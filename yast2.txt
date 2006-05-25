@@ -1,0 +1,231 @@
+* To test:
+
+   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp qt
+or
+   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk --nothreads
+
+	NB. examples are in yast2-core-devel ...
+
+* Code notes:
+
+/usr/include/YaST2/yui/YUI.h
+
+	+ main factory class interface.
+
+Implementation split over several files:
+
+YQUI_widgets.cc:
+	+ all the 'createFoo' methods
+
+YQUI_x11.cc:
+	+ cursor / font / some event bits
+
+YQUI_builtins.cc:
+	+ builtin dialogs etc.
+
+YQUI_core.cc:
+	+ constructor / init / arg parsing
+	+ mainloop etc.
+	+ 'YQUI::easterEgg'
+
+Registration with Yast2 via a single global instance:
+
+	// This is very important: We create one global variable of
+	// Y2CCQt. Its constructor will register it automatically to
+	// the Y2ComponentBroker, so that will be able to find it.
+	// This all happens before main() is called!
+
+	Y2CCQt g_y2ccqt;
+
+
+** Widget Positioning ?
+
+	Seems to be done post construction with (eg.):
+
+	YQSplit::moveChild (?)
+
+** Strategy:
+
+	+ create a tiny YGUI concrete class
+		+ 
+
+
+* To run 'Hello World' we need only:
+    fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
+
+YQUI_core.cc:87 (YQUI::YQUI(int, char**, bool, const char*))
+YQUI_core.cc:212 (void YQUI::processCommandLineArgs(int, char**))
+YQUI_core.cc:284 (void YQUI::calcDefaultSize())
+YQUI_core.cc:628 (bool YQUI::runningEmbedded() const)
+YQUI_core.cc:628 (bool YQUI::runningEmbedded() const)
+YQUI_core.cc:361 (virtual void YQUI::idleLoop(int))
+YQUI_core.cc:378 (void YQUI::leaveIdleLoop(int))
+YQUI_core.cc:478 (virtual YDialog* YQUI::createDialog(YWidgetOpt&))
+YQDialog.cc:49 (YQDialog::YQDialog(const YWidgetOpt&, QWidget*, bool))
+YQUI_widgets.cc:97 (virtual YContainerWidget* YQUI::createSplit(YWidget*, YWidgetOpt&, YUIDimension))
+YQSplit.cc:33 (YQSplit::YQSplit(QWidget*, const YWidgetOpt&, YUIDimension))
+YQUI_widgets.cc:120 (virtual YWidget* YQUI::createLabel(YWidget*, YWidgetOpt&, const YCPString&))
+YQLabel.cc:35 (YQLabel::YQLabel(QWidget*, const YWidgetOpt&, YCPString))
+YQUI_widgets.cc:189 (virtual YWidget* YQUI::createPushButton(YWidget*, YWidgetOpt&, const YCPString&))
+YQPushButton.cc:37 (YQPushButton::YQPushButton(QWidget*, YQDialog*, const YWidgetOpt&, const YCPString&))
+YQDialog.cc:367 (void YQDialog::setDefaultButton(YQGenericButton*))
+YQDialog.cc:636 (virtual void YQDialog::childAdded(YWidget*))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:112 (virtual long int YQDialog::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:112 (virtual long int YQDialog::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:162 (virtual void YQDialog::setSize(long int, long int))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQSplit.cc:47 (virtual void YQSplit::setSize(long int, long int))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:83 (virtual void YQLabel::setSize(long int, long int))
+YQSplit.cc:55 (virtual void YQSplit::moveChild(YWidget*, long int, long int))
+YQPushButton.cc:72 (virtual void YQPushButton::setSize(long int, long int))
+YQSplit.cc:55 (virtual void YQSplit::moveChild(YWidget*, long int, long int))
+YQUI_core.cc:507 (virtual void YQUI::showDialog(YDialog*))
+YQDialog.cc:599 (virtual void YQDialog::show())
+YQDialog.cc:215 (virtual void YQDialog::resizeEvent(QResizeEvent*))
+YQDialog.cc:162 (virtual void YQDialog::setSize(long int, long int))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQDialog.cc:145 (long int YQDialog::decorationWidth(YUIDimension))
+YQSplit.cc:47 (virtual void YQSplit::setSize(long int, long int))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:76 (virtual long int YQLabel::nicesize(YUIDimension))
+YQPushButton.cc:63 (virtual long int YQPushButton::nicesize(YUIDimension))
+YQLabel.cc:83 (virtual void YQLabel::setSize(long int, long int))
+YQSplit.cc:55 (virtual void YQSplit::moveChild(YWidget*, long int, long int))
+YQPushButton.cc:72 (virtual void YQPushButton::setSize(long int, long int))
+YQSplit.cc:55 (virtual void YQSplit::moveChild(YWidget*, long int, long int))
+YQDialog.cc:255 (void YQDialog::ensureOnlyOneDefaultButton())
+YQDialog.cc:575 (virtual void YQDialog::focusInEvent(QFocusEvent*))
+YQDialog.cc:457 (void YQDialog::gettingFocus(YQGenericButton*))
+YQDialog.cc:457 (void YQDialog::gettingFocus(YQGenericButton*))
+YQUI_core.cc:361 (virtual void YQUI::idleLoop(int))
+YQUI_core.cc:378 (void YQUI::leaveIdleLoop(int))
+YQUI_core.cc:398 (virtual YEvent* YQUI::userInput(long unsigned int))
+YQDialog.cc:196 (void YQDialog::activate(bool))
+YQDialog.cc:255 (void YQDialog::ensureOnlyOneDefaultButton())
+YQPushButton.cc:81 (void YQPushButton::hit())
+YQUI_core.cc:385 (void YQUI::sendEvent(YEvent*))
+YQDialog.cc:196 (void YQDialog::activate(bool))
+YQUI_core.cc:361 (virtual void YQUI::idleLoop(int))
+YQUI_core.cc:378 (void YQUI::leaveIdleLoop(int))
+YQUI_core.cc:545 (virtual void YQUI::closeDialog(YDialog*))
+YQDialog.cc:441 (void YQDialog::losingFocus(YQGenericButton*))
+YQDialog.cc:367 (void YQDialog::setDefaultButton(YQGenericButton*))
+YQUI_core.cc:361 (virtual void YQUI::idleLoop(int))
+YQUI_core.cc:266 (virtual YQUI::~YQUI())
+YQUI_core.cc:378 (void YQUI::leaveIdleLoop(int))
+
+Typical UI interaction trace:
+
+#1  0xb6072b20 in YGUI::userInput (this=0x80a1510, timeout_millisec=0) at YGUI.h:33
+#2  0xb7ef0971 in YUI::doUserInput (this=0x80a1510, builtin_name=0xb7f60d5c "UserInput", timeout_millisec=0, wait=true, detailed=false)
+    at YUI_builtins.cc:508
+#3  0xb7ef0fcb in YUI::evaluateUserInput (this=0x80a1510) at YUI_builtins.cc:375
+#4  0xb7f1f1f5 in UIUserInput () at YUI_bindings.cc:119
+#5  0xb7eeaaf2 in YUI::callFunction (function=0xb7f1f1c0, argc=0, argv=0xbf87e454) at YUI_core.cc:244
+#6  0xb7eeb140 in YUI::callBuiltin (this=0x80a1510, function=0xb7f1f1c0, argc=0, argv=0xbf87e454) at YUI_core.cc:215
+#7  0xb7ee9a9a in YUIComponent::callBuiltin (this=0x8083458, function=0xb7f1f1c0, fn_argc=0, fn_argv=0xbf87e454) at YUIComponent.cc:98
+#8  0xb7f1d48c in UICallHandler (ptr=0xb7f1f1c0, argc=0, argv=0xbf87e454) at YUI_bindings.cc:577
+#9  0xb7de7730 in YEBuiltin::evaluate (this=0x80902c0, cse=false) at YExpression.cc:2286
+#10 0xb7e0acb7 in YSExpression::evaluate (this=0x808fb60, cse=false) at YStatement.cc:175
+#11 0xb7e24b39 in YBlock::evaluate (this=0x808f858, cse=false) at YBlock.cc:558
+#12 0xb7ddb9c4 in YCPCodeRep::evaluate (this=0x80902a8, cse=false) at YCPCode.cc:81
+#13 0xb7fbbf83 in Y2WFMComponent::doActualWork (this=0x808b750, arglist=@0xbf87e938, displayserver=0x809ca10) at Y2WFMComponent.cc:177
+#14 0xb7d7f2fb in main (argc=4, argv=0xbf87ea74) at genericfrontend.cc:486
+#15 0xb767487c in __libc_start_main () from /lib/libc.so.6
+#16 0x08048501 in _start ()
+
+
+** Drive at '/usr/share/YaST2/clients/bootloader.ycp'
+    + createFrame ... [! - simple - !]
+
+    + needs scroll bars
+    + amazing state of this module
+	- as we update the progress bar: crazy stuff gets done ...
+
++ RichText
+    + needs scroll-bar ...
+
+
++ RadioButtonGroup: a screwed up 'invisible' container widget:
+    + deadly broken (!?)
+    + RadioButton1.ycp: crashes on start/exit ... [!]
+
++ createImage:
+    + 'tiled' ?
+
+
+** Layout issue
+
+    + The best-guess solution here is to understand yast2-qt better
+      and (perhaps) abandon the funky new YGWIDGET_NEW_LAYOUT
+    + This means we must clobber the resizing mess:
+	+ that gets spawned from 'gtk_fixed' when anything is moved.
+	+ with our own GtkFixed sub-class -perhaps- we can simply not
+	  trigger a resize on movement.
+	+ OTOH - we do want to re-trigger a size_allocate to
+	  actually move the GtkFixed children
+
+    + In short more analysis of Gtk / Qt sizing & YaST2 sizing needed
+	+ & in conclusion - ~none of our container widgets should be
+	  using Gtk+ size_requests - but native implemented ones.
+
+* Yast2 sizing:	
+    + setSize - recurses down from the 'top' to the bottom widgets
+	+ for contained widgets - it triggers pairs of:
+	    + setSize, moveChild calls.
+
+* Gtk sizing:
+    + gtksizegroup.c:
+	+ code always emits the gtk+ size_request signal
+	  [ which we should prolly emit ourselves incidentally ]
+	+ GtkWidgetAuxInfo's clobbered 'width' / 'height' that
+	  override the requisition information
+
++ Frame ...
+    + src/Frame2.ycp ...
+    + The problem is:
+	+ the Gtk+ containment hierarcy:
+	    + trying to do our own size allocate / etc.
+		+ our own 'size request' ? ...
+	    + is it going to work ?
+	    + do we need to derive from & clobber all widgets'
+	      'size_allocate' ?
+	    + [ and just use our own (evil) versions ]
+
+	+ Since Yast2 has it's own ideas:
+	    + perhaps 'setSize' should do just that:
+		+ hook to 'size_allocate'
+
+	+ use size requests for calculating other
+	  things, not this (?)
+
+
+++ New layout logic:
+    + re-factor to use a single top-level 'GtkFixed' thing.
+    + [ !? layering ? - flicker & child windows etc.
+        : no-window widgets fine but [events?] ... ]
+
+    + setSize - comes down from the 'top' to the bottom widgets
+	+ for contained widgets - it triggers pairs of:
+	    + setSize, moveChild calls.
+
++ YGFrame.cc [!?]
+    + poke at 'src/Frame2.ycp' ...

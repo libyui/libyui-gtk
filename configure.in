@@ -1,0 +1,176 @@
+dnl configure.in for yast2-gtk
+
+AC_INIT(yast2-gtk, 2.13.27, http://www.suse.de/feedback, yast2-gtk)
+
+AM_MAINTAINER_MODE
+
+dnl Checking host/target/build systems, for make, install etc.
+AC_CANONICAL_TARGET
+dnl Perform program name transformation
+AC_ARG_PROGRAM
+
+AC_PREFIX_DEFAULT(/usr)
+
+AM_INIT_AUTOMAKE(tar-ustar) dnl searches for some needed programs
+
+dnl Important YaST2 variables
+VERSION="2.13.27"
+RPMNAME="yast2-gtk"
+MAINTAINER="Wild Mongeese"
+
+AC_MSG_CHECKING(prefix)
+if test "z${prefix}" != "z/usr"; then
+   AC_MSG_ERROR(["Only the /usr prefix is supported, sorry. cf. README"])
+fi
+AC_MSG_RESULT(/usr - good)
+
+dnl pkgconfig honors lib64
+pkgconfigdir=\${libdir}/pkgconfig
+pkgconfigdatadir=\${datadir}/pkgconfig
+yast2dir=\${prefix}/share/YaST2
+
+ybindir=\${prefix}/lib/YaST2/bin
+ystartupdir=\${prefix}/lib/YaST2
+plugindir=\${libdir}/YaST2/plugin
+includedir=\${prefix}/include/YaST2
+
+execcompdir=\${prefix}/lib/YaST2
+agentdir=${execcompdir}/servers_non_y2
+
+ydatadir=${yast2dir}/data
+imagedir=${yast2dir}/images
+themedir=${yast2dir}/theme
+localedir=${yast2dir}/locale
+clientdir=${yast2dir}/clients
+moduledir=${yast2dir}/modules
+yncludedir=${yast2dir}/include
+schemadir=${yast2dir}/schema
+scrconfdir=${yast2dir}/scrconf
+desktopdir=\${prefix}/share/applications/YaST2
+
+AC_SUBST(VERSION)
+AC_SUBST(RPMNAME)
+AC_SUBST(MAINTAINER)
+
+AC_SUBST(pkgconfigdir)
+AC_SUBST(pkgconfigdatadir)
+
+AC_SUBST(yast2dir)
+
+AC_SUBST(ybindir)
+AC_SUBST(ystartupdir)
+AC_SUBST(plugindir)
+AC_SUBST(includedir)
+AC_SUBST(potdir)
+AC_SUBST(execcompdir)
+
+AC_SUBST(docdir)
+AC_SUBST(mandir)
+
+AC_SUBST(ydatadir)
+AC_SUBST(imagedir)
+AC_SUBST(themedir)
+AC_SUBST(localedir)
+AC_SUBST(clientdir)
+AC_SUBST(moduledir)
+AC_SUBST(yncludedir)
+AC_SUBST(schemadir)
+AC_SUBST(scrconfdir)
+AC_SUBST(agentdir)
+AC_SUBST(desktopdir)
+
+fillupdir_d="/var/adm/fillup-templates"
+AC_ARG_WITH(fillupdir,
+    AS_HELP_STRING([--with-fillupdir=DIR],
+		   [where to place fillup templates (default $fillupdir_d.]),
+    [ fillupdir="$withval" ],
+    [ fillupdir="$fillupdir_d" ])
+AC_SUBST(fillupdir)
+
+
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+dnl The YCP interpreter checks whether dependent ybc files are older
+dnl so we must preserve their timestamps
+INSTALL="${INSTALL} -p"
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+dnl pkgconfig
+AC_ARG_VAR([PKG_CONFIG_PATH], [where to search for pkg-config files])
+dnl devtools
+dnl ...
+
+dnl no need for AC_ARG_VAR
+AC_PATH_PROG(XGETTEXT, xgettext)
+if test -z "$XGETTEXT" ; then
+    AC_MSG_ERROR(xgettext is missing; please install gettext-devel.)
+fi
+
+devtools_ybindir=`pkg-config --print-errors --variable=ybindir yast2-devtools`
+devtools_yast2dir=`pkg-config --print-errors --variable=yast2dir yast2-devtools`
+
+dnl producing pkg-config for others?
+AM_CONDITIONAL(CREATE_PKGCONFIG, test "x${CREATE_PKGCONFIG}" != x)
+AM_CONDITIONAL(CREATE_PKGCONFIG_NOARCH, test "x${CREATE_PKGCONFIG}" = xnoarch)
+
+dbdir=${devtools_yast2dir}/data/docbook
+STYLESHEET_HTML=${dbdir}/stylesheets/customize-html.xsl
+STYLESHEET_PDF=${dbdir}/stylesheets/customize-fo.xsl
+STYLESHEET_CSS=${dbdir}/css/yast2docs.css
+STYLESHEET_YDOC=${dbdir}/stylesheets/ydoc.xsl
+STYLESHEET_YCPDOC=${dbdir}/stylesheets/ycpdoc.xsl
+AC_SUBST(STYLESHEET_HTML)
+AC_SUBST(STYLESHEET_PDF)
+AC_SUBST(STYLESHEET_CSS)
+AC_SUBST(STYLESHEET_YDOC)
+AC_SUBST(STYLESHEET_YCPDOC)
+
+
+
+AC_PATH_PROG(YDOXYGEN, ydoxygen, false, $PATH:$devtools_ybindir)
+if test "$YDOXYGEN" = "false"; then
+    AC_MSG_ERROR([ydoxygen is not installed])
+fi
+
+AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+
+CFLAGS="${CFLAGS} -Wall -Wformat -Wmissing-prototypes"
+CXXFLAGS="${CXXFLAGS} -Wall -Wformat"
+
+: ${AGENT_LIBADD:='-L$(libdir) -lscr'}
+AC_SUBST(AGENT_LIBADD)
+
+AC_DISABLE_STATIC
+AC_PROG_LIBTOOL
+AM_PROG_LIBTOOL dnl for libraries
+
+dnl generate the config header
+AC_CONFIG_HEADERS([config.h]) dnl at the distribution this done
+
+AC_FUNC_ALLOCA
+AC_HEADER_STDC
+
+dnl Try to find the X includes and libraries
+AC_PATH_X
+if test -n "$x_includes"; then
+	CPPFLAGS="$CPPFLAGS -I$x_includes"
+fi
+if test -n "$x_libraries"; then
+	LDFLAGS="$LDFLAGS -L$x_libraries"
+fi
+
+GTK_CFLAGS=`pkg-config --cflags gtk+-2.0`
+GTK_LIBS=`pkg-config --libs gtk+-2.0`
+AC_SUBST(GTK_CFLAGS)
+AC_SUBST(GTK_LIBS)
+
+AC_OUTPUT([Makefile src/Makefile])
+
+echo "
+Hello hacker: please read the README carefully while this builds.
+"

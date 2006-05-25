@@ -1,0 +1,38 @@
+* the very beginnings of a native gtk+ YaST2 UI *
+
+    This code creates a gtk+ plugin for YaST2. This plugin parallel
+installs with everything else, and will never be used unless
+explicitely invoked on the yast2 command line - ie. it won't break
+your system; go-on you know you want to install it.
+
+** build pre-requisites:
+
+    To make this compile you'll need the following packages installed
+(at a minimum):
+
+    yast2-devel yast2-devtools yast2-core-devel
+
+** to build / install
+
+./autogen.sh # NB. don't pass --prefix [1]
+make && sudo make install
+
+[1] - the YaST2 auto-foo system uses ${prefix}/include/YaST2 to
+      find the yast2-core-devel headers (sigh)
+
+** running:
+
+   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
+
+Also working fairly well:
+    Label1 Label2 Label3 Label4 Label1_de Label1_ja Label1_cs
+    Spacing1 PushButton1 PushButton2
+    ProgressBar1 ProgressBar2 ProgressBar3
+    Frame1
+
+
+Label - text needs escaping for shortcuts too (?) [uh?]
+checkout yast2.txt for notes.
+
+In case of oddness append --nothreads to the cmdline,
+Also check the log file: ~/.y2log

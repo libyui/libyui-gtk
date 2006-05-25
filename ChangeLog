@@ -1,0 +1,135 @@
+2006-05-25  Michael Meeks  <michael.meeks@novell.com>
+
+	* commit to Novell forge CVS: thanks kobliha
+
+	* src/YGWidget.cc (getNiceSize): remove ugly
+	hack, and emit 'size_request' signal ourselves 
+	to avoid need for hack.
+
+2006-05-17  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGFrame.cc: fix setSize
+
+	* src/YGWidget.cc: revert to old-style layout
+	again, forgotten the (good?) reasons for the pain.
+
+	* src/YGWidget.cc (YGWidget): if (!show) - toplevel
+	window: don't much about with 'size_allocate'
+	sub-classing: fixes window sizing issues.
+
+2006-05-06  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGWidget.cc (doMoveChild): impl. as a method.
+	(do_size_allocate): factor out of (doSetSize).
+	(doMoveChild): act on the child's allocation not ours.
+	Works rather nicely (now).
+
+2006-05-06  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGWidget.cc (clobbered_size_allocate): impl.
+	(doSetSize): impl. add CLOBBER_SIZE_ALLOCATE control,
+	default to off. Just need some more work on custom
+	GtkAllocation manipulation by containers.
+
+2006-05-06  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGWidget.cc (YGWidget): add 'hack here'
+	goodness.
+	(dynamic_subtype): create dynamic sub-type & clobber
+	size_allocate.
+	(clobbered_size_allocate): this needs to be able
+	to filter out individual widgets [ via g_object_data ? ]
+	to allow individual size allocations to be performed
+	without the rest of the children getting them too.
+
+	* src/YGWidget.[ch]: re-factor constructor to take
+	'type' & construction time args; this will allow a
+	dynamic sub-classing to happen there to allow
+	clobbering of size_request/allocate [etc.]
+	* src/*: update to fit.
+	* src/YGImage.c: clobber for now.
+
+2006-04-13  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGFrame.cc, src/YGImage.cc: add
+	* src/YGRadioButton.cc: add - something badly
+	wrong with destruction logic though.
+
+2006-04-05  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGDialog.cc: fold YGDialog.h in.
+
+	* src/YGUI.cc: impl. get screen dimensions /
+	default size etc.
+
+2006-04-05  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc (idleLoop): set NULL encoding.
+
+	* src/YGRichText.cc (YGRichText): impl.
+
+2006-04-04  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPushButton.cc, src/YGUI.cc: move.
+
+2006-04-01  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGRichText.cc: stubbed.
+
+2006-03-30  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc (YGUI): call 'topmostConstructorHasFinished'
+	(idleLoop, ycp_wakeup_fn): deal with fd_ycp properly.
+
+2006-03-30  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGLabel.h, src/YGSplit.h: remove.
+
+	* src/YGTextEntry.cc: partial impl.
+
+	* src/YGSpacing.cc, src/YGReplacePoint.cc,
+	* src/YGProgressBar.cc, src/YGEmpty.cc: impl.
+
+	* src/YGWidget.cc (show): impl.
+
+2006-03-29  Michael Meeks  <michael.meeks@novell.com>
+
+	* configure.in: catch non /usr prefixes.
+
+	* src/YGWidget.cc (getFixed): walk up widget hierarchy
+	first looking for 'Fixed's.
+
+	* src/YGSplit.cc (YGSplit): also a GtkFixed - we need
+	a nested hierarchy of Fixed it seems.
+
+2006-03-28  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.h (ui): fix silly infinite recursion,
+	click the button to exit now works.
+
+	* src/YGDialog.cc (nicesize): fix sizing.
+
+2006-03-27  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGSplit.h: remove bogus niceSize impl causing
+	difficulties.
+
+	* src/YGUI.cc (dumpWidgetTree, dumpYastTree): expose.
+
+	* src/YGDialog.cc (nicesize): remove hack /crop to
+	max 50 pixels large.
+
+	* src/YGWidget.h (getWidgetName): return better names.
+
+	* src/YGDialog.cc (setSize, ygdialog_size_allocate):
+	make dynamic sizing work better (can grow at least)
+
+	* yast2.txt: helpful devel. pointers.
+
+	* configure.in, src/*: add some code.
+
+	* Import personal play-ground of no real value.
+
+	* Please feal extremely free to commit
+	  tasteful bug fixes
+
