@@ -17,3 +17,5 @@ Makefile
 INSTALL
 ChangeLog
 AUTHORS
+COPYING
+aclocal.m4

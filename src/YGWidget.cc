@@ -224,10 +224,6 @@ YGWidget::getNiceSize (YUIDimension dim)
 	else 
 		ret = req.height;
 
-// FIXME: nicer layout [!]
-//	if (GTK_IS_CONTAINER (widget))
-//		ret += GTK_CONTAINER (widget)->border_width * 2;
-
 	fprintf (stderr, "NiceSize for '%s' %s %ld\n",
 			 getWidgetName(), dim == YD_HORIZ ? "width" : "height",
 			 ret);

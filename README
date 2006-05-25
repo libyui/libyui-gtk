@@ -1,3 +1,6 @@
+** This code is licensed under the
+   Lesser GNU Public License- (LGPL)
+
 * the very beginnings of a native gtk+ YaST2 UI *
 
     This code creates a gtk+ plugin for YaST2. This plugin parallel
@@ -29,7 +32,6 @@ Also working fairly well:
     Spacing1 PushButton1 PushButton2
     ProgressBar1 ProgressBar2 ProgressBar3
     Frame1
-
 
 Label - text needs escaping for shortcuts too (?) [uh?]
 checkout yast2.txt for notes.

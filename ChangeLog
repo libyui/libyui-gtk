@@ -1,5 +1,16 @@
 2006-05-25  Michael Meeks  <michael.meeks@novell.com>
 
+	* README, yast2.txt: update & clarify.
+
+	* src/YGDialog.cc (setSize): remove hack to work
+	around the 'growing' problems we had.
+
+	* src/YGWidget.cc (getNiceSize): remove ugly
+	hack, and emit 'size_request' signal ourselves 
+	to avoid need for hack.
+
+2006-05-25  Michael Meeks  <michael.meeks@novell.com>
+
 	* commit to Novell forge CVS: thanks kobliha
 
 	* src/YGWidget.cc (getNiceSize): remove ugly

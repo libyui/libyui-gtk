@@ -90,10 +90,6 @@ void YGDialog::setSize( long newWidth, long newHeight )
 	fprintf (stderr, "%s:%s %ld, %ld (%d, %d) def %d, %d\n", G_STRLOC, G_STRFUNC,
 		 newWidth, newHeight, m_oldSize.width, m_oldSize.height, defw, defh);
 
-	if (m_oldSize.width == newWidth &&
-		(m_oldSize.height == newHeight ||
-		 m_oldSize.height == newHeight - 1)) // urgh...[!]
-		return;
 	m_oldSize.width = newWidth;
 	m_oldSize.height = newHeight;
 
