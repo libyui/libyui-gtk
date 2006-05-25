@@ -2,9 +2,6 @@
 
 	* README, yast2.txt: update & clarify.
 
-	* src/YGDialog.cc (setSize): remove hack to work
-	around the 'growing' problems we had.
-
 	* src/YGWidget.cc (getNiceSize): remove ugly
 	hack, and emit 'size_request' signal ourselves 
 	to avoid need for hack.
