@@ -9,28 +9,28 @@ class YGProgressBar : public YProgressBar, public YGWidget
 {
 public:
     YGProgressBar( const YWidgetOpt &opt,
-				   YGWidget         *parent,
-				   const YCPString & label,
-				   const YCPInteger & maxprogress,
-				   const YCPInteger & progress ) :
-			YProgressBar( opt, label, maxprogress, progress ),
-			YGWidget( this, parent, true, GTK_TYPE_PROGRESS_BAR, NULL )
-	{
-		if (label->value() != "")
-			gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
-									   label->value_cstr());
-	}
-	virtual ~YGProgressBar() {}
+		   YGWidget         *parent,
+		   const YCPString & label,
+		   const YCPInteger & maxprogress,
+		   const YCPInteger & progress ) :
+	YProgressBar( opt, label, maxprogress, progress ),
+	YGWidget( this, parent, true, GTK_TYPE_PROGRESS_BAR, NULL )
+    {
+	if (label->value() != "")
+	    gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
+				       label->value_cstr());
+    }
+    virtual ~YGProgressBar() {}
 
-	// YProgressBar
+    // YProgressBar
     virtual void setLabel( const YCPString & label )
-	{
-		gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
-								   label->value_cstr());
-	}
-	virtual void setProgress( const YCPInteger & newProgress );
+    {
+	gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
+				   label->value_cstr());
+    }
+    virtual void setProgress( const YCPInteger & newProgress );
 
-	// YWidget
+    // YWidget
     YGWIDGET_IMPL_NICESIZE
     YGWIDGET_IMPL_SET_ENABLING
     YGWIDGET_IMPL_SET_SIZE
@@ -46,16 +46,16 @@ void YGProgressBar::setProgress( const YCPInteger & newProgress )
 
 	value /= maxProgress->value();
 	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), value);
-    YProgressBar::setProgress( newProgress );
+	YProgressBar::setProgress( newProgress );
 }
 
 YWidget *
 YGUI::createProgressBar( YWidget *parent, YWidgetOpt & opt,
-						 const YCPString & label,
-						 const YCPInteger & maxprogress,
-						 const YCPInteger & progress )
+			 const YCPString & label,
+			 const YCPInteger & maxprogress,
+			 const YCPInteger & progress )
 {
 	IMPL;
 	return new YGProgressBar( opt, YGWidget::get (parent),
-							  label, maxprogress, progress );
+				  label, maxprogress, progress );
 }

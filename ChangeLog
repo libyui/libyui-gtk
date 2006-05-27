@@ -1,5 +1,17 @@
 2006-05-27  Michael Meeks  <michael@>
 
+	* src/YGSelectionBox.cc: add - stub for timezone
+	selector. YGSquash.cc needed next: should be simple -
+	go Ricardo go ! ;-)
+
+	* src/Makefile.am (libpy2gtk_la_SOURCES): add
+	YGSelectionBox.cc
+
+	* src/YGWidget.cc: tag YGWIDGET_DUFF_LAYOUT & remove
+	the crufty guff trying to fixup some issues.
+	(clobbered_size_allocate, dynamic_subtype, moveWidget):
+	remove.
+
 	* test.sh: helpful script for testing.
 
 	* src/YGDialog.cc (YGDialog): remove set_default_size

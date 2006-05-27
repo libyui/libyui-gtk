@@ -172,9 +172,6 @@ YWidget *
 YGUI::createMultiLineEdit( YWidget *parent, YWidgetOpt & opt,
 					  const YCPString & label, const YCPString & text ) IMPL_NULL;
 YWidget *
-YGUI::createSelectionBox( YWidget *parent, YWidgetOpt & opt,
-					 const YCPString & label ) IMPL_NULL;
-YWidget *
 YGUI::createMultiSelectionBox( YWidget *parent, YWidgetOpt & opt,
 					      const YCPString & label ) IMPL_NULL;
 YWidget *

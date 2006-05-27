@@ -63,7 +63,6 @@ YGDialog::YGDialog( const YWidgetOpt &opt,
 	gtk_window_set_title (GTK_WINDOW (m_widget),
 			      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
 //	gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
-rm2
 
 	g_signal_connect (G_OBJECT (m_widget), "size_allocate",
 			  G_CALLBACK (ygdialog_size_allocate), this);
@@ -87,7 +86,6 @@ YGDialog::nicesize( YUIDimension dim )
 
 void YGDialog::setSize( long newWidth, long newHeight )
 {
-	int defw, defh;
 	int reqw, reqh;
 	gtk_widget_get_size_request (m_widget, &reqw, &reqh);
 	if (reqw == newWidth && reqh == newHeight)

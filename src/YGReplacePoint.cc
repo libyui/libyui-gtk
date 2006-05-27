@@ -9,14 +9,15 @@ class YGReplacePoint : public YReplacePoint, public YGWidget
 {
 public:
     YGReplacePoint( const YWidgetOpt &opt,
-					YGWidget         *parent );
-	virtual ~YGReplacePoint();
+		    YGWidget         *parent );
+    virtual ~YGReplacePoint();
 
     // YContainerWidget
-	virtual void childAdded( YWidget *child );
+    virtual void childAdded( YWidget *child );
 
     // YWidget
     YGWIDGET_IMPL_SET_ENABLING
+    YGWIDGET_IMPL_SET_SIZE_CHAIN(YReplacePoint)
     virtual bool setKeyboardFocus() IMPL_RET(false);
     virtual void startMultipleChanges() IMPL;
     virtual void doneMultipleChanges() IMPL;
@@ -24,7 +25,7 @@ public:
 };
 
 YGReplacePoint::YGReplacePoint( const YWidgetOpt &opt,
-								YGWidget         *parent )
+				YGWidget         *parent )
 	: YReplacePoint( opt ),
 	  YGWidget( this, parent )
 {

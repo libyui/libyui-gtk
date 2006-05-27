@@ -11,7 +11,6 @@ class YGWidget {
 	// no RTI for dynamic_cast ?
 	YWidget   *m_y_widget;
 	GtkAllocation m_alloc;
-	void moveWidget (long newx, long newy);
 	void construct (YWidget *y_widget, YGWidget *parent,
 					bool show, GType type,
 					const char *property_name, va_list args);

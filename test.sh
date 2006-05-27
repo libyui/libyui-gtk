@@ -4,7 +4,7 @@ echo "Hackish script to run a ton of yast2-gtk test that we know"
 echo "should work and layout fairly nicely."
 
 if test "z$1" = "z"; then
-    tests="Label3 HelloWorld PushButton2 RichText1"
+    tests="Label3 HelloWorld PushButton2 RichText1 Spacing1"
 else
     tests="$@"
 fi

@@ -9,14 +9,14 @@ class YGEmpty : public YEmpty, public YGWidget
 {
 public:
     YGEmpty( const YWidgetOpt &opt,
-			 YGWidget         *parent ) :
-			YEmpty( opt ),
-			YGWidget( this, parent ) {}
-	virtual ~YGEmpty() {}
+             YGWidget         *parent ) :
+        YEmpty( opt ),
+	YGWidget( this, parent ) {}
+    virtual ~YGEmpty() {}
 
-	// YWidget
+    // YWidget
     YGWIDGET_IMPL_SET_ENABLING
-    YGWIDGET_IMPL_SET_SIZE
+    YGWIDGET_IMPL_SET_SIZE_CHAIN(YEmpty)
     virtual bool setKeyboardFocus() IMPL_RET(false);
     virtual void startMultipleChanges() IMPL;
     virtual void doneMultipleChanges() IMPL;
@@ -26,6 +26,6 @@ public:
 YWidget *
 YGUI::createEmpty( YWidget *parent, YWidgetOpt & opt )
 {
-	IMPL;
-	return new YGEmpty( opt, YGWidget::get (parent) );
+    IMPL;
+    return new YGEmpty( opt, YGWidget::get (parent) );
 }

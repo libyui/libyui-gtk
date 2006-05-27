@@ -14,12 +14,12 @@ public:
 			   bool 			horizontal,
 			   bool 			vertical ) :
 			YSpacing( opt, size, horizontal, vertical ),
-			YGWidget( this, parent, true, GTK_TYPE_FIXED, NULL ) {}
+			YGWidget( this, parent ) {}
 	virtual ~YGSpacing() {}
 
 	// YWidget
     YGWIDGET_IMPL_SET_ENABLING
-    YGWIDGET_IMPL_SET_SIZE
+    YGWIDGET_IMPL_SET_SIZE_CHAIN(YSpacing)
     virtual bool setKeyboardFocus() IMPL_RET(false);
     virtual void startMultipleChanges() IMPL;
     virtual void doneMultipleChanges() IMPL;
@@ -31,5 +31,5 @@ YGUI::createSpacing( YWidget *parent, YWidgetOpt & opt, float size,
 					 bool horizontal, bool vertical )
 {
 	return new YGSpacing( opt, YGWidget::get (parent),
-						  size, horizontal, vertical );
+			      size, horizontal, vertical );
 }
