@@ -1,3 +1,13 @@
+2006-05-27  Michael Meeks  <michael.meeks@novell.com>
+
+	* configure.in: use PKG_CHECK_MODULES, fixes odd
+	64bit problem.
+
+	* autogen.sh: pass --libdir inferred from
+	yast2-devtools libdir: fixes 64bit foo; don't set
+	the wrong PKG_CONFIG_PATH unless we have nothing to
+	go on.
+
 2006-05-25  Michael Meeks  <michael.meeks@novell.com>
 
 	* README, yast2.txt: update & clarify.

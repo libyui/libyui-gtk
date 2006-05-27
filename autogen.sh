@@ -7,8 +7,14 @@ autoheader
 automake --gnu --add-missing --copy || exit 1;
 autoconf || exit 1;
 
+libdir=`pkg-config --print-errors --variable=libdir yast2-devtools`;
+
+if test "z$PKG_CONFIG_PATH" = "z"; then
+    export PKG_CONFIG_PATH="/opt/gnome/lib64/pkgconfig:/usr/lib64/pkgconfig;/opt/gnome/lib/pkgconfig:/usr/lib/pkgconfige"
+fi
+
 if test "z$@" = "z"; then
-    ./configure --libdir=/usr/lib --prefix=/usr PKG_CONFIG_PATH=/opt/gnome/lib/pkgconfig:/usr/lib/pkgconfig;
+    ./configure --prefix=/usr --libdir=$libdir
 
 elif test "x$NOCONFIGURE" = "x"; then
     ./configure "$@"
