@@ -49,6 +49,14 @@ class YGWidget {
 					 m_widget, m_y_widget, newWidth, newHeight); \
 			doSetSize (newWidth, newHeight); \
 		}
+#define YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass) \
+		virtual void setSize( long newWidth, long newHeight ) \
+		{ \
+			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld + chain\n", G_STRLOC, G_STRFUNC, \
+					 m_widget, m_y_widget, newWidth, newHeight); \
+			doSetSize (newWidth, newHeight); \
+			ParentClass::setSize (newWidth, newHeight); \
+		}
 #define YGWIDGET_IMPL_MOVE_CHILD   virtual void moveChild( YWidget *child, long newx, long newy ) \
 		{ \
 			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \

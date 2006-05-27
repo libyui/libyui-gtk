@@ -18,6 +18,8 @@ YQUI_core.cc:
 
 * Short term goals:
 
+** beef up test.sh to improve layout: add -geometry argument ?
+
 ** /usr/share/YaST2/clients/bootloader.ycp
     + works quite nicely...
     + needs scroll bars

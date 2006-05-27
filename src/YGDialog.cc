@@ -10,7 +10,8 @@ class YGWizard;
 
 class YGDialog : public YDialog, public YGWidget
 {
-	GtkAllocation m_oldSize;
+    GtkAllocation m_oldSize;
+    GtkWidget *m_pFixed;
 public:
     YGDialog( const YWidgetOpt &opt,
 	      YGWidget         *parent	= 0);
@@ -35,9 +36,10 @@ public:
 
 static void
 ygdialog_size_allocate (GtkWidget *widget,
-						GtkAllocation *allocation,
-						YGDialog  *pThis)
+			GtkAllocation *allocation,
+			YGDialog  *pThis)
 {
+	fprintf (stdout, "size_allocate\n");
 	pThis->setSize (allocation->width, allocation->height); 
 }
 
@@ -45,25 +47,26 @@ YGDialog::YGDialog( const YWidgetOpt &opt,
 					YGWidget         *parent )
 	: YDialog( opt ),
 	  YGWidget( this, parent, FALSE,
-				GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,
-				NULL )
+		    GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,
+		    NULL )
 {
 	m_oldSize.width = -1;
 	m_oldSize.height = -1;
 
-	GtkWidget *fixed = gtk_fixed_new();
-	gtk_widget_show (fixed);
-	gtk_container_add (GTK_CONTAINER (getWidget()), fixed);
+	m_pFixed = gtk_fixed_new();
+	gtk_widget_show (m_pFixed);
+	gtk_container_add (GTK_CONTAINER (getWidget()), m_pFixed);
 
 	fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 	gtk_window_set_modal (GTK_WINDOW (m_widget),
 			      !opt.hasDefaultSize.value());
 	gtk_window_set_title (GTK_WINDOW (m_widget),
 			      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
-	gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
+//	gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
+rm2
 
 	g_signal_connect (G_OBJECT (m_widget), "size_allocate",
-					  G_CALLBACK (ygdialog_size_allocate), this);
+			  G_CALLBACK (ygdialog_size_allocate), this);
 
 	//	if ( opt.hasWarnColor().value() || opt.hasInfoColor().value() )
 	//fprintf (stderr, "Ignored Warn / Info colors\n");
@@ -85,21 +88,12 @@ YGDialog::nicesize( YUIDimension dim )
 void YGDialog::setSize( long newWidth, long newHeight )
 {
 	int defw, defh;
-
-	gtk_window_get_default_size (GTK_WINDOW (m_widget), &defw, &defh);
-	fprintf (stderr, "%s:%s %ld, %ld (%d, %d) def %d, %d\n", G_STRLOC, G_STRFUNC,
-		 newWidth, newHeight, m_oldSize.width, m_oldSize.height, defw, defh);
-
-	// FIXME: ugly hack to nail idly growing-window issue
-	if (m_oldSize.width == newWidth &&
-		(m_oldSize.height == newHeight ||
-		m_oldSize.height == newHeight - 1)) // urgh...[!]
-		return;
-	m_oldSize.width = newWidth;
-	m_oldSize.height = newHeight;
-
-	// FIXME - was resize ...
-	gtk_window_set_default_size (GTK_WINDOW (m_widget), newWidth, newHeight);
+	int reqw, reqh;
+	gtk_widget_get_size_request (m_widget, &reqw, &reqh);
+	if (reqw == newWidth && reqh == newHeight)
+	    return;
+	fprintf (stdout, "YGDialog::setSize %ld, %ld (%d,%d)\n", newWidth, newHeight, reqw, reqh);
+ 	gtk_widget_set_size_request (m_widget, newWidth, newHeight);
 	if (numChildren() > 0)
 		YDialog::setSize (newWidth, newHeight);
 }

@@ -28,12 +28,7 @@ public:
 		return ret;
 	}
 
-	virtual void setSize( long newWidth, long newHeight )
-	{
-		fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
-				 m_widget, m_y_widget, newWidth, newHeight);
-		YSplit::setSize (newWidth, newHeight);
-	}
+	YGWIDGET_IMPL_SET_SIZE_CHAIN(YSplit)
 
     // YWidget
     YGWIDGET_IMPL_SET_ENABLING

@@ -1,3 +1,18 @@
+2006-05-27  Michael Meeks  <michael@>
+
+	* test.sh: helpful script for testing.
+
+	* src/YGDialog.cc (YGDialog): remove set_default_size
+	causing grief.
+
+	* src/YGSplit.cc (class YGSplit): use new
+	SET_SIZE_CHAIN - all 'Fixed' containers should do
+	this.
+
+	* src/YGDialog.cc (setSize): remove horrible hack
+	to trap set_size_request -> size_allocate -> ~ loop,
+	much cleaner now.
+
 2006-05-27  Michael Meeks  <michael.meeks@novell.com>
 
 	* configure.in: use PKG_CHECK_MODULES, fixes odd

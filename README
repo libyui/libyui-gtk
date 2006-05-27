@@ -25,7 +25,7 @@ make && sudo make install
 
 ** running:
 
-   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
+/usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
 
 Also working fairly well:
     Label1 Label2 Label3 Label4 Label1_de Label1_ja Label1_cs
