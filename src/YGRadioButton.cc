@@ -36,6 +36,7 @@ public:
 		IMPL;
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			pThis->buttonGroup()->uncheckOtherButtons (pThis);
+		fprintf (stderr, "Send event!\n");
 		YGUI::ui()->sendEvent( new YWidgetEvent( pThis, YEvent::ValueChanged ) );
 	}
 
@@ -67,11 +68,16 @@ public:
 	virtual void setValue( const YCPBoolean & checked )
 	{
 		IMPL;
-		// FIXME: block signal emissions from this ... (?)
+		g_signal_handlers_block_by_func
+			(getWidget(), (gpointer)toggled_cb, this);
+
 		if (checked->value())
 			buttonGroup()->uncheckOtherButtons (this);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()),
 					      checked->value());
+
+		g_signal_handlers_unblock_by_func
+			(getWidget(), (gpointer)toggled_cb, this);
 	}
 	virtual YCPBoolean getValue()
 	{

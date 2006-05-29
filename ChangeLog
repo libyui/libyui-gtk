@@ -1,5 +1,8 @@
 2006-05-29  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGRadioButton.cc (setValue): block signals to
+	avoid supurious events: fixes RadioButton1
+	
 	* src/YGRadioButton.cc (getCheckRadioButtonType):
 	remove bus-load of debug, angst & crud. Kill elusive
 	crasher (gdb was lying), sub-class GtkRadioButton to

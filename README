@@ -31,7 +31,7 @@ Also working fairly well:
     Label1 Label2 Label3 Label4 Label1_de Label1_ja Label1_cs
     Spacing1 PushButton1 PushButton2
     ProgressBar1 ProgressBar2 ProgressBar3
-    Frame1
+    Frame1 Frame2 RadioButton1 RadioButton2
 
 Label - text needs escaping for shortcuts too (?) [uh?]
 checkout yast2.txt for notes.
