@@ -1,3 +1,10 @@
+2006-05-29  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGRadioButton.cc (getCheckRadioButtonType):
+	remove bus-load of debug, angst & crud. Kill elusive
+	crasher (gdb was lying), sub-class GtkRadioButton to
+	make behavior more Qt-like.
+
 2006-05-27  Michael Meeks  <michael@>
 
 	* src/YGSelectionBox.cc: add - stub for timezone

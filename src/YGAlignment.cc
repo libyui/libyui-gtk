@@ -8,30 +8,24 @@
 class YGAlignment : public YAlignment, public YGWidget
 {
 public:
-    YGAlignment( const YWidgetOpt &opt,
-				 YGWidget         *parent,
-				 YAlignmentType halign,
-				 YAlignmentType valign ) :
-			YAlignment( opt, halign, valign ),
-			YGWidget( this, parent ) {}
+	YGAlignment( const YWidgetOpt &opt,
+		     YGWidget         *parent,
+		     YAlignmentType halign,
+		     YAlignmentType valign ) :
+		YAlignment( opt, halign, valign ),
+		YGWidget( this, parent ) {}
 	virtual ~YGAlignment() {}
 
 	// YAlignment
 	YGWIDGET_IMPL_MOVE_CHILD
 
 	// YWidget
-    YGWIDGET_IMPL_SET_ENABLING
-
-	virtual void setSize (long newWidth, long newHeight)
-	{
-		IMPL;
-		doSetSize (newWidth, newHeight);
-		YAlignment::setSize (newWidth, newHeight);
-	}
-    virtual bool setKeyboardFocus() IMPL_RET(false);
-    virtual void startMultipleChanges() IMPL;
-    virtual void doneMultipleChanges() IMPL;
-    virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_SET_SIZE_CHAIN(YAlignment)
+	virtual bool setKeyboardFocus() IMPL_RET(false);
+	virtual void startMultipleChanges() IMPL;
+	virtual void doneMultipleChanges() IMPL;
+	virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
 };
 
 YContainerWidget *

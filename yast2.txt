@@ -30,15 +30,10 @@ YQUI_core.cc:
 ** /usr/share/YaST2/clients/timezone.ycp
 
 
-+ RadioButtonGroup: a screwed up 'invisible' container widget:
-    + deadly broken (!?)
-    + RadioButton1.ycp: crashes on start/exit ... [!]
-
 + createImage:
     + 'tiled' ?
 
-
-** Layout issue
+** Layout issue(s)
 
     + The best-guess solution here is to understand yast2-qt better
       and (perhaps) abandon the funky new YGWIDGET_NEW_LAYOUT
