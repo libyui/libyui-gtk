@@ -1,3 +1,10 @@
+2006-05-30  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc: remove createComboBox
+
+	* src/YGComboBox.cc: move it here, implement a noddy
+	skeleton.
+
 2006-05-29  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGRadioButton.cc (setValue): block signals to

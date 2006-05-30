@@ -28,6 +28,7 @@ libpy2gtk_la_SOURCES = \
 	YGRadioButton.cc \
 	YGImage.cc \
 	YGFrame.cc \
+	YGComboBox.cc \
 	YGSelectionBox.cc
 
 dummy_SOURCES = dummy.cc
