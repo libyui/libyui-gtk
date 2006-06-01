@@ -1,3 +1,25 @@
+2006-06-01 Ricardo Cruz <rpmcruz@clix.pt>
+
+  * src/YGLabelWidget.cc/hh: added this convinience
+  class that displays a label next to the intended
+  widget.
+
+  * src/YGComboBox.cc: workable combo box.
+  To do: implement setValue() -- seems far from trivial.
+  And add validChars filter -- easy after setValue() done.
+  * src/YGTextEntry.cc: fully implemented text entry.
+  (Note: I haven't implemented *MultipleChanges() as 
+  I think the overhead of it on a single entry text
+  widget should not worth it. Qt does the same.)
+
+  * src/YGUtils.cc/hh: added these couple files
+  that should have functions shared between classes
+  or that just make sense to be in such a file.
+  Currently has setLabel() and is_str_valid().
+  (Note: setLabel() doesn't yet support buddies.)
+
+  * src/YGWidget.h: added keyboard focus macro.
+
 2006-05-30  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc: remove createComboBox
