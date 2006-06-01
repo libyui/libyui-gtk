@@ -35,6 +35,8 @@ Also working fairly well:
     Spacing1 PushButton1 PushButton2
     ProgressBar1 ProgressBar2 ProgressBar3
     Frame1 Frame2 RadioButton1 RadioButton2
+    TextEntry1 TextEntry2 TextEntry3 TextEntry4 TextEntry6
+    ComboBox1 ComboBox2 ComboBox3
 
 Label - text needs escaping for shortcuts too (?) [uh?]
 checkout yast2.txt for notes.
