@@ -18,10 +18,13 @@ your system; go-on you know you want to install it.
 ** to build / install
 
 ./autogen.sh # NB. don't pass --prefix [1]
-make && sudo make install
+make && sudo make install [2]
 
 [1] - the YaST2 auto-foo system uses ${prefix}/include/YaST2 to
       find the yast2-core-devel headers (sigh)
+
+[2] - if you want sudo not to ask you a password, add yourself to the
+      wheel group, and uncomment the related lines in /etc/sudoers
 
 ** running:
 
