@@ -1,57 +1,38 @@
+/* */
+
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YComboBox.h"
-#include "YGWidget.h"
+#include "YGLabelWidget.h"
 
-class YGComboBox : public YComboBox, public YGWidget
+class YGComboBox : public YComboBox, public YGLabelWidget
 {
-public:
-#if 0
-	static void toggled_cb (GtkButton *button, YGComboBox *pThis)
+	public:
+		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label,
+		            GType combo_box_type, GtkTreeModel* use_model)
+		: YComboBox (opt, label)
+		, YGLabelWidget (this, parent, label, YD_VERT, true,
+		                 combo_box_type, "model", use_model, "text-column", 0, NULL)
 	{
-		IMPL;
-		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
-			pThis->buttonGroup()->uncheckOtherButtons (pThis);
-		fprintf (stderr, "Send event!\n");
-		YGUI::ui()->sendEvent( new YWidgetEvent( pThis, YEvent::ValueChanged ) );
-	}
-#endif
-
-	YGComboBox( const YWidgetOpt &opt,
-		    YGWidget         *parent,
-		    YCPString         label)
-		:  YComboBox( opt, label ),
-		   YGWidget( this, parent, true,
-			     GTK_TYPE_COMBO_BOX, NULL )
-	{
-		IMPL;
-#if 0
-		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-		g_signal_connect (G_OBJECT (getWidget ()),
-				  "toggled", G_CALLBACK (toggled_cb), this);
-		setLabel (label);
-#endif
 	}
 
-	// YSelectionWidget
-	virtual void itemAdded( const YCPString & string, int index, bool selected ) IMPL;
-
-	// YComboBox
-	virtual void setLabel (const YCPString &label)
-	{
+	/* Doesn't honor the index argument. As Qt module does the same, I guess
+	   that's okay, maybe even expected. */
+	virtual void itemAdded (const YCPString & string, int index, bool selected)
+		{
 		IMPL;
-		char *str = YGWidget::mapKBAccel (label->value_cstr());
-#if 0
-		gtk_button_set_label (GTK_BUTTON (getWidget()), str);
-#endif
-		g_free (str);
-	}
+		GtkComboBox* combobox = GTK_COMBO_BOX(getWidget());
+		gtk_combo_box_insert_text (combobox, index, string->value_cstr());
+		if(selected || index == 0 /* always select the 1st by default */)
+			gtk_combo_box_set_active (combobox, index);
+		}
 
 	virtual void setValue (const YCPString &value)
 	{
 		IMPL;
+		// TODO
 #if 0
 		g_signal_handlers_block_by_func
 			(getWidget(), (gpointer)toggled_cb, this);
@@ -65,38 +46,50 @@ public:
 			(getWidget(), (gpointer)toggled_cb, this);
 #endif
 	}
+
 	virtual YCPString getValue() const
 	{
 		IMPL;
-#if 0
-		return YCPBoolean( gtk_toggle_button_get_active (
-			GTK_TOGGLE_BUTTON (getWidget() ) ) );
-#endif
-		return YCPString("foo");
+		return YCPString (gtk_combo_box_get_active_text(
+		  GTK_COMBO_BOX((const_cast<YGComboBox *>(this)->getWidget()))));
 	}
 
-	// Remove comments as we implement ;-) cf. YComboBox.h
-	/**
-	 * Returns the index of the currently selected item (from 0 on)
-	 * or -1 if no item is selected.
-	 **/
-	virtual int getCurrentItem() const IMPL_RET(0)
+	virtual int getCurrentItem() const
+	{
+		return gtk_combo_box_get_active(
+		  GTK_COMBO_BOX((const_cast<YGComboBox *>(this)->getWidget())));
+	}
 
-	/**
-	 * Selects an item from the list. Notice there intentionally is no
-	 * corresponding getCurrentItem() method - use getValue() instead.
-	 */
-	virtual void setCurrentItem( int index ) IMPL;
+	virtual void setCurrentItem (int index)
+	{
+		gtk_combo_box_set_active (GTK_COMBO_BOX(getWidget()), index);
+	}
 
 	// YWidget
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-};
+	};
 
 YWidget *
-YGUI::createComboBox( YWidget *parent, YWidgetOpt & opt,
-		      const YCPString & label )
+YGUI::createComboBox (YWidget *parent, YWidgetOpt & opt,
+                      const YCPString & label)
 {
-	return new YGComboBox (opt, YGWidget::get (parent), label);
+	// Making the combo box accepting text items.
+	GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
+
+	YGComboBox* y_widget = new YGComboBox (opt, YGWidget::get (parent), label,
+	  opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX,
+	  GTK_TREE_MODEL(store));
+
+	g_object_unref (store);
+
+	if(!opt.isEditable.value())
+		{
+		GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
+		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (y_widget->getWidget()), cell, TRUE);
+		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (y_widget->getWidget()), cell, "text", 0, NULL);
+		}
+
+	return y_widget;
 }

@@ -29,7 +29,7 @@ ycp_wakeup_fn (GIOChannel   *source,
 }
 
 void
-YGUI::idleLoop( int fd_ycp )
+YGUI::idleLoop (int fd_ycp)
 {
 	IMPL;
 

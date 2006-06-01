@@ -135,11 +135,11 @@ YGWidget::getNiceSize (YUIDimension dim)
 
 char *YGWidget::mapKBAccel(const char *src)
 {
-    char *result = g_strdup (src);
+	char *result = g_strdup (src);
 	for (char *p = result; *p; p++) {
-	   // FIXME '&' escaping ?
-	    if (*p == '&') 
-		    *p = '_';
+		// FIXME '&' escaping ?
+		if (*p == '&') 
+			*p = '_';
 	}
 	return result;
 }

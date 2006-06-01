@@ -67,6 +67,9 @@ YGDialog::YGDialog( const YWidgetOpt &opt,
 	g_signal_connect (G_OBJECT (m_widget), "size_allocate",
 			  G_CALLBACK (ygdialog_size_allocate), this);
 
+//  g_signal_connect(G_OBJECT (window), "destroy", G_CALLBACK (destroy), NULL);
+
+
 	//	if ( opt.hasWarnColor().value() || opt.hasInfoColor().value() )
 	//fprintf (stderr, "Ignored Warn / Info colors\n");
 }

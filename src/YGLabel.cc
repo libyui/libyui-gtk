@@ -1,6 +1,7 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
+#include "YGUtils.h"
 #include "YEvent.h"
 #include "YLabel.h"
 #include "YGWidget.h"
@@ -58,18 +59,7 @@ YGLabel::~YGLabel()
 void
 YGLabel::setLabel( const YCPString & label )
 {
-	IMPL;
-	char *escaped = g_markup_escape_text (label->value_cstr(), -1);
-	char *str;
-	if (m_start_tag) {
-			str = g_strdup_printf ("<%s>%s</%s>",
-								   m_start_tag, escaped, m_end_tag);
-			g_free (escaped);
-	} else
-			str = escaped;
-	fprintf (stderr, "Set label '%s'\n", str);
-	gtk_label_set_markup (GTK_LABEL (getWidget()), str);
-	g_free (str);
+	YGUtils::setLabel (GTK_LABEL(getWidget()), label);
 }
 
 YWidget *

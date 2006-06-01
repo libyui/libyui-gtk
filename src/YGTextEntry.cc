@@ -1,93 +1,96 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
+#include <string>
 #include "YEvent.h"
 #include "YTextEntry.h"
-#include "YGWidget.h"
+#include "YGUtils.h"
+#include "YGLabelWidget.h"
 
-class YGTextEntry : public YTextEntry, public YGWidget
+class YGTextEntry : public YTextEntry, public YGLabelWidget
 {
-	GtkWidget *m_label;
-	GtkWidget *m_entry;
 public:
-    YGTextEntry( const YWidgetOpt &opt,
-				   YGWidget         *parent,
-				   const YCPString &label,
-				   const YCPString &text ) :
-			YTextEntry( opt, label ),
-			YGWidget( this, parent, true,
-					  GTK_TYPE_VBOX, NULL )
+	YGTextEntry (const YWidgetOpt &opt,
+		             YGWidget *parent,
+		             const YCPString &label,
+		             const YCPString &text)
+		: YTextEntry( opt, label )
+		, YGLabelWidget (this, parent, label, YD_VERT, true, GTK_TYPE_ENTRY, NULL)
 	{
-		// FIXME: get alignment right here [ GtkAlignment ? ]
-		GtkWidget *align_left = gtk_vbox_new (FALSE, 0);
-		gtk_widget_show (align_left);
-		gtk_box_pack_start (GTK_BOX (getWidget()), align_left, FALSE, TRUE, 0);
-		
-		m_label = gtk_label_new ("");
-		if (label->value() != "")
-			gtk_widget_show (m_label);
-		gtk_box_pack_start (GTK_BOX (align_left), m_label, TRUE, TRUE, 0);
-		setLabel (label);
-
-		// LineEdit (?)
-		m_entry = gtk_entry_new ();
-		gtk_widget_show (m_entry);
-		gtk_box_pack_start (GTK_BOX (getWidget()), m_entry, TRUE, TRUE, 0);
 		setText (text);
 
-		// FIXME: set the label 'buddy' [ an a11y issue ? ] to the entry.
-		
-		// FIXME: connect to changed, linechanged
-		if ( opt.passwordMode.value() )
+		if (opt.passwordMode.value())
 			gtk_entry_set_visibility (GTK_ENTRY (getWidget()), FALSE);
+
+	// Signals to know of any text modification
+	g_signal_connect (G_OBJECT (getWidget()), "insert-text", G_CALLBACK (text_inserted_cb), this);
+	g_signal_connect (G_OBJECT (getWidget()), "delete-text", G_CALLBACK (text_deleted_cb), this);
 	}
+
 	virtual ~YGTextEntry() {}
 
 	// YTextEntry
-    virtual void setText( const YCPString & text );
-    virtual YCPString getText()
+	virtual void setText (const YCPString & text);
+
+	virtual YCPString getText()
 	{
-		return YCPString (gtk_entry_get_text (GTK_ENTRY (m_entry)));
+		return YCPString (gtk_entry_get_text (GTK_ENTRY (getWidget())));
 	}
-    virtual void setLabel( const YCPString & label )
+
+	virtual void setInputMaxLength (const YCPInteger & numberOfChars)
 	{
-		gtk_label_set_text (GTK_LABEL (m_label),
-							label->value_cstr());
-	    YTextEntry::setLabel( label );
+		gtk_entry_set_width_chars (GTK_ENTRY (getWidget()),
+		                           numberOfChars->asInteger()->value());
 	}
-    virtual void setValidChars( const YCPString & validChars )
+
+	void setText (const YCPString & text)
 	{
-		IMPL;
-		YTextEntry::setValidChars( validChars );
+		/* Maybe we should test this text with the validChars, but as this is sent by the
+	     programmer, I think we should trust him. */
+//		if (YGUtils::is_str_valid (text->value_cstr(), -1, pThis->getValidChars()->value_cstr()))
+		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
-    virtual void setInputMaxLength( const YCPInteger & numberOfChars )
-	{
-		gtk_entry_set_width_chars (GTK_ENTRY (m_entry),
-								   numberOfChars->asInteger()->value());
-	}
+
 
 	// YWidget
-    YGWIDGET_IMPL_NICESIZE
-    YGWIDGET_IMPL_SET_ENABLING
-    YGWIDGET_IMPL_SET_SIZE
-    virtual bool setKeyboardFocus() IMPL_RET(false);
-    virtual void startMultipleChanges() IMPL;
-    virtual void doneMultipleChanges() IMPL;
-    virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+	YGWIDGET_IMPL_NICESIZE
+	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_SET_SIZE
+	YGWIDGET_IMPL_KEYBOARD_FOCUS
+
+	/* Callbacks for when the text entry text is changed. */
+	static void text_inserted_cb (GtkEditable *editable, gchar *text,
+	                              gint length, gint *position,
+	                              YGTextEntry *pThis)
+	{
+		if (YGUtils::is_str_valid (text, length, pThis->getValidChars()->value_cstr()))
+		{
+			if (pThis->getNotify())
+				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
+		}
+		else
+		{
+			if(length == -1)
+				length = strlen(text);
+			g_signal_handlers_block_by_func (editable, (gpointer) text_deleted_cb, pThis);
+			gtk_editable_delete_text (editable, pos, length);
+			g_signal_handlers_unblock_by_func (editable, (gpointer) text_deleted_cb, pThis);
+			g_signal_stop_emission_by_name (editable, "insert_text");
+			gdk_beep();  // BEEP!
+		}
+	}
+
+	static void text_deleted_cb (GtkEditable *editable, gint start_pos, gint end_pos,
+	                             YGTextEntry *pThis)
+	{
+		if (pThis->getNotify())
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
+	}
 };
 
-void
-YGTextEntry::setText( const YCPString & text )
-{
-	// FIXME: Block signals
-	gtk_entry_set_text (GTK_ENTRY (m_entry), text->value_cstr());
-	// FIXME: UnBlock signals
-}
-
 YWidget *
-YGUI::createTextEntry( YWidget *parent, YWidgetOpt & opt,
-					   const YCPString & label, const YCPString & text )
+YGUI::createTextEntry (YWidget *parent, YWidgetOpt & opt,
+                       const YCPString & label, const YCPString & text)
 {
-	IMPL;
-	return new YGTextEntry( opt, YGWidget::get (parent), label, text );
+	return new YGTextEntry (opt, YGWidget::get (parent), label, text);
 }
