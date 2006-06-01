@@ -19,40 +19,25 @@ YGLabelWidget::YGLabelWidget(
 	va_list args;
 	va_start (args, property_name);
 
-	construct (parent, label_text, show, type, property_name, args);
+	m_label = gtk_label_new ("");
+	gtk_label_set_use_underline (GTK_LABEL (m_widget), TRUE);
+	doSetLabel (label_text);
+	m_field = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+
+	gtk_container_add (GTK_CONTAINER (m_widget), m_label);
+	gtk_container_add (GTK_CONTAINER (m_widget), m_field);
+
+	if(show)
+	{
+		gtk_widget_show (m_label);
+		gtk_widget_show (m_field);
+	}
 
 	va_end (args);
 }
 
-void YGLabelWidget::construct (
-               YGWidget *parent,
-               YCPString label_text,
-               bool show,
-               GType type,
-               const char *property_name,
-               va_list args)
-{
-	m_label = gtk_label_new ("");
-	setLabel (label_text);
-	m_field = GTK_WIDGET (g_object_new_valist (type, property_name, args));
-
-	gtk_container_add (GTK_CONTAINER(m_widget), m_label);
-	gtk_container_add (GTK_CONTAINER(m_widget), m_field);
-
-	if(show)
-		{
-		gtk_widget_show (m_label);
-		gtk_widget_show (m_field);
-		}
-#if 0
-		gtk_button_set_use_underline (GTK_BUTTON (m_label), TRUE);
-		g_signal_connect (G_OBJECT (getWidget ()),
-				  "toggled", G_CALLBACK (toggled_cb), this);
-#endif
-}
-
 void
-YGLabelWidget::setLabel (const YCPString & label)
+YGLabelWidget::doSetLabel (const YCPString & label)
 {
-	YGUtils::setLabel (GTK_LABEL(m_label), label);
+	YGUtils::setLabel (GTK_LABEL (m_label), label);
 }

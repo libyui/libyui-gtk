@@ -16,11 +16,16 @@ class YGLabelWidget : public YGWidget
 
 		virtual GtkWidget* getWidget() { return m_field; }
 
-		virtual void setLabel (const YCPString & label);
+		virtual void doSetLabel (const YCPString & label);
 
 	protected:
 		GtkWidget *m_label, *m_field;
-
-		void construct(YGWidget *parent, YCPString label_text,
-		              bool show, GType type, const char *property_name, va_list args);
 };
+
+#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass) \
+	virtual void setLabel (const YCPString &label) { \
+		fprintf (stderr, "%s:%s -G%p-Y%p- '%s' + chain\n", G_STRLOC, G_STRFUNC, \
+		         m_widget, m_y_widget, label->value_cstr()); \
+		doSetLabel (label); \
+		ParentClass::setLabel (label); \
+	}

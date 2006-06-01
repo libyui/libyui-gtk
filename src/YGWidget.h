@@ -26,15 +26,13 @@ public:
 	int ythickness();
 	int thickness (YUIDimension dim) { return dim == YD_HORIZ ? xthickness() : ythickness(); }
 
-	
-
 	/* Get the YGWidget associated with this YWidget */
 	static YGWidget *get (YWidget *y_widget);
 	static char *mapKBAccel(const char *src);
 
 protected:
 	GtkWidget *m_widget;
-	// no RTI for dynamic_cast ?
+	// no RTTI for dynamic_cast ?
 	YWidget   *m_y_widget;
 	GtkAllocation m_alloc;
 	void construct (YWidget *y_widget, YGWidget *parent,
