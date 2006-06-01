@@ -9,16 +9,34 @@
 
 class YGComboBox : public YComboBox, public YGLabelWidget
 {
+	int indices_nb;
+
 	public:
-		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label,
-		            GType combo_box_type, GtkTreeModel* use_model)
+		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
 		: YComboBox (opt, label)
 		, YGLabelWidget (this, parent, label, YD_VERT, true,
-		                 combo_box_type, "model", use_model, "text-column", 0, NULL)
+		    opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 	{
-		// FIXME: shouldn't pass "text-column" to regular GtkComboBox
+		/* Making the combo box accepting text items. */
+		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
+
+		gtk_combo_box_set_model(GTK_COMBO_BOX(getWidget()), GTK_TREE_MODEL (store));
+
+		g_object_unref (store);
+
+		if(!opt.isEditable.value())
+		{
+			GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
+			gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
+			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell, "text", 0, NULL);
+		}
+		else
+			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY(getWidget()), 0);
+
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 				  G_CALLBACK (selected_changed_cb), this);
+
+		indices_nb = 0;
 	}
 
 	GtkComboBox *getComboBox() const
@@ -26,39 +44,26 @@ class YGComboBox : public YComboBox, public YGLabelWidget
 		return GTK_COMBO_BOX ((const_cast<YGComboBox *>(this)->getWidget()));
 	}
 
-	/* Doesn't honor the index argument. As Qt module does the same, I guess
-	   that's okay, maybe even expected. */
 	virtual void itemAdded (const YCPString & string, int index, bool selected)
 	{
 		IMPL;
 		gtk_combo_box_insert_text (getComboBox(), index, string->value_cstr());
 		if (selected || index == 0) /* always select the 1st by default */
 			gtk_combo_box_set_active (getComboBox(), index);
+		indices_nb++;
 	}
 
 	virtual void setValue (const YCPString &value)
 	{
 		IMPL;
-#if 0
-		printf("\n\n\n\n");
-
-		GtkTreeModel *model = GTK_TREE_MODEL (gtk_combo_box_get_model (getComboBox()))
-		GtkTreeIter iter;
-
-		if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
-		{
-			gchar* str;
-			gtk_tree_model_get (model, &iter, 0, &str, -1);
-			// FIXME: this is broken - you need to use gtk_tree_model_set surely ?
-			// str is not allocated memory - this will SEGV like a beast :-)
-			strcpy (str, value->value_cstr());
-		}
-#endif
+		/* This does seem to work, but may break, so should be replaced. */
+		gtk_combo_box_append_text (GTK_COMBO_BOX(getWidget()), value->value_cstr());
+		setCurrentItem (indices_nb);
+		gtk_combo_box_remove_text (GTK_COMBO_BOX(getWidget()), indices_nb);
 	}
-       
+
 	virtual YCPString getValue() const
 	{
-		IMPL;
 		return YCPString (gtk_combo_box_get_active_text (getComboBox()));
 	}
 
@@ -101,23 +106,5 @@ YWidget *
 YGUI::createComboBox (YWidget *parent, YWidgetOpt & opt,
                       const YCPString & label)
 {
-	// Making the combo box accepting text items.
-	GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
-
-	YGComboBox* y_widget;
-
-	y_widget = new YGComboBox (opt, YGWidget::get (parent), label,
-				   opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX,
-				   GTK_TREE_MODEL (store));
-
-	g_object_unref (store);
-
-	if(!opt.isEditable.value())
-	{
-		GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
-		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (y_widget->getWidget()), cell, TRUE);
-		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (y_widget->getWidget()), cell, "text", 0, NULL);
-	}
-
-	return y_widget;
+	return new YGComboBox (opt, YGWidget::get (parent), label);
 }

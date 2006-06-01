@@ -1,3 +1,9 @@
+2006-06-01 Ricardo Cruz <rpmcruz@clix.pt>
+
+	* src/YGComboBox.cc: constructor now is an independent
+	woman. This was possible because of gtk_combo_box_set_model().
+	setValue() should work, but it's a hack.
+
 2006-06-01  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGTextEntry.cc (YGTextEntry): use SET_LABEL_CHAIN
