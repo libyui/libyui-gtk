@@ -21,7 +21,6 @@ void YGUtils::setLabel (GtkLabel * widget, const YCPString & label)
 
 bool YGUtils::is_str_valid (const char* text, int length, const char* valids)
 {
-printf("filtering: %s - from %s\n", valids, text);
 	if (strlen(valids) == 0)
 	  return true;
 

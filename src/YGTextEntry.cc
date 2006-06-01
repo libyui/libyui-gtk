@@ -30,8 +30,6 @@ public:
 	virtual ~YGTextEntry() {}
 
 	// YTextEntry
-	virtual void setText (const YCPString & text);
-
 	virtual YCPString getText()
 	{
 		return YCPString (gtk_entry_get_text (GTK_ENTRY (getWidget())));
@@ -43,7 +41,7 @@ public:
 		                           numberOfChars->asInteger()->value());
 	}
 
-	void setText (const YCPString & text)
+	virtual void setText (const YCPString & text)
 	{
 		/* Maybe we should test this text with the validChars, but as this is sent by the
 	     programmer, I think we should trust him. */
@@ -73,7 +71,7 @@ public:
 			if(length == -1)
 				length = strlen(text);
 			g_signal_handlers_block_by_func (editable, (gpointer) text_deleted_cb, pThis);
-			gtk_editable_delete_text (editable, pos, length);
+			gtk_editable_delete_text (editable, *position, length);
 			g_signal_handlers_unblock_by_func (editable, (gpointer) text_deleted_cb, pThis);
 			g_signal_stop_emission_by_name (editable, "insert_text");
 			gdk_beep();  // BEEP!

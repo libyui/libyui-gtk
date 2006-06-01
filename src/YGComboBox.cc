@@ -15,8 +15,9 @@ class YGComboBox : public YComboBox, public YGLabelWidget
 		: YComboBox (opt, label)
 		, YGLabelWidget (this, parent, label, YD_VERT, true,
 		                 combo_box_type, "model", use_model, "text-column", 0, NULL)
-	{
-	}
+  {                 // FIXME: shouldn't pass "text-column" to regular GtkComboBox
+  g_signal_connect (G_OBJECT (getWidget()), "changed", G_CALLBACK (selected_changed_cb), this);
+  }
 
 	/* Doesn't honor the index argument. As Qt module does the same, I guess
 	   that's okay, maybe even expected. */
@@ -32,18 +33,18 @@ class YGComboBox : public YComboBox, public YGLabelWidget
 	virtual void setValue (const YCPString &value)
 	{
 		IMPL;
-		// TODO
 #if 0
-		g_signal_handlers_block_by_func
-			(getWidget(), (gpointer)toggled_cb, this);
+printf("\n\n\n\n");
 
-		if (checked->value())
-			buttonGroup()->uncheckOtherButtons (this);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()),
-					      checked->value());
+    GtkTreeModel *model = GTK_TREE_MODEL(gtk_combo_box_get_model(GTK_COMBO_BOX(getWidget())));
+    GtkTreeIter iter;
 
-		g_signal_handlers_unblock_by_func
-			(getWidget(), (gpointer)toggled_cb, this);
+    if (gtk_combo_box_get_active_iter (GTK_COMBO_BOX(getWidget()), &iter))
+      {
+      gchar* str;
+      gtk_tree_model_get (model, &iter, 0, &str, -1);
+      strcpy(str, value->value_cstr());
+      }
 #endif
 	}
 
@@ -69,7 +70,21 @@ class YGComboBox : public YComboBox, public YGLabelWidget
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	};
+  YGWIDGET_IMPL_KEYBOARD_FOCUS
+
+  // Slots
+  static void selected_changed_cb(GtkComboBox* widget, YGComboBox* pThis)
+  {
+    if (pThis->getNotify())
+      if (!YGUI::ui()->eventPendingFor(pThis))
+        {
+        if (GTK_IS_COMBO_BOX_ENTRY(widget) && pThis->getCurrentItem() == -1)
+          YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
+        else
+          YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
+        }
+  }
+};
 
 YWidget *
 YGUI::createComboBox (YWidget *parent, YWidgetOpt & opt,

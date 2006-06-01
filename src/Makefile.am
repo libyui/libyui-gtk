@@ -30,6 +30,7 @@ libpy2gtk_la_SOURCES = \
 	YGFrame.cc \
 	YGComboBox.cc \
 	YGSelectionBox.cc \
+	YGLabelWidget.cc \
 	YGUtils.cc
 
 dummy_SOURCES = dummy.cc
