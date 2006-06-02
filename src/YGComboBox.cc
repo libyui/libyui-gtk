@@ -20,7 +20,8 @@ class YGComboBox : public YComboBox, public YGLabelWidget
 		/* Making the combo box accepting text items. */
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 
-		gtk_combo_box_set_model(GTK_COMBO_BOX(getWidget()), GTK_TREE_MODEL (store));
+		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()),
+					 GTK_TREE_MODEL (store));
 
 		g_object_unref (store);
 

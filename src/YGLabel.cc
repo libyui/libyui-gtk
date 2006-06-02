@@ -38,12 +38,10 @@ public:
 	virtual void setLabel (const YCPString & label)
 	{
 		YGUtils::setLabel (GTK_LABEL(getWidget()), label);
+		YLabel::setLabel( text );
 	}
 
 	// YWidget
-	virtual void childDeleted( YWidget *child ) IMPL;
-	virtual bool stretchable( YUIDimension dimension ) const IMPL_RET(true);
-
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING

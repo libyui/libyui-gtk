@@ -1,3 +1,10 @@
+2006-06-02  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGLabel.cc (setLabel): add missing chain to parent,
+	clean some cruft.
+
+	* ycc.sh: re-work to use the gtk+ option: zenity :-)
+
 2006-06-01 Ricardo Cruz <rpmcruz@clix.pt>
 
 	* src/YGComboBox.cc: constructor now is an independent
