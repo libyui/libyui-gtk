@@ -17,8 +17,6 @@ libpy2gtk_la_SOURCES = \
 	YGLayout.cc \
 	YGLabel.cc \
 	YGPushButton.cc \
-	YGReplacePoint.cc \
-	YGAlignment.cc \
 	YGWidget.cc \
 	YGProgressBar.cc \
 	YGTextEntry.cc \

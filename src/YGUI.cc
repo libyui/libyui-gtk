@@ -143,15 +143,6 @@ void dumpYastTree (YWidget *widget, int indent)
 			dumpYastTree (cont->child (i), indent + 1);
 }
 
-// Container widgets:
-
-YContainerWidget *
-YGUI::createSquash( YWidget *parent, YWidgetOpt & opt,
-					bool hsquash, bool vsquash )
-{
-		IMPL_NULL;
-}
-
 // Widgets Proper
 
 YWidget *

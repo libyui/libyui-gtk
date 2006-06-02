@@ -62,8 +62,8 @@ public:
     virtual YContainerWidget *createSplit( YWidget *parent, YWidgetOpt & opt, YUIDimension dimension );
     virtual YContainerWidget *createReplacePoint( YWidget *parent, YWidgetOpt & opt );
     virtual YContainerWidget *createAlignment( YWidget *parent, YWidgetOpt & opt,
-											   YAlignmentType halign,
-											   YAlignmentType valign );
+					       YAlignmentType halign,
+					       YAlignmentType valign );
     virtual YContainerWidget *createSquash( YWidget *parent, YWidgetOpt & opt,
 											bool hsquash, bool vsquash );
     virtual YContainerWidget *createRadioButtonGroup( YWidget *parent, YWidgetOpt & opt );

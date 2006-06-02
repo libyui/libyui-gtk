@@ -5,6 +5,8 @@
 #include "YSplit.h"
 #include "YEmpty.h"
 #include "YSpacing.h"
+#include "YSquash.h"
+#include "YReplacePoint.h"
 #include "YGWidget.h"
 
 #define YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
@@ -19,8 +21,11 @@
 #define YGWIDGET_CONTAINER_IMPL(ParentClass) \
 	YGWIDGET_IMPL_SET_ENABLING \
 	YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
-	YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass)
-
+	YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass)  \
+	virtual bool setKeyboardFocus() IMPL_RET(false); \
+	virtual void startMultipleChanges() IMPL; \
+	virtual void doneMultipleChanges() IMPL; \
+	virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
 
 // YSplit
 
@@ -35,7 +40,7 @@ public:
 	// YSplit
 	YGWIDGET_IMPL_MOVE_CHILD
 	// YWidget
-	YGWIDGET_CONTAINER_IMPL(YSplit)
+	YGWIDGET_CONTAINER_IMPL (YSplit)
 };
 
 YContainerWidget *
@@ -55,8 +60,7 @@ public:
 		 YGWidget         *parent ) :
 		YEmpty( opt ),
 		YGWidget( this, parent ) {}
-	// YWidget
-	YGWIDGET_CONTAINER_IMPL(YEmpty)
+	YGWIDGET_CONTAINER_IMPL (YEmpty)
 };
 
 YWidget *
@@ -78,7 +82,7 @@ public:
 		   bool 		 vertical ) :
 		YSpacing (opt, size, horizontal, vertical),
 		YGWidget(this, parent) {}
-	YGWIDGET_CONTAINER_IMPL(YSpacing)
+	YGWIDGET_CONTAINER_IMPL (YSpacing)
 };
 
 YWidget *
@@ -88,4 +92,77 @@ YGUI::createSpacing (YWidget *parent, YWidgetOpt & opt, float size,
 	IMPL;
 	return new YGSpacing (opt, YGWidget::get (parent),
 			      size, horizontal, vertical);
+}
+
+// YReplacePoint
+
+class YGReplacePoint : public YReplacePoint, public YGWidget
+{
+public:
+	YGReplacePoint( const YWidgetOpt &opt,
+			YGWidget         *parent )
+		: YReplacePoint( opt ),
+		  YGWidget( this, parent ) {}
+	// YContainerWidget
+	virtual void childAdded( YWidget *child )
+	{
+		YGWidget::get(child)->show();
+	}
+	// YWidget
+	YGWIDGET_CONTAINER_IMPL (YReplacePoint)
+};
+
+YContainerWidget *
+YGUI::createReplacePoint( YWidget *parent, YWidgetOpt & opt )
+{
+	IMPL;
+	return new YGReplacePoint (opt, YGWidget::get (parent));
+}
+
+// YSquash
+
+class YGSquash : public YSquash, public YGWidget
+{
+public:
+	YGSquash( const YWidgetOpt &opt,
+		  YGWidget         *parent,
+		  bool hsquash, bool vsquash) :
+		YSquash( opt, hsquash, vsquash ),
+		YGWidget( this, parent ) {}
+	YGWIDGET_CONTAINER_IMPL (YSquash)
+};
+
+YContainerWidget *
+YGUI::createSquash (YWidget *parent, YWidgetOpt &opt,
+		    bool hsquash, bool vsquash)
+{
+    IMPL;
+    return new YGSquash (opt, YGWidget::get (parent), hsquash, vsquash);
+}
+
+// YAlignment
+
+class YGAlignment : public YAlignment, public YGWidget
+{
+public:
+	YGAlignment( const YWidgetOpt &opt,
+		     YGWidget         *parent,
+		     YAlignmentType    halign,
+		     YAlignmentType    valign ) :
+		YAlignment( opt, halign, valign ),
+		YGWidget( this, parent ) {}
+	// YAlignment
+	YGWIDGET_IMPL_MOVE_CHILD
+	// YWidget
+	YGWIDGET_CONTAINER_IMPL (YAlignment)
+};
+
+YContainerWidget *
+YGUI::createAlignment (YWidget *parent, YWidgetOpt &opt,
+		       YAlignmentType halign,
+		       YAlignmentType valign)
+{
+	IMPL;
+	return new YGAlignment (opt, YGWidget::get (parent),
+				halign, valign);
 }
