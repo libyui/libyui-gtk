@@ -30,7 +30,7 @@ libpy2gtk_la_SOURCES = \
 	YGFrame.cc \
 	YGComboBox.cc \
 	YGSelectionBox.cc \
-	YGLabelWidget.cc \
+	YGLabeledWidget.cc \
 	YGUtils.cc \
 	YGTable.cc
 

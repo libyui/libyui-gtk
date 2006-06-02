@@ -4,9 +4,9 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGUtils.h"
-#include "YGLabelWidget.h"
+#include "YGLabeledWidget.h"
 
-YGLabelWidget::YGLabelWidget(
+YGLabeledWidget::YGLabeledWidget(
 	     YWidget *y_widget,
 	     YGWidget *parent,
 	     YCPString label_text, YUIDimension label_ori,
@@ -37,7 +37,7 @@ YGLabelWidget::YGLabelWidget(
 }
 
 void
-YGLabelWidget::doSetLabel (const YCPString & label)
+YGLabeledWidget::doSetLabel (const YCPString & label)
 {
 	YGUtils::setLabel (GTK_LABEL (m_label), label);
 }

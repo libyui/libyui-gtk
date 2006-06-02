@@ -5,16 +5,16 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YComboBox.h"
-#include "YGLabelWidget.h"
+#include "YGLabeledWidget.h"
 
-class YGComboBox : public YComboBox, public YGLabelWidget
+class YGComboBox : public YComboBox, public YGLabeledWidget
 {
 	int indices_nb;
 
 	public:
 		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
 		: YComboBox (opt, label)
-		, YGLabelWidget (this, parent, label, YD_VERT, true,
+		, YGLabeledWidget (this, parent, label, YD_VERT, true,
 		    opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 	{
 		/* Making the combo box accepting text items. */

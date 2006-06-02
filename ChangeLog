@@ -1,3 +1,7 @@
+2006-06-01 Ricardo Cruz <rpmcruz@clix.pt>
+
+	* src/YGLabelWidget.cc is now src/YGLabeledWidget.cc
+
 2006-06-02  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGLabel.cc (setLabel): add missing chain to parent,

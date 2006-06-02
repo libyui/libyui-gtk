@@ -43,12 +43,11 @@ public:
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
 };
 
 YWidget *
 YGUI::createLabel (YWidget *parent, YWidgetOpt & opt,
-	                 const YCPString & text)
+                   const YCPString & text)
 {
 	return new YGLabel (opt, YGWidget::get (parent), text);
 }

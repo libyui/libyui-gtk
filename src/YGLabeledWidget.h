@@ -6,13 +6,13 @@
 
 #include "YGWidget.h"
 
-class YGLabelWidget : public YGWidget
+class YGLabeledWidget : public YGWidget
 {
 	public:
-		YGLabelWidget(YWidget *y_widget, YGWidget *parent,
+		YGLabeledWidget(YWidget *y_widget, YGWidget *parent,
 		              YCPString label_text, YUIDimension label_ori,
 		              bool show, GType type, const char *property_name, ...);
-		virtual ~YGLabelWidget () {}
+		virtual ~YGLabeledWidget () {}
 
 		virtual GtkWidget* getWidget() { return m_field; }
 

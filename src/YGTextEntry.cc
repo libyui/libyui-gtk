@@ -5,9 +5,9 @@
 #include "YEvent.h"
 #include "YTextEntry.h"
 #include "YGUtils.h"
-#include "YGLabelWidget.h"
+#include "YGLabeledWidget.h"
 
-class YGTextEntry : public YTextEntry, public YGLabelWidget
+class YGTextEntry : public YTextEntry, public YGLabeledWidget
 {
 public:
 	YGTextEntry (const YWidgetOpt &opt,
@@ -15,7 +15,7 @@ public:
 		             const YCPString &label,
 		             const YCPString &text)
 		: YTextEntry( opt, label )
-		, YGLabelWidget (this, parent, label, YD_VERT, true, GTK_TYPE_ENTRY, NULL)
+		, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_ENTRY, NULL)
 	{
 		setText (text);
 
