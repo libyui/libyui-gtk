@@ -1,3 +1,9 @@
+2006-06-02  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGSplit.cc, src/YGEmpty.cc, src/YGSpacing.cc,
+	* src/YGLayout.cc: merge into YGLayout.
+	* src/Makefile.am: update.
+
 2006-06-01 Ricardo Cruz <rpmcruz@clix.pt>
 
 	* src/YGLabelWidget.cc is now src/YGLabeledWidget.cc

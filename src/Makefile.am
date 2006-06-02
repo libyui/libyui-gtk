@@ -14,14 +14,12 @@ libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
 	YGUI.cc \
 	YGDialog.cc \
-	YGSplit.cc \
+	YGLayout.cc \
 	YGLabel.cc \
 	YGPushButton.cc \
 	YGReplacePoint.cc \
-	YGSpacing.cc \
 	YGAlignment.cc \
 	YGWidget.cc \
-	YGEmpty.cc \
 	YGProgressBar.cc \
 	YGTextEntry.cc \
 	YGRichText.cc \
