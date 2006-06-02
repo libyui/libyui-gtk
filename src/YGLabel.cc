@@ -18,12 +18,10 @@ public:
 	, YGWidget (this, parent, true, GTK_TYPE_LABEL, NULL)
 	{
 		IMPL;
-		if (opt.isHeading.value())
-		{
+		if (opt.isHeading.value()) {
 			m_start_tag = "span size=\"larger\"";
 			m_end_tag = "span";
-		}
-		else if (opt.boldFont.value())
+		} else if (opt.boldFont.value())
 			m_start_tag = m_end_tag = "b";
 		else
 			m_start_tag = m_end_tag = NULL;

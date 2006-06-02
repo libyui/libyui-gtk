@@ -25,8 +25,7 @@ bool YGUtils::is_str_valid (const char* text, int length, const char* valids)
 	  return true;
 
 	const char *i, *j;
-	for(i = text; *i && length == -1 ? true : i < text+length; i++)
-		{
+	for(i = text; *i && length == -1 ? true : i < text+length; i++) {
 		for(j = valids; *j; j++)
 			if(*i == *j)
 				break;
