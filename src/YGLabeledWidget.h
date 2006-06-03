@@ -4,6 +4,9 @@
    intended widget. It should be used, in case you have the need for
    such, as it gives an uniform API.                               */
 
+#ifndef YGLABELEDWIDGET_H
+#define YGLABELEDWIDGET_H
+
 #include "YGWidget.h"
 
 class YGLabeledWidget : public YGWidget
@@ -29,3 +32,5 @@ class YGLabeledWidget : public YGWidget
 		doSetLabel (label); \
 		ParentClass::setLabel (label); \
 	}
+
+#endif // YGLABELEDWIDGET_H
