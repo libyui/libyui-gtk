@@ -40,13 +40,11 @@ protected:
 	                const char *property_name, va_list args);
 };
 
-/* These macros are to be used to enable functionality to a widget:
-   * YGWIDGET_IMPL_NICESIZE - does the widget have a size that it looks the best at?
-   * YGWIDGET_IMPL_SET_ENABLING - can the widget be disabled?
-   * YGWIDGET_IMPL_SET_SIZE / YGWIDGET_IMPL_SET_SIZE_CHAIN - is the widget resizable?
-   * YGWIDGET_IMPL_MOVE_CHILD - can the widget be moved?
-   * YGWIDGET_IMPL_KEYBOARD_FOCUS - can the widget have keyboard focus?
-   */
+/*
+ * Macros to help implement proxies between common YWidget virtual
+ * methods and the (multiply inherited) YGWidget base implementation
+ * for GTK+.
+ */
 
 #define YGWIDGET_IMPL_NICESIZE \
 		virtual long nicesize (YUIDimension dim) \
