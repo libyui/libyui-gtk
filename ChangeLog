@@ -1,3 +1,14 @@
+2006-06-03 Ricardo Cruz <rpmcruz@clix.pt>
+
+	* src/YGTable.cc: added table support; all
+	examples work. But two things still need attention:
+	+ I'm not sure what the first letter on the headers
+	is supposed to do.
+	+ Signal for when the user selects an item isn't
+	being sent.
+	(unfortunately, inetd or users yast modules aren't
+	working near well. But it seems like layout issues.)
+
 2006-06-02  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGReplacePoint.cc, src/YGAlignment.cc,

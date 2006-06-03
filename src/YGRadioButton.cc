@@ -37,7 +37,8 @@ public:
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			pThis->buttonGroup()->uncheckOtherButtons (pThis);
 		fprintf (stderr, "Send event!\n");
-		YGUI::ui()->sendEvent( new YWidgetEvent( pThis, YEvent::ValueChanged ) );
+		if (pThis->getNotify())
+			YGUI::ui()->sendEvent( new YWidgetEvent( pThis, YEvent::ValueChanged ) );
 	}
 
 	YGRadioButton( const YWidgetOpt &opt,

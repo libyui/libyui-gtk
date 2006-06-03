@@ -3,6 +3,7 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YTable.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 class YGTable : public YTable, public YGWidget
@@ -14,28 +15,33 @@ public:
 	: YTable (opt, headers.size())
 	, YGWidget (this, parent, true, GTK_TYPE_TREE_VIEW, NULL)
 	{
-#if 0
-		/* Sets a model. */
-		int c;
-		GType types[numCols()+1];
-		for (c = 0; c < numCols(); c++)
-			types[c] = G_TYPE_STRING;
-		types[c] = -1;
-		GtkListStore *list = gtk_list_store_new (numCols(), types);
+		// Add a GtkTreeModel -- in this case a GtkListStore
+		GType types [numCols()];
+		for (int c = 0; c < numCols(); c++)
+			types [c] = G_TYPE_STRING;
+		GtkListStore *list = gtk_list_store_newv (numCols(), types);
 
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
 
-		/* Creates the columns. */
-		GtkTreeViewColumn *column;
-		GtkCellRenderer   *renderer;
-		for(int i = 0; i < numCols(); i++)
+		// Add the columns
+		for (int c = 0; c < numCols(); c++)
 		{
-			renderer = gtk_cell_renderer_text_new ();
-			column = gtk_tree_view_column_new_with_attributes (
-		             headers[i].c_str(), renderer, "text", i, NULL);
-			gtk_tree_view_insert_column (GTK_TREE_VIEW(getWidget()), column, i);
+			// TODO: check what headers[c][0] is about
+			gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW(getWidget()),
+			                    c, headers[c].substr(1).c_str(), gtk_cell_renderer_text_new(),
+			                    "text", c, NULL);
 		}
-#endif
+
+		// Events
+		if (opt.notifyMode.value())
+		{
+			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
+			                  G_CALLBACK (activated_cb), this);
+			if (opt.immediateMode.value())
+				// FIXME: doesn't seem to work
+				g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+				                  G_CALLBACK (selected_cb), this);
+		}
 	}
 
 	YGWIDGET_IMPL_NICESIZE
@@ -44,84 +50,103 @@ public:
 	YGWIDGET_IMPL_KEYBOARD_FOCUS
 
 protected:
-    /**
-     * Is called, when an item ( a row ) has been added. Overload this to
-     * fill the ui specific widget with items.
-     * @param elements the strings of the elements, one for each column.
-     * @param index index of the new item.
-     */
 	virtual void itemAdded (vector<string> elements, int index)
 	{
-		IMPL;
-#if 0
-		GtkTreeModel* model = gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()));
-		GtkTreeIter  iter;
-
-		// Add the space for the rows
-printf("index: %d\n", index);
-		for (int r = numItems(); r <= index; r++)
-//			for (int c = 0; c < numCols(); c++)
-			{
-printf("adding row: %d\n", r);
-				gtk_list_store_append (GTK_LIST_STORE (model), &iter);
+		if (numCols() != (signed)elements.size()) {
+			y2error ("Adding %d elements where we have %d columns on %s - ignoring",
+		           (int)elements.size(), index, widgetClass());
+			return;
 			}
 
-		// Edit the rows
-		GtkListStore *list;
-		GType types[numCols()];
-		for (int c = 0; c < numCols(); c++)
-			types[c] = G_TYPE_STRING;
-		list = gtk_list_store_new (numCols(), types);
+		GtkListStore *list = GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget())));
+		GtkTreeIter iter;
+		gtk_list_store_insert (list, &iter, index);
 
-		gtk_list_store_append(list, &iter);
-		for (int c = 0; c < numCols(); c++)
-{
-printf("adding item: %s\n", elements[c].c_str());
-			gtk_list_store_set_value (list, &iter, c, (GValue*)elements[c].c_str());
-}
-
-	// reference: if this is slow, checkout:
-	// http://scentric.net/tutorial/sec-treemodel-add-rows.html#sec-treestore-adding-many-rows
-#endif
+		for(int c = 0; c < numCols(); c++)
+			gtk_list_store_set (list, &iter, c, elements[c].c_str(), -1);
 	}
 
-    /**
-     * Is called, when all items have been cleared. Overload this
-     * and clear the ui specific table.
-     */
 	virtual void itemsCleared()
 	{
-		IMPL;
-		for (int c = 0; c < numCols(); c++)
-			gtk_tree_view_remove_column (GTK_TREE_VIEW(getWidget()),
-			    gtk_tree_view_get_column (GTK_TREE_VIEW(getWidget()), c));
+		gtk_list_store_clear (GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()))));
 	}
 
-    /**
-     * Is called, when the contents of a cell has been changed. Overload
-     * this and change the cell text.
-     */
-	virtual void cellChanged (int index, int colnum, const YCPString & newtext)
+	virtual void cellChanged (int index, int colnum, const YCPString & text)
 	{
-		IMPL;
+		GtkTreeIter iter;
+		GtkListStore *list = GTK_LIST_STORE
+		             (gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget())));
+
+		// Get the intended row
+		GtkTreePath *path = gtk_tree_path_new_from_string
+		                      (YGUtils::int_to_string(index).c_str());
+		gtk_tree_model_get_iter (GTK_TREE_MODEL(list), &iter, path);
+		gtk_tree_path_free (path);
+
+		// Set the intended column
+		gtk_list_store_set (list, &iter, colnum, text->value_cstr(), -1);
 	}
 
-    /**
-     * Returns the index of the currently
-     * selected item or -1 if no item is selected.
-     */
 	virtual int getCurrentItem()
 	{
-		IMPL;
-		return -1;
+		GtkTreePath *path;
+		GtkTreeViewColumn *column;
+		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()),
+		                                     &path, &column);
+		if (path == NULL || column == NULL)
+			return -1;
+
+		int item = atoi (gtk_tree_path_to_string (path));
+		return item;
 	}
 
-    /**
-     * Makes another item the selected one.
-     */
 	virtual void setCurrentItem (int index)
 	{
-		IMPL;
+		GtkTreeModel *model = GTK_TREE_MODEL(gtk_tree_view_get_model(
+		                      GTK_TREE_VIEW(getWidget())));
+		GtkTreeIter it;
+
+		if (!gtk_tree_model_get_iter_first (model, &it))
+			goto setitem_error;
+
+		while(true)
+		{
+			gchar* cur_item_str = gtk_tree_model_get_string_from_iter (model, &it);
+			int cur_item = atoi (cur_item_str);
+			g_free(cur_item_str);
+
+			if (cur_item == index)
+			{
+				// TODO: test if we also need to scroll to item to ensure visibility
+				// (can't currently do it since window can't be shrinked.)
+
+				GtkTreePath *path = gtk_tree_model_get_path (model, &it);
+				gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), path, NULL, false);
+				gtk_tree_path_free(path);
+				return;
+			}
+
+			if (!gtk_tree_model_iter_next (model, &it))
+				break;
+		}
+
+	setitem_error:
+		y2error ("setCurrentItem(): item %d doesn't exist on %s - ignoring",
+		         index, widgetClass());
+	}
+
+	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
+	                          GtkTreeViewColumn *column, YGTable* pThis)
+	{
+		if (pThis->getNotify())
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
+	}
+
+	static void selected_cb (GtkTreeView *tree_view, YGTable* pThis)
+	{
+printf("TABLE SELECTED CB!!\n");
+		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
 	}
 };
 

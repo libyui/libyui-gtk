@@ -11,8 +11,8 @@ fi
 module_list=`ls $DEFAULT_DIR/*.ycp | sed 's/.*\///'`
 
 while true; do
-    module=`zenity --title "choose a ycc module" \
-            --list --column "module" $module_list`;
+    module=`zenity --title "Yast Control Center" \
+            --list --column "Available modules:" $module_list`;
     if [ "$module" ]; then
 	$Y2BASE_BINARY "$DEFAULT_DIR/$module" qt &
 	$Y2BASE_BINARY "$DEFAULT_DIR/$module" gtk

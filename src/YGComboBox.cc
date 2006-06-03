@@ -4,12 +4,15 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YEvent.h"
+#include "YGUtils.h"
 #include "YComboBox.h"
 #include "YGLabeledWidget.h"
 
+// TODO: some stuff is missing
+
 class YGComboBox : public YComboBox, public YGLabeledWidget
 {
-	int indices_nb;
+	int items_nb;
 
 	public:
 		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
@@ -37,7 +40,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 				  G_CALLBACK (selected_changed_cb), this);
 
-		indices_nb = 0;
+		items_nb = 0;
 	}
 
 	GtkComboBox *getComboBox() const
@@ -47,20 +50,20 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 
 	virtual void itemAdded (const YCPString & string, int index, bool selected)
 	{
-		IMPL;
 		gtk_combo_box_insert_text (getComboBox(), index, string->value_cstr());
 		if (selected || index == 0) /* always select the 1st by default */
 			gtk_combo_box_set_active (getComboBox(), index);
-		indices_nb++;
+		items_nb++;
 	}
 
 	virtual void setValue (const YCPString &value)
 	{
 		IMPL;
-		/* This does seem to work, but may break, so should be replaced. */
+printf("COMBOBOX: setValue: %s\n", value->value_cstr());
+		/* FIXME: This does seem to work, but may break, so should be replaced. */
 		gtk_combo_box_append_text (GTK_COMBO_BOX(getWidget()), value->value_cstr());
-		setCurrentItem (indices_nb);
-		gtk_combo_box_remove_text (GTK_COMBO_BOX(getWidget()), indices_nb);
+		setCurrentItem (items_nb);
+		gtk_combo_box_remove_text (GTK_COMBO_BOX(getWidget()), items_nb);
 	}
 
 	virtual YCPString getValue() const
@@ -91,11 +94,28 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 	// Slots
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{
-		if (pThis->getNotify () &&
-		    !YGUI::ui()->eventPendingFor (pThis))
-		{
-			if (GTK_IS_COMBO_BOX_ENTRY (widget) &&
-			    pThis->getCurrentItem() == -1)
+		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget) && pThis->getCurrentItem() == -1;
+
+		if (text_changed) {
+			const char *text = pThis->getValue()->value_cstr();
+			string str = YGUtils::filter_text (text, -1,
+			       pThis->getValidChars()->value_cstr());
+
+			if (str.compare (text) != 0) {
+				// invalid text
+printf("given text: %s\n", text);
+printf("correct text: %s\n", str.c_str());
+				g_signal_handlers_block_by_func (widget, (gpointer) selected_changed_cb, pThis);
+				pThis->setValue (YCPString(str));
+				g_signal_handlers_unblock_by_func (widget, (gpointer) selected_changed_cb, pThis);
+				g_signal_stop_emission_by_name (widget, "changed");
+
+				gdk_beep();  // BEEP!
+			}
+		}
+
+		if (pThis->getNotify() && !YGUI::ui()->eventPendingFor (pThis)) {
+			if (text_changed)
 				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
 			else
 				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));

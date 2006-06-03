@@ -65,20 +65,25 @@ public:
 	                              gint length, gint *position,
 	                              YGTextEntry *pThis)
 	{
-		if (YGUtils::is_str_valid (text, length,
-					   pThis->getValidChars()->value_cstr()))
-			if (pThis->getNotify())
-				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
-		else
-		{
+		string str = YGUtils::filter_text (text, length, pThis->getValidChars()->value_cstr());
+		if (str.compare (text) != 0) {
+			// invalid text
 			if (length == -1)
 				length = strlen (text);
+			// delete current text
 			g_signal_handlers_block_by_func (editable, (gpointer) text_deleted_cb, pThis);
 			gtk_editable_delete_text (editable, *position, length);
 			g_signal_handlers_unblock_by_func (editable, (gpointer) text_deleted_cb, pThis);
+			// insert correct text
+			g_signal_handlers_block_by_func (editable, (gpointer) text_inserted_cb, pThis);
+			gtk_editable_insert_text (editable, str.c_str(), str.length(), position);
+			g_signal_handlers_unblock_by_func (editable, (gpointer) text_inserted_cb, pThis);
 			g_signal_stop_emission_by_name (editable, "insert_text");
 			gdk_beep();  // BEEP!
 		}
+		else
+			if (pThis->getNotify())
+				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
 	}
 
 	static void text_deleted_cb (GtkEditable *editable, gint start_pos,
