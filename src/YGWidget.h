@@ -28,7 +28,6 @@ public:
 
 	/* Get the YGWidget associated with this YWidget */
 	static YGWidget *get (YWidget *y_widget);
-	static char *mapKBAccel(const char *src);
 
 protected:
 	GtkWidget *m_widget;

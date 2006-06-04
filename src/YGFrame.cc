@@ -3,6 +3,7 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YFrame.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 class YGFrame : public YFrame, public YGWidget
@@ -28,9 +29,8 @@ public:
 
 	virtual void setLabel( const YCPString & newLabel )
 	{
-		char *str = YGWidget::mapKBAccel (label->value_cstr());
-		gtk_frame_set_label (GTK_FRAME (getWidget()), str);
-		g_free (str);
+		gtk_frame_set_label (GTK_FRAME (getWidget()),
+			YGUtils::mapKBAccel(label->value_cstr()).c_str());
 	}
 
     // YWidget

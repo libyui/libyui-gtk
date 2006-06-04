@@ -39,14 +39,7 @@ YGLabeledWidget::YGLabeledWidget(
 void
 YGLabeledWidget::doSetLabel (const YCPString & label)
 {
-	string str (label->value_cstr());
-	int i;
-	for (i = 0; i < str.length(); i++)
-		if (str[i] == '&') {
-			str[i] = '_';
-			break;
-			}
-
+	string str = YGUtils::mapKBAccel (label->value_cstr());
 	gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
-	gtk_label_set_use_underline (GTK_LABEL (m_label), i != str.length());
+	gtk_label_set_use_underline (GTK_LABEL (m_label), str.compare(label->value_cstr()));
 }

@@ -4,6 +4,7 @@
 #include "YEvent.h"
 #include "YRadioButton.h"
 #include "YRadioButtonGroup.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 // Sub-class GtkRadioButton to get a widget that renders like
@@ -58,15 +59,14 @@ public:
 	}
 
 	// YRadioButton
-	virtual void setLabel( const YCPString &label )
+	virtual void setLabel (const YCPString &label)
 	{
 		IMPL;
-		char *str = YGWidget::mapKBAccel (label->value_cstr());
-		gtk_button_set_label (GTK_BUTTON (getWidget()), str);
-		g_free (str);
+		gtk_button_set_label (GTK_BUTTON (getWidget()),
+			YGUtils::mapKBAccel (label->value_cstr()).c_str());
 	}
 
-	virtual void setValue( const YCPBoolean & checked )
+	virtual void setValue (const YCPBoolean & checked)
 	{
 		IMPL;
 		g_signal_handlers_block_by_func

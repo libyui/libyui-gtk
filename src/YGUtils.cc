@@ -2,6 +2,17 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 
+string YGUtils::mapKBAccel(const char *src)
+{
+	string str (src);
+	for (unsigned int i = 0; i < str.length(); i++)
+		if (str[i] == '&') {
+			str[i] = '_';
+			break;
+			}
+	return str;
+}
+
 string YGUtils::filter_text (const char* text, int length, const char* valid_chars)
 {
 	if (strlen (valid_chars) == 0) {

@@ -3,6 +3,7 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YPushButton.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 class YGPushButton : public YPushButton, public YGWidget
@@ -17,9 +18,8 @@ public:
     virtual void setLabel( const YCPString &label )
 	{
 		IMPL;
-		char *str = YGWidget::mapKBAccel (label->value_cstr());
-		gtk_button_set_label (GTK_BUTTON (getWidget()), str);
-		g_free (str);
+		gtk_button_set_label (GTK_BUTTON (getWidget()),
+			YGUtils::mapKBAccel (label->value_cstr()).c_str());
 	}
 
     virtual void setIcon( const YCPString & icon_name ) IMPL;

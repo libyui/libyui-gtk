@@ -3,6 +3,9 @@
 
 namespace YGUtils
 {
+	/* Replaces '&' accelerator like Yast likes by the '_' that Gnome prefers. */
+	string mapKBAccel(const char *src);
+
 	/* Filters charatcers that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
 	   terminated (you may pass -1, if it is).
