@@ -30,3 +30,10 @@ string YGUtils::filter_text (const char* text, int length, const char* valid_cha
 				}
 	return str;
 }
+
+string YGUtils::int_to_str (int i)
+{
+	char str [8];
+	snprintf (str, 8, "%d", i);
+	return string (str);
+}

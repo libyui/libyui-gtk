@@ -14,7 +14,7 @@ YGLabeledWidget::YGLabeledWidget(
 	     const char *property_name, ...)
 	: YGWidget (y_widget, parent, show,
 	    label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
-	    "homogeneous", TRUE, "spacing", 4, NULL)
+	    "spacing", 4, NULL)
 {
 	// Create the field widget
 	va_list args;

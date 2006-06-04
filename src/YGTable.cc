@@ -3,7 +3,6 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YTable.h"
-#include "YGUtils.h"
 #include "YGWidget.h"
 
 class YGTable : public YTable, public YGWidget
@@ -24,8 +23,7 @@ public:
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
 
 		// Add the columns
-		for (int c = 0; c < numCols(); c++)
-		{
+		for (int c = 0; c < numCols(); c++) {
 			// TODO: check what headers[c][0] is about
 			gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW(getWidget()),
 			                    c, headers[c].substr(1).c_str(), gtk_cell_renderer_text_new(),
@@ -33,8 +31,7 @@ public:
 		}
 
 		// Events
-		if (opt.notifyMode.value())
-		{
+		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 			                  G_CALLBACK (activated_cb), this);
 			if (opt.immediateMode.value())
@@ -113,8 +110,7 @@ protected:
 			int cur_item = atoi (cur_item_str);
 			g_free(cur_item_str);
 
-			if (cur_item == index)
-			{
+			if (cur_item == index) {
 				// TODO: test if we also need to scroll to item to ensure visibility
 				// (can't currently do it since window can't be shrinked.)
 

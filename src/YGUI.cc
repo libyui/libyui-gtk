@@ -165,9 +165,6 @@ YGUI::createMultiLineEdit( YWidget *parent, YWidgetOpt & opt,
 YWidget *
 YGUI::createMultiSelectionBox( YWidget *parent, YWidgetOpt & opt,
 					      const YCPString & label ) IMPL_NULL;
-YWidget *
-YGUI::createTree( YWidget *parent, YWidgetOpt & opt,
-				 const YCPString & label ) IMPL_NULL;
 
 YWidget *
 YGUI::createIntField( YWidget *parent, YWidgetOpt & opt,
