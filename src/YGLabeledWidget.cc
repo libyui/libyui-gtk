@@ -16,28 +16,37 @@ YGLabeledWidget::YGLabeledWidget(
 	    label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
 	    "homogeneous", TRUE, "spacing", 4, NULL)
 {
+	// Create the field widget
 	va_list args;
 	va_start (args, property_name);
-
-	m_label = gtk_label_new ("");
-	gtk_label_set_use_underline (GTK_LABEL (m_widget), TRUE);
-	doSetLabel (label_text);
 	m_field = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+	va_end (args);
 
+	// Create the label
+	m_label = gtk_label_new ("");
+	gtk_label_set_mnemonic_widget (GTK_LABEL (m_label), m_field);
+	doSetLabel (label_text);
+
+	// Set the container and show widgets
 	gtk_container_add (GTK_CONTAINER (m_widget), m_label);
 	gtk_container_add (GTK_CONTAINER (m_widget), m_field);
-
-	if(show)
-	{
+	if(show) {
 		gtk_widget_show (m_label);
 		gtk_widget_show (m_field);
 	}
-
-	va_end (args);
 }
 
 void
 YGLabeledWidget::doSetLabel (const YCPString & label)
 {
-	YGUtils::setLabel (GTK_LABEL (m_label), label);
+	string str (label->value_cstr());
+	int i;
+	for (i = 0; i < str.length(); i++)
+		if (str[i] == '&') {
+			str[i] = '_';
+			break;
+			}
+
+	gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
+	gtk_label_set_use_underline (GTK_LABEL (m_label), i != str.length());
 }

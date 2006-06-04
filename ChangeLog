@@ -1,3 +1,10 @@
+2006-06-04 Ricardo Cruz <rpmcruz@clix.pt>
+
+	* src/YGLabel.cc: worked out; all examples now work.
+	* src/YGLabeledWidget.cc: added support for buddies.
+	(Notes: YGUtils::setLabel() was removed as it is
+	 not needed.)
+
 2006-06-03 Ricardo Cruz <rpmcruz@clix.pt>
 
 	* src/YGTable.cc: added table support; all

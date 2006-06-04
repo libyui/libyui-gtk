@@ -14,7 +14,7 @@ public:
 		             YGWidget *parent,
 		             const YCPString &label,
 		             const YCPString &text)
-		: YTextEntry( opt, label )
+		: YTextEntry (opt, label)
 		, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_ENTRY, NULL)
 	{
 		setText (text);
@@ -45,9 +45,7 @@ public:
 
 	virtual void setText (const YCPString & text)
 	{
-		/* Maybe we should test this text with the validChars, but as this is sent by the
-		   programmer, I think we should trust him. */
-//		if (YGUtils::is_str_valid (text->value_cstr(), -1, pThis->getValidChars()->value_cstr()))
+		/* No need to check for valid chars as this is done by the programmer. */
 		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
 
