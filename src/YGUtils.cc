@@ -53,10 +53,3 @@ bool YGUtils::is_str_valid (const char* text, int length, const char* valids)
 
 	return true;
 }
-
-string YGUtils::int_to_string (int i)
-{
-	char str[8];
-	snprintf(str, 8, "%d", i);
-	return string(str);
-}

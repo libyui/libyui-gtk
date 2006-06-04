@@ -60,7 +60,15 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 	{
 		IMPL;
 printf("COMBOBOX: setValue: %s\n", value->value_cstr());
+
+		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
+			y2error ("%s - setValue(%s): can't be used for read-only combo boxes - ignoring",
+			         widgetClass(), value->value_cstr());
+			return;
+		}
+
 		/* FIXME: This does seem to work, but may break, so should be replaced. */
+		// TRY: Might be possible to use GtkTreeModel and set the -1 index to value.
 		gtk_combo_box_append_text (GTK_COMBO_BOX(getWidget()), value->value_cstr());
 		setCurrentItem (items_nb);
 		gtk_combo_box_remove_text (GTK_COMBO_BOX(getWidget()), items_nb);

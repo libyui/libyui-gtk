@@ -78,8 +78,7 @@ protected:
 		             (gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget())));
 
 		// Get the intended row
-		GtkTreePath *path = gtk_tree_path_new_from_string
-		                      (YGUtils::int_to_string(index).c_str());
+		GtkTreePath *path = gtk_tree_path_new_from_indices (index, -1);
 		gtk_tree_model_get_iter (GTK_TREE_MODEL(list), &iter, path);
 		gtk_tree_path_free (path);
 
@@ -96,8 +95,7 @@ protected:
 		if (path == NULL || column == NULL)
 			return -1;
 
-		int item = atoi (gtk_tree_path_to_string (path));
-		return item;
+		return *gtk_tree_path_get_indices (path);
 	}
 
 	virtual void setCurrentItem (int index)
