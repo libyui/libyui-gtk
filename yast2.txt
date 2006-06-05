@@ -84,3 +84,11 @@ YQUI_core.cc:
     + setSize - comes down from the 'top' to the bottom widgets
 	+ for contained widgets - it triggers pairs of:
 	    + setSize, moveChild calls.
+
+
+TODO:
+    implement YGCheckBox
+    move YGWidget::mapKBAccel into YGUtils
+    re-factor YGRadioButton to create YGCheckBox (?)
+	      + YGToggledBase ?
+    + YGRadioButton -> YGToggle ?

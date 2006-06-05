@@ -157,9 +157,6 @@ YWidget *
 YGUI::createMenuButton( YWidget *parent, YWidgetOpt & opt,
 				       const YCPString & label ) IMPL_NULL;
 YWidget *
-YGUI::createCheckBox( YWidget *parent, YWidgetOpt & opt,
-				     const YCPString & label, bool checked ) IMPL_NULL;
-YWidget *
 YGUI::createMultiLineEdit( YWidget *parent, YWidgetOpt & opt,
 					  const YCPString & label, const YCPString & text ) IMPL_NULL;
 YWidget *
