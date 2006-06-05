@@ -14,12 +14,10 @@ public:
 	: YTable (opt, headers.size())
 	, YGWidget (this, parent, true, GTK_TYPE_TREE_VIEW, NULL)
 	{
-		// Add a GtkTreeModel -- in this case a GtkListStore
 		GType types [numCols()];
 		for (int c = 0; c < numCols(); c++)
 			types [c] = G_TYPE_STRING;
 		GtkListStore *list = gtk_list_store_newv (numCols(), types);
-
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
 
 		// Add the columns
@@ -53,7 +51,7 @@ protected:
 			y2error ("Adding %d elements where we have %d columns on %s - ignoring",
 		           (int)elements.size(), index, widgetClass());
 			return;
-			}
+		}
 
 		GtkListStore *list = GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget())));
 		GtkTreeIter iter;
@@ -104,8 +102,7 @@ protected:
 		if (!gtk_tree_model_get_iter_first (model, &it))
 			goto setitem_error;
 
-		while(true)
-		{
+		while(true) {
 			gchar* cur_item_str = gtk_tree_model_get_string_from_iter (model, &it);
 			int cur_item = atoi (cur_item_str);
 			g_free(cur_item_str);

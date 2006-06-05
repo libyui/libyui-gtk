@@ -8,8 +8,13 @@
 using std::string;
 using std::vector;
 
+#define IMPL_DEBUG true /* Print IMPL debug messages? */
 #define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
-#define IMPL      { LOC; }
+#ifdef IMPL_DEBUG
+	#define IMPL      { LOC; }
+#else
+	#define IMPL      { }
+#endif
 #define IMPL_NULL { LOC; return NULL; }
 #define IMPL_VOID { LOC; return YCPVoid(); }
 #define IMPL_RET(a) { LOC; return (a); }

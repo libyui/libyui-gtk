@@ -45,7 +45,8 @@ public:
 
 	virtual void setText (const YCPString & text)
 	{
-		/* No need to check for valid chars as this is done by the programmer. */
+		/* No need to check for valid chars as that's the responsible of the YCP
+		   application programmer. */
 		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
 
@@ -63,7 +64,7 @@ public:
 	                              gint length, gint *position,
 	                              YGTextEntry *pThis)
 	{
-		string str = YGUtils::filter_text (text, length, pThis->getValidChars()->value_cstr());
+		string str = YGUtils::filterText (text, length, pThis->getValidChars()->value_cstr());
 		if (str.compare (text) != 0) {
 			// invalid text
 			if (length == -1)

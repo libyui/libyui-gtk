@@ -13,27 +13,28 @@ string YGUtils::mapKBAccel(const char *src)
 	return str;
 }
 
-string YGUtils::filter_text (const char* text, int length, const char* valid_chars)
+string YGUtils::filterText (const char* text, int length, const char* valid_chars)
 {
-	if (strlen (valid_chars) == 0) {
-		if (length == -1) return string(text);
-		else              return string(text, length);
-		}
+	if (length == -1)
+		length = strlen (text);
+	if (strlen (valid_chars) == 0)
+		return string(text);
 
 	string str;
-	const char *i, *j;
-	for(i = text; *i && length == -1 ? true : i < text+length; i++)
-		for(j = valid_chars; *j; j++)
-			if(*i == *j) {
-				str += *i;
+	int i, j;
+	for(i = 0; text[i] && i < length; i++)
+		for(j = 0; valid_chars[j]; j++)
+			if(text[i] == valid_chars[j]) {
+				str += text[i];
 				break;
-				}
+			}
 	return str;
 }
 
-string YGUtils::int_to_str (int i)
+string YGUtils::intToStr (int n)
 {
-	char str [8];
-	snprintf (str, 8, "%d", i);
-	return string (str);
+	string str;
+	for (; n != 0; n /= 10)
+		str.insert (0, 1, (n % 10) + '0');
+	return str;
 }

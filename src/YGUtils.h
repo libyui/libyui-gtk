@@ -6,12 +6,12 @@ namespace YGUtils
 	/* Replaces '&' accelerator like Yast likes by the '_' that Gnome prefers. */
 	string mapKBAccel(const char *src);
 
-	/* Filters charatcers that are not on the valids_chars array from the text string
+	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
 	   terminated (you may pass -1, if it is).
 	   Use the compare string member if you won't to see if there was any change.  */
-	string filter_text (const char* text, int length, const char* valid_chars);
+	string filterText (const char* text, int length, const char* valid_chars);
 
 	/* Converts an integer to a STL string. */
-	string int_to_str (int i);
+	string intToStr (int i);
 };

@@ -18,21 +18,16 @@ public:
 		if (opt.isOutputField.value())
 			gtk_editable_set_editable (GTK_EDITABLE (getWidget()), FALSE);
 
-		if (opt.boldFont.value()) {
-			PangoFontDescription* font = pango_font_description_new();
+		PangoFontDescription* font = pango_font_description_new();
+		if (opt.boldFont.value())
 			pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-			gtk_widget_modify_font (getWidget(), font);
-			pango_font_description_free (font);
-			}
-
-		/* This isn't a documented attribute, but seems to be used. */
+		/* This isn't a documented attribute, but seems to be used: */
 		if (opt.isHeading.value()) {
-			PangoFontDescription* font = pango_font_description_new();
 			pango_font_description_set_weight (font, PANGO_WEIGHT_HEAVY);
-			pango_font_description_set_size (font, 16*PANGO_SCALE);
-			gtk_widget_modify_font (getWidget(), font);
-			pango_font_description_free (font);
+			pango_font_description_set_size   (font, 16*PANGO_SCALE);
 		}
+		gtk_widget_modify_font (getWidget(), font);
+		pango_font_description_free (font);
 
 		setLabel (text);
 	}

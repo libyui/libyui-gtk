@@ -99,14 +99,18 @@ printf("COMBOBOX: setValue: %s\n", value->value_cstr());
 	// YGLabelWidget
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YComboBox)
 	
-	// Slots
+	// Events notifications
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{
+		/* selected_changed_cb() is called when a new item was selected or the user has
+		   typed some text on a writable ComboBox. text_changed is true for the later and
+		   false for the former. */
 		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget) && pThis->getCurrentItem() == -1;
 
+		// Filter non valid characters (FIXME: not yet working because of setValue())
 		if (text_changed) {
 			const char *text = pThis->getValue()->value_cstr();
-			string str = YGUtils::filter_text (text, -1,
+			string str = YGUtils::filterText (text, -1,
 			       pThis->getValidChars()->value_cstr());
 
 			if (str.compare (text) != 0) {
