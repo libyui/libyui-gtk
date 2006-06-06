@@ -39,7 +39,10 @@ YGLabeledWidget::YGLabeledWidget(
 void
 YGLabeledWidget::setLabelVisible(bool show)
 {
-	gtk_container_remove (GTK_CONTAINER (m_widget), m_label);
+  if (show)
+    gtk_widget_show (m_label);
+  else
+    gtk_widget_hide (m_label);
 }
 
 void
