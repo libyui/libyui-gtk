@@ -33,7 +33,7 @@ make && sudo make install [2]
 Also working fairly well:
     Label* Spacing* PushButton* ProgressBar* Frame*
     RadioButton* CheckBox* TextEntry[1-4,6] ComboBox[1-3]
-    IntField*
+    IntField*, Table[1-3]
 
 Label - text needs escaping for shortcuts too (?) [uh?]
 checkout yast2.txt for notes.

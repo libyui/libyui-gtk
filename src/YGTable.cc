@@ -135,13 +135,13 @@ printf("TABLE SELECTED CB!!\n");
 	}
 };
 
-class YGTable : public YGTableView, public YTable
+class YGTable : public YTable, public YGTableView
 {
 public:
 	YGTable (const YWidgetOpt &opt, YGWidget *parent,
 	         vector <string> headers)
-	: YGTableView (this, parent, opt, YCPString("<no label>"))
-	, YTable (opt, headers.size())
+		: YTable (opt, headers.size()),
+		  YGTableView (this, parent, opt, YCPString("<no label>"))
 	{
 		IMPL
 		GType types [numCols()];

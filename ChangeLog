@@ -1,3 +1,10 @@
+2006-06-06  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGTable.cc (class YGTable): inherit 1st from
+	YTable, and 2nd from YGTableView, so constructors
+	get invoked in the right order, and so the
+	setWidgetRep works as expected.
+
 2006-06-05  Michael Meeks  <michael.meeks@novell.com>
 
 	* README: simplify list of what works with
