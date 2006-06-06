@@ -18,11 +18,11 @@ public:
     virtual void setLabel( const YCPString &label )
 	{
 		IMPL;
-		gtk_button_set_label (GTK_BUTTON (getWidget()),
-			YGUtils::mapKBAccel (label->value_cstr()).c_str());
+		string str = YGUtils::mapKBAccel(label->value_cstr());
+		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 	}
 
-    virtual void setIcon( const YCPString & icon_name ) IMPL;
+    virtual void setIcon (const YCPString & icon_name) IMPL;
 
     // YWidget
     YGWIDGET_IMPL_NICESIZE

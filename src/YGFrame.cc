@@ -29,8 +29,8 @@ public:
 
 	virtual void setLabel( const YCPString & newLabel )
 	{
-		gtk_frame_set_label (GTK_FRAME (getWidget()),
-			YGUtils::mapKBAccel(label->value_cstr()).c_str());
+		string str = YGUtils::mapKBAccel(label->value_cstr());
+		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
 	}
 
     // YWidget
