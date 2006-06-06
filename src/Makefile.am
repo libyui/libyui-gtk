@@ -12,6 +12,7 @@ libpy2gtk_la_LDFLAGS = -version-info 2:0
 libpy2gtk_la_LIBADD = -lyui -lycp -ly2 $(GTK_LIBS)
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
+	YGUtils.cc \
 	YGUI.cc \
 	YGDialog.cc \
 	YGLayout.cc \
@@ -20,17 +21,17 @@ libpy2gtk_la_SOURCES = \
 	YGWidget.cc \
 	YGProgressBar.cc \
 	YGTextEntry.cc \
+	YGMultiLineEdit.cc \
 	YGRichText.cc \
+	YGIntField.cc \
 	YGRadioButton.cc \
 	YGImage.cc \
 	YGFrame.cc \
 	YGComboBox.cc \
 	YGSelectionBox.cc \
 	YGLabeledWidget.cc \
-	YGUtils.cc \
 	YGTable.cc \
-	YGTree.cc \
-	YGIntField.cc
+	YGTree.cc
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
