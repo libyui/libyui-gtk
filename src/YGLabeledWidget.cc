@@ -37,6 +37,12 @@ YGLabeledWidget::YGLabeledWidget(
 }
 
 void
+YGLabeledWidget::setLabelVisible(bool show)
+{
+	gtk_container_remove (GTK_CONTAINER (m_widget), m_label);
+}
+
+void
 YGLabeledWidget::doSetLabel (const YCPString & label)
 {
 	string str = YGUtils::mapKBAccel (label->value_cstr());

@@ -13,12 +13,13 @@ class YGLabeledWidget : public YGWidget
 {
 	public:
 		YGLabeledWidget(YWidget *y_widget, YGWidget *parent,
-		              YCPString label_text, YUIDimension label_ori,
-		              bool show, GType type, const char *property_name, ...);
+		                YCPString label_text, YUIDimension label_ori,
+		                bool show, GType type, const char *property_name, ...);
 		virtual ~YGLabeledWidget () {}
 
 		virtual GtkWidget* getWidget() { return m_field; }
 
+		void setLabelVisible(bool show);
 		virtual void doSetLabel (const YCPString & label);
 
 	protected:

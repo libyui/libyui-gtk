@@ -164,10 +164,6 @@ YGUI::createMultiSelectionBox( YWidget *parent, YWidgetOpt & opt,
 					      const YCPString & label ) IMPL_NULL;
 
 YWidget *
-YGUI::createIntField( YWidget *parent, YWidgetOpt & opt,
-				     const YCPString & label,
-				     int minValue, int maxValue, int initialValue ) IMPL_NULL;
-YWidget *
 YGUI::createPackageSelector( YWidget *parent, YWidgetOpt & opt,
 					    const YCPString & floppyDevice ) IMPL_NULL;
 
