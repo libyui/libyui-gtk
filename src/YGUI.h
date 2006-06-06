@@ -22,14 +22,13 @@ using std::vector;
 class YGUI: public YUI
 {
 public:
-    YGUI( int 		argc,
-	  char **	argv,
-	  bool 		with_threads,
-	  const char *	macro_file );
-    virtual ~YGUI();
+	YGUI (int argc, char **argv,
+	      bool with_threads,
+	      const char *macro_file);
+	virtual ~YGUI();
 
-    static YGUI *ui() { return (YGUI *)YUI::ui(); }
-    
+	static YGUI *ui() { return (YGUI *)YUI::ui(); }
+
     // non abstract loop bits:
     virtual void blockEvents( bool block = true ) { LOC; }
     virtual bool eventsBlocked() const { LOC; return false; }
@@ -219,14 +218,60 @@ public:
     virtual void makeScreenShot( string filename ) IMPL;
 
     virtual YCPValue runPkgSelection( YWidget * packageSelector ) IMPL_VOID
-    virtual YCPValue askForExistingDirectory( const YCPString & startDir,
-					      const YCPString & headline ) IMPL_VOID;
-    virtual YCPValue askForExistingFile( const YCPString & startWith,
-					 const YCPString & filter,
-					 const YCPString & headline ) IMPL_VOID;
-    virtual YCPValue askForSaveFileName( const YCPString & startWith,
-					 const YCPString & filter,
-					 const YCPString & headline ) IMPL_VOID;
+
+	static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
+	       const YCPString &startWith, const YCPString &filter_pattern,
+	       const YCPString &headline)
+	{
+		GtkWidget *dialog;
+		dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
+			NULL /* TODO: set GtkWindow parent*/,
+			action,
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+			GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
+			NULL);
+		// FIXME: startWith is not necessarly a folder, it can be a file!
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), startWith->value_cstr());
+
+		if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
+			GtkFileFilter *filter = gtk_file_filter_new();
+			gtk_file_filter_add_pattern (filter, filter_pattern->value_cstr());
+			gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+			}
+
+		YCPValue ret;
+		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+			char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+			YCPString ret (filename);
+			g_free (filename);
+
+			gtk_widget_destroy (dialog);
+			return ret;
+		}
+		gtk_widget_destroy (dialog);
+		return YCPVoid();
+	}
+
+	virtual YCPValue askForExistingDirectory (const YCPString &startDir,
+	                                          const YCPString &headline)
+	{
+		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, startDir,
+		                              YCPString ("*"), headline);
+	}
+
+	virtual YCPValue askForExistingFile (const YCPString &startWith,
+	     const YCPString &filter, const YCPString &headline)
+	{
+		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, startWith,
+		                              filter, headline);
+	}
+
+	virtual YCPValue askForSaveFileName (const YCPString &startWith,
+	     const YCPString &filter, const YCPString &headline)
+	{
+		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, startWith,
+		                              filter, headline);
+	}
 };
 
 // debug helpers.
