@@ -2,18 +2,16 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YEvent.h"
-#include "YGLabeledWidget.h"
+#include "YGScrolledWidget.h"
 
 /* A generic widget for table related widgets. */
-// TODO: we might have to add a GtkScrolledWindow to this like in YGTree
-// btw, we might want to share some code with it
-class YGTableView : public YGLabeledWidget
+class YGTableView : public YGScrolledWidget
 {
 public:
 	YGTableView (YWidget *y_widget, YGWidget *parent,
 	             const YWidgetOpt &opt, YCPString label)
-	: YGLabeledWidget (y_widget, parent, label, YD_VERT, true,
-	                   GTK_TYPE_TREE_VIEW, NULL)
+	: YGScrolledWidget (y_widget, parent, label, YD_VERT, true,
+	                    GTK_TYPE_TREE_VIEW, NULL)
 	{
 		IMPL
 		// Events

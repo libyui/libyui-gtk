@@ -16,9 +16,11 @@ libpy2gtk_la_SOURCES = \
 	YGUI.cc \
 	YGDialog.cc \
 	YGLayout.cc \
+	YGWidget.cc \
+	YGLabeledWidget.cc \
+	YGScrolledWidget.cc \
 	YGLabel.cc \
 	YGPushButton.cc \
-	YGWidget.cc \
 	YGProgressBar.cc \
 	YGTextEntry.cc \
 	YGMultiLineEdit.cc \
@@ -29,7 +31,6 @@ libpy2gtk_la_SOURCES = \
 	YGFrame.cc \
 	YGComboBox.cc \
 	YGSelectionBox.cc \
-	YGLabeledWidget.cc \
 	YGTable.cc \
 	YGTree.cc
 

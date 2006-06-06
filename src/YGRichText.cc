@@ -4,9 +4,9 @@
 #include "YEvent.h"
 #include "YRichText.h"
 #include <queue>
-#include "YGWidget.h"
+#include "YGScrolledWidget.h"
 
-class YGRichText : public YRichText, public YGWidget
+class YGRichText : public YRichText, public YGScrolledWidget
 {
 	GtkWidget *m_label;
 	GtkWidget *m_entry;
@@ -40,9 +40,9 @@ public:
 YGRichText::YGRichText( const YWidgetOpt &opt,
 						YGWidget         *parent,
 						const YCPString &text ) :
-	YRichText( opt, text ),
-	YGWidget( this, parent, true,
-			  GTK_TYPE_TEXT_VIEW, NULL )
+	YRichText (opt, text),
+	YGScrolledWidget (this, parent, true,
+	                  GTK_TYPE_TEXT_VIEW, NULL)
 {
 	// FIXME: get alignment right here [ GtkAlignment ? ]
 	GtkWidget *align_left = gtk_vbox_new (FALSE, 0);

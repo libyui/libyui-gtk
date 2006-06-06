@@ -1,5 +1,12 @@
 2006-06-06 Ricardo Cruz <rpmcruz@clix.pt>
 
+	* src/YGMultiLineEdit.cc: implemented the YMultiLineEdit.
+	* src/YGScrolledWidget.h/cc: added this new convinience parent
+	widget. It is being used by YGMultiLineEdit, YGRichText,
+	YGTree and YGTableView derivates.
+
+2006-06-06 Ricardo Cruz <rpmcruz@clix.pt>
+
 	* src/YGTable.cc: worked over the YGTableView API and
 	made YGSelectBox and YGMultiSelectBox using it.
 	(Note: YGTable is segfaulting and toggle buttons on

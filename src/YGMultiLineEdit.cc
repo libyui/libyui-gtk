@@ -6,11 +6,9 @@
 #include <string>
 #include "YEvent.h"
 #include "YMultiLineEdit.h"
-#include "YGLabeledWidget.h"
+#include "YGScrolledWidget.h"
 
-// TODO: this class needs a GtkScrolledWindow
-
-class YGMultiLineEdit : public YMultiLineEdit, public YGLabeledWidget
+class YGMultiLineEdit : public YMultiLineEdit, public YGScrolledWidget
 {
 int maxChars;
 
@@ -20,8 +18,8 @@ public:
 		               const YCPString &label,
 		               const YCPString &text)
 		: YMultiLineEdit (opt, label)
-		, YGLabeledWidget (this, parent, label, YD_VERT, true,
-		                   GTK_TYPE_TEXT_VIEW, NULL)
+		, YGScrolledWidget (this, parent, label, YD_VERT, true,
+		                    GTK_TYPE_TEXT_VIEW, NULL)
 	{
 		IMPL
 		maxChars = -1;

@@ -4,28 +4,16 @@
 #include "YEvent.h"
 #include "YTree.h"
 #include "YGUtils.h"
-#include "YGLabeledWidget.h"
+#include "YGScrolledWidget.h"
 
-// FIXME: set a scroll bar to the widget
-
-class YGTree : public YTree, public YGLabeledWidget
+class YGTree : public YTree, public YGScrolledWidget
 {
-GtkWidget* m_tree;
-
 public:
 	YGTree (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
 	: YTree (opt, label)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
-	                   GTK_TYPE_SCROLLED_WINDOW, NULL)
+	, YGScrolledWidget (this, parent, label, YD_VERT, true,
+	                   GTK_TYPE_TREE_VIEW, NULL)
 	{
-		m_tree = gtk_tree_view_new();
-
-		gtk_scrolled_window_set_policy (
-			GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
-			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_container_add (GTK_CONTAINER (YGLabeledWidget::getWidget()), m_tree);
-		gtk_widget_show (m_tree);
-
 		GtkTreeStore *tree = gtk_tree_store_new (1, G_TYPE_STRING);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(tree));
 
@@ -51,10 +39,6 @@ public:
 	{
 		return GTK_TREE_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget())));
 	}
-
-
-	virtual GtkWidget* getWidget()
-	{ return m_tree; }
 
 	// YTree
 
