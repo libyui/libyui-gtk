@@ -3,59 +3,44 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YProgressBar.h"
-#include "YGWidget.h"
+#include "YGLabeledWidget.h"
 
-class YGProgressBar : public YProgressBar, public YGWidget
+class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {
 public:
-    YGProgressBar( const YWidgetOpt &opt,
-		   YGWidget         *parent,
-		   const YCPString & label,
-		   const YCPInteger & maxprogress,
-		   const YCPInteger & progress ) :
-	YProgressBar( opt, label, maxprogress, progress ),
-	YGWidget( this, parent, true, GTK_TYPE_PROGRESS_BAR, NULL )
-    {
-	if (label->value() != "")
-	    gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
-				       label->value_cstr());
-    }
-    virtual ~YGProgressBar() {}
+	YGProgressBar (const YWidgetOpt &opt, YGWidget *parent,
+	               const YCPString& label,
+	               const YCPInteger& maxprogress, const YCPInteger& progress)
+	: YProgressBar (opt, label, maxprogress, progress)
+	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	{
+	}
 
-    // YProgressBar
-    virtual void setLabel( const YCPString & label )
-    {
-	gtk_progress_bar_set_text (GTK_PROGRESS_BAR (getWidget()),
-				   label->value_cstr());
-    }
-    virtual void setProgress( const YCPInteger & newProgress );
+	virtual ~YGProgressBar() {}
 
-    // YWidget
-    YGWIDGET_IMPL_NICESIZE
-    YGWIDGET_IMPL_SET_ENABLING
-    YGWIDGET_IMPL_SET_SIZE
-    virtual bool setKeyboardFocus() IMPL_RET(false);
-    virtual void startMultipleChanges() IMPL;
-    virtual void doneMultipleChanges() IMPL;
-    virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YProgressBar)
+	YGWIDGET_IMPL_NICESIZE
+	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_SET_SIZE
+
+	// YProgressBar
+	virtual void setProgress (const YCPInteger& newProgress)
+	{
+		float value = newProgress->value();
+		value /= maxProgress->value();
+		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), value);
+		YProgressBar::setProgress (newProgress);
+	}
 };
 
-void YGProgressBar::setProgress( const YCPInteger & newProgress )
-{
-	float value = newProgress->value();
-
-	value /= maxProgress->value();
-	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), value);
-	YProgressBar::setProgress( newProgress );
-}
-
 YWidget *
-YGUI::createProgressBar( YWidget *parent, YWidgetOpt & opt,
-			 const YCPString & label,
-			 const YCPInteger & maxprogress,
-			 const YCPInteger & progress )
+YGUI::createProgressBar (YWidget* parent, YWidgetOpt& opt,
+                         const YCPString& label,
+                         const YCPInteger& maxprogress,
+                         const YCPInteger& progress )
 {
 	IMPL;
-	return new YGProgressBar( opt, YGWidget::get (parent),
-				  label, maxprogress, progress );
+	return new YGProgressBar (opt, YGWidget::get (parent),
+	                          label, maxprogress, progress);
 }
