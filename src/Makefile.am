@@ -29,7 +29,8 @@ libpy2gtk_la_SOURCES = \
 	YGLabeledWidget.cc \
 	YGUtils.cc \
 	YGTable.cc \
-	YGTree.cc
+	YGTree.cc \
+	YGIntField.cc
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
