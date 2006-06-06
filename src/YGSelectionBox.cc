@@ -5,6 +5,8 @@
 #include "YSelectionBox.h"
 #include "YGWidget.h"
 
+#if 0
+
 class YGSelectionBox : public YSelectionBox, public YGWidget
 {
 public:
@@ -50,3 +52,4 @@ YGUI::createSelectionBox( YWidget *parent, YWidgetOpt & opt,
     IMPL;
     return new YGSelectionBox (opt, YGWidget::get (parent), label);
 }
+#endif

@@ -1,3 +1,15 @@
+2006-06-06 Ricardo Cruz <rpmcruz@clix.pt>
+
+	* src/YGTable.cc: worked over the YGTableView API and
+	made YGSelectBox and YGMultiSelectBox using it.
+	(Note: YGTable is segfaulting and toggle buttons on
+	 Multi* don't seem to like "activatable" attribute.)
+
+	* src/YGTree.cc: tree now goes inside a GtkScrolledWindow
+	which gives it the needed scroll bars.
+
+	* src/YGUI.h: added dialogs to open directories and files.
+
 2006-06-06  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGTable.cc (class YGTable): inherit 1st from
