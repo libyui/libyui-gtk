@@ -1,3 +1,7 @@
+2006-06-07  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGTable.cc (itemAdded): fix crash.
+
 2006-06-06 Ricardo Cruz <rpmcruz@clix.pt>
 
 	* src/YGMultiLineEdit.cc: implemented the YMultiLineEdit.

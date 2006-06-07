@@ -176,7 +176,7 @@ public:
 	{
 		IMPL
 		addRow (index);
-		for (unsigned int c = 0; elements.size(); c++)
+		for (unsigned int c = 0; c < elements.size(); c++)
 			setItem (elements[c], index, c);
 	}
 
