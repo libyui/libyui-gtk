@@ -30,6 +30,8 @@ YGLabeledWidget::YGLabeledWidget(
 	// Set the container and show widgets
 	gtk_container_add (GTK_CONTAINER (m_widget), m_label);
 	gtk_container_add (GTK_CONTAINER (m_widget), m_field);
+	gtk_box_set_child_packing (GTK_BOX (m_widget), m_label,
+	                      FALSE, FALSE, 4, GTK_PACK_START);
 	if(show) {
 		gtk_widget_show (m_label);
 		gtk_widget_show (m_field);
