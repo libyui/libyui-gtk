@@ -19,7 +19,6 @@ public:
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 			                  G_CALLBACK (activated_cb), y_widget);
 			if (opt.immediateMode.value())
-				// FIXME: isn't the signal we want -- find another
 				g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 				                  G_CALLBACK (selected_cb), y_widget);
 		}
@@ -45,6 +44,7 @@ public:
 				column = gtk_tree_view_column_new_with_attributes (headers[c].substr(1).c_str(),
 					gtk_cell_renderer_toggle_new(), "activatable", TRUE, NULL);
 
+			// FIXME: only seems to be alligned the header, not the actual columns
 			gfloat xalign;
 			if (headers[c][0] == 'L')
 				xalign = 0.0;
@@ -55,20 +55,15 @@ public:
 			gtk_tree_view_column_set_alignment (column, xalign);
 
 			gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, c);
-
 		}
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), show_headers);
 	}
 
 protected:
 	GtkListStore *getStore()
-	{
-		return GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget())));
-	}
+	{ return GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()))); }
 	GtkTreeModel *getModel()
-	{
-		return GTK_TREE_MODEL(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget())));
-	}
+	{ return GTK_TREE_MODEL(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()))); }
 
 	virtual char* widgetClass()
 	{ return "YGTableView"; }
@@ -134,17 +129,16 @@ protected:
 		gtk_tree_path_free (path);
 	}
 
+	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
+	{
+		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
+	}
+
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                          GtkTreeViewColumn *column, YWidget* pThis)
 	{
 		if (pThis->getNotify())
-			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
-	}
-
-	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
-	{
-printf("TABLE SELECTED CB!!\n");
-		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
 	}
 };

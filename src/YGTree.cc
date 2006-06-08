@@ -14,7 +14,7 @@ public:
 	, YGScrolledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_TREE_VIEW, NULL)
 	{
-		GtkTreeStore *tree = gtk_tree_store_new (1, G_TYPE_STRING);
+		GtkTreeStore *tree = gtk_tree_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(tree));
 
 		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW(getWidget()),
@@ -25,9 +25,22 @@ public:
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 			                  G_CALLBACK (activated_cb), this);
-			// TODO: add the selected signal -- after adding it to YGTable
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_cb), this);
 		}
 	}
+
+	void freeItemsData (const YTreeItemList &items)
+	{
+		for (YTreeItemListConstIterator it = items.begin();
+		     it != items.end(); it++) {
+			gtk_tree_path_free ((GtkTreePath*)(*it)->data());
+			freeItemsData ((*it)->itemList());
+		}
+	}
+
+	virtual ~YGTree()
+	{ freeItemsData (items); }
 
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
@@ -36,9 +49,9 @@ public:
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTree)
 
 	GtkTreeStore *getStore()
-	{
-		return GTK_TREE_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget())));
-	}
+	{ return GTK_TREE_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
+	GtkTreeModel *getModel()
+	{ return GTK_TREE_MODEL(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
 
 	// YTree
 
@@ -48,11 +61,13 @@ public:
 		for (unsigned int i = 0; i < items.size(); i++) {
 			gtk_tree_store_append (getStore(), &iter, parent);
 			gtk_tree_store_set (getStore(), &iter, 0,
-				items[i]->getText()->value_cstr(), -1);
+				items[i]->getText()->value_cstr(), 1, items[i], -1);
+
+			// store pointer to GtkTreePath for use in setCurrentItem()
+			items[i]->setData (gtk_tree_model_get_path (getModel(), &iter));
 
 			if (parent && items[i]->parent()->isOpenByDefault()) {
-				GtkTreePath *path = gtk_tree_model_get_path (
-					GTK_TREE_MODEL (getStore()), &iter);
+				GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
 				gtk_tree_view_expand_to_path (GTK_TREE_VIEW (getWidget()), path);
 				gtk_tree_path_free(path);
 				}
@@ -68,75 +83,44 @@ public:
 	}
 
 protected:
-	virtual const YTreeItem * getCurrentItem() const
+	virtual const YTreeItem *getCurrentItem() const
 	{
-		return NULL;
-#if 0
 		GtkTreePath *path;
 		GtkTreeViewColumn *column;
-		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()),
-		                                     &path, &column);
+		gtk_tree_view_get_cursor
+			(GTK_TREE_VIEW(const_cast<YGTree *>(this)->getWidget()),
+			&path, &column);
 		if (path == NULL || column == NULL)
 			return NULL;
 
-		const gint *indices = gtk_tree_path_get_indices (path);
+		GtkTreeIter iter;
+		YTreeItem *item = 0;
+		gtk_tree_model_get_iter
+			(const_cast<YGTree *>(this)->getModel(), &iter, path);
+		gtk_tree_model_get
+			(const_cast<YGTree *>(this)->getModel(), &iter, 1, &item, -1);
 
-		if (*indices == -1)
-			return NULL;
-
-		const YTreeItem* item = items[*indices];
-		while (true) {
-			if (*(++indices) == -1)
-{
-printf("current: %s\n", item->getText()->value_cstr());
-				return item;
-}
-printf("going to item: %d\n", *indices);
-			item = item->itemList()[*indices];
-		}
-#endif
-	}
-
-	virtual void setCurrentItem (YTreeItem *item) IMPL;
-#if 0
-	string getPath (const YTreeItemList &items, YTreeItem* item, string path) const
-	{
-fprintf(stderr, "getPath(): '%s'\n", path.c_str());
-		for (unsigned int i = 0; i < items.size(); i++) {
-fprintf(stderr, "iteration %d\n", i);
-			if (item->getId()->equal(items[i]->getId()))
-{
-fprintf(stderr, "found at: '%s'\n", path.c_str());
-fprintf(stderr, "%s == %s\n", item->getText()->value_cstr(), items[i]->getText()->value_cstr());
-				return (path + ":" + YGUtils::intToStr(i)).substr(1);
-}
-			string res = getPath (items[i]->itemList(), item, path + ":" + YGUtils::intToStr(i));
-			if (res[0] != ':')  // not very pretty
-				return res;
-		}
-	return "";
+		return item;
 	}
 
 	virtual void setCurrentItem (YTreeItem *item)
 	{
-		string path = getPath (items, item, "");
-		if (path.length() == 0) {
-			y2error ("setCurrentItem(): item %s doesn't exist on %s - ignoring",
-			         item->getText()->value_cstr(), widgetClass());
-			return;
-			}
-
-fprintf (stderr, "found %s at path %s\n", item->getText()->value_cstr(), path.c_str());
-
-		GtkTreePath *tree_path = gtk_tree_path_new_from_string (path.c_str());
-		gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), tree_path, NULL, FALSE);
-		gtk_tree_path_free (tree_path);
+		IMPL
+		GtkTreePath *path = (GtkTreePath*) item->data();
+		gtk_tree_view_expand_to_path (GTK_TREE_VIEW (getWidget()), path);
+		gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), path, NULL, FALSE);
 	}
-#endif
+
 	virtual void deleteAllItems()
 	{
 		gtk_tree_store_clear (getStore());
 		YTree::deleteAllItems();
+	}
+
+	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
+	{
+		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
 	}
 
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,

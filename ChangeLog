@@ -4,6 +4,14 @@
 	move of YGLabeledWidget and YGScrolledWidget to the
 	same file of YGWidget.
 
+	* src/YGTree: added set/getCurrentItem() using
+	Michael's suggestions. It saves the YTree items
+	on a non-visible column for east getCurrentItem().
+	And it uses data()/setData() from YTreeItems to
+	save the GtkTreePath there and retrive it on
+	getCurrentItem(). Rather elegant -- and all examples
+	run nicely.
+
 2006-06-08  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGMultiLineEdit.cc (setInputMaxLength): remove
