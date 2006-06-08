@@ -30,11 +30,3 @@ string YGUtils::filterText (const char* text, int length, const char* valid_char
 			}
 	return str;
 }
-
-string YGUtils::intToStr (int n)
-{
-	string str;
-	for (; n != 0; n /= 10)
-		str.insert (0, 1, (n % 10) + '0');
-	return str;
-}

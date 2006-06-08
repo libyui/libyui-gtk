@@ -1,15 +1,21 @@
 2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
 
+	* src/YGUtils: function that converts integers
+	to strings gets to see the light at the end of
+	the tunnel as it is not used.
+
+2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
+
 	Made some changes suggested by Michael, mainly the
 	move of YGLabeledWidget and YGScrolledWidget to the
 	same file of YGWidget.
 
 	* src/YGTree: added set/getCurrentItem() using
 	Michael's suggestions. It saves the YTree items
-	on a non-visible column for east getCurrentItem().
+	on a non-visible column for getCurrentItem().
 	And it uses data()/setData() from YTreeItems to
 	save the GtkTreePath there and retrive it on
-	getCurrentItem(). Rather elegant -- and all examples
+	getCurrentItem(). Pretty elegant -- and all examples
 	run nicely.
 
 2006-06-08  Michael Meeks  <michael.meeks@novell.com>

@@ -11,7 +11,4 @@ namespace YGUtils
 	   terminated (you may pass -1, if it is).
 	   Use the compare string member if you won't to see if there was any change.  */
 	string filterText (const char* text, int length, const char* valid_chars);
-
-	/* Converts an integer to a STL string. */
-	string intToStr (int i);
 };
