@@ -6,7 +6,7 @@
 #include <string>
 #include "YEvent.h"
 #include "YIntField.h"
-#include "YGLabeledWidget.h"
+#include "YGWidget.h"
 
 class YGIntField : public YIntField, public YGLabeledWidget
 {

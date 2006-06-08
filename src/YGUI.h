@@ -197,12 +197,12 @@ public:
 				   const YCPString & nextButtonLabel ) IMPL_NULL;
     virtual bool     hasWizard() { return false; }
 
-    virtual int	 getDisplayWidth();
-    virtual int	 getDisplayHeight();
-    virtual int	 getDisplayDepth();
+    virtual int  getDisplayWidth();
+    virtual int  getDisplayHeight();
+    virtual int  getDisplayDepth();
     virtual long getDisplayColors();
-    virtual int	 getDefaultWidth();
-    virtual int	 getDefaultHeight();
+    virtual int  getDefaultWidth();
+    virtual int  getDefaultHeight();
     virtual bool textMode()              IMPL_RET(false);
     virtual bool hasImageSupport()       IMPL_RET(true);
     virtual bool hasLocalImageSupport()  IMPL_RET(true);
@@ -219,59 +219,13 @@ public:
 
     virtual YCPValue runPkgSelection( YWidget * packageSelector ) IMPL_VOID
 
-	static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
-	       const YCPString &startWith, const YCPString &filter_pattern,
-	       const YCPString &headline)
-	{
-		GtkWidget *dialog;
-		dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
-			NULL /* TODO: set GtkWindow parent*/,
-			action,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-			GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
-			NULL);
-		// FIXME: startWith is not necessarly a folder, it can be a file!
-		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), startWith->value_cstr());
-
-		if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
-			GtkFileFilter *filter = gtk_file_filter_new();
-			gtk_file_filter_add_pattern (filter, filter_pattern->value_cstr());
-			gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
-			}
-
-		YCPValue ret;
-		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-			char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			YCPString ret (filename);
-			g_free (filename);
-
-			gtk_widget_destroy (dialog);
-			return ret;
-		}
-		gtk_widget_destroy (dialog);
-		return YCPVoid();
-	}
-
+	/* File/directory dialogs. */
 	virtual YCPValue askForExistingDirectory (const YCPString &startDir,
-	                                          const YCPString &headline)
-	{
-		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, startDir,
-		                              YCPString ("*"), headline);
-	}
-
+	     const YCPString &headline);
 	virtual YCPValue askForExistingFile (const YCPString &startWith,
-	     const YCPString &filter, const YCPString &headline)
-	{
-		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, startWith,
-		                              filter, headline);
-	}
-
+	     const YCPString &filter, const YCPString &headline);
 	virtual YCPValue askForSaveFileName (const YCPString &startWith,
-	     const YCPString &filter, const YCPString &headline)
-	{
-		return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, startWith,
-		                              filter, headline);
-	}
+	     const YCPString &filter, const YCPString &headline);
 };
 
 // debug helpers.

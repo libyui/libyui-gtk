@@ -5,7 +5,7 @@
 #include "YEvent.h"
 #include "YTextEntry.h"
 #include "YGUtils.h"
-#include "YGLabeledWidget.h"
+#include "YGWidget.h"
 
 class YGTextEntry : public YTextEntry, public YGLabeledWidget
 {

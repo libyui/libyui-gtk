@@ -4,7 +4,7 @@
 #include "YEvent.h"
 #include "YTree.h"
 #include "YGUtils.h"
-#include "YGScrolledWidget.h"
+#include "YGWidget.h"
 
 class YGTree : public YTree, public YGScrolledWidget
 {

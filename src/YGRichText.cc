@@ -4,7 +4,7 @@
 #include "YEvent.h"
 #include "YRichText.h"
 #include <queue>
-#include "YGScrolledWidget.h"
+#include "YGWidget.h"
 
 class YGRichText : public YRichText, public YGScrolledWidget
 {

@@ -6,7 +6,7 @@
 #include "YEvent.h"
 #include "YGUtils.h"
 #include "YComboBox.h"
-#include "YGLabeledWidget.h"
+#include "YGWidget.h"
 
 // TODO: some stuff is missing
 

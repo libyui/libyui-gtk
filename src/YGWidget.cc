@@ -1,5 +1,8 @@
 #include <stdarg.h>
-#include <YGWidget.h>
+#include "YGWidget.h"
+#include "YGUtils.h"
+
+/* YGWidget follows */
 
 void
 YGWidget::construct (YWidget *y_widget, YGWidget *parent,
@@ -146,4 +149,97 @@ int YGWidget::xthickness()
 int YGWidget::ythickness()
 {
 	return getWidget()->style->ythickness;
+}
+
+/* YGLabeledWidget follows */
+
+YGLabeledWidget::YGLabeledWidget(
+	     YWidget *y_widget,
+	     YGWidget *parent,
+	     YCPString label_text, YUIDimension label_ori,
+	     bool show, GType type,
+	     const char *property_name, ...)
+	: YGWidget (y_widget, parent, show,
+	    label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
+	    "spacing", 4, NULL)
+{
+	// Create the field widget
+	va_list args;
+	va_start (args, property_name);
+	m_field = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+	va_end (args);
+
+	// Create the label
+	m_label = gtk_label_new ("");
+	gtk_label_set_mnemonic_widget (GTK_LABEL (m_label), m_field);
+	doSetLabel (label_text);
+
+	// Set the container and show widgets
+	gtk_container_add (GTK_CONTAINER (m_widget), m_label);
+	gtk_container_add (GTK_CONTAINER (m_widget), m_field);
+	gtk_box_set_child_packing (GTK_BOX (m_widget), m_label,
+	                      FALSE, FALSE, 4, GTK_PACK_START);
+	if(show) {
+		gtk_widget_show (m_label);
+		gtk_widget_show (m_field);
+	}
+}
+
+void
+YGLabeledWidget::setLabelVisible(bool show)
+{
+  if (show)
+    gtk_widget_show (m_label);
+  else
+    gtk_widget_hide (m_label);
+}
+
+void
+YGLabeledWidget::doSetLabel (const YCPString & label)
+{
+	string str = YGUtils::mapKBAccel (label->value_cstr());
+	gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
+	gtk_label_set_use_underline (GTK_LABEL (m_label), str.compare(label->value_cstr()));
+}
+
+/* YGScrolledWidget follows */
+
+YGScrolledWidget::YGScrolledWidget (
+		YWidget *y_widget, YGWidget *parent,
+		bool show, GType type, const char *property_name, ...)
+: YGLabeledWidget (y_widget, parent,
+                   YCPString ("<no label>"), YD_VERT,
+                   show, GTK_TYPE_SCROLLED_WINDOW, NULL)
+{
+	va_list args;
+	va_start (args, property_name);
+	construct(type, property_name, args);
+	va_end (args);
+
+	setLabelVisible (false);
+}
+
+YGScrolledWidget::YGScrolledWidget (
+		YWidget *y_widget, YGWidget *parent,
+		YCPString label_text, YUIDimension label_ori,
+		bool show, GType type, const char *property_name, ...)
+: YGLabeledWidget (y_widget, parent, label_text, label_ori, show,
+                   GTK_TYPE_SCROLLED_WINDOW, NULL)
+{
+	va_list args;
+	va_start (args, property_name);
+	construct(type, property_name, args);
+	va_end (args);
+}
+
+void YGScrolledWidget::construct
+		(GType type, const char *property_name, va_list args)
+{
+	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+
+	gtk_scrolled_window_set_policy (
+		GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
+		GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_container_add (GTK_CONTAINER (YGLabeledWidget::getWidget()), m_widget);
+	gtk_widget_show (m_widget);
 }

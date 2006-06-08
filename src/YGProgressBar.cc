@@ -3,7 +3,7 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YProgressBar.h"
-#include "YGLabeledWidget.h"
+#include "YGWidget.h"
 
 class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {

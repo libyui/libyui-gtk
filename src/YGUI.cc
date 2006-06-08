@@ -5,24 +5,24 @@
 #include <YGWidget.h>
 
 YGUI::YGUI( int argc, char ** argv,
-	    bool with_threads, const char *macro_file ) :
+			bool with_threads, const char *macro_file ) :
 	YUI(with_threads)
 {
 	IMPL;
 	gtk_init (&argc, &argv);
 	fprintf (stderr, "I'm initialized '%s' - come & get me !\n",
-		 with_threads ? "with threads !" : "no threads");
+		with_threads ? "with threads !" : "no threads");
 
 	// without this none of the (default) threading action works ...
-    topmostConstructorHasFinished();
+		topmostConstructorHasFinished();
 }
 
 YGUI::~YGUI() IMPL;
 
 static gboolean
 ycp_wakeup_fn (GIOChannel   *source,
-			   GIOCondition  condition,
-			   gpointer      data)
+				GIOCondition  condition,
+				gpointer      data)
 {
 	*(int *)data = TRUE;
 	return TRUE;
@@ -41,7 +41,7 @@ YGUI::idleLoop (int fd_ycp)
 
 	int woken = FALSE;
 	guint watch_tag = g_io_add_watch (wakeup, (GIOCondition)(G_IO_IN | G_IO_PRI),
-									  ycp_wakeup_fn, &woken);
+										ycp_wakeup_fn, &woken);
 	while (!woken)
 		g_main_iteration (TRUE);
 
@@ -73,7 +73,7 @@ YGUI::userInput( unsigned long timeout_millisec )
 	LOC;
 	if (timeout_millisec > 0)
 		timeout = g_timeout_add (timeout_millisec,
-					 (GSourceFunc)set_timeout, this);
+					(GSourceFunc)set_timeout, this);
 
 	// FIXME: do it only if currentDialog (?) ...
 	while (!pendingEvent())
@@ -109,12 +109,12 @@ void dumpWidgetTree (GtkWidget *widget, int indent)
 		children = gtk_container_get_children (GTK_CONTAINER (widget));
 
 	fprintf (stderr, "Widget %p (%s) [%s] children (%d) req (%d,%d) alloc (%d,%d, %d,%d)\n",
-		 widget, g_type_name_from_instance ((GTypeInstance *)widget),
-		 GTK_WIDGET_VISIBLE (widget) ? "visible" : "invisible",
-		 g_list_length (children),
-		 widget->requisition.width, widget->requisition.height,
-		 widget->allocation.x, widget->allocation.y,
-		 widget->allocation.width, widget->allocation.height);
+		widget, g_type_name_from_instance ((GTypeInstance *)widget),
+		GTK_WIDGET_VISIBLE (widget) ? "visible" : "invisible",
+		g_list_length (children),
+		widget->requisition.width, widget->requisition.height,
+		widget->allocation.x, widget->allocation.y,
+		widget->allocation.width, widget->allocation.height);
 
 	for (GList *l = children; l; l = l->next)
 		dumpWidgetTree ((GtkWidget *)l->data, indent + 1);
@@ -135,8 +135,8 @@ void dumpYastTree (YWidget *widget, int indent)
 		cont = (YContainerWidget *) widget;
 
 	fprintf (stderr, "Widget %p (%s) children (%d)\n",
-		 widget, widget->widgetClass(),
-		 cont ? cont->numChildren() : -1);
+		widget, widget->widgetClass(),
+		cont ? cont->numChildren() : -1);
 
 	if (cont)
 		for (int i = 0; i < cont->numChildren(); i++)
@@ -147,23 +147,23 @@ void dumpYastTree (YWidget *widget, int indent)
 
 YWidget *
 YGUI::createLogView( YWidget *parent, YWidgetOpt & opt,
-					 const YCPString & label, int visibleLines,
-					 int maxLines )
+					const YCPString & label, int visibleLines,
+					int maxLines )
 {
 		IMPL_NULL;
 }
 
 YWidget *
 YGUI::createMenuButton( YWidget *parent, YWidgetOpt & opt,
-				       const YCPString & label ) IMPL_NULL;
+							const YCPString & label ) IMPL_NULL;
 
 YWidget *
 YGUI::createPackageSelector( YWidget *parent, YWidgetOpt & opt,
-					    const YCPString & floppyDevice ) IMPL_NULL;
+							const YCPString & floppyDevice ) IMPL_NULL;
 
 YWidget *
 YGUI::createPkgSpecial( YWidget *parent, YWidgetOpt & opt,
-				       const YCPString & subwidget ) IMPL_NULL;
+							const YCPString & subwidget ) IMPL_NULL;
 
 static GdkScreen *
 getScreen ()
@@ -202,7 +202,7 @@ long YGUI::getDisplayColors()
 #define SHRINK(a) (int)(0.7 * (a))
 int YGUI::getDefaultWidth()
 {
-  // FIXME: -fullscreen option ?
+	// FIXME: -fullscreen option ?
 	IMPL;
 	return MAX(SHRINK(gdk_screen_get_width (getScreen())), 800);
 }
@@ -211,4 +211,59 @@ int YGUI::getDefaultHeight()
 {
 	IMPL;
 	return MAX(SHRINK(gdk_screen_get_height (getScreen())), 600);
+}
+
+/* File/directory dialogs. */
+static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
+		const YCPString &startWith, const YCPString &filter_pattern,
+		const YCPString &headline)
+{
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
+		NULL /* TODO: set GtkWindow parent*/,
+		action,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
+		NULL);
+	// FIXME: startWith is not necessarly a folder, it can be a file!
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), startWith->value_cstr());
+
+	if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
+		GtkFileFilter *filter = gtk_file_filter_new();
+		gtk_file_filter_add_pattern (filter, filter_pattern->value_cstr());
+		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+		}
+
+	YCPValue ret;
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		YCPString ret (filename);
+		g_free (filename);
+
+		gtk_widget_destroy (dialog);
+		return ret;
+	}
+	gtk_widget_destroy (dialog);
+	return YCPVoid();
+}
+
+YCPValue YGUI::askForExistingDirectory (const YCPString &startDir,
+		const YCPString &headline)
+{
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, startDir,
+	                              YCPString ("*"), headline);
+}
+
+YCPValue YGUI::askForExistingFile (const YCPString &startWith,
+		const YCPString &filter, const YCPString &headline)
+{
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, startWith,
+	                              filter, headline);
+}
+
+YCPValue YGUI::askForSaveFileName (const YCPString &startWith,
+		const YCPString &filter, const YCPString &headline)
+{
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, startWith,
+	                              filter, headline);
 }

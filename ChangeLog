@@ -1,3 +1,9 @@
+2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	Made some changes suggested by Michael, mainly the
+	move of YGLabeledWidget and YGScrolledWidget to the
+	same file of YGWidget.
+
 2006-06-08  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGMultiLineEdit.cc (setInputMaxLength): remove

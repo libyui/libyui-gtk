@@ -6,7 +6,7 @@
 #include <string>
 #include "YEvent.h"
 #include "YMultiLineEdit.h"
-#include "YGScrolledWidget.h"
+#include "YGWidget.h"
 
 class YGMultiLineEdit : public YMultiLineEdit, public YGScrolledWidget
 {
@@ -64,12 +64,10 @@ public:
 	virtual YCPString text()
 	{
 		IMPL
-		GtkTextBuffer *buffer = getBuffer();
 		GtkTextIter start_it, end_it;
-		gtk_text_buffer_get_iter_at_offset (getBuffer(), &start_it, 0);
-		gtk_text_buffer_get_iter_at_offset (getBuffer(), &end_it,   getCharsNb());
+		gtk_text_buffer_get_bounds (getBuffer(), &start_it, &end_it);
 
-		gchar* text = gtk_text_buffer_get_text (buffer, &start_it, &end_it, FALSE);
+		gchar* text = gtk_text_buffer_get_text (getBuffer(), &start_it, &end_it, FALSE);
 		YCPString str (text);
 		g_free (text);
 		return str;

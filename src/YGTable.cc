@@ -2,7 +2,7 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YEvent.h"
-#include "YGScrolledWidget.h"
+#include "YGWidget.h"
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget
