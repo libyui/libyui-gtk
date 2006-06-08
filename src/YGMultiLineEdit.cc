@@ -79,7 +79,7 @@ public:
 	{
 		IMPL
 		maxChars = numberOfChars->asInteger()->value();
-		if (pThis->maxChars != -1 && getCharsNb() > maxChars)
+		if (maxChars != -1 && getCharsNb() > maxChars)
 			truncateText (maxChars);
 	}
 
