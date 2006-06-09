@@ -116,7 +116,6 @@ protected:
 	void setItem (string text, int row, int col)
 	{
 		IMPL
-cerr << "SETTING ITEM: " << row << "x" << col << " as " << text << endl;
 		GtkTreeIter iter;
 		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
 		gtk_tree_model_get_iter (getModel(), &iter, path);
