@@ -88,11 +88,18 @@ protected:
 	virtual char* widgetClass()
 	{ return "YGTableView"; }
 
-	void addRow (int row)
+	int addRow (int row)
 	{
 		IMPL
 		GtkTreeIter iter;
 		gtk_list_store_insert (getStore(), &iter, row);
+
+		// As it may now insert the row at the position we want, tell parent
+		// about it
+		GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
+		row = *gtk_tree_path_get_indices (path);
+		gtk_tree_path_free (path);
+		return row;
 	}
 
 	void setItem (gboolean state, int row, int col)
@@ -109,6 +116,7 @@ protected:
 	void setItem (string text, int row, int col)
 	{
 		IMPL
+cerr << "SETTING ITEM: " << row << "x" << col << " as " << text << endl;
 		GtkTreeIter iter;
 		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
 		gtk_tree_model_get_iter (getModel(), &iter, path);
@@ -201,7 +209,7 @@ public:
 	virtual void itemAdded (vector<string> elements, int index)
 	{
 		IMPL
-		addRow (index);
+		index = addRow (index);
 		for (unsigned int c = 0; c < elements.size(); c++)
 			setItem (elements[c], index, c);
 	}
@@ -260,7 +268,7 @@ public:
 	virtual void itemAdded (const YCPString &str, int index, bool selected)
 	{
 		IMPL
-		addRow (index);
+		index = addRow (index);
 		setItem (str->value(), index, 0);
 		if (selected)
 			setCurrentRow (index);
@@ -313,7 +321,7 @@ public:
 	virtual void itemAdded (const YCPString &str, int index, bool selected)
 	{
 		IMPL
-		addRow (index);
+		index = addRow (index);
 		setItem (selected, index, 0);
 		setItem (str->value(), index, 1);
 	}

@@ -5,6 +5,12 @@
 	The allignment from the YGTable should be fixed
 	as well.
 
+	+ addRow() returns the position of the added row
+	because sometimes it might not be possible
+	to insert it at the intended position.
+	This makes MultiSelectionBox example from the
+	Yast manual working.
+
 2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGUtils: function that converts integers
