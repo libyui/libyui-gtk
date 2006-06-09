@@ -1,3 +1,10 @@
+2006-06-09  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* src/YGTableView.cc (YGMultiSelectionBox):
+	should now be working properly.
+	The allignment from the YGTable should be fixed
+	as well.
+
 2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGUtils: function that converts integers

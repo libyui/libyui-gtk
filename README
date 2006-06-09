@@ -33,7 +33,8 @@ make && sudo make install [2]
 Also working fairly well:
     Label* Spacing* PushButton* ProgressBar* Frame*
     RadioButton* CheckBox* TextEntry[1-4,6] ComboBox[1-3]
-    IntField*, SelectionBox[1-4], Table[1,3-5], Tree*
+    IntField* SelectionBox[1-4] MultiSelectionBox* Table*
+    Tree*
 
 In case of oddness append --nothreads to the cmdline,
 Also check the log file: ~/.y2log

@@ -7,6 +7,11 @@
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget
 {
+struct Pointers {
+	GtkTreeModel *model;
+	YWidget *y_widget;
+  } pointers;
+
 public:
 	YGTableView (YWidget *y_widget, YGWidget *parent,
 	             const YWidgetOpt &opt, YCPString label)
@@ -14,6 +19,8 @@ public:
 	                    GTK_TYPE_TREE_VIEW, NULL)
 	{
 		IMPL
+		pointers.y_widget = y_widget;
+
 		// Events
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
@@ -28,31 +35,44 @@ public:
 	                    bool show_headers)
 	{
 		IMPL
+		// Set the model
 		GType types_array [types.size()];
 		for (unsigned int i = 0; i < types.size(); i++)
 			types_array [i] = types[i];
 		GtkListStore *list = gtk_list_store_newv (headers.size(), types_array);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
+		pointers.model = GTK_TREE_MODEL (list);
 
-
+		// Set renderers
 		for (unsigned int c = 0; c < headers.size(); c++) {
 			GtkTreeViewColumn *column;
-			if (types[c] == G_TYPE_STRING)
-				column = gtk_tree_view_column_new_with_attributes (headers[c].substr(1).c_str(),
-					gtk_cell_renderer_text_new(), "text", c, NULL);
-			else // toggle button
-				column = gtk_tree_view_column_new_with_attributes (headers[c].substr(1).c_str(),
-					gtk_cell_renderer_toggle_new(), "activatable", TRUE, NULL);
 
-			// FIXME: only seems to be alligned the header, not the actual columns
-			gfloat xalign;
-			if (headers[c][0] == 'L')
-				xalign = 0.0;
-			else if (headers[c][0] == 'C')
-				xalign = 0.5;
-			else //if (headers[c][0] == 'R')
-				xalign = 1.0;
-			gtk_tree_view_column_set_alignment (column, xalign);
+			// The allignment of the column items
+			gfloat xalign = 0.0;
+			if (headers[c].length()) {
+				if (headers[c][0] == 'R')
+					xalign = 1.0;
+				else if (headers[c][0] == 'C')
+					xalign = 0.5;
+				// else if (headers[c][0] == 'L')
+				headers[c] = headers[c].substr(1);
+				}
+
+			if (types[c] == G_TYPE_STRING) {
+				GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+				g_object_set (renderer, "xalign", xalign, NULL);
+				column = gtk_tree_view_column_new_with_attributes (headers[c].c_str(),
+					renderer, "text", c, NULL);
+			}
+			else { // G_TYPE_BOOLEAN -- toggle button
+				GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+				g_object_set (renderer, "xalign", xalign, NULL);
+				column = gtk_tree_view_column_new_with_attributes (headers[c].c_str(),
+					renderer, "active", c, NULL);
+
+				g_signal_connect (G_OBJECT (renderer), "toggled",
+				                  G_CALLBACK (value_changed_cb), &pointers);
+			}
 
 			gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, c);
 		}
@@ -75,19 +95,15 @@ protected:
 		gtk_list_store_insert (getStore(), &iter, row);
 	}
 
-	void setItem (GtkObject *object, int row, int col)
+	void setItem (gboolean state, int row, int col)
 	{
 		IMPL
 		GtkTreeIter iter;
 		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
-			{  // temporary
-				fprintf(stderr, "ERROR: SETITEM TRYING TO EDIT NON-EXISTING ROW: %d\n", row);
-				return;
-			}
+		gtk_tree_model_get_iter (getModel(), &iter, path);
 		gtk_tree_path_free (path);
 
-		gtk_list_store_set (getStore(), &iter, col, object, -1);
+		gtk_list_store_set (getStore(), &iter, col, state, -1);
 	}
 
 	void setItem (string text, int row, int col)
@@ -95,11 +111,7 @@ protected:
 		IMPL
 		GtkTreeIter iter;
 		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
-			{  // temporary
-				fprintf(stderr, "ERROR: SETITEM TRYING TO EDIT NON-EXISTING ROW: %d\n", row);
-				return;
-			}
+		gtk_tree_model_get_iter (getModel(), &iter, path);
 		gtk_tree_path_free (path);
 
 		gtk_list_store_set (getStore(), &iter, col, text.c_str(), -1);
@@ -140,6 +152,26 @@ protected:
 	{
 		if (pThis->getNotify())
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
+	}
+
+	static void value_changed_cb (GtkCellRendererToggle *renderer, gchar *path_str,
+	                              Pointers* pointers)
+	{
+	// Toggle the box
+	GtkTreeModel* model = pointers->model;
+	GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
+	gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
+	GtkTreeIter iter;
+	gtk_tree_model_get_iter (model, &iter, path);
+
+	gboolean state;
+	gtk_tree_model_get (model, &iter, column, &state, -1);
+	gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
+
+	gtk_tree_path_free (path);
+
+		if (pointers->y_widget->getNotify())
+			YGUI::ui()->sendEvent (new YWidgetEvent (pointers->y_widget, YEvent::ValueChanged));
 	}
 };
 
@@ -205,7 +237,7 @@ public:
 	  YGTableView (this, parent, opt, label)
 	{
 		vector <string> headers;
-		headers.assign (1, "L");
+		headers.assign (1, "");
 		vector <GType> types;
 		types.assign (1, G_TYPE_STRING);
 		/* we'll have to wait for 09 to get nicer to construct vectors :P */
@@ -258,9 +290,9 @@ public:
 	  YGTableView (this, parent, opt, label)
 	{
 		vector <string> headers;
-		headers.assign (2, "L");
+		headers.assign (2, "");
 		vector <GType> types;
-		types.push_back (G_TYPE_OBJECT);
+		types.push_back (G_TYPE_BOOLEAN);
 		types.push_back (G_TYPE_STRING);
 		insertColumns (headers, types, false);
 	}
@@ -282,10 +314,8 @@ public:
 	{
 		IMPL
 		addRow (index);
-		setItem (gtk_object_new (GTK_TYPE_CHECK_BUTTON, NULL), index, 0);
+		setItem (selected, index, 0);
 		setItem (str->value(), index, 1);
-		if (selected)
-			setCurrentRow (index);
 	}
 
 	virtual void deleteAllItems()
@@ -297,52 +327,43 @@ public:
 	bool itemSelected (int index, int state)
 	{
 		IMPL
-		GtkTreeViewColumn *column = gtk_tree_view_get_column
-			(GTK_TREE_VIEW (getWidget()), 0);
-
-		GList *list = gtk_tree_view_column_get_cell_renderers (column);
-		GtkCellRendererToggle* cell = (GtkCellRendererToggle*)
-		                              g_list_nth_data (list, index);
-		g_list_free (list);
+		GtkTreeIter iter;
+		GtkTreePath *path = gtk_tree_path_new_from_indices (index, -1);
+		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
+			throw "Row doesn't exist";
+		gtk_tree_path_free (path);
 
 		if (state != -1)
-			gtk_cell_renderer_toggle_set_active (cell, state);
-		return gtk_cell_renderer_toggle_get_active (cell);
+			gtk_list_store_set (getStore(), &iter, 0, state, -1);
+
+		gtk_tree_model_get (getModel(), &iter, 0, &state, -1);
+		return state;
 	}
 
 	virtual bool itemIsSelected (int index)
-	{  // NOTE: not yet tested
+	{
 		IMPL
-		return itemSelected (index, -1);
+		bool state = 0;
+		try { state = itemSelected (index, -1); }
+			catch (char *str) { y2error ("%s - itemIsSelected(%d): %s - ignoring",
+			                    YMultiSelectionBox::widgetClass(), index, str); }
+		return state;
 	}
 
 	virtual void selectItem (int index)
-	{  // NOTE: not yet tested
+	{
 		IMPL
-		itemSelected (index, 1);
+		try { itemSelected (index, 1); }
+			catch (char *str) { y2error ("%s - selectItem(%d): %s - ignoring",
+			                    YMultiSelectionBox::widgetClass(), index, str); }
 	}
 
 	virtual void deselectAllItems()
-	{  // NOTE: not yet tested
-		// we could just use itemSelected(), but I would have
-		// nightmares about the performance loss :P
-		IMPL
-		GtkTreeViewColumn *column = gtk_tree_view_get_column
-			(GTK_TREE_VIEW (getWidget()), 0);
-
-		GList *list = gtk_tree_view_column_get_cell_renderers (column);
-
-		GtkCellRendererToggle* cell;
-		int i = 0;
-		while (true)
-			{
-			cell = (GtkCellRendererToggle*) g_list_nth_data (list, i++);
-			if (cell == NULL)
-				break;
-			gtk_cell_renderer_toggle_set_active (cell, FALSE);
-			}
-
-		g_list_free (list);
+	{
+		for (int i = 0; ; i++) {
+			try { itemSelected (i, false); }
+				catch (...) { break; }
+		}
 	}
 };
 
