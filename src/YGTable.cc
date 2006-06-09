@@ -7,11 +7,6 @@
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget
 {
-struct Pointers {
-	GtkTreeModel *model;
-	YWidget *y_widget;
-  } pointers;
-
 public:
 	YGTableView (YWidget *y_widget, YGWidget *parent,
 	             const YWidgetOpt &opt, YCPString label)
@@ -19,8 +14,6 @@ public:
 	                    GTK_TYPE_TREE_VIEW, NULL)
 	{
 		IMPL
-		pointers.y_widget = y_widget;
-
 		// Events
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
@@ -41,7 +34,6 @@ public:
 			types_array [i] = types[i];
 		GtkListStore *list = gtk_list_store_newv (headers.size(), types_array);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
-		pointers.model = GTK_TREE_MODEL (list);
 
 		// Set renderers
 		for (unsigned int c = 0; c < headers.size(); c++) {
@@ -71,7 +63,7 @@ public:
 					renderer, "active", c, NULL);
 
 				g_signal_connect (G_OBJECT (renderer), "toggled",
-				                  G_CALLBACK (value_changed_cb), &pointers);
+					G_CALLBACK (toggled_cb), YGWidget::get (m_y_widget));
 			}
 
 			gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, c);
@@ -161,24 +153,23 @@ protected:
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
 	}
 
-	static void value_changed_cb (GtkCellRendererToggle *renderer, gchar *path_str,
-	                              Pointers* pointers)
+	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
+	                              YGWidget *pThis)
 	{
-	// Toggle the box
-	GtkTreeModel* model = pointers->model;
-	GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
-	gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
-	GtkTreeIter iter;
-	gtk_tree_model_get_iter (model, &iter, path);
+		// Toggle the box
+		GtkTreeModel* model = ((YGTableView*) pThis)->getModel();
+		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
+		gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
+		GtkTreeIter iter;
+		gtk_tree_model_get_iter (model, &iter, path);
+		gtk_tree_path_free (path);
 
-	gboolean state;
-	gtk_tree_model_get (model, &iter, column, &state, -1);
-	gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
+		gboolean state;
+		gtk_tree_model_get (model, &iter, column, &state, -1);
+		gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
 
-	gtk_tree_path_free (path);
-
-		if (pointers->y_widget->getNotify())
-			YGUI::ui()->sendEvent (new YWidgetEvent (pointers->y_widget, YEvent::ValueChanged));
+		if (pThis->getYWidget()->getNotify())
+			YGUI::ui()->sendEvent (new YWidgetEvent (pThis->getYWidget(), YEvent::ValueChanged));
 	}
 };
 
@@ -284,7 +275,6 @@ YGUI::createSelectionBox (YWidget *parent, YWidgetOpt &opt,
 	IMPL
 	return new YGSelectionBox (opt, YGWidget::get (parent), label);
 }
-
 
 #include "YMultiSelectionBox.h"
 

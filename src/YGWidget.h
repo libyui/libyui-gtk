@@ -29,6 +29,8 @@ public:
 	/* Get the YGWidget associated with this YWidget */
 	static YGWidget *get (YWidget *y_widget);
 
+	YWidget* getYWidget() { return m_y_widget; }
+
 protected:
 	GtkWidget *m_widget;
 	// no RTTI for dynamic_cast ?

@@ -11,6 +11,12 @@
 	This makes MultiSelectionBox example from the
 	Yast manual working.
 
+	+ added a getYWidget() to YGWidget so that we
+	can make some magic on toggled_cb to avoid
+	the previous approach of having a structure
+	of pointers (we need to pass YGTableView and
+	YMultiSelectionBox...).
+
 2006-06-08  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGUtils: function that converts integers
