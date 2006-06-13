@@ -326,8 +326,10 @@ public:
 		IMPL
 		GtkTreeIter iter;
 		GtkTreePath *path = gtk_tree_path_new_from_indices (index, -1);
-		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
+		if (!gtk_tree_model_get_iter (getModel(), &iter, path)) {
+			gtk_tree_path_free (path);
 			throw "Row doesn't exist";
+		}
 		gtk_tree_path_free (path);
 
 		if (state != -1)
@@ -357,10 +359,9 @@ public:
 
 	virtual void deselectAllItems()
 	{
-		for (int i = 0; ; i++) {
+		for (int i = 0; ; i++)
 			try { itemSelected (i, false); }
 				catch (...) { break; }
-		}
 	}
 };
 

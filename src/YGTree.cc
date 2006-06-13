@@ -30,17 +30,7 @@ public:
 		}
 	}
 
-	void freeItemsData (const YTreeItemList &items)
-	{
-		for (YTreeItemListConstIterator it = items.begin();
-		     it != items.end(); it++) {
-			gtk_tree_path_free ((GtkTreePath*)(*it)->data());
-			freeItemsData ((*it)->itemList());
-		}
-	}
-
-	virtual ~YGTree()
-	{ freeItemsData (items); }
+	virtual ~YGTree() { }
 
 	YGWIDGET_IMPL_NICESIZE
 	YGWIDGET_IMPL_SET_SIZE
@@ -54,7 +44,6 @@ public:
 	{ return GTK_TREE_MODEL(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
 
 	// YTree
-
 	void addItems (const YTreeItemList &items, GtkTreeIter *parent)
 	{
 		GtkTreeIter iter;
@@ -64,7 +53,15 @@ public:
 				items[i]->getText()->value_cstr(), 1, items[i], -1);
 
 			// store pointer to GtkTreePath for use in setCurrentItem()
-			items[i]->setData (gtk_tree_model_get_path (getModel(), &iter));
+			{  // need to create a path cause iterator would only return the path as a string
+				GtkTreePath* path = gtk_tree_model_get_path (getModel(), &iter);
+				// get current index...
+				gint depth = gtk_tree_path_get_depth (path);
+				gint *index, *indices = gtk_tree_path_get_indices (path);
+				for (index = indices; index+1 < indices + depth; index++) printf("%d ", *index);
+				items[i]->setData (GINT_TO_POINTER (*index));
+				gtk_tree_path_free (path);
+			}
 
 			if (parent && items[i]->parent()->isOpenByDefault()) {
 				GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
@@ -103,12 +100,25 @@ protected:
 		return item;
 	}
 
+	/* Constructs a GtkTreePath to the item.
+	   path argument must have been created and unset. */
+	void getItemPath (GtkTreePath *path, YTreeItem *item)
+	{
+		if (item == NULL)
+			return;
+		getItemPath (path, item->parent());
+		gtk_tree_path_append_index (path, GPOINTER_TO_INT (item->data()));
+	}
+
 	virtual void setCurrentItem (YTreeItem *item)
 	{
 		IMPL
-		GtkTreePath *path = (GtkTreePath*) item->data();
+		GtkTreePath *path = gtk_tree_path_new();
+		getItemPath (path, item);
+
 		gtk_tree_view_expand_to_path (GTK_TREE_VIEW (getWidget()), path);
 		gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), path, NULL, FALSE);
+		gtk_tree_path_free (path);
 	}
 
 	virtual void deleteAllItems()

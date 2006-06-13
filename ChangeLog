@@ -1,3 +1,15 @@
+2006-06-13  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* src/YGTree.cc: changed the attribution of an
+	absolute path of GtkTreePath to each YTreeItem,
+	that would have to be freed, by the attribute of
+	just an index. The path can easily be calculated.
+	This should also make it easier if we want that
+	setCurrentItem() searches and builds the path
+	itself.
+
+	* src/YGTable.cc: fixed a memory leak.
+
 2006-06-09  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGTableView.cc (YGMultiSelectionBox):
