@@ -3,212 +3,16 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YRichText.h"
-#include <queue>
 #include "YGWidget.h"
 
-class YGRichText : public YRichText, public YGScrolledWidget
-{
-	GtkWidget *m_label;
-	GtkWidget *m_entry;
-	bool m_shrinkable;
-	bool m_plainText;
-public:
-    YGRichText( const YWidgetOpt &opt,
-				YGWidget         *parent,
-				const YCPString &text );
-	virtual ~YGRichText() {}
+// TODO: replace g_warning() by y2error()
+// maybe it would be better to create a method that would
+// print errors for both y2error() and stdout
+// (at least on debug mode)
 
-	// YRichText
-    virtual void setText( const YCPString & text );
+/** Auxiliary code for the Rich Text support. **/
 
-	// YWidget
-	virtual long nicesize( YUIDimension dim )
-	{
-		IMPL;
-		long size = getNiceSize (dim);
-		return MAX (m_shrinkable ? 10 : 100, size);
-	}
-    YGWIDGET_IMPL_SET_ENABLING
-    YGWIDGET_IMPL_SET_SIZE
-    virtual bool setKeyboardFocus() IMPL_RET(false);
-    virtual void startMultipleChanges() IMPL;
-    virtual void doneMultipleChanges() IMPL;
-    virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
-};
-
-
-YGRichText::YGRichText( const YWidgetOpt &opt,
-						YGWidget         *parent,
-						const YCPString &text ) :
-	YRichText (opt, text),
-	YGScrolledWidget (this, parent, true,
-	                  GTK_TYPE_TEXT_VIEW, NULL)
-{
-	// FIXME: get alignment right here [ GtkAlignment ? ]
-	GtkWidget *align_left = gtk_vbox_new (FALSE, 0);
-	gtk_widget_show (align_left);
-	gtk_box_pack_start (GTK_BOX (getWidget()), align_left, FALSE, TRUE, 0);
-
-	IMPL;
-	m_plainText = opt.plainTextMode.value();
-
-	m_shrinkable = opt.isShrinkable.value();
-
-	GtkTextView *tview = GTK_TEXT_VIEW (getWidget());
-	// Set defaults
-	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
-	gtk_text_view_set_editable (tview, FALSE);
-	// FIXME: points ? cf. foo.
-	gtk_text_view_set_pixels_below_lines (tview, 10);
-
-	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
-
-	// Create tags:
-	// 'h3', 'b', 'i'
-	gtk_text_buffer_create_tag (buffer, "h3",
-								"weight", PANGO_WEIGHT_BOLD,
-								"size", 15 * PANGO_SCALE,
-								NULL);
-	gtk_text_buffer_create_tag (buffer, "i",
-								"style", PANGO_STYLE_ITALIC, NULL);
-	gtk_text_buffer_create_tag (buffer, "b",
-								"weight", PANGO_WEIGHT_BOLD, NULL);
-	gtk_text_buffer_create_tag (buffer, "pre",
-								"family", "monospace", NULL);
-
-	// FIXME: hyperlink goodness ...
-	setText (text);
-}
-
-struct GRTPTag {
-	GtkTextMark *mark;
-	GtkTextTag  *tag;
-};
-struct GRTParseState {
-	GtkTextBuffer *buffer;
-	GtkTextTagTable *tags;
-	bool pre_mode;
-	std::vector<GRTPTag> htags;
-
-	GRTParseState(GtkTextBuffer *_buffer) :
-		buffer(_buffer),
-		pre_mode(false)
-	{
-		tags = gtk_text_buffer_get_tag_table (buffer);
-	}
-};
-
-/*
- * Tags to support: <p> and not </p>:
- * either 'elide' \ns (turn off with <pre> I gues
- */
-
-static void
-rt_start_element (GMarkupParseContext *context,
-				  const gchar         *element_name,
-				  const gchar        **attribute_names,
-				  const gchar        **attribute_values,
-				  gpointer             user_data,
-				  GError             **error)
-{	/* Called for open tags <foo bar="baz"> */
-	GRTParseState *state = (GRTParseState *)user_data;
-
-	if (!g_ascii_strcasecmp (element_name, "p"))
-	{
-		if (state->pre_mode)
-			g_warning ("Odd <p> inside <pre>");
-		return;
-	}
-	if (!g_ascii_strcasecmp (element_name, "pre"))
-		state->pre_mode = true;
-
-	// FIXME - create marks here instead & push on-list etc.
-	GRTPTag tag;
-
-	GtkTextIter iter;
-	gtk_text_buffer_get_end_iter (state->buffer, &iter);
-	tag.mark = gtk_text_buffer_create_mark (state->buffer, NULL, &iter, TRUE);
-
-	char *lower = g_ascii_strdown (element_name, -1);
-	tag.tag = gtk_text_tag_table_lookup (state->tags, lower);
-	if (!tag.tag)
-	{
-		if (!g_ascii_strcasecmp (element_name, "font"))
-		{
-			if (!g_ascii_strcasecmp (attribute_names[0], "color"))
-				tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-													  "foreground",
-													  attribute_values[0],
-													  NULL);
-			else
-				g_warning ("Unknown font attribute");
-		}
-		else
-			g_warning ("Unknown tag '%s'", lower);
-	}
-	g_free (lower);
-
-	state->htags.push_back(tag);
-}
-
-static void
-rt_end_element (GMarkupParseContext *context,
-				const gchar         *element_name,
-				gpointer             user_data,
-				GError             **error)
-{	/* Called for close tags </foo> */
-	GRTParseState *state = (GRTParseState *)user_data;
-
-	GtkTextIter start, end;
-	gtk_text_buffer_get_end_iter (state->buffer, &end);
-
-	if (!g_ascii_strcasecmp (element_name, "p"))
-	{
-		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
-		return;
-	}
-
-	if (state->htags.empty())
-	{
-		g_warning ("Urgh - empty tag queue closing '%s'", element_name);
-		return;
-	}
-
-	GRTPTag tag;
-	tag = state->htags.back ();
-	state->htags.pop_back ();
-
-	gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag.mark);
-	gtk_text_buffer_get_end_iter (state->buffer, &end);
-
-	bool appendNewline = false;
-	if (g_ascii_tolower (element_name[0]) == 'h' &&
-		g_ascii_isdigit (element_name[1]) &&
-		element_name[2] == '\0') // heading - implies newline:
-		appendNewline = true;
-
-	if (!g_ascii_strcasecmp (element_name, "pre"))
-	{
-		state->pre_mode = false;
-		char *txt = gtk_text_buffer_get_text (state->buffer,
-											  &start, &end, TRUE);
-		char endc = txt ? txt[strlen(txt) - 1] : '\0';
-		if (endc != '\r' && endc != '\n')
-			appendNewline = true;
-	}
-
-	if (appendNewline) {
-		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
-		gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag.mark);
-		gtk_text_buffer_get_end_iter (state->buffer, &end);
-	}
-
-	if (tag.tag)
-		gtk_text_buffer_apply_tag (state->buffer, tag.tag, &start, &end);
-
-	g_warning ("Delete mark %p", tag.mark);
-	gtk_text_buffer_delete_mark (state->buffer, tag.mark);
-}
+/* String preparation methods. */
 
 #define IS_WHITE(c) (g_ascii_isspace (c) || (c) == '\t')
 
@@ -238,54 +42,6 @@ elide_whitespace (const char *instr, int len)
 	return g_string_free (dest, FALSE);
 }
 
-static void
-rt_text (GMarkupParseContext *context,
-		 const gchar         *text,
-		 gsize                text_len,  
-		 gpointer             user_data,
-		 GError             **error)
-{  /* Called for character data, NB. text NOT nul-terminated */
-	GRTParseState *state = (GRTParseState *)user_data;
-	GtkTextIter start, end;
-	gtk_text_buffer_get_end_iter (state->buffer, &start);
-	if (state->pre_mode)
-		gtk_text_buffer_insert_with_tags (state->buffer, &start,
-										  text, text_len,
-										  NULL, NULL);
-	else {
-		char *real = elide_whitespace (text, text_len);
-		gtk_text_buffer_insert_with_tags (state->buffer, &start,
-										  real, -1, NULL, NULL);
-		g_free (real);
-	}
-	gtk_text_buffer_get_end_iter (state->buffer, &end);
-}
-
-static void
-rt_passthrough (GMarkupParseContext *context,
-				const gchar         *passthrough_text,
-				gsize                text_len,  
-				gpointer             user_data,
-				GError             **error)
-{
-	// ignore comments etc.
-}
-
-static void
-rt_error (GMarkupParseContext *context,
-		  GError              *error,
-		  gpointer             user_data)
-{
-}
-
-static GMarkupParser rt_parser = {
-		rt_start_element,
-		rt_end_element,
-		rt_text,
-		rt_passthrough,
-		rt_error
-};
-
 #define PROD_ENTITY "&product;"
 
 // We have to manually substitute the product entity.
@@ -301,24 +57,23 @@ xmlize_string (const char *instr, const char *prodname)
 		if (instr[i] == '<')
 			inTag = true;
 		if (instr[i] == '&' &&
-			!g_ascii_strncasecmp (instr + i, PROD_ENTITY,
-								  sizeof (PROD_ENTITY) - 1))
+		    !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
+		                          sizeof (PROD_ENTITY) - 1))
 		{
 			g_string_append (outp, prodname);
-			i += sizeof (PROD_ENTITY) - 2;
+			i += sizeof (PROD_ENTITY) - 1;
 		}
 		else if (inTag) {
 				// This is bothersome
 				for (; instr[i] != '>'; i++) {
 					g_string_append_c (outp, instr[i]);
-					if (instr[i] == '=' && instr[i+1] != '"')
-					{
+					if (instr[i] == '=' && instr[i+1] != '"') {
 						g_string_append_c (outp, '"');
 						for (i++; !g_ascii_isspace (instr[i]) && instr[i] != '>'; i++)
 							g_string_append_c (outp, instr[i]);
 						g_string_append_c (outp, '"');
 						g_string_append_c (outp, instr[i]);	
-				}
+					}
 				}
 				inTag = false;
 		}
@@ -327,41 +82,438 @@ xmlize_string (const char *instr, const char *prodname)
 	return g_string_free (outp, FALSE);
 }
 
-void
-YGRichText::setText( const YCPString & text )
-{
-	GRTParseState state(gtk_text_view_get_buffer (GTK_TEXT_VIEW (getWidget())));
+/* Actual Rich Text parsing methods. */
 
-	if (m_plainText)
+struct GRTPTag {
+	GtkTextMark *mark;
+	GtkTextTag  *tag;
+};
+struct GRTParseState {
+	GtkTextBuffer *buffer;
+	GtkTextTagTable *tags;
+	bool pre_mode;
+	std::vector <GRTPTag> htags;
+
+	GRTParseState(GtkTextBuffer *buffer) :
+		buffer(buffer),
+		pre_mode(false)
 	{
-		gtk_text_buffer_set_text (state.buffer, text->value_cstr(), -1);
+		tags = gtk_text_buffer_get_tag_table (buffer);
+	}
+};
+
+// Tags to support: <p> and not </p>:
+// either 'elide' \ns (turn off with <pre> I guess
+static GdkColor link_color;
+
+static void
+rt_start_element (GMarkupParseContext *context,
+                  const gchar         *element_name,
+                  const gchar        **attribute_names,
+                  const gchar        **attribute_values,
+                  gpointer             user_data,
+                  GError             **error)
+{	// Called for open tags <foo bar="baz">
+	GRTParseState *state = (GRTParseState*) user_data;
+	if (!g_ascii_strcasecmp (element_name, "p"))
+	{
+		if (state->pre_mode)
+			g_warning ("Odd <p> inside <pre>");
+		return;
+	}
+	if (!g_ascii_strcasecmp (element_name, "pre"))
+		state->pre_mode = true;
+
+	// FIXME - create marks here instead & push on-list etc.
+	// FIXME - what does this comment mean?
+	GRTPTag tag;
+
+	GtkTextIter iter;
+	gtk_text_buffer_get_end_iter (state->buffer, &iter);
+	tag.mark = gtk_text_buffer_create_mark (state->buffer, NULL, &iter, TRUE);
+
+	char *lower = g_ascii_strdown (element_name, -1);
+	tag.tag = gtk_text_tag_table_lookup (state->tags, lower);
+	// Special tags that must be inserted manually
+	if (!tag.tag) {
+		if (!g_ascii_strcasecmp (element_name, "font")) {
+			if (!g_ascii_strcasecmp (attribute_names[0], "color"))
+				tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+				                                      "foreground", attribute_values[0],
+				                                      NULL);
+			else
+				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
+		}
+		else if (!g_ascii_strcasecmp (element_name, "a")) {
+			if (!g_ascii_strcasecmp (attribute_names[0], "href")) {
+				tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+				                                      "foreground-gdk", link_color,
+				                                      "underline", PANGO_UNDERLINE_SINGLE,
+				                                      NULL);
+				g_object_set_data (G_OBJECT (tag.tag), "link", g_strdup (attribute_values[0]));
+				}
+			else
+				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
+		}
+		else
+			g_warning ("Unknown tag '%s'", lower);
+	}
+	g_free (lower);
+
+	state->htags.push_back(tag);
+}
+
+static void
+rt_end_element (GMarkupParseContext *context,
+                const gchar         *element_name,
+                gpointer             user_data,
+                GError             **error)
+{	// Called for close tags </foo>
+	GRTParseState *state = (GRTParseState*) user_data;
+	GtkTextIter start, end;
+	gtk_text_buffer_get_end_iter (state->buffer, &end);
+
+	if (!g_ascii_strcasecmp (element_name, "p")) {
+		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
 		return;
 	}
 
-	GMarkupParseContext *ctx;
-	
-	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
+	if (state->htags.empty()) {
+		g_warning ("Urgh - empty tag queue closing '%s'", element_name);
+		return;
+	}
 
-	char *xml;
-	xml = xmlize_string (text->value_cstr(), YUI::ui()->productName().c_str());
-//	fprintf (stderr, "Insert text '%s', after '%s'\n",
-//			 text->value_cstr(), xml);
+	GRTPTag tag;
+	tag = state->htags.back ();
+	state->htags.pop_back ();
 
-	GError *error = NULL;
-	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
-			g_warning ("Markup parse error");
-	g_free (xml);
+	gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag.mark);
+	gtk_text_buffer_get_end_iter (state->buffer, &end);
 
-	g_markup_parse_context_free(ctx);
+	bool appendNewline = false;
+	if (g_ascii_tolower (element_name[0]) == 'h' &&
+		g_ascii_isdigit (element_name[1]) &&
+		element_name[2] == '\0') // heading - implies newline:
+		appendNewline = true;
 
-	// FIXME: scroll to 0,0 (?)
-	// if 'autoScrollDown' -> scroll down ...
-	// FIXME: if PlainText: search & replace &product; with productName ...
+	if (!g_ascii_strcasecmp (element_name, "pre")) {
+		state->pre_mode = false;
+		char *txt = gtk_text_buffer_get_text (state->buffer,
+		                                      &start, &end, TRUE);
+		char endc = txt ? txt[strlen(txt) - 1] : '\0';
+		if (endc != '\r' && endc != '\n')
+			appendNewline = true;
+	}
+
+	if (appendNewline) {
+		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
+		gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag.mark);
+		gtk_text_buffer_get_end_iter (state->buffer, &end);
+	}
+
+	if (tag.tag)
+		gtk_text_buffer_apply_tag (state->buffer, tag.tag, &start, &end);
+
+	g_warning ("Delete mark %p", tag.mark);
+	gtk_text_buffer_delete_mark (state->buffer, tag.mark);
 }
 
+static void
+rt_text (GMarkupParseContext *context,
+         const gchar         *text,
+         gsize                text_len,
+         gpointer             user_data,
+         GError             **error)
+{  // Called for character data, NB. text NOT nul-terminated
+	GRTParseState *state = (GRTParseState*) user_data;
+	GtkTextIter start, end;
+	gtk_text_buffer_get_end_iter (state->buffer, &start);
+	if (state->pre_mode)
+		gtk_text_buffer_insert_with_tags (state->buffer, &start,
+		                                  text, text_len,
+		                                  NULL, NULL);
+	else {
+		char *real = elide_whitespace (text, text_len);
+		gtk_text_buffer_insert_with_tags (state->buffer, &start,
+		                                  real, -1, NULL, NULL);
+		g_free (real);
+	}
+	gtk_text_buffer_get_end_iter (state->buffer, &end);
+}
+
+static void
+rt_passthrough (GMarkupParseContext *context,
+                const gchar         *passthrough_text,
+                gsize                text_len,
+                gpointer             user_data,
+                GError             **error)
+{
+	// ignore comments etc.
+}
+
+static void
+rt_error (GMarkupParseContext *context,
+          GError              *error,
+          gpointer             user_data)
+{
+}
+
+static GMarkupParser rt_parser = {
+	rt_start_element,
+	rt_end_element,
+	rt_text,
+	rt_passthrough,
+	rt_error
+};
+
+/* Methods to add hyperlink support for GtkTextView (based from gtk-demos). */
+
+// Looks at all tags covering the position of iter in the text view,
+// and returns the link the text points to, in case that text is a link.
+static char*
+get_link (GtkTextView *text_view, gint x, gint y)
+{
+	GtkTextIter iter;
+	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
+
+	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
+	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
+		GtkTextTag *tag = (GtkTextTag*) tagp->data;
+		char *link = (char*) g_object_get_data (G_OBJECT (tag), "link");
+		if (link != NULL) {
+			// link found!
+			g_slist_free (tags);
+			return link;
+    break;
+		}
+	}
+
+	if (tags)
+		g_slist_free (tags);
+	return NULL;
+}
+
+// Links can also be activated by clicking.
+static gboolean
+event_after (GtkWidget *text_view,
+             GdkEvent  *ev)
+{
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+	GdkEventButton *event;
+	gint x, y;
+
+	if (ev->type != GDK_BUTTON_RELEASE)
+		return FALSE;
+
+	event = (GdkEventButton *)ev;
+	if (event->button != 1)
+		return FALSE;
+
+	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
+
+	// We shouldn't follow a link if the user is selecting something.
+	gtk_text_buffer_get_selection_bounds (buffer, &start, &end);
+	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
+		return FALSE;
+
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+	                                       GTK_TEXT_WINDOW_WIDGET,
+	                                       (gint) event->x, (gint) event->y,
+	                                       &x, &y);
+
+	char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
+	if (link)  // report link
+		YGUI::ui()->sendEvent (new YMenuEvent (YCPString (link)));
+
+	return FALSE;
+}
+
+static GdkCursor *hand_cursor = NULL;
+static GdkCursor *regular_cursor = NULL;
+
+// Change the cursor to the "hands" cursor typically used by web browsers,
+// if there is a link in the given position.
+static void
+set_cursor_if_appropriate (GtkTextView    *text_view,
+                           gint            x,
+                           gint            y)
+{
+	static bool hovering_over_link = false;
+	bool hovering = get_link (text_view, x, y);
+
+	if (hovering != hovering_over_link) {
+		hovering_over_link = hovering;
+
+		if (hovering_over_link)
+			gdk_window_set_cursor (gtk_text_view_get_window
+			                         (text_view, GTK_TEXT_WINDOW_TEXT), hand_cursor);
+		else
+			gdk_window_set_cursor (gtk_text_view_get_window
+			                         (text_view, GTK_TEXT_WINDOW_TEXT), regular_cursor);
+		}
+}
+
+// Update the cursor image if the pointer moved.
+static gboolean
+motion_notify_event (GtkWidget      *text_view,
+                     GdkEventMotion *event)
+{
+  gint x, y;
+  gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+                                         GTK_TEXT_WINDOW_WIDGET,
+                                         (gint) event->x, (gint) event->y,
+                                         &x, &y);
+  set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), x, y);
+
+  gdk_window_get_pointer (text_view->window, NULL, NULL, NULL);
+  return FALSE;
+}
+
+// Also update the cursor image if the window becomes visible
+// (e.g. when a window covering it got iconified).
+static gboolean
+visibility_notify_event (GtkWidget          *text_view,
+                         GdkEventVisibility *event)
+{
+  gint wx, wy, bx, by;
+
+  gdk_window_get_pointer (text_view->window, &wx, &wy, NULL);
+  gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view), 
+                                         GTK_TEXT_WINDOW_WIDGET,
+                                         wx, wy, &bx, &by);
+  set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), bx, by);
+
+  return FALSE;
+}
+
+void
+init_link_support (GtkTextView *view)
+{
+	hand_cursor = gdk_cursor_new (GDK_HAND2);
+	regular_cursor = gdk_cursor_new (GDK_XTERM);
+	gtk_widget_style_get (GTK_WIDGET (view), "link-color", &link_color, NULL);
+
+	g_signal_connect (view, "event-after",
+	                  G_CALLBACK (event_after), NULL);
+	g_signal_connect (view, "motion-notify-event",
+	                  G_CALLBACK (motion_notify_event), NULL);
+	g_signal_connect (view, "visibility-notify-event",
+	                  G_CALLBACK (visibility_notify_event), NULL);
+}
+
+/** Actual widget. **/
+
+class YGRichText : public YRichText, public YGScrolledWidget
+{
+	bool m_shrinkable;
+	bool m_plainText;
+
+public:
+	YGRichText(const YWidgetOpt &opt,
+	           YGWidget *parent,
+	           const YCPString &text)
+	: YRichText (opt, text),
+	  YGScrolledWidget (this, parent, true,
+	                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD,
+	                    "editable", FALSE, "cursor-visible", FALSE, NULL)
+	{
+		IMPL;
+		m_plainText = opt.plainTextMode.value();
+		m_shrinkable = opt.isShrinkable.value();
+
+		GtkTextView *view = GTK_TEXT_VIEW (getWidget());
+		gtk_text_view_set_pixels_below_lines (view, 10);  // FIXME: points ? cf. foo.
+		init_link_support (view);
+
+		GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+		// Create a few tags like 'h3', 'b', 'i'
+		gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
+		                            "size", 22 * PANGO_SCALE, NULL);
+		gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
+		                            "size", 18 * PANGO_SCALE, NULL);
+		gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
+		                            "size", 15 * PANGO_SCALE, NULL);
+		gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
+		                            "size", 13 * PANGO_SCALE, NULL);
+		gtk_text_buffer_create_tag (buffer, "h5", "weight", PANGO_WEIGHT_SEMIBOLD,
+		                            "size", 11 * PANGO_SCALE, NULL);
+		gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
+		gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
+		gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
+		gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
+		setText (text);
+	}
+
+	virtual ~YGRichText() {}
+
+	// YRichText
+	virtual void setText (const YCPString &text)
+	{
+		IMPL
+		GRTParseState state(gtk_text_view_get_buffer (GTK_TEXT_VIEW (getWidget())));
+
+		if (m_plainText)
+		{
+			gtk_text_buffer_set_text (state.buffer, text->value_cstr(), -1);
+			YRichText::setText (text);
+			return;
+		}
+
+		GMarkupParseContext *ctx;
+
+		ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
+	
+		char *xml;
+		xml = xmlize_string (text->value_cstr(), YUI::ui()->productName().c_str());
+	//	fprintf (stderr, "Insert text '%s', after '%s'\n",
+	//			 text->value_cstr(), xml);
+
+		GError *error = NULL;
+		if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
+			g_warning ("Markup parse error");
+		g_free (xml);
+
+		g_markup_parse_context_free(ctx);
+
+		if (autoScrollDown || true /* temp until this works */) {
+printf("AUTO SCROLLBAR DOWN\n");
+
+/*
+		GtkTextIter iter;
+		gtk_text_buffer_get_end_iter (gtk_text_view_get_buffer
+		                                 (GTK_TEXT_VIEW (getWidget())), &iter);
+		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (getWidget()), &iter, 0.5, TRUE, 0, 0);
+*/
+
+				GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment
+						(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()));
+
+				gdouble scroll_to = adj->upper - adj->page_size;
+				printf("scroll to %f\n", scroll_to);
+
+				gtk_adjustment_set_value (adj, scroll_to);
+		}
+
+		YRichText::setText (text);
+	}
+
+	// YWidget
+	// TODO: used by a few more widgets... maybe use some macro approach for this?
+	virtual long nicesize (YUIDimension dim)
+	{
+		IMPL;
+		long size = getNiceSize (dim);
+		return MAX (m_shrinkable ? 10 : 100, size);
+	}
+	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_SET_SIZE
+	YGWIDGET_IMPL_KEYBOARD_FOCUS
+};
+
 YWidget *
-YGUI::createRichText( YWidget *parent, YWidgetOpt & opt,
-					  const YCPString & text )
+YGUI::createRichText (YWidget *parent, YWidgetOpt &opt,
+                      const YCPString &text )
 {
 	IMPL;
 	return new YGRichText( opt, YGWidget::get (parent), text );

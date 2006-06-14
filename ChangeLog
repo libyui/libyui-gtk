@@ -1,3 +1,13 @@
+2006-06-14  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* src/YGRichText.cc: added support for hyperlinks.
+	I have changed some code ordering (can put it back
+	if you don't like...), but the rendering should be
+	unchaged. Hyperlink code was adapted from the gtk-demos.
+
+	* src/YGMultiLineEdit.cc: changed a couple of things
+	that could have been done easier.
+
 2006-06-13  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGTree.cc: changed the attribution of an
