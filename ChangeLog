@@ -8,6 +8,9 @@
 	* src/YGMultiLineEdit.cc: changed a couple of things
 	that could have been done easier.
 
+	* src/YGImage: initial image support (misses
+	tiled and scale-to-fit)
+
 2006-06-13  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGTree.cc: changed the attribution of an

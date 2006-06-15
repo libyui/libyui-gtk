@@ -7,15 +7,28 @@
 
 class YGImage : public YImage, public YGWidget
 {
-	void construct (const YWidgetOpt &opt, GdkPixbuf* pixbuf)
-	{
-	if (pixbuf == NULL) {
-fprintf(stderr, "COULDN'T LOAD PIXMAP\n");
-		y2error("Couldn't load pixmap.");
-		return;
-	}
+	bool m_zeroWidth, m_zeroHeight, m_scale, m_tiled;
+//	GdkPixBuf *pixbuf_ori;  // after resize quality is lost, so we need an original
 
-	gtk_image_set_from_pixbuf (GTK_IMAGE (getWidget()), pixbuf);
+	void construct (const YWidgetOpt &opt, void* pixbuf)
+	{
+		if (pixbuf == NULL) {
+			g_warning ("Couldn't load pixmap.");
+			return;
+		}
+
+		if (opt.animated.value())
+			gtk_image_set_from_animation (GTK_IMAGE (getWidget()),
+			                        (GdkPixbufAnimation*) pixbuf);
+		else
+			gtk_image_set_from_pixbuf (GTK_IMAGE (getWidget()),
+			                              (GdkPixbuf*) pixbuf);
+
+		m_zeroWidth  = opt.zeroWidth.value();
+		m_zeroHeight = opt.zeroHeight.value();
+		// TODO implement:
+		m_scale      = opt.scaleToFit.value();
+		m_tiled      = opt.tiled.value();
 	}
 
 public:
@@ -24,8 +37,13 @@ public:
 	: YImage (opt),
 	  YGWidget (this, parent, true, GTK_TYPE_IMAGE, NULL)
 	{
-		GError *error;
-		construct (opt, gdk_pixbuf_new_from_file (filename->value_cstr(), &error));
+		GError *error = 0;
+		if (opt.animated.value())
+			construct (opt, gdk_pixbuf_animation_new_from_file
+			                    (filename->value_cstr(), &error));
+		else
+			construct (opt, gdk_pixbuf_new_from_file
+			                    (filename->value_cstr(), &error));
 	}
 
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
@@ -33,38 +51,37 @@ public:
 	: YImage (opt),
 	  YGWidget (this, parent, true, GTK_TYPE_IMAGE, NULL)
 
-	{  // TODO
+	{
+		GError *error = 0;
+		GdkPixbufLoader* loader = gdk_pixbuf_loader_new();
+		if (!gdk_pixbuf_loader_write (loader,
+		        byteblock->value(), byteblock->size(), &error)) {
+			g_warning ("Could not load image from data blocks.");
+			return;
+		}
 
-/* byteblock->size()
-Returns the number of bytes in the block.
-long size() const;
-*/
-		GError *error;
-/*
-		GdkPixbuf* pixbuf = gdk_pixbuf_new_from_data (byteblock->value(),
-			GDK_COLORSPACE_RGB, FALSE, 8, 50, 50, 0, NULL, NULL);
-*/
-	GdkPixbuf* pixbuf = gdk_pixbuf_new_from_inline
-		(byteblock->size(), byteblock->value(), TRUE, &error);
+		if (opt.animated.value())
+			construct (opt, gdk_pixbuf_loader_get_animation (loader));
+		else
+			construct (opt, gdk_pixbuf_loader_get_pixbuf (loader));
 
-		construct (opt, pixbuf);
-
-// Options:
-//  opt.zeroWidth.value()
-//  opt.zeroHeight.value()
-//  opt.animated.value()
-//  opt.tiled.value()
-//  opt.scaleToFit.value()
+		gdk_pixbuf_loader_close (loader, &error);
 	}
 
 	virtual ~YGImage() {}
 
 	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
 	virtual bool stretchable (YUIDimension dimension) const
 		IMPL_RET(true)
+	virtual long nicesize (YUIDimension dim)
+	{
+		IMPL
+		if (dim == YD_HORIZ && m_zeroWidth)  return 0;
+		if (dim == YD_VERT  && m_zeroHeight) return 0;
+		return getNiceSize (dim);
+	}
+	YGWIDGET_IMPL_SET_SIZE
+//	virtual void setSize (long newWidth, long newHeight)  // TODO: overload for scaling
 };
 
 YWidget *
@@ -80,32 +97,3 @@ YGUI::createImage (YWidget *parent, YWidgetOpt &opt,
 {
 	return new YGImage (opt, YGWidget::get (parent), file_name, defaulttext);
 }
-
-#if 0
-
-YWidget *
-YGUI::createImage( YWidget *parent, YWidgetOpt & opt,
-				   YCPByteblock imagedata, YCPString defaulttext )
-{
-	IMPL;
-	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_inline (
-		imagedata->size(), imagedata->value(),
-		TRUE, NULL);
-	IMPL;
-	GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-	return new YGImage (opt, YGWidget::get (parent), image, defaulttext);
-
-	return NULL;
-}
-
-YWidget *
-YGUI::createImage( YWidget *parent, YWidgetOpt & opt,
-				   YCPString file_name, YCPString defaulttext )
-{
-	IMPL;
-
-	GtkWidget *image = gtk_image_new_from_file (file_name->value_cstr());
-	return new YGImage (opt, YGWidget::get (parent), image, defaulttext);
-	return NULL;
-}
-#endif
