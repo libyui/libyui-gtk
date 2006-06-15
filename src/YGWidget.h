@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 #include <stdarg.h>
 #include "YGUI.h"
+#include "YEvent.h"
 
 class YGWidget
 {
@@ -29,7 +30,9 @@ public:
 	/* Get the YGWidget associated with this YWidget */
 	static YGWidget *get (YWidget *y_widget);
 
-	YWidget* getYWidget() { return m_y_widget; }
+	// Event handling
+	void emitEvent(YEvent::EventReason reason,
+	               bool if_notify = true, bool if_not_pending = false);
 
 protected:
 	GtkWidget *m_widget;

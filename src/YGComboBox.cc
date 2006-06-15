@@ -3,7 +3,6 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
 #include "YGUtils.h"
 #include "YComboBox.h"
 #include "YGWidget.h"
@@ -126,12 +125,10 @@ printf("correct text: %s\n", str.c_str());
 			}
 		}
 
-		if (pThis->getNotify() && !YGUI::ui()->eventPendingFor (pThis)) {
-			if (text_changed)
-				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
-			else
-				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
-		}
+		if (text_changed)
+			pThis->emitEvent (YEvent::ValueChanged, true, true);
+		else
+			pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
 };
 

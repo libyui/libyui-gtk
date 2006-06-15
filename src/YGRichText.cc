@@ -104,7 +104,7 @@ struct GRTParseState {
 
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
-static GdkColor link_color;
+static GdkColor* link_color;
 
 static void
 rt_start_element (GMarkupParseContext *context,
@@ -151,7 +151,7 @@ rt_start_element (GMarkupParseContext *context,
 				                                      "underline", PANGO_UNDERLINE_SINGLE,
 				                                      NULL);
 				g_object_set_data (G_OBJECT (tag.tag), "link", g_strdup (attribute_values[0]));
-				}
+			}
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
@@ -276,21 +276,18 @@ get_link (GtkTextView *text_view, gint x, gint y)
 	GtkTextIter iter;
 	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
 
+	char *link = NULL;
 	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
 	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
 		GtkTextTag *tag = (GtkTextTag*) tagp->data;
-		char *link = (char*) g_object_get_data (G_OBJECT (tag), "link");
-		if (link != NULL) {
-			// link found!
-			g_slist_free (tags);
-			return link;
-    break;
-		}
+		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
+		if (link)
+			break;
 	}
 
 	if (tags)
 		g_slist_free (tags);
-	return NULL;
+	return link;
 }
 
 // Links can also be activated by clicking.

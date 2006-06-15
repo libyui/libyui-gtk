@@ -10,25 +10,33 @@ class YGImage : public YImage, public YGWidget
 	bool m_zeroWidth, m_zeroHeight, m_scale, m_tiled;
 //	GdkPixBuf *pixbuf_ori;  // after resize quality is lost, so we need an original
 
-	void construct (const YWidgetOpt &opt, void* pixbuf)
+	void initOptions (const YWidgetOpt &opt)
 	{
-		if (pixbuf == NULL) {
-			g_warning ("Couldn't load pixmap.");
-			return;
-		}
-
-		if (opt.animated.value())
-			gtk_image_set_from_animation (GTK_IMAGE (getWidget()),
-			                        (GdkPixbufAnimation*) pixbuf);
-		else
-			gtk_image_set_from_pixbuf (GTK_IMAGE (getWidget()),
-			                              (GdkPixbuf*) pixbuf);
-
 		m_zeroWidth  = opt.zeroWidth.value();
 		m_zeroHeight = opt.zeroHeight.value();
 		// TODO implement:
 		m_scale      = opt.scaleToFit.value();
 		m_tiled      = opt.tiled.value();
+	}
+
+	void construct (const YWidgetOpt &opt, GdkPixbuf *pixbuf)
+	{
+		if (pixbuf == NULL) {
+			g_warning ("Couldn't load image.");
+			return;
+		}
+		gtk_image_set_from_pixbuf (GTK_IMAGE (getWidget()), pixbuf);
+		initOptions (opt);
+	}
+
+	void construct (const YWidgetOpt &opt, GdkPixbufAnimation *pixbuf)
+	{
+		if (pixbuf == NULL) {
+			g_warning ("Couldn't load animation.");
+			return;
+		}
+		gtk_image_set_from_animation (GTK_IMAGE (getWidget()), pixbuf);
+		initOptions (opt);
 	}
 
 public:

@@ -151,6 +151,13 @@ int YGWidget::ythickness()
 	return getWidget()->style->ythickness;
 }
 
+void YGWidget::emitEvent (YEvent::EventReason reason, bool if_notify, bool if_not_pending)
+{
+	if ((!if_notify      || m_y_widget->getNotify()) &&
+	    (!if_not_pending || !YGUI::ui()->eventPendingFor(m_y_widget)))
+		YGUI::ui()->sendEvent (new YWidgetEvent (m_y_widget, reason));
+}
+
 /* YGLabeledWidget follows */
 
 YGLabeledWidget::YGLabeledWidget(

@@ -168,8 +168,7 @@ protected:
 		gtk_tree_model_get (model, &iter, column, &state, -1);
 		gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
 
-		if (pThis->getYWidget()->getNotify())
-			YGUI::ui()->sendEvent (new YWidgetEvent (pThis->getYWidget(), YEvent::ValueChanged));
+		pThis->emitEvent (YEvent::ValueChanged);
 	}
 };
 

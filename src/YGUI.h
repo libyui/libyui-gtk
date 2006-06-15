@@ -206,8 +206,8 @@ public:
     virtual bool textMode()              IMPL_RET(false);
     virtual bool hasImageSupport()       IMPL_RET(true);
     virtual bool hasLocalImageSupport()  IMPL_RET(true);
-    virtual bool hasAnimationSupport()   IMPL_RET(false);
-    virtual bool hasIconSupport()        IMPL_RET(false);
+    virtual bool hasAnimationSupport()   IMPL_RET(true);
+    virtual bool hasIconSupport()        IMPL_RET(true);
     virtual bool hasFullUtf8Support()    IMPL_RET(true);
     virtual bool richTextSupportsTable() IMPL_RET(false);
     virtual bool leftHandedMouse()       IMPL_RET(false);
