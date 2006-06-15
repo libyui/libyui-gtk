@@ -3,6 +3,8 @@
 	* src/YGWidget.h: added the emitEvent() method.
 	Also did some others of Michael's suggestions.
 
+	* src/YGRichText.cc: added basic bullets.
+
 2006-06-14  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGRichText.cc: added support for hyperlinks.

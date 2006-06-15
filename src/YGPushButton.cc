@@ -36,12 +36,12 @@ public:
 	{ pThis->emitEvent (YEvent::Activated, false); }
 
 	virtual void setIcon (const YCPString &icon_name)
-	{	// FIXME: doesn't seem to be working
+	{
 		IMPL
 		GError *error = 0;
 		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file
 		                    (icon_name->value_cstr(), &error);
-		if (pixbuf) {
+		if (!pixbuf) {
 			g_warning ("Couldn't load push button icon image");
 			return;
 		}

@@ -56,10 +56,8 @@ xmlize_string (const char *instr, const char *prodname)
 	{
 		if (instr[i] == '<')
 			inTag = true;
-		if (instr[i] == '&' &&
-		    !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
-		                          sizeof (PROD_ENTITY) - 1))
-		{
+		else if (instr[i] == '&' && !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
+		                                               sizeof (PROD_ENTITY) - 1)) {
 			g_string_append (outp, prodname);
 			i += sizeof (PROD_ENTITY) - 1;
 		}
@@ -104,7 +102,7 @@ struct GRTParseState {
 
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
-static GdkColor* link_color;
+static GdkColor* link_color = NULL;
 
 static void
 rt_start_element (GMarkupParseContext *context,
@@ -155,6 +153,8 @@ rt_start_element (GMarkupParseContext *context,
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
+		else if (!g_ascii_strcasecmp (element_name, "li"))  // \u2022 for smaller bullets
+			gtk_text_buffer_insert (state->buffer, &iter, "\u25cf ", -1);
 		else
 			g_warning ("Unknown tag '%s'", lower);
 	}
@@ -174,7 +174,7 @@ rt_end_element (GMarkupParseContext *context,
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
 
 	if (!g_ascii_strcasecmp (element_name, "p")) {
-		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
+		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
 		return;
 	}
 
@@ -204,9 +204,11 @@ rt_end_element (GMarkupParseContext *context,
 		if (endc != '\r' && endc != '\n')
 			appendNewline = true;
 	}
+	else if (!g_ascii_strcasecmp (element_name, "li"))
+		appendNewline = true;
 
 	if (appendNewline) {
-		gtk_text_buffer_insert (state->buffer, &end, "\n", strlen("\n"));
+		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
 		gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag.mark);
 		gtk_text_buffer_get_end_iter (state->buffer, &end);
 	}
@@ -387,9 +389,18 @@ visibility_notify_event (GtkWidget          *text_view,
 void
 init_link_support (GtkTextView *view)
 {
-	hand_cursor = gdk_cursor_new (GDK_HAND2);
-	regular_cursor = gdk_cursor_new (GDK_XTERM);
-	gtk_widget_style_get (GTK_WIDGET (view), "link-color", &link_color, NULL);
+	if (hand_cursor == NULL)
+		hand_cursor = gdk_cursor_new (GDK_HAND2);
+	if (regular_cursor == NULL)
+		regular_cursor = gdk_cursor_new (GDK_XTERM);
+
+	if (link_color == NULL) {
+		link_color = g_new (GdkColor, 1);
+		link_color->pixel = 0;
+		link_color->red = link_color->green = 0;
+		link_color->blue = 255;
+		gtk_widget_style_get (GTK_WIDGET (view), "link_color", link_color, NULL);
+	}
 
 	g_signal_connect (view, "event-after",
 	                  G_CALLBACK (event_after), NULL);
@@ -439,6 +450,8 @@ public:
 		gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 		gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
 		gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
+		gtk_text_buffer_create_tag (buffer, "blockquote", "left_margin", 20, NULL);
+		gtk_text_buffer_create_tag (buffer, "ul", "left_margin", 10, NULL);
 		setText (text);
 	}
 
