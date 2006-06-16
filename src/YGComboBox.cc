@@ -123,10 +123,8 @@ printf("correct text: %s\n", str.c_str());
 
 				gdk_beep();  // BEEP!
 			}
-		}
-
-		if (text_changed)
 			pThis->emitEvent (YEvent::ValueChanged, true, true);
+		}
 		else
 			pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
