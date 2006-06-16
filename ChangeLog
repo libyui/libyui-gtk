@@ -4,6 +4,9 @@
 	presses the window manager close button. Instead report
 	it to Yast.
 
+	* src/YGRichText.cc: sub-bullets and numbering should
+	be working, as well as sub-"blockquotes".
+
 2006-06-16  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGRichText.cc (rt_end_element): remove debug.

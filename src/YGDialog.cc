@@ -51,12 +51,11 @@ ygdialog_size_allocate (GtkWidget *widget,
 	pThis->setSize (allocation->width, allocation->height); 
 }
 
-YGDialog::YGDialog( const YWidgetOpt &opt,
-					YGWidget         *parent )
-	: YDialog( opt ),
-	  YGWidget( this, parent, FALSE,
-		    GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,// "allow-shrink", FALSE,
-		    NULL )
+YGDialog::YGDialog (const YWidgetOpt &opt,
+                    YGWidget         *parent)
+	: YDialog (opt),
+	  YGWidget (this, parent, FALSE,
+	           GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL, NULL)
 {
 	m_oldSize.width = -1;
 	m_oldSize.height = -1;

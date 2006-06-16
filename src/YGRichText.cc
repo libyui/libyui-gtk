@@ -89,12 +89,19 @@ struct GRTPTag {
 struct GRTParseState {
 	GtkTextBuffer *buffer;
 	GtkTextTagTable *tags;
-	bool pre_mode;
 	std::vector <GRTPTag> htags;
+
+	// Attributes for tags that affect their children
+	// TODO: maybe this should work in a context-scheme
+	bool pre_mode;
+	int left_margin;
+	list <bool> numbering;  // or bullets
+	list <char> enumeration;
 
 	GRTParseState(GtkTextBuffer *buffer) :
 		buffer(buffer),
-		pre_mode(false)
+		pre_mode(false),
+		left_margin(0)
 	{
 		tags = gtk_text_buffer_get_tag_table (buffer);
 	}
@@ -153,13 +160,34 @@ rt_start_element (GMarkupParseContext *context,
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
-		else if (!g_ascii_strcasecmp (element_name, "li"))  // \u2022 for smaller bullets
-			gtk_text_buffer_insert (state->buffer, &iter, "\u25cf ", -1);
+		else if (!g_ascii_strcasecmp (element_name, "li")) {
+			if (state->numbering.front()) {
+				char str[4];
+				snprintf (str, 4, "%d. ", state->enumeration.front()++);
+				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
+			}
+			else                             // \u2022 for smaller bullets
+				gtk_text_buffer_insert (state->buffer, &iter, "\u25cf ", -1);
+		}
+		// Tags that affect the margin
+		else if (!g_ascii_strcasecmp (element_name, "ul") ||
+		         !g_ascii_strcasecmp (element_name, "ol")) {
+			state->numbering.push_front (!g_ascii_strcasecmp (element_name, "ol"));
+			state->enumeration.push_front(1);
+			state->left_margin += 10;
+			tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+			                 "left-margin", state->left_margin, NULL);
+		}
+		else if (!g_ascii_strcasecmp (element_name, "blockquote")) {
+			state->left_margin += 20;
+			tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+			                 "left-margin", state->left_margin, NULL);
+		}
 		else
 			g_warning ("Unknown tag '%s'", lower);
 	}
-	g_free (lower);
 
+	g_free (lower);
 	state->htags.push_back(tag);
 }
 
@@ -206,6 +234,15 @@ rt_end_element (GMarkupParseContext *context,
 	}
 	else if (!g_ascii_strcasecmp (element_name, "li"))
 		appendNewline = true;
+
+	else if (!g_ascii_strcasecmp (element_name, "blockquote"))
+		state->left_margin -= 20;
+	else if (!g_ascii_strcasecmp (element_name, "ul") ||
+	         !g_ascii_strcasecmp (element_name, "ol")) {
+		state->left_margin -= 10;
+		state->enumeration.pop_front();
+		state->numbering.pop_front();
+	}
 
 	if (appendNewline) {
 		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
@@ -449,8 +486,6 @@ public:
 		gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 		gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
 		gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
-		gtk_text_buffer_create_tag (buffer, "blockquote", "left_margin", 20, NULL);
-		gtk_text_buffer_create_tag (buffer, "ul", "left_margin", 10, NULL);
 		setText (text);
 	}
 

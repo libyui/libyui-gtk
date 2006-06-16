@@ -119,7 +119,7 @@ YGWidget::getNiceSize (YUIDimension dim)
 	dumpWidgetTree (widget);
 #endif
 
-	gtk_widget_ensure_style (widget);      
+	gtk_widget_ensure_style (widget);
 	g_signal_emit_by_name (widget, "size_request", &req);
 
 	// Since there are no tweaks for widget separation etc.
