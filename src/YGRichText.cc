@@ -425,18 +425,19 @@ visibility_notify_event (GtkWidget          *text_view,
 void
 init_link_support (GtkTextView *view)
 {
-	if (hand_cursor == NULL)
+	if (!hand_cursor)
 		hand_cursor = gdk_cursor_new (GDK_HAND2);
-	if (regular_cursor == NULL)
+	if (!regular_cursor)
 		regular_cursor = gdk_cursor_new (GDK_XTERM);
 
-	if (link_color == NULL) {
-		link_color = g_new (GdkColor, 1);
-		link_color->pixel = 0;
-		link_color->red = link_color->green = 0;
-		link_color->blue = 255;
-		gtk_widget_style_get (GTK_WIDGET (view), "link_color", link_color, NULL);
+	static GdkColor default_link_color = { 0, 0, 0, 0xeeee };
+	if (!link_color) {
+		#if GTK_CHECK_VERSION(2,10,0)
+			gtk_widget_style_get (GTK_WIDGET (view), "link_color", link_color, NULL);
+		#endif
 	}
+	if (!link_color)
+		link_color = &default_link_color;
 
 	g_signal_connect (view, "event-after",
 	                  G_CALLBACK (event_after), NULL);

@@ -6,6 +6,7 @@
 
 	* src/YGRichText.cc: sub-bullets and numbering should
 	be working, as well as sub-"blockquotes".
+	And added the link color code suggested by Michael.
 
 2006-06-16  Michael Meeks  <michael.meeks@novell.com>
 
