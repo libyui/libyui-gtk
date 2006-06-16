@@ -216,7 +216,6 @@ rt_end_element (GMarkupParseContext *context,
 	if (tag.tag)
 		gtk_text_buffer_apply_tag (state->buffer, tag.tag, &start, &end);
 
-	g_warning ("Delete mark %p", tag.mark);
 	gtk_text_buffer_delete_mark (state->buffer, tag.mark);
 }
 
@@ -460,8 +459,10 @@ public:
 	// YRichText
 	virtual void setText (const YCPString &text)
 	{
-		IMPL
-		GRTParseState state(gtk_text_view_get_buffer (GTK_TEXT_VIEW (getWidget())));
+		IMPL;
+		GtkTextBuffer *buffer;
+		buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (getWidget()));
+		GRTParseState state (buffer);
 
 		if (m_plainText)
 		{
@@ -486,23 +487,15 @@ public:
 
 		g_markup_parse_context_free(ctx);
 
-		if (autoScrollDown || true /* temp until this works */) {
-printf("AUTO SCROLLBAR DOWN\n");
-
-/*
-		GtkTextIter iter;
-		gtk_text_buffer_get_end_iter (gtk_text_view_get_buffer
-		                                 (GTK_TEXT_VIEW (getWidget())), &iter);
-		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (getWidget()), &iter, 0.5, TRUE, 0, 0);
-*/
-
-				GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment
-						(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()));
-
-				gdouble scroll_to = adj->upper - adj->page_size;
-				printf("scroll to %f\n", scroll_to);
-
-				gtk_adjustment_set_value (adj, scroll_to);
+		if (autoScrollDown) {
+			GtkTextIter end_iter;
+			gtk_text_buffer_get_end_iter (state.buffer, &end_iter);
+			GtkTextMark *end_mark;
+			end_mark = gtk_text_buffer_create_mark
+				(state.buffer, NULL, &end_iter, FALSE);
+			gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (getWidget()),
+						      end_mark, 0.0, FALSE, 0, 0);
+			gtk_text_buffer_delete_mark (state.buffer, end_mark);
 		}
 
 		YRichText::setText (text);

@@ -1,3 +1,10 @@
+2006-06-16  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGRichText.cc (rt_end_element): remove debug.
+	(setText): fix auto scroll down - we need to use
+	gtk_text_view_scroll_to_mark - which queues the scroll
+	until mapped/sized etc.
+
 2006-06-15  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGWidget.h: added the emitEvent() method.
