@@ -5,8 +5,6 @@
 #include "YDialog.h"
 #include "YGWidget.h"
 
-#define TO16bit(color) ((color*65536)/256)
-
 class YGGenericButton;
 class YGWizard;
 
