@@ -1,7 +1,10 @@
 2006-06-16  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGDialog.h: added info/warn color.
+
 	* src/YGRichText.cc: cleanups as asked by Michael.
+
+	* src/YGMultiLineEdit.cc: added YLogView support.
 
 2006-06-16  Ricardo Cruz   <rpmcruz@clix.pt>
 

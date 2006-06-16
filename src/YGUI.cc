@@ -146,14 +146,6 @@ void dumpYastTree (YWidget *widget, int indent)
 // Widgets Proper
 
 YWidget *
-YGUI::createLogView( YWidget *parent, YWidgetOpt & opt,
-					const YCPString & label, int visibleLines,
-					int maxLines )
-{
-		IMPL_NULL;
-}
-
-YWidget *
 YGUI::createMenuButton( YWidget *parent, YWidgetOpt & opt,
 							const YCPString & label ) IMPL_NULL;
 
