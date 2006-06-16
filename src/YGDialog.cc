@@ -32,6 +32,16 @@ public:
     virtual void startMultipleChanges() IMPL;
     virtual void doneMultipleChanges() IMPL;
     virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+
+	static gboolean close_window_cb (GtkWidget *widget,
+	                                 GdkEvent  *event,
+	                                 YGDialog  *pThis)
+	{
+		g_print ("delete event occurred\n");
+
+		YGUI::ui()->sendEvent (new YCancelEvent());
+		return TRUE;
+	}
 };
 
 static void
@@ -47,7 +57,7 @@ YGDialog::YGDialog( const YWidgetOpt &opt,
 					YGWidget         *parent )
 	: YDialog( opt ),
 	  YGWidget( this, parent, FALSE,
-		    GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,
+		    GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,// "allow-shrink", FALSE,
 		    NULL )
 {
 	m_oldSize.width = -1;
@@ -67,11 +77,24 @@ YGDialog::YGDialog( const YWidgetOpt &opt,
 	g_signal_connect (G_OBJECT (m_widget), "size_allocate",
 			  G_CALLBACK (ygdialog_size_allocate), this);
 
-//  g_signal_connect(G_OBJECT (window), "destroy", G_CALLBACK (destroy), NULL);
+	g_signal_connect(G_OBJECT (m_widget), "delete_event",
+	                 G_CALLBACK (close_window_cb), this);
 
+#if 0
+	if (opt.hasWarnColor.value()) {
+		GdkColor color = { 0, 240, 185, 185 };  // red tone
 
-	//	if ( opt.hasWarnColor().value() || opt.hasInfoColor().value() )
-	//fprintf (stderr, "Ignored Warn / Info colors\n");
+		GdkColormap *colormap = gdk_colormap_get_system();
+		if (gdk_colormap_alloc_color (colormap, &color, TRUE, FALSE))
+			gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
+		else
+			g_warning ("Could not allocate color for warn dialog.");
+		}
+	else if (opt.hasInfoColor.value()) {
+		GdkColor color = { 0, 245, 255, 128 };  // yellow tone
+		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
+		}
+#endif
 }
 
 YGDialog::~YGDialog()

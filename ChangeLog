@@ -1,3 +1,9 @@
+2006-06-16  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* src/YGDialog.h: don't close the window when the user
+	presses the window manager close button. Instead report
+	it to Yast.
+
 2006-06-16  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGRichText.cc (rt_end_element): remove debug.
