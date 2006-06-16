@@ -37,8 +37,6 @@ public:
 	                                 GdkEvent  *event,
 	                                 YGDialog  *pThis)
 	{
-		g_print ("delete event occurred\n");
-
 		YGUI::ui()->sendEvent (new YCancelEvent());
 		return TRUE;
 	}
