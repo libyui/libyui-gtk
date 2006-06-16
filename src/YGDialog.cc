@@ -5,6 +5,8 @@
 #include "YDialog.h"
 #include "YGWidget.h"
 
+#define TO16bit(color) ((color*65536)/256)
+
 class YGGenericButton;
 class YGWizard;
 
@@ -77,21 +79,14 @@ YGDialog::YGDialog (const YWidgetOpt &opt,
 	g_signal_connect(G_OBJECT (m_widget), "delete_event",
 	                 G_CALLBACK (close_window_cb), this);
 
-#if 0
 	if (opt.hasWarnColor.value()) {
-		GdkColor color = { 0, 240, 185, 185 };  // red tone
-
-		GdkColormap *colormap = gdk_colormap_get_system();
-		if (gdk_colormap_alloc_color (colormap, &color, TRUE, FALSE))
-			gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
-		else
-			g_warning ("Could not allocate color for warn dialog.");
-		}
-	else if (opt.hasInfoColor.value()) {
-		GdkColor color = { 0, 245, 255, 128 };  // yellow tone
+		GdkColor color = { 0, 0xf000, 0xb900, 0xb900 };  // red tone
 		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
 		}
-#endif
+	else if (opt.hasInfoColor.value()) {
+		GdkColor color = { 0, 0xf500, 0xffff, 0x8000 };  // yellow tone
+		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
+		}
 }
 
 YGDialog::~YGDialog()
