@@ -270,6 +270,7 @@ public:
 			hand_cursor    = gdk_cursor_new (GDK_HAND2);
 			regular_cursor = gdk_cursor_new (GDK_XTERM);
 		}
+		ref_cursor++;
 
 #if GTK_CHECK_VERSION(2,10,0)
 		gtk_widget_style_get (GTK_WIDGET (view), "link_color", &link_color, NULL);
@@ -304,7 +305,7 @@ public:
 
 	virtual ~YGRichText()
 	{
-		if (!--ref_cursor) {
+		if (--ref_cursor == 0) {
 			gdk_cursor_unref (hand_cursor);
 			gdk_cursor_unref (regular_cursor);
 		}
