@@ -134,8 +134,8 @@ public:
 					     int expectedSize ) IMPL_NULL;
     virtual bool     hasDownloadProgress() { return false; }
 
-    virtual YWidget *createBarGraph( YWidget *parent, YWidgetOpt & opt ) IMPL_NULL;
-    virtual bool     hasBarGraph()  { return false; }
+	virtual YWidget *createBarGraph (YWidget *parent, YWidgetOpt &opt);
+	virtual bool hasBarGraph() { return true; }
 
 	virtual YWidget *createColoredLabel (YWidget *parent, YWidgetOpt &opt,
 	                                     YCPString label,
