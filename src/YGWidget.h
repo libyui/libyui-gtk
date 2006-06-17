@@ -97,8 +97,8 @@ class YGLabeledWidget : public YGWidget
 		virtual GtkWidget* getWidget() { return m_field; }
 
 		void setLabelVisible(bool show);
+		void setBuddy (GtkWidget *widget);
 		virtual void doSetLabel (const YCPString & label);
-
 	protected:
 		GtkWidget *m_label, *m_field;
 };

@@ -3,6 +3,7 @@
 #include <YGUI.h>
 #include "YEvent.h"
 #include "YRichText.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 // TODO: replace g_warning() by y2error()
@@ -339,16 +340,8 @@ public:
 
 		g_markup_parse_context_free(ctx);
 
-		if (autoScrollDown) {
-			GtkTextIter end_iter;
-			gtk_text_buffer_get_end_iter (state.buffer, &end_iter);
-			GtkTextMark *end_mark;
-			end_mark = gtk_text_buffer_create_mark
-			               (state.buffer, NULL, &end_iter, FALSE);
-			gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (getWidget()),
-			               end_mark, 0.0, FALSE, 0, 0);
-			gtk_text_buffer_delete_mark (state.buffer, end_mark);
-		}
+		if (autoScrollDown)
+			YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));
 
 		YRichText::setText (text);
 	}

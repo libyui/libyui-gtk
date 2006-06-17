@@ -178,7 +178,7 @@ YGLabeledWidget::YGLabeledWidget(
 
 	// Create the label
 	m_label = gtk_label_new ("");
-	gtk_label_set_mnemonic_widget (GTK_LABEL (m_label), m_field);
+	setBuddy (m_field);
 	doSetLabel (label_text);
 
 	// Set the container and show widgets
@@ -199,6 +199,12 @@ YGLabeledWidget::setLabelVisible(bool show)
     gtk_widget_show (m_label);
   else
     gtk_widget_hide (m_label);
+}
+
+void
+YGLabeledWidget::setBuddy (GtkWidget *widget)
+{
+	gtk_label_set_mnemonic_widget (GTK_LABEL (m_label), widget);
 }
 
 void

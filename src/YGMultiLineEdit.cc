@@ -4,6 +4,7 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include <string>
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 class YGTextView : public YGScrolledWidget
@@ -72,18 +73,6 @@ public:
 		YCPString str (text);
 		g_free (text);
 		return str;
-	}
-
-	void scrollDown()
-	{
-		GtkTextIter end_iter;
-		gtk_text_buffer_get_end_iter (getBuffer(), &end_iter);
-		GtkTextMark *end_mark;
-		end_mark = gtk_text_buffer_create_mark
-		               (getBuffer(), NULL, &end_iter, FALSE);
-		gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (getWidget()),
-		               end_mark, 0.0, FALSE, 0, 0);
-		gtk_text_buffer_delete_mark (getBuffer(), end_mark);
 	}
 
 	// Event callbacks
@@ -163,7 +152,7 @@ public:
 	virtual void setLogText (const YCPString &text)
 	{
 		setText (text);
-		scrollDown();
+		YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));
 	}
 
 	// YWidget

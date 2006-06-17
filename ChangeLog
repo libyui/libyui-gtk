@@ -1,3 +1,7 @@
+2006-06-17  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* src/YGIntField.cc: added YSlider support.
+
 2006-06-16  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGDialog.h: added info/warn color.

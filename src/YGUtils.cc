@@ -30,3 +30,16 @@ string YGUtils::filterText (const char* text, int length, const char* valid_char
 			}
 	return str;
 }
+
+void YGUtils::scrollTextViewDown(GtkTextView *text_view)
+{
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (text_view);
+	GtkTextIter end_iter;
+	gtk_text_buffer_get_end_iter (buffer, &end_iter);
+	GtkTextMark *end_mark;
+	end_mark = gtk_text_buffer_create_mark
+	               (buffer, NULL, &end_iter, FALSE);
+	gtk_text_view_scroll_to_mark (text_view,
+	               end_mark, 0.0, FALSE, 0, 0);
+	gtk_text_buffer_delete_mark (buffer, end_mark);
+}

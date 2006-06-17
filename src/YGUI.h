@@ -163,13 +163,10 @@ public:
 					       const YCPList & maxValues ) IMPL_NULL;
     virtual bool     hasMultiProgressMeter() { return false; }
 
-    virtual YWidget *createSlider( YWidget *		parent,
-				   YWidgetOpt &	opt,
-				   const YCPString &	label,
-				   int		minValue,
-				   int		maxValue,
-				   int		initialValue ) IMPL_NULL;
-    virtual bool     hasSlider() { return false; }
+	virtual YWidget *createSlider (YWidget *parent, YWidgetOpt &opt,
+	                               const YCPString &label,
+	                               int min, int max, int initial);
+	virtual bool hasSlider() { return true; }
 
     virtual YWidget *createPartitionSplitter( YWidget *		parent,
 					      YWidgetOpt &	opt,
