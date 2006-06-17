@@ -2,6 +2,8 @@
 
 	* src/YGIntField.cc: added YSlider support.
 
+	* src/YGLabel.cc: added YColoredLabel support.
+
 2006-06-16  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGDialog.h: added info/warn color.

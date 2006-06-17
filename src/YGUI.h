@@ -137,11 +137,11 @@ public:
     virtual YWidget *createBarGraph( YWidget *parent, YWidgetOpt & opt ) IMPL_NULL;
     virtual bool     hasBarGraph()  { return false; }
 
-    virtual YWidget *createColoredLabel( YWidget *parent, YWidgetOpt & opt,
-					 YCPString label,
-					 YColor foreground, YColor background,
-					 int margin ) IMPL_NULL;
-    virtual bool     hasColoredLabel() { return false; }
+	virtual YWidget *createColoredLabel (YWidget *parent, YWidgetOpt &opt,
+	                                     YCPString label,
+	                                     YColor foreground, YColor background,
+	                                     int margin);
+	virtual bool hasColoredLabel() { return true; }
 
     virtual YWidget *createDate( YWidget *parent,
 				 YWidgetOpt & opt, 
