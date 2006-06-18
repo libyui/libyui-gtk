@@ -34,6 +34,7 @@ struct GRTParseState {
 
 	// Attributes for tags that affect their children
 	bool pre_mode;
+	bool default_color;
 	int left_margin;
 	list <HTMLList> html_list;
 
@@ -82,19 +83,22 @@ rt_start_element (GMarkupParseContext *context,
 	// Special tags that must be inserted manually
 	if (!tag.tag) {
 		if (!g_ascii_strcasecmp (element_name, "font")) {
-			if (!g_ascii_strcasecmp (attribute_names[0], "color"))
+			if (!g_ascii_strcasecmp (attribute_names[0], "color")) {
 				tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
 				                                      "foreground", attribute_values[0],
 				                                      NULL);
+				state->default_color = false;
+			}
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
 		else if (!g_ascii_strcasecmp (element_name, "a")) {
 			if (!g_ascii_strcasecmp (attribute_names[0], "href")) {
 				tag.tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-				                                      "foreground-gdk", &link_color,
 				                                      "underline", PANGO_UNDERLINE_SINGLE,
 				                                      NULL);
+				if (state->default_color)
+					g_object_set (tag.tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag.tag), "link", g_strdup (attribute_values[0]));
 			}
 			else
@@ -182,6 +186,9 @@ rt_end_element (GMarkupParseContext *context,
 		state->left_margin -= LISTS_MARGIN;
 		state->html_list.pop_front();
 	}
+
+	else if (!g_ascii_strcasecmp (element_name, "font"))
+		state->default_color = true;
 
 	if (appendNewline) {
 		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
