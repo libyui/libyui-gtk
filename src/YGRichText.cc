@@ -41,6 +41,7 @@ struct GRTParseState {
 	GRTParseState(GtkTextBuffer *buffer) :
 		buffer(buffer),
 		pre_mode(false),
+		default_color(true),
 		left_margin(0)
 	{
 		tags = gtk_text_buffer_get_tag_table (buffer);
