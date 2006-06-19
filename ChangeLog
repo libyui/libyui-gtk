@@ -1,3 +1,9 @@
+2006-06-19  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc/.h: move boolean flag impls to here
+	from the header, beautify header, move cursor
+	bits to .cc.
+
 2006-06-17  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGIntField.cc: added YSlider support.

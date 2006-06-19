@@ -259,3 +259,17 @@ YCPValue YGUI::askForSaveFileName (const YCPString &startWith,
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, startWith,
 	                              filter, headline);
 }
+
+bool YGUI::textMode()		   IMPL_RET(false);
+bool YGUI::hasImageSupport()       IMPL_RET(true);
+bool YGUI::hasLocalImageSupport()  IMPL_RET(true);
+bool YGUI::hasAnimationSupport()   IMPL_RET(true);
+bool YGUI::hasIconSupport()        IMPL_RET(true);
+bool YGUI::hasFullUtf8Support()    IMPL_RET(true);
+bool YGUI::richTextSupportsTable() IMPL_RET(false);
+bool YGUI::leftHandedMouse()       IMPL_RET(false);
+
+void YGUI::busyCursor() IMPL;
+void YGUI::normalCursor() IMPL;
+void YGUI::redrawScreen() IMPL;
+void YGUI::makeScreenShot (string filename) IMPL;
