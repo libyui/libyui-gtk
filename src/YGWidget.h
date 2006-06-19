@@ -14,6 +14,7 @@ public:
 	YGWidget(YWidget *y_widget, YGWidget *parent,
 			 bool show, GType type,
 			 const char *property_name, ...);
+	virtual ~YGWidget();
 
 	GtkWidget *getWidget() { return m_widget; }
 	const char *getWidgetName() { return m_y_widget->widgetClass(); }

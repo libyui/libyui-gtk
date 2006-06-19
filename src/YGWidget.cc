@@ -12,6 +12,8 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	m_alloc.x = m_alloc.y = m_alloc.width = m_alloc.height = 0;
 
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+	g_object_ref (G_OBJECT (m_widget));
+	gtk_object_sink (GTK_OBJECT (m_widget));
 
 	y_widget->setWidgetRep ((void *)this);
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
@@ -40,6 +42,13 @@ YGWidget::YGWidget(YWidget *y_widget, YGWidget *parent,
 	va_end (args);
 }
 
+YGWidget::~YGWidget()
+{
+	IMPL;
+	gtk_widget_destroy (m_widget);
+	g_object_unref (G_OBJECT (m_widget));
+}
+
 // Container constructor
 YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 		   const char *property_name, ...) :
@@ -49,7 +58,7 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 	va_start (args, property_name);
 
 	construct (y_container, parent, true, GTK_TYPE_FIXED,
-			   property_name, args);
+		   property_name, args);
 
 	va_end (args);
 }
