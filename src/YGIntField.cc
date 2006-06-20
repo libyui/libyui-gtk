@@ -24,19 +24,20 @@ public:
 			m_slider = gtk_hscale_new_with_range (minValue, maxValue, 1);
 			gtk_scale_set_draw_value (GTK_SCALE (m_slider), FALSE);
 			YGLabeledWidget::setBuddy (m_slider);
+
+			gtk_container_add (GTK_CONTAINER (getWidget()), m_slider);
+			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);
+			gtk_box_set_child_packing (GTK_BOX (getWidget()), m_spiner,
+			                      FALSE, FALSE, 5, GTK_PACK_START);
+			gtk_widget_show (m_slider);
 		}
 		else {
 			m_slider = NULL;
 			YGLabeledWidget::setBuddy (m_spiner);
-		}
 
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_slider);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), m_spiner,
-		                      FALSE, FALSE, 5, GTK_PACK_START);
+			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);
+		}
 		gtk_widget_show (m_spiner);
-		if (show_slider)
-			gtk_widget_show (m_slider);
 
 		doSetValue (initialValue);
 		g_signal_connect (G_OBJECT (m_spiner), "value-changed",
