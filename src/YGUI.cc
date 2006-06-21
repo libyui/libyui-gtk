@@ -146,10 +146,6 @@ void dumpYastTree (YWidget *widget, int indent)
 // Widgets Proper
 
 YWidget *
-YGUI::createMenuButton( YWidget *parent, YWidgetOpt & opt,
-							const YCPString & label ) IMPL_NULL;
-
-YWidget *
 YGUI::createPackageSelector( YWidget *parent, YWidgetOpt & opt,
 							const YCPString & floppyDevice ) IMPL_NULL;
 
