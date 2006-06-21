@@ -29,7 +29,8 @@ libpy2gtk_la_SOURCES = \
 	YGFrame.cc \
 	YGComboBox.cc \
 	YGTable.cc \
-	YGTree.cc
+	YGTree.cc \
+	YGMenuButton.cc
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
