@@ -22,25 +22,20 @@ public:
 		                  G_CALLBACK (toggled_cb), this);
 
 		// Add a separator and an arrow to the button to indicate there is a menu
-		GtkWidget *hbox, *separator, *arrow;
+		GtkWidget *hbox, *arrow;
 		hbox = gtk_hbox_new (FALSE, 0);
 		m_label = gtk_label_new ("");
-		separator = gtk_vseparator_new ();
 		arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_NONE);
 
 		// put arrow in different end according to the language phrase direction
-		if (gtk_widget_get_direction (getWidget()) == GTK_TEXT_DIR_LTR && false) {
+		if (gtk_widget_get_direction (getWidget()) == GTK_TEXT_DIR_LTR) {
 			gtk_container_add (GTK_CONTAINER (hbox), m_label);
-			gtk_container_add (GTK_CONTAINER (hbox), separator);
 			gtk_container_add (GTK_CONTAINER (hbox), arrow);
 		}
 		else {
 			gtk_container_add (GTK_CONTAINER (hbox), arrow);
-			gtk_container_add (GTK_CONTAINER (hbox), separator);
 			gtk_container_add (GTK_CONTAINER (hbox), m_label);
 		}
-		gtk_box_set_child_packing (GTK_BOX (hbox), separator,
-		                      FALSE, FALSE, 5, GTK_PACK_START);
 		gtk_box_set_child_packing (GTK_BOX (hbox), arrow,
 		                      FALSE, FALSE, 5, GTK_PACK_START);
 		gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
@@ -107,8 +102,9 @@ public:
 			gtk_menu_popup (menu, NULL, NULL,
 			                get_menu_pos, (YGWidget*) pThis, 0,
 			                gtk_get_current_event_time());
-			gtk_widget_set_size_request (GTK_WIDGET (menu),
-			                             pThis->getWidget()->allocation.width, -1);
+			if (pThis->getWidget()->allocation.width > GTK_WIDGET(menu)->allocation.width)
+				gtk_widget_set_size_request (GTK_WIDGET (menu),
+				                             pThis->getWidget()->allocation.width, -1);
 		}
 	}
 
