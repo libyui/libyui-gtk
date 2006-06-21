@@ -8,7 +8,7 @@
 
 class YGMenuButton : public YMenuButton, public YGWidget
 {
-GtkWidget *menu;
+GtkWidget *m_menu, *m_label;
 
 public:
 	YGMenuButton (const YWidgetOpt &opt,
@@ -16,28 +16,39 @@ public:
 	              YCPString         label)
 	:  YMenuButton (opt, label),
 	   YGWidget (this, parent, true, GTK_TYPE_TOGGLE_BUTTON, NULL)
-{
-	IMPL;
-	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-	g_signal_connect (G_OBJECT (getWidget ()), "button-press-event",
-	                  G_CALLBACK (pressed_cb), this);
+	{
+		IMPL;
+		g_signal_connect (G_OBJECT (getWidget()), "toggled",
+		                  G_CALLBACK (toggled_cb), this);
 
-	// Add a separator and an arrow to the button to indicate there is a menu
-	GtkWidget *hbox = gtk_hbox_new (FALSE, 0);
-	GtkWidget *separator = gtk_vseparator_new ();
-	GtkWidget *arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_NONE /* TODO: check others */);
-	// FIXME: check right to left language
-	gtk_container_add (GTK_CONTAINER (hbox), separator);
-	gtk_container_add (GTK_CONTAINER (hbox), arrow);
-	gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
+		// Add a separator and an arrow to the button to indicate there is a menu
+		GtkWidget *hbox, *separator, *arrow;
+		hbox = gtk_hbox_new (FALSE, 0);
+		m_label = gtk_label_new ("");
+		separator = gtk_vseparator_new ();
+		arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_NONE);
 
-	gtk_widget_show (separator);
-	gtk_widget_show (arrow);  // REMOVE: redundant
-	gtk_widget_show_all (getWidget());
-
-	setLabel (label);
-	menu = NULL;
-}
+		// put arrow in different end according to the language phrase direction
+		if (gtk_widget_get_direction (getWidget()) == GTK_TEXT_DIR_LTR && false) {
+			gtk_container_add (GTK_CONTAINER (hbox), m_label);
+			gtk_container_add (GTK_CONTAINER (hbox), separator);
+			gtk_container_add (GTK_CONTAINER (hbox), arrow);
+		}
+		else {
+			gtk_container_add (GTK_CONTAINER (hbox), arrow);
+			gtk_container_add (GTK_CONTAINER (hbox), separator);
+			gtk_container_add (GTK_CONTAINER (hbox), m_label);
+		}
+		gtk_box_set_child_packing (GTK_BOX (hbox), separator,
+		                      FALSE, FALSE, 5, GTK_PACK_START);
+		gtk_box_set_child_packing (GTK_BOX (hbox), arrow,
+		                      FALSE, FALSE, 5, GTK_PACK_START);
+		gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
+		gtk_widget_show_all (getWidget());
+	
+		setLabel (label);
+		m_menu = NULL;
+	}
 
 	virtual ~YGMenuButton() {}
 
@@ -46,21 +57,24 @@ public:
 	{
 		IMPL;
 		string str = YGUtils::mapKBAccel (label->value_cstr());
-		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
+		gtk_label_set_text_with_mnemonic (GTK_LABEL (m_label), str.c_str());
 		YMenuButton::setLabel (label);
 	}
 
 	GtkMenu* getMenu()
-	{ return GTK_MENU (menu); }
+	{ return GTK_MENU (m_menu); }
 
 	// YMenuButton
 	virtual void createMenu()
 	{
-		if (menu) {
-			gtk_widget_destroy (menu);
-			g_object_unref (menu);
+		if (m_menu) {
+			gtk_widget_destroy (m_menu);
+			g_object_unref (m_menu);
 		}
-		menu = doCreateMenu (getToplevelMenu()->itemList());
+		m_menu = doCreateMenu (getToplevelMenu()->itemList());
+
+		g_signal_connect (G_OBJECT (m_menu), "hide", G_CALLBACK (menu_hiden_cb),
+		                  GTK_TOGGLE_BUTTON (getWidget()));
 	}
 
 	static GtkWidget* doCreateMenu (YMenuItemList &items)
@@ -85,24 +99,33 @@ public:
 		return menu;
 	}
 
-	static gboolean pressed_cb (GtkWidget *widget,
-	                            GdkEventButton *event, YGMenuButton *pThis)
+	static void popup_menu_cb (YGMenuButton *pThis)
 	{
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+		IMPL
 		GtkMenu *menu = pThis->getMenu();
 		if (menu) {
 			gtk_menu_popup (menu, NULL, NULL,
 			                get_menu_pos, (YGWidget*) pThis, 0,
-			                event->time);
-			gtk_widget_set_size_request (GTK_WIDGET (menu), widget->allocation.width, -1);
+			                gtk_get_current_event_time());
+			gtk_widget_set_size_request (GTK_WIDGET (menu),
+			                             pThis->getWidget()->allocation.width, -1);
 		}
-		return FALSE;
+	}
+
+	static void toggled_cb (GtkWidget *button, YGMenuButton* pThis)
+	{
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
+			popup_menu_cb (pThis);
 	}
 
 	static void selected_item_cb (GtkMenuItem *menuitem, YMenuItem *yitem)
 	{
-// FIXME: we must call: gtk_toggle_button_set_active (button, FALSE);
 		YGUI::ui()->sendEvent (new YMenuEvent (yitem->getId()));
+	}
+
+	static void menu_hiden_cb (GtkWidget *widget, GtkToggleButton *button)
+	{
+		gtk_toggle_button_set_active (button, FALSE);
 	}
 
 	static void get_menu_pos (GtkMenu *menu, gint *x, gint *y,
