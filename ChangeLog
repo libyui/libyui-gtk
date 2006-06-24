@@ -1,3 +1,9 @@
+2006-06-24  Ricardo Cruz   <rpmcruz@clix.pt>
+
+	* BUGS: added this file that could be used as a notebook
+	for issues, so we don't loose track of them. Nothing
+	comprehensive or anything...
+
 2006-06-21  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* src/YGMenuButton.cc: added support for YMenuButton.
