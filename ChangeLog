@@ -1,3 +1,23 @@
+2006-06-29  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGLabel.cc (class YGGenericLabel): use
+	m_inner_widget not m_widget to avoid confusion.
+
+	* src/YGDialog.cc (YGDialog): if opt.hasDefaultSize
+	set modal & type hint to dialog; set 'allow_shrink'
+	to allow windows to be shrunk.
+	(configure_event_cb): listen for configure event,
+	use it instead of (size_allocate) nastiness.
+	(setSize): get/set defaultSize not size request.
+
+	* src/YGUI.cc (defaultSize): 1st cut.
+	(YGUI): parse arguments etc.
+
+	* src/Y2CCGtk.cc: re-indent.
+
+	* src/YGFrame.cc (setSize, nicesize, childAdded):
+	bin bogus size calculation for children.
+
 2006-06-24  Ricardo Cruz   <rpmcruz@clix.pt>
 
 	* BUGS: added this file that could be used as a notebook

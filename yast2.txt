@@ -87,8 +87,10 @@ YQUI_core.cc:
 
 
 TODO:
-    implement YGCheckBox
-    move YGWidget::mapKBAccel into YGUtils
-    re-factor YGRadioButton to create YGCheckBox (?)
-	      + YGToggledBase ?
-    + YGRadioButton -> YGToggle ?
+	+ YGDialog.cc: listen for configure_event
+	+ sizing - shrinking windows ...
+	+ layout - spacing
+	+ graph/chart - [Ricardo]
+	+ YGRadioButton -> YGToggle ?
+	+ radio-button bug:
+		+ click button twice - shouldn't toggle.

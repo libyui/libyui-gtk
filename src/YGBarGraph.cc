@@ -96,7 +96,7 @@ printf("YGBarGraph: setting width of %d to %d\n", requisition->width, pThis->val
 	{
 		// This is quite ugly, but the other way I can think of getting the value
 		// involves searching for the index on the container...
-		GtkWidget *label = gtk_bin_get_child (GTK_BIN (widget));
+sadfsdf		GtkWidget *label = gtk_bin_get_child (GTK_BIN (widget));
 		int value = atoi (gtk_label_get_text (GTK_LABEL (label)));
 
 		gdouble ratio = (gdouble) value / pThis->m_valuesSum;

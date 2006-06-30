@@ -10,28 +10,29 @@ class YGWizard;
 
 class YGDialog : public YDialog, public YGWidget
 {
-    GtkAllocation m_oldSize;
-    GtkWidget *m_pFixed;
+	GtkRequisition m_userSize;
+	GtkWidget *m_pFixed;
+	bool userResized () { return m_userSize.width > 0 && m_userSize.height > 0; }
 public:
-    YGDialog( const YWidgetOpt &opt,
-	      YGWidget         *parent	= 0);
-    virtual ~YGDialog();
-
-    // YContainerWidget
-//    virtual void addChild( YWidget *child ) IMPL;
-    virtual void childAdded( YWidget *child ) IMPL;
-    virtual void childRemoved( YWidget *child ) IMPL;
-
-    // YWidget
-    virtual void childDeleted( YWidget *child ) IMPL;
-    virtual long nicesize( YUIDimension dim );
-    virtual bool stretchable( YUIDimension dimension ) const IMPL_RET(true);
-    virtual void setSize( long newwidth, long newheight );
-    YGWIDGET_IMPL_SET_ENABLING
-    virtual bool setKeyboardFocus() IMPL_RET(false);
-    virtual void startMultipleChanges() IMPL;
-    virtual void doneMultipleChanges() IMPL;
-    virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+	YGDialog (const YWidgetOpt &opt,
+		  YGWidget         *parent = 0);
+	virtual ~YGDialog();
+	
+	// YContainerWidget
+	//    virtual void addChild (YWidget *child) IMPL;
+	virtual void childAdded (YWidget *child) IMPL;
+	virtual void childRemoved (YWidget *child) IMPL;
+	
+	// YWidget
+	virtual void childDeleted (YWidget *child) IMPL;
+	virtual long nicesize (YUIDimension dim);
+	virtual bool stretchable (YUIDimension dimension) const IMPL_RET(true);
+	virtual void setSize (long newwidth, long newheight);
+	YGWIDGET_IMPL_SET_ENABLING
+	virtual bool setKeyboardFocus() IMPL_RET(false);
+	virtual void startMultipleChanges() IMPL;
+	virtual void doneMultipleChanges() IMPL;
+	virtual void saveUserInput (YMacroRecorder *macroRecorder) IMPL;
 
 	static gboolean close_window_cb (GtkWidget *widget,
 	                                 GdkEvent  *event,
@@ -40,16 +41,20 @@ public:
 		YGUI::ui()->sendEvent (new YCancelEvent());
 		return TRUE;
 	}
-};
 
-static void
-ygdialog_size_allocate (GtkWidget *widget,
-			GtkAllocation *allocation,
-			YGDialog  *pThis)
-{
-	fprintf (stdout, "size_allocate\n");
-	pThis->setSize (allocation->width, allocation->height); 
-}
+	static gboolean configure_event_cb (GtkWidget *widget,
+					    GdkEventConfigure *event,
+					    YGDialog  *pThis)
+	{
+		fprintf (stderr, "configure event %d, %d\n",
+			 event->width, event->height);
+		pThis->setSize (event->width, event->height);
+		pThis->m_userSize.width = event->width;
+		pThis->m_userSize.height = event->height;
+
+		return FALSE;
+	}
+};
 
 YGDialog::YGDialog (const YWidgetOpt &opt,
                     YGWidget         *parent)
@@ -57,8 +62,10 @@ YGDialog::YGDialog (const YWidgetOpt &opt,
 	  YGWidget (this, parent, FALSE,
 	           GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL, NULL)
 {
-	m_oldSize.width = -1;
-	m_oldSize.height = -1;
+	m_userSize.width = -1;
+	m_userSize.height = -1;
+
+	g_object_set (G_OBJECT (getWidget()), "allow_shrink", TRUE, NULL);
 
 	m_pFixed = gtk_fixed_new();
 	gtk_widget_show (m_pFixed);
@@ -69,22 +76,30 @@ YGDialog::YGDialog (const YWidgetOpt &opt,
 			      !opt.hasDefaultSize.value());
 	gtk_window_set_title (GTK_WINDOW (m_widget),
 			      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
+// FIXME: set default size to getDefaultSize ?
 //	gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
 
-	g_signal_connect (G_OBJECT (m_widget), "size_allocate",
-			  G_CALLBACK (ygdialog_size_allocate), this);
+	g_signal_connect (G_OBJECT (m_widget), "configure_event",
+			  G_CALLBACK (configure_event_cb), this);
 
-	g_signal_connect(G_OBJECT (m_widget), "delete_event",
-	                 G_CALLBACK (close_window_cb), this);
+	g_signal_connect (G_OBJECT (m_widget), "delete_event",
+			  G_CALLBACK (close_window_cb), this);
 
 	if (opt.hasWarnColor.value()) {
 		GdkColor color = { 0, 0xf000, 0xb900, 0xb900 };  // red tone
 		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
-		}
+	}
 	else if (opt.hasInfoColor.value()) {
 		GdkColor color = { 0, 0xf500, 0xffff, 0x8000 };  // yellow tone
 		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
-		}
+	}
+
+	if (!opt.hasDefaultSize.value())
+	{
+		gtk_window_set_modal (GTK_WINDOW (m_widget), TRUE);
+		gtk_window_set_type_hint (GTK_WINDOW (m_widget),
+					  GDK_WINDOW_TYPE_HINT_DIALOG);
+	}
 }
 
 YGDialog::~YGDialog()
@@ -92,35 +107,44 @@ YGDialog::~YGDialog()
 }
 
 long
-YGDialog::nicesize( YUIDimension dim )
+YGDialog::nicesize (YUIDimension dim)
 {
 	LOC; // FIXME - hack.
-	// The GtkFixed doesn't give a sensible answer until items
-	// are positioned, they are however not at this stage
-	return YDialog::nicesize (dim);
+	long nice;
+	fprintf (stderr, "YGDialog::nicesize\n");
+	if (hasDefaultSize())
+	{
+		if  (userResized())
+			nice = dim == YD_HORIZ ? m_userSize.width : m_userSize.height;
+		else
+			nice = YGUI::ui()->defaultSize (dim);
+	}
+	else
+		nice = YDialog::nicesize (dim);
+	return nice;
 }
 
-void YGDialog::setSize( long newWidth, long newHeight )
+void YGDialog::setSize (long newWidth, long newHeight)
 {
 	int reqw, reqh;
-	gtk_widget_get_size_request (m_widget, &reqw, &reqh);
+	gtk_window_get_default_size (GTK_WINDOW (m_widget), &reqw, &reqh);
 	if (reqw == newWidth && reqh == newHeight)
 	    return;
 	fprintf (stdout, "YGDialog::setSize %ld, %ld (%d,%d)\n", newWidth, newHeight, reqw, reqh);
- 	gtk_widget_set_size_request (m_widget, newWidth, newHeight);
+ 	gtk_window_set_default_size (GTK_WINDOW (m_widget), newWidth, newHeight);
 	if (numChildren() > 0)
 		YDialog::setSize (newWidth, newHeight);
 }
 
 YDialog *
-YGUI::createDialog( YWidgetOpt & opt )
+YGUI::createDialog (YWidgetOpt &opt)
 {
 	IMPL;
 	return new YGDialog (opt, NULL);
 }
 
 void
-YGUI::showDialog( YDialog *dialog )
+YGUI::showDialog (YDialog *dialog)
 {
 	IMPL;
 	gtk_widget_show (YGWidget::get (dialog)->getWidget());
@@ -129,7 +153,7 @@ YGUI::showDialog( YDialog *dialog )
 }
 
 void
-YGUI::closeDialog( YDialog *dialog )
+YGUI::closeDialog (YDialog *dialog)
 {
 	IMPL; // FIXME - destroy ? lifecycle etc. ...
 	gtk_widget_hide (YGWidget::get (dialog)->getWidget());

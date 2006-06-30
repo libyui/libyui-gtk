@@ -15,7 +15,7 @@ GdkColor fromYColor (const YColor &ycolor)
 class YGGenericLabel : public YGWidget
 {
 protected:
-	GtkWidget *m_widget;
+	GtkWidget *m_inner_widget;
 	int m_vert_margin, m_hori_margin;
 
 public:
@@ -25,18 +25,18 @@ public:
 	: YGWidget (y_widget, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		if (opt.isOutputField.value()) {
-			m_widget = gtk_entry_new();
-			gtk_editable_set_editable (GTK_EDITABLE (m_widget), FALSE);
+			m_inner_widget = gtk_entry_new();
+			gtk_editable_set_editable (GTK_EDITABLE (m_inner_widget), FALSE);
 		}
 		else
-			m_widget = gtk_label_new ("");
+			m_inner_widget = gtk_label_new ("");
 
 		gtk_container_add (GTK_CONTAINER (YGWidget::getWidget()), getWidget());
 		// NOTE: we can't just use gtk_container_set_border_width() because the color
 		// would not expand to the borders
 		m_hori_margin = hor_margin;
 		m_vert_margin = ver_margin;
-		gtk_widget_show (m_widget);
+		gtk_widget_show (m_inner_widget);
 
 		PangoFontDescription* font = pango_font_description_new();
 		if (opt.boldFont.value())
@@ -64,7 +64,7 @@ public:
 	virtual ~YGGenericLabel() {}
 
 	virtual GtkWidget* getWidget()
-	{ return m_widget; }
+	{ return m_inner_widget; }
 
 	void doSetLabel (const YCPString &label)
 	{
@@ -102,7 +102,13 @@ public:
 	{ }
 
 	// YGWidget
-	YGWIDGET_IMPL_SET_SIZE
+	//	YGWIDGET_IMPL_SET_SIZE
+	virtual void setSize (long newWidth, long newHeight)
+	{
+		fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, 
+			 m_widget, m_y_widget, newWidth, newHeight); 
+		doSetSize (newWidth, newHeight);
+	}
 	YGWIDGET_IMPL_SET_ENABLING
 	YGWIDGET_IMPL_NICESIZE
 	// YGLabeledWidget
@@ -145,5 +151,5 @@ YGUI::createColoredLabel (YWidget *parent, YWidgetOpt &opt,
                           YColor bgColor, int margin)
 {
 	return new YGColoredLabel (opt, YGWidget::get (parent), label,
-	                                     fgColor, bgColor, margin);
+				   fgColor, bgColor, margin);
 }

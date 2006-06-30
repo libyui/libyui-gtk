@@ -4,17 +4,63 @@
 #include <YGUI.h>
 #include <YGWidget.h>
 
-YGUI::YGUI( int argc, char ** argv,
-			bool with_threads, const char *macro_file ) :
-	YUI(with_threads)
+YGUI::YGUI (int argc, char ** argv,
+	    bool with_threads,
+	    const char *macro_file) :
+	YUI (with_threads),
+	m_have_wm (true),
+	m_fullscreen (false),
+	m_no_border (false)
 {
 	IMPL;
 	gtk_init (&argc, &argv);
 	fprintf (stderr, "I'm initialized '%s' - come & get me !\n",
 		with_threads ? "with threads !" : "no threads");
 
+	for (int i = 0; i < argc; i++)
+	{
+		const char *argp = argv[i];
+		if (!argp) continue;
+		if (argp[0] != '-')
+		{
+			fprintf (stderr, "Unknown argument '%s'\n", argp);
+			continue;
+		}
+		argp++;
+		if (argp[0] == '-') argp++;
+		if (!strcmp (argp, "no-wm"))
+			m_have_wm = false;
+
+		else if (!strcmp (argp, "fullscreen"))
+			m_fullscreen = true;
+
+		else if (!strcmp (argp, "fullscreen"))
+			m_no_border = true;
+
+		// FIXME: handle/parse geometry option
+
+		else if (!strcmp (argp, "help"))
+		{
+			fprintf( stderr,
+				 "Command line options for the YaST2 Gtk UI:\n"
+				 "\n"
+				 "--nothreads   run without additional UI threads\n"
+				 "--no-wm       assume no window manager is running\n"
+				 "--fullscreen  use full screen for `opt(`defaultsize) dialogs\n"
+				 "--noborder    no window manager border for `opt(`defaultsize) dialogs\n"
+				 "--help        this help text\n"
+				 "\n"
+				 );
+			
+			// FIXME: raiseFatalError
+		}
+	}
+
+	m_default_size.width = -1;
+	m_default_size.height = -1;
+
 	// without this none of the (default) threading action works ...
-		topmostConstructorHasFinished();
+	topmostConstructorHasFinished();
 }
 
 YGUI::~YGUI() IMPL;
@@ -269,3 +315,37 @@ void YGUI::busyCursor() IMPL;
 void YGUI::normalCursor() IMPL;
 void YGUI::redrawScreen() IMPL;
 void YGUI::makeScreenShot (string filename) IMPL;
+
+// Internal helper functions
+bool YGUI::haveWM() const
+{
+	return m_have_wm;
+}
+
+long YGUI::defaultSize (YUIDimension dim)
+{
+	// FIXME: check for panel etc. bits available vs. full screen size
+	GtkRequisition availableSize = { getDisplayWidth(), getDisplayHeight() };
+	if (m_fullscreen || !haveWM())
+		return dim == YD_HORIZ ? getDisplayWidth() : getDisplayHeight();
+	if (haveWM()) {
+		fprintf (stderr, "need geometry setup ...\n");
+		if (m_default_size.width  < 800 ||
+		    m_default_size.height < 600)
+		{
+			if (getDisplayWidth() >= 1024 &&
+			    getDisplayHeight() >= 768)
+			{ // 70% of screen size
+				m_default_size.width = MAX ((int)(getDisplayWidth() * 0.7), 800);
+				m_default_size.height = MAX ((int)(getDisplayHeight() * 0.7), 600);
+			}
+		}
+		else
+			m_default_size = availableSize;
+	}
+
+	if (dim == YD_HORIZ)
+		return haveWM() ? m_default_size.width : getDisplayWidth();
+	else
+		return haveWM() ? m_default_size.height : getDisplayHeight();
+}

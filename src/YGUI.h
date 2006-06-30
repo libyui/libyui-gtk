@@ -222,6 +222,16 @@ public:
 					 const YCPString &filter, const YCPString &headline);
     virtual YCPValue askForSaveFileName (const YCPString &startWith,
 					 const YCPString &filter, const YCPString &headline);
+
+ private:
+    bool m_have_wm;
+    bool m_fullscreen;
+    bool m_no_border;
+    GtkRequisition m_default_size;
+ public:
+    // Helpers for internal use [ visibility hidden ]
+    long defaultSize(YUIDimension dim);
+    bool haveWM() const;
 };
 
 // debug helpers.
