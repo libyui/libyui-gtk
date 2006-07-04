@@ -5,107 +5,89 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include "YBarGraph.h"
+#include "ratiobox.h"
 
 class YGBarGraph : public YBarGraph, public YGWidget
 {
 public:
 	YGBarGraph (const YWidgetOpt &opt, YGWidget *parent)
 	: YBarGraph (opt)
-	, YGWidget (this, parent, true, GTK_TYPE_HBOX, NULL)
-	{
-	
-		g_signal_connect (G_OBJECT (getWidget()), "size-request",
-		                  G_CALLBACK (calculate_size_cb), this);
-
-
-	}
-
-	int m_valuesSum;
+	, YGWidget (this, parent, true, TYPE_RATIO_BOX, NULL)
+	{ }
 
 	// YBarGraph
 	virtual void doUpdate()
 	{
+		// FIXME: let's avoid removing all labels as no new ones will be created
+		//        just values will be changed (I think...).
 		// Remove possible existing labels
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
-		for (guint i = 0; i < g_list_length (children); i++) {
-			GtkWidget *label = (GtkWidget*) g_list_nth_data (children, i);
+		for (GList* child = children; child; child = child->next) {
+			GtkWidget *label = (GtkWidget*) child->data;
 			gtk_container_remove (GTK_CONTAINER (getWidget()), label);  // un-refs widget
 		}
 		g_list_free (children);
 
-		// Sum of the values for ratio calculation purposes
+		// Max value needed for the color intensity
+		int maxValue = 0;
 		for (int i = 0; i < segments(); i++)
-			m_valuesSum += value(i);
+			maxValue = std::max (maxValue, value(i));
 
 		// Add new labels
 		for (int i = 0; i < segments(); i++) {
-			gchar *str = g_strdup_printf ("%d", value(i));
-			GtkWidget *label = gtk_label_new (str);
-			g_free (str);
+			// Reading label text
+			gchar* value_str = g_strdup_printf ("%d", value(i));
+			GString* str = g_string_new (value_str);
+			if (g_ascii_strcasecmp (label(i).c_str(), value_str)) {
+				str = g_string_prepend_c (str, '\n');
+				str = g_string_prepend (str, label(i).c_str());
+				// TODO: Replace %1 by whatever we must
+/*
+				for (guint s = 0; str->str[s] && s < str->len; s++)
+					if (str->str[s] == '%' && str->str[s+1] == '1') {
+						str = g_string_erase (str, s, 2);
+						str = g_string_insert (str, s, value_str);
+						break;
+					}
+*/
+				}
+			g_free (value_str);
 
-			GtkWidget *box = gtk_event_box_new();
-			GdkColor color = { 0, 255<<8, (i*100)<<8, (i*100)<<8 };  // TODO: temporary
-			gtk_widget_modify_bg (box, GTK_STATE_NORMAL, &color);
+			GtkWidget* label = gtk_label_new (str->str);
+			g_string_free (str, TRUE);
+
+			// Box so that we can draw a background on the label
+			GtkWidget* box = gtk_event_box_new();
 			gtk_container_add (GTK_CONTAINER (box), label);
 
-//			g_signal_connect (G_OBJECT (box), "size-request",
-//			                  G_CALLBACK (calculate_size_cb), this);
-
-/*
-// using a frame
-			GdkColor color = { 0, 0xf500, 0xffff, 0x8000 };  // yellow tone (temporary)
-			GtkWidget *frame = gtk_aspect_frame_new (NULL, 0.5, 0.5,
-			                           value(i) / values_sum, FALSE);
-			gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, &color);
+			// A frame around the label
+			GtkWidget* frame = gtk_frame_new (NULL);
+			gtk_container_add (GTK_CONTAINER (frame), box);
 			gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_OUT);
-			gtk_container_add (GTK_CONTAINER (frame), label);
-*/
 
-			gtk_container_add (GTK_CONTAINER (getWidget()), box);
+			// Set background color
+			static const bool colors_mask [][3] = {
+				{ 1, 0, 0 },	// red
+				{ 0, 1, 1 },	// cyan
+				{ 1, 1, 0 },	// yellow
+				{ 0, 1, 0 },	// green
+				{ 1, 0, 1 } 	// purple
+			};
+			const bool* mask = colors_mask [i % (sizeof (colors_mask)/3)];
+			int intensity = (int)((1.0 - ((float)value(i) / maxValue)) * 255);
+			GdkColor color = { 0, (mask[0] ? 255 : intensity) << 8,
+			                      (mask[1] ? 255 : intensity) << 8,
+			                      (mask[2] ? 255 : intensity) << 8 };
+			gtk_widget_modify_bg (box,   GTK_STATE_NORMAL, &color);
+			gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, &color);
+
+			gtk_container_add (GTK_CONTAINER (getWidget()), frame);
+			int val = value(i);
+			if (val == -1) val = 0;
+			ratio_box_set_child_packing (RATIO_BOX (getWidget()), frame, val, TRUE, 0);
 		}
-
-//		gtk_container_resize_children (GTK_CONTAINER (getWidget());  // needed?
-
 		gtk_widget_show_all (getWidget());
 	}
-
-
-// for the container
-	static void calculate_size_cb (GtkWidget *container, GtkRequisition *requisition,
-	                               YGBarGraph *pThis)
-	{
-		int width = container->allocation.width;
-
-		GList* children = gtk_container_get_children (GTK_CONTAINER (pThis->getWidget()));
-		for (guint i = 0; i < g_list_length (children); i++) {
-			GtkWidget *box = (GtkWidget*) g_list_nth_data (children, i);
-
-			gdouble ratio = (gdouble) pThis->value(i) / pThis->m_valuesSum;
-			GtkRequisition req = { (gint)(ratio * width), -1 };
-printf("req.width: %d\n", req.width);
-			gtk_widget_size_request (box, &req);
-printf("YGBarGraph: setting width of %d to %d\n", requisition->width, pThis->value(i));
-		}
-		g_list_free (children);
-	}
-
-#if 0
-// per each label
-	static void calculate_size_cb (GtkWidget *widget, GtkRequisition *requisition,
-	                               YGBarGraph *pThis)
-	{
-		// This is quite ugly, but the other way I can think of getting the value
-		// involves searching for the index on the container...
-sadfsdf		GtkWidget *label = gtk_bin_get_child (GTK_BIN (widget));
-		int value = atoi (gtk_label_get_text (GTK_LABEL (label)));
-
-		gdouble ratio = (gdouble) value / pThis->m_valuesSum;
-
-		GtkWidget *container = pThis->getWidget();
-		requisition->width = (gint) (container->allocation.width * ratio);
-printf("YGBarGraph: requested width by %d is %d\n", value, requisition->width);
-	}
-#endif
 
 	// YWidget
 	YGWIDGET_IMPL_SET_SIZE

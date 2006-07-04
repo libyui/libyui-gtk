@@ -1,3 +1,9 @@
+2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/YGBarGraph.cc src/ratiobox.cc: added ratio
+	container and made bar graph making use of it.
+	Still some issues to care.
+
 2006-06-29  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGLabel.cc (class YGGenericLabel): use
