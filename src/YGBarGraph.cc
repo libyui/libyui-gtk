@@ -18,8 +18,10 @@ public:
 	// YBarGraph
 	virtual void doUpdate()
 	{
-		// FIXME: let's avoid removing all labels as no new ones will be created
-		//        just values will be changed (I think...).
+		// FIXME: We could remove this pain of removing/adding everything by
+		// just removing no longer existing labels and adding new ones. And
+		// re-settings container ratios, labels text and colors.
+
 		// Remove possible existing labels
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
 		for (GList* child = children; child; child = child->next) {
@@ -33,28 +35,20 @@ public:
 		for (int i = 0; i < segments(); i++)
 			maxValue = std::max (maxValue, value(i));
 
-		// Add new labels
+		// Add the labels
 		for (int i = 0; i < segments(); i++) {
 			// Reading label text
-			gchar* value_str = g_strdup_printf ("%d", value(i));
-			GString* str = g_string_new (value_str);
-			if (g_ascii_strcasecmp (label(i).c_str(), value_str)) {
-				str = g_string_prepend_c (str, '\n');
-				str = g_string_prepend (str, label(i).c_str());
-				// TODO: Replace %1 by whatever we must
-/*
-				for (guint s = 0; str->str[s] && s < str->len; s++)
-					if (str->str[s] == '%' && str->str[s+1] == '1') {
-						str = g_string_erase (str, s, 2);
-						str = g_string_insert (str, s, value_str);
-						break;
+			string label_text = label (i);
+				{  // Replace %1 by value(i)
+				string::size_type pos = label_text.find ("%1", 0);
+				if (pos != string::npos) {
+					gchar* value_str = g_strdup_printf ("%d", value(i));
+					label_text.erase (pos, 2);
+					label_text.insert (pos, value_str);
+					g_free (value_str);
 					}
-*/
 				}
-			g_free (value_str);
-
-			GtkWidget* label = gtk_label_new (str->str);
-			g_string_free (str, TRUE);
+			GtkWidget* label = gtk_label_new (label_text.c_str());
 
 			// Box so that we can draw a background on the label
 			GtkWidget* box = gtk_event_box_new();

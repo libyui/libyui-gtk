@@ -13,8 +13,8 @@ static void ratio_box_forall     (GtkContainer   *container,
                                   GtkCallback     callback,
                                   gpointer        callback_data);
 static GType ratio_box_child_type (GtkContainer   *container);
-static gboolean ratio_box_visibility_notify_event (GtkWidget	     *widget,
-                                                GdkEventVisibility  *event);
+//static gboolean ratio_box_visibility_notify_event (GtkWidget	     *widget,
+//                                                GdkEventVisibility  *event);
 static void ratio_box_size_request  (GtkWidget      *widget,
                                      GtkRequisition *requisition);
 static void ratio_box_size_allocate (GtkWidget      *widget,
@@ -223,29 +223,72 @@ printf("** widget set (in)visible\n");
 static void ratio_box_size_request (GtkWidget      *widget,
                                     GtkRequisition *requisition)
 {
+	/* Let's first calculate the size that the smallest widget must have
+	   to fit its ratio and get that multiplied by the other containees. */
+	guint box_length = GTK_CONTAINER (widget)->border_width * 2;
+	guint box_height = 0;
 	RatioBox* box = RATIO_BOX (widget);
-	requisition->width = requisition->height =
-	     GTK_CONTAINER (widget)->border_width * 2;
+
+	// Calculate min proportional-containees length
+	gfloat min_length = 0;
 
 	GList* child;
 	for (child = g_list_first (box->children); child; child = child->next) {
 		RatioBoxChild* box_child = (RatioBoxChild*) child->data;
+		if (GTK_WIDGET_VISIBLE (box_child->widget) && box_child->ratio) {
+			GtkRequisition widget_requisition;
+			gtk_widget_size_request (box_child->widget, &widget_requisition);
 
+			int widget_length;
+			if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION)
+				widget_length = widget_requisition.width;
+			else // orientation == VERTICAL_RATIO_BOX_ORIENTATION
+				widget_length = widget_requisition.height;
+			widget_length += box_child->padding*2 + box->spacing*2;
+
+			gfloat ratio = box_child->ratio / box->ratios_sum;
+			min_length = MAX (min_length, (widget_length * (1 - ratio)));
+		}
+	}
+
+	// Calculate container size
+	for (child = g_list_first (box->children); child; child = child->next) {
+		RatioBoxChild* box_child = (RatioBoxChild*) child->data;
+	
 		if (GTK_WIDGET_VISIBLE (box_child->widget)) {
 			GtkRequisition widget_requisition;
 			gtk_widget_size_request (box_child->widget, &widget_requisition);
 
+			int widget_length, widget_height;
 			if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
-				requisition->width += widget_requisition.width
-				                   + (box_child->padding*2) + (box->spacing*2);
-				requisition->height = MAX (requisition->height, widget_requisition.height);
+				widget_length = widget_requisition.width;
+				widget_height = widget_requisition.height;
 			}
 			else { // orientation == VERTICAL_RATIO_BOX_ORIENTATION
-				requisition->height += widget_requisition.height
-				                    + (box_child->padding*2) + (box->spacing*2);
-				requisition->width = MAX (requisition->width, widget_requisition.width);
+				widget_length = widget_requisition.height;
+				widget_height = widget_requisition.width;
 			}
+			widget_length += box_child->padding*2 + box->spacing*2;
+
+			if (box_child->ratio) {
+				gfloat ratio = box_child->ratio / box->ratios_sum;
+				box_length += gint (ratio * min_length * widget_length);
+			}
+			else
+				box_length += widget_length;
+
+			box_height = MAX (box_height,
+				widget_height + GTK_CONTAINER (widget)->border_width*2);
 		}
+	}
+
+	if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
+		requisition->width = box_length;
+		requisition->height = box_height;
+	}
+	else { // orientation == VERTICAL_RATIO_BOX_ORIENTATION
+		requisition->height = box_length;
+		requisition->width  = box_height;
 	}
 }
 
@@ -281,7 +324,7 @@ static void ratio_box_size_allocate (GtkWidget     *widget,
 		box_length -= box_child->padding*2 + box->spacing*2;
 	}
 
-	gint child_pos = 0;
+	gfloat child_pos = 0;
 	for (child = g_list_first (box->children); child; child = child->next) {
 		GtkAllocation child_allocation;
 		RatioBoxChild* box_child = (RatioBoxChild*) child->data;
@@ -295,43 +338,46 @@ static void ratio_box_size_allocate (GtkWidget     *widget,
 		// ratio 0 == non-expansible
 		if (box_child->ratio == 0) {
 			if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
-				child_allocation.x = allocation->x + child_pos;
+				child_allocation.x = allocation->x + gint(child_pos);
 				child_allocation.y = allocation->y;
 				child_allocation.width  = requisition.width;
 				child_allocation.height = allocation->height;
+				child_pos += child_allocation.width;
 			}
 			else {  // VERTICAL_RATIO_BOX_ORIENTATION
 				child_allocation.x = allocation->x;
-				child_allocation.y = allocation->y + child_pos;
+				child_allocation.y = allocation->y + gint(child_pos);
 				child_allocation.width  = allocation->width;
 				child_allocation.height = requisition.height;
+				child_pos += child_allocation.height;
 			}
 		}
 		// expansible
 		else {
+			gfloat length = (box_child->ratio / box->ratios_sum) * box_length;
+
 			if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
-				child_allocation.x = allocation->x + child_pos;
+				child_allocation.x = allocation->x + gint(child_pos);
 				child_allocation.y = allocation->y;
-				child_allocation.width =
-				  (gint)((box_child->ratio / box->ratios_sum) * box_length);
+				child_allocation.width = gint(length);
 				child_allocation.height = allocation->height;
 			}
 			else {  // VERTICAL_RATIO_BOX_ORIENTATION
 				child_allocation.x = allocation->x;
-				child_allocation.y = allocation->y + child_pos;
+				child_allocation.y = allocation->y + gint(child_pos);
 				child_allocation.width = allocation->width;
-				child_allocation.height =
-				  (gint)((box_child->ratio / box->ratios_sum) * box_length);
+				child_allocation.height = gint(length);
 			}
+			child_pos += length;
 		}
 
 		if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
 			child_allocation.x += box->spacing + box_child->padding;
-			child_pos += child_allocation.width + box->spacing * 2 + box_child->padding * 2;
+			child_pos += box->spacing * 2 + box_child->padding * 2;
 		}
 		else {  // VERTICAL_RATIO_BOX_ORIENTATION
 			child_allocation.y += box->spacing + box_child->padding;
-			child_pos += child_allocation.height + box->spacing * 2 + box_child->padding * 2;
+			child_pos += box->spacing * 2 + box_child->padding * 2;
 		}
 
 		if (!box_child->fill) {

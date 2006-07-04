@@ -1,5 +1,12 @@
 2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
 
+	* src/ratiobox.cc: changed size request so that the
+	container always has space for the smallest widget.
+	Fixed some left space caused by precision losses.
+	* YGBarGraph.cc: fixed label text.
+
+2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
+
 	* src/YGBarGraph.cc src/ratiobox.cc: added ratio
 	container and made bar graph making use of it.
 	Still some issues to care.
