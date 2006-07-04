@@ -223,38 +223,15 @@ printf("** widget set (in)visible\n");
 static void ratio_box_size_request (GtkWidget      *widget,
                                     GtkRequisition *requisition)
 {
-	/* Let's first calculate the size that the smallest widget must have
-	   to fit its ratio and get that multiplied by the other containees. */
 	guint box_length = GTK_CONTAINER (widget)->border_width * 2;
 	guint box_height = 0;
 	RatioBox* box = RATIO_BOX (widget);
 
-	// Calculate min proportional-containees length
-	gfloat min_length = 0;
+	gfloat pixels_per_percent = 0;
 
 	GList* child;
 	for (child = g_list_first (box->children); child; child = child->next) {
 		RatioBoxChild* box_child = (RatioBoxChild*) child->data;
-		if (GTK_WIDGET_VISIBLE (box_child->widget) && box_child->ratio) {
-			GtkRequisition widget_requisition;
-			gtk_widget_size_request (box_child->widget, &widget_requisition);
-
-			int widget_length;
-			if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION)
-				widget_length = widget_requisition.width;
-			else // orientation == VERTICAL_RATIO_BOX_ORIENTATION
-				widget_length = widget_requisition.height;
-			widget_length += box_child->padding*2 + box->spacing*2;
-
-			gfloat ratio = box_child->ratio / box->ratios_sum;
-			min_length = MAX (min_length, (widget_length * (1 - ratio)));
-		}
-	}
-
-	// Calculate container size
-	for (child = g_list_first (box->children); child; child = child->next) {
-		RatioBoxChild* box_child = (RatioBoxChild*) child->data;
-	
 		if (GTK_WIDGET_VISIBLE (box_child->widget)) {
 			GtkRequisition widget_requisition;
 			gtk_widget_size_request (box_child->widget, &widget_requisition);
@@ -272,15 +249,17 @@ static void ratio_box_size_request (GtkWidget      *widget,
 
 			if (box_child->ratio) {
 				gfloat ratio = box_child->ratio / box->ratios_sum;
-				box_length += gint (ratio * min_length * widget_length);
+				pixels_per_percent = MAX (widget_length / ratio, pixels_per_percent);
 			}
 			else
 				box_length += widget_length;
 
-			box_height = MAX (box_height,
-				widget_height + GTK_CONTAINER (widget)->border_width*2);
+			box_height = MAX (box_height, widget_height +
+			                  GTK_CONTAINER (widget)->border_width*2);
 		}
 	}
+
+	box_length += (guint) pixels_per_percent;
 
 	if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
 		requisition->width = box_length;

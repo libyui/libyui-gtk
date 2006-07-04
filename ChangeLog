@@ -5,7 +5,7 @@
 	Fixed some left space caused by precision losses.
 	* YGBarGraph.cc: fixed label text.
 
-2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
+2006-07-03 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/YGBarGraph.cc src/ratiobox.cc: added ratio
 	container and made bar graph making use of it.
