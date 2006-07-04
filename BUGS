@@ -44,6 +44,12 @@ List of missing features, actual bugs and other issues:
 	it is something else, causing an assert fault.
 	Would be nice to make an actual patch for Yast guys.
 
+* It has been reported that a 80Mb computer is able to proceed during
+  all the text mode installation process, but the partition custom
+  setup. I suspect this is due to the Yast-core table and not really
+  ncurses'. Something that might be nice to see together with the previous
+  point... For more information, contact jdd@dodin.org .
+
 * ColorLabel change value
 	There should be a setColor() API on the frontend instead of Yast-core
 	trying to implement that itself by removing the label and creating
