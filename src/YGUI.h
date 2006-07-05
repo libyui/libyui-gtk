@@ -129,11 +129,11 @@ public:
     virtual YWidget *createDummySpecialWidget (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
     virtual bool     hasDummySpecialWidget() { return false; }
 
-    virtual YWidget *createDownloadProgress (YWidget *parent, YWidgetOpt & opt,
-					     const YCPString & label,
-					     const YCPString & filename,
-					     int expectedSize) IMPL_NULL;
-    virtual bool     hasDownloadProgress() { return false; }
+	virtual YWidget *createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
+	                                         const YCPString &label,
+	                                         const YCPString &filename,
+	                                         int expectedSize);
+	virtual bool     hasDownloadProgress() { return true; }
 
     virtual YWidget *createBarGraph (YWidget *parent, YWidgetOpt &opt);
     virtual bool hasBarGraph() { return true; }

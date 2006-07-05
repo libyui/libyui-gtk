@@ -2,6 +2,7 @@
 
 	* src/ratiobox.cc renamed to src/ygtkratiobox.cc
 	* src/YGMultiProgressMeter.cc: new widget.
+	* src/YGProgressBar.cc: added YGDownloadProgress.
 
 2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
 
