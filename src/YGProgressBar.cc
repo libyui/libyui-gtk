@@ -14,8 +14,7 @@ public:
 	: YProgressBar (opt, label, maxprogress, progress)
 	, YGLabeledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
-	{
-	}
+	{ }
 
 	virtual ~YGProgressBar() {}
 
@@ -27,9 +26,8 @@ public:
 	// YProgressBar
 	virtual void setProgress (const YCPInteger& newProgress)
 	{
-		float value = newProgress->value();
-		value /= maxProgress->value();
-		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), value);
+		float fraction = (float) newProgress->value() / maxProgress->value();
+		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
 		YProgressBar::setProgress (newProgress);
 	}
 };

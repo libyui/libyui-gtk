@@ -159,10 +159,9 @@ public:
     virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
     virtual bool     hasDumbTab() { return false; }
 
-    virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt & opt,
-					       bool horizontal,
-					       const YCPList & maxValues) IMPL_NULL;
-    virtual bool     hasMultiProgressMeter() { return false; }
+	virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt & opt,
+	                                  bool horizontal, const YCPList & maxValues);
+	virtual bool     hasMultiProgressMeter() { return true; }
 
     virtual YWidget *createSlider (YWidget *parent, YWidgetOpt &opt,
 				   const YCPString &label,

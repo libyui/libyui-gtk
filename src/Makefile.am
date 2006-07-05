@@ -32,7 +32,8 @@ libpy2gtk_la_SOURCES = \
 	YGTree.cc \
 	YGMenuButton.cc \
 	YGBarGraph.cc \
-	ratiobox.cc
+	YGMultiProgressMeter.cc \
+	ygtkratiobox.cc
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la

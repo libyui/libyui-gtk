@@ -1,6 +1,9 @@
 /* RatioBox container */
 
-#include "ratiobox.h"
+#include "ygtkratiobox.h"
+
+namespace YGtk
+{
 
 static void ratio_box_class_init (RatioBoxClass *klass);
 static void ratio_box_init       (RatioBox      *box);
@@ -107,6 +110,16 @@ void ratio_box_set_child_packing (RatioBox *box, GtkWidget *child,
 			gtk_widget_queue_resize (child);
 	}
 	gtk_widget_thaw_child_notify (child);
+}
+
+void ratio_box_set_spacing (RatioBox *box, gint spacing)
+{
+	box->spacing = spacing;
+}
+
+gint ratio_box_get_spacing (RatioBox *box)
+{
+	return box->spacing;
 }
 
 static void ratio_box_add (GtkContainer *container, GtkWidget *child)
@@ -248,8 +261,11 @@ static void ratio_box_size_request (GtkWidget      *widget,
 			widget_length += box_child->padding*2 + box->spacing*2;
 
 			if (box_child->ratio) {
-				gfloat ratio = box_child->ratio / box->ratios_sum;
-				pixels_per_percent = MAX (widget_length / ratio, pixels_per_percent);
+				gfloat percent_of_whole = box_child->ratio / box->ratios_sum * 100;
+printf("widget_length: %d - ratio: %f\n", widget_length, percent_of_whole);
+				pixels_per_percent = MAX (widget_length / percent_of_whole,
+				                          pixels_per_percent);
+printf("pixels_per_percent: %f\n", pixels_per_percent);
 			}
 			else
 				box_length += widget_length;
@@ -259,7 +275,8 @@ static void ratio_box_size_request (GtkWidget      *widget,
 		}
 	}
 
-	box_length += (guint) pixels_per_percent;
+	// The space for the proportional containees
+	box_length += (guint) (pixels_per_percent * 100);
 
 	if (box->orientation == HORIZONTAL_RATIO_BOX_ORIENTATION) {
 		requisition->width = box_length;
@@ -367,3 +384,5 @@ static void ratio_box_size_allocate (GtkWidget     *widget,
 		gtk_widget_size_allocate (box_child->widget, &child_allocation);
 	}
 }
+
+}; /*namespace YGtk*/

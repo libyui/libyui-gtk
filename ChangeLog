@@ -1,3 +1,8 @@
+2006-07-05 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/ratiobox.cc renamed to src/ygtkratiobox.cc
+	* src/YGMultiProgressMeter.cc: new widget.
+
 2006-07-04 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/ratiobox.cc: changed size request so that the

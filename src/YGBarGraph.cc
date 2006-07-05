@@ -2,10 +2,9 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YGUtils.h"
 #include "YGWidget.h"
 #include "YBarGraph.h"
-#include "ratiobox.h"
+#include "ygtkratiobox.h"
 
 class YGBarGraph : public YBarGraph, public YGWidget
 {
@@ -48,14 +47,14 @@ public:
 					g_free (value_str);
 					}
 				}
-			GtkWidget* label = gtk_label_new (label_text.c_str());
+			GtkWidget *label = gtk_label_new (label_text.c_str());
 
 			// Box so that we can draw a background on the label
-			GtkWidget* box = gtk_event_box_new();
+			GtkWidget *box = gtk_event_box_new();
 			gtk_container_add (GTK_CONTAINER (box), label);
 
 			// A frame around the label
-			GtkWidget* frame = gtk_frame_new (NULL);
+			GtkWidget *frame = gtk_frame_new (NULL);
 			gtk_container_add (GTK_CONTAINER (frame), box);
 			gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_OUT);
 
@@ -67,7 +66,7 @@ public:
 				{ 0, 1, 0 },	// green
 				{ 1, 0, 1 } 	// purple
 			};
-			const bool* mask = colors_mask [i % (sizeof (colors_mask)/3)];
+			const bool *mask = colors_mask [i % (sizeof (colors_mask)/3)];
 			int intensity = (int)((1.0 - ((float)value(i) / maxValue)) * 255);
 			GdkColor color = { 0, (mask[0] ? 255 : intensity) << 8,
 			                      (mask[1] ? 255 : intensity) << 8,
@@ -78,7 +77,8 @@ public:
 			gtk_container_add (GTK_CONTAINER (getWidget()), frame);
 			int val = value(i);
 			if (val == -1) val = 0;
-			ratio_box_set_child_packing (RATIO_BOX (getWidget()), frame, val, TRUE, 0);
+			YGtk::ratio_box_set_child_packing
+				(RATIO_BOX (getWidget()), frame, val, TRUE, 0);
 		}
 		gtk_widget_show_all (getWidget());
 	}
