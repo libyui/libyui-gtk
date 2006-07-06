@@ -8,11 +8,15 @@
 
 class YGBarGraph : public YBarGraph, public YGWidget
 {
+	GtkTooltips *m_tooltips;
+
 public:
 	YGBarGraph (const YWidgetOpt &opt, YGWidget *parent)
 	: YBarGraph (opt)
 	, YGWidget (this, parent, true, TYPE_RATIO_BOX, NULL)
-	{ }
+	{
+		m_tooltips = gtk_tooltips_new();
+	}
 
 	// YBarGraph
 	virtual void doUpdate()
@@ -58,6 +62,9 @@ public:
 			gtk_container_add (GTK_CONTAINER (frame), box);
 			gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_OUT);
 
+			// Tooltip with the label -- useful if the bar entry gets too small
+			gtk_tooltips_set_tip (m_tooltips, box, label_text.c_str(), NULL);
+
 			// Set background color
 			static const bool colors_mask [][3] = {
 				{ 1, 0, 0 },	// red
@@ -80,13 +87,24 @@ public:
 			YGtk::ratio_box_set_child_packing
 				(RATIO_BOX (getWidget()), frame, val, TRUE, 0);
 		}
+
 		gtk_widget_show_all (getWidget());
 	}
 
 	// YWidget
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_NICESIZE
+	virtual long nicesize (YUIDimension dim)
+	{
+		long nicesize = getNiceSize (dim);
+		if (dim == YD_HORIZ) {
+			// Don't let the bar graph be too big
+			const long max_width = 250;
+			if (nicesize > max_width)
+				return max_width;
+		}
+		return nicesize;
+	}
 };
 
 YWidget *

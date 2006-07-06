@@ -262,10 +262,8 @@ static void ratio_box_size_request (GtkWidget      *widget,
 
 			if (box_child->ratio) {
 				gfloat percent_of_whole = box_child->ratio / box->ratios_sum * 100;
-printf("widget_length: %d - ratio: %f\n", widget_length, percent_of_whole);
 				pixels_per_percent = MAX (widget_length / percent_of_whole,
 				                          pixels_per_percent);
-printf("pixels_per_percent: %f\n", pixels_per_percent);
 			}
 			else
 				box_length += widget_length;

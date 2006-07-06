@@ -156,8 +156,8 @@ public:
 				 const YCPString & time) IMPL_NULL;
     virtual bool     hasTime() { return false; }
 
-    virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
-    virtual bool     hasDumbTab() { return false; }
+	virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt) IMPL_NULL;
+	virtual bool     hasDumbTab() { return false; }
 
 	virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt & opt,
 	                                  bool horizontal, const YCPList & maxValues);
