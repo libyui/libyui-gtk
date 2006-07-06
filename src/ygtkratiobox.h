@@ -34,23 +34,23 @@ struct _RatioBox
 	GList *children;
 	gint16 spacing;
 
-  /*< private >*/
-  guint orientation : 1;
-  gfloat ratios_sum;
+	/*< private >*/
+	guint orientation : 1;
+	gfloat ratios_sum;
 };
 
 struct _RatioBoxClass
 {
-  GtkContainerClass parent_class;
+	GtkContainerClass parent_class;
 };
 
 struct _RatioBoxChild
 {
-  GtkWidget *widget;
-  // Proprieties
-  guint16 padding;
-  guint fill : 1;
-  gfloat ratio;
+	GtkWidget *widget;
+	// Proprieties
+	guint16 padding;
+	guint fill : 1;
+	gfloat ratio;
 };
 
 typedef enum RatioBoxOrientation {
