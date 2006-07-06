@@ -97,7 +97,7 @@ namespace YGtk
 static void bar_graph_class_init (BarGraphClass *klass);
 static void bar_graph_init       (BarGraph      *bar);
 
-static BarGraphClass *parent_class = NULL;
+static RatioBoxClass *parent_class = NULL;
 
 GType bar_graph_get_type()
 {
@@ -119,7 +119,7 @@ GType bar_graph_get_type()
 static void bar_graph_class_init (BarGraphClass *klass)
 {
 	IMPL
-	parent_class = (BarGraphClass*) g_type_class_peek_parent (klass);
+	parent_class = (RatioBoxClass*) g_type_class_peek_parent (klass);
 }
 
 static void bar_graph_init (BarGraph *bar)
