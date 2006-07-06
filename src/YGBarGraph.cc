@@ -125,15 +125,15 @@ static void bar_graph_class_init (BarGraphClass *klass)
 static void bar_graph_init (BarGraph *bar)
 {
 	IMPL
+	RATIO_BOX (bar)->orientation = YGtk::HORIZONTAL_RATIO_BOX_ORIENTATION;
+	RATIO_BOX (bar)->spacing = 0;
+	bar->m_tooltips = gtk_tooltips_new();
 }
 
 GtkWidget* bar_graph_new ()
 {
 	IMPL
 	BarGraph* bar = (BarGraph*) g_object_new (TYPE_BAR_GRAPH, NULL);
-	RATIO_BOX (bar)->orientation = YGtk::HORIZONTAL_RATIO_BOX_ORIENTATION;
-	RATIO_BOX (bar)->spacing = 0;
-	bar->m_tooltips = gtk_tooltips_new();
 	return GTK_WIDGET (bar);
 }
 
