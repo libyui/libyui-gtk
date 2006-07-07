@@ -1,3 +1,9 @@
+2006-07-06 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/ygtkbargraph.c: moved BarGraph to a Gtk class.
+	* src/ygtkslider.c: a more complex gtkscale.
+	* src/YGBarGraph.cc: added YGPartitionSplitter.
+
 2006-07-05 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/ratiobox.cc renamed to src/ygtkratiobox.cc

@@ -1,3 +1,4 @@
+AM_CFLAGS = $(GTK_CFLAGS)
 AM_CXXFLAGS = -DY2LOG=\"ui-gtk\" $(GTK_CFLAGS)
 
 noinst_HEADERS = $(wildcard *.h)
@@ -33,7 +34,10 @@ libpy2gtk_la_SOURCES = \
 	YGMenuButton.cc \
 	YGBarGraph.cc \
 	YGMultiProgressMeter.cc \
-	ygtkratiobox.cc
+	\
+	ygtkratiobox.c \
+	ygtkbargraph.c \
+	ygtkslider.c
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la

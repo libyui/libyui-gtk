@@ -1,32 +1,30 @@
 /* RatioBox container */
 
-#ifndef RATIO_BOX_H
-#define RATIO_BOX_H
+#ifndef YGTK_RATIO_BOX_H
+#define YGTK_RATIO_BOX_H
 
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
 
+G_BEGIN_DECLS
 
-#define TYPE_RATIO_BOX            (YGtk::ratio_box_get_type ())
-#define RATIO_BOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-                                   TYPE_RATIO_BOX, YGtk::RatioBox))
-#define RATIO_BOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
-                                   TYPE_RATIO_BOX, YGtk::RatioBoxClass))
-#define IS_RATIO_BOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-                                   TYPE_RATIO_BOX))
-#define IS_RATIO_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
-                                   TYPE_RATIO_BOX))
-#define RATIO_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-                                   TYPE_RATIO_BOX, YGtk::RatioBoxClass))
+#define YGTK_TYPE_RATIO_BOX            (ygtk_ratio_box_get_type ())
+#define YGTK_RATIO_BOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                        YGTK_TYPE_RATIO_BOX, YGtkRatioBox))
+#define YGTK_RATIO_BOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                        YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
+#define IS_YGTK_RATIO_BOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                        YGTK_TYPE_RATIO_BOX))
+#define IS_YGTK_RATIO_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                        YGTK_TYPE_RATIO_BOX))
+#define YGTK_RATIO_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                        YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
 
-namespace YGtk
-{
+typedef struct _YGtkRatioBox	     YGtkRatioBox;
+typedef struct _YGtkRatioBoxClass  YGtkRatioBoxClass;
+typedef struct _YGtkRatioBoxChild  YGtkRatioBoxChild;
 
-typedef struct _RatioBox	     RatioBox;
-typedef struct _RatioBoxClass  RatioBoxClass;
-typedef struct _RatioBoxChild  RatioBoxChild;
-
-struct _RatioBox
+struct _YGtkRatioBox
 {
 	GtkContainer container;
 
@@ -39,12 +37,12 @@ struct _RatioBox
 	gfloat ratios_sum;
 };
 
-struct _RatioBoxClass
+struct _YGtkRatioBoxClass
 {
 	GtkContainerClass parent_class;
 };
 
-struct _RatioBoxChild
+struct _YGtkRatioBoxChild
 {
 	GtkWidget *widget;
 	// Proprieties
@@ -53,23 +51,23 @@ struct _RatioBoxChild
 	gfloat ratio;
 };
 
-typedef enum RatioBoxOrientation {
-	HORIZONTAL_RATIO_BOX_ORIENTATION = 0,
-	VERTICAL_RATIO_BOX_ORIENTATION   = 1
-};
+typedef enum YGtkRatioBoxOrientation {
+	YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION = 0,
+	YGTK_RATIO_BOX_VERTICAL_ORIENTATION   = 1
+} YGtkRatioBoxOrientation;
 
-GtkWidget* ratio_box_new (RatioBoxOrientation orientation, gint spacing);
-GType ratio_box_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_ratio_box_new (YGtkRatioBoxOrientation orientation, gint spacing);
+GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
-void ratio_box_set_spacing (RatioBox *box, gint spacing);
-gint ratio_box_get_spacing (RatioBox *box);
+void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
+gint ygtk_ratio_box_get_spacing (YGtkRatioBox *box);
 
-void ratio_box_query_child_packing (RatioBox *box, GtkWidget *child,
-                                    gfloat *ratio, gboolean *fill,
-                                    guint *padding);
-void ratio_box_set_child_packing (RatioBox *box, GtkWidget *child, gfloat ratio,
-                                  gboolean fill, guint padding);
+void ygtk_ratio_box_query_child_packing (YGtkRatioBox *box, GtkWidget *child,
+                                         gfloat *ratio, gboolean *fill,
+                                         guint *padding);
+void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
+                                       gboolean fill, guint padding);
 
-}; /*namespace YGtk*/
+G_END_DECLS
 
-#endif /* RATIO_BOX_H */
+#endif /* YGTK_RATIO_BOX_H */

@@ -168,19 +168,19 @@ public:
 				   int min, int max, int initial);
     virtual bool hasSlider() { return true; }
 
-    virtual YWidget *createPartitionSplitter (YWidget *		parent,
-					      YWidgetOpt &	opt,
-					      int		usedSize,
-					      int		totalFreeSize,
-					      int		newPartSize,
-					      int		minNewPartSize,
-					      int		minFreeSize,
-					      const YCPString & usedLabel,
-					      const YCPString & freeLabel,
-					      const YCPString & newPartLabel,
-					      const YCPString & freeFieldLabel,
-					      const YCPString & newPartFieldLabel) IMPL_NULL
-    virtual bool     hasPartitionSplitter()  { return false; }
+	virtual YWidget *createPartitionSplitter (YWidget    *parent,
+	                                          YWidgetOpt &opt,
+	                                          int         usedSize,
+	                                          int         totalFreeSize,
+	                                          int         newPartSize,
+	                                          int         minNewPartSize,
+	                                          int         minFreeSize,
+	                                     const YCPString &usedLabel,
+	                                     const YCPString &freeLabel,
+	                                     const YCPString &newPartLabel,
+	                                     const YCPString &freeFieldLabel,
+	                                     const YCPString &newPartFieldLabel);
+	virtual bool     hasPartitionSplitter()  { return true; }
 
     virtual YWidget *createPatternSelector (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
     virtual bool     hasPatternSelector() { return false; }
