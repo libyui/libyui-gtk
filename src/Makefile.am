@@ -34,6 +34,7 @@ libpy2gtk_la_SOURCES = \
 	YGMenuButton.cc \
 	YGBarGraph.cc \
 	YGMultiProgressMeter.cc \
+	YGDumbTab.cc \
 	\
 	ygtkratiobox.c \
 	ygtkbargraph.c \

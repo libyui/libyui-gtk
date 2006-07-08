@@ -1,10 +1,9 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
-#include "YFrame.h"
-#include "YGUtils.h"
 #include "YGWidget.h"
+#include "YGUtils.h"
+#include "YFrame.h"
 
 class YGFrame : public YFrame, public YGWidget
 {
@@ -19,44 +18,49 @@ public:
 	{
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;
-		gtk_container_add (GTK_CONTAINER (getWidget()),
-						   gtk_fixed_new ());
+		gtk_container_add (GTK_CONTAINER (getWidget()), gtk_fixed_new());
 		gtk_widget_show_all (getWidget());
 		setLabel (label);
 	}
 
 	virtual ~YGFrame() {}
 
-	virtual void setLabel( const YCPString & newLabel )
+	// YFrame
+	virtual void setLabel (const YCPString &label)
 	{
 		string str = YGUtils::mapKBAccel(label->value_cstr());
 		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
+		YFrame::setLabel (label);
+	}
+
+	// YGWidget
+	GtkFixed *getFixed()
+	{
+		return GTK_FIXED (gtk_bin_get_child (GTK_BIN (getWidget())));
 	}
 
 	// YWidget
 	YGWIDGET_IMPL_SET_ENABLING
 
-	virtual void setSize( long newWidth, long newHeight )
+//	YGWIDGET_IMPL_SET_SIZE_CHAIN (YContainerWidget::child(0)->this)
+
+	virtual void setSize (long newWidth, long newHeight)
 	{
 		doSetSize (newWidth, newHeight);
 
-		long newChildWidth  = max ( 0L, newWidth );
-		long newChildHeight = max ( 0L, newHeight - m_label_req.height );
+		long newChildWidth  = max (0L, newWidth);
+		long newChildHeight = max (0L, newHeight - m_label_req.height);
 
-		if ( numChildren() > 0 )
-			YContainerWidget::child(0)->setSize( newChildWidth, newChildHeight );
-  	}
-
-	virtual void childAdded( YWidget * child )
-	{
-		IMPL;
-		doMoveChild (child, xthickness(),
-			     m_label_req.height + ythickness());
+		if (numChildren() > 0) {
+			int border = GTK_CONTAINER (getWidget())->border_width;
+			YContainerWidget::child(0)->setSize (newChildWidth - 2*xthickness() - border,
+				                                   newChildHeight - 2*ythickness() - border);
+		}
 	}
 
-	virtual long nicesize( YUIDimension dim )
+	virtual long nicesize (YUIDimension dim)
 	{
-		IMPL;
+		IMPL
 
 		long niceSize = numChildren() > 0 ? YContainerWidget::child(0)->nicesize( dim ) : 0;
 		GtkFrame *frame = GTK_FRAME (getWidget());
@@ -81,8 +85,8 @@ public:
 };
 
 YContainerWidget *
-YGUI::createFrame( YWidget *parent, YWidgetOpt &opt,
-				   const YCPString &label )
+YGUI::createFrame (YWidget *parent, YWidgetOpt &opt,
+                   const YCPString &label)
 {
 	IMPL;
 	return new YGFrame (opt, YGWidget::get (parent), label);

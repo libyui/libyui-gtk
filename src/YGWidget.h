@@ -18,7 +18,7 @@ public:
 
 	GtkWidget *getWidget() { return m_widget; }
 	const char *getWidgetName() { return m_y_widget->widgetClass(); }
-	GtkFixed *getFixed();
+	virtual GtkFixed *getFixed();
 
 	long getNiceSize (YUIDimension dim);
 	void show ();
@@ -36,7 +36,9 @@ public:
 	               bool if_notify = true, bool if_not_pending = false);
 
 protected:
+	/* The associated GTK+ widget. */
 	GtkWidget *m_widget;
+
 	// no RTTI for dynamic_cast ?
 	YWidget   *m_y_widget;
 	GtkAllocation m_alloc;
@@ -53,10 +55,10 @@ protected:
 
 #define YGWIDGET_IMPL_NICESIZE \
 		virtual long nicesize (YUIDimension dim) \
-			{ LOC; return getNiceSize (dim); }
+			{ IMPL; return getNiceSize (dim); }
 #define YGWIDGET_IMPL_SET_ENABLING \
 		virtual void setEnabling (bool enabled) \
-			{ LOC; gtk_widget_set_sensitive (getWidget(), enabled); }
+			{ IMPL; gtk_widget_set_sensitive (getWidget(), enabled); }
 #define YGWIDGET_IMPL_SET_SIZE \
 		virtual void setSize (long newWidth, long newHeight) { \
 			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
@@ -71,9 +73,9 @@ protected:
 			ParentClass::setSize (newWidth, newHeight); \
 		}
 #define YGWIDGET_IMPL_MOVE_CHILD \
-		virtual void moveChild (YWidget *child, long newx, long newy) { \
+		virtual void moveChild (YWidget *child, long newx, long newy) {       \
 			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
-			         child ? get(child)->getWidget():NULL, child, newx, newy); \
+			         child ? get(child)->getWidget():NULL, child, newx, newy);  \
 			doMoveChild (child, newx, newy); \
 		}
 #define YGWIDGET_IMPL_KEYBOARD_FOCUS \
@@ -104,12 +106,12 @@ class YGLabeledWidget : public YGWidget
 		GtkWidget *m_label, *m_field;
 };
 
-#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass) \
-	virtual void setLabel (const YCPString &label) { \
+#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)                    \
+	virtual void setLabel (const YCPString &label) {                          \
 		fprintf (stderr, "%s:%s -G%p-Y%p- '%s' + chain\n", G_STRLOC, G_STRFUNC, \
-		         m_widget, m_y_widget, label->value_cstr()); \
-		doSetLabel (label); \
-		ParentClass::setLabel (label); \
+		         m_widget, m_y_widget, label->value_cstr());                    \
+		doSetLabel (label);                                                     \
+		ParentClass::setLabel (label);                                          \
 	}
 
 /* This is a convenience class for widgets that need scrollbars. */

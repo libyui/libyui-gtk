@@ -1,3 +1,9 @@
+2006-07-07 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/YGWidget.cc: getFixed() can now be overloaded
+	and thise
+	* src/YGDumbTab.cc: first try.
+
 2006-07-06 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/ygtkbargraph.c: moved BarGraph to a Gtk class.

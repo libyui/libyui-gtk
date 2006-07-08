@@ -42,7 +42,7 @@ static void ygtk_slider_class_init (YGtkSliderClass *klass)
 	widget_class->mnemonic_activate  = ygtk_slider_mnemonic_activate;
 
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	value_changed_signal = g_signal_new ("value_changed",
+	value_changed_signal = g_signal_new ("value-changed",
 	                       G_TYPE_FROM_CLASS (gobject_class),
 	                       G_SIGNAL_RUN_LAST,
 	                       G_STRUCT_OFFSET (YGtkSliderClass, value_changed),

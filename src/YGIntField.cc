@@ -77,7 +77,7 @@ public:
 
 	static void slider_changed_cb (YGtkSlider *slider, YGIntField *pThis)
 	{
-		pThis->emitEvent (YEvent::ValueChanged);
+		pThis->emitEvent (YEvent::ValueChanged);//, true, true);
 	}
 
 	// YWidget

@@ -8,15 +8,16 @@
 using std::string;
 using std::vector;
 
-#define IMPL_DEBUG true /* Print IMPL debug messages? */
+/* Comment the following line to disable debug messages */
+//#define IMPL_DEBUG
 #define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
 #ifdef IMPL_DEBUG
 	#define IMPL      { LOC; }
 #else
 	#define IMPL      { }
 #endif
-#define IMPL_NULL { LOC; return NULL; }
-#define IMPL_VOID { LOC; return YCPVoid(); }
+#define IMPL_NULL   { LOC; return NULL; }
+#define IMPL_VOID   { LOC; return YCPVoid(); }
 #define IMPL_RET(a) { LOC; return (a); }
 
 class YGUI: public YUI
@@ -156,8 +157,8 @@ public:
 				 const YCPString & time) IMPL_NULL;
     virtual bool     hasTime() { return false; }
 
-	virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt) IMPL_NULL;
-	virtual bool     hasDumbTab() { return false; }
+	virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt);
+	virtual bool     hasDumbTab() { return true; }
 
 	virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt & opt,
 	                                  bool horizontal, const YCPList & maxValues);

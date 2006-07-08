@@ -346,7 +346,7 @@ public:
 			g_warning ("Markup parse error");
 		g_free (xml);
 
-		g_markup_parse_context_free(ctx);
+		g_markup_parse_context_free (ctx);
 
 		if (autoScrollDown)
 			YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));

@@ -16,8 +16,10 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	gtk_object_sink (GTK_OBJECT (m_widget));
 
 	y_widget->setWidgetRep ((void *)this);
+#ifdef IMPL_DEBUG
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
-	
+#endif
+
 	GtkFixed *fixed;
 	if (!parent || !(fixed = parent->getFixed()))
 		g_warning ("No parent for new widget");
@@ -66,6 +68,23 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 GtkFixed *
 YGWidget::getFixed()
 {
+	YGWidget *parent = (YGWidget*) (m_y_widget->yParent()->widgetRep());
+
+	if (!parent) {
+		g_error ("getFixed() failed -- widget is orphan.");
+		return NULL;
+	}
+
+	if (GTK_IS_FIXED (m_widget))
+		return GTK_FIXED (m_widget);
+
+	return parent->getFixed();
+}
+
+#if 0
+GtkFixed *
+YGWidget::getFixed()
+{
 	GtkWidget *widget = m_widget;
 	GtkWidget *child;
 
@@ -87,31 +106,31 @@ YGWidget::getFixed()
 		return NULL;
 	return GTK_FIXED (gtk_bin_get_child (GTK_BIN (dialog->getWidget())));
 }
+#endif
 
 YGWidget *
 YGWidget::get (YWidget *y_widget)
 {
-	YGWidget *ptr;
 	if (!y_widget || !y_widget->widgetRep()) {
+#ifdef IMPL_DEBUG
 		fprintf (stderr, "Y_Widget %p : rep %p\n",
 			 y_widget, y_widget ? y_widget->widgetRep() : NULL);
+#endif
 		return NULL;
 	}
-	ptr = static_cast<YGWidget *>(y_widget->widgetRep());
-	g_assert (GTK_IS_WIDGET (ptr->m_widget));
-	return ptr;
+	return (YGWidget *) (y_widget->widgetRep());
 }
 
 void
-YGWidget::doSetSize (long newWidth, long newHeight)
+YGWidget::doSetSize (long width, long height)
 {
- 	gtk_widget_set_size_request (getWidget(), newWidth, newHeight );
+	gtk_widget_set_size_request (getWidget(), width, height);
 }
 
 void
-YGWidget::doMoveChild( YWidget *child, long newx, long newy )
+YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
-	gtk_fixed_move (getFixed(), YGWidget::get (child)->getWidget(), newx, newy);
+	gtk_fixed_move (YGWidget::getFixed(), YGWidget::get (child)->getWidget(), x, y);
 }
 
 long
@@ -122,8 +141,7 @@ YGWidget::getNiceSize (YUIDimension dim)
 	GtkRequisition req;
 
 	widget = getWidget();
-#define SIZING_DEBUG
-#ifdef SIZING_DEBUG
+#ifdef IMPL_DEBUG
 	fprintf (stderr, "Get nice size request for:\n");
 	dumpWidgetTree (widget);
 #endif
@@ -138,9 +156,11 @@ YGWidget::getNiceSize (YUIDimension dim)
 	else 
 		ret = req.height;
 
+#ifdef IMPL_DEBUG
 	fprintf (stderr, "NiceSize for '%s' %s %ld\n",
 			 getWidgetName(), dim == YD_HORIZ ? "width" : "height",
 			 ret);
+#endif
 
 	return ret;
 }
