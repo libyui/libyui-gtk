@@ -95,7 +95,7 @@ public:
 		gtk_window_resize (GTK_WINDOW (m_widget), newWidth, newHeight);
 //		gtk_window_set_default_size (GTK_WINDOW (m_widget), newWidth, newHeight);
 
-		if (numChildren() > 0)
+		if (hasChildren())
 			YDialog::setSize (newWidth, newHeight);
 	}
 

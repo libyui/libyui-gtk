@@ -17,8 +17,8 @@ public:
 {
 	IMPL;
 	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-	g_signal_connect (G_OBJECT (getWidget ()),
-					  "clicked", G_CALLBACK (clicked_cb), this);
+	g_signal_connect (G_OBJECT (getWidget ()), "clicked",
+	                  G_CALLBACK (clicked_cb), this);
 	setLabel (label);
 }
 

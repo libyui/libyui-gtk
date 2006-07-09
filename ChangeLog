@@ -1,3 +1,7 @@
+2006-07-09 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/YGWizard.cc: first try.
+
 2006-07-07 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/YGWidget.cc: getFixed() can now be overloaded

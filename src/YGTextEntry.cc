@@ -24,9 +24,9 @@ public:
 
 		// Signals to know of any text modification
 		g_signal_connect (G_OBJECT (getWidget()), "insert-text",
-				  G_CALLBACK (text_inserted_cb), this);
+		                  G_CALLBACK (text_inserted_cb), this);
 		g_signal_connect (G_OBJECT (getWidget()), "delete-text",
-				  G_CALLBACK (text_deleted_cb), this);
+		                  G_CALLBACK (text_deleted_cb), this);
 	}
 
 	virtual ~YGTextEntry() {}
@@ -49,7 +49,6 @@ public:
 		   application programmer. */
 		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
-
 
 	// YWidget
 	YGWIDGET_IMPL_NICESIZE

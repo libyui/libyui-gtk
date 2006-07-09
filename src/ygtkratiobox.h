@@ -20,7 +20,7 @@ G_BEGIN_DECLS
 #define YGTK_RATIO_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
 
-typedef struct _YGtkRatioBox	     YGtkRatioBox;
+typedef struct _YGtkRatioBox       YGtkRatioBox;
 typedef struct _YGtkRatioBoxClass  YGtkRatioBoxClass;
 typedef struct _YGtkRatioBoxChild  YGtkRatioBoxChild;
 

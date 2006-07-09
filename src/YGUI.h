@@ -9,7 +9,7 @@ using std::string;
 using std::vector;
 
 /* Comment the following line to disable debug messages */
-//#define IMPL_DEBUG
+#define IMPL_DEBUG
 #define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
 #ifdef IMPL_DEBUG
 	#define IMPL      { LOC; }
@@ -186,14 +186,15 @@ public:
     virtual YWidget *createPatternSelector (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
     virtual bool     hasPatternSelector() { return false; }
 
-    virtual YWidget *createWizard (YWidget *parent, YWidgetOpt & opt,
-				   const YCPValue & backButtonId,
-				   const YCPString & backButtonLabel,
-				   const YCPValue & abortButtonId,
-				   const YCPString & abortButtonLabel,
-				   const YCPValue & nextButtonId,
-				   const YCPString & nextButtonLabel) IMPL_NULL;
-    virtual bool     hasWizard() { return false; }
+	virtual YWidget *createWizard (YWidget *parent,
+	                            YWidgetOpt &opt,
+	                        const YCPValue &backButtonId,
+	                       const YCPString &backButtonLabel,
+	                        const YCPValue &abortButtonId,
+	                       const YCPString &abortButtonLabel,
+	                        const YCPValue &nextButtonId,
+	                       const YCPString &nextButtonLabel);
+	virtual bool     hasWizard() { return true; }
 
     virtual int  getDisplayWidth();
     virtual int  getDisplayHeight();

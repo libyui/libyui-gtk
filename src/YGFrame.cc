@@ -2,7 +2,6 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
-#include "YGUtils.h"
 #include "YFrame.h"
 
 class YGFrame : public YFrame, public YGWidget
@@ -28,8 +27,7 @@ public:
 	// YFrame
 	virtual void setLabel (const YCPString &label)
 	{
-		string str = YGUtils::mapKBAccel(label->value_cstr());
-		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
+		gtk_frame_set_label (GTK_FRAME (getWidget()), label->value_cstr());
 		YFrame::setLabel (label);
 	}
 

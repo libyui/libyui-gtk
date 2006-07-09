@@ -69,8 +69,8 @@ static void ygtk_ratio_box_init (YGtkRatioBox *box)
 GtkWidget* ygtk_ratio_box_new (YGtkRatioBoxOrientation orientation, gint spacing)
 {
 	YGtkRatioBox* box = (YGtkRatioBox*) g_object_new (YGTK_TYPE_RATIO_BOX, NULL);
-	YGTK_RATIO_BOX (box)->orientation = orientation;
-	YGTK_RATIO_BOX (box)->spacing = spacing;
+	box->orientation = orientation;
+	box->spacing = spacing;
 	return GTK_WIDGET (box);
 }
 

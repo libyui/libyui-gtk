@@ -15,16 +15,19 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	g_object_ref (G_OBJECT (m_widget));
 	gtk_object_sink (GTK_OBJECT (m_widget));
 
+fprintf (stderr, "setWidgetRep\n");
 	y_widget->setWidgetRep ((void *)this);
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
 #endif
 
 	GtkFixed *fixed;
+fprintf (stderr, "asking for fixed\n");
 	if (!parent || !(fixed = parent->getFixed()))
 		g_warning ("No parent for new widget");
 	else
 		gtk_fixed_put (fixed, m_widget, 0, 0);
+fprintf (stderr, "showing up\n");
 	if (show)
 		gtk_widget_show_all (m_widget);
 }
@@ -68,45 +71,21 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 GtkFixed *
 YGWidget::getFixed()
 {
-	YGWidget *parent = (YGWidget*) (m_y_widget->yParent()->widgetRep());
-
-	if (!parent) {
-		g_error ("getFixed() failed -- widget is orphan.");
-		return NULL;
-	}
-
+	// In containers, the widget is the GtkFixed itself
 	if (GTK_IS_FIXED (m_widget))
 		return GTK_FIXED (m_widget);
 
+	YWidget *y_parent;
+	YGWidget *parent;
+
+	if (!(y_parent = m_y_widget->yParent()) ||
+	    !(parent = (YGWidget*) y_parent->widgetRep())) {
+		g_error ("getFixed() failed -- widget %s is orphan", m_y_widget->widgetClass());
+		return NULL;
+	}
+
 	return parent->getFixed();
 }
-
-#if 0
-GtkFixed *
-YGWidget::getFixed()
-{
-	GtkWidget *widget = m_widget;
-	GtkWidget *child;
-
-	// Some widgets are special cases where the true parent
-	// is in fact a child of a compound widget
-	if (GTK_IS_FRAME (widget) &&
-		(child = gtk_bin_get_child (GTK_BIN (widget))))
-		return GTK_FIXED (child);
-
-	while (widget && !GTK_IS_FIXED (widget))
-		widget = widget->parent;
-
-	if (widget)
-		return GTK_FIXED (widget);
-
-	// Desparate last measures FIXME: necessary ?
-	YGWidget *dialog;
-	if (!(dialog = get (m_y_widget->yDialog())))
-		return NULL;
-	return GTK_FIXED (gtk_bin_get_child (GTK_BIN (dialog->getWidget())));
-}
-#endif
 
 YGWidget *
 YGWidget::get (YWidget *y_widget)
@@ -124,30 +103,41 @@ YGWidget::get (YWidget *y_widget)
 void
 YGWidget::doSetSize (long width, long height)
 {
+fprintf (stderr, "setting size %ld, %ld to %s\n", width, height, m_y_widget->widgetClass()); 
 	gtk_widget_set_size_request (getWidget(), width, height);
+fprintf (stderr, "done\n");
 }
 
 void
 YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
-	gtk_fixed_move (YGWidget::getFixed(), YGWidget::get (child)->getWidget(), x, y);
+	GtkFixed *fixed = YGWidget::getFixed();
+	GtkWidget *widget = YGWidget::get (child)->getWidget();
+
+	if (!GTK_IS_WIDGET (widget))
+		g_error ("doMoveChild() failed -- widget %s isn't associated to a GtkWidget",
+		         m_y_widget->widgetClass());
+	else if (!GTK_IS_FIXED (fixed))
+		g_error ("doMoveChild() failed -- no associated GtkFixed to widget %s",
+		         m_y_widget->widgetClass());
+
+	else
+		gtk_fixed_move (YGWidget::getFixed(), widget, x, y);
 }
 
 long
 YGWidget::getNiceSize (YUIDimension dim)
 {
 	long ret;
-	GtkWidget *widget;
 	GtkRequisition req;
 
-	widget = getWidget();
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "Get nice size request for:\n");
-	dumpWidgetTree (widget);
+	dumpWidgetTree (m_widget);
 #endif
 
-	gtk_widget_ensure_style (widget);
-	g_signal_emit_by_name (widget, "size_request", &req);
+	gtk_widget_ensure_style (m_widget);
+	g_signal_emit_by_name (m_widget, "size_request", &req);
 
 	// Since there are no tweaks for widget separation etc.
 	// we get to do that ourselves
@@ -158,8 +148,8 @@ YGWidget::getNiceSize (YUIDimension dim)
 
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "NiceSize for '%s' %s %ld\n",
-			 getWidgetName(), dim == YD_HORIZ ? "width" : "height",
-			 ret);
+	         getWidgetName(), dim == YD_HORIZ ? "width" : "height",
+	         ret);
 #endif
 
 	return ret;
