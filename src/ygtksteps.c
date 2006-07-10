@@ -90,11 +90,14 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 
 void ygtk_steps_set_current (YGtkSteps *steps, guint step)
 {
+	guint old_step = steps->current_step;
 	steps->current_step = step;
 
 	// update step icons
-	guint i;
-	for (i = 0; i < g_list_length (steps->steps); i++)
+	guint min, max, i;
+	min = MIN (old_step, step);
+	max = MAX (old_step, step);
+	for (i = min; i <= max; i++)
 		ygtk_steps_update_step (steps, i);
 }
 
