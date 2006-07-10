@@ -37,6 +37,16 @@ List of missing features, actual bugs and other issues:
 	Just clicking around results on it.
 	To be investigated.
 
+* BarGraph
+	Colors should follow user-defined tons,
+	maybe based on Evolution's calendar.
+
+* MultiProgressBar
+	Doesn't work well on vertical.
+
+* RatioButton
+	Shouldn't behave completely like a push button.
+
 = Yast-Core =
 
 * Crash on example Tree3.ycp

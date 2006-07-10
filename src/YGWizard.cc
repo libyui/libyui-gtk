@@ -5,9 +5,10 @@
 #include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
-#include "YWizard.h"
-#include "ygtkrichtext.h"
 #include "YGLayout.h"
+#include "ygtkrichtext.h"
+#include "ygtksteps.h"
+#include "YWizard.h"
 
 class YGWizard : public YWizard, public YGWidget
 {
@@ -28,8 +29,12 @@ class YGWizard : public YWizard, public YGWidget
 
 	// Help box
 	GtkWidget *m_help_frame, *m_help_text, *m_help_tree, *m_help_steps;
+
 	typedef map <string, GtkTreePath*> TreeId;
 	TreeId tree_ids;
+	typedef map <string, guint> StepId;
+	StepId steps_ids;
+
 	bool m_treeEnabled, m_stepsEnabled;
 
 	// Bottom buttons
@@ -38,6 +43,7 @@ class YGWizard : public YWizard, public YGWidget
 
 	// Miscellaneous
 	bool m_verboseCommands;
+	GtkWidget *m_releaseNotesButton;
 
 public:
 	YGWizard (const YWidgetOpt &opt, YGWidget *parent,
@@ -63,7 +69,7 @@ public:
 		GtkWidget *title_box = gtk_hbox_new (FALSE, 0);
 		GtkWidget *line = gtk_hseparator_new();
 
-		m_heading_image = (GtkWidget*) g_object_new (GTK_TYPE_IMAGE, NULL);
+		m_heading_image = gtk_image_new();
 		m_heading_label = gtk_label_new ("");
 
 		// set a strong font to the heading label
@@ -125,19 +131,21 @@ public:
 			gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (m_help_tree),
 				0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
 			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_help_tree), FALSE);
+			g_signal_connect (G_OBJECT (m_help_tree), "cursor-changed",
+			                  G_CALLBACK (tree_item_selected_cb), this);
 
 			g_object_ref (G_OBJECT (m_help_tree));
 			setHelpBarWidget (m_help_tree);
 		}
 		if (m_stepsEnabled) {
-			m_help_steps = gtk_label_new ("Steps widget not\nyet implemented");
+			m_help_steps = ygtk_steps_new();
 			g_object_ref (G_OBJECT (m_help_steps));
 			setHelpBarWidget (m_help_steps);
 		}
 
 		if (m_treeEnabled || m_stepsEnabled) {
 			// create a switch button
-			GtkWidget *switch_button = gtk_button_new_with_mnemonic ("_Help");
+			GtkWidget *switch_button = gtk_button_new_with_mnemonic ("Help");
 			gtk_container_add (GTK_CONTAINER (m_help_box), switch_button);
 			gtk_box_set_child_packing (GTK_BOX (m_help_box), switch_button,
 			                           FALSE, FALSE, 10, GTK_PACK_END);
@@ -146,6 +154,8 @@ public:
 		}
 		else
 			setHelpBarWidget (m_help_text);
+
+		m_releaseNotesButton = NULL;
 
 		//** Adding the bottom buttons
 		/* NOTE: we can't really use gtk_button_new_from_stock() because the
@@ -200,6 +210,10 @@ public:
 
 		//** Some should be invisible until initializated
 		gtk_widget_hide (m_menu);
+		// FIXME: this doesn't seem to work ?!
+		if (backLabel.empty())  gtk_widget_hide (backButton);
+		if (abortLabel.empty()) gtk_widget_hide (abortButton);
+		if (nextLabel.empty())  gtk_widget_hide (nextButton);
 	}
 
 	void clear_tree_ids()
@@ -212,6 +226,9 @@ public:
 	virtual ~YGWizard()
 	{
 		clear_tree_ids();
+		// we need to manually delete them, as only one is in the container
+		// at the moment
+		// FIXME: do we also need to call gtk_widget_destroy() ?
 		g_object_unref (G_OBJECT (m_help_text));
 		if (m_treeEnabled)
 			g_object_unref (G_OBJECT (m_help_tree));
@@ -224,18 +241,6 @@ public:
 		IMPL
 		return GTK_FIXED (m_fixed);
 	}
-
-// only for debugging:
-virtual void addChild (YWidget *child)
-{
-printf("YGWizard: adding child: %s\n", child->widgetClass());
-YContainerWidget::addChild (child);
-}
-
-virtual void childAdded (YWidget *child)
-{
-printf("YGWizard: child added: %s\n", child->widgetClass());
-}
 
 // TODO: some sanity checks might be nice
 #define isCommand(cmd, str) (cmd->name() == str)
@@ -295,8 +300,16 @@ printf("YGWizard: child added: %s\n", child->widgetClass());
 
 		else if (isCommand (cmd, "SetDialogHeading"))
 			gtk_label_set_text (GTK_LABEL (m_heading_label), getCStringArg (cmd, 0));
-		else if (isCommand (cmd, "SetDialogIcon"))
-			gtk_image_set_from_file (GTK_IMAGE (m_heading_image), getCStringArg (cmd, 0));
+		else if (isCommand (cmd, "SetDialogIcon")) {
+			GError *error = 0;
+			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (getCStringArg (cmd, 0), &error);
+			if (pixbuf) {
+				gtk_image_set_from_pixbuf (GTK_IMAGE (m_heading_image), pixbuf);
+				g_object_unref (G_OBJECT (pixbuf));
+			}
+			else
+				y2warning ("YGWizard: could not load image: %s", getCStringArg (cmd, 0));
+		}
 
 		else if (isCommand (cmd, "SetAbortButtonLabel") ||
 		         isCommand (cmd, "SetCancelButtonLabel")) {
@@ -405,16 +418,48 @@ printf("YGWizard: child added: %s\n", child->widgetClass());
 		else if (isCommand (cmd, "Ping"))
 			y2debug ("YGWizard is active");
 
+		else if (isCommand (cmd, "AddStepHeading"))
+			ygtk_steps_append_heading (YGTK_STEPS (m_help_steps), getCStringArg (cmd, 0));
+		else if (isCommand (cmd, "AddStep"))
+			steps_ids [getStdStringArg (cmd, 1)]
+				= ygtk_steps_append (YGTK_STEPS (m_help_steps), getCStringArg (cmd, 0));
+		else if (isCommand (cmd, "SetCurrentStep")) {
+			StepId::iterator it = steps_ids.find (getStdStringArg (cmd, 0));
+			if (it == steps_ids.end()) {
+				y2error ("YGWizard: there is no step with id %s.", getCStringArg (cmd, 0));
+				return YCPBoolean (false);
+			}
+			ygtk_steps_set_current (YGTK_STEPS (m_help_steps), it->second);
+		}
+		else if (isCommand (cmd, "UpdateSteps"))
+			;
+		else if (isCommand (cmd, "DeleteSteps"))
+			ygtk_steps_clear (YGTK_STEPS (m_help_steps));
+
+		else if (isCommand (cmd, "ShowReleaseNotesButton")) {
+			if (!m_stepsEnabled)
+				y2error ("YGWizard: Release button only possible when tree enabled");
+
+			if (!m_releaseNotesButton) {
+				string label = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
+				m_releaseNotesButton = gtk_button_new_with_mnemonic (label.c_str());
+				g_object_set_data_full (G_OBJECT (m_releaseNotesButton), "id",
+				                        new YCPValue (getAnyArg (cmd, 1)), delete_data_cb);
+				g_signal_connect (G_OBJECT (m_releaseNotesButton), "clicked",
+				                  G_CALLBACK (button_clicked_cb), this);
+			}
+			gtk_container_add (GTK_CONTAINER (m_help_steps), m_releaseNotesButton);
+			gtk_box_set_child_packing (GTK_BOX (m_help_steps), m_releaseNotesButton,
+			                           FALSE, FALSE, 2, GTK_PACK_END);
+			gtk_widget_show (m_releaseNotesButton);
+		}
+		else if (isCommand (cmd, "HideReleaseNotesButton")) {
+			gtk_widget_destroy (m_releaseNotesButton);
+			m_releaseNotesButton = NULL;
+		}
+
 #if 0
 		// to implement:
-		else if (isCommand (cmd, "SetCurrentStep")) {}
-		else if (isCommand (cmd, "AddStep")) {}
-		else if (isCommand (cmd, "AddStepHeading")) {}
-		else if (isCommand (cmd, "DeleteSteps")) {}
-		else if (isCommand (cmd, "UpdateSteps")) {}
-
-		else if (isCommand (cmd, "ShowReleaseNotesButton")) {}
-		else if (isCommand (cmd, "HideReleaseNotesButton")) {}
 		else if (isCommand (cmd, "RetranslateInternalButtons")) {}
 #endif
 
@@ -426,30 +471,6 @@ printf("YGWizard: child added: %s\n", child->widgetClass());
 		if (m_verboseCommands)
 			y2milestone ("Processed wizard command: %s\n", cmd->name().c_str());
 		return YCPBoolean (true);
-	}
-
-	YCPString currentTreeSelection()
-	{
-		GtkTreePath *path;
-		GtkTreeViewColumn *column;
-		gtk_tree_view_get_cursor (GTK_TREE_VIEW (m_help_tree), &path, &column);
-		if (path == NULL || column == NULL)
-			return YCPString ("");
-
-		/* A bit cpu-consuming, but saving the strings is something I'd rather avoid. */
-		gint* path_depth = gtk_tree_path_get_indices (path);
-		for (TreeId::iterator it = tree_ids.begin(); it != tree_ids.end(); it++) {
-			gint* it_depth = gtk_tree_path_get_indices (it->second);
-			if (gtk_tree_path_get_depth (path) == gtk_tree_path_get_depth (it->second)) {
-				int i;
-				for (i = 0; i < gtk_tree_path_get_depth (path) &&
-				            it_depth[i] == path_depth[i]; i++) ;
-				if (i == gtk_tree_path_get_depth (path))
-					return it->first;
-			}
-		}
-		g_error ("YGWizard: internal error: current selection doesn't match any id");
-		return YCPString ("");
 	}
 
 	// YGWidget
@@ -469,21 +490,6 @@ printf("YGWizard: child added: %s\n", child->widgetClass());
 		child (0)->setSize (width, height);
 	}
 
-
-/*
-	virtual void setSize (long width, long height)
-	{
-		IMPL
-fprintf(stderr, "set size: %ld, %ld\n", width, height);
-		doSetSize (width, height);
-
-		GtkRequisition containee_size;
-		gtk_widget_size_request (m_fixed, &containee_size);
-fprintf(stderr, "set containee size: %d, %d\n", containee_size.width, containee_size.height);
-//		YContainerWidget::child(0)->setSize (containee_size.width, containee_size.height);
-		YContainerWidget::child(0)->setSize (50, 50);
-	}
-*/
 	virtual void setEnabling (bool enabled)
 	{
 		IMPL
@@ -511,23 +517,23 @@ fprintf(stderr, "set containee size: %d, %d\n", containee_size.width, containee_
 	static void switch_button_clicked_cb (GtkButton *button, YGWizard *pThis)
 	{
 		string label = string (gtk_button_get_label (button));
-		if (label == "_Tree") {
+		if (label == "Tree") {
 			pThis->setHelpBarWidget (pThis->m_help_tree);
 			if (pThis->m_stepsEnabled)
-				gtk_button_set_label (button, "_Steps");
+				gtk_button_set_label (button, "Steps");
 			else
-				gtk_button_set_label (button, "_Help");
+				gtk_button_set_label (button, "Help");
 		}
-		else if (label == "_Help") {
+		else if (label == "Help") {
 			pThis->setHelpBarWidget (pThis->m_help_text);
 			if (pThis->m_treeEnabled)
-				gtk_button_set_label (button, "_Tree");
+				gtk_button_set_label (button, "Tree");
 			else
-				gtk_button_set_label (button, "_Steps");
+				gtk_button_set_label (button, "Steps");
 		}
-		else if (label == "_Steps") {
+		else if (label == "Steps") {
 			pThis->setHelpBarWidget (pThis->m_help_steps);
-			gtk_button_set_label (button, "_Help");
+			gtk_button_set_label (button, "Help");
 		}
 	}
 
@@ -539,6 +545,37 @@ fprintf(stderr, "set containee size: %d, %d\n", containee_size.width, containee_
 	static void selected_menu_item_cb (GtkMenuItem *item, const char* id)
 	{
 		YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (YCPString (id))));
+	}
+
+	YCPString currentTreeSelection()
+	{
+		GtkTreePath *path;
+		GtkTreeViewColumn *column;
+		gtk_tree_view_get_cursor (GTK_TREE_VIEW (m_help_tree), &path, &column);
+		if (path == NULL || column == NULL)
+			return YCPString ("");
+
+		/* A bit cpu-consuming, but saving the strings is something I'd rather avoid. */
+		gint* path_depth = gtk_tree_path_get_indices (path);
+		for (TreeId::iterator it = tree_ids.begin(); it != tree_ids.end(); it++) {
+			gint* it_depth = gtk_tree_path_get_indices (it->second);
+			if (gtk_tree_path_get_depth (path) == gtk_tree_path_get_depth (it->second)) {
+				int i;
+				for (i = 0; i < gtk_tree_path_get_depth (path) &&
+				            it_depth[i] == path_depth[i]; i++) ;
+				if (i == gtk_tree_path_get_depth (path))
+					return it->first;
+			}
+		}
+		g_warning ("YGWizard: internal error: current selection doesn't match any id");
+		return YCPString ("");
+	}
+
+	static void tree_item_selected_cb (GtkTreeView *tree_view, YGWizard *pThis)
+	{
+		YCPString id = pThis->currentTreeSelection();
+		if (!id->value().empty())
+			YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (id)));
 	}
 };
 

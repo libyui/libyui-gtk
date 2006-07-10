@@ -46,6 +46,7 @@ public:
 	  YGWidget (this, parent, true, GTK_TYPE_IMAGE, NULL)
 	{
 		GError *error = 0;
+		// FIXME: we need to unref the pixbuf image.
 		if (opt.animated.value())
 			construct (opt, gdk_pixbuf_animation_new_from_file
 			                    (filename->value_cstr(), &error));
@@ -68,6 +69,8 @@ public:
 			return;
 		}
 
+		// FIXME: we need to wait until the loader has finished working
+		// (through a callback), to be safe.
 		if (opt.animated.value())
 			construct (opt, gdk_pixbuf_loader_get_animation (loader));
 		else

@@ -52,12 +52,14 @@ public:
 			gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
 		}
 
-		if (!opt.hasDefaultSize.value())
-		{
-			gtk_window_set_modal (GTK_WINDOW (m_widget), TRUE);
-			gtk_window_set_type_hint (GTK_WINDOW (m_widget),
+		if (!opt.hasDefaultSize.value()) {
+			gtk_window_set_modal (GTK_WINDOW (getWidget()), TRUE);
+			gtk_window_set_type_hint (GTK_WINDOW (getWidget()),
 			                          GDK_WINDOW_TYPE_HINT_DIALOG);
 		}
+
+		if (!hasDefaultSize() && !YGUI::ui()->haveWM())
+			gtk_window_set_has_frame (GTK_WINDOW (getWidget()), TRUE);
 	}
 
 	virtual ~YGDialog()

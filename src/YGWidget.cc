@@ -15,19 +15,16 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	g_object_ref (G_OBJECT (m_widget));
 	gtk_object_sink (GTK_OBJECT (m_widget));
 
-fprintf (stderr, "setWidgetRep\n");
 	y_widget->setWidgetRep ((void *)this);
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
 #endif
 
 	GtkFixed *fixed;
-fprintf (stderr, "asking for fixed\n");
 	if (!parent || !(fixed = parent->getFixed()))
 		g_warning ("No parent for new widget");
 	else
 		gtk_fixed_put (fixed, m_widget, 0, 0);
-fprintf (stderr, "showing up\n");
 	if (show)
 		gtk_widget_show_all (m_widget);
 }
@@ -103,9 +100,7 @@ YGWidget::get (YWidget *y_widget)
 void
 YGWidget::doSetSize (long width, long height)
 {
-fprintf (stderr, "setting size %ld, %ld to %s\n", width, height, m_y_widget->widgetClass()); 
 	gtk_widget_set_size_request (getWidget(), width, height);
-fprintf (stderr, "done\n");
 }
 
 void

@@ -40,7 +40,8 @@ libpy2gtk_la_SOURCES = \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
 	ygtkslider.c \
-	ygtkrichtext.c
+	ygtkrichtext.c \
+	ygtksteps.c
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
