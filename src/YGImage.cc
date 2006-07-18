@@ -23,29 +23,35 @@ class YGImage : public YImage, public YGWidget
 
 	void initOptions (const YWidgetOpt &opt)
 	{
+		IMPL
+printf ("checking values\n");
+		m_imageLoaded   = false;
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
 		m_isAnimation   = opt.animated.value();
-		m_imageLoaded   = false;
-		m_isScaled     = opt.scaleToFit.value();
-		m_isTiled      = opt.tiled.value();
+		m_isScaled      = opt.scaleToFit.value();
+		m_isTiled       = opt.tiled.value();
 		if (m_isScaled && m_isTiled) {
 			y2warning ("YImage can't be scaled and tiled at the same time");
 			m_isTiled = false;
 		}
 
+printf ("set null\n");
 		if (m_isAnimation)
 			m_animation = NULL;
 		else
 			m_pixbuf = NULL;
 
+printf ("connection\n");
 		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
 		                  G_CALLBACK (expose_event_cb), this);
+printf ("queue draw\n");
 		gtk_widget_queue_draw (getWidget());
 	}
 
 	void loadImage (GdkPixbuf *pixbuf, const char *error_msg)
 	{
+		IMPL
 		if (pixbuf == NULL) {
 			g_warning ("Couldn't load image - %s", error_msg);
 			return;
@@ -57,6 +63,7 @@ class YGImage : public YImage, public YGWidget
 
 	void loadAnimation (GdkPixbufAnimation *pixbuf, const char *error_msg)
 	{
+		IMPL
 		if (pixbuf == NULL) {
 			g_warning ("Couldn't load animation - %s", error_msg);
 			return;
@@ -80,19 +87,23 @@ public:
 	: YImage (opt),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
+		IMPL
 		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
 		GError *error = 0;
 		if (m_isAnimation) {
+printf ("load animation\n");
 			GdkPixbufAnimation *pixbuf =
 				gdk_pixbuf_animation_new_from_file (filename->value_cstr(), &error);
-			loadAnimation (pixbuf, error->message);
+			loadAnimation (pixbuf, error ? error->message : "(undefined)");
 		}
 		else {
+printf ("load static image\n");
 			GdkPixbuf *pixbuf =
 				gdk_pixbuf_new_from_file (filename->value_cstr(), &error);
-			loadImage (pixbuf, error->message);
+fprintf (stderr, "loaded image: %s\n", filename->value_cstr());
+			loadImage (pixbuf, error ? error->message : "(undefined)");
 		}
 	}
 
@@ -101,6 +112,7 @@ public:
 	: YImage (opt),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
+		IMPL
 		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
@@ -117,6 +129,7 @@ public:
 
 	virtual ~YGImage()
 	{
+		IMPL
 		if (m_imageLoaded) {
 			if (m_isAnimation) {
 				g_object_unref (G_OBJECT (m_animation->pixbuf));
@@ -133,6 +146,7 @@ public:
 	// YWidget
 	virtual bool stretchable (YUIDimension dim) const
 	{
+		IMPL
 		if (m_isScaled || m_isTiled)
 			return true;
 		return (dim == YD_HORIZ) ? m_hasZeroWidth : m_hasZeroHeight;
@@ -167,6 +181,7 @@ public:
 	// callback for image loading
 	static void image_loaded_cb (GdkPixbufLoader *loader, YGImage *pThis)
 	{
+		IMPL
 		if (pThis->m_isAnimation) {
 			if (pThis->m_animation) {
 				// a new frame loaded -- just redraw the widget
@@ -190,6 +205,7 @@ public:
 	// callback for image displaying
 	static gboolean advance_frame_cb (void *pData)
 	{
+		IMPL
 		YGImage *pThis = (YGImage *) pData;
 		Animation *animation = pThis->m_animation;
 
@@ -210,6 +226,7 @@ public:
 	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
 	                                 YGImage *pThis)
 	{
+		IMPL
 		int x, y, width, height;
 		x = widget->allocation.x;
 		y = widget->allocation.y;
@@ -269,6 +286,7 @@ YWidget *
 YGUI::createImage (YWidget *parent, YWidgetOpt &opt,
                    YCPByteblock image_data, YCPString default_text)
 {
+	IMPL
 	return new YGImage (opt, YGWidget::get (parent), image_data, default_text);
 }
 
@@ -276,5 +294,6 @@ YWidget *
 YGUI::createImage (YWidget *parent, YWidgetOpt &opt,
                    YCPString file_name, YCPString default_text)
 {
+	IMPL
 	return new YGImage (opt, YGWidget::get (parent), file_name, default_text);
 }
