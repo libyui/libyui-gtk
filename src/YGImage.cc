@@ -24,7 +24,6 @@ class YGImage : public YImage, public YGWidget
 	void initOptions (const YWidgetOpt &opt)
 	{
 		IMPL
-printf ("checking values\n");
 		m_imageLoaded   = false;
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
@@ -36,16 +35,13 @@ printf ("checking values\n");
 			m_isTiled = false;
 		}
 
-printf ("set null\n");
 		if (m_isAnimation)
 			m_animation = NULL;
 		else
 			m_pixbuf = NULL;
 
-printf ("connection\n");
 		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
 		                  G_CALLBACK (expose_event_cb), this);
-printf ("queue draw\n");
 		gtk_widget_queue_draw (getWidget());
 	}
 
@@ -85,7 +81,7 @@ public:
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
 	         const YCPString &filename, const YCPString &text)
 	: YImage (opt),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_DRAWING_AREA, NULL)
 	{
 		IMPL
 		alt_text = g_strdup (text->value_cstr());
@@ -93,16 +89,13 @@ public:
 
 		GError *error = 0;
 		if (m_isAnimation) {
-printf ("load animation\n");
 			GdkPixbufAnimation *pixbuf =
 				gdk_pixbuf_animation_new_from_file (filename->value_cstr(), &error);
 			loadAnimation (pixbuf, error ? error->message : "(undefined)");
 		}
 		else {
-printf ("load static image\n");
 			GdkPixbuf *pixbuf =
 				gdk_pixbuf_new_from_file (filename->value_cstr(), &error);
-fprintf (stderr, "loaded image: %s\n", filename->value_cstr());
 			loadImage (pixbuf, error ? error->message : "(undefined)");
 		}
 	}
@@ -110,7 +103,7 @@ fprintf (stderr, "loaded image: %s\n", filename->value_cstr());
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
 	         const YCPByteblock &byteblock, const YCPString &text)
 	: YImage (opt),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_DRAWING_AREA, NULL)
 	{
 		IMPL
 		alt_text = g_strdup (text->value_cstr());
@@ -274,7 +267,7 @@ fprintf (stderr, "loaded image: %s\n", filename->value_cstr());
 			cairo_pattern_set_matrix (cairo_get_source (cr), &matrix);
 		}
 
-		cairo_rectangle (cr, x, y, width, height);
+		cairo_rectangle (cr, 0, 0, width, height);
 		cairo_fill (cr);
 		
 		cairo_destroy (cr);
