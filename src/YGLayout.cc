@@ -110,7 +110,6 @@ gboolean YGAlignment::expose_event_cb (GtkWidget *widget,
 	cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
 
 	cairo_rectangle (cr, x, y, width, height);
-	cairo_close_path (cr);
 	cairo_fill (cr);
 
 	cairo_destroy (cr);

@@ -9,10 +9,17 @@ class YGImage : public YImage, public YGWidget
 {
 	bool m_hasZeroWidth, m_hasZeroHeight, m_isScaled, m_isTiled, m_isAnimation;
 	bool m_imageLoaded;
+
+	struct Animation {
+		GdkPixbufAnimation *pixbuf;
+		GdkPixbufAnimationIter *frame;
+		guint timeout_id;
+	};
 	union {
 		GdkPixbuf *m_pixbuf;
-		GdkPixbufAnimation *m_animated_pixbuf;
+		Animation *m_animation;
 	};
+	gchar *alt_text;
 
 	void initOptions (const YWidgetOpt &opt)
 	{
@@ -20,18 +27,25 @@ class YGImage : public YImage, public YGWidget
 		m_hasZeroHeight = opt.zeroHeight.value();
 		m_isAnimation   = opt.animated.value();
 		m_imageLoaded   = false;
-
-		// TODO implement:
 		m_isScaled     = opt.scaleToFit.value();
 		m_isTiled      = opt.tiled.value();
+		if (m_isScaled && m_isTiled) {
+			y2warning ("YImage can't be scaled and tiled at the same time");
+			m_isTiled = false;
+		}
+
+		if (m_isAnimation)
+			m_animation = NULL;
+		else
+			m_pixbuf = NULL;
 
 		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
 		                  G_CALLBACK (expose_event_cb), this);
+		gtk_widget_queue_draw (getWidget());
 	}
 
 	void loadImage (GdkPixbuf *pixbuf, const char *error_msg)
 	{
-printf ("load image\n");
 		if (pixbuf == NULL) {
 			g_warning ("Couldn't load image - %s", error_msg);
 			return;
@@ -49,16 +63,24 @@ printf ("load image\n");
 		}
 
 		m_imageLoaded = true;
-		m_animated_pixbuf = pixbuf;
+		m_animation = new Animation;
+		m_animation->pixbuf = pixbuf;
+
+		m_animation->frame = NULL;
+		advance_frame_cb (this);
+
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
+		                  G_CALLBACK (expose_event_cb), this);
+		gtk_widget_queue_draw (getWidget());
 	}
 
 public:
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
 	         const YCPString &filename, const YCPString &text)
 	: YImage (opt),
-	  YGWidget (this, parent, true, GTK_TYPE_LABEL,
-	            "label", text->value_cstr(), NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
+		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
 		GError *error = 0;
@@ -77,40 +99,45 @@ public:
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
 	         const YCPByteblock &byteblock, const YCPString &text)
 	: YImage (opt),
-	  YGWidget (this, parent, true, GTK_TYPE_LABEL,
-	            "label", text->value_cstr(), NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
-printf ("init options\n");
+		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
-printf("creating loader\n");
 		GdkPixbufLoader *loader = gdk_pixbuf_loader_new();
-printf ("connecting loader\n");
 		g_signal_connect (G_OBJECT (loader), "area-prepared",
 		                  G_CALLBACK (image_loaded_cb), this);
 
-printf ("calling loader write\n");
 		GError *error = 0;
 		if (!gdk_pixbuf_loader_write (loader,
 		    byteblock->value(), byteblock->size(), &error))
 			g_warning ("Could not load image from data blocks: %s", error->message);
 		gdk_pixbuf_loader_close (loader, &error);
-printf ("image widget done\n");
 	}
 
 	virtual ~YGImage()
 	{
 		if (m_imageLoaded) {
-			if (m_isAnimation)
-				g_object_unref (G_OBJECT (m_animated_pixbuf));
+			if (m_isAnimation) {
+				g_object_unref (G_OBJECT (m_animation->pixbuf));
+				if (m_animation->timeout_id)
+					g_source_remove (m_animation->timeout_id);
+				delete m_animation;
+			}
 			else
 				g_object_unref (G_OBJECT (m_pixbuf));
 		}
+		g_free (alt_text);
 	}
 
 	// YWidget
-	virtual bool stretchable (YUIDimension dimension) const
-		IMPL_RET(true)
+	virtual bool stretchable (YUIDimension dim) const
+	{
+		if (m_isScaled || m_isTiled)
+			return true;
+		return (dim == YD_HORIZ) ? m_hasZeroWidth : m_hasZeroHeight;
+	}
+
 	virtual long nicesize (YUIDimension dim)
 	{
 		IMPL
@@ -122,9 +149,9 @@ printf ("image widget done\n");
 
 		if (m_isAnimation) {
 			if (dim == YD_HORIZ)
-				return gdk_pixbuf_animation_get_width (m_animated_pixbuf);
+				return gdk_pixbuf_animation_get_width (m_animation->pixbuf);
 			else
-				return gdk_pixbuf_animation_get_height (m_animated_pixbuf);
+				return gdk_pixbuf_animation_get_height (m_animation->pixbuf);
 		}
 		else {
 			if (dim == YD_HORIZ)
@@ -136,16 +163,22 @@ printf ("image widget done\n");
 		return getNiceSize (dim);
 	}
 	YGWIDGET_IMPL_SET_SIZE
-//	virtual void setSize (long newWidth, long newHeight)  // TODO: overload for scaling
 
 	// callback for image loading
 	static void image_loaded_cb (GdkPixbufLoader *loader, YGImage *pThis)
 	{
-printf("image loaded cb\n");
 		if (pThis->m_isAnimation) {
-			GdkPixbufAnimation *pixbuf = gdk_pixbuf_loader_get_animation (loader);
-			g_object_ref (G_OBJECT (pixbuf));
-			pThis->loadAnimation (pixbuf, " on block data reading callback");
+			if (pThis->m_animation) {
+				// a new frame loaded -- just redraw the widget
+				if (gdk_pixbuf_animation_iter_on_currently_loading_frame
+				       (pThis->m_animation->frame))
+					gtk_widget_queue_draw (pThis->getWidget());
+			}
+			else {
+				GdkPixbufAnimation *pixbuf = gdk_pixbuf_loader_get_animation (loader);
+				g_object_ref (G_OBJECT (pixbuf));
+				pThis->loadAnimation (pixbuf, " on block data reading callback");
+			}
 		}
 		else {
 			GdkPixbuf *pixbuf = gdk_pixbuf_loader_get_pixbuf (loader);
@@ -155,38 +188,79 @@ printf("image loaded cb\n");
 	}
 
 	// callback for image displaying
+	static gboolean advance_frame_cb (void *pData)
+	{
+		YGImage *pThis = (YGImage *) pData;
+		Animation *animation = pThis->m_animation;
+
+		if (!animation->frame)  // no frame yet loaded
+			animation->frame = gdk_pixbuf_animation_get_iter (animation->pixbuf, NULL);
+		else
+			if (gdk_pixbuf_animation_iter_advance (animation->frame, NULL))
+				gtk_widget_queue_draw (pThis->getWidget());
+
+		// shedule next frame
+		int delay = gdk_pixbuf_animation_iter_get_delay_time (animation->frame);
+		if (delay != -1)
+			animation->timeout_id = g_timeout_add (delay, advance_frame_cb, pThis);
+
+		return FALSE;
+	}
+
 	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
 	                                 YGImage *pThis)
 	{
-printf ("expose event\n");
-		if (!pThis->m_imageLoaded)
-			return FALSE;
-
-		GdkPixbuf *pixbuf;
-		if (pThis->m_isAnimation) {
-			// TODO: get current frame's pixbuf
-			return FALSE;
-		}
-		else
-			pixbuf = pThis->m_pixbuf;
-
-		int x, y, w, h;
+		int x, y, width, height;
 		x = widget->allocation.x;
 		y = widget->allocation.y;
-		w = widget->allocation.width;
-		h = widget->allocation.height;
+		width  = widget->allocation.width;
+		height = widget->allocation.height;
 
-		// drawing
 		cairo_t *cr = gdk_cairo_create (widget->window);
-		gdk_cairo_set_source_pixbuf (cr, pixbuf, x, y);
 
-// TODO: scaling and tiling
+		if (!pThis->m_imageLoaded) {
+			// show default text if no image was loaded
+			PangoLayout *layout;
+			layout = gtk_widget_create_pango_layout (widget, pThis->alt_text);
 
-		cairo_rectangle (cr, x, y, w, h);
- 
+			int text_width, text_height;
+			pango_layout_get_size (layout, &text_width, &text_height);
+			text_width /= PANGO_SCALE;
+			text_height /= PANGO_SCALE;
+
+			x += (width - text_width) / 2;
+			y += (height - text_height) / 2;
+
+			cairo_move_to (cr, x, y);
+			pango_cairo_show_layout (cr, layout);
+
+			g_object_unref (layout);
+			cairo_destroy (cr);
+			return TRUE;
+		}
+
+		GdkPixbuf *pixbuf;
+		if (pThis->m_isAnimation)
+			pixbuf = gdk_pixbuf_animation_iter_get_pixbuf (pThis->m_animation->frame);
+		else
+			pixbuf = pThis->m_pixbuf;
+		gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
+
+		if (pThis->m_isTiled)
+			cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
+
+		if (pThis->m_isScaled) {
+			double scale_x = (double) gdk_pixbuf_get_width (pixbuf) / width;
+			double scale_y = (double) gdk_pixbuf_get_height (pixbuf) / height;
+			cairo_matrix_t matrix;
+			cairo_matrix_init_scale (&matrix, scale_x, scale_y);
+			cairo_pattern_set_matrix (cairo_get_source (cr), &matrix);
+		}
+
+		cairo_rectangle (cr, x, y, width, height);
 		cairo_fill (cr);
+		
 		cairo_destroy (cr);
-
 		return TRUE;
 	}
 };

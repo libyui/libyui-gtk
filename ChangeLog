@@ -3,8 +3,8 @@
 	* src/YGWizard.cc: changed look and added sanity checks
 	to commands.
 	* src/YGAlignment.cc: background image supported.
-	* src/ygtksteps.c / YGImage.cc: some improvements (still
-	work to do.)
+	* src/YGImage.cc: done.
+	* src/ygtksteps.c: some improvements (still work to do.)
 	* src/ygtkbargraph.cc: changed mask to fixed colors and chosen
 	some.
 

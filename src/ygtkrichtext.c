@@ -632,6 +632,11 @@ printf ("loading background %s\n", image);
 	if (!rtext->background)
 		g_warning ("YGtkRichText: couldn't load background image '%s'", image);
 
-if (rtext->background)
+	else {
 printf ("loading sucessful\n");
+		GtkTextAttributes *attr;
+		attr = gtk_text_view_get_default_attributes (GTK_TEXT_VIEW (rtext));
+printf("draw_bg: %d\n", attr->appearance.draw_bg);
+		attr->appearance.draw_bg = 1;
+	}
 }
