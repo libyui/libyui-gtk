@@ -2,11 +2,6 @@ List of missing features, actual bugs and other issues:
 
 = Yast-GTK =
 
-* MenuButton
-	o Popup-menu only appears on button click.
-		Should appear right when pressed.
-		Trivial, just needs some time.
-
 * RichText
 	o we need to add table support for the package selector.
 		Might be nice to use GtkHtml, if available.

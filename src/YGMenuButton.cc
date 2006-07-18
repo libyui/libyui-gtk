@@ -20,6 +20,8 @@ public:
 		IMPL;
 		g_signal_connect (G_OBJECT (getWidget()), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "button-press-event",
+		                  G_CALLBACK (pressed_cb), this);
 
 		// Add a separator and an arrow to the button to indicate there is a menu
 		GtkWidget *hbox, *arrow;
@@ -112,6 +114,17 @@ public:
 	{
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			popup_menu_cb (pThis);
+	}
+
+	static gboolean pressed_cb (GtkWidget *button, GdkEventButton *event,
+	                            YGMenuButton* pThis)
+	{
+		if (event->type == GDK_BUTTON_PRESS && event->button == 1) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+			popup_menu_cb (pThis);
+			return TRUE;
+		}
+		return FALSE;
 	}
 
 	static void selected_item_cb (GtkMenuItem *menuitem, YMenuItem *yitem)

@@ -9,7 +9,8 @@
 	* src/ygtkbargraph.cc: changed mask to fixed colors and chosen
 	some.
 	* src/YGPartitionSplitter.cc: should be fully operational.
-	* src/YGComboBox: implemented maxchars and validchars.
+	* src/YGComboBox.cc: implemented maxchars and validchars.
+	* src/YGMenuButton.cc: bug fix: popup menu right on button press.
 
 2006-07-09 Ricardo Cruz    <rpmcruz@clix.pt>
 
