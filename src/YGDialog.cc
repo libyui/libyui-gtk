@@ -11,12 +11,12 @@ class YGWizard;
 class YGDialog : public YDialog, public YGWidget
 {
 	GtkRequisition m_userSize;
-	GtkWidget *m_pFixed;
+	GtkWidget *m_fixed;
 	bool userResized () { return m_userSize.width > 0 && m_userSize.height > 0; }
 public:
-	YGDialog (const YWidgetOpt &opt, YGWidget *parent = 0)
+	YGDialog (const YWidgetOpt &opt)
 		: YDialog (opt),
-		  YGWidget (this, parent, FALSE,
+		  YGWidget (this, NULL, FALSE,
 		            GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,
 		            "allow_shrink", TRUE, NULL)
 	{
@@ -25,9 +25,9 @@ public:
 
 		g_object_set (G_OBJECT (getWidget()), NULL);
 
-		m_pFixed = gtk_fixed_new();
-		gtk_widget_show (m_pFixed);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_pFixed);
+		m_fixed = gtk_fixed_new();
+		gtk_widget_show (m_fixed);
+		gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);
 
 		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
@@ -104,7 +104,7 @@ public:
 	// YGWidget
 	GtkFixed *getFixed()
 	{
-		return GTK_FIXED (gtk_bin_get_child (GTK_BIN (getWidget())));
+		return GTK_FIXED (m_fixed);
 	}
 
 	static gboolean close_window_cb (GtkWidget *widget,
@@ -133,7 +133,7 @@ YDialog *
 YGUI::createDialog (YWidgetOpt &opt)
 {
 	IMPL;
-	return new YGDialog (opt, NULL);
+	return new YGDialog (opt);
 }
 
 void

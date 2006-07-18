@@ -33,7 +33,7 @@ public:
     // non abstract loop bits:
     virtual void blockEvents (bool block = true) { LOC; }
     virtual bool eventsBlocked() const { LOC; return false; }
-    virtual void internalError (const char *msg) { fprintf (stderr, "Internal err '%s'\n", msg); LOC; }
+    virtual void internalError (const char *msg);
     virtual void idleLoop (int fd_ycp);
     virtual YEvent * userInput (unsigned long timeout_millisec);
     virtual YEvent * pollInput();

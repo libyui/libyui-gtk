@@ -10,7 +10,7 @@
 #include "YGWidget.h"
 
 #define YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
-	virtual long nicesize( YUIDimension dim ) \
+	virtual long nicesize (YUIDimension dim) \
 	{ \
 		long ret = ParentClass::nicesize (dim); \
 		fprintf (stderr, "NiceSize for '%s' %s %ld\n", \
@@ -22,12 +22,10 @@
 	YGWIDGET_IMPL_SET_ENABLING \
 	YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
 	YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass)  \
-	virtual GtkFixed *getFixed()               \
-	  { return GTK_FIXED (getWidget()); }      \
-	virtual bool setKeyboardFocus() IMPL_RET(false); \
-	virtual void startMultipleChanges() IMPL; \
-	virtual void doneMultipleChanges() IMPL; \
-	virtual void saveUserInput( YMacroRecorder *macroRecorder ) IMPL;
+	virtual bool setKeyboardFocus() IMPL_RET(false) \
+	virtual void startMultipleChanges() IMPL \
+	virtual void doneMultipleChanges() IMPL \
+	virtual void saveUserInput (YMacroRecorder *macroRecorder) IMPL
 
 // YSplit
 
@@ -42,6 +40,8 @@ public:
 	YGWIDGET_IMPL_MOVE_CHILD
 	// YWidget
 	YGWIDGET_CONTAINER_IMPL (YSplit)
+	virtual GtkFixed *getFixed()
+		{ return GTK_FIXED (getWidget()); }
 };
 
 // YEmpty
@@ -54,6 +54,8 @@ public:
 	  YGWidget( this, parent )
 	{}
 	YGWIDGET_CONTAINER_IMPL (YEmpty)
+	virtual GtkFixed *getFixed()
+		{ return GTK_FIXED (getWidget()); }
 };
 
 // YSpacing
@@ -67,6 +69,8 @@ public:
 	  YGWidget(this, parent)
 	{}
 	YGWIDGET_CONTAINER_IMPL (YSpacing)
+	virtual GtkFixed *getFixed()
+		{ return GTK_FIXED (getWidget()); }
 };
 
 // YReplacePoint
@@ -84,6 +88,8 @@ public:
 	}
 	// YWidget
 	YGWIDGET_CONTAINER_IMPL (YReplacePoint)
+	virtual GtkFixed *getFixed()
+		{ return GTK_FIXED (getWidget()); }
 };
 
 // YSquash
@@ -96,17 +102,26 @@ public:
 	: YSquash (opt, hsquash, vsquash),
 	  YGWidget( this, parent ) {}
 	YGWIDGET_CONTAINER_IMPL (YSquash)
+	virtual GtkFixed *getFixed()
+		{ return GTK_FIXED (getWidget()); }
 };
 
 // YAlignment
 
 class YGAlignment : public YAlignment, public YGWidget
 {
+	GtkWidget *m_fixed;
+	GdkPixbuf *m_background_pixbuf;
+
 public:
 	YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
-	             YAlignmentType halign, YAlignmentType valign)
-	: YAlignment (opt, halign, valign),
-	  YGWidget (this, parent) {}
+	             YAlignmentType halign, YAlignmentType valign);
+
+	virtual void setBackgroundPixmap (string image);
+	virtual GtkFixed *getFixed();
+
+	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
+	                                 YGAlignment *pThis);
 	// YAlignment
 	YGWIDGET_IMPL_MOVE_CHILD
 	// YWidget

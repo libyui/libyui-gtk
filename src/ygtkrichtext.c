@@ -12,12 +12,14 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev);
 static gboolean motion_notify_event (GtkWidget *text_view, GdkEventMotion *event);
 static gboolean visibility_notify_event (GtkWidget          *text_view,
                                          GdkEventVisibility *event);
+static gboolean ygtk_richtext_expose_event (GtkWidget      *widget,
+                                            GdkEventExpose *event);
 
 static GtkTextViewClass *parent_class = NULL;
 
 /* Methods to add hyperlink support for GtkTextView (based from gtk-demos). */
 static GdkCursor *hand_cursor, *regular_cursor;
-static unsigned int ref_cursor = 0;
+static guint ref_cursor = 0;
 
 static guint link_pressed_signal;
 
@@ -41,6 +43,9 @@ static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 {
 	parent_class = (GtkTextViewClass*) g_type_class_peek_parent (klass);
 
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+  widget_class->expose_event = ygtk_richtext_expose_event;
+
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->finalize = ygtk_richtext_finalize;
 
@@ -56,6 +61,7 @@ static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 static void ygtk_richtext_init (YGtkRichText *rtext)
 {
 	rtext->prodname = NULL;
+	rtext->background = NULL;
 
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
@@ -112,6 +118,8 @@ static void ygtk_richtext_finalize (GObject *object)
 	YGtkRichText *rtext = YGTK_RICHTEXT (object);
 	if (rtext->prodname)
 		g_free (rtext->prodname);
+	if (rtext->background)
+		g_object_unref (G_OBJECT (rtext->background));
 
 	G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -593,4 +601,37 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean pl
 
 	g_markup_parse_context_free (ctx);
 	GRTParseState_free (&state);
+}
+
+static gint ygtk_richtext_expose_event (GtkWidget      *widget,
+                                        GdkEventExpose *event)
+{
+	YGtkRichText *rtext = YGTK_RICHTEXT (widget);
+	GdkRectangle *area = &event->area;
+printf("expose_event\n");
+	if (rtext->background) {
+		gint width  = MIN (gdk_pixbuf_get_width  (rtext->background), area->width);
+		gint height = MIN (gdk_pixbuf_get_height (rtext->background), area->height);
+printf("widget pos: %dx%d\n", widget->allocation.x, widget->allocation.y);
+printf("area: %dx%d , %dx%d\n", area->x, area->y, width, height);
+		gdk_draw_pixbuf (widget->window, widget->style->black_gc,
+		                 rtext->background, widget->allocation.x + area->x,
+		                 widget->allocation.y + area->y, area->x, area->y, width, height,
+		                 GDK_RGB_DITHER_NORMAL, 0, 0);
+	}
+
+	(* GTK_WIDGET_CLASS (parent_class)->expose_event) (widget, event);
+	return FALSE;
+}
+
+void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
+{
+printf ("loading background %s\n", image);
+	GError *error = 0;
+	rtext->background = gdk_pixbuf_new_from_file (image, &error);
+	if (!rtext->background)
+		g_warning ("YGtkRichText: couldn't load background image '%s'", image);
+
+if (rtext->background)
+printf ("loading sucessful\n");
 }

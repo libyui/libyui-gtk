@@ -164,11 +164,8 @@ public:
 		IMPL
 		if (dim == YD_HORIZ) return getNiceSize (dim);
 
-		PangoFontDescription *font = gtk_widget_get_style (getWidget())->font_desc;
-		gint font_size = pango_font_description_get_size(font);
-		if (!pango_font_description_get_size_is_absolute(font))
-			font_size /= PANGO_SCALE;
-
+		int font_size =
+			pango_font_description_get_size (getWidget()->style->font_desc);
 		return MAX (getNiceSize (dim), font_size * visibleLines());
 	}
 

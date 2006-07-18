@@ -10,40 +10,34 @@
 #include "ygtksteps.h"
 #include "YWizard.h"
 
+#define CONTENT_PADDING 15
+#define TITLE_HEIGHT   45
+#define HELP_BOX_WIDTH 150
+#define MAIN_BORDER 8
+
 class YGWizard : public YWizard, public YGWidget
 {
-	// Layout boxes
-	GtkWidget *m_heading_box, *m_main_box, *m_buttons_box;  // vertical
-	GtkWidget *m_help_box;  // horizontals
-
-	// The menu
-	GtkWidget *m_menu;
+	/* Hash tables to assign Yast Ids to Gtk entries. */
 	typedef map <string, GtkWidget*> MenuId;
-	MenuId menu_ids;
-
-	// Headings
-	GtkWidget *m_heading_image, *m_heading_label;
-
-	// Containee
-	GtkWidget *m_fixed;
-
-	// Help box
-	GtkWidget *m_help_frame, *m_help_text, *m_help_tree, *m_help_steps;
-
 	typedef map <string, GtkTreePath*> TreeId;
-	TreeId tree_ids;
 	typedef map <string, guint> StepId;
+	MenuId menu_ids;
+	TreeId tree_ids;
 	StepId steps_ids;
 
-	bool m_treeEnabled, m_stepsEnabled;
+	/* Widgets that we need to have access to. */
+	GtkWidget *m_menu, *m_title_label, *m_title_image, *m_help_widget,
+	          *m_steps_widget, *m_tree_widget, *m_release_notes_button;
+	GtkWidget *m_back_button, *m_abort_button, *m_next_button;
 
-	// Bottom buttons
-	GtkWidget *backButton, *abortButton, *nextButton;
-	bool m_protectNextButton;
+	GtkWidget *m_fixed;  // containee
 
-	// Miscellaneous
+	/* Layouts that we need for size_request. */
+	GtkWidget *m_button_box, *m_pane_box, *m_help_vbox, *m_title_hbox,
+	          *m_main_hbox;
+
+	/* Miscellaneous */
 	bool m_verboseCommands;
-	GtkWidget *m_releaseNotesButton;
 
 public:
 	YGWizard (const YWidgetOpt &opt, YGWidget *parent,
@@ -53,41 +47,46 @@ public:
 	: YWizard (opt, backButtonId, backButtonLabel,
 	                abortButtonId, abortButtonLabel,
 	                nextButtonId, nextButtonLabel),
-	  YGWidget (this, parent, true, GTK_TYPE_VBOX, NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		IMPL
-		m_stepsEnabled = opt.stepsEnabled.value();
-		m_treeEnabled  = opt.treeEnabled.value();
+		m_verboseCommands = false;
 
-		m_verboseCommands = true;  // for now...
+		// Layout widgets
+		GtkWidget *help_program_hbox, *main_vbox;
 
-		//** A menu bar
+		//** Menu bar
 		m_menu = gtk_menu_bar_new();
 
-		//** Heading space
-		m_heading_box = gtk_vbox_new (FALSE, 2);
-		GtkWidget *title_box = gtk_hbox_new (FALSE, 0);
-		GtkWidget *line = gtk_hseparator_new();
+		//** Title
+		m_title_hbox = gtk_hbox_new (FALSE, 0);
+		gtk_widget_set_size_request (m_title_hbox, -1, TITLE_HEIGHT);
 
-		m_heading_image = gtk_image_new();
-		m_heading_label = gtk_label_new ("");
+		m_title_image = gtk_image_new();
+		m_title_label = gtk_label_new("");
+
+		// setup label look
+		gtk_widget_modify_bg (m_title_label, GTK_STATE_NORMAL,
+		                      &m_title_label->style->bg[GTK_STATE_SELECTED]);
+		gtk_widget_modify_fg (m_title_label, GTK_STATE_NORMAL,
+		                      &m_title_label->style->fg[GTK_STATE_SELECTED]);
 
 		// set a strong font to the heading label
 		PangoFontDescription* font = pango_font_description_new();
-		pango_font_description_set_weight (font, PANGO_WEIGHT_HEAVY);
-		pango_font_description_set_size   (font, 16*PANGO_SCALE);
-		gtk_widget_modify_font (m_heading_label, font);
+		int size = pango_font_description_get_size (m_title_label->style->font_desc);
+		pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
+		pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
+		gtk_widget_modify_font (m_title_label, font);
 		pango_font_description_free (font);
 
-		gtk_container_add (GTK_CONTAINER (title_box), m_heading_image);
-		gtk_container_add (GTK_CONTAINER (title_box), m_heading_label);
-		gtk_box_set_child_packing (GTK_BOX (title_box), m_heading_image,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
+		gtk_container_add (GTK_CONTAINER (m_title_hbox), m_title_label);
+		gtk_container_add (GTK_CONTAINER (m_title_hbox), m_title_image);
+		gtk_box_set_child_packing (GTK_BOX (m_title_hbox), m_title_label,
+		                           FALSE, FALSE, 4, GTK_PACK_START);
+		gtk_box_set_child_packing (GTK_BOX (m_title_hbox), m_title_image,
+		                           FALSE, FALSE, 4, GTK_PACK_END);
 
-		gtk_container_add (GTK_CONTAINER (m_heading_box), title_box);
-		gtk_container_add (GTK_CONTAINER (m_heading_box), line);
-
-		//** Main widgets go here
+		//** Application area
 		m_fixed = gtk_fixed_new();
 
 		{
@@ -114,48 +113,72 @@ public:
 			addChild (contents);
 		}
 
-		//** Help space
-		GtkWidget *m_help_box = gtk_vbox_new (FALSE, 0);
-		m_help_frame = gtk_frame_new (NULL);
-		gtk_frame_set_shadow_type (GTK_FRAME (m_help_frame), GTK_SHADOW_IN);
-		gtk_widget_set_size_request (m_help_box, 250, -1);
-		gtk_container_add (GTK_CONTAINER (m_help_box), m_help_frame);
+		//** Help box
+		GtkWidget *help_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (help_scrolled_window),
+		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+		GtkWidget *help_frame = gtk_frame_new (NULL);
+		gtk_frame_set_shadow_type (GTK_FRAME (help_frame), GTK_SHADOW_IN);
+		m_help_vbox = gtk_vbox_new (FALSE, 0);  // shared with "Release Notes" button
 
-		m_help_text = ygtk_richtext_new();
-		g_object_ref (G_OBJECT (m_help_text));  // to survive container removals
+		m_help_widget = ygtk_richtext_new();
+		gtk_container_add (GTK_CONTAINER (help_scrolled_window), m_help_widget);
+		gtk_container_add (GTK_CONTAINER (help_frame), help_scrolled_window);
+		ygtk_richtext_set_background (YGTK_RICHTEXT (m_help_widget),
+			"/usr/share/YaST2/theme/SuSELinux/wizard/help-background.png");
+		// FIXME: we need to set some THEMEDIR on the configure process to avoid
+		// absolute paths
+		m_release_notes_button = gtk_button_new();
 
-		m_help_steps = m_help_tree = NULL;
-		if (m_treeEnabled) {
-			m_help_tree = gtk_tree_view_new_with_model
-				(GTK_TREE_MODEL (gtk_tree_store_new (1, G_TYPE_STRING)));
-			gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (m_help_tree),
-				0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
-			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_help_tree), FALSE);
-			g_signal_connect (G_OBJECT (m_help_tree), "cursor-changed",
-			                  G_CALLBACK (tree_item_selected_cb), this);
+		gtk_container_add (GTK_CONTAINER (m_help_vbox), help_frame);
+		gtk_container_add (GTK_CONTAINER (m_help_vbox), m_release_notes_button);
+		gtk_box_set_child_packing (GTK_BOX (m_help_vbox), m_release_notes_button,
+		                           FALSE, FALSE, 0, GTK_PACK_START);
+		gtk_widget_set_size_request (m_help_vbox, HELP_BOX_WIDTH, -1);
 
-			g_object_ref (G_OBJECT (m_help_tree));
-			setHelpBarWidget (m_help_tree);
+		//** Steps/tree pane
+		bool steps_enabled = opt.stepsEnabled.value();
+		bool tree_enabled  = opt.treeEnabled.value();
+		m_steps_widget = m_tree_widget = NULL;
+
+		if (steps_enabled && tree_enabled) {
+			y2error ("YGWizard doesn't support both steps and tree enabled at the same time."
+			         "\nDisabling the steps.");
+			steps_enabled = false;
 		}
-		if (m_stepsEnabled) {
-			m_help_steps = ygtk_steps_new();
-			g_object_ref (G_OBJECT (m_help_steps));
-			setHelpBarWidget (m_help_steps);
-		}
 
-		if (m_treeEnabled || m_stepsEnabled) {
-			// create a switch button
-			GtkWidget *switch_button = gtk_button_new_with_mnemonic ("Help");
-			gtk_container_add (GTK_CONTAINER (m_help_box), switch_button);
-			gtk_box_set_child_packing (GTK_BOX (m_help_box), switch_button,
-			                           FALSE, FALSE, 10, GTK_PACK_END);
-			g_signal_connect (G_OBJECT (switch_button), "clicked",
-			                  G_CALLBACK (switch_button_clicked_cb), this);
+		GtkWidget *pane_frame;
+		if (steps_enabled || tree_enabled) {
+			m_pane_box = gtk_event_box_new();
+
+			pane_frame = gtk_frame_new (NULL);
+			gtk_frame_set_shadow_type (GTK_FRAME (pane_frame), GTK_SHADOW_OUT);
 		}
 		else
-			setHelpBarWidget (m_help_text);
+			m_pane_box = NULL;
 
-		m_releaseNotesButton = NULL;
+		if (steps_enabled) {
+			m_steps_widget = ygtk_steps_new();
+			gtk_container_add (GTK_CONTAINER (pane_frame), m_steps_widget);
+			gtk_container_add (GTK_CONTAINER (m_pane_box), pane_frame);
+		}
+
+		if (tree_enabled) {
+			m_tree_widget = gtk_tree_view_new_with_model
+				(GTK_TREE_MODEL (gtk_tree_store_new (1, G_TYPE_STRING)));
+			gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (m_tree_widget),
+				0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
+			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_tree_widget), FALSE);
+			g_signal_connect (G_OBJECT (m_tree_widget), "cursor-changed",
+			                  G_CALLBACK (tree_item_selected_cb), this);
+
+			GtkWidget *tree_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (tree_scrolled_window),
+			                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+			gtk_container_add (GTK_CONTAINER (tree_scrolled_window), m_tree_widget);
+			gtk_container_add (GTK_CONTAINER (pane_frame), tree_scrolled_window);
+			gtk_container_add (GTK_CONTAINER (m_pane_box), pane_frame);
+		}
 
 		//** Adding the bottom buttons
 		/* NOTE: we can't really use gtk_button_new_from_stock() because the
@@ -165,59 +188,81 @@ public:
 		string abortLabel = YGUtils::mapKBAccel(abortButtonLabel->value_cstr());
 		string nextLabel  = YGUtils::mapKBAccel(nextButtonLabel->value_cstr());
 
-		backButton  = gtk_button_new_with_mnemonic (backLabel.c_str());
-		abortButton = gtk_button_new_with_mnemonic (abortLabel.c_str());
-		nextButton  = gtk_button_new_with_mnemonic (nextLabel.c_str());
-		m_protectNextButton = false;
-		g_object_set_data_full (G_OBJECT (backButton),  "id",
+		m_back_button  = gtk_button_new_with_mnemonic (backLabel.c_str());
+		m_abort_button = gtk_button_new_with_mnemonic (abortLabel.c_str());
+		m_next_button  = gtk_button_new_with_mnemonic (nextLabel.c_str());
+
+		g_object_set_data_full (G_OBJECT (m_back_button),  "id",
 		                        new YCPValue (backButtonId), delete_data_cb);
-		g_object_set_data_full (G_OBJECT (abortButton), "id",
+		g_object_set_data_full (G_OBJECT (m_abort_button), "id",
 		                        new YCPValue (abortButtonId), delete_data_cb);
-		g_object_set_data_full (G_OBJECT (nextButton),  "id",
+		g_object_set_data_full (G_OBJECT (m_next_button),  "id",
 		                        new YCPValue (nextButtonId), delete_data_cb);
+		g_object_set_data (G_OBJECT (m_next_button),  "protect", GINT_TO_POINTER (0));
 
-		g_signal_connect (G_OBJECT (backButton), "clicked",
+		g_signal_connect (G_OBJECT (m_back_button), "clicked",
 		                  G_CALLBACK (button_clicked_cb), this);
-		g_signal_connect (G_OBJECT (abortButton), "clicked",
+		g_signal_connect (G_OBJECT (m_abort_button), "clicked",
 		                  G_CALLBACK (button_clicked_cb), this);
-		g_signal_connect (G_OBJECT (nextButton), "clicked",
+		g_signal_connect (G_OBJECT (m_next_button), "clicked",
 		                  G_CALLBACK (button_clicked_cb), this);
 
-		GtkWidget *m_buttons_box = gtk_hbutton_box_new();
-		gtk_container_add (GTK_CONTAINER (m_buttons_box), backButton);
-		gtk_container_add (GTK_CONTAINER (m_buttons_box), abortButton);
-		gtk_container_add (GTK_CONTAINER (m_buttons_box), nextButton);
+		g_signal_connect (G_OBJECT (m_release_notes_button), "clicked",
+		                  G_CALLBACK (button_clicked_cb), this);
 
-		//** Setting the main layout
-		m_main_box = gtk_hbox_new (FALSE, 5);
-		gtk_container_add (GTK_CONTAINER (m_main_box), m_help_box);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), m_help_box,
-		                           FALSE, FALSE, 2, GTK_PACK_START);
-		gtk_container_add (GTK_CONTAINER (m_main_box), m_fixed);
+		m_button_box = gtk_hbutton_box_new();
+		gtk_container_add (GTK_CONTAINER (m_button_box), m_abort_button);
+		gtk_container_add (GTK_CONTAINER (m_button_box), m_back_button);
+		gtk_container_add (GTK_CONTAINER (m_button_box), m_next_button);
+		gtk_button_box_set_layout (GTK_BUTTON_BOX (m_button_box), GTK_BUTTONBOX_END);
+		gtk_container_set_border_width (GTK_CONTAINER (m_button_box), 10);
 
-		//** Setting the whole layout
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_menu);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), m_menu,
+		//** Setting general layouts
+		help_program_hbox = gtk_hbox_new (FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (help_program_hbox), m_help_vbox);
+		gtk_container_add (GTK_CONTAINER (help_program_hbox), m_fixed);
+		gtk_box_set_child_packing (GTK_BOX (help_program_hbox), m_help_vbox,
 		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_heading_box);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), m_heading_box,
-		                           FALSE, FALSE, 2, GTK_PACK_START);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_main_box);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_buttons_box);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), m_buttons_box,
-		                           FALSE, FALSE, 2, GTK_PACK_END);
-		gtk_widget_show_all (getWidget());
+		gtk_container_set_border_width (GTK_CONTAINER (help_program_hbox),
+		                                CONTENT_PADDING);
 
-		//** Some should be invisible until initializated
+		main_vbox = gtk_vbox_new (FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (main_vbox), m_title_hbox);
+		gtk_container_add (GTK_CONTAINER (main_vbox), help_program_hbox);
+		gtk_container_add (GTK_CONTAINER (main_vbox), m_button_box);
+
+		m_main_hbox = gtk_hbox_new (FALSE, 0);
+		if (m_pane_box) {
+			gtk_container_add (GTK_CONTAINER (m_main_hbox), m_pane_box);
+			gtk_box_set_child_packing (GTK_BOX (m_main_hbox), m_pane_box,
+			                           FALSE, FALSE, 0, GTK_PACK_START);
+		}
+		gtk_container_add (GTK_CONTAINER (m_main_hbox), main_vbox);
+
+		if (m_pane_box)
+			gtk_container_set_border_width (GTK_CONTAINER (m_pane_box), MAIN_BORDER);
+		gtk_container_set_border_width (GTK_CONTAINER (main_vbox), MAIN_BORDER);
+
+		gtk_container_add (GTK_CONTAINER (getWidget()), m_main_hbox);
+
+		//** Lights on!
+		gtk_widget_show_all (getWidget());
+		// some widgets need to start invisibly
 		gtk_widget_hide (m_menu);
-		// FIXME: this doesn't seem to work ?!
-		if (backLabel.empty())  gtk_widget_hide (backButton);
-		if (abortLabel.empty()) gtk_widget_hide (abortButton);
-		if (nextLabel.empty())  gtk_widget_hide (nextButton);
+		// FIXME: this doesn't seem to work:
+		if (backLabel.empty())  gtk_widget_hide (m_back_button);
+		if (abortLabel.empty()) gtk_widget_hide (m_abort_button);
+		if (nextLabel.empty())  gtk_widget_hide (m_next_button);
+		gtk_widget_hide (m_release_notes_button);
+
+		//** Get expose, so we can draw line border
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
+		                  G_CALLBACK (expose_event_cb), this);
 	}
 
 	void clear_tree_ids()
 	{
+		IMPL
 		for (TreeId::iterator it = tree_ids.begin(); it != tree_ids.end(); it++)
 			gtk_tree_path_free (it->second);
 		tree_ids.clear();
@@ -225,15 +270,8 @@ public:
 
 	virtual ~YGWizard()
 	{
+		IMPL
 		clear_tree_ids();
-		// we need to manually delete them, as only one is in the container
-		// at the moment
-		// FIXME: do we also need to call gtk_widget_destroy() ?
-		g_object_unref (G_OBJECT (m_help_text));
-		if (m_treeEnabled)
-			g_object_unref (G_OBJECT (m_help_tree));
-		if (m_stepsEnabled)
-			g_object_unref (G_OBJECT (m_help_steps));
 	}
 
 	virtual GtkFixed* getFixed()
@@ -242,8 +280,41 @@ public:
 		return GTK_FIXED (m_fixed);
 	}
 
-// TODO: some sanity checks might be nice
-#define isCommand(cmd, str) (cmd->name() == str)
+/* args_type is a reverse hexadecimal number where
+   any = 0, string = 1, boolean = 2. */
+bool isCommand (const YCPTerm &cmd, const char *func,
+                guint args_nb, guint args_type)
+{
+	if (cmd->name() == func) {
+		// do some sanity checks
+		if ((unsigned) cmd->size() != args_nb) {
+			y2error ("YGWizard: expected %d arguments for the '%s' command. %d given.",
+			         args_nb, func, cmd->size());
+			return false;
+		}
+
+		guint i, t;
+		for (i = 0, t = args_type; i < args_nb; i++, t >>= 4)
+			switch (t % 0x4) {
+				case 0x1:
+					if (!cmd->value(i)->isString()) {
+						y2error ("YGWizard: expected string as the %d argument for the '%s'"
+						         " command.", i+1, func);
+						return false;
+					}
+					break;
+				case 0x2:
+					if (!cmd->value(i)->isBoolean()) {
+						y2error ("YGWizard: expected boolean as the %d argument for the '%s'"
+						         " command.", i+1, func);
+						return false;
+					}
+					break;
+			}
+		return true;
+	}
+	return false;
+}
 #define getStdStringArg(cmd, arg) (cmd->value(arg)->asString()->value())
 #define getCStringArg(cmd, arg) (cmd->value(arg)->asString()->value_cstr())
 #define getBoolArg(cmd, arg) (cmd->value(arg)->asBoolean()->value())
@@ -255,13 +326,17 @@ public:
 	YCPValue command (const YCPTerm &cmd)
 	{
 		IMPL
-		if (isCommand (cmd, "SetHelpText"))
-			ygtk_richtext_set_text (YGTK_RICHTEXT (m_help_text), getCStringArg (cmd, 0), FALSE);
+		if (m_verboseCommands)
+			y2milestone ("Processing wizard command: %s\n", cmd->name().c_str());
 
-		else if (isCommand (cmd, "AddTreeItem")) {
+		if (isCommand (cmd, "SetHelpText", 1, 0x1))
+			ygtk_richtext_set_text (YGTK_RICHTEXT (m_help_widget),
+			                        getCStringArg (cmd, 0), FALSE);
+
+		else if (isCommand (cmd, "AddTreeItem", 3, 0x111)) {
 			string tree_id = getStdStringArg (cmd, 0);
 			GtkTreeIter *parent_iter, iter;
-			GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (m_help_tree));
+			GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (m_tree_widget));
 
 			if (tree_id.empty())
 				parent_iter = NULL;
@@ -282,76 +357,77 @@ public:
 			tree_ids [getStdStringArg (cmd, 2)] = gtk_tree_model_get_path (model, &iter);
 			delete parent_iter;
 		}
-		else if (isCommand (cmd, "DeleteTreeItems")) {
+		else if (isCommand (cmd, "DeleteTreeItems", 0, 0)) {
 			gtk_tree_store_clear
-				(GTK_TREE_STORE (gtk_tree_view_get_model (GTK_TREE_VIEW (m_help_tree))));
+				(GTK_TREE_STORE (gtk_tree_view_get_model (GTK_TREE_VIEW (m_tree_widget))));
 			clear_tree_ids();
 		}
-		else if (isCommand (cmd, "SelectTreeItem")) {
+		else if (isCommand (cmd, "SelectTreeItem", 1, 0x1)) {
 			TreeId::iterator it = tree_ids.find (getStdStringArg (cmd, 0));
 			if (it == tree_ids.end()) {
 				y2error ("YGWizard: there is no tree item with id '%s'", getCStringArg (cmd, 0));
 				return YCPBoolean (false);
 			}
 			GtkTreePath *path = it->second;
-			gtk_tree_view_expand_to_path (GTK_TREE_VIEW (m_help_tree), path);
-			gtk_tree_view_set_cursor (GTK_TREE_VIEW (m_help_tree), path, NULL, FALSE);
+			gtk_tree_view_expand_to_path (GTK_TREE_VIEW (m_tree_widget), path);
+			gtk_tree_view_set_cursor (GTK_TREE_VIEW (m_tree_widget), path, NULL, FALSE);
 		}
 
-		else if (isCommand (cmd, "SetDialogHeading"))
-			gtk_label_set_text (GTK_LABEL (m_heading_label), getCStringArg (cmd, 0));
-		else if (isCommand (cmd, "SetDialogIcon")) {
+		else if (isCommand (cmd, "SetDialogHeading", 1, 0x1))
+			gtk_label_set_text (GTK_LABEL (m_title_label), getCStringArg (cmd, 0));
+		else if (isCommand (cmd, "SetDialogIcon", 1, 0x1)) {
 			GError *error = 0;
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (getCStringArg (cmd, 0), &error);
 			if (pixbuf) {
-				gtk_image_set_from_pixbuf (GTK_IMAGE (m_heading_image), pixbuf);
+				gtk_image_set_from_pixbuf (GTK_IMAGE (m_title_image), pixbuf);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
 				y2warning ("YGWizard: could not load image: %s", getCStringArg (cmd, 0));
 		}
 
-		else if (isCommand (cmd, "SetAbortButtonLabel") ||
-		         isCommand (cmd, "SetCancelButtonLabel")) {
+		else if (isCommand (cmd, "SetAbortButtonLabel", 1, 0x1) ||
+		         isCommand (cmd, "SetCancelButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
-			gtk_button_set_label (GTK_BUTTON (abortButton), str.c_str());
+			gtk_button_set_label (GTK_BUTTON (m_abort_button), str.c_str());
 		}
-		else if (isCommand (cmd, "SetBackButtonLabel")) {
+		else if (isCommand (cmd, "SetBackButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
-			gtk_button_set_label (GTK_BUTTON (backButton), str.c_str());
+			gtk_button_set_label (GTK_BUTTON (m_back_button), str.c_str());
 		}
-		else if (isCommand (cmd, "SetNextButtonLabel") ||
-		         isCommand (cmd, "SetAcceptButtonLabel")) {
+		else if (isCommand (cmd, "SetNextButtonLabel", 1, 0x1) ||
+		         isCommand (cmd, "SetAcceptButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
-			gtk_button_set_label (GTK_BUTTON (nextButton), str.c_str());
+			gtk_button_set_label (GTK_BUTTON (m_next_button), str.c_str());
 		}
 
-		else if (isCommand (cmd, "SetAbortButtonID"))
-			g_object_set_data_full (G_OBJECT (abortButton), "id",
+		else if (isCommand (cmd, "SetAbortButtonID", 1, 0x0))
+			g_object_set_data_full (G_OBJECT (m_abort_button), "id",
 			                        new YCPValue (getAnyArg (cmd, 0)), delete_data_cb);
-		else if (isCommand (cmd, "SetBackButtonID"))
-			g_object_set_data_full (G_OBJECT (backButton), "id",
+		else if (isCommand (cmd, "SetBackButtonID", 1, 0x0))
+			g_object_set_data_full (G_OBJECT (m_back_button), "id",
 			                        new YCPValue (getAnyArg (cmd, 0)), delete_data_cb);
-		else if (isCommand (cmd, "SetNextButtonID"))
-			g_object_set_data_full (G_OBJECT (nextButton), "id",
+		else if (isCommand (cmd, "SetNextButtonID", 1, 0x0))
+			g_object_set_data_full (G_OBJECT (m_next_button), "id",
 			                        new YCPValue (getAnyArg (cmd, 0)), delete_data_cb);
 
-		else if (isCommand (cmd, "EnableAbortButton"))
-			enable_widget (getBoolArg (cmd, 0), abortButton);
-		else if (isCommand (cmd, "EnableBackButton"))
-			enable_widget (getBoolArg (cmd, 0), backButton);
-		else if (isCommand (cmd, "EnableNextButton"))
-			enable_widget (getBoolArg (cmd, 0), nextButton);
+		else if (isCommand (cmd, "EnableAbortButton", 1, 0x2))
+			enable_widget (getBoolArg (cmd, 0), m_abort_button);
+		else if (isCommand (cmd, "EnableBackButton", 1, 0x2))
+			enable_widget (getBoolArg (cmd, 0), m_back_button);
+		else if (isCommand (cmd, "EnableNextButton", 1, 0x2))
+			enable_widget (getBoolArg (cmd, 0), m_next_button);
 
-		else if (isCommand (cmd, "ProtectNextButton"))
-			m_protectNextButton = getBoolArg (cmd, 0);
+		else if (isCommand (cmd, "ProtectNextButton", 1, 0x2))
+			g_object_set_data (G_OBJECT (m_next_button), "protect",
+			                   GINT_TO_POINTER (getBoolArg (cmd, 0)));
 
-		else if (isCommand (cmd, "SetFocusToNextButton"))
-			gtk_widget_grab_focus (nextButton);
-		else if (isCommand (cmd, "SetFocusToBackButton"))
-			gtk_widget_grab_focus (backButton);
+		else if (isCommand (cmd, "SetFocusToNextButton", 0, 0))
+			gtk_widget_grab_focus (m_next_button);
+		else if (isCommand (cmd, "SetFocusToBackButton", 0, 0))
+			gtk_widget_grab_focus (m_back_button);
 
-		else if (isCommand (cmd, "AddMenu")) {
+		else if (isCommand (cmd, "AddMenu", 2, 0x11)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			GtkWidget *entry = gtk_menu_item_new_with_mnemonic (str.c_str());
 
@@ -363,7 +439,7 @@ public:
 			menu_ids [getStdStringArg (cmd, 1)] = submenu;
 			gtk_widget_show_all (m_menu);
 		}
-		else if (isCommand (cmd, "AddMenuEntry")) {
+		else if (isCommand (cmd, "AddMenuEntry", 3, 0x111)) {
 			MenuId::iterator it = menu_ids.find (getStdStringArg (cmd, 0));
 			if (it == menu_ids.end()) {
 				y2error ("YGWizard: there is no menu item with id '%s'", getCStringArg (cmd, 0));
@@ -377,11 +453,12 @@ public:
 			gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
 
 			gtk_widget_show (entry);
-			g_signal_connect (G_OBJECT (entry), "activate",
-			                  G_CALLBACK (selected_menu_item_cb),
-			                  (void*) getCStringArg (cmd, 2));
+			g_signal_connect_data (G_OBJECT (entry), "activate",
+			                       G_CALLBACK (selected_menu_item_cb),
+			                       (void*) g_strdup (getCStringArg (cmd, 2)),
+			                       free_data_cb, GConnectFlags (0));
 		}
-		else if (isCommand (cmd, "AddSubMenu")) {
+		else if (isCommand (cmd, "AddSubMenu", 3, 0x111)) {
 			MenuId::iterator it = menu_ids.find (getStdStringArg (cmd, 0));
 			if (it == menu_ids.end()) {
 				y2error ("YGWizard: there is no menu with id %s.", getCStringArg (cmd, 0));
@@ -400,7 +477,7 @@ public:
 			menu_ids [getStdStringArg (cmd, 2)] = submenu;
 			gtk_widget_show_all (entry);
 		}
-		else if (isCommand (cmd, "AddMenuSeparator")) {
+		else if (isCommand (cmd, "AddMenuSeparator", 1, 0x1)) {
 			MenuId::iterator it = menu_ids.find (getStdStringArg (cmd, 0));
 			if (it == menu_ids.end()) {
 				y2error ("YGWizard: there is no menu with id %s.", getCStringArg (cmd, 0));
@@ -413,145 +490,59 @@ public:
 			gtk_widget_show (separator);
 		}
 
-		else if (isCommand (cmd, "SetVerboseCommands"))
+		else if (isCommand (cmd, "SetVerboseCommands", 1, 0x2))
 			m_verboseCommands = getBoolArg (cmd, 0);
-		else if (isCommand (cmd, "Ping"))
+		else if (isCommand (cmd, "Ping", 0, 0))
 			y2debug ("YGWizard is active");
 
-		else if (isCommand (cmd, "AddStepHeading"))
-			ygtk_steps_append_heading (YGTK_STEPS (m_help_steps), getCStringArg (cmd, 0));
-		else if (isCommand (cmd, "AddStep"))
+		else if (isCommand (cmd, "AddStepHeading", 1, 0x1))
+			ygtk_steps_append_heading (YGTK_STEPS (m_steps_widget), getCStringArg (cmd, 0));
+		else if (isCommand (cmd, "AddStep", 2, 0x11)) {
 			steps_ids [getStdStringArg (cmd, 1)]
-				= ygtk_steps_append (YGTK_STEPS (m_help_steps), getCStringArg (cmd, 0));
-		else if (isCommand (cmd, "SetCurrentStep")) {
+				= ygtk_steps_append (YGTK_STEPS (m_steps_widget), getCStringArg (cmd, 0));
+		}
+		else if (isCommand (cmd, "SetCurrentStep", 1, 0x1)) {
 			StepId::iterator it = steps_ids.find (getStdStringArg (cmd, 0));
 			if (it == steps_ids.end()) {
 				y2error ("YGWizard: there is no step with id %s.", getCStringArg (cmd, 0));
 				return YCPBoolean (false);
 			}
-			ygtk_steps_set_current (YGTK_STEPS (m_help_steps), it->second);
+			ygtk_steps_set_current (YGTK_STEPS (m_steps_widget), it->second);
 		}
-		else if (isCommand (cmd, "UpdateSteps"))
+		else if (isCommand (cmd, "UpdateSteps", 0, 0))
 			;
-		else if (isCommand (cmd, "DeleteSteps"))
-			ygtk_steps_clear (YGTK_STEPS (m_help_steps));
-
-		else if (isCommand (cmd, "ShowReleaseNotesButton")) {
-			if (!m_stepsEnabled)
-				y2error ("YGWizard: Release button only possible when tree enabled");
-
-			if (!m_releaseNotesButton) {
-				string label = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
-				m_releaseNotesButton = gtk_button_new_with_mnemonic (label.c_str());
-				g_object_set_data_full (G_OBJECT (m_releaseNotesButton), "id",
-				                        new YCPValue (getAnyArg (cmd, 1)), delete_data_cb);
-				g_signal_connect (G_OBJECT (m_releaseNotesButton), "clicked",
-				                  G_CALLBACK (button_clicked_cb), this);
-			}
-			gtk_container_add (GTK_CONTAINER (m_help_steps), m_releaseNotesButton);
-			gtk_box_set_child_packing (GTK_BOX (m_help_steps), m_releaseNotesButton,
-			                           FALSE, FALSE, 2, GTK_PACK_END);
-			gtk_widget_show (m_releaseNotesButton);
-		}
-		else if (isCommand (cmd, "HideReleaseNotesButton")) {
-			gtk_widget_destroy (m_releaseNotesButton);
-			m_releaseNotesButton = NULL;
+		else if (isCommand (cmd, "DeleteSteps", 0, 0)) {
+			ygtk_steps_clear (YGTK_STEPS (m_steps_widget));
+			steps_ids.clear();
 		}
 
-#if 0
-		// to implement:
-		else if (isCommand (cmd, "RetranslateInternalButtons")) {}
-#endif
+		else if (isCommand (cmd, "ShowReleaseNotesButton", 2, 0x01)) {
+			string label = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
+			gtk_button_set_label (GTK_BUTTON (m_release_notes_button), label.c_str());
+			gtk_button_set_use_underline (GTK_BUTTON (m_release_notes_button), TRUE);
+			g_object_set_data_full (G_OBJECT (m_release_notes_button), "id",
+			                        new YCPValue (getAnyArg (cmd, 1)), delete_data_cb);
+			gtk_widget_show (m_release_notes_button);
+		}
+		else if (isCommand (cmd, "HideReleaseNotesButton", 0, 0))
+			gtk_widget_hide (m_release_notes_button);
+
+		else if (isCommand (cmd, "RetranslateInternalButtons", 0, 0))
+			;  // NOTE: we don't need this as we don't use switch buttons
 
 		else {
-			y2error ("Unsupported wizard command: %s\n", cmd->name().c_str());
+			y2error ("Unsupported wizard command (or invalid arguments): %s\n",
+			         cmd->name().c_str());
 			return YCPBoolean (false);
 		}
-
-		if (m_verboseCommands)
-			y2milestone ("Processed wizard command: %s\n", cmd->name().c_str());
 		return YCPBoolean (true);
-	}
-
-	// YGWidget
-	YGWIDGET_IMPL_NICESIZE
-	virtual void setSize (long width, long height)
-	{
-		doSetSize (width, height);
-
-		GtkRequisition requisition;
-		width -= 250;  // for the help box
-
-		gtk_widget_size_request (m_heading_box, &requisition);
-		height -= requisition.height;
-		gtk_widget_size_request (m_buttons_box, &requisition);
-		height -= requisition.height;
-
-		child (0)->setSize (width, height);
-	}
-
-	virtual void setEnabling (bool enabled)
-	{
-		IMPL
-		gtk_widget_set_sensitive (getWidget(), enabled);
-		if (m_protectNextButton)
-			gtk_widget_set_sensitive (nextButton, TRUE);
-	}
-
-	// callbacks
-	static void button_clicked_cb (GtkButton *button, YGWizard *pThis)
-	{
-		YCPValue *id = (YCPValue *) g_object_get_data (G_OBJECT (button), "id");
-		YGUI::ui()->sendEvent (new YMenuEvent (*id));
-	}
-
-	void setHelpBarWidget (GtkWidget* widget)
-	{
-		GtkWidget* current;
-		if ((current = gtk_bin_get_child (GTK_BIN (m_help_frame))))
-			gtk_container_remove (GTK_CONTAINER (m_help_frame), current);
-		gtk_container_add (GTK_CONTAINER (m_help_frame), widget);
-		gtk_widget_show (widget);
-	}
-
-	static void switch_button_clicked_cb (GtkButton *button, YGWizard *pThis)
-	{
-		string label = string (gtk_button_get_label (button));
-		if (label == "Tree") {
-			pThis->setHelpBarWidget (pThis->m_help_tree);
-			if (pThis->m_stepsEnabled)
-				gtk_button_set_label (button, "Steps");
-			else
-				gtk_button_set_label (button, "Help");
-		}
-		else if (label == "Help") {
-			pThis->setHelpBarWidget (pThis->m_help_text);
-			if (pThis->m_treeEnabled)
-				gtk_button_set_label (button, "Tree");
-			else
-				gtk_button_set_label (button, "Steps");
-		}
-		else if (label == "Steps") {
-			pThis->setHelpBarWidget (pThis->m_help_steps);
-			gtk_button_set_label (button, "Help");
-		}
-	}
-
-	static void delete_data_cb (gpointer data)
-	{
-		delete (YCPValue*) data;
-	}
-
-	static void selected_menu_item_cb (GtkMenuItem *item, const char* id)
-	{
-		YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (YCPString (id))));
 	}
 
 	YCPString currentTreeSelection()
 	{
 		GtkTreePath *path;
 		GtkTreeViewColumn *column;
-		gtk_tree_view_get_cursor (GTK_TREE_VIEW (m_help_tree), &path, &column);
+		gtk_tree_view_get_cursor (GTK_TREE_VIEW (m_tree_widget), &path, &column);
 		if (path == NULL || column == NULL)
 			return YCPString ("");
 
@@ -569,6 +560,122 @@ public:
 		}
 		g_warning ("YGWizard: internal error: current selection doesn't match any id");
 		return YCPString ("");
+	}
+
+	// nicesize, but only for the GTK widgets
+	long size_request (YUIDimension dim)
+	{
+		GtkRequisition requisition;
+		long request = 0;
+
+		if (dim == YD_HORIZ) {
+			if (m_pane_box) {
+				gtk_widget_size_request (m_pane_box, &requisition);
+				request += requisition.width
+				        + gtk_container_get_border_width (GTK_CONTAINER (m_pane_box));
+			}
+			gtk_widget_size_request (m_help_vbox, &requisition);
+			request += requisition.width
+			        + gtk_container_get_border_width (GTK_CONTAINER (m_title_hbox))
+			        + CONTENT_PADDING * 2;
+			request += MAIN_BORDER * 2;
+		}
+		else {
+			gtk_widget_size_request (m_title_hbox, &requisition);
+			request += requisition.height
+			        + gtk_container_get_border_width (GTK_CONTAINER (m_title_hbox))
+			        + CONTENT_PADDING * 2;
+			request += MAIN_BORDER * 2;
+			gtk_widget_size_request (m_button_box, &requisition);
+			request += requisition.height
+			        + gtk_container_get_border_width (GTK_CONTAINER (m_button_box));
+		}
+		return request;
+	}
+
+	// FIXME: this doesn't seem to get called ?!
+	virtual long nicesize (YUIDimension dim)
+	{
+		IMPL
+printf("ygwizard nicesize requested\n");
+		return child (0)->nicesize(dim) + size_request (dim);
+	}
+
+	virtual void setSize (long width, long height)
+	{
+		IMPL
+		doSetSize (width, height);
+
+		width  -= size_request (YD_HORIZ);
+		height -= size_request (YD_VERT);
+		child (0)->setSize (width, height);
+	}
+
+	virtual void setEnabling (bool enabled)
+	{
+		IMPL
+		// FIXME: this chains it all, no?
+		gtk_widget_set_sensitive (getWidget(), enabled);
+
+		bool protectNextButton =
+			GPOINTER_TO_INT (g_object_get_data (G_OBJECT (m_next_button),  "protect"));
+		if (!enabled && protectNextButton)
+			gtk_widget_set_sensitive (m_next_button, TRUE);
+	}
+
+	// callbacks
+	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
+	                                 YGWizard *pThis)
+	{
+		// Let's paint the square boxes
+		// (a filled for the title and a stroke around the content area)
+		int x, y, w, h;
+		cairo_t *cr = gdk_cairo_create (widget->window);
+		gdk_cairo_set_source_color (cr, &widget->style->bg[GTK_STATE_SELECTED]);
+
+		GtkWidget *title_widget = pThis->m_title_hbox;
+		GtkWidget *help_box     = pThis->m_help_vbox;
+
+		// title
+		x = title_widget->allocation.x;
+		y = title_widget->allocation.y;
+		w = title_widget->allocation.width;
+		h = title_widget->allocation.height;
+
+		cairo_rectangle (cr, x, y, w, h);
+		cairo_fill (cr);
+
+		// content area
+		x += 1; w -= 2;
+		y += h;
+		h = help_box->allocation.height + CONTENT_PADDING*2;
+
+		cairo_rectangle (cr, x, y, w, h);
+		cairo_stroke (cr);
+
+		cairo_destroy (cr);
+
+		GtkContainer *container = GTK_CONTAINER (widget);
+		gtk_container_propagate_expose (container, pThis->m_main_hbox, event);
+
+		return TRUE;
+	}
+
+
+	static void button_clicked_cb (GtkButton *button, YGWizard *pThis)
+	{
+		YCPValue *id = (YCPValue *) g_object_get_data (G_OBJECT (button), "id");
+		YGUI::ui()->sendEvent (new YMenuEvent (*id));
+	}
+
+	static void delete_data_cb (gpointer data)
+	{ delete (YCPValue*) data; }
+	static void free_data_cb (gpointer data, GClosure *closure)
+	{ g_free ((gchar*) data); }
+
+	static void selected_menu_item_cb (GtkMenuItem *item, const char* id)
+	{
+		YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (YCPString (id))));
 	}
 
 	static void tree_item_selected_cb (GtkTreeView *tree_view, YGWizard *pThis)

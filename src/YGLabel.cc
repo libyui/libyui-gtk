@@ -44,7 +44,8 @@ public:
 		/* This isn't a documented attribute, but seems to be used: */
 		if (opt.isHeading.value()) {
 			pango_font_description_set_weight (font, PANGO_WEIGHT_HEAVY);
-			pango_font_description_set_size   (font, 16*PANGO_SCALE);
+			int size = pango_font_description_get_size (getWidget()->style->font_desc);
+			pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
 		}
 		gtk_widget_modify_font (getWidget(), font);
 		pango_font_description_free (font);

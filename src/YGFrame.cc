@@ -40,8 +40,6 @@ public:
 	// YWidget
 	YGWIDGET_IMPL_SET_ENABLING
 
-//	YGWIDGET_IMPL_SET_SIZE_CHAIN (YContainerWidget::child(0)->this)
-
 	virtual void setSize (long newWidth, long newHeight)
 	{
 		doSetSize (newWidth, newHeight);

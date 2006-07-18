@@ -81,24 +81,24 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
                                  const gchar *label_entry, int value)
 {
-	YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*)
+	YGtkRatioBoxChild *box_child = (YGtkRatioBoxChild *)
 		g_list_nth_data (YGTK_RATIO_BOX (bar)->children, index);
 
 	GtkWidget *frame = box_child->widget;
 	GtkWidget *box   = gtk_bin_get_child (GTK_BIN (frame));
 	GtkWidget *label = gtk_bin_get_child (GTK_BIN (box));
 
-	if (value == -1)
+	if (value < 0)
 		value = 0;
 
 	// Reading label text
 	if (label_entry) {
-		GString* label_text = g_string_new (label_entry);
+		GString *label_text = g_string_new (label_entry);
 			{  // Replace %1 by value(i)
 			guint i;
 			for (i = 0; i < label_text->len; i++)
 				if (label_text->str[i] == '%' && label_text->str[i+1] == '1') {
-					gchar* value_str = g_strdup_printf ("%d", value);
+					gchar *value_str = g_strdup_printf ("%d", value);
 					label_text = g_string_erase (label_text, i, 2);
 					label_text = g_string_insert (label_text, i, value_str);
 					g_free (value_str);
@@ -111,24 +111,25 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 	}
 
 	// Set proportion
-	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), frame, value, TRUE, 0);
+	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), frame,
+	                                  MAX (value, 1), TRUE, 0);
 
 	// Set background color
-	static const gboolean colors_mask [][3] = {
-		{ 1, 0, 0 },	// red
-		{ 0, 1, 1 },	// cyan
-		{ 1, 1, 0 },	// yellow
-		{ 0, 1, 0 },	// green
-		{ 1, 0, 1 } 	// purple
+	const GdkColor palette [] = {
+		{ 0, 224 << 8,   0 << 8,   0 << 8 },	// red
+		{ 0, 237 << 8, 238 << 8, 236 << 8 },	// gray
+		{ 0, 252 << 8, 233 << 8,  79 << 8 },	// yellow
+		{ 0, 138 << 8, 226 << 8,  52 << 8 },	// green
+		{ 0, 173 << 8, 127 << 8, 168 << 8 },	// pink
+		{ 0, 114 << 8, 159 << 8, 207 << 8 },	// blue
+		{ 0, 252 << 8, 175 << 8,  62 << 8 },	// orange
+		{ 0, 193 << 8, 125 << 8,  17 << 8 },	// brown
 	};
-	const gboolean *mask = colors_mask [index % (sizeof (colors_mask)/3)];
-	float ratio = box_child->ratio * YGTK_RATIO_BOX(bar)->ratios_sum;
-	int intensity = (int)(ratio * 255);
-	GdkColor color = { 0, (mask[0] ? 255 : intensity) << 8,
-	                      (mask[1] ? 255 : intensity) << 8,
-	                      (mask[2] ? 255 : intensity) << 8 };
-	gtk_widget_modify_bg (box,   GTK_STATE_NORMAL, &color);
-	gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, &color);
+#define palette_size (sizeof (palette) / sizeof (GdkColor))
+
+	const GdkColor *color = &palette [index % palette_size];
+	gtk_widget_modify_bg (box,   GTK_STATE_NORMAL, color);
+	gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, color);
 }
 
 /* Just to avoid the size getting too big, when we have little

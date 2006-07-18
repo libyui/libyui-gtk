@@ -31,7 +31,6 @@ struct _YGtkSteps
 	// members
 	GList *steps;  // of YGtkSingleStep
 	guint current_step;
-	// total steps = g_list_length (steps)
 };
 
 struct _YGtkStepsClass
@@ -45,6 +44,7 @@ struct _YGtkSingleStep
 	// can either be a GtkLabel or a GtkHBox, with a GtkImage and a GtkLabel,
 	// depending on is_heading
 	GtkWidget *widget;
+	gboolean is_alias;  // duplicated step -- read ygtksteps.c intro text
 };
 
 GtkWidget* ygtk_steps_new();
@@ -53,7 +53,10 @@ GType ygtk_steps_get_type (void) G_GNUC_CONST;
 guint ygtk_steps_append (YGtkSteps *steps, const gchar *label);
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading);
 
+void ygtk_steps_advance (YGtkSteps *steps);
 void ygtk_steps_set_current (YGtkSteps *steps, guint step);
+guint ygtk_steps_total (YGtkSteps *steps);
+
 void ygtk_steps_clear (YGtkSteps *steps);
 
 G_END_DECLS

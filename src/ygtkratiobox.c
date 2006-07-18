@@ -1,27 +1,39 @@
-/* YGtkRatioBox container */
+/* Yast-GTK */
+/* YGtkRatioBox is an improvement over the GtkBox container that
+   allows the programmer to set the size containees as a ratio,
+   as opposed to just define their size as expandable or not.
+   (ratio = 0 would be the equivalent of expand = FALSE, while
+    ratio = 1 is the equivalent to expand = TRUE.)
+
+   YGtkRatioBox could be API (and ABI for the matter) compatible with
+   GtkBox, but isn't, as there is no compelling reason for that, since it
+   would require not only initial work, but the code would get bigger,
+   which is obviously undesirable for maintance.
+   However, if you want to use YGtkRatioBox as a replacement for GtkBox,
+   feel free to contact us that we may give you hand in accomplishing that.
+
+   Limitations:
+     * containees visibility is not supported
+     * text direction is not honored
+*/
 
 #include "ygtkratiobox.h"
 
 static void ygtk_ratio_box_class_init (YGtkRatioBoxClass *klass);
 static void ygtk_ratio_box_init       (YGtkRatioBox      *box);
 static void ygtk_ratio_box_add        (GtkContainer   *container,
-                                  GtkWidget      *widget);
+                                       GtkWidget      *widget);
 static void ygtk_ratio_box_remove     (GtkContainer   *container,
-                                  GtkWidget      *widget);
+                                       GtkWidget      *widget);
 static void ygtk_ratio_box_forall     (GtkContainer   *container,
-                                  gboolean	include_internals,
-                                  GtkCallback     callback,
-                                  gpointer        callback_data);
-static GType ygtk_ratio_box_child_type (GtkContainer   *container);
-//static gboolean ygtk_ratio_box_visibility_notify_event (GtkWidget	     *widget,
-//                                                GdkEventVisibility  *event);
+                                       gboolean        include_internals,
+                                       GtkCallback     callback,
+                                       gpointer        callback_data);
+static GType ygtk_ratio_box_child_type (GtkContainer  *container);
 static void ygtk_ratio_box_size_request  (GtkWidget      *widget,
-                                     GtkRequisition *requisition);
+                                          GtkRequisition *requisition);
 static void ygtk_ratio_box_size_allocate (GtkWidget      *widget,
-                                     GtkAllocation  *allocation);
-
-//static void ygtk_ratio_box_show_widget (GtkWidget *widget, YGtkRatioBox* box);
-//static void ygtk_ratio_box_hide_widget (GtkWidget *widget, YGtkRatioBox* box);
+                                          GtkAllocation  *allocation);
 
 static GtkContainerClass *parent_class = NULL;
 
@@ -133,12 +145,6 @@ static void ygtk_ratio_box_add (GtkContainer *container, GtkWidget *child)
 	child_info->ratio = 1.0;
 	child_info->padding = 0;
 	child_info->fill = TRUE;
-/*
-	g_signal_connect (G_OBJECT (child), "show",
-	                  G_CALLBACK (ygtk_ratio_box_show_widget), box);
-	g_signal_connect (G_OBJECT (child), "hide",
-	                  G_CALLBACK (ygtk_ratio_box_hide_widget), box);
-*/
 	box->ratios_sum += child_info->ratio;
 
 	box->children = g_list_append (box->children, child_info);
@@ -189,49 +195,8 @@ static void ygtk_ratio_box_forall (GtkContainer *container,
 	}
 }
 
-#if 0
-static void ygtk_ratio_box_show_widget (GtkWidget *widget, YGtkRatioBox* box)
-{
-	GList* child = box->children;
-	for (child = box->children; child; child = child->next) {
-		YGtkRatioBoxChild *box_child = (YGtkRatioBoxChild*) child->data;
-		if (box_child->widget == widget)
-			box->ratios_sum += box_child->ratio;
-	}
-}
-
-
-static void ygtk_ratio_box_hide_widget (GtkWidget *widget, YGtkRatioBox* box)
-{
-	GList* child = box->children;
-	for (child = box->children; child; child = child->next) {
-		YGtkRatioBoxChild *box_child = (YGtkRatioBoxChild*) child->data;
-		if (box_child->widget == widget)
-			box->ratios_sum -= box_child->ratio;
-	}
-}
-#endif
-/*
-static gboolean ygtk_ratio_box_visibility_notify_event (GtkWidget          *widget,
-                                                   GdkEventVisibility *event)
-{
-	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);
-printf("** widget set (in)visible\n");
-	GList* child = box->children;
-	for (child = box->children; child; child = child->next) {
-		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
-		if (box_child->widget == widget) {
-			if (GTK_WIDGET_VISIBLE (widget))
-				box->ratios_sum += box_child->ratio;
-			else
-				box->ratios_sum -= box_child->ratio;
-		}
-	}
-	return FALSE;
-}
-*/
 static void ygtk_ratio_box_size_request (GtkWidget      *widget,
-                                    GtkRequisition *requisition)
+                                         GtkRequisition *requisition)
 {
 	guint box_length = GTK_CONTAINER (widget)->border_width * 2;
 	guint box_height = 0;
@@ -284,11 +249,8 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 }
 
 static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
-                                     GtkAllocation *allocation)
+                                          GtkAllocation *allocation)
 {
-// TODO: honor this:
-// * text direction - gtk_widget_get_direction (widget);
-// * visibility - GTK_WIDGET_VISIBLE (child->widget)
 	GList* child;
 	int box_length;
 	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);

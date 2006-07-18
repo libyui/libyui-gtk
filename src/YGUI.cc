@@ -247,6 +247,14 @@ int YGUI::getDefaultHeight()
 	return MAX(SHRINK(gdk_screen_get_height (getScreen())), 600);
 }
 
+void YGUI::internalError (const char *msg)
+{
+	GtkWidget* dialog = gtk_message_dialog_new (NULL,
+		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+}
+
 /* File/directory dialogs. */
 static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 		const YCPString &startWith, const YCPString &filter_pattern,

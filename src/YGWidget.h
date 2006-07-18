@@ -101,7 +101,7 @@ class YGLabeledWidget : public YGWidget
 
 		void setLabelVisible(bool show);
 		void setBuddy (GtkWidget *widget);
-		virtual void doSetLabel (const YCPString & label);
+		virtual void doSetLabel (const YCPString &label);
 	protected:
 		GtkWidget *m_label, *m_field;
 };
@@ -127,7 +127,7 @@ class YGScrolledWidget : public YGLabeledWidget
 		                 bool show, GType type, const char *property_name, ...);
 		virtual ~YGScrolledWidget () {}
 
-		virtual GtkWidget* getWidget() { return m_widget; }
+		virtual GtkWidget *getWidget() { return m_widget; }
 
 	protected:
 		void construct(GType type, const char *property_name, va_list args);

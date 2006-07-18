@@ -15,16 +15,21 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	g_object_ref (G_OBJECT (m_widget));
 	gtk_object_sink (GTK_OBJECT (m_widget));
 
-	y_widget->setWidgetRep ((void *)this);
+	y_widget->setWidgetRep ((void *) this);
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
 #endif
 
-	GtkFixed *fixed;
-	if (!parent || !(fixed = parent->getFixed()))
-		g_warning ("No parent for new widget");
-	else
-		gtk_fixed_put (fixed, m_widget, 0, 0);
+	if (parent) {
+		GtkFixed *fixed;
+
+	 	if (!(fixed = parent->getFixed()))
+			g_error ("YGWidget: widget %s doesn't have where to seat",
+			         y_widget->widgetClass());
+		else
+			gtk_fixed_put (fixed, m_widget, 0, 0);
+	}
+
 	if (show)
 		gtk_widget_show_all (m_widget);
 }
@@ -68,10 +73,6 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 GtkFixed *
 YGWidget::getFixed()
 {
-	// In containers, the widget is the GtkFixed itself
-	if (GTK_IS_FIXED (m_widget))
-		return GTK_FIXED (m_widget);
-
 	YWidget *y_parent;
 	YGWidget *parent;
 
@@ -106,7 +107,7 @@ YGWidget::doSetSize (long width, long height)
 void
 YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
-	GtkFixed *fixed = YGWidget::getFixed();
+	GtkFixed *fixed = getFixed();
 	GtkWidget *widget = YGWidget::get (child)->getWidget();
 
 	if (!GTK_IS_WIDGET (widget))
@@ -117,7 +118,7 @@ YGWidget::doMoveChild (YWidget *child, long x, long y)
 		         m_y_widget->widgetClass());
 
 	else
-		gtk_fixed_move (YGWidget::getFixed(), widget, x, y);
+		gtk_fixed_move (fixed, widget, x, y);
 }
 
 long
