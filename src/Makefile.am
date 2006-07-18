@@ -39,7 +39,6 @@ libpy2gtk_la_SOURCES = \
 	\
 	ygtkratiobox.c \
 	ygtkbargraph.c \
-	ygtkslider.c \
 	ygtkrichtext.c \
 	ygtksteps.c
 

@@ -40,7 +40,7 @@ GType ygtk_bar_graph_get_type (void) G_GNUC_CONST;
 
 void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries);
 void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
-                 const gchar *label_entry, int value);
+                                 const gchar *label_entry, int value);
 
 G_END_DECLS
 

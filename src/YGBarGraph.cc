@@ -36,39 +36,43 @@ YGUI::createBarGraph (YWidget *parent, YWidgetOpt &opt)
 	return new YGBarGraph (opt, YGWidget::get (parent));
 }
 
-#include "ygtkslider.h"
 #include "YPartitionSplitter.h"
 
 class YGPartitionSplitter : public YPartitionSplitter, public YGWidget
 {
 public:
 	YGtkBarGraph *m_barGraph;
+	bool m_showDelta;
+	GtkWidget *m_scale, *m_free_spin, *m_new_spin;
+	string m_freeLabel, m_newPartLabel;
 
 	YGPartitionSplitter (const YWidgetOpt &opt, YGWidget *parent,
-	             int usedSize, int totalFreeSize, int newPartSize,
-	                          int minNewPartSize, int minFreeSize,
-	        const YCPString &usedLabel,const YCPString &freeLabel,
-	                                const YCPString &newPartLabel,
-	                              const YCPString &freeFieldLabel,
-	                           const YCPString &newPartFieldLabel)
-	: YPartitionSplitter (opt, usedSize, totalFreeSize, newPartSize, minNewPartSize,
-	                      minFreeSize, usedLabel, freeLabel, newPartLabel,
-	                      freeFieldLabel, newPartFieldLabel)
+	        int _usedSize, int _totalFreeSize, int _newPartSize,
+	        int _minNewPartSize, int _minFreeSize,
+	        const YCPString &usedLabel, const YCPString &freeLabel,
+	        const YCPString &newPartLabel, const YCPString &freeFieldLabel,
+	        const YCPString &newPartFieldLabel)
+	: YPartitionSplitter (opt, _usedSize, _totalFreeSize, _newPartSize,
+	                      _minNewPartSize, _minFreeSize, usedLabel,
+	                      freeLabel, newPartLabel, freeFieldLabel,
+	                      newPartFieldLabel)
 	, YGWidget (this, parent, true, GTK_TYPE_VBOX, NULL)
 	{
+		/* Bar graph widget */
 		GtkWidget *graph = ygtk_bar_graph_new();
 		m_barGraph = YGTK_BAR_GRAPH (graph);
 		ygtk_bar_graph_create_entries (m_barGraph, 3);
-		ygtk_bar_graph_setup_entry (m_barGraph, 0,
-		                            usedLabel->value_cstr(), usedSize);
-		ygtk_bar_graph_setup_entry (m_barGraph, 1,
-		                            freeLabel->value_cstr(), totalFreeSize);
-		ygtk_bar_graph_setup_entry (m_barGraph, 2,
-		                            newPartLabel->value_cstr(), newPartSize);
+		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel->value_cstr(),
+		                            usedSize());
+		m_freeLabel = freeLabel->value();
+		m_newPartLabel = newPartLabel->value();
+		// the others are setup-ed on SetValue()
 
-		GtkWidget *labels_box = gtk_hbox_new (FALSE, 0);
-		GtkWidget *free_label = gtk_label_new (freeFieldLabel->value_cstr());
-		GtkWidget *new_part_label = gtk_label_new (newPartFieldLabel->value_cstr());
+		/* Labels over the slider */
+		GtkWidget *labels_box, *free_label, *new_part_label;
+		labels_box = gtk_hbox_new (FALSE, 0);
+		free_label = gtk_label_new (freeFieldLabel->value_cstr());
+		new_part_label = gtk_label_new (newPartFieldLabel->value_cstr());
 		gtk_container_add (GTK_CONTAINER (labels_box), free_label);
 		gtk_container_add (GTK_CONTAINER (labels_box), new_part_label);
 		gtk_box_set_child_packing (GTK_BOX (labels_box), free_label,
@@ -76,47 +80,109 @@ public:
 		gtk_box_set_child_packing (GTK_BOX (labels_box), new_part_label,
 		                           FALSE, FALSE, 0, GTK_PACK_END);
 
-		GtkWidget *slider = ygtk_slider_new (minFreeSize, minNewPartSize, TRUE, TRUE);
+		/* Slider and the spinners */
+		m_showDelta = opt.countShowDelta.value();
 
+		GtkWidget *slider_box = gtk_hbox_new (FALSE, 0);
+		m_scale = gtk_hscale_new_with_range (minFreeSize(), maxFreeSize(), 1);
+		gtk_scale_set_draw_value (GTK_SCALE (m_scale), FALSE);
+		m_free_spin = gtk_spin_button_new_with_range
+			(minFreeSize(), maxFreeSize(), 1);
+		m_new_spin  = gtk_spin_button_new_with_range
+			(minNewPartSize(), maxNewPartSize(), 1);
+		gtk_container_add (GTK_CONTAINER (slider_box), m_free_spin);
+		gtk_container_add (GTK_CONTAINER (slider_box), m_scale);
+		gtk_container_add (GTK_CONTAINER (slider_box), m_new_spin);
+		gtk_box_set_child_packing (GTK_BOX (slider_box), m_free_spin,
+		                           FALSE, FALSE, 0, GTK_PACK_START);
+		gtk_box_set_child_packing (GTK_BOX (slider_box), m_new_spin,
+		                           FALSE, FALSE, 0, GTK_PACK_START);
+
+		g_signal_connect (G_OBJECT (m_scale), "value-changed",
+		                  G_CALLBACK (scale_changed_cb), this);
+		g_signal_connect (G_OBJECT (m_free_spin), "value-changed",
+		                  G_CALLBACK (free_spin_changed_cb), this);
+		g_signal_connect (G_OBJECT (m_new_spin), "value-changed",
+		                  G_CALLBACK (new_spin_changed_cb), this);
+
+		/* Main layout */
 		gtk_container_add (GTK_CONTAINER (getWidget()), graph);
 		gtk_container_add (GTK_CONTAINER (getWidget()), labels_box);
-		gtk_container_add (GTK_CONTAINER (getWidget()), slider);
+		gtk_container_add (GTK_CONTAINER (getWidget()), slider_box);
 		gtk_box_set_child_packing (GTK_BOX (getWidget()), labels_box,
 		                           FALSE, FALSE, 2, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), slider,
+		gtk_box_set_child_packing (GTK_BOX (getWidget()), slider_box,
 		                           FALSE, FALSE, 2, GTK_PACK_START);
 
+		setValue (newPartSize());  // initialization
 		gtk_widget_show_all (getWidget());
-
-		g_signal_connect (G_OBJECT (slider), "value-changed",
-		                  G_CALLBACK (slider_changed_cb), this);
 	}
 
 	// YPartitionSplitter
 	virtual void setValue (int newValue)
 	{
-		ygtk_slider_set_value (YGTK_SLIDER (getWidget()), newValue);
+		IMPL
 		YPartitionSplitter::setValue (newValue);
+
+		ygtk_bar_graph_setup_entry (m_barGraph, 1, m_freeLabel.c_str(),
+		                            remainingFreeSize());
+		ygtk_bar_graph_setup_entry (m_barGraph, 2, m_newPartLabel.c_str(),
+		                            newPartSize());
+
+		// block connections
+		g_signal_handlers_block_by_func (m_scale,
+		                                 (gpointer) scale_changed_cb, this);
+		g_signal_handlers_block_by_func (m_free_spin,
+		                                 (gpointer) free_spin_changed_cb, this);
+		g_signal_handlers_block_by_func (m_new_spin,
+		                                 (gpointer) new_spin_changed_cb, this);
+
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin),
+		                           remainingFreeSize());
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin),
+		                           newPartSize());
+		gtk_range_set_value (GTK_RANGE (m_scale), remainingFreeSize());
+
+		// unblock connections
+		g_signal_handlers_unblock_by_func (m_scale,
+		                                   (gpointer) scale_changed_cb, this);
+		g_signal_handlers_unblock_by_func (m_free_spin,
+		                                   (gpointer) free_spin_changed_cb, this);
+		g_signal_handlers_unblock_by_func (m_new_spin,
+		                                   (gpointer) new_spin_changed_cb, this);
 	}
 
-	static void slider_changed_cb (YGtkSlider *slider, YGPartitionSplitter *pThis)
+	static void scale_changed_cb (GtkRange *range, YGPartitionSplitter *pThis)
 	{
-// FIXME: why is pThis->freeLabel()->value_cstr() crashing ?!
-		pThis->YPartitionSplitter::setValue (ygtk_slider_get_value (slider));
-printf("setting up entry 1\n");
-		ygtk_bar_graph_setup_entry (pThis->m_barGraph, 1,
-		                            NULL,
-//		                            pThis->freeLabel()->value_cstr(),
-		                            pThis->totalFreeSize());
-fprintf(stderr, "setting up entry 2\n");
-//fprintf(stderr, "label: %s\n", pThis->newPartLabel()->value().c_str());
-fprintf(stderr, "value: %d\n", pThis->newPartSize());
-		ygtk_bar_graph_setup_entry (pThis->m_barGraph, 2,
-		                            NULL,
-//		                            pThis->newPartLabel()->value_cstr(),
-		                            pThis->newPartSize());
+		IMPL
+		int newFreeSize = (int) gtk_range_get_value (range);
+		int newPartSize = pThis->totalFreeSize() - newFreeSize;
+		if (pThis->m_showDelta)
+			newPartSize += pThis->usedSize();
 
-fprintf(stderr, "emitting value\n");
+		pThis->setValue (newPartSize);
+		pThis->emitEvent (YEvent::ValueChanged);
+	}
+
+	static void free_spin_changed_cb (GtkSpinButton *spin, YGPartitionSplitter *pThis)
+	{
+		IMPL
+		int newFreeSize = gtk_spin_button_get_value_as_int (spin);
+		int newPartSize = pThis->totalFreeSize() - newFreeSize;
+		if (pThis->m_showDelta)
+			newPartSize += pThis->usedSize();
+
+		pThis->setValue (newPartSize);
+		pThis->emitEvent (YEvent::ValueChanged);
+	}
+
+	static void new_spin_changed_cb (GtkSpinButton *spin, YGPartitionSplitter *pThis)
+	{
+		IMPL
+		if (pThis->m_showDelta)
+			pThis->setValue (pThis->remainingFreeSize() - pThis->totalFreeSize());
+		else
+			pThis->setValue (gtk_spin_button_get_value_as_int (spin));
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
@@ -128,12 +194,12 @@ fprintf(stderr, "emitting value\n");
 
 YWidget *
 YGUI::createPartitionSplitter (YWidget *parent, YWidgetOpt &opt,
-               int usedSize, int totalFreeSize, int newPartSize,
-                            int minNewPartSize, int minFreeSize,
-          const YCPString &usedLabel,const YCPString &freeLabel,
-                                  const YCPString &newPartLabel,
-                                const YCPString &freeFieldLabel,
-                             const YCPString &newPartFieldLabel)
+	int usedSize, int totalFreeSize, int newPartSize,
+	int minNewPartSize, int minFreeSize,
+	const YCPString &usedLabel,const YCPString &freeLabel,
+	const YCPString &newPartLabel,
+	const YCPString &freeFieldLabel,
+	const YCPString &newPartFieldLabel)
 {
 	return new YGPartitionSplitter (opt, YGWidget::get (parent), usedSize,
 		totalFreeSize, newPartSize, minNewPartSize, minFreeSize, usedLabel,
