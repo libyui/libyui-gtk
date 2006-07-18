@@ -132,13 +132,27 @@ GtkWidget* ygtk_steps_new()
 
 guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 {
+	YGtkSingleStep *last_step = 0;
+	if (ygtk_steps_total (steps))
+		last_step = g_list_nth_data (steps->steps, ygtk_steps_total (steps) - 1);
+
 	// Don't add the same step twice -- but emulate like if you did
-// TODO
+	if (last_step && !g_strcasecmp (last_step->text, step_text)) {
+		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
+		step->is_heading = FALSE;
+		step->widget = last_step->widget;
+		step->text = last_step->text;
+		step->is_alias = TRUE;
+		steps->steps = g_list_append (steps->steps, step);
+		return ygtk_steps_total (steps) - 1;
+	}
 	// New step
-	{
+	else {
 		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 		step->is_heading = FALSE;
 		step->widget = gtk_hbox_new (FALSE, 0);
+		step->text = g_strdup (step_text);
+		step->is_alias = FALSE;
 		steps->steps = g_list_append (steps->steps, step);
 
 		GtkWidget *image = gtk_image_new();
@@ -159,7 +173,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 
 		guint step_nb = g_list_length (steps->steps) - 1;
 		ygtk_steps_update_step (steps, step_nb);
-		return ygtk_steps_total (steps) - 1;
+		return step_nb;
 	}
 }
 
@@ -168,6 +182,8 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 	step->is_heading = TRUE;
 	step->widget = gtk_label_new (heading);
+	step->text = g_strdup (heading);
+	step->is_alias = FALSE;
 	steps->steps = g_list_append (steps->steps, step);
 
 	gtk_misc_set_alignment (GTK_MISC (step->widget), 0, 0.5);
@@ -213,8 +229,12 @@ void ygtk_steps_clear (YGtkSteps *steps)
 	GList* it;
 	for (it = g_list_first (steps->steps); it; it = it->next) {
 		YGtkSingleStep *step = it->data;
-		gtk_widget_destroy (step->widget);
-		g_object_unref (G_OBJECT (step->widget));
+		if (!step->is_alias) {
+			g_free (step->text);
+			gtk_widget_destroy (step->widget);
+			g_object_unref (G_OBJECT (step->widget));
+		}
+		g_free (step);
 	}
 
 	g_list_free (steps->steps);

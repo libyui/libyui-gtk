@@ -44,7 +44,10 @@ struct _YGtkSingleStep
 	// can either be a GtkLabel or a GtkHBox, with a GtkImage and a GtkLabel,
 	// depending on is_heading
 	GtkWidget *widget;
-	gboolean is_alias;  // duplicated step -- read ygtksteps.c intro text
+	// cache used for fast access (same as the label)
+	gchar *text;
+	// duplicated step -- read ygtksteps.c intro text
+	gboolean is_alias;
 };
 
 GtkWidget* ygtk_steps_new();
