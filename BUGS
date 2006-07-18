@@ -18,20 +18,12 @@ List of missing features, actual bugs and other issues:
 * Auto-yast flickering
 	after changing modules. To be investigated.
 
-* Auto-Yast
-	o Flickering
-	Just clicking around results on it.
-	To be investigated.
-
 * BarGraph
 	Colors should follow user-defined tons,
 	maybe based on Evolution's calendar.
 
 * BarGraph / RatioBox
 	Let tiny widgets still have some pixels visible for popup menu.
-
-* RadioButton
-	Shouldn't behave completely like a push button.
 
 = Yast-Core =
 

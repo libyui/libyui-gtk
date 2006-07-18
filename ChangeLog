@@ -14,6 +14,8 @@
 	* src/ygtk_ratio_box.h/c: YGtkRatioBox is now abstract, being instanced
 	by *HBox and *VBox. (still using a common size_request/allocate.)
 	* src/YGMultiProgressMeter.cc: bug fix: vertical orientation fixed.
+	* src/YGRadioButton.cc: bug fix: radio buttons behaving too much like
+	a toggle button.
 
 2006-07-09 Ricardo Cruz    <rpmcruz@clix.pt>
 
