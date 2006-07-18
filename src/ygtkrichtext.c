@@ -637,6 +637,6 @@ printf ("loading sucessful\n");
 		GtkTextAttributes *attr;
 		attr = gtk_text_view_get_default_attributes (GTK_TEXT_VIEW (rtext));
 printf("draw_bg: %d\n", attr->appearance.draw_bg);
-		attr->appearance.draw_bg = 1;
+		attr->appearance.draw_bg = 0;
 	}
 }

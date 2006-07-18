@@ -20,6 +20,8 @@ static void ygtk_steps_class_init (YGtkStepsClass *klass);
 static void ygtk_steps_init       (YGtkSteps      *step);
 static void ygtk_steps_finalize   (GObject        *object);
 static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb);
+static void ygtk_steps_size_allocate (GtkWidget     *widget,
+                                      GtkAllocation *allocation);
 
 static GtkVBoxClass *parent_class = NULL;
 
@@ -95,6 +97,9 @@ static void ygtk_steps_class_init (YGtkStepsClass *klass)
 {
 	parent_class = (GtkVBoxClass*) g_type_class_peek_parent (klass);
 
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->size_allocate  = ygtk_steps_size_allocate;
+
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->finalize = ygtk_steps_finalize;
 }
@@ -103,7 +108,6 @@ static void ygtk_steps_init (YGtkSteps *steps)
 {
 	steps->steps = NULL;
 	steps->current_step = 0;
-	gtk_box_set_homogeneous (GTK_BOX (steps), TRUE);
 	gtk_box_set_spacing (GTK_BOX (steps), 2);
 	gtk_container_set_border_width (GTK_CONTAINER (steps), 4);
 
@@ -165,7 +169,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 		                           FALSE, FALSE, 5, GTK_PACK_START);
 
 		GtkWidget *alignment = gtk_alignment_new (0, 0.5, 0, 0);
-		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 0, 0, 20, 0);
+		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 2, 2, 20, 0);
 		gtk_container_add (GTK_CONTAINER (alignment), step->widget);
 
 		gtk_container_add (GTK_CONTAINER (steps), alignment);
@@ -187,6 +191,7 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	steps->steps = g_list_append (steps->steps, step);
 
 	gtk_misc_set_alignment (GTK_MISC (step->widget), 0, 0.5);
+	gtk_misc_set_padding (GTK_MISC (step->widget), 0, 6);
 
 	gtk_container_add (GTK_CONTAINER (steps), step->widget);
 	gtk_widget_show (step->widget);
@@ -246,6 +251,8 @@ static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb)
 	YGtkSingleStep *step = g_list_nth_data (steps->steps, step_nb);
 	if (step->is_heading)
 		return;
+	if (step->is_alias && step_nb > steps->current_step)
+		return;
 
 	GtkWidget *image, *label;
 	GList *list = gtk_container_get_children (GTK_CONTAINER (step->widget));
@@ -277,4 +284,15 @@ static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb)
 		gtk_widget_set_size_request (image, gdk_pixbuf_get_width (done_pixbuf),
 		                             gdk_pixbuf_get_height (done_pixbuf));
 	}
+}
+
+static void ygtk_steps_size_allocate (GtkWidget     *widget,
+                                      GtkAllocation *allocation)
+{
+	// Don't let the steps widget expand besides a certain point
+	GtkRequisition requisition;
+	gtk_widget_size_request (widget, &requisition);
+	allocation->height = MIN (requisition.height, allocation->height);
+
+	(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
 }

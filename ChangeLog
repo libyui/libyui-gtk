@@ -4,7 +4,8 @@
 	to commands.
 	* src/YGAlignment.cc: background image supported.
 	* src/YGImage.cc: done.
-	* src/ygtksteps.c: some improvements (still work to do.)
+	* src/ygtksteps.c: added alias steps support and made it
+	non-expansible.
 	* src/ygtkbargraph.cc: changed mask to fixed colors and chosen
 	some.
 
