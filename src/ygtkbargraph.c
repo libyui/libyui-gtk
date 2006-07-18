@@ -10,7 +10,7 @@ static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
 static void ygtk_bar_graph_size_request  (GtkWidget      *widget,
                                      GtkRequisition *requisition);
 
-static YGtkRatioBoxClass *parent_class = NULL;
+static YGtkRatioHBoxClass *parent_class = NULL;
 
 GType ygtk_bar_graph_get_type()
 {
@@ -22,7 +22,7 @@ GType ygtk_bar_graph_get_type()
 			sizeof (YGtkBarGraph), 0, (GInstanceInitFunc) ygtk_bar_graph_init, NULL
 		};
 
-		bar_type = g_type_register_static (YGTK_TYPE_RATIO_BOX, "YGtkBarGraph",
+		bar_type = g_type_register_static (YGTK_TYPE_RATIO_HBOX, "YGtkBarGraph",
 		                                   &bar_info, (GTypeFlags) 0);
 	}
 	return bar_type;
@@ -30,7 +30,7 @@ GType ygtk_bar_graph_get_type()
 
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
 {
-	parent_class = (YGtkRatioBoxClass*) g_type_class_peek_parent (klass);
+	parent_class = (YGtkRatioHBoxClass*) g_type_class_peek_parent (klass);
 
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->size_request  = ygtk_bar_graph_size_request;
@@ -38,7 +38,6 @@ static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
 
 static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
-	YGTK_RATIO_BOX (bar)->orientation = YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION;
 	YGTK_RATIO_BOX (bar)->spacing = 0;
 	bar->m_tooltips = gtk_tooltips_new();
 }
@@ -53,7 +52,7 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 {
 	// Remove the ones in excess
 	guint i;
-	for (i = entries; i < g_list_length (bar->ratio_box.children); i++)
+	for (i = entries; i < g_list_length (YGTK_RATIO_BOX (bar)->children); i++)
 		gtk_container_remove (GTK_CONTAINER (bar),
 				(GtkWidget*) g_list_nth_data (YGTK_RATIO_BOX (bar)->children, i));
 

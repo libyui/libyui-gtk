@@ -27,8 +27,8 @@ List of missing features, actual bugs and other issues:
 	Colors should follow user-defined tons,
 	maybe based on Evolution's calendar.
 
-* MultiProgressBar
-	Doesn't work well on vertical.
+* BarGraph / RatioBox
+	Let tiny widgets still have some pixels visible for popup menu.
 
 * RadioButton
 	Shouldn't behave completely like a push button.

@@ -30,10 +30,6 @@ static void ygtk_ratio_box_forall     (GtkContainer   *container,
                                        GtkCallback     callback,
                                        gpointer        callback_data);
 static GType ygtk_ratio_box_child_type (GtkContainer  *container);
-static void ygtk_ratio_box_size_request  (GtkWidget      *widget,
-                                          GtkRequisition *requisition);
-static void ygtk_ratio_box_size_allocate (GtkWidget      *widget,
-                                          GtkAllocation  *allocation);
 
 static GtkContainerClass *parent_class = NULL;
 
@@ -48,7 +44,7 @@ GType ygtk_ratio_box_get_type()
 		};
 
 		box_type = g_type_register_static (GTK_TYPE_CONTAINER, "YGtkRatioBox",
-		                                   &box_info, (GTypeFlags) 0);
+		                                   &box_info, G_TYPE_FLAG_ABSTRACT);
 	}
 	return box_type;
 }
@@ -62,10 +58,6 @@ static void ygtk_ratio_box_class_init (YGtkRatioBoxClass *klass)
 	container_class->remove = ygtk_ratio_box_remove;
   container_class->forall = ygtk_ratio_box_forall;
   container_class->child_type = ygtk_ratio_box_child_type;
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->size_request  = ygtk_ratio_box_size_request;
-	widget_class->size_allocate = ygtk_ratio_box_size_allocate;
 }
 
 static void ygtk_ratio_box_init (YGtkRatioBox *box)
@@ -74,24 +66,16 @@ static void ygtk_ratio_box_init (YGtkRatioBox *box)
 	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (box), FALSE);
 
 	box->children = NULL;
-	box->orientation = box->spacing = 0;
+	box->spacing = 0;
 	box->ratios_sum = 0;
-}
-
-GtkWidget* ygtk_ratio_box_new (YGtkRatioBoxOrientation orientation, gint spacing)
-{
-	YGtkRatioBox* box = (YGtkRatioBox*) g_object_new (YGTK_TYPE_RATIO_BOX, NULL);
-	box->orientation = orientation;
-	box->spacing = spacing;
-	return GTK_WIDGET (box);
 }
 
 static GType ygtk_ratio_box_child_type (GtkContainer* container)
 { return GTK_TYPE_WIDGET; }
 
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                  gfloat ratio, gboolean fill,
-                                  guint padding)
+                                       gfloat ratio, gboolean fill,
+                                       guint padding)
 {
 	YGtkRatioBoxChild *child_info = NULL;
 
@@ -195,8 +179,19 @@ static void ygtk_ratio_box_forall (GtkContainer *container,
 	}
 }
 
+/* Size request and size allocate functions common to both YGtkRatioBox.
+   It is not implemented right on YGtkRatioBox class -- instead should be
+   called by its two children.
+   Splitting into two functions would just waste too much code and wouldn't
+   be nice for maintance. */
+typedef enum YGtkRatioBoxOrientation {
+	YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION = 0,
+	YGTK_RATIO_BOX_VERTICAL_ORIENTATION   = 1
+} YGtkRatioBoxOrientation;
+
 static void ygtk_ratio_box_size_request (GtkWidget      *widget,
-                                         GtkRequisition *requisition)
+                                         GtkRequisition *requisition,
+                                         YGtkRatioBoxOrientation orientation)
 {
 	guint box_length = GTK_CONTAINER (widget)->border_width * 2;
 	guint box_height = 0;
@@ -212,7 +207,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 			gtk_widget_size_request (box_child->widget, &widget_requisition);
 
 			int widget_length, widget_height;
-			if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
+			if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
 				widget_length = widget_requisition.width;
 				widget_height = widget_requisition.height;
 			}
@@ -238,7 +233,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 	// The space for the proportional containees
 	box_length += (guint) (pixels_per_percent * 100);
 
-	if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
+	if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
 		requisition->width = box_length;
 		requisition->height = box_height;
 	}
@@ -249,14 +244,15 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 }
 
 static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
-                                          GtkAllocation *allocation)
+                                          GtkAllocation *allocation,
+                                          YGtkRatioBoxOrientation orientation)
 {
 	GList* child;
 	int box_length;
 	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);
 
 	// Calculate actual size for the exansable widgets
-	if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION)
+	if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION)
 		box_length = allocation->width;
 	else  // YGTK_RATIO_BOX_VERTICAL_ORIENTATION
 		box_length = allocation->height;
@@ -269,7 +265,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			GtkRequisition requisition;
 			gtk_widget_size_request (box_child->widget, &requisition);
 
-			if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION)
+			if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION)
 				box_length -= requisition.width;
 			else  // YGTK_RATIO_BOX_VERTICAL_ORIENTATION
 				box_length -= requisition.height;
@@ -290,7 +286,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 		// ratio 0 == non-expansible
 		if (box_child->ratio == 0) {
-			if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
+			if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
 				child_allocation.x = allocation->x + (gint)child_pos;
 				child_allocation.y = allocation->y;
 				child_allocation.width  = requisition.width;
@@ -309,7 +305,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		else {
 			gfloat length = (box_child->ratio / box->ratios_sum) * box_length;
 
-			if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
+			if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
 				child_allocation.x = allocation->x + (gint)child_pos;
 				child_allocation.y = allocation->y;
 				child_allocation.width = (gint)length;
@@ -324,7 +320,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_pos += length;
 		}
 
-		if (box->orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
+		if (orientation == YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION) {
 			child_allocation.x += box->spacing + box_child->padding;
 			child_pos += box->spacing * 2 + box_child->padding * 2;
 		}
@@ -340,4 +336,129 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 		gtk_widget_size_allocate (box_child->widget, &child_allocation);
 	}
+}
+
+/* RatioHBox */
+
+static void ygtk_ratio_hbox_class_init (YGtkRatioHBoxClass *klass);
+static void ygtk_ratio_hbox_init       (YGtkRatioHBox      *box);
+static void ygtk_ratio_hbox_size_request  (GtkWidget      *widget,
+                                           GtkRequisition *requisition);
+static void ygtk_ratio_hbox_size_allocate (GtkWidget      *widget,
+                                           GtkAllocation  *allocation);
+
+static YGtkRatioBoxClass *hbox_parent_class = NULL;
+
+GType ygtk_ratio_hbox_get_type()
+{
+	static GType box_type = 0;
+	if (!box_type) {
+		static const GTypeInfo box_info = {
+			sizeof (YGtkRatioHBoxClass),
+			NULL, NULL, (GClassInitFunc) ygtk_ratio_hbox_class_init, NULL, NULL,
+			sizeof (YGtkRatioHBox), 0, (GInstanceInitFunc) ygtk_ratio_hbox_init, NULL
+		};
+
+		box_type = g_type_register_static (YGTK_TYPE_RATIO_BOX, "YGtkRatioHBox",
+		                                   &box_info, 0);
+	}
+	return box_type;
+}
+
+static void ygtk_ratio_hbox_class_init (YGtkRatioHBoxClass *klass)
+{
+	hbox_parent_class = (YGtkRatioBoxClass*) g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->size_request  = ygtk_ratio_hbox_size_request;
+	widget_class->size_allocate = ygtk_ratio_hbox_size_allocate;
+}
+
+static void ygtk_ratio_hbox_init (YGtkRatioHBox *box)
+{
+}
+
+GtkWidget* ygtk_ratio_hbox_new (gint spacing)
+{
+	YGtkRatioBox* box = (YGtkRatioBox*) g_object_new (YGTK_TYPE_RATIO_HBOX, NULL);
+	box->spacing = spacing;
+	return GTK_WIDGET (box);
+}
+
+
+static void ygtk_ratio_hbox_size_request (GtkWidget      *widget,
+                                         GtkRequisition *requisition)
+{
+	ygtk_ratio_box_size_request (widget, requisition,
+	                             YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION);
+}
+
+static void ygtk_ratio_hbox_size_allocate (GtkWidget     *widget,
+                                          GtkAllocation *allocation)
+{
+	ygtk_ratio_box_size_allocate (widget, allocation,
+	                              YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION);
+}
+
+/* RatioVBox */
+
+
+static void ygtk_ratio_vbox_class_init (YGtkRatioVBoxClass *klass);
+static void ygtk_ratio_vbox_init       (YGtkRatioVBox      *box);
+static void ygtk_ratio_vbox_size_request  (GtkWidget      *widget,
+                                           GtkRequisition *requisition);
+static void ygtk_ratio_vbox_size_allocate (GtkWidget      *widget,
+                                           GtkAllocation  *allocation);
+
+static YGtkRatioBoxClass *vbox_parent_class = NULL;
+
+GType ygtk_ratio_vbox_get_type()
+{
+	static GType box_type = 0;
+	if (!box_type) {
+		static const GTypeInfo box_info = {
+			sizeof (YGtkRatioVBoxClass),
+			NULL, NULL, (GClassInitFunc) ygtk_ratio_vbox_class_init, NULL, NULL,
+			sizeof (YGtkRatioVBox), 0, (GInstanceInitFunc) ygtk_ratio_vbox_init, NULL
+		};
+
+		box_type = g_type_register_static (YGTK_TYPE_RATIO_BOX, "YGtkRatioVBox",
+		                                   &box_info, 0);
+	}
+	return box_type;
+}
+
+static void ygtk_ratio_vbox_class_init (YGtkRatioVBoxClass *klass)
+{
+	vbox_parent_class = (YGtkRatioBoxClass*) g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->size_request  = ygtk_ratio_vbox_size_request;
+	widget_class->size_allocate = ygtk_ratio_vbox_size_allocate;
+}
+
+static void ygtk_ratio_vbox_init (YGtkRatioVBox *box)
+{
+}
+
+GtkWidget* ygtk_ratio_vbox_new (gint spacing)
+{
+	YGtkRatioBox* box = (YGtkRatioBox*) g_object_new (YGTK_TYPE_RATIO_VBOX, NULL);
+	box->spacing = spacing;
+	return GTK_WIDGET (box);
+}
+
+
+static void ygtk_ratio_vbox_size_request (GtkWidget      *widget,
+                                         GtkRequisition *requisition)
+{
+	ygtk_ratio_box_size_request (widget, requisition,
+	                             YGTK_RATIO_BOX_VERTICAL_ORIENTATION);
+}
+
+static void ygtk_ratio_vbox_size_allocate (GtkWidget     *widget,
+                                          GtkAllocation *allocation)
+{
+	ygtk_ratio_box_size_allocate (widget, allocation,
+	                              YGTK_RATIO_BOX_VERTICAL_ORIENTATION);
 }

@@ -25,7 +25,9 @@ typedef struct _YGtkBarGraphClass  YGtkBarGraphClass;
 
 struct _YGtkBarGraph
 {
-	YGtkRatioBox ratio_box;
+	YGtkRatioHBox ratio_hbox;
+	YGtkRatioBox *ratio_box;
+
 	// private:
 	GtkTooltips *m_tooltips;
 };

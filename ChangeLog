@@ -11,6 +11,9 @@
 	* src/YGPartitionSplitter.cc: should be fully operational.
 	* src/YGComboBox.cc: implemented maxchars and validchars.
 	* src/YGMenuButton.cc: bug fix: popup menu right on button press.
+	* src/ygtk_ratio_box.h/c: YGtkRatioBox is now abstract, being instanced
+	by *HBox and *VBox. (still using a common size_request/allocate.)
+	* src/YGMultiProgressMeter.cc: bug fix: vertical orientation fixed.
 
 2006-07-09 Ricardo Cruz    <rpmcruz@clix.pt>
 

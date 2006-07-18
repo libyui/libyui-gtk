@@ -33,7 +33,6 @@ struct _YGtkRatioBox
 	gint16 spacing;
 
 	/*< private >*/
-	guint orientation : 1;
 	gfloat ratios_sum;
 };
 
@@ -51,12 +50,6 @@ struct _YGtkRatioBoxChild
 	gfloat ratio;
 };
 
-typedef enum YGtkRatioBoxOrientation {
-	YGTK_RATIO_BOX_HORIZONTAL_ORIENTATION = 0,
-	YGTK_RATIO_BOX_VERTICAL_ORIENTATION   = 1
-} YGtkRatioBoxOrientation;
-
-GtkWidget* ygtk_ratio_box_new (YGtkRatioBoxOrientation orientation, gint spacing);
 GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
@@ -67,6 +60,66 @@ void ygtk_ratio_box_query_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                          guint *padding);
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
                                        gboolean fill, guint padding);
+
+/* RatioHBox */
+
+#define YGTK_TYPE_RATIO_HBOX            (ygtk_ratio_hbox_get_type ())
+#define YGTK_RATIO_HBOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                        YGTK_TYPE_RATIO_HBOX, YGtkRatioHBox))
+#define YGTK_RATIO_HBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                        YGTK_TYPE_RATIO_HBOX, YGtkRatioHBoxClass))
+#define IS_YGTK_RATIO_HBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                        YGTK_TYPE_RATIO_HBOX))
+#define IS_YGTK_RATIO_HBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                        YGTK_TYPE_RATIO_HBOX))
+#define YGTK_RATIO_HBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                        YGTK_TYPE_RATIO_HBOX, YGtkRatioHBoxClass))
+
+typedef struct _YGtkRatioHBox       YGtkRatioHBox;
+typedef struct _YGtkRatioHBoxClass  YGtkRatioHBoxClass;
+
+struct _YGtkRatioHBox
+{
+	YGtkRatioBox ratiobox;
+};
+
+struct _YGtkRatioHBoxClass
+{
+	YGtkRatioBoxClass parent_class;
+};
+
+GtkWidget* ygtk_ratio_hbox_new (gint spacing);
+GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
+
+/* RatioVBox */
+
+#define YGTK_TYPE_RATIO_VBOX            (ygtk_ratio_vbox_get_type ())
+#define YGTK_RATIO_VBOX(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                        YGTK_TYPE_RATIO_VBOX, YGtkRatioVBox))
+#define YGTK_RATIO_VBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                        YGTK_TYPE_RATIO_VBOX, YGtkRatioVBoxClass))
+#define IS_YGTK_RATIO_VBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                        YGTK_TYPE_RATIO_VBOX))
+#define IS_YGTK_RATIO_VBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                        YGTK_TYPE_RATIO_VBOX))
+#define YGTK_RATIO_VBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                        YGTK_TYPE_RATIO_VBOX, YGtkRatioVBoxClass))
+
+typedef struct _YGtkRatioVBox       YGtkRatioVBox;
+typedef struct _YGtkRatioVBoxClass  YGtkRatioVBoxClass;
+
+struct _YGtkRatioVBox
+{
+	YGtkRatioBox ratiobox;
+};
+
+struct _YGtkRatioVBoxClass
+{
+	YGtkRatioBoxClass parent_class;
+};
+
+GtkWidget* ygtk_ratio_vbox_new (gint spacing);
+GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
 

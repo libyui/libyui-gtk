@@ -12,7 +12,8 @@ public:
 	YGMultiProgressMeter (const YWidgetOpt &opt, YGWidget *parent,
 	                      bool horizontal, const YCPList &maxValues)
 	: YMultiProgressMeter (opt, horizontal, maxValues)
-	, YGWidget (this, parent, true, YGTK_TYPE_RATIO_BOX, NULL)
+	, YGWidget (this, parent, true,
+	            horizontal ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 
