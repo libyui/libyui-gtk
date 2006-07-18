@@ -9,6 +9,7 @@
 	* src/ygtkbargraph.cc: changed mask to fixed colors and chosen
 	some.
 	* src/YGPartitionSplitter.cc: should be fully operational.
+	* src/YGComboBox: implemented maxchars and validchars.
 
 2006-07-09 Ricardo Cruz    <rpmcruz@clix.pt>
 

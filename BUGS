@@ -2,11 +2,6 @@ List of missing features, actual bugs and other issues:
 
 = Yast-GTK =
 
-* ComboBox
-	o must implement SetValue() and filter
-		We may use gtk_bin_get_child().
-		To be discussed.
-
 * MenuButton
 	o Popup-menu only appears on button click.
 		Should appear right when pressed.
@@ -28,10 +23,6 @@ List of missing features, actual bugs and other issues:
 * Auto-yast flickering
 	after changing modules. To be investigated.
 
-* Image
-	Misses scaling and tiling.
-	Cairo API might be the 
-
 * Auto-Yast
 	o Flickering
 	Just clicking around results on it.
@@ -44,7 +35,7 @@ List of missing features, actual bugs and other issues:
 * MultiProgressBar
 	Doesn't work well on vertical.
 
-* RatioButton
+* RadioButton
 	Shouldn't behave completely like a push button.
 
 = Yast-Core =

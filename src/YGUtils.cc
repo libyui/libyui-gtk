@@ -13,7 +13,7 @@ string YGUtils::mapKBAccel(const char *src)
 	return str;
 }
 
-string YGUtils::filterText (const char* text, int length, const char* valid_chars)
+string YGUtils::filterText (const char* text, int length, const char *valid_chars)
 {
 	if (length == -1)
 		length = strlen (text);
@@ -29,6 +29,31 @@ string YGUtils::filterText (const char* text, int length, const char* valid_char
 				break;
 			}
 	return str;
+}
+
+void YGUtils::filterText (GtkEditable *editable, int pos, int length,
+                          const char *valid_chars)
+{
+	gchar *text = gtk_editable_get_chars (editable, pos, pos + length);
+	string str = filterText (text, length, valid_chars);
+printf ("inserted text: %s\n", text);
+printf ("pos: %d - length: %d\n", pos, length);
+printf ("cursor pos: %d\n", gtk_editable_get_position (editable));
+	if (length == -1)
+		length = strlen (text);
+
+	if (str != text) {  // invalid text
+printf ("to be replaced by: %s\n", str.c_str());
+		// delete current text
+		gtk_editable_delete_text (editable, pos, length);
+		// insert correct text
+		gtk_editable_insert_text (editable, str.c_str(), str.length(), &pos);
+
+		g_signal_stop_emission_by_name (editable, "insert_text");
+		gdk_beep();  // BEEP!
+	}
+
+	g_free (text);
 }
 
 void YGUtils::scrollTextViewDown(GtkTextView *text_view)

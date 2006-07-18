@@ -1,4 +1,4 @@
-/* */
+/* YaST-GTK */
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -6,8 +6,6 @@
 #include "YGUtils.h"
 #include "YComboBox.h"
 #include "YGWidget.h"
-
-// TODO: some stuff is missing
 
 class YGComboBox : public YComboBox, public YGLabeledWidget
 {
@@ -21,23 +19,21 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 	{
 		/* Making the combo box accepting text items. */
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
-
 		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()),
-					 GTK_TREE_MODEL (store));
-
+		                         GTK_TREE_MODEL (store));
 		g_object_unref (store);
 
-		if(!opt.isEditable.value())
-		{
+		if(!opt.isEditable.value()) {
 			GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
 			gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
-			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell, "text", 0, NULL);
+			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
+			                                "text", 0, NULL);
 		}
 		else
 			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY(getWidget()), 0);
 
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
-				  G_CALLBACK (selected_changed_cb), this);
+		                  G_CALLBACK (selected_changed_cb), this);
 
 		items_nb = 0;
 	}
@@ -45,6 +41,22 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 	GtkComboBox *getComboBox() const
 	{
 		return GTK_COMBO_BOX ((const_cast<YGComboBox *>(this)->getWidget()));
+	}
+
+	GtkEntry *getEntry()
+	{
+		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
+			y2error ("YGComboBox: trying to edit read-only combo box");
+			return NULL;
+		}
+
+		GtkWidget *entry = gtk_bin_get_child (GTK_BIN (getWidget()));
+		if (!GTK_IS_ENTRY (entry)) {
+			g_error ("YGComboBox: GtkComboBoxEntry doesn't have a GtkEntry as child");
+			return NULL;
+		}
+
+		return GTK_ENTRY (entry);
 	}
 
 	virtual void itemAdded (const YCPString & string, int index, bool selected)
@@ -58,19 +70,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 	virtual void setValue (const YCPString &value)
 	{
 		IMPL;
-printf("COMBOBOX: setValue: %s\n", value->value_cstr());
-
-		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
-			y2error ("%s - setValue(%s): can't be used for read-only combo boxes - ignoring",
-			         widgetClass(), value->value_cstr());
-			return;
-		}
-
-		/* FIXME: This does seem to work, but may break, so should be replaced. */
-		// TRY: Might be possible to use GtkTreeModel and set the -1 index to value.
-		gtk_combo_box_append_text (GTK_COMBO_BOX(getWidget()), value->value_cstr());
-		setCurrentItem (items_nb);
-		gtk_combo_box_remove_text (GTK_COMBO_BOX(getWidget()), items_nb);
+		gtk_entry_set_text (getEntry(), value->value_cstr());
 	}
 
 	virtual YCPString getValue() const
@@ -80,13 +80,17 @@ printf("COMBOBOX: setValue: %s\n", value->value_cstr());
 
 	virtual int getCurrentItem() const
 	{
-		GtkComboBox *box = GTK_COMBO_BOX((const_cast<YGComboBox *>(this)->getWidget()));
-		return gtk_combo_box_get_active(box);
+		return gtk_combo_box_get_active (getComboBox());
 	}
 
 	virtual void setCurrentItem (int index)
 	{
 		gtk_combo_box_set_active (GTK_COMBO_BOX(getWidget()), index);
+	}
+
+	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
+	{
+		gtk_entry_set_width_chars (getEntry(), numberOfChars->asInteger()->value());
 	}
 
 	// YWidget
@@ -104,25 +108,17 @@ printf("COMBOBOX: setValue: %s\n", value->value_cstr());
 		/* selected_changed_cb() is called when a new item was selected or the user has
 		   typed some text on a writable ComboBox. text_changed is true for the later and
 		   false for the former. */
-		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget) && pThis->getCurrentItem() == -1;
+		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget)
+		                    && pThis->getCurrentItem() == -1;
 
-		// Filter non valid characters (FIXME: not yet working because of setValue())
 		if (text_changed) {
-			const char *text = pThis->getValue()->value_cstr();
-			string str = YGUtils::filterText (text, -1,
-			       pThis->getValidChars()->value_cstr());
+			g_signal_handlers_block_by_func (pThis->getWidget(), (gpointer)
+			                                 selected_changed_cb, pThis);
+			YGUtils::filterText (GTK_EDITABLE (pThis->getEntry()), 0, -1,
+			                     pThis->getValidChars()->value_cstr());
+			g_signal_handlers_unblock_by_func (pThis->getWidget(), (gpointer)
+			                                   selected_changed_cb, pThis);
 
-			if (str.compare (text) != 0) {
-				// invalid text
-printf("given text: %s\n", text);
-printf("correct text: %s\n", str.c_str());
-				g_signal_handlers_block_by_func (widget, (gpointer) selected_changed_cb, pThis);
-				pThis->setValue (YCPString(str));
-				g_signal_handlers_unblock_by_func (widget, (gpointer) selected_changed_cb, pThis);
-				g_signal_stop_emission_by_name (widget, "changed");
-
-				gdk_beep();  // BEEP!
-			}
 			pThis->emitEvent (YEvent::ValueChanged, true, true);
 		}
 		else

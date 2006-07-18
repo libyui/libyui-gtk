@@ -37,13 +37,13 @@ public:
 		return YCPString (gtk_entry_get_text (GTK_ENTRY (getWidget())));
 	}
 
-	virtual void setInputMaxLength (const YCPInteger & numberOfChars)
+	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
 	{
 		gtk_entry_set_width_chars (GTK_ENTRY (getWidget()),
 		                           numberOfChars->asInteger()->value());
 	}
 
-	virtual void setText (const YCPString & text)
+	virtual void setText (const YCPString &text)
 	{
 		/* No need to check for valid chars as that's the responsible of the YCP
 		   application programmer. */
@@ -63,32 +63,19 @@ public:
 	                              gint length, gint *position,
 	                              YGTextEntry *pThis)
 	{
-		string str = YGUtils::filterText (text, length, pThis->getValidChars()->value_cstr());
-		if (str.compare (text) != 0) {
-			// invalid text
-			if (length == -1)
-				length = strlen (text);
-			// delete current text
-			g_signal_handlers_block_by_func (editable, (gpointer) text_deleted_cb, pThis);
-			gtk_editable_delete_text (editable, *position, length);
-			g_signal_handlers_unblock_by_func (editable, (gpointer) text_deleted_cb, pThis);
-			// insert correct text
-			g_signal_handlers_block_by_func (editable, (gpointer) text_inserted_cb, pThis);
-			gtk_editable_insert_text (editable, str.c_str(), str.length(), position);
-			g_signal_handlers_unblock_by_func (editable, (gpointer) text_inserted_cb, pThis);
+		if (YGUtils::filterText (text, length, pThis->getValidChars()->value_cstr())
+		    != text) {
 			g_signal_stop_emission_by_name (editable, "insert_text");
-			gdk_beep();  // BEEP!
+			gdk_beep();
 		}
 		else
-			if (pThis->getNotify())
-				YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
+			pThis->emitEvent (YEvent::ValueChanged);
 	}
 
 	static void text_deleted_cb (GtkEditable *editable, gint start_pos,
-				     gint end_pos, YGTextEntry *pThis)
+	                             gint end_pos, YGTextEntry *pThis)
 	{
-		if (pThis->getNotify())
-			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
+		pThis->emitEvent (YEvent::ValueChanged);
 	}
 };
 

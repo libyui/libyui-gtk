@@ -12,6 +12,12 @@ namespace YGUtils
 	   Use the compare string member if you won't to see if there was any change.  */
 	string filterText (const char* text, int length, const char* valid_chars);
 
+	/* Convinience call for widgets that implement GtkEditable interface.
+	   This function inserts and deletes text, if needed, so you may want
+	   to block those signals, if you have them set.  */
+	void filterText (GtkEditable *editable, int pos, int length,
+	                 const char *valid_chars);
+
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
 };

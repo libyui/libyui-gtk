@@ -98,7 +98,7 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 	g_return_if_fail (IS_YGTK_RATIO_BOX (box));
 	g_return_if_fail (GTK_IS_WIDGET (child));
 
-	GList* list;
+	GList *list;
 	for (list = box->children; list; list = list->next) {
 		child_info = (YGtkRatioBoxChild*) list->data;
 		if (child_info->widget == child)
