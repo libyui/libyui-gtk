@@ -25,11 +25,12 @@ public:
 	virtual ~YGPushButton() {}
 
 	// YPushButton
-	virtual void setLabel( const YCPString &label )
+	virtual void setLabel (const YCPString &label)
 	{
 		IMPL;
 		string str = YGUtils::mapKBAccel(label->value_cstr());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
+		YPushButton::setLabel (label);
 	}
 
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
