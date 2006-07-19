@@ -57,18 +57,23 @@ public:
 	// YWidget
 	YGWIDGET_IMPL_SET_ENABLING
 
-	virtual void setSize (long newWidth, long newHeight)
+	virtual void setSize (long width, long height)
 	{
 		IMPL
-		doSetSize (newWidth, newHeight);
+		doSetSize (width, height);
 
-		long newChildWidth  = max (0L, newWidth);
-		long newChildHeight = max (0L, newHeight);
+		long newChildWidth  = max (0L, width);
+		long newChildHeight = max (0L, height);
+
+		GtkRequisition tabs_menu_req;
+		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
+		gtk_widget_size_request (notebook->menu, &tabs_menu_req);
 
 		if (numChildren() > 0) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
-			YContainerWidget::child(0)->setSize (newChildWidth - 2*xthickness() - border,
-				newChildHeight - 2*ythickness() - border);
+			YContainerWidget::child(0)->setSize
+				(newChildWidth - 2*xthickness() - 2*border,
+				 newChildHeight - 2*ythickness() - 2*border - tabs_menu_req.height);
 		}
 	}
 
@@ -77,7 +82,7 @@ public:
 		IMPL
 		long niceSize = numChildren() ? YContainerWidget::child(0)->nicesize (dim) : 0;
 
-		niceSize += GTK_CONTAINER (getWidget())->border_width;
+	//	niceSize += GTK_CONTAINER (getWidget())->border_width;
 		niceSize += thickness (dim) * 2;
 
 		return niceSize;

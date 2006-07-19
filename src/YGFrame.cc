@@ -50,7 +50,7 @@ public:
 		if (numChildren() > 0) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
 			YContainerWidget::child(0)->setSize (newChildWidth - 2*xthickness() - border,
-				                                   newChildHeight - 2*ythickness() - border);
+			                                     newChildHeight - 2*ythickness() - border);
 		}
 	}
 
@@ -61,18 +61,17 @@ public:
 		long niceSize = numChildren() > 0 ? YContainerWidget::child(0)->nicesize( dim ) : 0;
 		GtkFrame *frame = GTK_FRAME (getWidget());
   
-		if (frame->label_widget && GTK_WIDGET_VISIBLE (frame->label_widget))
-		{
+		if (frame->label_widget && GTK_WIDGET_VISIBLE (frame->label_widget)) {
 			gtk_widget_size_request (frame->label_widget, &m_label_req);
 			m_label_req.width += 6;
 			m_label_req.height = MAX (0, m_label_req.height -
-									  GTK_WIDGET (frame)->style->ythickness);
+			                             GTK_WIDGET (frame)->style->ythickness);
 			if (dim == YD_HORIZ)
 				niceSize = MAX (niceSize, m_label_req.width);
 			else
 				niceSize += m_label_req.height;
 		}
-		
+
 		niceSize += GTK_CONTAINER (frame)->border_width;
 		niceSize += thickness (dim) * 2;
 			  

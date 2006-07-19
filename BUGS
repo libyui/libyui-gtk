@@ -2,6 +2,13 @@ List of missing features, actual bugs and other issues:
 
 = Yast-GTK =
 
+* ColoredLabel4.ycp test
+	wierd change of size when moving sliders
+	investigate
+
+* DumbTab
+	setSize() and niceSize() don't respect tab menu
+
 * RichText
 	o we need to add table support for the package selector.
 		Might be nice to use GtkHtml, if available.

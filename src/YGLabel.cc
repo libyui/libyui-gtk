@@ -74,15 +74,13 @@ public:
 		else
 			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
 	}
-
-	virtual long getNiceSize (YUIDimension dim)
-	{
-		IMPL
-		return YGWidget::getNiceSize (dim) +
-		           (dim  == YD_HORIZ ? m_hori_margin : m_vert_margin);
-	}
 };
 
+#define YG_GENERIC_LABEL_IMPL_NICESIZE \
+	virtual long nicesize (YUIDimension dim) { \
+		return getNiceSize (dim)                 \
+		       + (dim  == YD_HORIZ ? m_hori_margin : m_vert_margin); \
+	}
 #define YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS \
 	virtual bool setKeyboardFocus() {          \
 		if (GTK_IS_ENTRY (getWidget())) {        \
@@ -103,15 +101,9 @@ public:
 	{ }
 
 	// YGWidget
-	//	YGWIDGET_IMPL_SET_SIZE
-	virtual void setSize (long newWidth, long newHeight)
-	{
-		fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, 
-			 m_widget, m_y_widget, newWidth, newHeight); 
-		doSetSize (newWidth, newHeight);
-	}
+	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_NICESIZE
+	YG_GENERIC_LABEL_IMPL_NICESIZE
 	// YGLabeledWidget
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YLabel)
 	// YGGenericLabel
@@ -139,11 +131,9 @@ public:
 	// YGWidget
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_NICESIZE
+	YG_GENERIC_LABEL_IMPL_NICESIZE
 	// YGLabeledWidget
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YColoredLabel)
-	// YGGenericLabel
-	YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS
 };
 
 YWidget *
@@ -152,5 +142,5 @@ YGUI::createColoredLabel (YWidget *parent, YWidgetOpt &opt,
                           YColor bgColor, int margin)
 {
 	return new YGColoredLabel (opt, YGWidget::get (parent), label,
-				   fgColor, bgColor, margin);
+	                           fgColor, bgColor, margin);
 }
