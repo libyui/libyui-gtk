@@ -53,3 +53,6 @@ List of missing features, actual bugs and other issues:
 * Stock images for buttons
 	If the ids that YCP apps give have any meaning we might be able to
 	just use those...
+
+* Simple dialogs API
+	So that we could display native dialogs.

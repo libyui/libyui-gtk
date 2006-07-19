@@ -40,6 +40,15 @@ public:
 		YRadioButtonGroup::addRadioButton (button);
 	}
 
+	virtual void removeRadioButton (YRadioButton *button)
+	{
+		IMPL
+		GtkWidget *widget = ((YGWidget *) button->widgetRep())->getWidget();
+		group = g_slist_remove (group, (gpointer) widget);
+
+		YRadioButtonGroup::removeRadioButton (button);
+	}
+
 	// YWidget
 	YGWIDGET_IMPL_SET_ENABLING
 	YGWIDGET_IMPL_SET_SIZE_CHAIN (YRadioButtonGroup)
