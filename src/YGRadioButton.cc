@@ -25,6 +25,12 @@ public:
 		group = NULL;
 	}
 
+	~YGRadioButtonGroup()
+	{
+		if (group)
+			g_slist_free (group);
+	}
+
 	virtual void addRadioButton (YRadioButton *button)
 	{
 		IMPL
