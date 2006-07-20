@@ -43,7 +43,7 @@ public:
 		doSetValue (initialValue);
 		g_signal_connect (G_OBJECT (m_spiner), "value-changed",
 		                  G_CALLBACK (spiner_changed_cb), this);
-		g_signal_connect (G_OBJECT (m_slider), "change-value",
+		g_signal_connect (G_OBJECT (m_slider), "value-changed",
 		                  G_CALLBACK (slider_changed_cb), this);
 	}
 
@@ -74,13 +74,12 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	static gboolean slider_changed_cb (GtkRange *widget, GtkScrollType *scroll,
-	                                        gdouble newValue, YGSpinBox *pThis)
+	static void slider_changed_cb (GtkRange *range, YGSpinBox *pThis)
 	{
-		gtk_spin_button_set_value (pThis->getSpiner(), newValue);
-		pThis->reportValue ((int)newValue);
+		int value = (int) gtk_range_get_value (range);
+		gtk_spin_button_set_value (pThis->getSpiner(), value);
+		pThis->reportValue (value);
 		pThis->emitEvent (YEvent::ValueChanged);
-		return FALSE;
 	}
 };
 

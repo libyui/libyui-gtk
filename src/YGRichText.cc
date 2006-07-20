@@ -52,8 +52,9 @@ public:
 	// TODO: used by a few more widgets... maybe use some macro approach for this?
 	virtual long nicesize (YUIDimension dim)
 	{
-		IMPL;
+		IMPL
 		long size = getNiceSize (dim);
+printf ("richtext wantes: %d of %s size\n", size, dim == YD_HORIZ ? "horizontal" : "vertical");
 		return MAX (m_shrinkable ? 10 : 100, size);
 	}
 	YGWIDGET_IMPL_SET_ENABLING

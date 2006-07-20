@@ -16,11 +16,11 @@ class YGGenericLabel : public YGWidget
 {
 protected:
 	GtkWidget *m_inner_widget;
-	int m_vert_margin, m_hori_margin;
+	int m_border;
 
 public:
 	YGGenericLabel (YWidget *y_widget, YGWidget *parent, const YWidgetOpt &opt,
-	                YCPString text, int hor_margin = 0, int ver_margin = 0,
+	                YCPString text, int border = 0,
 	                const YColor *fgColor = 0, const YColor *bgColor = 0)
 	: YGWidget (y_widget, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
@@ -34,8 +34,7 @@ public:
 		gtk_container_add (GTK_CONTAINER (YGWidget::getWidget()), getWidget());
 		// NOTE: we can't just use gtk_container_set_border_width() because the color
 		// would not expand to the borders
-		m_hori_margin = hor_margin;
-		m_vert_margin = ver_margin;
+		m_border = border;
 		gtk_widget_show (m_inner_widget);
 
 		PangoFontDescription* font = pango_font_description_new();
@@ -78,8 +77,7 @@ public:
 
 #define YG_GENERIC_LABEL_IMPL_NICESIZE \
 	virtual long nicesize (YUIDimension dim) { \
-		return getNiceSize (dim)                 \
-		       + (dim  == YD_HORIZ ? m_hori_margin : m_vert_margin); \
+		return getNiceSize (dim) + 2*m_border; \
 	}
 #define YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS \
 	virtual bool setKeyboardFocus() {          \
@@ -125,7 +123,7 @@ public:
 	YGColoredLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text,
 	                const YColor &fgColor, const YColor &bgColor, int margin)
 	: YColoredLabel (opt, text)
-	, YGGenericLabel (this, parent, opt, text, margin, margin, &fgColor, &bgColor)
+	, YGGenericLabel (this, parent, opt, text, margin, &fgColor, &bgColor)
 	{ }
 
 	// YGWidget
