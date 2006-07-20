@@ -4,11 +4,9 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-#define TO16bits(clr) (clr << 8)
 GdkColor fromYColor (const YColor &ycolor)
 {
-	GdkColor color = { 0, TO16bits (ycolor.red), TO16bits (ycolor.green),
-	                   TO16bits (ycolor.blue) };
+	GdkColor color = { 0, ycolor.red << 8, ycolor.green << 8, ycolor.blue << 8 };
 	return color;
 }
 
