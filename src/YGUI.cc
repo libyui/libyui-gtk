@@ -34,7 +34,7 @@ YGUI::YGUI (int argc, char ** argv,
 		else if (!strcmp (argp, "fullscreen"))
 			m_fullscreen = true;
 
-		else if (!strcmp (argp, "fullscreen"))
+		else if (!strcmp (argp, "noborder"))
 			m_no_border = true;
 
 		// FIXME: handle/parse geometry option
