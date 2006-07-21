@@ -22,10 +22,8 @@ YaST basis
 
   You don't need to know to program YCP, but you should
   have a look at its API because it will give you some
-  insight into the platform:
-  /usr/share/doc/packages/yast2-core/libycp/index.html
-  YWidgets:
-  /usr/share/doc/packages/yast2-core/libyui/index.html
+  insight into the platform. Yast documentation:
+  http://forgeftp.novell.com//yast/doc/SL10.1/tdg/
 
 Code structure
 
