@@ -1,36 +1,46 @@
-** This code is licensed under the
-   Lesser GNU Public License- (LGPL)
+/* Light information on YaST-GTK */
 
-* the very beginnings of a native gtk+ YaST2 UI *
+License
 
-    This code creates a gtk+ plugin for YaST2. This plugin parallel
-installs with everything else, and will never be used unless
-explicitely invoked on the yast2 command line - ie. it won't break
-your system; go-on you know you want to install it.
+  This code is licensed under the
+  Lesser GNU Public License (LGPL)
 
-** build pre-requisites:
+The very beginnings of a native gtk+ YaST2 UI
 
-    To make this compile you'll need the following packages installed
-(at a minimum):
+  This code creates a GTK+ plugin for YaST2. This plugin parallel
+  installs with everything else, and will never be used unless
+  explicitely invoked on the yast2 command line - ie. it won't break
+  your system; go-on you know you want to install it.
 
-    yast2-devel yast2-devtools yast2-core-devel
+Build pre-requisites
 
-** to build / install
+  To make this compile you'll need the following packages installed
+  (at a minimum):
 
-./autogen.sh # NB. don't pass --prefix [1]
-make && sudo make install [2]
+  yast2-devel yast2-devtools yast2-core-devel
 
-[1] - the YaST2 auto-foo system uses ${prefix}/include/YaST2 to
-      find the yast2-core-devel headers (sigh)
+  They all are distributed with Suse's CDs.
 
-[2] - if you want sudo not to ask you a password, add yourself to the
-      wheel group, and uncomment the related lines in /etc/sudoers
+Building / Installing
 
-** running:
+  ./autogen.sh              [1]
+  make && sudo make install [2]
 
-/usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
+  [1] - don't pass "--prefix" as the YaST2 auto-foo system uses
+        ${prefix}/include/YaST2 to find the yast2-core-devel headers (sigh)
 
-Also working fairly well:
+  [2] - if you want sudo not to ask you a password, add yourself to the
+        wheel group, and uncomment the related lines in /etc/sudoers
+
+Running
+
+  /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
+
+  In order to fire up YaST modules, run the ycc.sh script.
+  (You'll need the zenity package installed.)
+
+Working fairly well
+
     Label* Spacing* PushButton* ProgressBar* Frame*
     RadioButton* CheckBox* TextEntry ComboBox[1-3]
     IntField* SelectionBox[1-4] MultiSelectionBox* Table*
@@ -38,8 +48,5 @@ Also working fairly well:
   Optionals:
     ColoredLabel* Slider*
 
-In case of oddness append --nothreads to the cmdline,
-Also check the log file: ~/.y2log
-
-In order to fire up Yast modules, run the ycc.sh script.
-(You'll need to have the zenity package installed.)
+  In case of oddness append --nothreads to the cmdline,
+  Also check the log file: ~/.y2log
