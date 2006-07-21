@@ -1,0 +1,153 @@
+/* Documentation on YaST-GTK */
+
+YaST basis
+
+  Yast-core is a simple byte-code interpreted programming
+  language. It is splitted into two threads: one with the
+  interpreter that runs the YCP application, the other
+  with the interface. This is so because a user may want
+  to setup another machine while sitting confortably
+  with its GTK+ interface.
+
+  Yast-core offers an interface API, called YWidgets, that
+  is then wrapped, by dynamic loading at run-time, by
+  one of the available interface modules that the user
+  specified. This code is one of these modules.
+
+  Yast is usually distributed with the /sbin/yast script
+  that automatically looks for the best interface for
+  the environment.
+  Yast-core is located at /usr/lib/YaST2/bin/y2base ,
+  on the Suse distribution.
+
+  You don't need to know to program YCP, but you should
+  have a look at its API because it will give you some
+  insight into the platform:
+  /usr/share/doc/packages/yast2-core/libycp/index.html
+  YWidgets:
+  /usr/share/doc/packages/yast2-core/libyui/index.html
+
+Code structure
+
+  Hierarchy of some of the widgets:
+
+  YGWidgets                    YWidget
+          |                          |
+          |                         /|
+          |                        / |
+          |\       YContainerWidget  |
+          |\\      /                 |
+          |\\YGSplit                 |
+          |\\YGEmpty                 |
+          |\\YGSpacing               |
+          | \YSSquash                |
+          |  YGAlignment     /-------|
+          |                 /        |
+          |\          YLabel         |
+          | \          /             |
+          |  \---YGLabel             |
+          |                          |
+          |                          |
+          |\                        /|
+          | \             YTextEntry |
+          |  YGLabeledWidget  /      |
+          |  |    \          /       |
+          |  |    YGTextEntry        |
+          |  |                       |
+          |   \                      |
+          |    YGScrolledWidget  /---|
+          |      \              /    |
+          |       \    YRichText     |
+          |        \    /            |
+          |     YGRichText           |
+          |                          |
+          |..........................|
+
+
+  As you may see, everything inherits from both YGWidget
+  and YWidget. YWidget derivated classes provide virtual functions
+  that we must fill. A pointer to the interface class wrapper may
+  always be obtain with widgetRep().
+
+  On the other hand, YGWidget provides a common set of functionaly
+  with great value for code re-use and also makes the code more
+  robust and flexible since it provides an infrastructure to the
+  whole code.
+  YGWidgets always creates an associated GtkWidget object, as asked
+  by the class that inherits it, and that can be obtained via
+  getWidget().
+
+  Every YGWidget has an associated parent, with the single exception
+  of YGDialog, that provides their children with a GtkFixed container
+  that they sit upon. getFixed() is the recursive function that asks
+  the parent for its associated GtkFixed. Container widgets replace
+  getFixed() by one that returns a GtkFixed that they created, thus
+  closing the cycle.
+
+  YGLabeledWidget and YGSrolledWidget are simple children of
+  YGWidget that create the asked widget with a label or inside
+  a GtkScrolledWindow for code re-use value.
+
+  The force behind the all thing is in YGUI. Its header has the declaration
+  for the creation of all the widgets, while its implementation is done
+  on the widgets files, and also specifies whatever one widget is
+  supported or not. YGUI.cc has, for the most part, the code that switches
+  between our code and the main YWidget, since we all use the same thread.
+
+On specific widgets
+
+  Layout widgets
+    Yast-core is the one responsible for the layout geometry stuff.
+    This is why we use GtkFixed and this means that this part of
+    the code is almost inexistant.
+    We still need to create those classes though; they provide
+    a GtkFixed for their children to sit on top, but they have almost
+    no code. That's because the required functions (that is, moveChild()
+    and setSize()) are provided on YGWidget and inherited by them.
+
+    YGAlignment
+      As opposite to the other layouts, this one uses a GtkEventBox
+      on bottom of the GtkFixed and overrides getFixed() as
+      appropriate.
+      This is because GtkFixed doesn't have an associated GtkWindow
+      that we need because we may have to draw a background image
+      if requested.
+
+      YGFrame and YGDumbTab containers use the same approach.
+
+  Most of the widgets are a no brainer. Any other widget should have
+  some comments as appropriate.
+
+Code practices
+
+  As you may have noticed from YGWidget.h, we use macros a lot to
+  enable common functionality, instead of virtual functions. This is
+  because simply in a few cases virtual functions would not apply --
+  ie. the need to call a parent class function. You would have to
+  override the virtual function everytime. With a macro, we may do:
+  #define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (ParentClass) \
+    virtual setLabel (const YCPString &label) {             \
+      doSetLabel (label);                                   \
+      ParentClass::setLabel (label);                        \
+    }
+
+  The code style is heavily inspired on the Linux guideline:
+  http://pantransit.reptiles.org/prog/CodingStyle.html
+  There may be some differences as it obviously doesn't mention
+  C++ classes.
+  I also use tabs for identation and spaces for layout so that
+  the code looks nice no matter your tab stops. But the only
+  requirement is that it looks nice on 4 tab stops, so you may
+  want to set that definition.
+
+  Speaking of classes, we don't use headers, unless we have to, as
+  opposite to the other interfaces code. There is no reason to
+  make them publicaly available and it just adds even more
+  files to the pool.
+  Also, we generally don't split classes into declaration and
+  implementation code, for the same reasons.
+
+  Variables and functions names follow Yast style (variableNameOne),
+  for the most part. Our Gtk widgets (on ygtk* files) are written
+  in C and follow this_name_style to fit better with GTK+ one.
+  We always prefix m_ to class memeber variables.
