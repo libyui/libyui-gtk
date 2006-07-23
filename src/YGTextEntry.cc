@@ -1,8 +1,6 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include <string>
-#include "YEvent.h"
 #include "YTextEntry.h"
 #include "YGUtils.h"
 #include "YGWidget.h"

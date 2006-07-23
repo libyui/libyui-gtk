@@ -26,7 +26,8 @@ public:
 	void doMoveChild (YWidget *child, long newx, long newy);
 	int xthickness();
 	int ythickness();
-	int thickness (YUIDimension dim) { return dim == YD_HORIZ ? xthickness() : ythickness(); }
+	int thickness (YUIDimension dim)
+		{ return dim == YD_HORIZ ? xthickness() : ythickness(); }
 
 	/* Get the YGWidget associated with this YWidget */
 	static YGWidget *get (YWidget *y_widget);

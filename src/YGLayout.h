@@ -40,8 +40,6 @@ public:
 	YGWIDGET_IMPL_MOVE_CHILD
 	// YWidget
 	YGWIDGET_CONTAINER_IMPL (YSplit)
-	virtual GtkFixed *getFixed()
-		{ return GTK_FIXED (getWidget()); }
 };
 
 // YEmpty
@@ -54,8 +52,6 @@ public:
 	  YGWidget( this, parent )
 	{}
 	YGWIDGET_CONTAINER_IMPL (YEmpty)
-	virtual GtkFixed *getFixed()
-		{ return GTK_FIXED (getWidget()); }
 };
 
 // YSpacing
@@ -69,8 +65,6 @@ public:
 	  YGWidget(this, parent)
 	{}
 	YGWIDGET_CONTAINER_IMPL (YSpacing)
-	virtual GtkFixed *getFixed()
-		{ return GTK_FIXED (getWidget()); }
 };
 
 // YReplacePoint
@@ -88,8 +82,6 @@ public:
 	}
 	// YWidget
 	YGWIDGET_CONTAINER_IMPL (YReplacePoint)
-	virtual GtkFixed *getFixed()
-		{ return GTK_FIXED (getWidget()); }
 };
 
 // YSquash
@@ -102,8 +94,6 @@ public:
 	: YSquash (opt, hsquash, vsquash),
 	  YGWidget( this, parent ) {}
 	YGWIDGET_CONTAINER_IMPL (YSquash)
-	virtual GtkFixed *getFixed()
-		{ return GTK_FIXED (getWidget()); }
 };
 
 // YAlignment

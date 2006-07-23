@@ -73,6 +73,11 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 GtkFixed *
 YGWidget::getFixed()
 {
+	// This is just a shortcut so that simple containers don't have to
+	// override getFixed()
+	if (GTK_IS_FIXED (m_widget))
+		return GTK_FIXED (m_widget);
+
 	YWidget *y_parent;
 	YGWidget *parent;
 

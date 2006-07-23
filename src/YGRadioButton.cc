@@ -22,11 +22,13 @@ public:
 	: YRadioButtonGroup (opt),
 	  YGWidget (this, parent)
 	{
+		IMPL
 		group = NULL;
 	}
 
 	~YGRadioButtonGroup()
 	{
+		IMPL
 		if (group)
 			g_slist_free (group);
 	}
@@ -57,36 +59,36 @@ public:
 YContainerWidget *
 YGUI::createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt)
 {
-	IMPL
+	IMPL;
 	return new YGRadioButtonGroup (opt, YGWidget::get (parent));
 }
 
+
+// YRadioButton
 class YGRadioButton : public YRadioButton, public YGWidget
 {
 	bool m_isBold;
 
 public:
-	YGRadioButton (const YWidgetOpt &opt,
-		       YGWidget         *parent,
-		       YCPString         label_str,
-		       YRadioButtonGroup *rb_group,
-		       bool               checked)
-		:  YRadioButton (opt, label, rb_group),
-		   YGWidget (this, parent, true, GTK_TYPE_RADIO_BUTTON, NULL)
+	YGRadioButton (const YWidgetOpt  &opt,
+	               YGWidget          *parent,
+	               YCPString          label,
+	               YRadioButtonGroup *rb_group,
+	               bool               checked)
+	:  YRadioButton (opt, label, rb_group),
+	   YGWidget (this, parent, true, GTK_TYPE_RADIO_BUTTON, NULL)
 	{
 		IMPL
 		m_isBold = opt.boldFont.value();
 
-		// set group
 		GSList *group = ((YGRadioButtonGroup *) rb_group)->group;
 		if (group)
 			gtk_radio_button_set_group (GTK_RADIO_BUTTON (getWidget()), group);
-
-		// set label
-		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-		setLabel (label_str);
 		if (checked)
 			setValue (YCPBoolean (true));
+
+		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
+		setLabel (label);
 
 		g_signal_connect (G_OBJECT (getWidget()), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
@@ -95,7 +97,7 @@ public:
 	// YRadioButton
 	virtual void setLabel (const YCPString &text)
 	{
-		// NOTE: we can't just set a PangoFontDescription at the initialization
+		// NOTE: we can't just set a gtk_widget_modify() at the initialization
 		// because each gtk_button_set_label() creates a new label
 		IMPL
 		string str = YGUtils::mapKBAccel(text->value_cstr());
@@ -124,8 +126,8 @@ public:
 	virtual YCPBoolean getValue()
 	{
 		IMPL
-		return YCPBoolean (gtk_toggle_button_get_active (
-			GTK_TOGGLE_BUTTON (getWidget())));
+		return YCPBoolean (gtk_toggle_button_get_active
+		                       (GTK_TOGGLE_BUTTON (getWidget())));
 	}
 
 	// YWidget
@@ -142,10 +144,10 @@ public:
 
 YWidget *
 YGUI::createRadioButton (YWidget *parent, YWidgetOpt &opt,
-			 YRadioButtonGroup *rbg, const YCPString &label,
-			 bool checked)
+                         YRadioButtonGroup *rbg, const YCPString &label,
+                         bool checked)
 {
-	IMPL;
+	IMPL
 	return new YGRadioButton (opt, YGWidget::get (parent), label, rbg, checked);
 }
 
@@ -158,11 +160,11 @@ class YGCheckBox : public YCheckBox, public YGWidget
 
 public:
 	YGCheckBox(const YWidgetOpt &opt,
-		   YGWidget         *parent,
-		   YCPString         label_str,
-		   bool              checked)
-		:  YCheckBox (opt, label_str),
-		   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
+	           YGWidget         *parent,
+	           const YCPString  &label_str,
+	           bool              checked)
+	:  YCheckBox (opt, label_str),
+	   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
 		IMPL
 		m_isBold = opt.boldFont.value();
