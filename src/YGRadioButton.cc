@@ -5,88 +5,51 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-// YRadioButton
-#include "YRadioButton.h"
-#include "YRadioButtonGroup.h"
-
-// YRadioButtonGroup
-class YGRadioButton;
-
-class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
+// Sub-class GtkRadioButton to get a widget that renders like
+// a radio-button, but behaves like a check/toggle-button.
+static GType getCheckRadioButtonType()
 {
-GSList *group;  // of GtkRadioButton
-friend class YGRadioButton;
+	static GType type = 0;
 
-public:
-	YGRadioButtonGroup(const YWidgetOpt &opt, YGWidget *parent)
-	: YRadioButtonGroup (opt),
-	  YGWidget (this, parent)
-	{
-		IMPL
-		group = NULL;
-	}
+	if (type)
+		return type;
 
-	~YGRadioButtonGroup()
-	{
-		IMPL
-		if (group)
-			g_slist_free (group);
-	}
-
-	virtual void addRadioButton (YRadioButton *button)
-	{
-		IMPL
-		GtkWidget *widget = ((YGWidget *) button->widgetRep())->getWidget();
-		group = g_slist_append (group, (gpointer) widget);
-
-		YRadioButtonGroup::addRadioButton (button);
-	}
-
-	virtual void removeRadioButton (YRadioButton *button)
-	{
-		IMPL
-		GtkWidget *widget = ((YGWidget *) button->widgetRep())->getWidget();
-		group = g_slist_remove (group, (gpointer) widget);
-
-		YRadioButtonGroup::removeRadioButton (button);
-	}
-
-	// YWidget
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE_CHAIN (YRadioButtonGroup)
-};
-
-YContainerWidget *
-YGUI::createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt)
-{
-	IMPL;
-	return new YGRadioButtonGroup (opt, YGWidget::get (parent));
+	static const GTypeInfo info = {
+		sizeof (GtkRadioButtonClass), NULL, NULL,
+		NULL, NULL, NULL,
+		sizeof (GtkRadioButton), 0, NULL
+		};
+	type = g_type_register_static (GTK_TYPE_RADIO_BUTTON, "YGRadioButton",
+	                               &info, GTypeFlags(0));
+	// save a class_init function
+	GtkButtonClass *klass_new = GTK_BUTTON_CLASS (g_type_class_ref (type));
+	GtkButtonClass *klass_sane =
+		GTK_BUTTON_CLASS (g_type_class_ref (GTK_TYPE_TOGGLE_BUTTON));
+	klass_new->clicked = klass_sane->clicked;
+	return type;
 }
 
+#include "YRadioButtonGroup.h"
+#include "YRadioButton.h"
 
-// YRadioButton
 class YGRadioButton : public YRadioButton, public YGWidget
 {
 	bool m_isBold;
 
 public:
+
 	YGRadioButton (const YWidgetOpt  &opt,
 	               YGWidget          *parent,
 	               YCPString          label,
-	               YRadioButtonGroup *rb_group,
+	               YRadioButtonGroup *rbg, 
 	               bool               checked)
-	:  YRadioButton (opt, label, rb_group),
-	   YGWidget (this, parent, true, GTK_TYPE_RADIO_BUTTON, NULL)
+	:  YRadioButton (opt, label, rbg),
+	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
+		setValue (YCPBoolean (checked));
+
 		m_isBold = opt.boldFont.value();
-
-		GSList *group = ((YGRadioButtonGroup *) rb_group)->group;
-		if (group)
-			gtk_radio_button_set_group (GTK_RADIO_BUTTON (getWidget()), group);
-		if (checked)
-			setValue (YCPBoolean (true));
-
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 
@@ -118,7 +81,7 @@ public:
 		if (checked->value())
 			buttonGroup()->uncheckOtherButtons (this);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()),
-		                              checked->value());
+		                               checked->value());
 
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}
@@ -135,23 +98,54 @@ public:
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
 
+	// callbacks
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
 	{
 		IMPL
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
+			pThis->buttonGroup()->uncheckOtherButtons (pThis);
+		else {
+			g_signal_handlers_block_by_func (button, (gpointer) toggled_cb, pThis);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+			g_signal_handlers_unblock_by_func (button, (gpointer) toggled_cb, pThis);
+		}
+
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 };
 
 YWidget *
 YGUI::createRadioButton (YWidget *parent, YWidgetOpt &opt,
-                         YRadioButtonGroup *rbg, const YCPString &label,
-                         bool checked)
+			 YRadioButtonGroup *rbg, const YCPString &label,
+			 bool checked)
 {
-	IMPL
+	IMPL;
 	return new YGRadioButton (opt, YGWidget::get (parent), label, rbg, checked);
 }
 
-// YCheckBox
+// YRadioButtonGroup
+
+class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
+{
+public:
+	YGRadioButtonGroup(const YWidgetOpt &opt,
+	                   YGWidget         *parent)
+	: YRadioButtonGroup (opt),
+	  YGWidget (this, parent)
+	{ }
+
+	// YWidget
+	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_SET_SIZE_CHAIN (YRadioButtonGroup)
+};
+
+YContainerWidget *
+YGUI::createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt)
+{
+	IMPL;
+	return new YGRadioButtonGroup (opt, YGWidget::get (parent));
+}
+
 #include "YCheckBox.h"
 
 class YGCheckBox : public YCheckBox, public YGWidget
