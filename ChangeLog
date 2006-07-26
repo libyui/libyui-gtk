@@ -1,3 +1,14 @@
+2006-07-26 Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/ygtkspinbox.h/c: An extension over GtkSpinButton that
+	adds support for more than one field.
+	* src/YGTime.cc: implemented YGTime and YGDate.
+
+2006-07-23 Ricardo Cruz    <rpmcruz@clix.pt>
+
+	* src/YGRadioButton.cc: regression to Michael's code
+	(with a couple of fixes) due to instability.
+
 2006-07-18 Ricardo Cruz    <rpmcruz@clix.pt>
 
 	* src/YGWizard.cc: changed look and added sanity checks

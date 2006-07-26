@@ -36,11 +36,13 @@ libpy2gtk_la_SOURCES = \
 	YGMultiProgressMeter.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
+	YGTime.cc \
 	\
 	ygtkratiobox.c \
 	ygtkbargraph.c \
 	ygtkrichtext.c \
-	ygtksteps.c
+	ygtksteps.c \
+	ygtkspinbox.c
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la

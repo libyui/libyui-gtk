@@ -145,17 +145,17 @@ public:
 					 int margin);
     virtual bool hasColoredLabel() { return true; }
 
-    virtual YWidget *createDate (YWidget *parent,
-				 YWidgetOpt & opt, 
-				 const YCPString & label,
-				 const YCPString & date) IMPL_NULL;
-    virtual bool     hasDate() { return false; } 
+	virtual YWidget *createDate (YWidget         *parent,
+	                             YWidgetOpt      &opt,
+	                             const YCPString &label,
+	                             const YCPString &date);
+	virtual bool     hasDate() { return true; }
 
-    virtual YWidget *createTime (YWidget *parent,
-				 YWidgetOpt & opt,   
-				 const YCPString & label,
-				 const YCPString & time) IMPL_NULL;
-    virtual bool     hasTime() { return false; }
+	virtual YWidget *createTime (YWidget         *parent,
+	                             YWidgetOpt      &opt,
+	                             const YCPString &label,
+	                             const YCPString &time);
+	virtual bool     hasTime() { return true; }
 
 	virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt);
 	virtual bool     hasDumbTab() { return true; }
