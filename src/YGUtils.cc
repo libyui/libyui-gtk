@@ -75,3 +75,69 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 	               end_mark, 0.0, FALSE, 0, 0);
 	gtk_text_buffer_delete_mark (buffer, end_mark);
 }
+
+#define PROD_ENTITY "&product;"
+
+// We have to:
+//   + manually substitute the product entity.
+//   + rewrite <br> and <hr> tags
+//   + deal with <a attrib=noquotes>
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product)
+{
+	GString *outp = g_string_new ("");
+	int i = 0;
+	// elide leading whitespace
+	while (g_ascii_isspace (instr[i++]));
+
+	gboolean addOuterTag = FALSE;
+	if ((addOuterTag = (instr[i] != '<')))
+		g_string_append (outp, "<body>");
+
+	for (i = 0; instr[i] != '\0'; i++)
+	{
+		// Tag foo
+		if (instr[i] == '<') {
+			GString *tag = g_string_sized_new (20);
+
+			i++;
+			for (; instr[i] != '>'; i++)
+				g_string_append_c (tag, instr[i]);
+
+			// Unmatched tags
+			if ( (!strncmp (tag->str, "hr", 2) ||
+			      !strncmp (tag->str, "br", 2)) &&
+			     tag->str[tag->len - 1] != '/')
+				g_string_append_c (tag, '/');
+			
+			// Add quoting for un-quoted attributes
+			for (guint j = 0; j < tag->len; j++) {
+				if (tag->str[j] == '=' && tag->str[j+1] != '"') {
+					g_string_insert_c (tag, j+1, '"');
+					for (j++; !g_ascii_isspace (tag->str[j]) && tag->str[j]; j++);
+					g_string_insert_c (tag, j, '"');
+				}
+			}
+
+			g_string_append_c (outp, '<');
+			g_string_append_len (outp, tag->str, tag->len);
+			g_string_append_c (outp, '>');
+			
+			g_string_free (tag, TRUE);
+		}
+		
+		else if (instr[i] == '&' &&
+			 !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
+					       sizeof (PROD_ENTITY) - 1)) {
+			// 1 Magic entity
+			g_string_append (outp, product);
+			i += sizeof (PROD_ENTITY) - 2;
+			
+		} else // Normal text
+			g_string_append_c (outp, instr[i]);
+	}
+
+	if (addOuterTag)
+		g_string_append (outp, "</body>");
+
+	return g_string_free (outp, FALSE);
+}

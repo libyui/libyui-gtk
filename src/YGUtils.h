@@ -29,4 +29,9 @@ namespace YGUtils
 	void scrollTextViewDown(GtkTextView *text_view);
 };
 
+extern "C" {
+	/* Convert html to xhtml (or at least try) */
+	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+};
+
 #endif // YGUTILS_H

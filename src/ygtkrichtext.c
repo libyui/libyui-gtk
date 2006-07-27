@@ -4,6 +4,10 @@
 #include <gtk/gtkversion.h>
 #include <string.h>
 
+// Sucky - but we mix C & C++ so ...
+/* Convert html to xhtml (or at least try) */
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+
 static void ygtk_richtext_class_init (YGtkRichTextClass *klass);
 static void ygtk_richtext_init       (YGtkRichText      *rich_text);
 static void ygtk_richtext_finalize   (GObject           *object);
@@ -532,43 +536,6 @@ static char *elide_whitespace (const char *instr, int len)
 	return g_string_free (dest, FALSE);
 }
 
-#define PROD_ENTITY "&product;"
-
-// We have to manually substitute the product entity.
-// Also we have to deal with <a attrib=noquotes>
-static char *xmlize_string (const char *instr, const char *prodname)
-{
-	GString *outp = g_string_new ("");
-	int i = 0;
-	gboolean inTag = FALSE;
-	for (i = 0; instr[i] != '\0'; i++)
-	{
-		if (instr[i] == '<')
-			inTag = TRUE;
-		else if (instr[i] == '&' && !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
-		                                               sizeof (PROD_ENTITY) - 1)) {
-			g_string_append (outp, prodname);
-			i += sizeof (PROD_ENTITY) - 1;
-		}
-		else if (inTag) {
-				// This is bothersome
-				for (; instr[i] != '>'; i++) {
-					g_string_append_c (outp, instr[i]);
-					if (instr[i] == '=' && instr[i+1] != '"') {
-						g_string_append_c (outp, '"');
-						for (i++; !g_ascii_isspace (instr[i]) && instr[i] != '>'; i++)
-							g_string_append_c (outp, instr[i]);
-						g_string_append_c (outp, '"');
-						g_string_append_c (outp, instr[i]);	
-					}
-				}
-				inTag = FALSE;
-		}
-		g_string_append_c (outp, instr[i]);
-	}
-	return g_string_free (outp, FALSE);
-}
-
 void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 {
 	rtext->prodname = g_strdup (prodname);
@@ -593,12 +560,11 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean pl
 	GMarkupParseContext *ctx;
 	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
 
-	char *xml;
-	xml = xmlize_string (text, rtext->prodname);
+	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname);
 
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
-		g_warning ("Markup parse error");
+		g_warning ("Markup parse error '%s'", error ? error->message : "Unknown");
 	g_free (xml);
 
 	g_markup_parse_context_free (ctx);

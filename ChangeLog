@@ -1,6 +1,16 @@
 2006-07-27  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst): 
+	re-work to cope with hr & br tags, add <body> tag if
+	no outer tag.
+	
+	* src/test.cc (testXHtmlConvert): add torture
+	tests.
+
 	* src/YGUtils.cc (mapKBAccel): add _ escaping.
+	(ygutils_convert_to_xhmlt_and_subst): split to here.
+
+	* src/ygtkrichtext.c (ygtk_richtext_set_text): upd.
 
 	* src/YGUtils.h (YGUtils): add missing dependant
 	headers & guards.
