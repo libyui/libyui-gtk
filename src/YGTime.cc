@@ -2,7 +2,7 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
-#include "ygtkspinbox.h"
+#include "ygtkfieldentry.h"
 
 #include "YTime.h"
 
@@ -12,14 +12,16 @@ public:
 	YGTime (const YWidgetOpt &opt, YGWidget *parent,
 	        const YCPString &label, const YCPString &time)
 	: YTime (opt, label),
-	  YGLabeledWidget (this, parent, label, YD_VERT, true, YGTK_TYPE_SPIN_BOX, NULL)
+	  YGLabeledWidget (this, parent, label, YD_VERT, true,
+	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
-		ygtk_spin_box_add_field (YGTK_SPIN_BOX (getWidget()), 0, 24);
-		ygtk_spin_box_add_field (YGTK_SPIN_BOX (getWidget()), 0, 60);
+		guint fields_width[2] = { 2, 2 };
+		ygtk_field_entry_set(YGTK_FIELD_ENTRY (getWidget()), 2, fields_width,
+		                     ':', YGTK_FIELD_ALIGN_LEFT);
 		setNewTime (time);
 
-		g_signal_connect (G_OBJECT (getWidget()), "value-changed",
+		g_signal_connect (G_OBJECT (getWidget()), "field-text-changed",
 		                  G_CALLBACK (value_changed_cb), this);
 	}
 
@@ -29,21 +31,23 @@ public:
 	virtual void setNewTime (const YCPString &time)
 	{
 		IMPL
-		int hours = 0, mins = 0;
-		sscanf (time->value_cstr(), "%02d:%02d", &hours, &mins);
+		char hours[3], mins[3];
+		sscanf (time->value_cstr(), "%2s:%2s", hours, mins);
 
-		YGtkSpinBox *spinner = YGTK_SPIN_BOX (getWidget());
-		ygtk_spin_box_set_value (spinner, 0, hours);
-		ygtk_spin_box_set_value (spinner, 1, mins);
+		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
+		ygtk_field_entry_set_field_text (entry, 0, hours);
+		ygtk_field_entry_set_field_text (entry, 1, mins);
 	}
 
 	virtual YCPString getTime()
 	{
 		IMPL
-		YGtkSpinBox *spinner = YGTK_SPIN_BOX (getWidget());
-		gchar *time = g_strdup_printf ("%02d:%02d:00",
-		                               ygtk_spin_box_get_value (spinner, 0),
-		                               ygtk_spin_box_get_value (spinner, 1));
+		const gchar *hours, *mins;
+		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
+		hours = ygtk_field_entry_get_field_text (entry, 0);
+		mins  = ygtk_field_entry_get_field_text (entry, 1);
+
+		gchar *time = g_strdup_printf ("%02d:%02d:00", atoi (hours), atoi (mins));
 		YCPString str = YCPString (time);
 		g_free (time);
 		return str;
@@ -59,7 +63,8 @@ public:
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YTime)
 
 	// callbacks
-	static void value_changed_cb (YGtkSpinBox *spinner, YGTime *pThis)
+	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
+	                              YGTime *pThis)
 	{ IMPL; pThis->emitEvent (YEvent::ValueChanged); }
 };
 
@@ -72,6 +77,7 @@ YGUI::createTime (YWidget *parent, YWidgetOpt &opt,
 }
 
 #include "YDate.h"
+#include "ygtkspinbox.h"
 
 #if 0
 #include "ygtkmenubutton.h"
@@ -154,6 +160,7 @@ public:
 		ygtk_spin_box_add_field (getSpin(), 1000, 9000);
 		ygtk_spin_box_add_field (getSpin(), 1, 12);
 		ygtk_spin_box_add_field (getSpin(), 1, 31);
+		ygtk_spin_box_set_separator_character (getSpin(), '-');
 
 #if 0
 		GtkWidget *menu_button = ygtk_menu_button_new();
