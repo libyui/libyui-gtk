@@ -1,3 +1,7 @@
+2006-07-27  Michael Meeks  <michael.meeks@novell.com>
+
+	* AUTHORS: set the record straight.
+
 2006-07-26 Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/ygtkspinbox.h/c: An extension over GtkSpinButton that
