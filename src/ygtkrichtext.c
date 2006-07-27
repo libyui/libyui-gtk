@@ -1,6 +1,7 @@
 /* YGtkRichText widget */
 
 #include "ygtkrichtext.h"
+#include <gtk/gtkversion.h>
 #include <string.h>
 
 static void ygtk_richtext_class_init (YGtkRichTextClass *klass);
@@ -71,11 +72,18 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	ref_cursor++;
 
 // FIXME: this doesn't seem to compile ?!
+
 /*
+#define	GTK_CHECK_VERSION(major,minor,micro)	\
+    (GTK_MAJOR_VERSION > (major) || \
+     (GTK_MAJOR_VERSION == (major) && GTK_MINOR_VERSION > (minor)) || \
+     (GTK_MAJOR_VERSION == (major) && GTK_MINOR_VERSION == (minor) && \
+      GTK_MICRO_VERSION >= (micro)))
+*/
+
 #if GTK_CHECK_VERSION(2,10,0)
 	gtk_widget_style_get (GTK_WIDGET (view), "link_color", &link_color, NULL);
 #endif
-*/
 	g_signal_connect (tview, "event-after",
 	                  G_CALLBACK (event_after), NULL);
 	g_signal_connect (tview, "motion-notify-event",

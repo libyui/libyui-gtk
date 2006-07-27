@@ -47,4 +47,10 @@ libpy2gtk_la_SOURCES = \
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
 
+check_PROGRAMS = test
+TESTS = $(check_PROGRAMS)
+
+test_SOURCES = test.cc
+test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
+
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui

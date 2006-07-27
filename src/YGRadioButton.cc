@@ -81,7 +81,7 @@ public:
 		if (checked->value())
 			buttonGroup()->uncheckOtherButtons (this);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()),
-		                               checked->value());
+					      checked->value());
 
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}

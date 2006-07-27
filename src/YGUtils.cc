@@ -9,7 +9,7 @@ string YGUtils::mapKBAccel(const char *src)
 		if (str[i] == '&') {
 			str[i] = '_';
 			break;
-			}
+		}
 	return str;
 }
 
@@ -21,13 +21,13 @@ string YGUtils::filterText (const char* text, int length, const char *valid_char
 		return string(text);
 
 	string str;
-	int i, j;
-	for(i = 0; text[i] && i < length; i++)
-		for(j = 0; valid_chars[j]; j++)
+	for (int i = 0; text[i] && i < length; i++) {
+		for (int j = 0; valid_chars[j]; j++)
 			if(text[i] == valid_chars[j]) {
 				str += text[i];
 				break;
 			}
+	}
 	return str;
 }
 

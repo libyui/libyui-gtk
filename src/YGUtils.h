@@ -1,3 +1,10 @@
+#ifndef YGUTILS_H
+#define YGUTILS_H
+
+#include <string>
+#include <gtk/gtktextview.h>
+#include <gtk/gtkeditable.h>
+
 /* YGUtils.h/cc have some functionality that is shared between different parts
    of the code. */
 
@@ -21,3 +28,5 @@ namespace YGUtils
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
 };
+
+#endif // YGUTILS_H

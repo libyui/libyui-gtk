@@ -1,5 +1,11 @@
 2006-07-27  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGUtils.h (YGUtils): add missing dependant
+	headers & guards.
+
+	* src/test.cc: simple automated test set for
+	'make check', (testMapKBAccel): impl.
+
 	* AUTHORS: set the record straight.
 
 2006-07-26 Ricardo Cruz    <rpcmruz@clix.pt>
