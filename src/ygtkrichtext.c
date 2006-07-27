@@ -12,8 +12,6 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev);
 static gboolean motion_notify_event (GtkWidget *text_view, GdkEventMotion *event);
 static gboolean visibility_notify_event (GtkWidget          *text_view,
                                          GdkEventVisibility *event);
-static gboolean ygtk_richtext_expose_event (GtkWidget      *widget,
-                                            GdkEventExpose *event);
 
 static GtkTextViewClass *parent_class = NULL;
 
@@ -43,9 +41,6 @@ static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 {
 	parent_class = (GtkTextViewClass*) g_type_class_peek_parent (klass);
 
-	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-  widget_class->expose_event = ygtk_richtext_expose_event;
-
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->finalize = ygtk_richtext_finalize;
 
@@ -61,7 +56,6 @@ static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 static void ygtk_richtext_init (YGtkRichText *rtext)
 {
 	rtext->prodname = NULL;
-	rtext->background = NULL;
 
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
@@ -76,7 +70,7 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	}
 	ref_cursor++;
 
-// FIXME this doesn't seem to compile ?!
+// FIXME: this doesn't seem to compile ?!
 /*
 #if GTK_CHECK_VERSION(2,10,0)
 	gtk_widget_style_get (GTK_WIDGET (view), "link_color", &link_color, NULL);
@@ -118,8 +112,6 @@ static void ygtk_richtext_finalize (GObject *object)
 	YGtkRichText *rtext = YGTK_RICHTEXT (object);
 	if (rtext->prodname)
 		g_free (rtext->prodname);
-	if (rtext->background)
-		g_object_unref (G_OBJECT (rtext->background));
 
 	G_OBJECT_CLASS (parent_class)->finalize (object);
 }
@@ -579,11 +571,13 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean pl
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
-	if (plain_text)
-	{
+	if (plain_text) {
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
+
+	// remove any possible existing text
+	gtk_text_buffer_set_text (buffer, "", 0);
 
 	GRTParseState state;
 	GRTParseState_init (&state, buffer);
@@ -603,40 +597,28 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean pl
 	GRTParseState_free (&state);
 }
 
-static gint ygtk_richtext_expose_event (GtkWidget      *widget,
-                                        GdkEventExpose *event)
-{
-	YGtkRichText *rtext = YGTK_RICHTEXT (widget);
-	GdkRectangle *area = &event->area;
-printf("expose_event\n");
-	if (rtext->background) {
-		gint width  = MIN (gdk_pixbuf_get_width  (rtext->background), area->width);
-		gint height = MIN (gdk_pixbuf_get_height (rtext->background), area->height);
-printf("widget pos: %dx%d\n", widget->allocation.x, widget->allocation.y);
-printf("area: %dx%d , %dx%d\n", area->x, area->y, width, height);
-		gdk_draw_pixbuf (widget->window, widget->style->black_gc,
-		                 rtext->background, widget->allocation.x + area->x,
-		                 widget->allocation.y + area->y, area->x, area->y, width, height,
-		                 GDK_RGB_DITHER_NORMAL, 0, 0);
-	}
-
-	(* GTK_WIDGET_CLASS (parent_class)->expose_event) (widget, event);
-	return FALSE;
-}
-
 void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
 {
-printf ("loading background %s\n", image);
-	GError *error = 0;
-	rtext->background = gdk_pixbuf_new_from_file (image, &error);
-	if (!rtext->background)
-		g_warning ("YGtkRichText: couldn't load background image '%s'", image);
+	g_return_if_fail (GTK_WIDGET_REALIZED (GTK_WIDGET (rtext)));
 
-	else {
-printf ("loading sucessful\n");
-		GtkTextAttributes *attr;
-		attr = gtk_text_view_get_default_attributes (GTK_TEXT_VIEW (rtext));
-printf("draw_bg: %d\n", attr->appearance.draw_bg);
-		attr->appearance.draw_bg = 0;
+	GdkWindow *window = gtk_text_view_get_window
+		(GTK_TEXT_VIEW (rtext), GTK_TEXT_WINDOW_TEXT);
+
+	if (!image) {
+		gdk_window_clear (window);
+		return;
 	}
+
+	GError *error = 0;
+	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (image, &error);
+	if (!pixbuf)
+		g_warning ("ygtkrichtext: could not open background image: '%s'"
+		           " - %s", image, error->message);
+
+	GdkPixmap *pixmap;
+	gdk_pixbuf_render_pixmap_and_mask_for_colormap (pixbuf,
+		gdk_drawable_get_colormap (GDK_DRAWABLE (window)), &pixmap, NULL, 0);
+	g_object_unref (G_OBJECT (pixbuf));
+
+	gdk_window_set_back_pixmap (window, pixmap, FALSE);
 }
