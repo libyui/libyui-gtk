@@ -1,5 +1,7 @@
 2006-07-27  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGUtils.cc (mapKBAccel): add _ escaping.
+
 	* src/YGUtils.h (YGUtils): add missing dependant
 	headers & guards.
 

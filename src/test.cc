@@ -9,7 +9,11 @@ bool testMapKBAccel()
 		{ "Foo&", "Foo_",
 		  "B&aa", "B_aa",
 		  "&Foo", "_Foo",
-		  "&&Foo", "&Foo", // (?) what escaping ?
+		  "_Foo", "__Foo",
+// FIXME - unfortunately it seems yast has noescaping policy
+// for labels (hmm) at least judging from the code at
+// ncurses/src/NCstring.cc (getHotKey)
+//		  "&&Foo", "&Foo",
 		  NULL };
 	for (int i = 0; aTests[i]; i += 2) {
 		string mapped = YGUtils::mapKBAccel(aTests[i]);

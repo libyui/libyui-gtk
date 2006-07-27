@@ -4,12 +4,19 @@
 
 string YGUtils::mapKBAccel(const char *src)
 {
-	string str (src);
-	for (unsigned int i = 0; i < str.length(); i++)
-		if (str[i] == '&') {
-			str[i] = '_';
-			break;
-		}
+	string str;
+	int length = strlen (src);
+
+	str.reserve (length);
+	for (int i = 0; i < length; i++) {
+		if (src[i] == '_')
+			str += "__";
+		else if (src[i] == '&')
+			str += '_';
+		else
+		    str += src[i];
+	}
+
 	return str;
 }
 
