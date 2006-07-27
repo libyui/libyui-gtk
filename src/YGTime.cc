@@ -18,7 +18,7 @@ public:
 		IMPL
 		guint fields_width[2] = { 2, 2 };
 		ygtk_field_entry_set(YGTK_FIELD_ENTRY (getWidget()), 2, fields_width,
-		                     ':', YGTK_FIELD_ALIGN_RIGHT);
+		                     ':', YGTK_FIELD_ALIGN_CENTER);
 		setNewTime (time);
 
 		g_signal_connect (G_OBJECT (getWidget()), "field-text-changed",
@@ -91,7 +91,7 @@ public:
 	{
 		IMPL
 		guint fields_width[3] = { 4, 2, 2 };
-		m_entry = ygtk_field_entry_new (3, fields_width, '-', YGTK_FIELD_ALIGN_RIGHT);
+		m_entry = ygtk_field_entry_new (3, fields_width, '-', YGTK_FIELD_ALIGN_CENTER);
 
 		GtkWidget *menu_button = ygtk_menu_button_new();
 		m_calendar = gtk_calendar_new();
@@ -148,7 +148,6 @@ public:
 
 		gchar *time = g_strdup_printf ("%04d-%02d-%02d", atoi (year),
 		                               atoi (month), atoi (day));
-printf("time: %s\n", time);
 		YCPString str = YCPString (time);
 		g_free (time);
 		return str;

@@ -1,3 +1,14 @@
+2006-07-27 Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/ygtkmenubutton.c/h: added this button widget that
+	displays a popup when pressed. The popup doesn't have to
+	be necessarly of type GtkMenu that it does the work to
+	make the thing pop-able.
+	* src/YGMenuButton.cc / YGDate: use above.
+	* src/ygtkfieldentry.c/h: added this entry that supports
+	more than one field (from Baruch Even).
+	* src/ygtkspinbox.c/h: replaced by above.
+
 2006-07-27  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst): 

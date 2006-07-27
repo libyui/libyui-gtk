@@ -1,5 +1,5 @@
 /*
- * YYGtkFieldEntry widget for GTK+
+ * YGtkFieldEntry widget for GTK+
  * Copyright (C) 2005 Baruch Even <baruch@ev-en.org>
  *
  * This library is free software; you can redistribute it and/or

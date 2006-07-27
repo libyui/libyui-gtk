@@ -42,7 +42,6 @@ libpy2gtk_la_SOURCES = \
 	ygtkbargraph.c \
 	ygtkrichtext.c \
 	ygtksteps.c \
-	ygtkspinbox.c \
 	ygtkfieldentry.c \
 	ygtkmenubutton.c
 
