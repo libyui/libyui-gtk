@@ -1,0 +1,39 @@
+// test for the HTML parser
+
+{
+	list texts = [
+		// simple
+		"<p><a href=\"nowhere\">Hello world!</a></p>",
+		"<h1>Operating Systems</h1><h2>Linux</h2> Suse",
+
+		// the br tag
+		"Drinking <u>ice</u> tea <br> is <b>good</b> for you.",
+		"Drinking <u>ice</u> tea <br /> is <b>good</b> for you.",
+
+		// missing tags
+		"<big>Some text</big>",
+	];
+
+	UI::OpenDialog (
+		`VBox (
+			`RichText (`id (`rtext), texts[0]:nil),
+			`Slider (`id (`slider), `opt(`notify), "Test text case:", 0, size (texts)-1, 0),
+			`PushButton (`id (`close), "&Close")
+		)
+	);
+
+	any ret = nil;
+	repeat
+	{
+		ret = UI::UserInput();
+
+		if (ret == `slider)
+		{
+			integer cur_text = (integer) UI::QueryWidget(`id(`slider), `Value );
+			UI::ChangeWidget (`id (`rtext), `Value, texts[cur_text]:nil);
+		}
+
+	} until (ret == `close || ret == `cancel);
+
+	UI::CloseDialog();
+}
