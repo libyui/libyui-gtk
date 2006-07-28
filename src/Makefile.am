@@ -1,5 +1,7 @@
 AM_CFLAGS = $(GTK_CFLAGS)
-AM_CXXFLAGS = -DY2LOG=\"ui-gtk\" $(GTK_CFLAGS)
+AM_CXXFLAGS = $(GTK_CFLAGS) \
+	-DY2LOG=\"ui-gtk\" \
+	-DTHEMEDIR=\"${themedir}/current\"
 
 noinst_HEADERS = $(wildcard *.h)
 

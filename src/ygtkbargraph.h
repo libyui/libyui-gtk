@@ -36,7 +36,7 @@ struct _YGtkBarGraphClass
 	YGtkRatioBoxClass parent_class;
 };
 
-GtkWidget *ygtk_bar_graph_new();
+GtkWidget *ygtk_bar_graph_new (void);
 GType ygtk_bar_graph_get_type (void) G_GNUC_CONST;
 
 void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries);

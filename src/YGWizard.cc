@@ -10,6 +10,8 @@
 #include "ygtksteps.h"
 #include "YWizard.h"
 
+#define PIXMAPDIR THEMEDIR "/wizard/"
+
 #define CONTENT_PADDING 15
 #define TITLE_HEIGHT   45
 #define MAIN_BORDER 8
@@ -644,10 +646,8 @@ printf ("next label: %s\n", str.c_str());
 	static void set_help_background_cb (GtkWidget *widget, YGWizard *pThis)
 	{
 		IMPL
-		// FIXME: we need to set some THEMEDIR on the configure process to avoid
-		// absolute paths
 		ygtk_richtext_set_background (YGTK_RICHTEXT (widget),
-			"/usr/share/YaST2/theme/SuSELinux/wizard/help-background.png");
+					      PIXMAPDIR "help-background.png");
 	}
 
 	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,

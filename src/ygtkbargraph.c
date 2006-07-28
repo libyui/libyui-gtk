@@ -42,7 +42,7 @@ static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 	bar->m_tooltips = gtk_tooltips_new();
 }
 
-GtkWidget *ygtk_bar_graph_new()
+GtkWidget *ygtk_bar_graph_new (void)
 {
 	YGtkBarGraph* bar = (YGtkBarGraph*) g_object_new (YGTK_TYPE_BAR_GRAPH, NULL);
 	return GTK_WIDGET (bar);
@@ -115,7 +115,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 
 	// Set background color
 	const GdkColor palette [] = {
-#define DECL_COLOR(r,g,b) \ 
+#define DECL_COLOR(r,g,b) \
 		{ 0, (r) << 8, (g) << 8, (b) << 8 }
 // Tango Palette
 		DECL_COLOR (138, 226,  52), //	Chameleon 1
@@ -159,7 +159,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 #undef DECL_COLOR
 	};
 
-	const GdkColor *color = &palette [index % G_N_ELEMENTS (palette_size)];
+	const GdkColor *color = &palette [index % G_N_ELEMENTS (palette)];
 	gtk_widget_modify_bg (box,   GTK_STATE_NORMAL, color);
 	gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, color);
 }

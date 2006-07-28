@@ -1,8 +1,12 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/Makefile.am (AM_CXXFLAGS): set THEMEDIR.
+	* src/YGWizard.cc (class YGWizard): use THEMEDIR
+
 	* src/ygtkbargraph.c (ygtk_bar_graph_setup_entry): add
 	Tango palette from Jimmac for graphs, order it to get a
 	pleasant set of colors first.
+	(ygtk_bar_graph_new): use a void prototype
 
 	* src/YGDialog.cc ::YGDialog: remove bogus
 	g_object_set causing warning.
