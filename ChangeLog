@@ -1,5 +1,9 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/ygtkbargraph.c (ygtk_bar_graph_setup_entry): add
+	Tango palette from Jimmac for graphs, order it to get a
+	pleasant set of colors first.
+
 	* src/YGDialog.cc ::YGDialog: remove bogus
 	g_object_set causing warning.
 	(configure_event_cb): don't setSize if we just moved.

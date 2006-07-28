@@ -115,18 +115,51 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 
 	// Set background color
 	const GdkColor palette [] = {
-		{ 0, 224 << 8,   0 << 8,   0 << 8 },	// red
-		{ 0, 237 << 8, 238 << 8, 236 << 8 },	// gray
-		{ 0, 252 << 8, 233 << 8,  79 << 8 },	// yellow
-		{ 0, 138 << 8, 226 << 8,  52 << 8 },	// green
-		{ 0, 173 << 8, 127 << 8, 168 << 8 },	// pink
-		{ 0, 114 << 8, 159 << 8, 207 << 8 },	// blue
-		{ 0, 252 << 8, 175 << 8,  62 << 8 },	// orange
-		{ 0, 193 << 8, 125 << 8,  17 << 8 },	// brown
+#define DECL_COLOR(r,g,b) \ 
+		{ 0, (r) << 8, (g) << 8, (b) << 8 }
+// Tango Palette
+		DECL_COLOR (138, 226,  52), //	Chameleon 1
+		DECL_COLOR (252, 175,  62), //	Orange 1
+		DECL_COLOR (114, 159, 207), //	Sky Blue 1
+		DECL_COLOR (233, 185, 110), //	Chocolate 1
+		DECL_COLOR (239,  41,  41), //	Scarlet Red 1
+		DECL_COLOR (252, 233,  79), //	Butter 1
+		DECL_COLOR (173, 127, 168), //	Plum 1
+		DECL_COLOR (115, 210,  22), //	Chameleon 2
+		DECL_COLOR (245, 121,   0), //	Orange 2
+		DECL_COLOR ( 52, 101, 164), //	Sky Blue 2
+		DECL_COLOR (193, 125,  17), //	Chocolate 2
+		DECL_COLOR (204,   0,   0), //	Scarlet Red 2
+		DECL_COLOR (237, 212,   0), //	Butter 2
+		DECL_COLOR (117,  80, 123), //	Plum 2
+		DECL_COLOR ( 78, 154,   6), //	Chameleon 3
+		DECL_COLOR (206,  92,   0), //	Orange 3
+		DECL_COLOR ( 32,  74, 135), //	Sky Blue 3
+		DECL_COLOR (143,  89,   2), //	Chocolate 3
+		DECL_COLOR (164,   0,   0), //	Scarlet Red 3
+		DECL_COLOR (196, 160,   0), //	Butter 3
+		DECL_COLOR ( 92,  53, 102), //	Plum 3
+		DECL_COLOR (238, 238, 236), //	Aluminium 1
+		DECL_COLOR (211, 215, 207), //	Aluminium 2
+		DECL_COLOR (186, 189, 182), //	Aluminium 3
+		DECL_COLOR (136, 138, 133), //	Aluminium 4
+		DECL_COLOR ( 85,  87,  83), //	Aluminium 5
+		DECL_COLOR ( 46,  52,  54)  //	Aluminium 6
+// Ricardo's palette
+#if 0
+		DECL_COLOR (224,   0,   0),	// red
+		DECL_COLOR (237, 238, 236),	// gray
+		DECL_COLOR (252, 233,  79),	// yellow
+		DECL_COLOR (138, 226,  52),	// green
+		DECL_COLOR (173, 127, 168),	// pink
+		DECL_COLOR (114, 159, 207),	// blue
+		DECL_COLOR (252, 175,  62),	// orange
+		DECL_COLOR (193, 125,  17)	// brown
+#endif
+#undef DECL_COLOR
 	};
-#define palette_size (sizeof (palette) / sizeof (GdkColor))
 
-	const GdkColor *color = &palette [index % palette_size];
+	const GdkColor *color = &palette [index % G_N_ELEMENTS (palette_size)];
 	gtk_widget_modify_bg (box,   GTK_STATE_NORMAL, color);
 	gtk_widget_modify_bg (frame, GTK_STATE_NORMAL, color);
 }
