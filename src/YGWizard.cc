@@ -587,16 +587,12 @@ printf ("next label: %s\n", str.c_str());
 				request += requisition.width
 				        + gtk_container_get_border_width (GTK_CONTAINER (m_pane_box));
 			}
-			gtk_widget_size_request (m_help_vbox, &requisition);
-			request += requisition.width
-			        + gtk_container_get_border_width (GTK_CONTAINER (m_title_hbox))
-			        + CONTENT_PADDING * 2;
+			request += m_help_vbox->allocation.width + CONTENT_PADDING * 2;
 			request += MAIN_BORDER * 2;
 		}
 		else {
 			gtk_widget_size_request (m_title_hbox, &requisition);
 			request += requisition.height
-			        + gtk_container_get_border_width (GTK_CONTAINER (m_title_hbox))
 			        + CONTENT_PADDING * 2;
 			request += MAIN_BORDER * 2;
 			gtk_widget_size_request (m_button_box, &requisition);
@@ -606,11 +602,9 @@ printf ("next label: %s\n", str.c_str());
 		return request;
 	}
 
-	// FIXME: this doesn't seem to get called ?!
 	virtual long nicesize (YUIDimension dim)
 	{
 		IMPL
-printf("ygwizard nicesize requested\n");
 		return child (0)->nicesize(dim) + size_request (dim);
 	}
 
@@ -640,6 +634,7 @@ printf("ygwizard nicesize requested\n");
 	static void help_pane_moved_cb (GtkWidget *widget, GParamSpec *pspec,
 	                                YGWizard *pThis)
 	{
+		IMPL
 		// When the user moves the GtkPaned, we need to tell our children
 		// a new size.
 		GtkAllocation *allocation = &pThis->m_fixed->allocation;
@@ -648,6 +643,7 @@ printf("ygwizard nicesize requested\n");
 
 	static void set_help_background_cb (GtkWidget *widget, YGWizard *pThis)
 	{
+		IMPL
 		// FIXME: we need to set some THEMEDIR on the configure process to avoid
 		// absolute paths
 		ygtk_richtext_set_background (YGTK_RICHTEXT (widget),
