@@ -67,19 +67,38 @@ bool testXHtmlConvert()
 		const char *in;
 		const char *out;
 	} aTests[] = {
-		{ "&product;", "foo" },
-		{ "<p>&product;</p>", "<p>foo</p>" },
+		// preservation
+		{ "<p>foo</p>", "<p>foo</p>" },
+		// product substitution
+		{ "&product;", "<body>foo</body>" },
+		{ " <p>&product;</p>", "<p>foo</p>" },
+		// outer tag
 		{ "some text", "<body>some text</body>" },
+		// unquoted attributes
 		{ "<foo baa=Foo></foo>", "<foo baa=\"Foo\"></foo>" },
+		// break tags
 		{ "<br>", "<br/>" },
 		{ "<hr>", "<hr/>" },
-		// FIXME: we need to get <p> markers to work nicely.
+		// unclosed tags
+		{ "<p>", "<p></p>" },
+		{ "<b>unclosed", "<b>unclosed</b>" },
+		{ "<b><i>bold</i>", "<b><i>bold</i></b>" },
+		{ "<i><i>bold</i>", "<i><i>bold</i></i>" },
+		{ "<unclosed foo=baa>",
+		  "<unclosed foo=\"baa\"></unclosed>" },
+		// unclosed 'early close' tags
+		{ "<i>Some<p>text<p> here<p></i>",
+		  "<i>Some<p>text</p><p> here</p><p></p></i>" },
+		{ "<ul><li>foo<li>baa",
+		  "<ul><li>foo</li><li>baa</li></ul>" },
+		{ "no outer<p>unclosed<p>several<b>unclosed bold",
+		  "<body>no outer<p>unclosed</p><p>several<b>unclosed bold</b></p></body>" },
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
 		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in, "foo");
 		if (strcmp (out, aTests[i].out)) {
-			fprintf (stderr, "Mis-converted entry %d XML '%s' vs '%s'\n",
+			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);
 			return false;
 		}

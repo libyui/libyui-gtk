@@ -1,3 +1,16 @@
+2006-07-28  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst):
+	fix br handling to to clobber 'b' tags.
+	
+	* src/YGUtils.cc (emit_unclosed_tags_for, tag_entry_new) 
+	(tag_entry_free, check_early_close) 
+	(ygutils_convert_to_xhmlt_and_subst): complicate royally,
+	now handles all the new tests in
+
+	* src/test.cc (testXHtmlConvert): here: cope with unclosed
+	<p> and <li>, and generic, un-closed tags.
+
 2006-07-28 Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGFrame.cc: follow Gnome HIG (no border, bold label

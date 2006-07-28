@@ -6,12 +6,14 @@
 		"<p><a href=\"nowhere\">Hello world!</a></p>",
 		"<h1>Operating Systems</h1><h2>Linux</h2> Suse",
 
-		// the br tag
-		"Drinking <u>ice</u> tea <br> is <b>good</b> for you.",
-		"Drinking <u>ice</u> tea <br /> is <b>good</b> for you.",
+		// the br & hr tags
+		"Drinking <u>ice</u> tea <br> <hr> is <b>good</b> for you.",
 
 		// missing tags
 		"<big>Some text</big>",
+
+		// unclosed tags
+		"No outer tag<p>Unclosed paragraphs<p>several of them <b>unclosed bold</b>",
 	];
 
 	UI::OpenDialog (

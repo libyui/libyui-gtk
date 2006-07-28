@@ -74,6 +74,94 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 
 #define PROD_ENTITY "&product;"
 
+inline void skipSpace(const char *instr, int &i)
+{
+	while (g_ascii_isspace (instr[i])) i++;
+}
+
+typedef struct {
+	GString     *tag;
+	int          tag_len : 31;
+	unsigned int early_closer : 1;
+} TagEntry;
+
+static TagEntry *
+tag_entry_new (GString *tag, int tag_len)
+{
+	static const char *early_closers[] = { "p", "li" };
+	TagEntry *entry = g_new (TagEntry, 1);
+	entry->tag = tag;
+	entry->tag_len = tag_len;
+	entry->early_closer = FALSE;
+
+	for (unsigned int i = 0; i < G_N_ELEMENTS (early_closers); i++)
+		if (!g_ascii_strncasecmp (tag->str, early_closers[i], tag_len))
+			entry->early_closer = TRUE;
+	return entry;
+}
+
+static void
+tag_entry_free (TagEntry *entry)
+{
+	if (entry && entry->tag)
+		g_string_free (entry->tag, TRUE);
+	g_free (entry);
+}
+
+static void
+emit_unclosed_tags_for (GString *outp, GQueue *tag_queue, const char *tag_str, int tag_len)
+{
+	gboolean matched = FALSE;
+
+	// top-level tag ...
+	if (g_queue_is_empty (tag_queue))
+		return;
+
+	do {
+		TagEntry *last_entry = (TagEntry *)g_queue_pop_tail (tag_queue);
+		if (!last_entry)
+			break;
+
+		if (last_entry->tag_len != tag_len ||
+		    g_ascii_strncasecmp (last_entry->tag->str, tag_str, tag_len)) {
+			/* different tag - emit a close ... */
+			g_string_append (outp, "</");
+			g_string_append_len (outp, last_entry->tag->str, last_entry->tag_len);
+			g_string_append_c (outp, '>');
+		} else
+			matched = TRUE;
+
+		tag_entry_free (last_entry);
+	} while (!matched);
+}
+
+static gboolean
+check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
+{
+	TagEntry *last_tag;
+
+        // Early closers:
+	if (!entry->early_closer)
+		return FALSE;
+
+	last_tag = (TagEntry *) g_queue_peek_tail (tag_queue);
+	if (!last_tag || !last_tag->early_closer)
+		return FALSE;
+
+	if (entry->tag_len != last_tag->tag_len ||
+	    g_ascii_strncasecmp (last_tag->tag->str, entry->tag->str, entry->tag_len))
+		return FALSE;
+
+	// Emit close & leave last tag on the stack
+
+	g_string_append (outp, "</");
+	g_string_append_len (outp, entry->tag->str, entry->tag_len);
+	g_string_append_c (outp, '>');
+
+	return TRUE;
+}
+
+
 // We have to:
 //   + manually substitute the product entity.
 //   + rewrite <br> and <hr> tags
@@ -81,32 +169,57 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product)
 {
 	GString *outp = g_string_new ("");
+	GQueue *tag_queue = g_queue_new();
 	int i = 0;
-	// elide leading whitespace
-	while (g_ascii_isspace (instr[i++]));
+
+	skipSpace (instr, i);
 
 	gboolean addOuterTag = FALSE;
 	if ((addOuterTag = (instr[i] != '<')))
 		g_string_append (outp, "<body>");
 
-	for (i = 0; instr[i] != '\0'; i++)
+	for (; instr[i] != '\0'; i++)
 	{
 		// Tag foo
 		if (instr[i] == '<') {
+			guint j;
+			gboolean is_close = FALSE;
+			gboolean in_tag;
+			int tag_len;
 			GString *tag = g_string_sized_new (20);
 
 			i++;
-			for (; instr[i] != '>'; i++)
+			skipSpace (instr, i);
+
+			if (instr[i] == '/') {
+			    i++;
+			    is_close = TRUE;
+			}
+
+			skipSpace (instr, i);
+
+			// find the tag name piece
+			in_tag = TRUE;
+			tag_len = 0;
+			for (; instr[i] != '>'; i++) {
+				if (in_tag) {
+					if (!g_ascii_isalnum(instr[i]))
+						in_tag = FALSE;
+					else
+						tag_len++;
+				}
 				g_string_append_c (tag, instr[i]);
+			}
 
 			// Unmatched tags
-			if ( (!strncmp (tag->str, "hr", 2) ||
+			if ( !is_close && tag_len == 2 &&
+			     (!strncmp (tag->str, "hr", 2) ||
 			      !strncmp (tag->str, "br", 2)) &&
 			     tag->str[tag->len - 1] != '/')
 				g_string_append_c (tag, '/');
 			
 			// Add quoting for un-quoted attributes
-			for (guint j = 0; j < tag->len; j++) {
+			for (j = 0; j < tag->len; j++) {
 				if (tag->str[j] == '=' && tag->str[j+1] != '"') {
 					g_string_insert_c (tag, j+1, '"');
 					for (j++; !g_ascii_isspace (tag->str[j]) && tag->str[j]; j++);
@@ -114,11 +227,37 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 				}
 			}
 
+			// Is it an open or close ?
+			j = tag->len - 1;
+			while (j > 0 && g_ascii_isspace (tag->str[j])) j--;
+
+			gboolean is_open_close = (tag->str[j] == '/');
+			if (is_open_close)
+				; // ignore it
+			else if (is_close)
+				emit_unclosed_tags_for (outp, tag_queue, tag->str, tag_len);
+			else {
+				TagEntry *entry = tag_entry_new (tag, tag_len);
+
+				entry->tag = tag;
+				entry->tag_len = tag_len;
+
+				if (!check_early_close (outp, tag_queue, entry))
+					g_queue_push_tail (tag_queue, entry);
+				else {
+					entry->tag = NULL;
+					tag_entry_free (entry);
+				}
+			}
+
 			g_string_append_c (outp, '<');
+			if (is_close)
+			    g_string_append_c (outp, '/');
 			g_string_append_len (outp, tag->str, tag->len);
 			g_string_append_c (outp, '>');
-			
-			g_string_free (tag, TRUE);
+
+			if (is_close || is_open_close)
+				g_string_free (tag, TRUE);
 		}
 		
 		else if (instr[i] == '&' &&
@@ -131,6 +270,9 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 		} else // Normal text
 			g_string_append_c (outp, instr[i]);
 	}
+
+	emit_unclosed_tags_for (outp, tag_queue, "", 0);
+	g_queue_free (tag_queue);
 
 	if (addOuterTag)
 		g_string_append (outp, "</body>");
