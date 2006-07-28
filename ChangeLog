@@ -1,3 +1,8 @@
+2006-07-28 Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGDumbTab.cc: setSize() and niceSize() should give
+	good values (though things are not yet shining)
+
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc (defaultSize): fix default sizing logic.

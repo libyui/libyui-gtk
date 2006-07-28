@@ -7,6 +7,8 @@
 
 class YGDumbTab : public YDumbTab, public YGWidget
 {
+	GtkRequisition m_label_req;
+
 	GtkWidget *m_fixed;
 
 public:
@@ -16,6 +18,7 @@ public:
 	{
 		IMPL
 		m_fixed = gtk_fixed_new();
+		m_label_req.width = m_label_req.height = 0;
 
 		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
 		                  G_CALLBACK (changed_tab_cb), this);
@@ -33,11 +36,25 @@ public:
 		string str = YGUtils::mapKBAccel (label_text->value_cstr());
 		GtkWidget *label = gtk_label_new (str.c_str());
 
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) changed_tab_cb, this);
-		gtk_notebook_append_page (GTK_NOTEBOOK (getWidget()), m_fixed, label);
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) changed_tab_cb, this);
+		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
+		g_signal_handlers_block_by_func (notebook, (gpointer) changed_tab_cb, this);
+		gtk_notebook_append_page (notebook, m_fixed, label);
+		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 
 		gtk_widget_show_all (getWidget());
+		gtk_widget_show_all (m_fixed);
+
+		// for setsize and nicesize...
+		int focus_width;
+		gtk_widget_style_get (getWidget(), "focus-line-width", &focus_width, NULL);
+
+		GtkRequisition req;
+		gtk_widget_size_request (label, &req);
+		req.width  += (focus_width + notebook->tab_hborder + 2) * 2 + 1;
+		req.height += (focus_width + notebook->tab_vborder + 2) * 2;
+
+		m_label_req.width += req.width;
+		m_label_req.height = MAX (req.height, m_label_req.height);
 	}
 
 	virtual int getSelectedTabIndex()
@@ -62,28 +79,30 @@ public:
 		IMPL
 		doSetSize (width, height);
 
-		long newChildWidth  = max (0L, width);
-		long newChildHeight = max (0L, height);
+		long childWidth  = max (0L, width);
+		long childHeight = max (0L, height);
 
-		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
-//		int menu_height = notebook->menu ? notebook->menu->allocation.height : 0;
-		// TODO
-		int menu_height = 0;
-
-		if (numChildren() > 0) {
+		if (hasChildren()) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
 			YContainerWidget::child(0)->setSize
-				(newChildWidth - 2*xthickness() - 2*border,
-				 newChildHeight - 2*ythickness() - 2*border - menu_height);
+				(childWidth - 2*xthickness() - 2*border,
+				 childHeight - 2*ythickness() - 2*border - m_label_req.height);
 		}
 	}
 
 	virtual long nicesize (YUIDimension dim)
 	{
 		IMPL
-		long niceSize = numChildren() ? YContainerWidget::child(0)->nicesize (dim) : 0;
+		long niceSize = 0;
+		if (hasChildren())
+			niceSize = YContainerWidget::child(0)->nicesize (dim);
 
-	//	niceSize += GTK_CONTAINER (getWidget())->border_width;
+		if (dim == YD_HORIZ)
+			niceSize = MAX (niceSize, m_label_req.width);
+		else
+			niceSize += m_label_req.height;
+
+		niceSize += GTK_CONTAINER (getWidget())->border_width;
 		niceSize += thickness (dim) * 2;
 
 		return niceSize;
