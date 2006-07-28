@@ -3,8 +3,10 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include <string>
+#include "YGUtils.h"
 #include "YGWidget.h"
+
+#define SLIDER_NICESIZE_IN_CHARS 25
 
 class YGSpinBox : public YGLabeledWidget
 {
@@ -24,7 +26,9 @@ public:
 			m_slider = gtk_hscale_new_with_range (minValue, maxValue, 1);
 			gtk_scale_set_draw_value (GTK_SCALE (m_slider), FALSE);
 			YGLabeledWidget::setBuddy (m_slider);
-			gtk_widget_set_size_request (m_slider, 120, -1);
+			gtk_widget_set_size_request (m_slider,
+				YGUtils::calculateCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS),
+				-1);
 
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_slider);
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);

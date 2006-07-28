@@ -27,6 +27,9 @@ namespace YGUtils
 
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
+
+	/* Returns the average width of the given number of characters in pixels. */
+	int calculateCharsWidth (GtkWidget *widget, int chars_nb);
 };
 
 extern "C" {

@@ -121,6 +121,7 @@ static void ygtk_steps_init (YGtkSteps *steps)
 
 static void ygtk_steps_finalize (GObject *object)
 {
+	ygtk_steps_clear (YGTK_STEPS (object));
 	if (--ref_icons == 0) {
 		g_object_unref (G_OBJECT (done_pixbuf));
 		g_object_unref (G_OBJECT (current_pixbuf));
@@ -138,14 +139,15 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 {
 	YGtkSingleStep *last_step = 0;
 	if (ygtk_steps_total (steps))
-		last_step = g_list_nth_data (steps->steps, ygtk_steps_total (steps) - 1);
+		last_step = g_list_last (steps->steps)->data;
 
 	// Don't add the same step twice -- but emulate like if you did
-	if (last_step && !g_strcasecmp (last_step->text, step_text)) {
+	if (last_step && !g_strcasecmp (step_text,
+	        gtk_label_get_text (GTK_LABEL (last_step->label)))) {
 		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 		step->is_heading = FALSE;
-		step->widget = last_step->widget;
-		step->text = last_step->text;
+		step->label = last_step->label;
+		step->image = last_step->image;
 		step->is_alias = TRUE;
 		steps->steps = g_list_append (steps->steps, step);
 		return ygtk_steps_total (steps) - 1;
@@ -154,23 +156,23 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 	else {
 		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 		step->is_heading = FALSE;
-		step->widget = gtk_hbox_new (FALSE, 0);
-		step->text = g_strdup (step_text);
 		step->is_alias = FALSE;
 		steps->steps = g_list_append (steps->steps, step);
 
-		GtkWidget *image = gtk_image_new();
-		GtkWidget *label = gtk_label_new (step_text);
-		gtk_container_add (GTK_CONTAINER (step->widget), image);
-		gtk_container_add (GTK_CONTAINER (step->widget), label);
-		gtk_box_set_child_packing (GTK_BOX (step->widget), image,
+		GtkWidget *box = gtk_hbox_new (FALSE, 0);
+		step->image = gtk_image_new();
+		step->label = gtk_label_new (step_text);
+
+		gtk_container_add (GTK_CONTAINER (box), step->image);
+		gtk_container_add (GTK_CONTAINER (box), step->label);
+		gtk_box_set_child_packing (GTK_BOX (box), step->image,
 		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (step->widget), label,
+		gtk_box_set_child_packing (GTK_BOX (box), step->label,
 		                           FALSE, FALSE, 5, GTK_PACK_START);
 
 		GtkWidget *alignment = gtk_alignment_new (0, 0.5, 0, 0);
 		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 2, 2, 20, 0);
-		gtk_container_add (GTK_CONTAINER (alignment), step->widget);
+		gtk_container_add (GTK_CONTAINER (alignment), box);
 
 		gtk_container_add (GTK_CONTAINER (steps), alignment);
 		gtk_widget_show_all (alignment);
@@ -185,23 +187,23 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
 	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 	step->is_heading = TRUE;
-	step->widget = gtk_label_new (heading);
-	step->text = g_strdup (heading);
+	step->label = gtk_label_new (heading);
+	step->image = NULL;
 	step->is_alias = FALSE;
 	steps->steps = g_list_append (steps->steps, step);
 
-	gtk_misc_set_alignment (GTK_MISC (step->widget), 0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (step->widget), 0, 6);
+	gtk_misc_set_alignment (GTK_MISC (step->label), 0, 0.5);
+	gtk_misc_set_padding (GTK_MISC (step->label), 0, 6);
 
-	gtk_container_add (GTK_CONTAINER (steps), step->widget);
-	gtk_widget_show (step->widget);
+	gtk_container_add (GTK_CONTAINER (steps), step->label);
+	gtk_widget_show (step->label);
 
 	// set a heading font
 	PangoFontDescription *font = pango_font_description_new();
 	pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-	int size = pango_font_description_get_size (step->widget->style->font_desc);
+	int size = pango_font_description_get_size (step->label->style->font_desc);
 	pango_font_description_set_size   (font, size * PANGO_SCALE_LARGE);
-	gtk_widget_modify_font (step->widget, font);
+	gtk_widget_modify_font (step->label, font);
 	pango_font_description_free (font);
 }
 
@@ -231,16 +233,14 @@ guint ygtk_steps_total (YGtkSteps *steps)
 
 void ygtk_steps_clear (YGtkSteps *steps)
 {
-	GList* it;
-	for (it = g_list_first (steps->steps); it; it = it->next) {
-		YGtkSingleStep *step = it->data;
-		if (!step->is_alias) {
-			g_free (step->text);
-			gtk_widget_destroy (step->widget);
-			g_object_unref (G_OBJECT (step->widget));
-		}
-		g_free (step);
-	}
+	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
+	GList *it;
+	for (it = g_list_first (children); it; it = it->next)
+		gtk_container_remove (GTK_CONTAINER (steps), GTK_WIDGET (it->data));
+	g_list_free (children);
+
+	for (it = g_list_first (steps->steps); it; it = it->next)
+		g_free ((YGtkSingleStep *) it->data);
 
 	g_list_free (steps->steps);
 	steps->steps = NULL;
@@ -254,20 +254,15 @@ static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb)
 	if (step->is_alias && step_nb > steps->current_step)
 		return;
 
-	GtkWidget *image, *label;
-	GList *list = gtk_container_get_children (GTK_CONTAINER (step->widget));
-	image = g_list_nth_data (list, 0);
-	label = g_list_nth_data (list, 1);
-	g_list_free (list);
-
 	// update step label -- set bold if current step
 	PangoFontDescription *font = pango_font_description_new();
 	if (step_nb == steps->current_step)
 		pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-	gtk_widget_modify_font (label, font);
+	gtk_widget_modify_font (step->label, font);
 	pango_font_description_free (font);
 
 	// update step icon
+	GtkWidget *image = step->image;
 	if (step_nb < steps->current_step)
 		gtk_image_set_from_pixbuf (GTK_IMAGE (image), done_pixbuf);
 	else if (step_nb == steps->current_step)

@@ -43,14 +43,10 @@ void YGUtils::filterText (GtkEditable *editable, int pos, int length,
 {
 	gchar *text = gtk_editable_get_chars (editable, pos, pos + length);
 	string str = filterText (text, length, valid_chars);
-printf ("inserted text: %s\n", text);
-printf ("pos: %d - length: %d\n", pos, length);
-printf ("cursor pos: %d\n", gtk_editable_get_position (editable));
 	if (length == -1)
 		length = strlen (text);
 
 	if (str != text) {  // invalid text
-printf ("to be replaced by: %s\n", str.c_str());
 		// delete current text
 		gtk_editable_delete_text (editable, pos, length);
 		// insert correct text
@@ -140,4 +136,17 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 		g_string_append (outp, "</body>");
 
 	return g_string_free (outp, FALSE);
+}
+
+int YGUtils::calculateCharsWidth (GtkWidget *widget, int chars_nb)
+{
+	PangoContext *context = gtk_widget_get_pango_context (widget);
+	PangoFontMetrics *metrics = pango_context_get_metrics (context,
+		widget->style->font_desc, pango_context_get_language (context));
+
+	int char_width = pango_font_metrics_get_approximate_char_width (metrics);
+	char_width /= PANGO_SCALE;
+	pango_font_metrics_unref (metrics);
+
+	return char_width * chars_nb;
 }

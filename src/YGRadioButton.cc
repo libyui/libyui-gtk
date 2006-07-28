@@ -218,8 +218,7 @@ public:
 	{
 		IMPL
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (box);
-		if (gtk_toggle_button_get_inconsistent (button))
-		{
+		if (gtk_toggle_button_get_inconsistent (button)) {
 			gtk_toggle_button_set_inconsistent (button, false);
 			pThis->setValue (YCPBoolean (true));
 		}

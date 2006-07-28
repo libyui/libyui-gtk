@@ -65,15 +65,16 @@ public:
 		long newChildWidth  = max (0L, width);
 		long newChildHeight = max (0L, height);
 
-		GtkRequisition tabs_menu_req;
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
-		gtk_widget_size_request (notebook->menu, &tabs_menu_req);
+//		int menu_height = notebook->menu ? notebook->menu->allocation.height : 0;
+		// TODO
+		int menu_height = 0;
 
 		if (numChildren() > 0) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
 			YContainerWidget::child(0)->setSize
 				(newChildWidth - 2*xthickness() - 2*border,
-				 newChildHeight - 2*ythickness() - 2*border - tabs_menu_req.height);
+				 newChildHeight - 2*ythickness() - 2*border - menu_height);
 		}
 	}
 

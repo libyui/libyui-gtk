@@ -136,20 +136,8 @@ public:
 		gtk_box_set_child_packing (GTK_BOX (m_help_vbox), m_release_notes_button,
 		                           FALSE, FALSE, 0, GTK_PACK_START);
 
-		{
-			// calculate a nice size for the help box
-			PangoContext *context = gtk_widget_get_pango_context (m_help_widget);
-			PangoFontMetrics *metrics = pango_context_get_metrics (context,
-				m_help_widget->style->font_desc, pango_context_get_language (context));
-
-			int char_width = pango_font_metrics_get_approximate_char_width (metrics);
-			char_width /= PANGO_SCALE;
-printf ("digit_width: %d\n", char_width);
-			pango_font_metrics_unref (metrics);
-
-			int help_box_width = char_width * HELP_BOX_CHARS_WIDTH;
-			gtk_widget_set_size_request (m_help_vbox, help_box_width, -1);
-		}
+		gtk_widget_set_size_request (m_help_vbox,
+			YGUtils::calculateCharsWidth (m_help_widget, HELP_BOX_CHARS_WIDTH), -1);
 
 		//** Steps/tree pane
 		bool steps_enabled = opt.stepsEnabled.value();
