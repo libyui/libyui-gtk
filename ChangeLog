@@ -1,5 +1,7 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* TODO: prune tons of cruft.
+
 	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst):
 	fix br handling to to clobber 'b' tags.
 	

@@ -6,81 +6,7 @@
 
 ** beef up test.sh to improve layout: add -geometry argument ?
 
-** /usr/share/YaST2/clients/bootloader.ycp
-    + works quite nicely...
-    + needs scroll bars
-
-** RichText
-    + needs scroll-bar / adjustments ...
-
-** /usr/share/YaST2/clients/timezone.ycp
-
-
-+ createImage:
-    + 'tiled' ?
-
-** Layout issue(s)
-
-    + The best-guess solution here is to understand yast2-qt better
-      and (perhaps) abandon the funky new YGWIDGET_NEW_LAYOUT
-    + This means we must clobber the resizing mess:
-	+ that gets spawned from 'gtk_fixed' when anything is moved.
-	+ with our own GtkFixed sub-class -perhaps- we can simply not
-	  trigger a resize on movement.
-	+ OTOH - we do want to re-trigger a size_allocate to
-	  actually move the GtkFixed children
-
-    + In short more analysis of Gtk / Qt sizing & YaST2 sizing needed
-	+ & in conclusion - ~none of our container widgets should be
-	  using Gtk+ size_requests - but native implemented ones.
-
-* Yast2 sizing:	
-    + setSize - recurses down from the 'top' to the bottom widgets
-	+ for contained widgets - it triggers pairs of:
-	    + setSize, moveChild calls.
-
-* Gtk sizing:
-    + gtksizegroup.c:
-	+ code always emits the gtk+ size_request signal
-	  [ which we should prolly emit ourselves incidentally ]
-	+ GtkWidgetAuxInfo's clobbered 'width' / 'height' that
-	  override the requisition information
-
-+ Frame ...
-    + src/Frame2.ycp ...
-    + The problem is:
-	+ the Gtk+ containment hierarcy:
-	    + trying to do our own size allocate / etc.
-		+ our own 'size request' ? ...
-	    + is it going to work ?
-	    + do we need to derive from & clobber all widgets'
-	      'size_allocate' ?
-	    + [ and just use our own (evil) versions ]
-
-	+ Since Yast2 has it's own ideas:
-	    + perhaps 'setSize' should do just that:
-		+ hook to 'size_allocate'
-	+ use size requests for calculating other
-	  things, not this (?)
-
-++ New layout logic:
-    + re-factor to use a single top-level 'GtkFixed' thing.
-    + [ !? layering ? - flicker & child windows etc.
-        : no-window widgets fine but [events?] ... ]
-    + setSize - comes down from the 'top' to the bottom widgets
-	+ for contained widgets - it triggers pairs of:
-	    + setSize, moveChild calls.
-
-
-TODO:
-	+ YGDialog.cc: listen for configure_event
-	+ sizing - shrinking windows ...
-	+ layout - spacing
-	+ graph/chart - [Ricardo]
-	+ YGRadioButton -> YGToggle ?
-	+ radio-button bug:
-		+ click button twice - shouldn't toggle.
-
+* layout - spacing of widgets needs improving
 
 * ColoredLabel4.ycp test
 	wierd change of size when moving sliders
@@ -136,3 +62,19 @@ TODO:
 
 * Simple dialogs API
 	So that we could display native dialogs.
+
+= Yast-GTK Docs =
+
+== Layout ==
+
+* Yast2 sizing:	
+    + setSize - recurses down from the 'top' to the bottom widgets
+	+ for contained widgets - it triggers pairs of:
+	    + setSize, moveChild calls.
+
+* Gtk sizing:
+    + gtksizegroup.c:
+	+ code always emits the gtk+ size_request signal
+	  [ which we should prolly emit ourselves incidentally ]
+	+ GtkWidgetAuxInfo's clobbered 'width' / 'height' that
+	  override the requisition information

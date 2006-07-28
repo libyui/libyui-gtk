@@ -126,6 +126,12 @@ YGWidget::doMoveChild (YWidget *child, long x, long y)
 		gtk_fixed_move (fixed, widget, x, y);
 }
 
+// The slightly non-obvious thing here, is that by emitting the
+// size_request signal ourselves, we can force the widget to re-
+// calculate it's preferred size - without getting clobbered by
+// the (now incorrect) 'gtk_widget_set_size_request' data on the
+
+// widget.
 long
 YGWidget::getNiceSize (YUIDimension dim)
 {
