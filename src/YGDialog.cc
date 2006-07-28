@@ -23,8 +23,6 @@ public:
 		m_userSize.width = -1;
 		m_userSize.height = -1;
 
-		g_object_set (G_OBJECT (getWidget()), NULL);
-
 		m_fixed = gtk_fixed_new();
 		gtk_widget_show (m_fixed);
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);
@@ -119,11 +117,18 @@ public:
 	                                    GdkEventConfigure *event,
 	                                    YGDialog  *pThis)
 	{
-		fprintf (stderr, "configure event %d, %d\n",
-		         event->width, event->height);
-		pThis->setSize (event->width, event->height);
-		pThis->m_userSize.width = event->width;
-		pThis->m_userSize.height = event->height;
+		if (event->width != widget->allocation.width ||
+		    event->height != widget->allocation.height) {
+
+			fprintf (stderr, "configure event %d, %d (%d %d)\n",
+				 event->width, event->height,
+				 widget->allocation.width,
+				 widget->allocation.height);
+
+			pThis->setSize (event->width, event->height);
+			pThis->m_userSize.width = event->width;
+			pThis->m_userSize.height = event->height;
+		}
 
 		return FALSE;
 	}

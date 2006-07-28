@@ -1,5 +1,9 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGDialog.cc ::YGDialog: remove bogus
+	g_object_set causing warning.
+	(configure_event_cb): don't setSize if we just moved.
+
 	* TODO: prune tons of cruft.
 
 	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst):
