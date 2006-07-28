@@ -9,6 +9,13 @@
 	more than one field (from Baruch Even).
 	* src/ygtkspinbox.c/h: replaced by above.
 
+	* src/YGWizard.cc: added pane (there doesn't seem to be a
+	way other than connecting its children to size-allocate to
+	get pane movements... So this currently does unnecessary work
+	on window resizing which is undesirable cause its slow).
+	* src/YGWizard.cc: set help box by number of chars in a line,
+	not pixels, as suggested by Michael.
+
 2006-07-27  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUtils.cc (ygutils_convert_to_xhmlt_and_subst): 

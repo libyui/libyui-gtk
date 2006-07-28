@@ -12,8 +12,8 @@
 
 #define CONTENT_PADDING 15
 #define TITLE_HEIGHT   45
-#define HELP_BOX_WIDTH 150
 #define MAIN_BORDER 8
+#define HELP_BOX_CHARS_WIDTH 25
 
 class YGWizard : public YWizard, public YGWidget
 {
@@ -35,6 +35,7 @@ class YGWizard : public YWizard, public YGWidget
 	/* Layouts that we need for size_request. */
 	GtkWidget *m_button_box, *m_pane_box, *m_help_vbox, *m_title_hbox,
 	          *m_main_hbox;
+	GtkWidget *m_help_program_pane;
 
 	/* Miscellaneous */
 	bool m_verboseCommands;
@@ -53,7 +54,7 @@ public:
 		m_verboseCommands = false;
 
 		// Layout widgets
-		GtkWidget *help_program_hbox, *main_vbox;
+		GtkWidget *main_vbox;
 
 		//** Menu bar
 		m_menu = gtk_menu_bar_new();
@@ -122,19 +123,33 @@ public:
 		m_help_vbox = gtk_vbox_new (FALSE, 0);  // shared with "Release Notes" button
 
 		m_help_widget = ygtk_richtext_new();
+		g_signal_connect (G_OBJECT (m_help_widget), "realize",
+		                  G_CALLBACK (set_help_background_cb), this);
+
 		gtk_container_add (GTK_CONTAINER (help_scrolled_window), m_help_widget);
 		gtk_container_add (GTK_CONTAINER (help_frame), help_scrolled_window);
-		ygtk_richtext_set_background (YGTK_RICHTEXT (m_help_widget),
-			"/usr/share/YaST2/theme/SuSELinux/wizard/help-background.png");
-		// FIXME: we need to set some THEMEDIR on the configure process to avoid
-		// absolute paths
+
 		m_release_notes_button = gtk_button_new();
 
 		gtk_container_add (GTK_CONTAINER (m_help_vbox), help_frame);
 		gtk_container_add (GTK_CONTAINER (m_help_vbox), m_release_notes_button);
 		gtk_box_set_child_packing (GTK_BOX (m_help_vbox), m_release_notes_button,
 		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_widget_set_size_request (m_help_vbox, HELP_BOX_WIDTH, -1);
+
+		{
+			// calculate a nice size for the help box
+			PangoContext *context = gtk_widget_get_pango_context (m_help_widget);
+			PangoFontMetrics *metrics = pango_context_get_metrics (context,
+				m_help_widget->style->font_desc, pango_context_get_language (context));
+
+			int char_width = pango_font_metrics_get_approximate_char_width (metrics);
+			char_width /= PANGO_SCALE;
+printf ("digit_width: %d\n", char_width);
+			pango_font_metrics_unref (metrics);
+
+			int help_box_width = char_width * HELP_BOX_CHARS_WIDTH;
+			gtk_widget_set_size_request (m_help_vbox, help_box_width, -1);
+		}
 
 		//** Steps/tree pane
 		bool steps_enabled = opt.stepsEnabled.value();
@@ -218,17 +233,21 @@ public:
 		gtk_container_set_border_width (GTK_CONTAINER (m_button_box), 10);
 
 		//** Setting general layouts
-		help_program_hbox = gtk_hbox_new (FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (help_program_hbox), m_help_vbox);
-		gtk_container_add (GTK_CONTAINER (help_program_hbox), m_fixed);
-		gtk_box_set_child_packing (GTK_BOX (help_program_hbox), m_help_vbox,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_container_set_border_width (GTK_CONTAINER (help_program_hbox),
+		m_help_program_pane = gtk_hpaned_new();
+		gtk_paned_pack1 (GTK_PANED (m_help_program_pane), m_help_vbox, FALSE, TRUE);
+		gtk_paned_pack2 (GTK_PANED (m_help_program_pane), m_fixed, TRUE, TRUE);
+		gtk_container_set_border_width (GTK_CONTAINER (m_help_program_pane),
 		                                CONTENT_PADDING);
+
+//		g_signal_connect (G_OBJECT (m_help_program_pane), "move-handle",
+//		                  G_CALLBACK (help_pane_moved_cb), this);
+
+		g_signal_connect (G_OBJECT (m_help_vbox), "size-allocate",
+		                  G_CALLBACK (program_pane_resized_cb), this);
 
 		main_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (main_vbox), m_title_hbox);
-		gtk_container_add (GTK_CONTAINER (main_vbox), help_program_hbox);
+		gtk_container_add (GTK_CONTAINER (main_vbox), m_help_program_pane);
 		gtk_container_add (GTK_CONTAINER (main_vbox), m_button_box);
 
 		m_main_hbox = gtk_hbox_new (FALSE, 0);
@@ -624,6 +643,23 @@ printf("ygwizard nicesize requested\n");
 	}
 
 	// callbacks
+	static void program_pane_resized_cb (GtkWidget *widget, GtkAllocation *allocation,
+	                                     YGWizard *pThis)
+	{
+		// When the user moves the GtkPaned, we need to tell our children
+		// a new size.
+		allocation = &pThis->m_fixed->allocation;
+		pThis->child (0)->setSize (allocation->width, allocation->height);
+	}
+
+	static void set_help_background_cb (GtkWidget *widget, YGWizard *pThis)
+	{
+		// FIXME: we need to set some THEMEDIR on the configure process to avoid
+		// absolute paths
+		ygtk_richtext_set_background (YGTK_RICHTEXT (widget),
+			"/usr/share/YaST2/theme/SuSELinux/wizard/help-background.png");
+	}
+
 	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
 	                                 YGWizard *pThis)
 	{
@@ -660,7 +696,6 @@ printf("ygwizard nicesize requested\n");
 
 		return TRUE;
 	}
-
 
 	static void button_clicked_cb (GtkButton *button, YGWizard *pThis)
 	{
