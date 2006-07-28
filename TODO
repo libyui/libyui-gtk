@@ -8,6 +8,8 @@
 
 * layout - spacing of widgets needs improving
 
+* Import parts of gtkhtml - disable printing, use it for rendering
+
 * ColoredLabel4.ycp test
 	wierd change of size when moving sliders
 	investigate

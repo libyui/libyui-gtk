@@ -172,7 +172,7 @@ if test -n "$x_libraries"; then
 	LDFLAGS="$LDFLAGS -L$x_libraries"
 fi
 
-PKG_CHECK_MODULES( GTK, gtk+-2.0 )
+PKG_CHECK_MODULES( GTK, gtk+-2.0 glib-2.0 gthread-2.0 gobject-2.0 )
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 

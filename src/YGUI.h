@@ -229,6 +229,11 @@ public:
     bool m_fullscreen;
     bool m_no_border;
     GtkRequisition m_default_size;
+    // for delayed gtk+ init in the right thread
+    bool   m_done_init;
+    int    m_argc;
+    char **m_argv;
+    void  checkInit();
  public:
     // Helpers for internal use [ visibility hidden ]
     long defaultSize(YUIDimension dim);

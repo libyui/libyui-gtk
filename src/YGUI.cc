@@ -3,6 +3,7 @@
 #include <YEvent.h>
 #include <YGUI.h>
 #include <YGWidget.h>
+#include <glib/gthread.h>
 
 YGUI::YGUI (int argc, char ** argv,
 	    bool with_threads,
@@ -10,16 +11,26 @@ YGUI::YGUI (int argc, char ** argv,
 	YUI (with_threads),
 	m_have_wm (true),
 	m_fullscreen (false),
-	m_no_border (false)
+	m_no_border (false),
+	m_done_init (false),
+	m_argc (0),
+	m_argv (NULL)
 {
 	IMPL;
-	gtk_init (&argc, &argv);
+	GThread *gtk_main_thread = NULL;
+
+	m_argc = argc;
+	m_argv = g_new0 (char *, argc);
+	memcpy (m_argv, argv, sizeof (char *) * argc);
+	if (!with_threads)
+		checkInit();
+
 	fprintf (stderr, "I'm initialized '%s' - come & get me !\n",
 		with_threads ? "with threads !" : "no threads");
 
-	for (int i = 0; i < argc; i++)
+	for (int i = 0; i < m_argc; i++)
 	{
-		const char *argp = argv[i];
+		const char *argp = m_argv[i];
 		if (!argp) continue;
 		if (argp[0] != '-')
 		{
@@ -63,7 +74,11 @@ YGUI::YGUI (int argc, char ** argv,
 	topmostConstructorHasFinished();
 }
 
-YGUI::~YGUI() IMPL;
+YGUI::~YGUI()
+{
+	LOC;
+	g_free (m_argv);
+}
 
 static gboolean
 ycp_wakeup_fn (GIOChannel   *source,
@@ -74,10 +89,22 @@ ycp_wakeup_fn (GIOChannel   *source,
 	return TRUE;
 }
 
+void YGUI::checkInit()
+{
+	if (!m_done_init)
+		gtk_init (&m_argc, &m_argv);
+	m_done_init = TRUE;
+}
+
 void
 YGUI::idleLoop (int fd_ycp)
 {
 	IMPL;
+
+	// The rational for this is that we need somewhere to run
+	// the magic 'main' thread, that can process thread unsafe
+	// incoming CORBA messages for us
+	checkInit();
 
 	GIOChannel *wakeup;
 
@@ -87,9 +114,13 @@ YGUI::idleLoop (int fd_ycp)
 
 	int woken = FALSE;
 	guint watch_tag = g_io_add_watch (wakeup, (GIOCondition)(G_IO_IN | G_IO_PRI),
-										ycp_wakeup_fn, &woken);
+					  ycp_wakeup_fn, &woken);
+#ifdef HAVE_A11Y
+	while (!woken); // urgh...
+#else
 	while (!woken)
 		g_main_iteration (TRUE);
+#endif
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);

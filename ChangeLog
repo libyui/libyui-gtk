@@ -1,3 +1,9 @@
+2006-07-28  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc (idleLoop, YGUI, checkInit): do gtk_init
+	idly, inside the thread in which we run the gtk+
+	mainloop to avoid CORBA confusion with a11y.
+
 2006-07-28 Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGDumbTab.cc: setSize() and niceSize() should give
