@@ -115,12 +115,8 @@ YGUI::idleLoop (int fd_ycp)
 	int woken = FALSE;
 	guint watch_tag = g_io_add_watch (wakeup, (GIOCondition)(G_IO_IN | G_IO_PRI),
 					  ycp_wakeup_fn, &woken);
-#ifdef HAVE_A11Y
-	while (!woken); // urgh...
-#else
 	while (!woken)
 		g_main_iteration (TRUE);
-#endif
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
