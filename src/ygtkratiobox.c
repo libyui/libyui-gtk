@@ -64,10 +64,6 @@ static void ygtk_ratio_box_init (YGtkRatioBox *box)
 {
 	GTK_WIDGET_SET_FLAGS (box, GTK_NO_WINDOW);
 	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (box), FALSE);
-
-	box->children = NULL;
-	box->spacing = 0;
-	box->ratios_sum = 0;
 }
 
 static GType ygtk_ratio_box_child_type (GtkContainer* container)
@@ -200,7 +196,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 	gfloat pixels_per_percent = 0;
 
 	GList* child;
-	for (child = g_list_first (box->children); child; child = child->next) {
+	for (child = box->children; child; child = child->next) {
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
 		if (GTK_WIDGET_VISIBLE (box_child->widget)) {
 			GtkRequisition widget_requisition;
@@ -259,7 +255,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 	box_length -= GTK_CONTAINER (box)->border_width * 2;
 
-	for (child = g_list_first (box->children); child; child = child->next) {
+	for (child = box->children; child; child = child->next) {
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
 		if (box_child->ratio == 0) {
 			GtkRequisition requisition;
@@ -274,7 +270,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 	}
 
 	gfloat child_pos = 0;
-	for (child = g_list_first (box->children); child; child = child->next) {
+	for (child = box->children; child; child = child->next) {
 		GtkAllocation child_allocation;
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
 
@@ -384,7 +380,6 @@ GtkWidget* ygtk_ratio_hbox_new (gint spacing)
 	box->spacing = spacing;
 	return GTK_WIDGET (box);
 }
-
 
 static void ygtk_ratio_hbox_size_request (GtkWidget      *widget,
                                          GtkRequisition *requisition)

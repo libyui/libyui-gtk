@@ -235,11 +235,11 @@ void ygtk_steps_clear (YGtkSteps *steps)
 {
 	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	GList *it;
-	for (it = g_list_first (children); it; it = it->next)
+	for (it = children; it; it = it->next)
 		gtk_container_remove (GTK_CONTAINER (steps), GTK_WIDGET (it->data));
 	g_list_free (children);
 
-	for (it = g_list_first (steps->steps); it; it = it->next)
+	for (it = steps->steps; it; it = it->next)
 		g_free ((YGtkSingleStep *) it->data);
 
 	g_list_free (steps->steps);

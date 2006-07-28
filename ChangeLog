@@ -1,5 +1,12 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGWizard.cc (YGWizard): use gtk_box_pack_start
+	and fix a number of layout issues.
+
+	* src/*.c: remove all g_list_first macros: implicit.
+
+	* src/ygtkratiobox.c (ygtk_ratio_box_init): clean.
+
 	* src/Makefile.am (AM_CXXFLAGS): set THEMEDIR.
 	* src/YGWizard.cc (class YGWizard): use THEMEDIR
 

@@ -82,12 +82,8 @@ public:
 		gtk_widget_modify_font (m_title_label, font);
 		pango_font_description_free (font);
 
-		gtk_container_add (GTK_CONTAINER (m_title_hbox), m_title_label);
-		gtk_container_add (GTK_CONTAINER (m_title_hbox), m_title_image);
-		gtk_box_set_child_packing (GTK_BOX (m_title_hbox), m_title_label,
-		                           FALSE, FALSE, 4, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (m_title_hbox), m_title_image,
-		                           FALSE, FALSE, 4, GTK_PACK_END);
+		gtk_box_pack_start (GTK_BOX (m_title_hbox), m_title_label, FALSE, FALSE, 4);
+		gtk_box_pack_end (GTK_BOX (m_title_hbox), m_title_image, FALSE, FALSE, 4);
 
 		//** Application area
 		m_fixed = gtk_fixed_new();
@@ -134,9 +130,8 @@ public:
 		m_release_notes_button = gtk_button_new();
 
 		gtk_container_add (GTK_CONTAINER (m_help_vbox), help_frame);
-		gtk_container_add (GTK_CONTAINER (m_help_vbox), m_release_notes_button);
-		gtk_box_set_child_packing (GTK_BOX (m_help_vbox), m_release_notes_button,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
+		gtk_box_pack_start (GTK_BOX (m_help_vbox), m_release_notes_button,
+				    FALSE, FALSE, 0);
 
 		gtk_widget_set_size_request (m_help_vbox,
 			YGUtils::calculateCharsWidth (m_help_widget, HELP_BOX_CHARS_WIDTH), -1);
@@ -236,22 +231,19 @@ public:
 //		                  G_CALLBACK (program_pane_resized_cb), this);
 
 		main_vbox = gtk_vbox_new (FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (main_vbox), m_title_hbox);
-		gtk_container_add (GTK_CONTAINER (main_vbox), m_help_program_pane);
-		gtk_container_add (GTK_CONTAINER (main_vbox), m_button_box);
+		gtk_box_pack_start (GTK_BOX (main_vbox), m_title_hbox, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (main_vbox), m_help_program_pane, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (main_vbox), m_button_box, FALSE, TRUE, 0);
 
 		m_main_hbox = gtk_hbox_new (FALSE, 0);
-		if (m_pane_box) {
-			gtk_container_add (GTK_CONTAINER (m_main_hbox), m_pane_box);
-			gtk_box_set_child_packing (GTK_BOX (m_main_hbox), m_pane_box,
-			                           FALSE, FALSE, 0, GTK_PACK_START);
-		}
+		if (m_pane_box)
+			gtk_box_pack_start (GTK_BOX (m_main_hbox), m_pane_box,
+					    FALSE, FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (m_main_hbox), main_vbox);
 
 		if (m_pane_box)
 			gtk_container_set_border_width (GTK_CONTAINER (m_pane_box), MAIN_BORDER);
 		gtk_container_set_border_width (GTK_CONTAINER (main_vbox), MAIN_BORDER);
-
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_main_hbox);
 
 		//** Lights on!
