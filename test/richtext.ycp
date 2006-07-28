@@ -19,6 +19,7 @@
 	UI::OpenDialog (
 		`VBox (
 			`RichText (`id (`rtext), texts[0]:nil),
+			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", texts[0]:nil),
 			`Slider (`id (`slider), `opt(`notify), "Test text case:", 0, size (texts)-1, 0),
 			`PushButton (`id (`close), "&Close")
 		)
@@ -32,7 +33,14 @@
 		if (ret == `slider)
 		{
 			integer cur_text = (integer) UI::QueryWidget(`id(`slider), `Value );
-			UI::ChangeWidget (`id (`rtext), `Value, texts[cur_text]:nil);
+			UI::ChangeWidget (`id (`source), `Value, texts[cur_text]:nil);
+			UI::ChangeWidget (`id (`rtext),  `Value, texts[cur_text]:nil);
+		}
+
+		if (ret == `source)
+		{
+			UI::ChangeWidget (`id (`rtext), `Value,
+			                  (string) UI::QueryWidget(`id(`source), `Value));
 		}
 
 	} until (ret == `close || ret == `cancel);
