@@ -2,7 +2,10 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
+#include "YGUtils.h"
 #include "YFrame.h"
+
+#define CHILDREN_IDENTATION 15
 
 class YGFrame : public YFrame, public YGWidget
 {
@@ -13,10 +16,11 @@ public:
 		 const YCPString & label) :
 		YFrame (opt, label),
 		YGWidget (this, parent, true,
-			  GTK_TYPE_FRAME, NULL)
+		          GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;
+
 		gtk_container_add (GTK_CONTAINER (getWidget()), gtk_fixed_new());
 		gtk_widget_show_all (getWidget());
 		setLabel (label);
@@ -27,8 +31,25 @@ public:
 	// YFrame
 	virtual void setLabel (const YCPString &label)
 	{
-		gtk_frame_set_label (GTK_FRAME (getWidget()), label->value_cstr());
+		string str = "<b>" + label->value() + "</b>";
+		// elminate '&' that some YCP applications seem to set and have
+		// no use for a GtkFrame -- they actually interfer with the markup
+		string::size_type i = 0;
+		while ((i = str.find ("&", i)) != string::npos)
+			str.erase (i, 1);
+
+		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
 		YFrame::setLabel (label);
+
+		GtkWidget *frame_label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
+		gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
+	}
+
+	// ident children a bit
+	virtual void addChild (YWidget *child)
+	{
+		YContainerWidget::addChild (child);
+		doMoveChild (child, CHILDREN_IDENTATION, 0);
 	}
 
 	// YGWidget

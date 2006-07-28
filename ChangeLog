@@ -1,3 +1,9 @@
+2006-07-28 Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGFrame.cc: follow Gnome HIG (no border, bold label
+	and some children identation).
+
+
 2006-07-27 Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/ygtkmenubutton.c/h: added this button widget that
