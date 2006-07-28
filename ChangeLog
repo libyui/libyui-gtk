@@ -1,5 +1,7 @@
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGUI.cc (defaultSize): fix default sizing logic.
+
 	* src/YGWizard.cc (YGWizard): use gtk_box_pack_start
 	and fix a number of layout issues.
 

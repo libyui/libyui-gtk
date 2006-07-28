@@ -334,26 +334,28 @@ long YGUI::defaultSize (YUIDimension dim)
 {
 	// FIXME: check for panel etc. bits available vs. full screen size
 	GtkRequisition availableSize = { getDisplayWidth(), getDisplayHeight() };
+
+	fprintf (stderr, "YGUI::defaultSize %d %d\n", m_fullscreen, haveWM());
+
 	if (m_fullscreen || !haveWM())
 		return dim == YD_HORIZ ? getDisplayWidth() : getDisplayHeight();
-	if (haveWM()) {
-		fprintf (stderr, "need geometry setup ...\n");
-		if (m_default_size.width  < 800 ||
-		    m_default_size.height < 600)
-		{
-			if (getDisplayWidth() >= 1024 &&
-			    getDisplayHeight() >= 768)
-			{ // 70% of screen size
-				m_default_size.width = MAX ((int)(getDisplayWidth() * 0.7), 800);
-				m_default_size.height = MAX ((int)(getDisplayHeight() * 0.7), 600);
-			}
-		}
-		else
-			m_default_size = availableSize;
-	}
 
-	if (dim == YD_HORIZ)
-		return haveWM() ? m_default_size.width : getDisplayWidth();
-	else
-		return haveWM() ? m_default_size.height : getDisplayHeight();
+	// FIXME: should parse --geometry options ?
+	m_default_size.width = -1;
+	m_default_size.height = -1;
+
+	if (m_default_size.width  < 800 ||
+	    m_default_size.height < 600) {
+		if (getDisplayWidth() >= 1024 &&
+		    getDisplayHeight() >= 768) { // 70% of screen size
+			fprintf (stderr, "YGUI::defaultSize - set 70%%\n");
+			m_default_size.width = MAX ((int)(availableSize.width * 0.7), 800);
+			m_default_size.height = MAX ((int)(availableSize.height * 0.7), 600);
+		}
+	} else {
+		fprintf (stderr, "YGUI::defaultSize - has sane m_default_size already\n");
+		m_default_size = availableSize;
+	}
+	
+	return (dim == YD_HORIZ) ? m_default_size.width : m_default_size.height;
 }

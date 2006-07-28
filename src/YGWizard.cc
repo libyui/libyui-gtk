@@ -599,13 +599,18 @@ printf ("next label: %s\n", str.c_str());
 	virtual long nicesize (YUIDimension dim)
 	{
 		IMPL
-		return child (0)->nicesize(dim) + size_request (dim);
+		long ret = child (0)->nicesize(dim) + size_request (dim);
+		fprintf (stderr, "YGWizard::nicesize %s %ld\n",
+			 dim == YD_HORIZ ? "width" : "height", ret);
+		return ret;
 	}
 
 	virtual void setSize (long width, long height)
 	{
 		IMPL
 		doSetSize (width, height);
+
+		fprintf (stderr, "YGWizard:: setSize %ld, %ld\n", width, height);
 
 		width  -= size_request (YD_HORIZ);
 		height -= size_request (YD_VERT);

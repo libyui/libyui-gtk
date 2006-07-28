@@ -32,6 +32,7 @@ public:
 		                      !opt.hasDefaultSize.value());
 		gtk_window_set_title (GTK_WINDOW (m_widget),
 		                      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
+
 	// FIXME: set default size to getDefaultSize ?
 	// gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
 
@@ -68,16 +69,23 @@ public:
 	{
 		IMPL // FIXME - hack.
 		long nice;
-		fprintf (stderr, "YGDialog::nicesize\n");
 		if (hasDefaultSize())
 		{
-			if  (userResized())
+			fprintf (stderr, "YGDialog:: has default size\n");
+			if (userResized()) {
+				fprintf (stderr, "YGDialog:: has user size\n");
 				nice = dim == YD_HORIZ ? m_userSize.width : m_userSize.height;
-			else
+
+			} else {
+				fprintf (stderr, "YGDialog:: get default size\n");
 				nice = YGUI::ui()->defaultSize (dim);
-		}
-		else
+			}
+		} else {
+			fprintf (stderr, "YGDialog:: no default size\n");
 			nice = YDialog::nicesize (dim);
+		}
+		fprintf (stderr, "YGDialog::nicesize %s = %ld\n",
+			 dim == YD_HORIZ ? "width" : "height", nice);
 		return nice;
 	}
 
