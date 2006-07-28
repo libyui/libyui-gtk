@@ -3,6 +3,7 @@
 	* src/YGFrame.cc: follow Gnome HIG (no border, bold label
 	and some children identation).
 
+	* src/YGWizard.cc: check for pane movements correctly.
 
 2006-07-27 Ricardo Cruz    <rpcmruz@clix.pt>
 

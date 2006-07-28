@@ -227,11 +227,11 @@ public:
 		gtk_container_set_border_width (GTK_CONTAINER (m_help_program_pane),
 		                                CONTENT_PADDING);
 
-//		g_signal_connect (G_OBJECT (m_help_program_pane), "move-handle",
-//		                  G_CALLBACK (help_pane_moved_cb), this);
+		g_signal_connect (G_OBJECT (m_help_program_pane), "notify::position",
+		                  G_CALLBACK (help_pane_moved_cb), this);
 
-		g_signal_connect (G_OBJECT (m_help_vbox), "size-allocate",
-		                  G_CALLBACK (program_pane_resized_cb), this);
+//		g_signal_connect (G_OBJECT (m_help_vbox), "size-allocate",
+//		                  G_CALLBACK (program_pane_resized_cb), this);
 
 		main_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_container_add (GTK_CONTAINER (main_vbox), m_title_hbox);
@@ -256,11 +256,10 @@ public:
 		gtk_widget_show_all (getWidget());
 		// some widgets need to start invisibly
 		gtk_widget_hide (m_menu);
-		// FIXME: this doesn't seem to work:
-		if (backLabel.empty())  gtk_widget_hide (m_back_button);
-		if (abortLabel.empty()) gtk_widget_hide (m_abort_button);
-		if (nextLabel.empty())  gtk_widget_hide (m_next_button);
 		gtk_widget_hide (m_release_notes_button);
+		if (backLabel.empty()) { printf ("hide back but\n"); gtk_widget_hide (m_back_button); }
+		if (abortLabel.empty()) { printf ("hide abort but\n"); gtk_widget_hide (m_abort_button); }
+		if (nextLabel.empty()) { printf ("hide next but\n");  gtk_widget_hide (m_next_button); }
 
 		//** Get expose, so we can draw line border
 		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
@@ -287,41 +286,42 @@ public:
 		return GTK_FIXED (m_fixed);
 	}
 
-/* args_type is a reverse hexadecimal number where
-   any = 0, string = 1, boolean = 2. */
-bool isCommand (const YCPTerm &cmd, const char *func,
-                guint args_nb, guint args_type)
-{
-	if (cmd->name() == func) {
-		// do some sanity checks
-		if ((unsigned) cmd->size() != args_nb) {
-			y2error ("YGWizard: expected %d arguments for the '%s' command. %d given.",
-			         args_nb, func, cmd->size());
-			return false;
-		}
-
-		guint i, t;
-		for (i = 0, t = args_type; i < args_nb; i++, t >>= 4)
-			switch (t % 0x4) {
-				case 0x1:
-					if (!cmd->value(i)->isString()) {
-						y2error ("YGWizard: expected string as the %d argument for the '%s'"
-						         " command.", i+1, func);
-						return false;
-					}
-					break;
-				case 0x2:
-					if (!cmd->value(i)->isBoolean()) {
-						y2error ("YGWizard: expected boolean as the %d argument for the '%s'"
-						         " command.", i+1, func);
-						return false;
-					}
-					break;
+	/* The purpose of this function is to do some sanity checks, besides
+	   the simple test "cmd->name() == func".
+	     args_type is a reverse hexadecimal number where
+	     any = 0, string = 1, boolean = 2.                             */
+	static bool isCommand (const YCPTerm &cmd, const char *func,
+	                       guint args_nb, guint args_type)
+	{
+		if (cmd->name() == func) {
+			if ((unsigned) cmd->size() != args_nb) {
+				y2error ("YGWizard: expected %d arguments for the '%s' command. %d given.",
+								args_nb, func, cmd->size());
+				return false;
 			}
-		return true;
+
+			guint i, t;
+			for (i = 0, t = args_type; i < args_nb; i++, t >>= 4)
+				switch (t % 0x4) {
+					case 0x1:
+						if (!cmd->value(i)->isString()) {
+							y2error ("YGWizard: expected string as the %d argument for the '%s'"
+											" command.", i+1, func);
+							return false;
+						}
+						break;
+					case 0x2:
+						if (!cmd->value(i)->isBoolean()) {
+							y2error ("YGWizard: expected boolean as the %d argument for the '%s'"
+											" command.", i+1, func);
+							return false;
+						}
+						break;
+				}
+			return true;
+		}
+		return false;
 	}
-	return false;
-}
 #define getStdStringArg(cmd, arg) (cmd->value(arg)->asString()->value())
 #define getCStringArg(cmd, arg) (cmd->value(arg)->asString()->value_cstr())
 #define getBoolArg(cmd, arg) (cmd->value(arg)->asBoolean()->value())
@@ -397,15 +397,21 @@ bool isCommand (const YCPTerm &cmd, const char *func,
 		         isCommand (cmd, "SetCancelButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_abort_button), str.c_str());
+			enable_widget (!str.empty(), m_abort_button);
+printf ("cancel label: %s\n", str.c_str());
 		}
 		else if (isCommand (cmd, "SetBackButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_back_button), str.c_str());
+printf ("back label: %s\n", str.c_str());
+			enable_widget (!str.empty(), m_abort_button);
 		}
 		else if (isCommand (cmd, "SetNextButtonLabel", 1, 0x1) ||
 		         isCommand (cmd, "SetAcceptButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_next_button), str.c_str());
+printf ("next label: %s\n", str.c_str());
+			enable_widget (!str.empty(), m_abort_button);
 		}
 
 		else if (isCommand (cmd, "SetAbortButtonID", 1, 0x0))
@@ -631,12 +637,12 @@ printf("ygwizard nicesize requested\n");
 	}
 
 	// callbacks
-	static void program_pane_resized_cb (GtkWidget *widget, GtkAllocation *allocation,
-	                                     YGWizard *pThis)
+	static void help_pane_moved_cb (GtkWidget *widget, GParamSpec *pspec,
+	                                YGWizard *pThis)
 	{
 		// When the user moves the GtkPaned, we need to tell our children
 		// a new size.
-		allocation = &pThis->m_fixed->allocation;
+		GtkAllocation *allocation = &pThis->m_fixed->allocation;
 		pThis->child (0)->setSize (allocation->width, allocation->height);
 	}
 
