@@ -38,7 +38,6 @@
 			break;
 
 		any type_opt = nil;
-		boolean is_static = false;
 		string filename = "";
 		if ((boolean) UI::QueryWidget(`id(`static), `Value))
 			filename = "image.png";
@@ -53,8 +52,16 @@
 		else if ((boolean) UI::QueryWidget(`id(`scaled_effect), `Value))
 			effect_opt = `scaleToFit;
 
+		// needed for tiling (scaling sets this automatically, anyway...)
+		any zerowidth  = nil;
+		any zeroheight = nil;
+		if (effect_opt != nil) {
+			zerowidth = `zeroWidth;
+			zeroheight = `zeroHeight;
+		}
+
 		UI::ReplaceWidget (`replace_image,
-		                   `Image (`opt (type_opt, effect_opt),
+		                   `Image (`opt (type_opt, effect_opt, zerowidth, zeroheight),
 		                           filename, filename + " not found"));
 
 	}
