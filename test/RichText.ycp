@@ -1,0 +1,57 @@
+// RichText test
+
+{
+	list texts = [
+		// simple
+		"<p><a href=\"nowhere\">Hello world!</a></p>",
+		"<h1>Operating Systems</h1><h2>Linux</h2> Suse",
+
+		// the br & hr tags
+		"Drinking <u>ice</u> tea <br> <hr> is <b>good</b> for you.",
+
+		// missing tags
+		"<big>Some text</big>",
+
+		// unclosed tags
+		"No outer tag<p>Unclosed paragraphs<p>several of them <b>unclosed bold</b>",
+	];
+
+	UI::OpenDialog (
+		`VBox (
+			`RichText (`id (`rtext), texts[0]:nil),
+			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", texts[0]:nil),
+			`Label (`id(`link), `opt(`hstretch), ""),
+			`Slider (`id (`slider), `opt(`notify), "Test text case:", 0, size (texts)-1, 0),
+			`PushButton (`id (`close), "&Close")
+		)
+	);
+
+	any ret = nil;
+	repeat
+	{
+		ret = UI::UserInput();
+
+		if (ret == `slider)
+		{
+			integer cur_text = (integer) UI::QueryWidget(`id(`slider), `Value );
+			UI::ChangeWidget (`id (`source), `Value, texts[cur_text]:nil);
+			UI::ChangeWidget (`id (`rtext),  `Value, texts[cur_text]:nil);
+			UI::ChangeWidget (`id(`link), `Value, "");
+		}
+
+		else if (ret == `source)
+		{
+			UI::ChangeWidget (`id (`rtext), `Value,
+			                  (string) UI::QueryWidget(`id(`source), `Value));
+		}
+
+		else
+		{  // RichText doesn't seem to pass its id...
+			string url = sformat ("%1", ret);
+			UI::ChangeWidget (`id(`link), `Value, "You pressed: " + url);
+		}
+
+	} until (ret == `close || ret == `cancel);
+
+	UI::CloseDialog();
+}
