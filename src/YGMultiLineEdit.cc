@@ -98,6 +98,7 @@ public:
 	: YMultiLineEdit (opt, label)
 	, YGTextView (this, parent, opt, label, text)
 	{
+		gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (getWidget()), GTK_WRAP_WORD);
 	}
 
 	virtual ~YGMultiLineEdit() {}

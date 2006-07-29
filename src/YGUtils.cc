@@ -182,7 +182,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 	{
 		// Tag foo
 		if (instr[i] == '<') {
-			guint j;
+			gint j;
 			gboolean is_close = FALSE;
 			gboolean in_tag;
 			int tag_len;
@@ -201,7 +201,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			// find the tag name piece
 			in_tag = TRUE;
 			tag_len = 0;
-			for (; instr[i] != '>'; i++) {
+			for (; instr[i] != '>' && instr[i]; i++) {
 				if (in_tag) {
 					if (!g_ascii_isalnum(instr[i]))
 						in_tag = FALSE;
@@ -226,9 +226,11 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 					g_string_insert_c (tag, j, '"');
 				}
 			}
-
+fprintf (stderr, "tag: %s\n", tag->str);
 			// Is it an open or close ?
 			j = tag->len - 1;
+fprintf (stderr, "j: %d\n", j);
+
 			while (j > 0 && g_ascii_isspace (tag->str[j])) j--;
 
 			gboolean is_open_close = (tag->str[j] == '/');
