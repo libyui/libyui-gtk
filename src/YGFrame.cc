@@ -16,7 +16,7 @@ public:
 		 const YCPString & label) :
 		YFrame (opt, label),
 		YGWidget (this, parent, true,
-		          GTK_TYPE_FRAME, NULL)//, "shadow-type", GTK_SHADOW_NONE, NULL)
+		          GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;

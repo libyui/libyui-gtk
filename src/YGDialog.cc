@@ -13,6 +13,8 @@ class YGDialog : public YDialog, public YGWidget
 	GtkRequisition m_userSize;
 	GtkWidget *m_fixed;
 	bool userResized () { return m_userSize.width > 0 && m_userSize.height > 0; }
+	int m_padding;
+
 public:
 	YGDialog (const YWidgetOpt &opt)
 		: YDialog (opt),
@@ -22,10 +24,32 @@ public:
 	{
 		m_userSize.width = -1;
 		m_userSize.height = -1;
+		m_padding = 0;
 
 		m_fixed = gtk_fixed_new();
 		gtk_widget_show (m_fixed);
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);
+
+		if (opt.hasWarnColor.value() || opt.hasInfoColor.value()) {
+			// emulate a warning / info dialog
+			GtkWidget *hbox = gtk_hbox_new (FALSE, 0);
+			gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
+
+			GtkWidget *icon = gtk_image_new_from_stock
+				(opt.hasWarnColor.value() ? GTK_STOCK_DIALOG_WARNING : GTK_STOCK_DIALOG_INFO,
+				 GTK_ICON_SIZE_DIALOG);
+			gtk_misc_set_alignment (GTK_MISC (icon), 0.5, 0);
+			gtk_misc_set_padding   (GTK_MISC (icon), 0, 12);
+
+			gtk_box_pack_start (GTK_BOX (hbox), icon,    FALSE, FALSE, 12);
+			gtk_box_pack_start (GTK_BOX (hbox), m_fixed, FALSE, FALSE, 0);
+			gtk_widget_show_all (hbox);
+
+			GtkRequisition req;
+			gtk_widget_size_request (icon, &req);
+			m_padding = req.width + 24;
+		}
+		else
+			gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);
 
 		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
@@ -41,15 +65,6 @@ public:
 	
 		g_signal_connect (G_OBJECT (m_widget), "delete_event",
 		                  G_CALLBACK (close_window_cb), this);
-
-		if (opt.hasWarnColor.value()) {
-			GdkColor color = { 0, 0xf000, 0xb900, 0xb900 };  // red tone
-			gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
-		}
-		else if (opt.hasInfoColor.value()) {
-			GdkColor color = { 0, 0xf500, 0xffff, 0x8000 };  // yellow tone
-			gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
-		}
 
 		if (!opt.hasDefaultSize.value()) {
 			gtk_window_set_modal (GTK_WINDOW (getWidget()), TRUE);
@@ -82,7 +97,7 @@ public:
 			}
 		} else {
 			fprintf (stderr, "YGDialog:: no default size\n");
-			nice = YDialog::nicesize (dim);
+			nice = YDialog::nicesize (dim) + m_padding;
 		}
 		fprintf (stderr, "YGDialog::nicesize %s = %ld\n",
 			 dim == YD_HORIZ ? "width" : "height", nice);
@@ -104,7 +119,7 @@ public:
 //		gtk_window_set_default_size (GTK_WINDOW (m_widget), newWidth, newHeight);
 
 		if (hasChildren())
-			YDialog::setSize (newWidth, newHeight);
+			YDialog::setSize (newWidth - m_padding, newHeight);
 	}
 
 	// YGWidget

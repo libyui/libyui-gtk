@@ -88,7 +88,7 @@ static void ygtk_menu_button_free_popup (YGtkMenuButton *button)
 {
 	if (button->popup) {
 		gtk_widget_destroy (GTK_WIDGET (button->popup));
-//		g_object_unref (G_OBJECT (button->popup));  // FIXME: no mem leak?
+		g_object_unref (G_OBJECT (button->popup));
 		button->popup = NULL;
 	}
 }
@@ -136,6 +136,9 @@ void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
 		g_signal_connect(button->popup, "button_press_event",
 		                 G_CALLBACK (popup_button_press), button);
 	}
+
+	g_object_ref (G_OBJECT (button->popup));
+	gtk_object_sink (GTK_OBJECT (button->popup));
 
 	g_signal_connect (G_OBJECT (popup), "hide",
 	                  G_CALLBACK (menu_button_hide_popup), button);

@@ -18,8 +18,7 @@ public:
 	           YGWidget *parent,
 	           const YCPString &text)
 	: YRichText (opt, text),
-	  YGScrolledWidget (this, parent, true,
-	                    YGTK_TYPE_RICHTEXT, NULL)
+	  YGScrolledWidget (this, parent, true, YGTK_TYPE_RICHTEXT, NULL)
 	{
 		IMPL;
 		m_plainText = opt.plainTextMode.value();

@@ -85,7 +85,7 @@ public:
 		if (hasChildren()) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
 			YContainerWidget::child(0)->setSize
-				(childWidth - 2*xthickness() - 2*border,
+				(childWidth  - 2*xthickness() - 2*border,
 				 childHeight - 2*ythickness() - 2*border - m_label_req.height);
 		}
 	}
@@ -104,7 +104,6 @@ public:
 
 		niceSize += GTK_CONTAINER (getWidget())->border_width;
 		niceSize += thickness (dim) * 2;
-
 		return niceSize;
 	}
 

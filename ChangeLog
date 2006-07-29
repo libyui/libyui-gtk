@@ -9,6 +9,13 @@
 	* src/YGDumbTab.cc: setSize() and niceSize() should give
 	good values (though things are not yet shining)
 
+	* src/YGDialog.cc: warn/info-dialog option now shows an icon
+	at the left rather than a background color.
+
+	* src/YGWidget.cc: set-ed a frameborder  on GtkScrolledWindow,
+	which I just noticed that is supported. I was actually putting the
+	GtkScrolledWindow inside a GtkFrame on YGWizard... :P (fixed)
+
 2006-07-28  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc (defaultSize): fix default sizing logic.

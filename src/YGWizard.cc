@@ -116,8 +116,8 @@ public:
 		GtkWidget *help_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (help_scrolled_window),
 		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		GtkWidget *help_frame = gtk_frame_new (NULL);
-		gtk_frame_set_shadow_type (GTK_FRAME (help_frame), GTK_SHADOW_IN);
+		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (help_scrolled_window),
+		                                     GTK_SHADOW_IN);
 		m_help_vbox = gtk_vbox_new (FALSE, 0);  // shared with "Release Notes" button
 
 		m_help_widget = ygtk_richtext_new();
@@ -125,11 +125,9 @@ public:
 		                  G_CALLBACK (set_help_background_cb), this);
 
 		gtk_container_add (GTK_CONTAINER (help_scrolled_window), m_help_widget);
-		gtk_container_add (GTK_CONTAINER (help_frame), help_scrolled_window);
-
 		m_release_notes_button = gtk_button_new();
 
-		gtk_container_add (GTK_CONTAINER (m_help_vbox), help_frame);
+		gtk_container_add (GTK_CONTAINER (m_help_vbox), help_scrolled_window);
 		gtk_box_pack_start (GTK_BOX (m_help_vbox), m_release_notes_button,
 				    FALSE, FALSE, 0);
 
@@ -150,7 +148,6 @@ public:
 		GtkWidget *pane_frame;
 		if (steps_enabled || tree_enabled) {
 			m_pane_box = gtk_event_box_new();
-
 			pane_frame = gtk_frame_new (NULL);
 			gtk_frame_set_shadow_type (GTK_FRAME (pane_frame), GTK_SHADOW_OUT);
 		}
@@ -175,9 +172,10 @@ public:
 			GtkWidget *tree_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
 			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (tree_scrolled_window),
 			                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (tree_scrolled_window),
+			                                     GTK_SHADOW_IN);
 			gtk_container_add (GTK_CONTAINER (tree_scrolled_window), m_tree_widget);
-			gtk_container_add (GTK_CONTAINER (pane_frame), tree_scrolled_window);
-			gtk_container_add (GTK_CONTAINER (m_pane_box), pane_frame);
+			gtk_container_add (GTK_CONTAINER (m_pane_box), tree_scrolled_window);
 		}
 
 		//** Adding the bottom buttons
@@ -392,19 +390,16 @@ public:
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_abort_button), str.c_str());
 			enable_widget (!str.empty(), m_abort_button);
-printf ("cancel label: %s\n", str.c_str());
 		}
 		else if (isCommand (cmd, "SetBackButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_back_button), str.c_str());
-printf ("back label: %s\n", str.c_str());
 			enable_widget (!str.empty(), m_abort_button);
 		}
 		else if (isCommand (cmd, "SetNextButtonLabel", 1, 0x1) ||
 		         isCommand (cmd, "SetAcceptButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			gtk_button_set_label (GTK_BUTTON (m_next_button), str.c_str());
-printf ("next label: %s\n", str.c_str());
 			enable_widget (!str.empty(), m_abort_button);
 		}
 
@@ -554,13 +549,12 @@ printf ("next label: %s\n", str.c_str());
 			return YCPString ("");
 
 		/* A bit cpu-consuming, but saving the strings is something I'd rather avoid. */
-		gint* path_depth = gtk_tree_path_get_indices (path);
+		gint i, *path_depth = gtk_tree_path_get_indices (path);
 		for (TreeId::iterator it = tree_ids.begin(); it != tree_ids.end(); it++) {
 			gint* it_depth = gtk_tree_path_get_indices (it->second);
 			if (gtk_tree_path_get_depth (path) == gtk_tree_path_get_depth (it->second)) {
-				int i;
 				for (i = 0; i < gtk_tree_path_get_depth (path) &&
-				            it_depth[i] == path_depth[i]; i++) ;
+				            it_depth[i] == path_depth[i]; i++) {}
 				if (i == gtk_tree_path_get_depth (path))
 					return it->first;
 			}

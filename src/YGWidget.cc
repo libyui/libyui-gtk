@@ -247,8 +247,8 @@ YGScrolledWidget::YGScrolledWidget (
 		YWidget *y_widget, YGWidget *parent,
 		bool show, GType type, const char *property_name, ...)
 : YGLabeledWidget (y_widget, parent,
-                   YCPString ("<no label>"), YD_VERT,
-                   show, GTK_TYPE_SCROLLED_WINDOW, NULL)
+                   YCPString ("<no label>"), YD_VERT, show,
+                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
@@ -263,7 +263,7 @@ YGScrolledWidget::YGScrolledWidget (
 		YCPString label_text, YUIDimension label_ori,
 		bool show, GType type, const char *property_name, ...)
 : YGLabeledWidget (y_widget, parent, label_text, label_ori, show,
-                   GTK_TYPE_SCROLLED_WINDOW, NULL)
+                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
