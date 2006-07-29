@@ -17,11 +17,16 @@ public:
 	            const YCPString &label,
 	            const YCPString &text)
 		: YGScrolledWidget (y_widget, parent, label, YD_VERT, true,
-		                    GTK_TYPE_TEXT_VIEW, NULL)
+		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD, NULL)
 	{
 		IMPL
+		gtk_scrolled_window_set_policy
+				(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
+				 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+
 		maxChars = -1;
 		setText (text);
+
 		g_signal_connect (G_OBJECT (getBuffer()), "changed",
 		                  G_CALLBACK (text_changed_cb), this);
 	}
@@ -97,9 +102,7 @@ public:
 	                 const YCPString &text)
 	: YMultiLineEdit (opt, label)
 	, YGTextView (this, parent, opt, label, text)
-	{
-		gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (getWidget()), GTK_WRAP_WORD);
-	}
+	{ }
 
 	virtual ~YGMultiLineEdit() {}
 
@@ -140,12 +143,7 @@ public:
 	           int visibleLines, int maxLines)
 	: YLogView (opt, label, visibleLines, maxLines)
 	, YGTextView (this, parent, opt, label, YCPString(""))
-	{
-		gtk_scrolled_window_set_policy
-				(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
-				 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
-		gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (getWidget()), GTK_WRAP_WORD);
-	}
+	{ }
 
 	virtual ~YGLogView() {}
 
