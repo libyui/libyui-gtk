@@ -25,7 +25,7 @@
 						)
 					)
 				),
-
+			`Right (`Label ("Resize the window!")),
 			`PushButton(`id (`close), "&Close")
 		)
 	);
