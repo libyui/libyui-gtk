@@ -1,0 +1,41 @@
+// Stock Icons test
+
+{
+	list stock_icons = [
+		"ok",
+		"cancel",
+		"abort",
+		// add all the rest
+	];
+	integer i = 0;
+
+	UI::OpenDialog (
+		`ReplacePoint (`id (`rp),
+			`PushButton (stock_icons[i]:"", `icon (stock_icons[i]:nil)
+			)
+		);
+
+	any ret = nil;
+	while (true)
+		{
+		ret = UI::TimeoutUserInput (5000);
+
+		if (ret == `timeout)
+			{
+			i = i + 1;
+			if (i == size (stock_icons))
+				break;
+			else
+				UI::ReplaceWidget (`rp,
+					`PushButton (stock_icons[i]:""), `icon (stock_icons[i]:nil)
+					);
+			UI::RecalcLayout();
+			}
+
+		else
+			break;
+
+		};
+
+	UI::CloseDialog();
+}
