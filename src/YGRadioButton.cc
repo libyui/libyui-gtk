@@ -47,6 +47,7 @@ public:
 	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
+		setBorder (0);
 		setValue (YCPBoolean (checked));
 
 		m_isBold = opt.boldFont.value();
@@ -161,6 +162,7 @@ public:
 	   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
 		IMPL
+		setBorder (0);
 		m_isBold = opt.boldFont.value();
 
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);

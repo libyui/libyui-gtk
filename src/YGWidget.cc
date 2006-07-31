@@ -10,8 +10,7 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 		     const char *property_name, va_list args)
 {
 	m_alloc.x = m_alloc.y = m_alloc.width = m_alloc.height = 0;
-	m_xborder = m_yborder = m_min_xsize = m_min_ysize = 0;
-
+	m_min_xsize = m_min_ysize = 0;
 
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 	g_object_ref (G_OBJECT (m_widget));
@@ -42,6 +41,8 @@ YGWidget::YGWidget(YWidget *y_widget, YGWidget *parent,
 		   const char *property_name, ...) :
 	m_y_widget (y_widget)
 {
+	m_border = 6;
+
 	va_list args;
 	va_start (args, property_name);
 
@@ -51,18 +52,13 @@ YGWidget::YGWidget(YWidget *y_widget, YGWidget *parent,
 	va_end (args);
 }
 
-YGWidget::~YGWidget()
-{
-	IMPL;
-	gtk_widget_destroy (m_widget);
-	g_object_unref (G_OBJECT (m_widget));
-}
-
 // Container constructor
 YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 		   const char *property_name, ...) :
 	m_y_widget (y_container)
 {
+	m_border = 0;
+
 	va_list args;
 	va_start (args, property_name);
 
@@ -72,10 +68,11 @@ YGWidget::YGWidget(YWidget *y_container, YGWidget *parent,
 	va_end (args);
 }
 
-void YGWidget::setBorder (unsigned int xborder, unsigned int yborder)
+YGWidget::~YGWidget()
 {
-	m_xborder = xborder;
-	m_yborder = yborder;
+	IMPL
+	gtk_widget_destroy (m_widget);
+	g_object_unref (G_OBJECT (m_widget));
 }
 
 void YGWidget::setMinSize (unsigned int xsize, unsigned int ysize)
@@ -122,16 +119,18 @@ YGWidget::get (YWidget *y_widget)
 void
 YGWidget::doSetSize (long width, long height)
 {
-	gtk_widget_set_size_request (getWidget(), width - m_xborder*2,
-	                                          height - m_yborder*2);
+	// leave some blank space around...
+	width  -= m_border * 2;
+	height -= m_border * 2;
+	gtk_widget_set_size_request (getWidget(), width, height);
 }
 
 void
 YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
 	GtkFixed *fixed = getFixed();
-	YGWidget *ygwidget = YGWidget::get (child);
-	GtkWidget *widget = ygwidget->getWidget();
+	GtkWidget *widget = YGWidget::get (child)->getWidget();
+	unsigned int border = YGWidget::get (child)->m_border;
 
 	if (!GTK_IS_WIDGET (widget))
 		g_error ("doMoveChild() failed -- widget %s isn't associated to a GtkWidget",
@@ -141,8 +140,7 @@ YGWidget::doMoveChild (YWidget *child, long x, long y)
 		         m_y_widget->widgetClass());
 
 	else
-		gtk_fixed_move (fixed, widget, x + ygwidget->m_xborder,
-		                               y + ygwidget->m_yborder);
+		gtk_fixed_move (fixed, widget, x + border, y + border);
 }
 
 // The slightly non-obvious thing here, is that by emitting the
@@ -168,9 +166,10 @@ YGWidget::getNiceSize (YUIDimension dim)
 	// Since there are no tweaks for widget separation etc.
 	// we get to do that ourselves
 	if (dim == YD_HORIZ)
-		ret = MAX (req.width + m_xborder*2, m_min_xsize + m_xborder*2);
-	else 
-		ret = MAX (req.height + m_yborder*2, m_min_ysize + m_yborder*2);
+		ret = MAX (req.width, (signed) m_min_xsize);
+	else
+		ret = MAX (req.height, (signed) m_min_ysize);
+	ret += m_border * 2;
 
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "NiceSize for '%s' %s %ld\n",
@@ -188,12 +187,12 @@ void YGWidget::show()
 
 int YGWidget::xthickness()
 {
-	return getWidget()->style->xthickness;
+	return getWidget()->style->xthickness + m_border;
 }
 
 int YGWidget::ythickness()
 {
-	return getWidget()->style->ythickness;
+	return getWidget()->style->ythickness + m_border;
 }
 
 void YGWidget::emitEvent (YEvent::EventReason reason, bool if_notify, bool if_not_pending)

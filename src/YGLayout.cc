@@ -63,6 +63,7 @@ YGAlignment::YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 {
 	m_background_pixbuf = 0;
+	setBorder (0);
 
 	m_fixed = gtk_fixed_new();
 	gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);

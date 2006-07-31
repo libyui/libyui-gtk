@@ -1,3 +1,8 @@
+2006-07-31  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGWidget.cc: improved layout spacing a bit.
+	(to be worked out: some small wizard layout issues.)
+
 2006-07-30  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGTable.cc: added sortable table support.

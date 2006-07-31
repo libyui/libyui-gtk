@@ -16,8 +16,7 @@ public:
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, NULL)
 {
 	IMPL
-	setBorder (6, 6);
-	setMinSize (12, 0);
+	setMinSize (14, 0);
 
 	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 	g_signal_connect (G_OBJECT (getWidget ()), "clicked",
