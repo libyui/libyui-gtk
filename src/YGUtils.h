@@ -29,7 +29,8 @@ namespace YGUtils
 	void scrollTextViewDown(GtkTextView *text_view);
 
 	/* Returns the average width of the given number of characters in pixels. */
-	int calculateCharsWidth (GtkWidget *widget, int chars_nb);
+	int getCharsWidth (GtkWidget *widget, int chars_nb);
+	int getCharsHeight (GtkWidget *widget, int chars_nb);
 
 	/* A more sane strcmp() from the user point of view that honors numbers. */
 	int strcmp (const char *str1, const char *str2);

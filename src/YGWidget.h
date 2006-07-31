@@ -46,6 +46,14 @@ protected:
 	void construct (YWidget *y_widget, YGWidget *parent,
 	                bool show, GType type,
 	                const char *property_name, va_list args);
+
+	// Layout
+	void setBorder (unsigned int xborder, unsigned int yborder);  // in pixels
+	void setMinSize (unsigned int min_xsize, unsigned int min_ysize);  // in characters
+
+	// parameters to set the layout prettier
+	unsigned int m_xborder, m_yborder;
+	unsigned int m_min_xsize, m_min_ysize;  // 0 = disabled
 };
 
 /*
