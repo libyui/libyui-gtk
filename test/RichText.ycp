@@ -22,7 +22,7 @@
 			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", texts[0]:nil),
 			`Label (`id(`link), `opt(`hstretch), ""),
 			`Slider (`id (`slider), `opt(`notify), "Test text case:", 0, size (texts)-1, 0),
-			`PushButton (`id (`close), "&Close")
+			`PushButton (`id (`close), `opt(`icon ("close")), "&Close")
 		)
 	);
 

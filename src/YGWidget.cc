@@ -129,8 +129,10 @@ void
 YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
 	GtkFixed *fixed = getFixed();
-	GtkWidget *widget = YGWidget::get (child)->getWidget();
-	unsigned int border = YGWidget::get (child)->m_border;
+	YGWidget *yg_widget = YGWidget::get (child);
+
+	GtkWidget *widget   = yg_widget->getWidget();
+	unsigned int border = yg_widget->m_border;
 
 	if (!GTK_IS_WIDGET (widget))
 		g_error ("doMoveChild() failed -- widget %s isn't associated to a GtkWidget",

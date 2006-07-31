@@ -1,10 +1,12 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
 #include "YPushButton.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
+
+// comment next line for older core versions:
+//#define USE_STOCK_ICONS
 
 class YGPushButton : public YPushButton, public YGWidget
 {
@@ -17,6 +19,16 @@ public:
 {
 	IMPL
 	setMinSize (14, 0);
+
+#ifdef USE_STOCK_ICONS
+	if (opt.setIcon.defined()) {
+		string stock = opt.setIcon.value()->value();
+		stock = "gtk-" + stock;
+
+		GtkWidget *icon = gtk_image_new_from_stock (stock.c_str(), GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (getWidget()), icon);
+	}
+#endif
 
 	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 	g_signal_connect (G_OBJECT (getWidget ()), "clicked",

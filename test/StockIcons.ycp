@@ -5,20 +5,34 @@
 		"ok",
 		"cancel",
 		"abort",
-		// add all the rest
+		"apply",
+		"about",
+		"connect",
+		"disconnect",
+		"edit",
+		"open",
+		"close",
+		"new",
+		"quit",
+		"print",
+		"save",
+		"save-as",
+		"yes",
+		"no",
+		
 	];
 	integer i = 0;
 
 	UI::OpenDialog (
 		`ReplacePoint (`id (`rp),
-			`PushButton (stock_icons[i]:"", `icon (stock_icons[i]:nil)
+			`PushButton (`opt (`icon (stock_icons[i]:nil)), stock_icons[i]:"")
 			)
 		);
 
 	any ret = nil;
 	while (true)
 		{
-		ret = UI::TimeoutUserInput (5000);
+		ret = UI::TimeoutUserInput (1000);
 
 		if (ret == `timeout)
 			{
@@ -27,7 +41,7 @@
 				break;
 			else
 				UI::ReplaceWidget (`rp,
-					`PushButton (stock_icons[i]:""), `icon (stock_icons[i]:nil)
+					`PushButton (`opt (`icon (stock_icons[i]:nil)), stock_icons[i]:"")
 					);
 			UI::RecalcLayout();
 			}

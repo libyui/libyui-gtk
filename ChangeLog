@@ -6,6 +6,8 @@
 	* src/YGLabel.cc: work out output label field to look
 	non-editable.
 
+	* src/YGPushButton.cc: use stock icons.
+
 2006-07-30  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGTable.cc: added sortable table support.
