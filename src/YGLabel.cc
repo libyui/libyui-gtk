@@ -25,6 +25,9 @@ public:
 		if (opt.isOutputField.value()) {
 			m_inner_widget = gtk_entry_new();
 			gtk_editable_set_editable (GTK_EDITABLE (m_inner_widget), FALSE);
+			// insensitive GtkEntrys don't really look like it, so...
+			gtk_widget_modify_base (getWidget(), GTK_STATE_NORMAL,
+			                        &getWidget()->style->base [GTK_STATE_INSENSITIVE]);
 		}
 		else
 			m_inner_widget = gtk_label_new ("");

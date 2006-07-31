@@ -3,6 +3,9 @@
 	* src/YGWidget.cc: improved layout spacing a bit.
 	(to be worked out: some small wizard layout issues.)
 
+	* src/YGLabel.cc: work out output label field to look
+	non-editable.
+
 2006-07-30  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGTable.cc: added sortable table support.
