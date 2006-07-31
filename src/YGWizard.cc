@@ -132,7 +132,7 @@ public:
 				    FALSE, FALSE, 0);
 
 		gtk_widget_set_size_request (m_help_vbox,
-			YGUtils::calculateCharsWidth (m_help_widget, HELP_BOX_CHARS_WIDTH), -1);
+			YGUtils::getCharsWidth (m_help_widget, HELP_BOX_CHARS_WIDTH), -1);
 
 		//** Steps/tree pane
 		bool steps_enabled = opt.stepsEnabled.value();

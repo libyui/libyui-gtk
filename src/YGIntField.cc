@@ -27,8 +27,7 @@ public:
 			gtk_scale_set_draw_value (GTK_SCALE (m_slider), FALSE);
 			YGLabeledWidget::setBuddy (m_slider);
 			gtk_widget_set_size_request (m_slider,
-				YGUtils::calculateCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS),
-				-1);
+				YGUtils::getCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS), -1);
 
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_slider);
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);

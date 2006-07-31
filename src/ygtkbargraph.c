@@ -5,6 +5,8 @@
 #include <gtk/gtkframe.h>
 #include <gtk/gtkeventbox.h>
 
+#define YPADDING 12
+
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass);
 static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
 static void ygtk_bar_graph_size_request  (GtkWidget      *widget,
@@ -40,6 +42,7 @@ static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
 	YGTK_RATIO_BOX (bar)->spacing = 0;
 	bar->m_tooltips = gtk_tooltips_new();
+	gtk_container_set_border_width (GTK_CONTAINER (bar), 12);
 }
 
 GtkWidget *ygtk_bar_graph_new (void)
@@ -145,17 +148,6 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 		DECL_COLOR (136, 138, 133), //	Aluminium 4
 		DECL_COLOR ( 85,  87,  83), //	Aluminium 5
 		DECL_COLOR ( 46,  52,  54)  //	Aluminium 6
-// Ricardo's palette
-#if 0
-		DECL_COLOR (224,   0,   0),	// red
-		DECL_COLOR (237, 238, 236),	// gray
-		DECL_COLOR (252, 233,  79),	// yellow
-		DECL_COLOR (138, 226,  52),	// green
-		DECL_COLOR (173, 127, 168),	// pink
-		DECL_COLOR (114, 159, 207),	// blue
-		DECL_COLOR (252, 175,  62),	// orange
-		DECL_COLOR (193, 125,  17)	// brown
-#endif
 #undef DECL_COLOR
 	};
 
@@ -173,4 +165,5 @@ static void ygtk_bar_graph_size_request (GtkWidget      *widget,
 	//	const int max_width = 250;
 	//	if (requisition->width > max_width)
 	//		requisition->width = max_width;
+	requisition->height += YPADDING;
 }

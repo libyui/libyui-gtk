@@ -226,10 +226,9 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 					g_string_insert_c (tag, j, '"');
 				}
 			}
-fprintf (stderr, "tag: %s\n", tag->str);
+
 			// Is it an open or close ?
 			j = tag->len - 1;
-fprintf (stderr, "j: %d\n", j);
 
 			while (j > 0 && g_ascii_isspace (tag->str[j])) j--;
 
@@ -282,7 +281,7 @@ fprintf (stderr, "j: %d\n", j);
 	return g_string_free (outp, FALSE);
 }
 
-int YGUtils::calculateCharsWidth (GtkWidget *widget, int chars_nb)
+int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 {
 	PangoContext *context = gtk_widget_get_pango_context (widget);
 	PangoFontMetrics *metrics = pango_context_get_metrics (context,
@@ -293,6 +292,11 @@ int YGUtils::calculateCharsWidth (GtkWidget *widget, int chars_nb)
 	pango_font_metrics_unref (metrics);
 
 	return char_width * chars_nb;
+}
+
+int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
+{
+	return pango_font_description_get_size (widget->style->font_desc) * chars_nb;
 }
 
 #define IS_DIGIT(x) (x >= '0' && x <= '9')

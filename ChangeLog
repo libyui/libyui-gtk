@@ -1,6 +1,7 @@
 2006-07-30  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGTable.cc: added sortable table support.
+	* src/ygtkratiobox.c: fixed container border.
 
 2006-07-29  Ricardo Cruz    <rpcmruz@clix.pt>
 
