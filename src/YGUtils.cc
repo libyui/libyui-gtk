@@ -219,7 +219,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 				g_string_append_c (tag, '/');
 			
 			// Add quoting for un-quoted attributes
-			for (j = 0; j < tag->len; j++) {
+			for (j = 0; j < (signed) tag->len; j++) {
 				if (tag->str[j] == '=' && tag->str[j+1] != '"') {
 					g_string_insert_c (tag, j+1, '"');
 					for (j++; !g_ascii_isspace (tag->str[j]) && tag->str[j]; j++);
@@ -293,4 +293,40 @@ int YGUtils::calculateCharsWidth (GtkWidget *widget, int chars_nb)
 	pango_font_metrics_unref (metrics);
 
 	return char_width * chars_nb;
+}
+
+#define IS_DIGIT(x) (x >= '0' && x <= '9')
+int YGUtils::strcmp (const char *str1, const char *str2)
+{
+	// (if you think this is ugly, just wait for the Perl version! :P)
+	const char *i, *j;
+	for (i = str1, j = str2; *i || *j; i++, j++) {
+		// number comparasion
+		if (IS_DIGIT (*i) && IS_DIGIT (*j)) {
+			int n1 = 0, n2 = 0;
+			for (; IS_DIGIT (*i); i++)
+				n1 = (*i - '0') + (n1 * 10);
+			for (; IS_DIGIT (*j); j++)
+				n2 = (*j - '0') + (n2 * 10);
+
+			if (n1 != n2) {
+				if (n1 < n2)
+					return -1;
+				// if (n1 > n2)
+					return +1;
+			}
+			// prepare for loop
+			i--; j--;
+		}
+
+		// regular character comparasion
+		else if (*i != *j) {
+			if (*i < *j)
+				return -1;
+			// if (*i > *j)
+				return +1;
+		}
+			break;
+	}
+	return 0;	// identicals
 }

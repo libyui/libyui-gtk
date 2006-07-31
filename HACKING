@@ -29,7 +29,7 @@ Code structure
 
   Hierarchy of some of the widgets:
 
-  YGWidgets                    YWidget
+   YGWidget                    YWidget
           |                          |
           |                         /|
           |                        / |

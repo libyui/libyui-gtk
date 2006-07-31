@@ -1,3 +1,7 @@
+2006-07-30  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGTable.cc: added sortable table support.
+
 2006-07-29  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGUtils.cc: simple fix for a crash on tags that

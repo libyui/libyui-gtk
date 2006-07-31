@@ -1,12 +1,14 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
+#include "YGUtils.h"
 #include "YGWidget.h"
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget
 {
+GtkTreeViewColumn *m_sortedCol;
+
 public:
 	YGTableView (YWidget *y_widget, YGWidget *parent,
 	             const YWidgetOpt &opt, YCPString label)
@@ -14,6 +16,8 @@ public:
 	                    GTK_TYPE_TREE_VIEW, NULL)
 	{
 		IMPL
+		m_sortedCol = 0;
+
 		// Events
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
@@ -25,13 +29,14 @@ public:
 	}
 
 	void insertColumns (vector <string> headers, vector <GType> types,
-	                    bool show_headers)
+	                    bool show_headers, bool clickable_headers = false)
 	{
 		IMPL
 		// Set the model
 		GType types_array [types.size()];
 		for (unsigned int i = 0; i < types.size(); i++)
 			types_array [i] = types[i];
+
 		GtkListStore *list = gtk_list_store_newv (headers.size(), types_array);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
 
@@ -66,6 +71,21 @@ public:
 					G_CALLBACK (toggled_cb), YGWidget::get (m_y_widget));
 			}
 
+			if (clickable_headers && show_headers && types[c] == G_TYPE_STRING) {
+				GtkTreeSortable *sortable = GTK_TREE_SORTABLE (getStore());
+				gtk_tree_sortable_set_sort_func (sortable, c, sort_compare_cb,
+				                                 GINT_TO_POINTER (c), NULL);
+				gtk_tree_view_column_set_sort_order (column, GTK_SORT_DESCENDING);
+
+				// there is not really a prettier way to pass stuff to our callback...
+				g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (c));
+				g_object_set_data (G_OBJECT (column), "sortable", sortable);
+
+				gtk_tree_view_column_set_clickable (column, TRUE);
+				g_signal_connect (G_OBJECT (column), "clicked",
+				                  G_CALLBACK (header_clicked_cb), this);
+			}
+
 			gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, c);
 		}
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), show_headers);
@@ -73,12 +93,9 @@ public:
 
 protected:
 	GtkListStore *getStore()
-	{ return GTK_LIST_STORE(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()))); }
+	{ return GTK_LIST_STORE (getModel()); }
 	GtkTreeModel *getModel()
-	{ return GTK_TREE_MODEL(gtk_tree_view_get_model (GTK_TREE_VIEW(getWidget()))); }
-
-	virtual char* widgetClass()
-	{ return "YGTableView"; }
+	{ return gtk_tree_view_get_model (GTK_TREE_VIEW (getWidget())); }
 
 	int addRow (int row)
 	{
@@ -154,7 +171,7 @@ protected:
 	}
 
 	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
-	                              YGWidget *pThis)
+	                        YGWidget *pThis)
 	{
 		// Toggle the box
 		GtkTreeModel* model = ((YGTableView*) pThis)->getModel();
@@ -170,6 +187,38 @@ protected:
 
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
+
+	static void header_clicked_cb (GtkTreeViewColumn *column, YGTableView *pThis)
+	{
+		IMPL
+		GtkTreeSortable *sortable;
+		sortable = (GtkTreeSortable*) g_object_get_data (G_OBJECT (column),  "sortable");
+		int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column),  "id"));
+
+		GtkSortType sort = GTK_SORT_ASCENDING;
+		if (pThis->m_sortedCol == column) {
+			sort = gtk_tree_view_column_get_sort_order (column);
+			sort = (sort == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
+		}
+
+		gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
+		gtk_tree_view_column_set_sort_order (column, sort);
+
+		if (pThis->m_sortedCol)
+			gtk_tree_view_column_set_sort_indicator (pThis->m_sortedCol, FALSE);
+		gtk_tree_view_column_set_sort_indicator (column, TRUE);
+		pThis->m_sortedCol = column;
+	}
+
+	static gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
+	                             GtkTreeIter *b, gpointer data)
+	{
+		gint col = GPOINTER_TO_INT (data);
+		gchar *str1, *str2;
+		gtk_tree_model_get (model, a, col, &str1, -1);
+		gtk_tree_model_get (model, b, col, &str2, -1);
+		return YGUtils::strcmp (str1, str2);
+  }
 };
 
 #include "YTable.h"
@@ -185,7 +234,7 @@ public:
 		IMPL
 		vector <GType> types;
 		types.assign (numCols(), G_TYPE_STRING);
-		insertColumns (headers, types, true);
+		insertColumns (headers, types, true, !opt.keepSorting.value());
 
 		setLabelVisible (false);
 	}

@@ -30,6 +30,9 @@ namespace YGUtils
 
 	/* Returns the average width of the given number of characters in pixels. */
 	int calculateCharsWidth (GtkWidget *widget, int chars_nb);
+
+	/* A more sane strcmp() from the user point of view that honors numbers. */
+	int strcmp (const char *str1, const char *str2);
 };
 
 extern "C" {
