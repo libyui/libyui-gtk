@@ -1,6 +1,7 @@
 #include <config.h>
 #include <stdio.h>
 #include <YEvent.h>
+#include <YDialog.h>
 #include <YGUI.h>
 #include <YGWidget.h>
 #include <glib/gthread.h>
@@ -62,7 +63,7 @@ YGUI::YGUI (int argc, char ** argv,
 				 "--help        this help text\n"
 				 "\n"
 				 );
-			
+
 			// FIXME: raiseFatalError
 		}
 	}
@@ -283,25 +284,37 @@ void YGUI::internalError (const char *msg)
 }
 
 /* File/directory dialogs. */
+#include <sstream>
+
 static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 		const YCPString &startWith, const YCPString &filter_pattern,
 		const YCPString &headline)
 {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
-		NULL /* TODO: set GtkWindow parent*/,
+		GTK_WINDOW (((YGWidget*) YGUI::ui()->currentDialog()->widgetRep())->getWidget()),
 		action,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
 		NULL);
-	// FIXME: startWith is not necessarly a folder, it can be a file!
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), startWith->value_cstr());
+
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
+	                                     startWith->value_cstr());
 
 	if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
 		GtkFileFilter *filter = gtk_file_filter_new();
-		gtk_file_filter_add_pattern (filter, filter_pattern->value_cstr());
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+		gtk_file_filter_set_name (filter, filter_pattern->value_cstr());
+		// cut filter_pattern into chuncks like GTK likes
+		std::istringstream stream (filter_pattern->value());
+		while (!stream.eof()) {
+			string str;
+			stream >> str;
+			if (!str.empty() && str [str.size()-1] == ',')
+				str.erase (str.size()-1);
+			gtk_file_filter_add_pattern (filter, str.c_str());
 		}
+		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
+	}
 
 	YCPValue ret;
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -349,7 +362,12 @@ bool YGUI::leftHandedMouse()       IMPL_RET(false)
 void YGUI::busyCursor() IMPL
 void YGUI::normalCursor() IMPL
 void YGUI::redrawScreen() IMPL
-void YGUI::makeScreenShot (string filename) IMPL
+
+void YGUI::makeScreenShot (string filename)
+{
+	IMPL
+	// TODO
+}
 
 // Internal helper functions
 bool YGUI::haveWM() const
