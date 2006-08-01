@@ -22,7 +22,7 @@ public:
 
 #ifdef USE_STOCK_ICONS
 	if (opt.setIcon.defined()) {
-		string stock = opt.setIcon.value()->value();
+		string stock = opt.setIcon.value();
 		stock = "gtk-" + stock;
 
 		GtkWidget *icon = gtk_image_new_from_stock (stock.c_str(), GTK_ICON_SIZE_BUTTON);
