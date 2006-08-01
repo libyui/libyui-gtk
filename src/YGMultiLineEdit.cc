@@ -162,10 +162,8 @@ public:
 	{
 		IMPL
 		if (dim == YD_HORIZ) return getNiceSize (dim);
-
-		int font_size =
-			pango_font_description_get_size (getWidget()->style->font_desc);
-		return MAX (getNiceSize (dim), font_size * visibleLines());
+		return MAX (getNiceSize (dim),
+		            YGUtils::getCharsHeight (getWidget(), visibleLines()));
 	}
 
 	// YGLabelWidget

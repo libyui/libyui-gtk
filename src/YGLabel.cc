@@ -41,23 +41,22 @@ public:
 		PangoFontDescription* font = pango_font_description_new();
 		if (opt.boldFont.value())
 			pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-		/* This isn't a documented attribute, but seems to be used: */
 		if (opt.isHeading.value()) {
-			pango_font_description_set_weight (font, PANGO_WEIGHT_HEAVY);
+			m_border = 4;
+			setForegroundColor (getWidget()->style->fg[GTK_STATE_SELECTED]);
+			setBackgroundColor (getWidget()->style->bg[GTK_STATE_SELECTED]);
+
+			pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
 			int size = pango_font_description_get_size (getWidget()->style->font_desc);
 			pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
 		}
 		gtk_widget_modify_font (getWidget(), font);
 		pango_font_description_free (font);
 
-		if (fgColor) {
-			GdkColor color = fromYColor(*fgColor);
-			gtk_widget_modify_fg (getWidget(), GTK_STATE_NORMAL, &color);
-		}
-		if (bgColor) {
-			GdkColor color = fromYColor(*bgColor);
-			gtk_widget_modify_bg (YGWidget::getWidget(), GTK_STATE_NORMAL, &color);
-		}
+		if (fgColor)
+			setForegroundColor (fromYColor (*fgColor));
+		if (bgColor)
+			setBackgroundColor (fromYColor (*bgColor));
 
 		doSetLabel (text);
 	}
@@ -74,6 +73,11 @@ public:
 		else
 			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
 	}
+
+	void setForegroundColor (const GdkColor &color)
+	{ gtk_widget_modify_fg (getWidget(), GTK_STATE_NORMAL, &color); }
+	void setBackgroundColor (const GdkColor &color)
+	{ gtk_widget_modify_bg (YGWidget::getWidget(), GTK_STATE_NORMAL, &color); }
 };
 
 #define YG_GENERIC_LABEL_IMPL_NICESIZE \
