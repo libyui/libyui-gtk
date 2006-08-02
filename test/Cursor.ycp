@@ -1,0 +1,44 @@
+// Cursor test
+
+{
+	UI::OpenDialog (
+		`VBox (
+			`PushButton (`id (`busy), "&Busy"),
+			`PushButton (`id (`regular), "&Regular"),
+			`PushButton (`id (`new_dialog), "&New Dialog"),
+			`PushButton (`id (`close), "&Close")
+			)
+		);
+
+	any ret = nil;
+	while (true)
+	{
+		ret = UI::UserInput();
+
+		if (ret == `close || ret == `cancel)
+			break;
+
+		if (ret == `busy)
+			UI::BusyCursor();
+		if (ret == `regular)
+			UI::NormalCursor();
+
+		if (ret == `new_dialog)
+		{
+			UI::OpenDialog (
+				`VBox (
+					`Label ("Cursor here is always busy. Why don't you\n" +
+					        "try to set the other dialog cursor busy and\n" +
+					        "then check if both are busy."),
+					`PushButton ("&Close")
+				)
+			);
+
+			UI::BusyCursor();
+			UI::UserInput();
+			UI::CloseDialog();
+		}
+	}
+
+	UI::CloseDialog();
+}
