@@ -1,10 +1,17 @@
 #include <config.h>
 #include <stdio.h>
+#include <ycp/y2log.h>
 #include <YEvent.h>
 #include <YDialog.h>
-#include <YGUI.h>
-#include <YGWidget.h>
+#include <YMacroRecorder.h>
+#include "YGUI.h"
+#include "YGUtils.h"
+#include "YGWidget.h"
 #include <glib/gthread.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 
 YGUI::YGUI (int argc, char ** argv,
 	    bool with_threads,
@@ -70,6 +77,9 @@ YGUI::YGUI (int argc, char ** argv,
 
 	m_default_size.width = -1;
 	m_default_size.height = -1;
+
+	if (macro_file)
+		playMacro (macro_file);
 
 	// without this none of the (default) threading action works ...
 	topmostConstructorHasFinished();
@@ -283,6 +293,15 @@ void YGUI::internalError (const char *msg)
 	gtk_widget_destroy (dialog);
 }
 
+GtkWidget *YGUI::currentGtkDialog()
+{
+	YWidget *y_parent = YGUI::ui()->currentDialog();
+	if (y_parent)
+		return ((YGWidget*) y_parent->widgetRep())->getWidget();
+	else
+		return NULL;
+}
+
 /* File/directory dialogs. */
 #include <sstream>
 
@@ -292,14 +311,37 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
-		GTK_WINDOW (((YGWidget*) YGUI::ui()->currentDialog()->widgetRep())->getWidget()),
-		action,
+		GTK_WINDOW (YGUI::ui()->currentGtkDialog()), action,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
 		NULL);
 
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
-	                                     startWith->value_cstr());
+	// Yast gives startWith as an URL that can be a directory or a file
+	// All this chunck of code is because GTK+ likes to get those
+	// in separated.
+	if (g_file_test (startWith->value_cstr(), G_FILE_TEST_EXISTS)) {
+		if (action == GTK_FILE_CHOOSER_ACTION_OPEN ||
+		    action == GTK_FILE_CHOOSER_ACTION_SAVE) {
+				if (g_file_test (startWith->value_cstr(), G_FILE_TEST_IS_DIR))
+					gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
+					                                     startWith->value_cstr());
+				else {
+					string dirname, filename;
+					YGUtils::splitPath (startWith->value(), dirname, filename);
+					gtk_file_chooser_set_current_folder
+						(GTK_FILE_CHOOSER (dialog),dirname.c_str());
+					gtk_file_chooser_set_current_name
+						(GTK_FILE_CHOOSER (dialog), filename.c_str());
+				}
+		}
+		else
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
+			                                     startWith->value_cstr());
+	}
+	else if (!startWith->value().empty() &&
+	         action == GTK_FILE_CHOOSER_ACTION_SAVE)
+		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),
+		                                   startWith->value_cstr());
 
 	if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
 		GtkFileFilter *filter = gtk_file_filter_new();
@@ -359,14 +401,176 @@ bool YGUI::hasFullUtf8Support()    IMPL_RET(true)
 bool YGUI::richTextSupportsTable() IMPL_RET(false)
 bool YGUI::leftHandedMouse()       IMPL_RET(false)
 
-void YGUI::busyCursor() IMPL
-void YGUI::normalCursor() IMPL
+void YGUI::busyCursor()
+{
+	GtkWidget *window = currentGtkDialog();
+	if (!window) return;
+
+	// NOTE: GdkDisplay won't change for new dialogs, so we don't
+	// have to synchronize between them or something.
+	static GdkCursor *cursor = NULL;
+	if (!cursor) {
+		GdkDisplay *display = gtk_widget_get_display (window);
+		cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+	}
+
+	gdk_window_set_cursor (window->window, cursor);
+}
+
+void YGUI::normalCursor()
+{
+	GtkWidget *window = currentGtkDialog();
+	if (window)
+		gdk_window_set_cursor (window->window, NULL);
+}
+
 void YGUI::redrawScreen() IMPL
 
 void YGUI::makeScreenShot (string filename)
 {
 	IMPL
-	// TODO
+	bool interactive = filename.empty();
+
+	GtkWidget *widget = currentGtkDialog();
+	if (!widget) {
+		if (interactive)
+			internalError ("No dialog to take screenshot of.");
+		return;
+	}
+
+	GError *error = 0;
+	GdkPixbuf *shot =
+		gdk_pixbuf_get_from_drawable (NULL, GDK_DRAWABLE (widget->window),
+			gdk_colormap_get_system(), 0, 0, 0, 0, widget->allocation.width,
+			widget->allocation.height);
+
+	if (!shot) {
+		if (interactive)
+			internalError ("Couldn't take a screenshot.");
+		return;
+	}
+
+	if (interactive) {
+		//** ask user for filename
+		// calculate a default directory...
+		if (screenShotNameTemplate.empty()) {
+			string dir;
+			const char *homedir = getenv("HOME");
+			const char *ssdir = getenv("Y2SCREENSHOTS");
+			if (!homedir || !strcmp (homedir, "/")) {
+				// no homedir defined (installer)
+				dir = "/tmp/" + (ssdir ? (string(ssdir)) : (string("")));
+				if (mkdir (dir.c_str(), 0700) == -1)
+					dir = "";
+			}
+			else {
+				dir = homedir + (ssdir ? ("/" + string(ssdir)) : (string("")));
+				mkdir (dir.c_str(), 0750);  // create a dir for what to put the pics
+			}
+
+			screenShotNameTemplate = dir + "/%s-%03d.png";
+		}
+
+		// calculate a default filename...
+		const char *baseName = moduleName();
+		if  (!baseName)
+			baseName = "scr";
+
+		int nb;
+		map <string, int>::iterator it = screenShotNb.find (baseName);
+		if (it == screenShotNb.end())
+			nb = 0;
+
+		{
+			char *filename_t = g_strdup_printf (screenShotNameTemplate.c_str(), baseName, nb);
+			filename = filename_t;
+			g_free (filename_t);
+		}
+		y2debug ("screenshot: %s", filename.c_str());
+
+		YCPValue ret = askForSaveFileName (YCPString (filename.c_str()),
+		                                   YCPString ("*.png"),
+		                                   YCPString ("Save screenshot to"));
+		if (!ret->isString()) {  // user dismissed the dialog
+			y2debug ("Save screen shot canceled by user");
+			goto makeScreenShot_ret;
+		}
+
+		filename = ret->asString()->value();
+		screenShotNb.erase (baseName);
+		screenShotNb[baseName] = nb + 1;
+	}
+
+	y2debug ("Saving screen shot to %s", filename.c_str());
+	if (gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
+		y2error ("Couldn't save screen shot %s", filename.c_str());
+		if (interactive) {
+			string msg = "Couldn't save screenshot to file " + filename
+			             + " - " + error->message;
+			internalError (msg.c_str());
+		}
+		goto makeScreenShot_ret;
+	}
+
+	if (recordingMacro()) {
+		// save the taking of the screenshot and its name to the macro
+		macroRecorder->beginBlock();
+		currentDialog()->saveUserInput (macroRecorder);
+		macroRecorder->recordMakeScreenShot (true, filename.c_str());
+		macroRecorder->recordUserInput (YCPVoid());
+		macroRecorder->endBlock();
+	}
+
+	makeScreenShot_ret:
+		g_object_unref (G_OBJECT (shot));
+}
+
+void YGUI::toggleRecordMacro()
+{
+	if (recordingMacro()) {
+		stopRecordMacro();
+		normalCursor();
+
+		GtkWidget* dialog = gtk_message_dialog_new (NULL,
+			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+			"Macro recording done.");
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+	}
+	else {
+		normalCursor();
+		YCPValue ret = askForSaveFileName (YCPString (DEFAULT_MACRO_FILE_NAME),
+		                                   YCPString ("*.ycp"),
+		                                   YCPString ("Select Macro File to Record to"));
+		if (ret->isString()) {
+			YCPString filename = ret->asString();
+			recordMacro (filename->value_cstr());
+		}
+	}
+}
+
+void YGUI::askPlayMacro()
+{
+	normalCursor();
+	YCPValue ret = askForExistingFile (YCPString (DEFAULT_MACRO_FILE_NAME),
+	                                   YCPString ("*.ycp"),
+	                                   YCPString ("Select Macro File to Play"));
+
+	if (ret->isString()) {
+		busyCursor();
+		YCPString filename = ret->asString();
+
+		playMacro (filename->value_cstr());
+
+		// Do special magic to get out of any UserInput() loop right now
+		// without doing any harm - otherwise this would hang until the next
+		// mouse click on a PushButton etc.
+		sendEvent (new YEvent());
+/*
+		if (_do_exit_loop)
+			qApp->exit_loop();
+*/
+	}
 }
 
 // Internal helper functions

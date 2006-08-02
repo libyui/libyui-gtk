@@ -4,6 +4,7 @@
 #include "YEvent.h"
 #include "YDialog.h"
 #include "YGWidget.h"
+#include <gdk/gdkkeysyms.h>
 
 class YGGenericButton;
 class YGWizard;
@@ -65,6 +66,9 @@ public:
 	
 		g_signal_connect (G_OBJECT (m_widget), "delete_event",
 		                  G_CALLBACK (close_window_cb), this);
+
+		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
+		                        G_CALLBACK (key_pressed_cb), NULL);
 
 		if (!opt.hasDefaultSize.value()) {
 			gtk_window_set_modal (GTK_WINDOW (getWidget()), TRUE);
@@ -155,19 +159,49 @@ public:
 
 		return FALSE;
 	}
+
+	static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
+	                                YGDialog *pThis)
+	{
+		if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
+		    && (event->state & GDK_MOD1_MASK)) {
+			y2milestone ("Caught YaST2 magic key combination");
+			switch (event->keyval) {
+				case GDK_S:
+					YGUI::ui()->makeScreenShot("");
+					return TRUE;
+				case GDK_M:
+					YGUI::ui()->toggleRecordMacro();
+					return TRUE;
+				case GDK_P:
+					YGUI::ui()->askPlayMacro();
+					return TRUE;
+				case GDK_D:
+					YGUI::ui()->sendEvent (new YDebugEvent());
+					return TRUE;
+				case GDK_X:
+					y2milestone ("Starting xterm");
+					system ("/usr/bin/xterm &");
+					return TRUE;
+				default:
+					return FALSE;
+			}
+		}
+		return FALSE;
+	}
 };
 
 YDialog *
 YGUI::createDialog (YWidgetOpt &opt)
 {
-	IMPL;
+	IMPL
 	return new YGDialog (opt);
 }
 
 void
 YGUI::showDialog (YDialog *dialog)
 {
-	IMPL;
+	IMPL
 	gtk_widget_show (YGWidget::get (dialog)->getWidget());
 	dumpWidgetTree (YGWidget::get (dialog)->getWidget());
 	dumpYastTree (dialog);
@@ -176,6 +210,6 @@ YGUI::showDialog (YDialog *dialog)
 void
 YGUI::closeDialog (YDialog *dialog)
 {
-	IMPL; // FIXME - destroy ? lifecycle etc. ...
+	IMPL // FIXME - destroy ? lifecycle etc. ...
 	gtk_widget_hide (YGWidget::get (dialog)->getWidget());
 }

@@ -211,10 +211,16 @@ public:
     virtual bool richTextSupportsTable();
     virtual bool leftHandedMouse();
 
-    virtual void busyCursor();
-    virtual void normalCursor();
     virtual void redrawScreen();
-    virtual void makeScreenShot(string filename);
+
+	// convience function to be used rather than currentDialog()
+	// NULL if there is no dialog at the moment.
+	GtkWidget *currentGtkDialog();
+
+	virtual void busyCursor();
+	virtual void normalCursor();
+
+    virtual void makeScreenShot (string filename);
 
     /* File/directory dialogs. */
     virtual YCPValue askForExistingDirectory (const YCPString &startDir,
@@ -223,6 +229,15 @@ public:
 					 const YCPString &filter, const YCPString &headline);
     virtual YCPValue askForSaveFileName (const YCPString &startWith,
 					 const YCPString &filter, const YCPString &headline);
+
+	// Starts macro recording and asks for a filename to save it to
+	// If there is already one in progress, it just resumes/pauses as appropriate
+	// activated by Ctrl-Shift-Alt-M
+	void toggleRecordMacro();
+
+	// Plays a macro, opening a dialog first to ask for the filename
+	// activated by Ctrl-Shift-Alt-P
+	void askPlayMacro();
 
  private:
     bool m_have_wm;
@@ -234,6 +249,11 @@ public:
     int    m_argc;
     char **m_argv;
     void  checkInit();
+
+	// for screenshots:
+	map <string, int> screenShotNb;
+	string screenShotNameTemplate;
+
  public:
     // Helpers for internal use [ visibility hidden ]
     long defaultSize(YUIDimension dim);

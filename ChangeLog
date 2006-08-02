@@ -1,3 +1,20 @@
+2006-08-01  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGUI.cc: implemented:
+	+ screenshot - Ctrl+Alt+Shift+S
+
+	+ macros - use Ctrl+Alt+Shift+M (to start & stop)
+	           then Ctrl+Alt+Shift+P (play)
+	(not yet working -- looks like we have to do some trick with
+	 the events handling to let them pass? Michael, maybe you could
+	 check playMacro() on YGUI.cc and respective Qt.)
+
+	+ busy/normal cursor.
+	+ some fixes on the file dialogs.
+
+	* src/ygtkrichtext.c: added <big>, <small>, <br> and
+	set used cursor_new_for_display().
+
 2006-07-31  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGWidget.cc: improved layout spacing a bit.

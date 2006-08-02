@@ -34,6 +34,10 @@ namespace YGUtils
 
 	/* A more sane strcmp() from the user point of view that honors numbers. */
 	int strcmp (const char *str1, const char *str2);
+
+	/* splits a path to a filename by the path expect the file that is
+	   then written to filename. */
+	void splitPath (const string &path, string &dirname, string &filename);
 };
 
 extern "C" {

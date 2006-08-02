@@ -334,3 +334,16 @@ int YGUtils::strcmp (const char *str1, const char *str2)
 	}
 	return 0;	// identicals
 }
+
+void YGUtils::splitPath (const string &path, string &dirname, string &filename)
+{
+	string::size_type i = path.find_last_of ("/");
+	if (i == string::npos) {
+		dirname = path;
+		filename = "";
+	}
+	else {
+		dirname = path.substr (0, i);
+		filename = path.substr (i+1);
+	}
+}

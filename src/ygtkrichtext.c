@@ -20,7 +20,6 @@ static gboolean visibility_notify_event (GtkWidget          *text_view,
 
 static GtkTextViewClass *parent_class = NULL;
 
-/* Methods to add hyperlink support for GtkTextView (based from gtk-demos). */
 static GdkCursor *hand_cursor, *regular_cursor;
 static guint ref_cursor = 0;
 
@@ -70,24 +69,16 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 
 	// Init link support
 	if (!ref_cursor) {
-		hand_cursor    = gdk_cursor_new (GDK_HAND2);
-		regular_cursor = gdk_cursor_new (GDK_XTERM);
+		GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
+		hand_cursor    = gdk_cursor_new_for_display (display, GDK_HAND2);
+		regular_cursor = gdk_cursor_new_for_display (display, GDK_XTERM);
 	}
 	ref_cursor++;
-
-// FIXME: this doesn't seem to compile ?!
-
-/*
-#define	GTK_CHECK_VERSION(major,minor,micro)	\
-    (GTK_MAJOR_VERSION > (major) || \
-     (GTK_MAJOR_VERSION == (major) && GTK_MINOR_VERSION > (minor)) || \
-     (GTK_MAJOR_VERSION == (major) && GTK_MINOR_VERSION == (minor) && \
-      GTK_MICRO_VERSION >= (micro)))
-*/
 
 #if GTK_CHECK_VERSION(2,10,0)
 	gtk_widget_style_get (GTK_WIDGET (view), "link_color", &link_color, NULL);
 #endif
+
 	g_signal_connect (tview, "event-after",
 	                  G_CALLBACK (event_after), NULL);
 	g_signal_connect (tview, "motion-notify-event",
@@ -108,6 +99,8 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	                            "size", 13 * PANGO_SCALE, NULL);
 	gtk_text_buffer_create_tag (buffer, "h5", "weight", PANGO_WEIGHT_SEMIBOLD,
 	                            "size", 11 * PANGO_SCALE, NULL);
+	gtk_text_buffer_create_tag (buffer, "big", "size", 16 * PANGO_SCALE, NULL);
+	gtk_text_buffer_create_tag (buffer, "small", "size", 8 * PANGO_SCALE, NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
@@ -207,17 +200,20 @@ rt_start_element (GMarkupParseContext *context,
                   GError             **error)
 {	// Called for open tags <foo bar="baz">
 	GRTParseState *state = (GRTParseState*) user_data;
-	if (!g_ascii_strcasecmp (element_name, "p"))
-	{
+	if (!g_ascii_strcasecmp (element_name, "p")) {
 		if (state->pre_mode)
 			g_warning ("Odd <p> inside <pre>");
+		return;
+	}
+	if (!g_ascii_strcasecmp (element_name, "br")) {
+		GtkTextIter end;
+		gtk_text_buffer_get_end_iter (state->buffer, &end);
+		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
 		return;
 	}
 	if (!g_ascii_strcasecmp (element_name, "pre"))
 		state->pre_mode = TRUE;
 
-	// FIXME - create marks here instead & push on-list etc.
-	// FIXME - what does this comment mean?
 	GRTPTag *tag = g_malloc (sizeof (GRTPTag));
 
 	GtkTextIter iter;
@@ -251,15 +247,15 @@ rt_start_element (GMarkupParseContext *context,
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
 		else if (!g_ascii_strcasecmp (element_name, "li")) {
-fprintf(stderr, "appending list with li\n");
 			HTMLList *front_list = g_list_first (state->html_list)->data;
 			if (front_list->ordered) {
 				gchar *str = g_strdup_printf ("%d. ", front_list->enumeration++);
 				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
 				g_free (str);
 			}
-			else                             // \u2022 for smaller bullets
-				gtk_text_buffer_insert (state->buffer, &iter, "\u25cf ", -1);
+			else {                           // \u2022 for smaller bullets
+				gtk_text_buffer_insert (state->buffer, &iter, "\u25cf", -1);
+			}
 		}
 		// Tags that affect the margin
 		else if (!g_ascii_strcasecmp (element_name, "ul") ||
@@ -282,7 +278,6 @@ fprintf(stderr, "appending list with li\n");
 	}
 
 	g_free (lower);
-fprintf(stderr, "appending list with tag\n");
 	state->htags = g_list_append (state->htags, tag);
 }
 
