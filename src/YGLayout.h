@@ -22,10 +22,7 @@
 	YGWIDGET_IMPL_SET_ENABLING \
 	YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
 	YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass)  \
-	virtual bool setKeyboardFocus() IMPL_RET(false) \
-	virtual void startMultipleChanges() IMPL \
-	virtual void doneMultipleChanges() IMPL \
-	virtual void saveUserInput (YMacroRecorder *macroRecorder) IMPL
+	virtual bool setKeyboardFocus() IMPL_RET(false)
 
 // YSplit
 

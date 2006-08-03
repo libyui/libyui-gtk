@@ -119,12 +119,12 @@ public:
 				     const YCPString & label,
 				     int minValue, int maxValue, int initialValue);
 
-    // Package selector
-    virtual YWidget *createPackageSelector (YWidget *parent, YWidgetOpt & opt,
-					    const YCPString & floppyDevice);
-    virtual YWidget *createPkgSpecial (YWidget *parent, YWidgetOpt & opt,
-				       const YCPString & subwidget);
-    virtual YCPValue runPkgSelection (YWidget * packageSelector) IMPL_VOID
+	// Package selector
+	virtual YWidget *createPackageSelector (YWidget *parent, YWidgetOpt &opt,
+	                                        const YCPString &floppyDevice);
+	virtual YWidget *createPkgSpecial (YWidget *parent, YWidgetOpt &opt,
+	                                   const YCPString &subwidget);
+	virtual YCPValue runPkgSelection (YWidget *packageSelector);
 
     // Optional widgets
     virtual YWidget *createDummySpecialWidget (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;

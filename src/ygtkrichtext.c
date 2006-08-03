@@ -580,9 +580,11 @@ void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
 
 	GError *error = 0;
 	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (image, &error);
-	if (!pixbuf)
+	if (!pixbuf) {
 		g_warning ("ygtkrichtext: could not open background image: '%s'"
 		           " - %s", image, error->message);
+		return;
+	}
 
 	GdkPixmap *pixmap;
 	gdk_pixbuf_render_pixmap_and_mask_for_colormap (pixbuf,

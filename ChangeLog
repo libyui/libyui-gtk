@@ -1,3 +1,8 @@
+2006-08-03  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGLayout.h: don't overload macro operators. This
+	should fix macro playing.
+
 2006-08-01  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGUI.cc: implemented:

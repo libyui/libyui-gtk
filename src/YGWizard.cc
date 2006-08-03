@@ -1,5 +1,4 @@
 /* Yast-GTK */
-
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
@@ -13,8 +12,8 @@
 #define PIXMAPDIR THEMEDIR "/wizard/"
 
 #define CONTENT_PADDING 15
-#define TITLE_HEIGHT   45
-#define MAIN_BORDER 8
+#define TITLE_HEIGHT    45
+#define MAIN_BORDER      8
 #define HELP_BOX_CHARS_WIDTH 25
 
 class YGWizard : public YWizard, public YGWidget

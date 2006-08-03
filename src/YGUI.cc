@@ -87,7 +87,7 @@ YGUI::YGUI (int argc, char ** argv,
 
 YGUI::~YGUI()
 {
-	LOC;
+	IMPL
 	g_free (m_argv);
 }
 
@@ -226,16 +226,6 @@ void dumpYastTree (YWidget *widget, int indent)
 		for (int i = 0; i < cont->numChildren(); i++)
 			dumpYastTree (cont->child (i), indent + 1);
 }
-
-// Widgets Proper
-
-YWidget *
-YGUI::createPackageSelector( YWidget *parent, YWidgetOpt & opt,
-							const YCPString & floppyDevice ) IMPL_NULL;
-
-YWidget *
-YGUI::createPkgSpecial( YWidget *parent, YWidgetOpt & opt,
-							const YCPString & subwidget ) IMPL_NULL;
 
 static GdkScreen *
 getScreen ()
@@ -424,7 +414,39 @@ void YGUI::normalCursor()
 		gdk_window_set_cursor (window->window, NULL);
 }
 
-void YGUI::redrawScreen() IMPL
+void YGUI::redrawScreen()
+{
+	gtk_widget_queue_draw (currentGtkDialog());
+}
+
+YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
+{
+	y2milestone ("Running package selection...");
+
+	// TODO: we may have to do some trickery here to disable close button
+	// and auto activate dialogs (whatever that is)
+//	_wm_close_blocked           = true;
+//	_auto_activate_dialogs      = false;
+
+	YCPValue input = YCPVoid();
+	try {
+		input = evaluateUserInput();
+	}
+	catch (const std::exception &e) {
+		y2error ("Caught std::exception: %s", e.what());
+		y2error ("This is a libzypp problem. Do not file a bug against the UI!");
+	}
+	catch (...) {
+		y2error ("Caught unspecified exception.");
+		y2error ("This is a libzypp problem. Do not file a bug against the UI!");
+	}
+
+//	_auto_activate_dialogs      = true;
+//	_wm_close_blocked           = false;
+	y2milestone ("Package selection done - returning %s", input->toString().c_str());
+
+	return input;
+}
 
 void YGUI::makeScreenShot (string filename)
 {
@@ -557,19 +579,11 @@ void YGUI::askPlayMacro()
 	                                   YCPString ("Select Macro File to Play"));
 
 	if (ret->isString()) {
-		busyCursor();
+//		busyCursor();  // we need to stop this...
 		YCPString filename = ret->asString();
 
 		playMacro (filename->value_cstr());
-
-		// Do special magic to get out of any UserInput() loop right now
-		// without doing any harm - otherwise this would hang until the next
-		// mouse click on a PushButton etc.
-		sendEvent (new YEvent());
-/*
-		if (_do_exit_loop)
-			qApp->exit_loop();
-*/
+		sendEvent (new YEvent());  // flush
 	}
 }
 
