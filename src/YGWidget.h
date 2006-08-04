@@ -36,6 +36,11 @@ public:
 	void emitEvent(YEvent::EventReason reason,
 	               bool if_notify = true, bool if_not_pending = false);
 
+	// Layout
+	void setBorder (unsigned int border)  // in pixels
+	{ m_border = border; }
+	void setMinSize (unsigned int min_xsize, unsigned int min_ysize);  // in characters
+
 protected:
 	/* The associated GTK+ widget. */
 	GtkWidget *m_widget;
@@ -46,11 +51,6 @@ protected:
 	void construct (YWidget *y_widget, YGWidget *parent,
 	                bool show, GType type,
 	                const char *property_name, va_list args);
-
-	// Layout
-	void setBorder (unsigned int border)  // in pixels
-	{ m_border = border; }
-	void setMinSize (unsigned int min_xsize, unsigned int min_ysize);  // in characters
 
 	// parameters to set the layout prettier
 	unsigned int m_border;

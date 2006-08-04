@@ -28,7 +28,7 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 			g_error ("YGWidget: widget %s doesn't have where to seat",
 			         y_widget->widgetClass());
 		else
-			gtk_fixed_put (fixed, m_widget, 0, 0);
+			gtk_fixed_put (fixed, m_widget, m_border, m_border);
 	}
 
 	if (show)
