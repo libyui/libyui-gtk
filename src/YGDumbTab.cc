@@ -79,14 +79,12 @@ public:
 		IMPL
 		doSetSize (width, height);
 
-		long childWidth  = max (0L, width);
-		long childHeight = max (0L, height);
-
 		if (hasChildren()) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
-			YContainerWidget::child(0)->setSize
-				(childWidth  - 2*xthickness() - 2*border,
-				 childHeight - 2*ythickness() - 2*border - m_label_req.height);
+			width -= 2*xthickness() + 2*border;
+			height -= 2*ythickness() + 2*border + m_label_req.height;
+
+			YContainerWidget::child(0)->setSize (width, height);
 		}
 	}
 

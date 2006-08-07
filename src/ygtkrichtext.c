@@ -76,7 +76,7 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	ref_cursor++;
 
 #if GTK_CHECK_VERSION(2,10,0)
-	gtk_widget_style_get (GTK_WIDGET (view), "link_color", &link_color, NULL);
+	gtk_widget_style_get (GTK_WIDGET (rtext), "link_color", &link_color, NULL);
 #endif
 
 	g_signal_connect (tview, "event-after",
@@ -89,18 +89,25 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	// Init tags
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
 	// Create a few tags like 'h3', 'b', 'i'
+	PangoFontDescription *font_desc = GTK_WIDGET (rtext)->style->font_desc;
+	int size = pango_font_description_get_size (font_desc);
+	if (pango_font_description_get_size_is_absolute (font_desc))
+		size /= PANGO_SCALE;
+
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-	                            "size", 22 * PANGO_SCALE, NULL);
+	                            "size", (int)(size * PANGO_SCALE_XX_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-	                            "size", 18 * PANGO_SCALE, NULL);
+	                            "size", (int)(size * PANGO_SCALE_X_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-	                            "size", 15 * PANGO_SCALE, NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-	                            "size", 13 * PANGO_SCALE, NULL);
-	gtk_text_buffer_create_tag (buffer, "h5", "weight", PANGO_WEIGHT_SEMIBOLD,
-	                            "size", 11 * PANGO_SCALE, NULL);
-	gtk_text_buffer_create_tag (buffer, "big", "size", 16 * PANGO_SCALE, NULL);
-	gtk_text_buffer_create_tag (buffer, "small", "size", 8 * PANGO_SCALE, NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	gtk_text_buffer_create_tag (buffer, "h5",
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	gtk_text_buffer_create_tag (buffer, "big",
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	gtk_text_buffer_create_tag (buffer, "small",
+	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);

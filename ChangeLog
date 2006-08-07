@@ -1,3 +1,14 @@
+2006-08-08  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGWidget.cc: some border fixings.
+
+	* src/ygtkrichtext.c: tag sizes in proportion to normal font.
+	* src/YGWizard.cc: set icon.
+	* src/YGDialog.cc: and use it on children dialogs.
+
+	* src/YGPackageSelector.cc: initial code (I am just trying to
+	see if I can even print a list of packages with Zypp! :/)
+
 2006-08-03  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGLayout.h: don't overload macro operators. This

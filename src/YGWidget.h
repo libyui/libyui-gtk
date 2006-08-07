@@ -37,8 +37,7 @@ public:
 	               bool if_notify = true, bool if_not_pending = false);
 
 	// Layout
-	void setBorder (unsigned int border)  // in pixels
-	{ m_border = border; }
+	void setBorder (unsigned int border);  // in pixels
 	void setMinSize (unsigned int min_xsize, unsigned int min_ysize);  // in characters
 
 protected:

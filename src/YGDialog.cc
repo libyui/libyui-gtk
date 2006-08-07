@@ -57,6 +57,14 @@ public:
 		                      !opt.hasDefaultSize.value());
 		gtk_window_set_title (GTK_WINDOW (m_widget),
 		                      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
+		{	// set it the icon of the parent (if it exists)
+			GtkWidget *parent = YGUI::ui()->currentGtkDialog();
+			if (parent) {
+				GdkPixbuf *icon = gtk_window_get_icon (GTK_WINDOW (parent));
+				if (icon)
+					gtk_window_set_icon (GTK_WINDOW (getWidget()), icon);
+			}
+		}
 
 	// FIXME: set default size to getDefaultSize ?
 	// gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);

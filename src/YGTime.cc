@@ -192,6 +192,7 @@ public:
 		IMPL
 		guint year, month, day;
 		gtk_calendar_get_date (calendar, &year, &month, &day);
+		month += 1;  // GTK calendar months go from 0 to 11
 
 		gchar *year_str, *month_str, *day_str;
 		year_str = g_strdup_printf  ("%d", year);

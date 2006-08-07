@@ -52,6 +52,7 @@ public:
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		IMPL
+		setBorder (0);
 		m_verboseCommands = false;
 
 		// Layout widgets
@@ -75,7 +76,7 @@ public:
 
 		// set a strong font to the heading label
 		PangoFontDescription* font = pango_font_description_new();
-		int size = pango_font_description_get_size (m_title_label->style->font_desc);
+		int size = YGUtils::getCharsHeight (m_title_label, 1);
 		pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
 		pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
 		gtk_widget_modify_font (m_title_label, font);
@@ -223,9 +224,6 @@ public:
 
 		g_signal_connect (G_OBJECT (m_help_program_pane), "notify::position",
 		                  G_CALLBACK (help_pane_moved_cb), this);
-
-//		g_signal_connect (G_OBJECT (m_help_vbox), "size-allocate",
-//		                  G_CALLBACK (program_pane_resized_cb), this);
 
 		main_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (main_vbox), m_title_hbox, FALSE, TRUE, 0);
@@ -378,6 +376,7 @@ public:
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (getCStringArg (cmd, 0), &error);
 			if (pixbuf) {
 				gtk_image_set_from_pixbuf (GTK_IMAGE (m_title_image), pixbuf);
+				gtk_window_set_icon (GTK_WINDOW (YGUI::ui()->currentGtkDialog()), pixbuf);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
@@ -627,10 +626,28 @@ public:
 	                                YGWizard *pThis)
 	{
 		IMPL
+#if 0
 		// When the user moves the GtkPaned, we need to tell our children
 		// a new size.
+
+
 		GtkAllocation *allocation = &pThis->m_fixed->allocation;
+printf("pane moved - size: %d x %d - position: %d\n", allocation->width, allocation->height, gtk_paned_get_position (GTK_PANED (widget)));
+
+
 		pThis->child (0)->setSize (allocation->width, allocation->height);
+#endif
+
+#if 0
+		// When the user moves the GtkPaned, we need to tell our children
+		// a new size. We can't just use GtkFixed allocation because it is
+		// not updated.
+		unsigned int width, height;
+		width = pThis->getWidget()->allocation.width - pThis->size_request (YD_HORIZ);
+		height = pThis->getWidget()->allocation.height - pThis->size_request (YD_VERT);
+
+		pThis->child (0)->setSize (width, height);
+#endif
 	}
 
 	static void set_help_background_cb (GtkWidget *widget, YGWizard *pThis)

@@ -21,10 +21,13 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
 #endif
 
+printf ("border for %s: %d\n", y_widget->widgetClass(), m_border);
+
 	if (parent) {
+		y_widget->setParent (parent->m_y_widget);
 		GtkFixed *fixed;
 
-	 	if (!(fixed = parent->getFixed()))
+		if (!(fixed = parent->getFixed()))
 			g_error ("YGWidget: widget %s doesn't have where to seat",
 			         y_widget->widgetClass());
 		else
@@ -75,12 +78,22 @@ YGWidget::~YGWidget()
 	g_object_unref (G_OBJECT (m_widget));
 }
 
+void YGWidget::setBorder (unsigned int border)
+{
+	// We need to move child to fit new border.
+	// NOTE: setBorder() is meant to be called from the constructor
+	// only, otherwise we would need to recalculate the all layout.
+	m_border = border;
+printf ("border for %s: %d (priori)\n", m_y_widget->widgetClass(), m_border);
+	gtk_fixed_move (YGWidget::getFixed(), m_widget, m_border, m_border);
+}
+
 void YGWidget::setMinSize (unsigned int xsize, unsigned int ysize)
 {
 	if (xsize)
 		m_min_xsize = YGUtils::getCharsWidth (getWidget(), xsize);
 	if (ysize)
-		m_min_ysize = YGUtils::getCharsWidth (getWidget(), ysize);
+		m_min_ysize = YGUtils::getCharsHeight (getWidget(), ysize);
 }
 
 GtkFixed *
@@ -130,9 +143,8 @@ YGWidget::doMoveChild (YWidget *child, long x, long y)
 {
 	GtkFixed *fixed = getFixed();
 	YGWidget *yg_widget = YGWidget::get (child);
-
 	GtkWidget *widget   = yg_widget->getWidget();
-	unsigned int border = yg_widget->m_border;
+	int border = yg_widget->m_border;
 
 	if (!GTK_IS_WIDGET (widget))
 		g_error ("doMoveChild() failed -- widget %s isn't associated to a GtkWidget",
@@ -140,7 +152,6 @@ YGWidget::doMoveChild (YWidget *child, long x, long y)
 	else if (!GTK_IS_FIXED (fixed))
 		g_error ("doMoveChild() failed -- no associated GtkFixed to widget %s",
 		         m_y_widget->widgetClass());
-
 	else
 		gtk_fixed_move (fixed, widget, x + border, y + border);
 }

@@ -421,6 +421,7 @@ void YGUI::redrawScreen()
 
 YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
 {
+printf ("runPkgSelection()\n");
 	y2milestone ("Running package selection...");
 
 	// TODO: we may have to do some trickery here to disable close button

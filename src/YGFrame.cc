@@ -7,6 +7,10 @@
 
 #define CHILDREN_IDENTATION 15
 
+// Instead of tradicional looking frames, we use Gnome convention
+// for the frame's look. That is, don't draw a frame, use bold
+// header and pad children.
+
 class YGFrame : public YFrame, public YGWidget
 {
 	GtkRequisition m_label_req;
@@ -61,18 +65,16 @@ public:
 	// YWidget
 	YGWIDGET_IMPL_SET_ENABLING
 
-	virtual void setSize (long newWidth, long newHeight)
+	virtual void setSize (long width, long height)
 	{
-		doSetSize (newWidth, newHeight);
+		doSetSize (width, height);
 
-		long newChildWidth  = max (0L, newWidth);
-		long newChildHeight = max (0L, newHeight - m_label_req.height);
-
-		if (numChildren() > 0) {
+		if (hasChildren()) {
 			int border = GTK_CONTAINER (getWidget())->border_width;
-			YContainerWidget::child(0)->setSize
-				(newChildWidth - 2*xthickness() - border - CHILDREN_IDENTATION,
-				 newChildHeight - 2*ythickness() - border);
+			width -= 2*xthickness() + border + CHILDREN_IDENTATION;
+			height -= 2*ythickness() + border + m_label_req.height;
+
+			YContainerWidget::child(0)->setSize (width, height);
 		}
 	}
 

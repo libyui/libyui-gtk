@@ -42,12 +42,8 @@ public:
 		if (opt.boldFont.value())
 			pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
 		if (opt.isHeading.value()) {
-			m_border = 4;
-			setForegroundColor (getWidget()->style->fg[GTK_STATE_SELECTED]);
-			setBackgroundColor (getWidget()->style->bg[GTK_STATE_SELECTED]);
-
 			pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
-			int size = pango_font_description_get_size (getWidget()->style->font_desc);
+			int size = YGUtils::getCharsHeight (getWidget(), 1);
 			pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
 		}
 		gtk_widget_modify_font (getWidget(), font);

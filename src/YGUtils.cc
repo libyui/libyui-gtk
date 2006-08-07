@@ -296,7 +296,11 @@ int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 
 int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 {
-	return pango_font_description_get_size (widget->style->font_desc) * chars_nb;
+	PangoFontDescription *font_desc = widget->style->font_desc;
+	int size = pango_font_description_get_size (font_desc);
+	if (pango_font_description_get_size_is_absolute (font_desc))
+		size /= PANGO_SCALE;
+	return size * chars_nb;
 }
 
 #define IS_DIGIT(x) (x >= '0' && x <= '9')
