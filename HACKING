@@ -149,3 +149,74 @@ Code practices
   for the most part. Our Gtk widgets (on ygtk* files) are written
   in C and follow this_name_style to fit better with GTK+ one.
   We always prefix m_ to class memeber variables.
+
+Morphing Suse to use Yast-GTK
+
+  We haven't yet managed to create a Suse GTK-based installer, but
+  these steps should be close to that end.
+
+  1. Pick the 1st CD of some Suse edition version ISO
+     (let's say it is named SUSE.iso)
+
+  2. Mount it
+  $ mkdir cd
+  $ sudo mount -o loop -t iso9660 SUSE.iso cd
+
+  3. Mount the 'root' file
+  $ mkdir root
+  $ sudo mount -o -t auto cd/boot/i386/root root
+
+  4. Clone them so you can write to them
+  $ cp -rp cd my_cd
+
+  $ mkdir my_root
+  $ cd root ; sudo tar cf ../my_root/root.tar ; cd ..
+  $ cd my_root ; sudo tar xf root.tar ; sudo rm -f root.tar ; cd ..
+
+  $ sudo chmod -R a+rw my_cd my_root
+  (the usage of tar is because it keeps hard-links, unlike a "cp -rp".
+   Ignore tar warnings about the timestamp -- this is related to the 'root'
+   file's filesystem.)
+
+  5. You may unmount them now (it will be done at shutdown anyway...)
+  $ sudo umount cd root
+
+  6. Copy GTK plugin to the CD:
+  $ cp -p /usr/lib/YaST2/plugin/libpy2gtk.* my_root/usr/lib/Yast2/plugin
+
+  7. Copy GTK plugin required libraries into the my_cd
+  "ldd /usr/lib/YaST2/plugin/libpy2gtk.so" should give you an idea of
+  which these are.
+
+  8. Edit my_root/usr/lib/YaST2/startup/YaST2.class to replace qt by gtk
+  (careful about automatic replaces: set_inst_qt_env and clr_inst_qt_env are
+   executables, so better let them be for now...).
+  You may use this one: http://rpmcruz.planetaclix.pt/trash/YaST2.call
+
+  9. Remove a few (and be generous to avoid getting here again) packages from
+     my_cd/suse/i586 (because the cd is already very tight...)
+
+    Now, everything should be done. We just need to create our iso...
+
+  10. Get cramfs (not included on suse cds, just google it and it will be 1st
+      result), and compile it.
+
+  11. Make your own 'root' file based on the changes from my_root
+  $ rmdir root   # in case there is one...
+  $ sudo cramfs/mkcramfs my_root root
+
+  12. Copy your 'root' into the CD directory
+  $ cp -f root my_cd/boot/i386/root
+
+  13. Create the CD iso (without breaklines)
+  $ cd my_cd
+  $ sudo mkisofs -p "Yast-GTK installer" -publisher "Fools, Inc."
+     -r -J -f -pad -no-emul-boot -boot-load-size 4 -boot-info-table
+    -b boot/i386/loader/isolinux.bin -c boot/i386/boot.catalog -hide
+    boot/i386/boot.catalog -hide-joliet boot/i386/boot.catalog -A
+    "SUSE-Yast-GTK#0" -V SU1010.001 -o ../SUSE-Yast-GTK.iso .
+
+  (This command is based on the one used to made Suse CD -- that you may
+   get with a "strings SUSE.iso | grep mkisofs")
+
+  14. Ready to burn and try.
