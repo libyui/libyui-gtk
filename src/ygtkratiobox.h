@@ -55,6 +55,9 @@ GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
 gint ygtk_ratio_box_get_spacing (YGtkRatioBox *box);
 
+void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child,
+                          gfloat ratio, gboolean fill, guint padding);
+
 void ygtk_ratio_box_query_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                          gfloat *ratio, gboolean *fill,
                                          guint *padding);

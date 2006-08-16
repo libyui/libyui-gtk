@@ -42,15 +42,6 @@ public:
     virtual void closeDialog (YDialog *dialog);
     // Non abstract virtuals:
     virtual YCPValue setLanguage (const YCPTerm & term) IMPL_VOID;
-#if 0
-    virtual YCPString glyph (const YCPSymbol & glyphSymbol) { return YCPString (""); }
-    virtual YCPValue setConsoleFont (const YCPString & console_magic,
-				     const YCPString & font,
-				     const YCPString & screen_map,
-				     const YCPString & unicode_map,
-				     const YCPString & encoding);
-    virtual YCPValue setKeyboard();
-#endif
 
     // event pieces:
  private:
@@ -211,7 +202,8 @@ public:
     virtual bool richTextSupportsTable();
     virtual bool leftHandedMouse();
 
-    virtual void redrawScreen();
+	virtual YCPString glyph (const YCPSymbol &glyph);
+	virtual void redrawScreen();
 
 	// convience function to be used rather than currentDialog()
 	// NULL if there is no dialog at the moment.

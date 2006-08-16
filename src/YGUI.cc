@@ -548,6 +548,28 @@ void YGUI::makeScreenShot (string filename)
 		g_object_unref (G_OBJECT (shot));
 }
 
+YCPString YGUI::glyph (const YCPSymbol &symbol)
+{
+    string sym = symbol->symbol();
+	if (sym == YUIGlyph_ArrowLeft)
+		return YCPString ("\u2190");
+	if (sym == YUIGlyph_ArrowRight)
+		return YCPString ("\u2192");
+	if (sym == YUIGlyph_ArrowUp)
+		return YCPString ("\u2191");
+	if (sym == YUIGlyph_ArrowDown)
+		return YCPString ("\u2193");
+	if (sym == YUIGlyph_CheckMark)
+		return YCPString ("\u2714");
+	if (sym == YUIGlyph_BulletArrowRight)
+		return YCPString ("\u279c");
+	if (sym == YUIGlyph_BulletCircle)
+		return YCPString ("\u274d");
+	if (sym == YUIGlyph_BulletSquare)
+		return YCPString ("\u274f");
+	return YCPString ("");
+}
+
 void YGUI::toggleRecordMacro()
 {
 	if (recordingMacro()) {

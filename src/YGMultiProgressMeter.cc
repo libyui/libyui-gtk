@@ -29,9 +29,8 @@ public:
 			else
 				gtk_widget_set_size_request (bar, -1, min_size);
 
-			gtk_container_add (GTK_CONTAINER (getWidget()), bar);
-			ygtk_ratio_box_set_child_packing
-				(YGTK_RATIO_BOX (getWidget()), bar, maxValue (i), TRUE, 0);
+			ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), bar,
+			                     maxValue (i), TRUE, 0);
 		}
 
 		gtk_widget_show_all (getWidget());

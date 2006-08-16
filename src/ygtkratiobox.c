@@ -101,6 +101,13 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 	gtk_widget_thaw_child_notify (child);
 }
 
+void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child,
+                          gfloat ratio, gboolean fill, guint padding)
+{
+	gtk_container_add (GTK_CONTAINER (box), child);
+	ygtk_ratio_box_set_child_packing (box, child, ratio, fill, padding);
+}
+
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing)
 {
 	box->spacing = spacing;
