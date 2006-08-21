@@ -30,8 +30,8 @@ class YGSplit : public YSplit, public YGWidget
 {
 public:
 	YGSplit (const YWidgetOpt &opt, YGWidget *parent, YUIDimension dimension)
-	: YSplit( opt, dimension ),
-	  YGWidget( this, parent )
+	: YSplit (opt, dimension),
+	  YGWidget (this, parent)
 	{}
 	// YSplit
 	YGWIDGET_IMPL_MOVE_CHILD
@@ -45,8 +45,8 @@ class YGEmpty : public YEmpty, public YGWidget
 {
 public:
 	YGEmpty (const YWidgetOpt &opt, YGWidget *parent)
-	: YEmpty( opt ),
-	  YGWidget( this, parent )
+	: YEmpty (opt),
+	  YGWidget (this, parent)
 	{}
 	YGWIDGET_CONTAINER_IMPL (YEmpty)
 };
@@ -59,7 +59,7 @@ public:
 	YGSpacing (const YWidgetOpt &opt, YGWidget *parent,
 	           float size, bool horizontal, bool vertical)
 	: YSpacing (opt, size, horizontal, vertical),
-	  YGWidget(this, parent)
+	  YGWidget (this, parent)
 	{}
 	YGWIDGET_CONTAINER_IMPL (YSpacing)
 };
@@ -71,7 +71,7 @@ class YGReplacePoint : public YReplacePoint, public YGWidget
 public:
 	YGReplacePoint (const YWidgetOpt &opt, YGWidget *parent)
 	: YReplacePoint (opt),
-	  YGWidget( this, parent ) {}
+	  YGWidget (this, parent) {}
 	// YContainerWidget
 	virtual void childAdded( YWidget *child )
 	{
@@ -89,7 +89,7 @@ public:
 	YGSquash (const YWidgetOpt &opt, YGWidget *parent,
 	          bool hsquash, bool vsquash)
 	: YSquash (opt, hsquash, vsquash),
-	  YGWidget( this, parent ) {}
+	  YGWidget (this, parent) {}
 	YGWIDGET_CONTAINER_IMPL (YSquash)
 };
 

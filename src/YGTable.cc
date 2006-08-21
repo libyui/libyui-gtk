@@ -135,11 +135,13 @@ protected:
 
 	void deleteRows()
 	{
+		IMPL
 		gtk_list_store_clear (getStore());
 	}
 
 	int getCurrentRow()
 	{
+		IMPL
 		GtkTreePath *path;
 		GtkTreeViewColumn *column;
 		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()),
@@ -152,13 +154,19 @@ protected:
 
 	void setCurrentRow (int row)
 	{
+		IMPL
 		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), path, NULL, false);
+
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
+		gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
+
 		gtk_tree_path_free (path);
 	}
 
 	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
 	{
+		IMPL
 		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
 	}
@@ -166,6 +174,7 @@ protected:
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                          GtkTreeViewColumn *column, YWidget* pThis)
 	{
+		IMPL
 		if (pThis->getNotify())
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
 	}
@@ -173,6 +182,7 @@ protected:
 	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	                        YGWidget *pThis)
 	{
+		IMPL
 		// Toggle the box
 		GtkTreeModel* model = ((YGTableView*) pThis)->getModel();
 		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
@@ -192,32 +202,46 @@ protected:
 	{
 		IMPL
 		GtkTreeSortable *sortable;
-		sortable = (GtkTreeSortable*) g_object_get_data (G_OBJECT (column),  "sortable");
-		int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column),  "id"));
+fprintf (stderr, "get sortable\n");
+		sortable = (GtkTreeSortable*) g_object_get_data (G_OBJECT (column), "sortable");
+fprintf (stderr, "get id\n");
+		int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "id"));
 
 		GtkSortType sort = GTK_SORT_ASCENDING;
 		if (pThis->m_sortedCol == column) {
+fprintf (stderr, "get sort order\n");
 			sort = gtk_tree_view_column_get_sort_order (column);
+fprintf (stderr, "swap sort order\n");
 			sort = (sort == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
 		}
 
+fprintf (stderr, "set sort column id\n");
 		gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
+fprintf (stderr, "set sort order\n");
 		gtk_tree_view_column_set_sort_order (column, sort);
 
 		if (pThis->m_sortedCol)
+{
+fprintf (stderr, "set sort indicator of previous to false\n");
 			gtk_tree_view_column_set_sort_indicator (pThis->m_sortedCol, FALSE);
+}
+fprintf (stderr, "set sort indicator of current to true\n");
 		gtk_tree_view_column_set_sort_indicator (column, TRUE);
+fprintf (stderr, "cache old sorted column\n");
 		pThis->m_sortedCol = column;
 	}
 
 	static gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
 	                             GtkTreeIter *b, gpointer data)
 	{
+		IMPL
 		gint col = GPOINTER_TO_INT (data);
 		gchar *str1, *str2;
 		gtk_tree_model_get (model, a, col, &str1, -1);
 		gtk_tree_model_get (model, b, col, &str2, -1);
-		return YGUtils::strcmp (str1, str2);
+		if (str1 && str2)
+			return YGUtils::strcmp (str1, str2);
+		return 0;
   }
 };
 

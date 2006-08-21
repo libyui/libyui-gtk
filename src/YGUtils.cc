@@ -343,10 +343,10 @@ int YGUtils::strcmp (const char *str1, const char *str2)
 		}
 
 		// regular character comparasion
-		else if (*i != *j) {
-			if (*i < *j)
+		else if (g_ascii_tolower (*i) != g_ascii_tolower(*j)) {
+			if (g_ascii_tolower (*i) < g_ascii_tolower (*j))
 				return -1;
-			// if (*i > *j)
+			// if (g_ascii_tolower (*i) > g_ascii_tolower (*j))
 				return +1;
 		}
 			break;

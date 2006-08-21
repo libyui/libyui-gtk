@@ -147,6 +147,7 @@ public:
 		IMPL
 		if (m_verboseCommands)
 			y2milestone ("Processing wizard command: %s\n", cmd->name().c_str());
+printf ("Processing wizard command: %s\n", cmd->name().c_str());
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		if (isCommand (cmd, "SetHelpText", 1, 0x1))

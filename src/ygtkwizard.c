@@ -392,9 +392,15 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	if (path == NULL)
 		return FALSE;
 
+	g_signal_handlers_block_by_func (wizard->m_tree_widget,
+	                                 (gpointer) tree_item_selected_cb, wizard);
+
 	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (wizard->m_tree_widget), path);
 	gtk_tree_view_set_cursor (GTK_TREE_VIEW (wizard->m_tree_widget), path,
 	                          NULL, FALSE);
+
+	g_signal_handlers_unblock_by_func (wizard->m_tree_widget,
+	                                   (gpointer) tree_item_selected_cb, wizard);
 	return TRUE;
 }
 
@@ -648,7 +654,12 @@ void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition)
 	requisition->width += MAIN_BORDER * 2;
 
 	// vertical
-		gtk_widget_size_request (wizard->m_title_hbox, &req);
+	if (GTK_WIDGET_VISIBLE (wizard->m_menu)) {
+		gtk_widget_size_request (wizard->m_menu, &req);
+		requisition->height += req.height +
+		    gtk_container_get_border_width (GTK_CONTAINER (wizard->m_menu));
+	}
+	gtk_widget_size_request (wizard->m_title_hbox, &req);
 	requisition->height += req.height + CONTENT_PADDING * 2;
 	requisition->height += MAIN_BORDER * 2;
 	gtk_widget_size_request (wizard->m_button_box, &req);

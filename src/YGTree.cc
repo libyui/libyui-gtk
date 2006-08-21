@@ -116,8 +116,11 @@ protected:
 		GtkTreePath *path = gtk_tree_path_new();
 		getItemPath (path, item);
 
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
 		gtk_tree_view_expand_to_path (GTK_TREE_VIEW (getWidget()), path);
 		gtk_tree_view_set_cursor (GTK_TREE_VIEW(getWidget()), path, NULL, FALSE);
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
+
 		gtk_tree_path_free (path);
 	}
 
