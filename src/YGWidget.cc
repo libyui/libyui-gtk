@@ -33,9 +33,11 @@ printf ("border for %s: %d\n", y_widget->widgetClass(), m_border);
 		else
 			gtk_fixed_put (fixed, m_widget, m_border, m_border);
 	}
+	else
+		m_border = 0;
 
 	if (show)
-		gtk_widget_show_all (m_widget);
+		gtk_widget_show (m_widget);
 }
 
 // Widget constructor

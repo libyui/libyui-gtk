@@ -220,3 +220,50 @@ Morphing Suse to use Yast-GTK
    get with a "strings SUSE.iso | grep mkisofs")
 
   14. Ready to burn and try.
+
+LibZypp API overview
+
+  The Zypp library is a wrapper around at least two package repository
+  systems (zmd and rug). It is quite a monster with no clear API or
+  documentation, thus this section.
+
+  The first thing we need to do when using Zypp is to initializate it.
+  This is done for us by yast-core, so we don't have to care about that.
+
+  To get a list of packages, you iterate the Zypp pool, that you can get
+  with zypp::getZYpp()->poolProxy(). So, if you want to iterate through
+  the package pool, you would do:
+    for (zypp::ResPoolProxy::const_iterator it =
+           zypp::getZYpp()->poolProxy().byKindBegin <zypp::Package>();
+         it != zypp::getZYpp()->poolProxy().byKindEnd <zypp::Package>(); it++)
+  To iterate through patches, use zypp::Patch as the kind.
+
+  The iterators point to objects of type zypp::ui::Selectable::Ptr, where Ptr
+  is a boost intrusive_ptr -- so, you may turn that into a C pointers with
+  a "zypp::ui::Selectable *sel = get_pointer (*it);"
+
+  A Selectable object contains pointers to the installed version and all
+  available (through repositories) versions of some packages whose name
+  you may get with a zypp::ui::Selectable::name(). The package it considers
+  as the best from the available packages is what it calls a candidate.
+  Check /usr/include/zypp/ui/Selectable.h for its API.
+
+  You may get more details on a given packages by retriving the correspondent
+  zypp::ResObject from the Selectable of the version you want.
+  Check /usr/include/zypp/ResObject.h for its API.
+
+  To get even more information, you may cast the zypp::ResObject to a
+  zypp::Package or zypp::Patch, according to what you are iterating.
+  Since this is boost pointers we are dealing with, you would cast a
+  zypp::ResObject::constPtr like
+    zypp::dynamic_pointer_cast <const zypp::Package> (res_object);
+  Check /usr/include/zypp/Package.h / Patch.h for their API.
+
+  The reason why our categories tree is build in an ackward way is because you
+  get the category of a package with zypp::Package::group() which returns a
+  std::string like "Productivity/Networking/Email/Utilities". You can't build
+  the tree before you start adding packages since you don't have a way to know
+  its hierarchy.
+
+  To avoid the lengthy names of Zypp, we use some typedefs and inline helper
+  functions that you may find right on the start of YGPackageSelector.cc.

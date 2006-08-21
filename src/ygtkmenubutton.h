@@ -1,4 +1,7 @@
-/* YGtkSpinBox widget */
+/* YGtkMenuButton is a button that displays a widget when pressed.
+   This widget can either be of type GtkMenu or another, like a
+   GtkCalendar and we'll do the proper "emulation".
+*/
 
 #ifndef YGTK_MENU_BUTTON_H
 #define YGTK_MENU_BUTTON_H

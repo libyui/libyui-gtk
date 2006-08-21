@@ -1,6 +1,9 @@
-/* Yast-GTK */
-/* YGtkMenuButton is a button that displays a menu when pressed.
-*/
+/* YGtkFieldEntry widget */
+// check the header file for information about this widget
+/* YGtkFieldEntry widget */
+// check the header file for information about this widget
+/* YGtkMenuButton widget */
+// check the header file for information about this widget
 
 #include "ygtkmenubutton.h"
 #include <gtk/gtkimage.h>

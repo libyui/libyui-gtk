@@ -103,6 +103,7 @@ class YGAlignment : public YAlignment, public YGWidget
 public:
 	YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
 	             YAlignmentType halign, YAlignmentType valign);
+	virtual ~YGAlignment();
 
 	virtual void setBackgroundPixmap (string image);
 	virtual GtkFixed *getFixed();

@@ -1,3 +1,12 @@
+/* YGtkFieldEntry is an extension of GtkEntry with the added
+   functionality of being able to define fields (useful for when
+   you need the user to set a IP address or time/date). The number
+   of fields, their individual range and separation character
+   is all customizable.
+
+   Code from the VMware widgets set (http://view.sourceforge.net/classes.php).
+*/
+
 /*
  * YGtkFieldEntry widget for GTK+
  * Copyright (C) 2005 Baruch Even <baruch@ev-en.org>

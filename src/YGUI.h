@@ -209,6 +209,8 @@ public:
 	// NULL if there is no dialog at the moment.
 	GtkWidget *currentGtkDialog();
 
+	string hostname;
+
 	virtual void busyCursor();
 	virtual void normalCursor();
 

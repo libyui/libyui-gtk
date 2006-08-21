@@ -1,3 +1,4 @@
+/* Yast-GTK */
 #include <config.h>
 #include <stdio.h>
 #include <ycp/y2log.h>
@@ -10,6 +11,8 @@
 #include <glib/gthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <rpc/types.h>  // MAXHOSTNAMELEN
 
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 
@@ -77,6 +80,12 @@ YGUI::YGUI (int argc, char ** argv,
 
 	m_default_size.width = -1;
 	m_default_size.height = -1;
+
+	// get hostname (used for title)
+	char _hostname [MAXHOSTNAMELEN+1];
+	if (gethostname (_hostname, MAXHOSTNAMELEN) == 0)
+		_hostname [MAXHOSTNAMELEN -1] = '\0'; // make sure it's terminated
+	hostname = _hostname;
 
 	if (macro_file)
 		playMacro (macro_file);

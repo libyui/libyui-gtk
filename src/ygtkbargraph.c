@@ -1,4 +1,5 @@
 /* YGtkBarGraph widget */
+// check the header file for information about this widget
 
 #include "ygtkbargraph.h"
 #include <gtk/gtklabel.h>
@@ -10,7 +11,7 @@
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass);
 static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
 static void ygtk_bar_graph_size_request  (GtkWidget      *widget,
-                                     GtkRequisition *requisition);
+                                          GtkRequisition *requisition);
 
 static YGtkRatioHBoxClass *parent_class = NULL;
 

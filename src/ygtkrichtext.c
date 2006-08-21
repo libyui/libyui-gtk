@@ -1,4 +1,5 @@
 /* YGtkRichText widget */
+// check the header file for information about this widget
 
 #include "ygtkrichtext.h"
 #include <gtk/gtkversion.h>
@@ -6,7 +7,8 @@
 
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
+                                           gboolean cut_breaklines);
 
 static void ygtk_richtext_class_init (YGtkRichTextClass *klass);
 static void ygtk_richtext_init       (YGtkRichText      *rich_text);
@@ -65,7 +67,6 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
 	gtk_text_view_set_editable (tview, FALSE);
 	gtk_text_view_set_cursor_visible (tview, FALSE);
-	gtk_text_view_set_pixels_below_lines (tview, 10);
 
 	// Init link support
 	if (!ref_cursor) {
@@ -453,10 +454,8 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
 
 	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
-	if (link) {   // report link
-printf("emitting signal of link pressed: %s\n", link);
+	if (link)  // report link
 		g_signal_emit (YGTK_RICHTEXT (text_view), link_pressed_signal, 0, link);
-}
 	return FALSE;
 }
 
@@ -543,15 +542,20 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 	rtext->prodname = g_strdup (prodname);
 }
 
-void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_text)
+void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
+                             gboolean plain_text, gboolean honor_br_char)
 {
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
 	if (plain_text) {
+		gtk_text_view_set_pixels_below_lines (GTK_TEXT_VIEW (rtext), 0);
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
+
+	// only set space on paragraphs for html text
+	gtk_text_view_set_pixels_below_lines (GTK_TEXT_VIEW (rtext), 12);
 
 	// remove any possible existing text
 	gtk_text_buffer_set_text (buffer, "", 0);
@@ -562,7 +566,8 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text, gboolean pl
 	GMarkupParseContext *ctx;
 	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
 
-	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname);
+	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname,
+	                                                !honor_br_char);
 
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))

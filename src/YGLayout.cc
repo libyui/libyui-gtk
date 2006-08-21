@@ -70,6 +70,12 @@ YGAlignment::YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
 	gtk_widget_show (m_fixed);
 }
 
+YGAlignment::~YGAlignment()
+{
+	if (m_background_pixbuf)
+		g_object_unref (G_OBJECT (m_background_pixbuf));
+}
+
 void YGAlignment::setBackgroundPixmap (string filename)
 {
 	// YAlignment will prepend a path to the image

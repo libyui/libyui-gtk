@@ -40,7 +40,8 @@ public:
 	virtual void setText (const YCPString &text)
 	{
 		IMPL
-		ygtk_richtext_set_text (YGTK_RICHTEXT (getWidget()), text->value_cstr(), m_plainText);
+		ygtk_richtext_set_text (YGTK_RICHTEXT (getWidget()), text->value_cstr(),
+		                        m_plainText, FALSE);
 
 		if (autoScrollDown)
 			YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));

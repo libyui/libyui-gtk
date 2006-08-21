@@ -2,6 +2,7 @@
 #define YGUTILS_H
 
 #include <string>
+#include <list>
 #include <gtk/gtktextview.h>
 #include <gtk/gtkeditable.h>
 
@@ -35,14 +36,36 @@ namespace YGUtils
 	/* A more sane strcmp() from the user point of view that honors numbers. */
 	int strcmp (const char *str1, const char *str2);
 
-	/* splits a path to a filename by the path expect the file that is
+	/* Checks if a std::string contains some other string (case insensitive). */
+	bool contains (const string &haystack, const string &needle);
+
+	/* Splits a path to a filename by the path expect the file that is
 	   then written to filename. */
 	void splitPath (const string &path, string &dirname, string &filename);
+
+	/* Splits a string into parts as separated by the separator characters.
+	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
+	std::list <string> splitString (const string &str, char separator);
+
+	/* Prints a GtkTreeModel for debugging purposes. */
+	void print_model (GtkTreeModel *model, int string_col);
+
+	/* To be used as a callback for a GtkTreeView with toggle cells. */
+	void tree_view_toggle_cb (GtkCellRendererToggle *renderer,
+	                          gchar *path_str, GtkTreeModel *model);
+
+	/* Same as before but for radio buttons. */
+	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
+	                                gchar *path_str, GtkTreeModel *model);
 };
 
 extern "C" {
+	int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
+	int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
+
 	/* Convert html to xhtml (or at least try) */
-	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
+	                                           gboolean cut_breaklines);
 };
 
 #endif // YGUTILS_H

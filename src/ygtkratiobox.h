@@ -1,4 +1,20 @@
-/* RatioBox container */
+/* YGtkRatioBox is an improvement over the GtkBox container that
+   allows the programmer to set the size containees as a ratio,
+   as opposed to just define their size as expandable or not.
+   (ratio = 0 would be the equivalent of expand = FALSE, while
+    ratio = 1 is the equivalent to expand = TRUE.)
+
+   YGtkRatioBox could be API (and ABI for the matter) compatible with
+   GtkBox, but isn't, as there is no compelling reason for that, since it
+   would require not only initial work, but the code would get bigger,
+   which is obviously undesirable for maintance.
+   However, if you want to use YGtkRatioBox as a replacement for GtkBox,
+   feel free to contact us that we may give you hand in accomplishing that.
+
+   Limitations:
+     * containees visibility is not supported
+     * text direction is not honored
+*/
 
 #ifndef YGTK_RATIO_BOX_H
 #define YGTK_RATIO_BOX_H

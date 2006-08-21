@@ -1,3 +1,22 @@
+2006-08-21  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGPackageSelector.cc: functional version (just misses
+	search and some other glitches yet to fix for basic functionality
+	be done -- I have also not tested it much, so...).It features a patch,
+	pattern and package selectors. These last both are somewhat integrated.
+	It shows a summary dialog (it doesn't yet list dependencies --
+	actually, I am don't think those are dealt with, maybe with conflicts
+	dialog) and a conflicts dialog. License signing dialog (that some
+	packages force) should be working except that there is some mismatch
+	between the headers and libraries Zypp versions here on that point
+	(the function is there and it compiles fine without warnings, but the
+	linker complains), so it is disabled.
+
+	* src/ygtkwizard.c/h: added this base widget for YGWizard and
+	YGPackageSelector.
+
+	* HACKING: some Zypp info.
+
 2006-08-08  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGWidget.cc: some border fixings.

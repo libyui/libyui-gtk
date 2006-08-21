@@ -1,4 +1,5 @@
-AM_CFLAGS = $(GTK_CFLAGS)
+AM_CFLAGS = $(GTK_CFLAGS) \
+	-DTHEMEDIR=\"${themedir}/current\"
 AM_CXXFLAGS = $(GTK_CFLAGS) \
 	-DY2LOG=\"ui-gtk\" \
 	-DTHEMEDIR=\"${themedir}/current\"
@@ -46,7 +47,8 @@ libpy2gtk_la_SOURCES = \
 	ygtkrichtext.c \
 	ygtksteps.c \
 	ygtkfieldentry.c \
-	ygtkmenubutton.c
+	ygtkmenubutton.c \
+	ygtkwizard.c
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la

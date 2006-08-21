@@ -1,4 +1,7 @@
 /* YGtkBarGraph widget */
+/* YGtkBarGraph is just a simple graph of bars that may be
+   changed during run-time (see ygtk_bar_graph_setup_entry()).
+*/
 
 #ifndef YGTK_BAR_GRAPH_H
 #define YGTK_BAR_GRAPH_H

@@ -1,3 +1,6 @@
+/* YGtkFieldEntry widget */
+// check the header file for information about this widget
+
 /*
  * YGtkFieldEntry widget for GTK+
  * Copyright (C) 2005 Baruch Even <baruch@ev-en.org>
@@ -17,15 +20,6 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  */
-
-/* YGtkMultiEntry is an extension of GtkEntry with the added
-   functionality of being able to define field (useful for when
-   you need the user to set a IP address or time/date) The number
-   of fields, their individual range and separation character
-   is customizable.
-
-   Code from the VMware widgets set (http://view.sourceforge.net/classes.php).
-*/
 
 #include <ctype.h>
 #include <string.h>

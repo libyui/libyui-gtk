@@ -1,4 +1,13 @@
-/* YGTKSteps widget */
+/* YGtkSteps is a widget that displays a list of steps, useful
+   to show the progress of some configuration tool as it does
+   the work of updating files or services or whatever.
+
+   You use the append functions to initializate the steps. If,
+   for some reason, you want one step to count as more than one
+   (ie. so that a ygtk_steps_advance() needs to be called more than
+    once to actually advance for a given step), you may append a
+   step with the same name of the previous, that they'll be collapsed.
+*/
 
 #ifndef YGTK_STEPS_H
 #define YGTK_STEPS_H

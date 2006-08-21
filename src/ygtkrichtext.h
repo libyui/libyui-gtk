@@ -1,4 +1,7 @@
-/* RatioBox container */
+/* YGtkRichText is a very simple widget that displays HTML code.
+   It was done, since GTK+ doesn't offer one out of box, and to
+   avoid dependencies.
+*/
 
 #ifndef YGTK_RICHTEXT_H
 #define YGTK_RICHTEXT_H
@@ -40,8 +43,11 @@ struct _YGtkRichTextClass
 GtkWidget* ygtk_richtext_new();
 GType ygtk_richtext_get_type (void) G_GNUC_CONST;
 
+/* Sets some text to YGtkRichText that may be HTML or just plain, according
+   to "plain_text". In HTML case, "honor_br_char" means if the renderer
+   should break lines on the string '\n' characters. */
 void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
-                             gboolean plain_text);
+                             gboolean plain_text, gboolean honor_br_char);
 
 void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname);
 

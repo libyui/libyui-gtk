@@ -56,7 +56,8 @@ public:
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
 		                      !opt.hasDefaultSize.value());
 		gtk_window_set_title (GTK_WINDOW (m_widget),
-		                      (!opt.hasDefaultSize.value()) ?  "Yast2" : "");
+		                      (!opt.hasDefaultSize.value()) ?  "YaST2"
+		                        : ("YaST2@" + YGUI::ui()->hostname).c_str());
 		{	// set it the icon of the parent (if it exists)
 			GtkWidget *parent = YGUI::ui()->currentGtkDialog();
 			if (parent) {
