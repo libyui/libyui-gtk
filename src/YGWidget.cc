@@ -237,6 +237,10 @@ YGLabeledWidget::YGLabeledWidget(
 
 	// Create the label
 	m_label = gtk_label_new ("");
+	if(show) {
+		gtk_widget_show (m_label);
+		gtk_widget_show (m_field);
+	}
 	setBuddy (m_field);
 	doSetLabel (label_text);
 
@@ -245,19 +249,15 @@ YGLabeledWidget::YGLabeledWidget(
 	gtk_container_add (GTK_CONTAINER (m_widget), m_field);
 	gtk_box_set_child_packing (GTK_BOX (m_widget), m_label,
 	                      FALSE, FALSE, 4, GTK_PACK_START);
-	if(show) {
-		gtk_widget_show (m_label);
-		gtk_widget_show (m_field);
-	}
 }
 
 void
-YGLabeledWidget::setLabelVisible(bool show)
+YGLabeledWidget::setLabelVisible (bool show)
 {
-  if (show)
-    gtk_widget_show (m_label);
-  else
-    gtk_widget_hide (m_label);
+	if (show)
+		gtk_widget_show (m_label);
+	else
+		gtk_widget_hide (m_label);
 }
 
 void
@@ -267,11 +267,15 @@ YGLabeledWidget::setBuddy (GtkWidget *widget)
 }
 
 void
-YGLabeledWidget::doSetLabel (const YCPString & label)
+YGLabeledWidget::doSetLabel (const YCPString &label)
 {
 	string str = YGUtils::mapKBAccel (label->value_cstr());
-	gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
-	gtk_label_set_use_underline (GTK_LABEL (m_label), str.compare(label->value_cstr()));
+	if (str.empty())
+		gtk_widget_hide (m_label);
+	else {
+		gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
+		gtk_label_set_use_underline (GTK_LABEL (m_label), TRUE);
+	}
 }
 
 /* YGScrolledWidget follows */
@@ -308,6 +312,7 @@ void YGScrolledWidget::construct
 		(GType type, const char *property_name, va_list args)
 {
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+	setBuddy (m_widget);
 
 	gtk_scrolled_window_set_policy (
 		GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),

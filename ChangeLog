@@ -1,5 +1,21 @@
 2006-08-21  Ricardo Cruz    <rpcmruz@clix.pt>
 
+	* src/YWidget.cc: fixed menomnic on scrolled widget and hide label
+	when passing empty string, as agreed with Stefan.
+
+	* src/ygtkwidget.c & src/YGTree.cc: fixed that oldie bug of autoyast
+	flickering. It turns out my sucpitions about overlapping widgets
+	were (hopefully!) wrong. It was easier to debug now that we have a
+	YGWizard. The reason of the bug was that we were sending an event when
+	the user selected a tree branch and when the YCP asked a branch to
+	be selected. The last cause shouldn't happen and causes a cycle (in
+	certain YCP applications), which hogs up the CPU at full usage, thus
+	the flicker. Amusing enough I repeated the bug on the YGWidget's tree
+	implementation. :P I noticed that YGTable also had the same issue :/ (fixed).
+	Lesson learned. :)
+	* src/YGTable.cc: fixed mentioned bug and a crash on the sorting mechanism
+	when clearing rows (like in Table3.ycp example).
+
 	* src/YGPackageSelector.cc: functional version (just misses
 	search and some other glitches yet to fix for basic functionality
 	be done -- I have also not tested it much, so...).It features a patch,
