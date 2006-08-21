@@ -6,7 +6,6 @@
 #include "YGWidget.h"
 #include "YPackageSelector.h"
 #include "ygtkrichtext.h"
-#include "ygtktreeaslistmodel.h"
 #include "ygtkwizard.h"
 
 #ifndef DISABLE_PACKAGE_SELECTOR
