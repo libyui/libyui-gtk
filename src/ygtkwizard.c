@@ -658,16 +658,21 @@ void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition)
 
 gboolean expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
+	// We'll draw a nice simple frame. Since some themes seem to draw some
+	// color on GtkEventBox, I was forced to draw the frame on top, rather
+	// than on bottom. This means that the header label and image is drawn
+	// twice.
+	GTK_WIDGET_CLASS (parent_class)->expose_event (widget, event);
+
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
+	GtkWidget *title_widget = wizard->m_title_hbox;
+	GtkWidget *help_box     = wizard->m_help_vbox;
 
 	// Let's paint the square boxes
 	// (a filled for the title and a stroke around the content area)
 	int x, y, w, h;
 	cairo_t *cr = gdk_cairo_create (widget->window);
-	gdk_cairo_set_source_color (cr, &widget->style->bg[GTK_STATE_SELECTED]);
-
-	GtkWidget *title_widget = wizard->m_title_hbox;
-	GtkWidget *help_box     = wizard->m_help_vbox;
+	gdk_cairo_set_source_color (cr, &title_widget->style->bg[GTK_STATE_SELECTED]);
 
 	// title
 	x = title_widget->allocation.x;
@@ -688,7 +693,7 @@ gboolean expose_event (GtkWidget *widget, GdkEventExpose *event)
 
 	cairo_destroy (cr);
 
-	GTK_WIDGET_CLASS (parent_class)->expose_event (widget, event);
+	GTK_WIDGET_GET_CLASS (title_widget)->expose_event (title_widget, event);
 	return TRUE;
 }
 
