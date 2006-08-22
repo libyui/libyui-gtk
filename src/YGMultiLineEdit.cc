@@ -143,7 +143,9 @@ public:
 	           int visibleLines, int maxLines)
 	: YLogView (opt, label, visibleLines, maxLines)
 	, YGTextView (this, parent, opt, label, YCPString(""))
-	{ }
+	{
+		gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
+	}
 
 	virtual ~YGLogView() {}
 

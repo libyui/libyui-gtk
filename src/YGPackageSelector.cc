@@ -678,9 +678,15 @@ public:
 			}
 
 			string name = selectable->name();
-			if (selectable->hasBothObjects())
-				name += " (" + object->edition().version() + ")";
-
+#if 0
+// TODO: print the version of objects in case there is a candidate
+// available
+			bool hasCandidateObject = selectable->hasCandidateObj();
+			if (selectable->hasBothObjects()) {
+				if (object->edition().version()
+				name += " (" + selectable->candidateObject->edition().version() + ")";
+			}
+#endif
 			gtk_list_store_append (m_packages_list, &list_iter);
 			gtk_list_store_set (m_packages_list, &list_iter,
 				0, name.c_str(), 1, get_pointer (selectable),
@@ -1240,8 +1246,6 @@ protected:
 // TODO: put dependencies here! (for now, it goes as a list)
 
 
-
-
 					}
 				} while (gtk_tree_model_iter_next (packages_model, &packages_iter));
 			}
@@ -1285,14 +1289,21 @@ protected:
 	{
 		IMPL
 		zypp::Resolver_Ptr resolver = zypp::getZYpp()->resolver();
+		if (resolver->resolvePool())
+			return true;
 		zypp::ResolverProblemList problems = resolver->problems();
 		if (problems.empty())
+{
+printf ("no problems\n");
 			return true;
+}
 
+printf ("creating dialog\n");
 		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
 			GTK_WINDOW (YGUI::ui()->currentGtkDialog()), GTK_DIALOG_MODAL,
 			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
 
+printf ("creating interface\n");
 		GtkWidget *problems_view;
 		problems_view  = gtk_tree_view_new();
 
@@ -1305,19 +1316,20 @@ protected:
 		gtk_container_add (GTK_CONTAINER (problems_window), problems_view);
 
 		GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
-		gtk_box_pack_start (vbox, problems_window,  FALSE, FALSE, 0);
+		gtk_box_pack_start (vbox, problems_window,  TRUE, TRUE, 0);
 
 		// create model
 		// the vairous columns are: radio button active (boolean), problem
 		// or solution description (string), is radio button (boolean: always
 		// true), show radio button (boolean; false for problems)
-		GtkListStore *problems_store = gtk_list_store_new (4,
+printf ("creating store\n");
+		GtkTreeStore *problems_store = gtk_tree_store_new (4,
 			G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
 		// install view
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *radio_renderer = gtk_cell_renderer_toggle_new();
 		column = gtk_tree_view_column_new_with_attributes ("",
-			radio_renderer, "active", 0, "radio", 2, NULL);
+			radio_renderer, "active", 0, "radio", 2, "visible", 3, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
 		g_signal_connect (G_OBJECT (radio_renderer), "toggled",
 		                  G_CALLBACK (YGUtils::tree_view_radio_toggle_cb),
@@ -1332,52 +1344,63 @@ protected:
 		                         GTK_TREE_MODEL (problems_store));
 
 		// construct model
-		GtkTreeIter iter;
+printf ("creating model\n");
+		GtkTreeIter piter, siter;
 		map <GtkTreePath *, zypp::ProblemSolution *> users_actions;
 		for (zypp::ResolverProblemList::iterator it = problems.begin();
 		     it != problems.end(); it++) {
 			zypp::ProblemSolutionList solutions = (*it)->solutions();
 
-			gtk_list_store_append (problems_store, &iter);
-			gtk_list_store_set (problems_store, &iter, 0, FALSE,
+printf ("appending problem: %s\n", (*it)->description().c_str());
+			gtk_tree_store_append (problems_store, &piter, NULL);
+			gtk_tree_store_set (problems_store, &piter, 0, FALSE,
 				1, ((*it)->description() + "\n" + (*it)->details()).c_str(),
 				2, TRUE, 3, FALSE, -1);
 
 			for (zypp::ProblemSolutionList::iterator jt = solutions.begin();
 			     jt != solutions.end(); jt++) {
-				gtk_list_store_append (problems_store, &iter);
-				gtk_list_store_set (problems_store, &iter, 0, FALSE,
+printf ("appending solution: %s\n", (*jt)->description().c_str());
+				gtk_tree_store_append (problems_store, &siter, &piter);
+				gtk_tree_store_set (problems_store, &siter, 0, FALSE,
 					1, ((*jt)->description() + "\n" + (*jt)->details()).c_str(),
 					2, TRUE, 3, TRUE, -1);
 				users_actions [gtk_tree_model_get_path (GTK_TREE_MODEL (
-					problems_store), &iter)] = get_pointer (*jt);
+					problems_store), &siter)] = get_pointer (*jt);
 			}
 		}
 
+printf ("showing dialog\n");
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 		gtk_widget_show_all (dialog);
 
+printf ("running dialog\n");
 		bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
 
 		if (confirmed) {
+printf ("confirmed\n");
 			// apply user solutions
 			zypp::ProblemSolutionList userChoices;
 
+			GtkTreeIter iter;
 			for (map <GtkTreePath *, zypp::ProblemSolution *>::iterator it
 			     = users_actions.begin(); it != users_actions.end(); it++) {
+printf ("getting user selected solution...%s\n", it->second->description().c_str());
 				gtk_tree_model_get_iter (GTK_TREE_MODEL (problems_store),
 				                         &iter, it->first);
 				gboolean state = FALSE;
 				gtk_tree_model_get (GTK_TREE_MODEL (problems_store), &iter,
 				                    0, &state, -1);
 				if (state) {
+printf ("pushing solutions: %s\n", it->second->description().c_str());
 					userChoices.push_back (it->second);
-					resolver->applySolutions (userChoices);
 				}
+printf ("applying solutions\n");
+				resolver->applySolutions (userChoices);
 				gtk_tree_path_free (it->first);
 			}
 		}
 
+printf ("destroying dialog and returning\n");
 		gtk_widget_destroy (dialog);
 		if (confirmed)
 			// repeate the all process just in case

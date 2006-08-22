@@ -5,6 +5,8 @@
 	* src/YGImage.cc: bugfix: image was getting cut due to not
 	honoring borders on drawing.
 
+	* src/YGPackageSelector.cc: fixed problem solver.
+
 2006-08-21  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YWidget.cc: fixed menomnic on scrolled widget and hide label

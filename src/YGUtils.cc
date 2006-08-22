@@ -461,10 +461,13 @@ void YGUtils::tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	gtk_tree_path_free (path);
 
 	// Disable radio buttons from the same parent
-	GtkTreeIter parent_iter;
-	if (gtk_tree_model_iter_parent (model, &parent_iter, &iter))
-		do gtk_tree_store_set (GTK_TREE_STORE (model), &iter, column, FALSE, -1);
-			while (gtk_tree_model_iter_next (model, &parent_iter));
-
-	gtk_tree_store_set (GTK_TREE_STORE (model), &iter, column, TRUE, -1);
+	GtkTreeIter parent_iter, child_iter;
+	if (gtk_tree_model_iter_parent (model, &parent_iter, &iter) &&
+	    gtk_tree_model_iter_children (model, &child_iter, &parent_iter)) {
+		do gtk_tree_store_set (GTK_TREE_STORE (model), &child_iter, column, FALSE, -1);
+			while (gtk_tree_model_iter_next (model, &child_iter));
+		gtk_tree_store_set (GTK_TREE_STORE (model), &iter, column, TRUE, -1);
+	}
+else
+	printf ("there is not parent for: %s (col: %d)\n", path, *column);
 }
