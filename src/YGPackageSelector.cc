@@ -36,8 +36,6 @@ inline ZyppSelection tryCastToZyppSelection (ZyppObject obj)
 inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
 
-// install / remove ZyppSelectables convinience wrapper
-// returns true on sucess
 static bool acceptLicense (ZyppSelectablePtr sel)
 {
 // TODO. This should be done, but results in some linkage problems here.
@@ -83,6 +81,8 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 #endif
 }
 
+// install / remove ZyppSelectables convinience wrapper
+// returns true on sucess
 static bool mark_selectable (ZyppSelectablePtr selectable,
                              bool install /*or remove*/)
 {
@@ -561,6 +561,7 @@ friend class YGPackageSelector;
 	// Search gizmos
 	GtkWidget *m_search_entry;
 	guint search_timeout_id;
+	GtkWidget *m_categories_view_check;
 
 public:
 	PackageSelector (bool show_patterns_button)
@@ -590,10 +591,10 @@ public:
 		                                             FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (packages_hbox), installed_box, TRUE, TRUE, 0);
 
-		GtkWidget *categories_hbox, *categories_view_check;
+		GtkWidget *categories_hbox;
 		categories_hbox = gtk_hbox_new (FALSE, 0);
-		categories_view_check = gtk_check_button_new_with_mnemonic ("View in categories");
-		gtk_box_pack_start (GTK_BOX (categories_hbox), categories_view_check,
+		m_categories_view_check = gtk_check_button_new_with_mnemonic ("View in categories");
+		gtk_box_pack_start (GTK_BOX (categories_hbox), m_categories_view_check,
 		                    TRUE, TRUE, 0);
 		if (show_patterns_button) {
 			m_patterns_button = gtk_button_new_with_mnemonic ("_Patterns...");
@@ -605,7 +606,6 @@ public:
 		search_hbox = gtk_hbox_new (FALSE, 0);
 		search_label = gtk_label_new_with_mnemonic ("_Search:");
 		m_search_entry = gtk_entry_new();
-//		gtk_entry_set_text (GTK_ENTRY (m_search_entry), "(to be implemented)");
 		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), m_search_entry);
 		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
@@ -719,6 +719,10 @@ public:
 			gtk_cell_renderer_text_new(), "text", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_installed_view), column);
 
+		// user should use the search entry
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_installed_view), FALSE);
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_available_view), FALSE);
+
 		m_installed_list = gtk_tree_model_filter_new
 		                       (GTK_TREE_MODEL (m_packages_list), NULL);
 		m_available_list = gtk_tree_model_filter_new
@@ -743,7 +747,7 @@ public:
 		                  G_CALLBACK (install_button_clicked_cb), this);
 		g_signal_connect (G_OBJECT (remove_button), "clicked",
 		                  G_CALLBACK (remove_button_clicked_cb), this);
-		g_signal_connect (G_OBJECT (categories_view_check), "toggled",
+		g_signal_connect (G_OBJECT (m_categories_view_check), "toggled",
 		                  G_CALLBACK (toggle_packages_view_cb), this);
 
 		g_signal_connect (G_OBJECT (m_installed_view), "cursor-changed",
@@ -845,7 +849,8 @@ public:
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_installed_list));
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_available_list));
 
-		pThis->setPlainView();
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pThis->m_categories_view_check),
+		                              FALSE);
 		return FALSE;
 	}
 
@@ -1232,10 +1237,15 @@ protected:
 							store = remove_store;
 						else
 							continue;
-// TODO: put dependencies here! (for now, it goes as a list)
+
 						gtk_tree_store_append (store, &iter, NULL);
 						gtk_tree_store_set (store, &iter,
 							                  0, selectable->name().c_str(), -1);
+// TODO: put dependencies here! (for now, it goes as a list)
+
+
+
+
 					}
 				} while (gtk_tree_model_iter_next (packages_model, &packages_iter));
 			}
@@ -1348,7 +1358,6 @@ protected:
 			}
 		}
 
-
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 		gtk_widget_show_all (dialog);
 
@@ -1399,7 +1408,7 @@ protected:
 			    zyppPool().diffState <zypp::Pattern> () ||
 			    zyppPool().diffState <zypp::Selection>()) {
 				// in case of changes, check problems, ask for confirmation and JFDI.
-				if (pThis->solveProblems() && pThis->confirmChanges()) {
+				if (pThis->confirmChanges() && pThis->solveProblems()) {
 					y2milestone ("Closing PackageSelector with 'accept'");
 					YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
 				}
