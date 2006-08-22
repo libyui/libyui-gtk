@@ -28,12 +28,10 @@ public:
 		m_padding = 0;
 
 		m_fixed = gtk_fixed_new();
-		gtk_widget_show (m_fixed);
 
 		if (opt.hasWarnColor.value() || opt.hasInfoColor.value()) {
 			// emulate a warning / info dialog
 			GtkWidget *hbox = gtk_hbox_new (FALSE, 0);
-			gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
 
 			GtkWidget *icon = gtk_image_new_from_stock
 				(opt.hasWarnColor.value() ? GTK_STOCK_DIALOG_WARNING : GTK_STOCK_DIALOG_INFO,
@@ -43,14 +41,18 @@ public:
 
 			gtk_box_pack_start (GTK_BOX (hbox), icon,    FALSE, FALSE, 12);
 			gtk_box_pack_start (GTK_BOX (hbox), m_fixed, FALSE, FALSE, 0);
+
+			gtk_container_add (GTK_CONTAINER (getWidget()), hbox);
 			gtk_widget_show_all (hbox);
 
 			GtkRequisition req;
 			gtk_widget_size_request (icon, &req);
 			m_padding = req.width + 24;
 		}
-		else
+		else {
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_fixed);
+			gtk_widget_show (m_fixed);
+		}
 
 		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
@@ -220,5 +222,6 @@ void
 YGUI::closeDialog (YDialog *dialog)
 {
 	IMPL // FIXME - destroy ? lifecycle etc. ...
+printf ("close dialog\n");
 	gtk_widget_hide (YGWidget::get (dialog)->getWidget());
 }

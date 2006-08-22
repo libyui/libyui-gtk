@@ -250,9 +250,9 @@ public:
 		ygtk_wizard_set_header_icon (wizard, NULL,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
 		ygtk_wizard_set_help_text (wizard,
-			"For information on a given patch, just press it and as well as the"
+			"For information on a given patch, just press it and as well as the "
 			"Package Information expander to make those informations visible.<br>"
-			"To install a patch you just need to press the check button next to it"
+			"To install a patch you just need to press the check button next to it "
 			"and then the button Install when you are done."
 		);
 		ygtk_wizard_set_next_button_label (wizard, "_Install");
@@ -719,10 +719,6 @@ public:
 			gtk_cell_renderer_text_new(), "text", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_installed_view), column);
 
-		// user should use the search entry
-		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_installed_view), FALSE);
-		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_available_view), FALSE);
-
 		m_installed_list = gtk_tree_model_filter_new
 		                       (GTK_TREE_MODEL (m_packages_list), NULL);
 		m_available_list = gtk_tree_model_filter_new
@@ -1073,9 +1069,9 @@ public:
 		else {
 			ygtk_wizard_set_header_text (wizard, "Patterns Selector");
 			ygtk_wizard_set_help_text (wizard,
-				"Patterns are bundles of software that you may install by pressing them"
+				"Patterns are bundles of software that you may install by pressing them "
 				"and then clicking Accept.<br>"
-				"If you are an experienced user, you may press Customize to choose"
+				"If you are an experienced user, you may press Customize to choose "
 				"from individual packages."
 			);
 			ygtk_wizard_set_back_button_label (wizard, "_Customize...");
@@ -1117,13 +1113,13 @@ protected:
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_text (wizard, "Package Selector");
 		ygtk_wizard_set_help_text (wizard,
-			"Two pools are presented; one with the available software, the other"
-			"with the installed one. To install software you choose a package"
-			"from the install pool and press Install. Similar method for removal"
+			"Two pools are presented; one with the available software, the other "
+			"with the installed one. To install software you choose a package "
+			"from the install pool and press Install. Similar method for removal "
 			"of software. When you are done press the Accept button.<br>"
-			"Information on a given package is displayed on the Package Information"
+			"Information on a given package is displayed on the Package Information "
 			"expander at the bottom which may be enlarged.<br>"
-			"A categories view of the software is possible, as well as searching"
+			"A categories view of the software is possible, as well as searching "
 			"for a given package."
 		);
 		ygtk_wizard_set_back_button_label (wizard, "");

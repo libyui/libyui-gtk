@@ -156,18 +156,16 @@ public:
 
 		if (m_isAnimation) {
 			if (dim == YD_HORIZ)
-				return gdk_pixbuf_animation_get_width (m_animation->pixbuf);
+				return gdk_pixbuf_animation_get_width (m_animation->pixbuf) + m_border*2;
 			else
-				return gdk_pixbuf_animation_get_height (m_animation->pixbuf);
+				return gdk_pixbuf_animation_get_height (m_animation->pixbuf) + m_border*2;
 		}
 		else {
 			if (dim == YD_HORIZ)
-				return gdk_pixbuf_get_width (m_pixbuf);
+				return gdk_pixbuf_get_width (m_pixbuf) + m_border*2;
 			else
-				return gdk_pixbuf_get_height (m_pixbuf);
+				return gdk_pixbuf_get_height (m_pixbuf) + m_border*2;
 		}
-
-		return getNiceSize (dim);
 	}
 	YGWIDGET_IMPL_SET_SIZE
 
@@ -221,8 +219,8 @@ public:
 	{
 		IMPL
 		int x, y, width, height;
-		x = widget->allocation.x;
-		y = widget->allocation.y;
+		x = widget->allocation.x + pThis->m_border;
+		y = widget->allocation.y + pThis->m_border;
 		width  = widget->allocation.width;
 		height = widget->allocation.height;
 
