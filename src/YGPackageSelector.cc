@@ -241,7 +241,7 @@ public:
 		: YPackageSelector (opt),
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
-		setBorder (12);
+		setBorder (0);
 		GtkWidget *main_vbox = gtk_vbox_new (FALSE, 0);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
@@ -558,6 +558,10 @@ friend class YGPackageSelector;
 	// Have a button for patterns selection
 	GtkWidget *m_patterns_button;
 
+	// Search gizmos
+	GtkWidget *m_search_entry;
+	guint search_timeout_id;
+
 public:
 	PackageSelector (bool show_patterns_button)
 	{
@@ -597,14 +601,17 @@ public:
 			                  FALSE, FALSE, 4);
 		}
 
-		GtkWidget *search_hbox, *search_label, *search_entry;
+		GtkWidget *search_hbox, *search_label;
 		search_hbox = gtk_hbox_new (FALSE, 0);
 		search_label = gtk_label_new_with_mnemonic ("_Search:");
-		search_entry = gtk_entry_new();
-		gtk_entry_set_text (GTK_ENTRY (search_entry), "(to be implemented)");
-		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), search_entry);
+		m_search_entry = gtk_entry_new();
+//		gtk_entry_set_text (GTK_ENTRY (m_search_entry), "(to be implemented)");
+		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), m_search_entry);
 		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (search_hbox), search_entry, TRUE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
+		search_timeout_id = 0;
+		g_signal_connect (G_OBJECT (m_search_entry), "changed",
+		                  G_CALLBACK (search_request_cb), this);
 
 		m_information_widget = new PackageInformation (false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
@@ -721,13 +728,13 @@ public:
 		m_available_tree = gtk_tree_model_filter_new
 		                       (GTK_TREE_MODEL (m_packages_tree), NULL);
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (m_installed_list),
-		                                        is_package_installed, NULL, NULL);
+		                                        is_package_installed, this, NULL);
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (m_available_list),
-		                                        is_package_available, NULL, NULL);
+		                                        is_package_available, this, NULL);
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (m_installed_tree),
-		                                        is_package_installed, NULL, NULL);
+		                                        is_package_installed, this, NULL);
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (m_available_tree),
-		                                        is_package_available, NULL, NULL);
+		                                        is_package_available, this, NULL);
 
 		setPlainView();
 
@@ -794,6 +801,9 @@ public:
 	virtual ~PackageSelector()
 	{
 		IMPL
+		if (search_timeout_id)
+			g_source_remove (search_timeout_id);
+
 		delete m_information_widget;
 
 		// clean the GtkTreePath stored on the list and tree
@@ -815,34 +825,78 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
+	static void search_request_cb (GtkEditable *editable, PackageSelector *pThis)
+	{
+		IMPL
+		// we'll make a delay for the actual search to wait for the user
+		// to finish writting
+		if (pThis->search_timeout_id)
+			g_source_remove (pThis->search_timeout_id);
+		pThis->search_timeout_id = g_timeout_add (2000, search_cb, pThis);
+	}
+
+	static gboolean search_cb (gpointer data)
+	{
+		IMPL
+		PackageSelector *pThis = (PackageSelector *) data;
+		string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
+		pThis->search_timeout_id = 0;
+
+		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_installed_list));
+		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_available_list));
+
+		pThis->setPlainView();
+		return FALSE;
+	}
+
 	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
 	{
+		IMPL
 		gboolean visible;
 		gtk_tree_model_get (model, iter, 3, &visible, -1);
-
-#if 0
-		// TEST
-		if (gtk_tree_model_iter_has_child (model, iter))
-			return FALSE;
-/*
-		ZyppSelectable selectable;
-		gtk_tree_model_get (model, iter, 1, &selectable, -1);
-		if (!selectable)
-			return FALSE;
-*/
-		//
-#endif
-
+		if (visible)
+			visible = show_package (model, iter, (PackageSelector *) data);
 		return visible;
 	}
 
 	static gboolean is_package_available (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
 	{
+		IMPL
 		gboolean visible;
 		gtk_tree_model_get (model, iter, 2, &visible, -1);
+		if (visible)
+			visible = show_package (model, iter, (PackageSelector *) data);
+		return visible;
+	}
 
+	// common stuff for is_package_installed and is_package_available (ie. search)
+	static gboolean show_package (GtkTreeModel *model, GtkTreeIter *iter,
+	                              PackageSelector *pThis)
+	{
+		IMPL
+		gboolean visible = TRUE;
+		if (GTK_IS_LIST_STORE (model)) {
+			string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
+			if (!search.empty()) {
+				ZyppSelectablePtr selectable = 0;
+				gtk_tree_model_get (model, iter, 1, &selectable, -1);
+
+				if (!YGUtils::contains (selectable->name(), search)) {
+					// check also description and rpm provides
+					ZyppObject object = selectable->theObj();
+					if (!YGUtils::contains (object->description(), search)) {
+						// test rpm-provides
+						const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
+						for (zypp::CapSet::const_iterator it = capSet.begin();
+						     it != capSet.end(); it++)
+							if ((visible = YGUtils::contains (it->index(), search)) == TRUE)
+								break;
+					}
+				}
+			}
+		}
 		return visible;
 	}
 
@@ -856,6 +910,7 @@ public:
 	{
 		gtk_tree_view_set_model(GTK_TREE_VIEW (m_available_view), m_available_tree);
 		gtk_tree_view_set_model(GTK_TREE_VIEW (m_installed_view), m_installed_tree);
+		gtk_entry_set_text (GTK_ENTRY (m_search_entry), "");
 	}
 
 	// callbacks
@@ -963,7 +1018,7 @@ public:
 		: YPackageSelector (opt),
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
-		setBorder (12);
+		setBorder (0);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard, NULL,
@@ -1087,6 +1142,9 @@ protected:
 		IMPL
 		if (button)
 			gtk_widget_hide (pThis->m_patterns_widget);
+
+		// TODO: currently patterns should be being installed, but when a pattern
+		// is selected, its packages should be displayed in the packages list
 #if 0
 		set <string> packages;
 		// to remove
@@ -1337,10 +1395,17 @@ protected:
 			pThis->set_packages_help();
 		}
 		else if (!strcmp (action, "accept")) {
-			if (pThis->solveProblems() && pThis->confirmChanges()) {
-				y2milestone ("Closing PackageSelector with 'accept'");
-				YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
+			if (zyppPool().diffState <zypp::Package> () ||
+			    zyppPool().diffState <zypp::Pattern> () ||
+			    zyppPool().diffState <zypp::Selection>()) {
+				// in case of changes, check problems, ask for confirmation and JFDI.
+				if (pThis->solveProblems() && pThis->confirmChanges()) {
+					y2milestone ("Closing PackageSelector with 'accept'");
+					YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
+				}
 			}
+			else
+				YGUI::ui()->sendEvent (new YCancelEvent());
 		}
 		else if (!strcmp (action, "cancel")) {
 			y2milestone ("Closing PackageSelector with 'cancel'");

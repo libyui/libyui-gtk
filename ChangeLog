@@ -1,3 +1,7 @@
+2006-08-22  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGPackageSelector.cc: search implemented.
+
 2006-08-21  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YWidget.cc: fixed menomnic on scrolled widget and hide label
