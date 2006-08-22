@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkMenuButton is a button that displays a widget when pressed.
    This widget can either be of type GtkMenu or another, like a
    GtkCalendar and we'll do the proper "emulation".

@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 #ifndef YGUTILS_H
 #define YGUTILS_H
 

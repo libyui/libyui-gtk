@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkWizard is a widget similar that offers a wizard interface
    (eg. buttons and side help text) based on the look of GtkAssistance
    that we couldn't use for several reasons (for starters, it is

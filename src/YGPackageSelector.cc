@@ -1,4 +1,6 @@
-/* Yast-GTK */
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
@@ -149,7 +151,6 @@ public:
 		                        "<i>(no package selected)</i>", FALSE, TRUE);
 		gtk_box_pack_start (GTK_BOX (vbox), m_description_text, FALSE, FALSE, 0);
 
-
 		if (only_description) {
 			m_filelist_text = NULL;
 			m_history_text = NULL;
@@ -220,6 +221,7 @@ public:
 
 	// This forces GtkScrolledWindow to set "new" scrollbars to reflect
 	// a new box size (due to expanders being activated)
+	// FIXME: ain't working all that well...
 	static void size_changed_cb (GtkWidget *widget, GtkRequisition *requisition,
 	                             GtkWidget *view)
 	{

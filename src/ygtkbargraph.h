@@ -1,4 +1,6 @@
-/* YGtkBarGraph widget */
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkBarGraph is just a simple graph of bars that may be
    changed during run-time (see ygtk_bar_graph_setup_entry()).
 */

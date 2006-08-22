@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 #include <stdio.h>
 #include <YUI.h>
 #include <YGUtils.h>

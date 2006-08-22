@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkSteps is a widget that displays a list of steps, useful
    to show the progress of some configuration tool as it does
    the work of updating files or services or whatever.

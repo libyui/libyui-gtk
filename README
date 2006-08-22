@@ -5,7 +5,7 @@ License
   This code is licensed under the
   Lesser GNU Public License (LGPL)
 
-The very beginnings of a native gtk+ YaST2 UI
+A native GTK+ YaST2 UI !
 
   This code creates a GTK+ plugin for YaST2. This plugin parallel
   installs with everything else, and will never be used unless
@@ -39,14 +39,11 @@ Running
   In order to fire up YaST modules, run the ycc.sh script.
   (You'll need the zenity package installed.)
 
-Working fairly well
-
-    Label* Spacing* PushButton* ProgressBar* Frame*
-    RadioButton* CheckBox* TextEntry ComboBox[1-3]
-    IntField* SelectionBox[1-4] MultiSelectionBox* Table*
-    Tree* MenuButton*
-  Optionals:
-    ColoredLabel* Slider*
-
   In case of oddness append --nothreads to the cmdline,
   Also check the log file: ~/.y2log
+
+Documentation
+
+  A code overview is given on HACKING.
+  For documentation on YaST in general:
+    http://developer.novell.com/wiki/index.php/Special:Downloads/yast/doc

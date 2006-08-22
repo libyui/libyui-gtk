@@ -1,7 +1,6 @@
-/* YGtkFieldEntry widget */
-// check the header file for information about this widget
-/* YGtkFieldEntry widget */
-// check the header file for information about this widget
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkMenuButton widget */
 // check the header file for information about this widget
 

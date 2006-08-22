@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkRichText is a very simple widget that displays HTML code.
    It was done, since GTK+ doesn't offer one out of box, and to
    avoid dependencies.

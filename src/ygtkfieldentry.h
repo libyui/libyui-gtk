@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkFieldEntry is an extension of GtkEntry with the added
    functionality of being able to define fields (useful for when
    you need the user to set a IP address or time/date). The number

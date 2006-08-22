@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 /* YGtkRatioBox is an improvement over the GtkBox container that
    allows the programmer to set the size containees as a ratio,
    as opposed to just define their size as expandable or not.
