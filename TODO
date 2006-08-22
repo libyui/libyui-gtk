@@ -18,12 +18,8 @@
 	  row or a package from it, the same row should be expanded and set in
 	  the visible area as well.
 
-	+ when one of the views is selected, the other should be set unselected
-	   to make it clear what package is currently selected.
-
 	+ allow multi-selections on a given view, so that the user could keep
-	  pressing control or use shift, but this doesn't seem to be supported
-	  by GtkTreeView -- to be investigated.
+	  pressing control or use shift. (GtkTreeSelection allows for this.)
 
 	+ when the user presses Alt+I (for the button mnemonic), we probably want the
 	  focus to stay on the view, so that the user can choose more... A shortcut for
@@ -45,6 +41,10 @@
 	  case still to fix...
 
 	+ use icons for the "install >" and "< remove" buttons.
+
+	+ show version number when there is a better candidate.
+
+	+ show popup menu when right clicking a package (for actions like update)
 
 
 = Yast quirk requests =

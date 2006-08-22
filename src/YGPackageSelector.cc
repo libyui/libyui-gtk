@@ -846,14 +846,15 @@ public:
 	{
 		IMPL
 		PackageSelector *pThis = (PackageSelector *) data;
-		string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
 		pThis->search_timeout_id = 0;
 
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_installed_list));
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (pThis->m_available_list));
 
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pThis->m_categories_view_check),
-		                              FALSE);
+		string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
+		if (!search.empty())
+			gtk_toggle_button_set_active (
+				GTK_TOGGLE_BUTTON (pThis->m_categories_view_check), FALSE);
 		return FALSE;
 	}
 
@@ -877,17 +878,28 @@ public:
 		return visible;
 	}
 
-	// common stuff for is_package_installed and is_package_available (ie. search)
+	// common stuff for is_package_installed and is_package_available
+	// used for search and to not show categories with no children
 	static gboolean show_package (GtkTreeModel *model, GtkTreeIter *iter,
 	                              PackageSelector *pThis)
 	{
+		ZyppSelectablePtr selectable = 0;
+		gtk_tree_model_get (model, iter, 1, &selectable, -1);
+#if 0
+// TODO: don't show empty nodes
+// A bit harder than I thouht -- we need to go iterate
+// through all children and see if they don't have
+// packages either -- consider caching this.
+		if (!selectable)  // this means it's a category
+			if (!gtk_tree_model_iter_has_child (model, iter))
+				return FALSE;
+#endif
+
+		// search
 		gboolean visible = TRUE;
 		if (GTK_IS_LIST_STORE (model)) {
 			string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
 			if (!search.empty()) {
-				ZyppSelectablePtr selectable = 0;
-				gtk_tree_model_get (model, iter, 1, &selectable, -1);
-
 				if (!YGUtils::contains (selectable->name(), search)) {
 					// check also description and rpm provides
 					ZyppObject object = selectable->theObj();
@@ -1007,6 +1019,14 @@ public:
 		IMPL
 		ZyppSelectablePtr sel = selectedPackage (tree_view);
 		pThis->m_information_widget->setPackage (sel);
+
+		// set the other view as un-selected
+		if (tree_view == GTK_TREE_VIEW (pThis->m_installed_view))
+			gtk_tree_selection_unselect_all (
+				gtk_tree_view_get_selection (GTK_TREE_VIEW (pThis->m_available_view)));
+		else
+			gtk_tree_selection_unselect_all (
+				gtk_tree_view_get_selection (GTK_TREE_VIEW (pThis->m_installed_view)));
 	}
 };
 
