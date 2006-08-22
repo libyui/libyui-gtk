@@ -39,6 +39,7 @@ public:
 
 		GtkListStore *list = gtk_list_store_newv (headers.size(), types_array);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(list));
+		g_object_unref (G_OBJECT (list));
 
 		// Set renderers
 		for (unsigned int c = 0; c < headers.size(); c++) {

@@ -1,5 +1,12 @@
 2006-08-22  Ricardo Cruz    <rpcmruz@clix.pt>
 
+	* src/YGPackageSelector.cc , src/YGTable.cc & src/YGTree.cc: added
+	g_object_unref() for all models. I thought GtkTreeView would assume
+	ownership, but it just refs them. So, even if after
+	gtk_tree_view_set_model() we need to unref them.
+
+	* src/YGPackageSelector.cc: show software dependencies and requirments
+	on summary window.
 	* src/YGPackageSelector.cc: search implemented.
 
 	* src/YGImage.cc: bugfix: image was getting cut due to not

@@ -16,6 +16,7 @@ public:
 	{
 		GtkTreeStore *tree = gtk_tree_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(tree));
+		g_object_unref (G_OBJECT (tree));
 
 		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW(getWidget()),
 			0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);

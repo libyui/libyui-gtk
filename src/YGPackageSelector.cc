@@ -186,7 +186,7 @@ public:
 
 			description = "<p><b>" + selectable->name() + "</b> - "
 			              + object->summary() + "</p>"
-//FIXME
+//FIXME: break authors nicely.
 			 + "<p>" + object->description() + "</p>";
 
 			if (m_filelist_text && m_history_text) {
@@ -323,6 +323,7 @@ public:
 	virtual ~YGPatchSelector()
 	{
 		IMPL
+		g_object_unref (m_patches_model);
 		delete m_information_widget;
 	}
 
@@ -838,7 +839,7 @@ public:
 		// to finish writting
 		if (pThis->search_timeout_id)
 			g_source_remove (pThis->search_timeout_id);
-		pThis->search_timeout_id = g_timeout_add (2000, search_cb, pThis);
+		pThis->search_timeout_id = g_timeout_add (1000, search_cb, pThis);
 	}
 
 	static gboolean search_cb (gpointer data)
@@ -859,7 +860,6 @@ public:
 	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
 	{
-		IMPL
 		gboolean visible;
 		gtk_tree_model_get (model, iter, 3, &visible, -1);
 		if (visible)
@@ -870,7 +870,6 @@ public:
 	static gboolean is_package_available (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
 	{
-		IMPL
 		gboolean visible;
 		gtk_tree_model_get (model, iter, 2, &visible, -1);
 		if (visible)
@@ -882,7 +881,6 @@ public:
 	static gboolean show_package (GtkTreeModel *model, GtkTreeIter *iter,
 	                              PackageSelector *pThis)
 	{
-		IMPL
 		gboolean visible = TRUE;
 		if (GTK_IS_LIST_STORE (model)) {
 			string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
@@ -898,7 +896,7 @@ public:
 						const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
 						for (zypp::CapSet::const_iterator it = capSet.begin();
 						     it != capSet.end(); it++)
-							if ((visible = YGUtils::contains (it->index(), search)) == TRUE)
+							if ((visible = YGUtils::contains (it->asString(), search)) == TRUE)
 								break;
 					}
 				}
@@ -1222,6 +1220,9 @@ protected:
 			gtk_tree_view_set_model (GTK_TREE_VIEW (remove_view),
 			                         GTK_TREE_MODEL (remove_store));
 
+			g_object_unref (G_OBJECT (install_store));
+			g_object_unref (G_OBJECT (remove_store));
+
 			// construct model
 			GtkTreeModel *packages_model = GTK_TREE_MODEL (
 			                                   m_package_selector->m_packages_list);
@@ -1243,12 +1244,47 @@ protected:
 						gtk_tree_store_append (store, &iter, NULL);
 						gtk_tree_store_set (store, &iter,
 							                  0, selectable->name().c_str(), -1);
-// TODO: put dependencies here! (for now, it goes as a list)
 
+						// show dependencies -- we just ask Zypp for dependencies in the form
+						// of a string (which is the only way to do it anyway).
+						if (store == install_store) {
+								GtkTreeIter dep_iter;
+								ZyppObject object = selectable->theObj();
+								const zypp::CapSet &capSet = object->dep (zypp::Dep::REQUIRES);
+								for (zypp::CapSet::const_iterator it = capSet.begin();
+								     it != capSet.end(); it++) {
+									gtk_tree_store_append (store, &dep_iter, &iter);
+									gtk_tree_store_set (store, &dep_iter,
+									                    0, it->asString().c_str(), -1);
+								}
+							}
 
+						// show packages that require this -- we will need to iterate through
+						// all the packages... (not very accurate)
+						else {
+							GtkTreeIter req_iter;
+
+							for (ZyppPool::const_iterator it =
+							         zyppPool().byKindBegin <zypp::Package>();
+							     it != zyppPool().byKindEnd <zypp::Package>(); it++) {
+								ZyppSelectable dep_selectable = *it;
+								ZyppObject dep_object = dep_selectable->theObj();
+
+								const zypp::CapSet &capSet = dep_object->dep (zypp::Dep::REQUIRES);
+								for (zypp::CapSet::const_iterator it = capSet.begin();
+								     it != capSet.end(); it++) {
+									if (YGUtils::contains (it->asString(), selectable->name())) {
+										gtk_tree_store_append (store, &req_iter, &iter);
+										gtk_tree_store_set (store, &req_iter,
+										                    0, dep_selectable->name().c_str(), -1);
+										break;
+									}
+								}
+							}
+						}
 					}
 				} while (gtk_tree_model_iter_next (packages_model, &packages_iter));
-			}
+		}
 
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 		gtk_widget_show_all (dialog);
@@ -1293,17 +1329,12 @@ protected:
 			return true;
 		zypp::ResolverProblemList problems = resolver->problems();
 		if (problems.empty())
-{
-printf ("no problems\n");
 			return true;
-}
 
-printf ("creating dialog\n");
 		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
 			GTK_WINDOW (YGUI::ui()->currentGtkDialog()), GTK_DIALOG_MODAL,
 			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
 
-printf ("creating interface\n");
 		GtkWidget *problems_view;
 		problems_view  = gtk_tree_view_new();
 
@@ -1322,7 +1353,6 @@ printf ("creating interface\n");
 		// the vairous columns are: radio button active (boolean), problem
 		// or solution description (string), is radio button (boolean: always
 		// true), show radio button (boolean; false for problems)
-printf ("creating store\n");
 		GtkTreeStore *problems_store = gtk_tree_store_new (4,
 			G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
 		// install view
@@ -1342,16 +1372,15 @@ printf ("creating store\n");
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (problems_view), FALSE);
 		gtk_tree_view_set_model (GTK_TREE_VIEW (problems_view),
 		                         GTK_TREE_MODEL (problems_store));
+		g_object_unref (G_OBJECT (problems_store));
 
 		// construct model
-printf ("creating model\n");
 		GtkTreeIter piter, siter;
 		map <GtkTreePath *, zypp::ProblemSolution *> users_actions;
 		for (zypp::ResolverProblemList::iterator it = problems.begin();
 		     it != problems.end(); it++) {
 			zypp::ProblemSolutionList solutions = (*it)->solutions();
 
-printf ("appending problem: %s\n", (*it)->description().c_str());
 			gtk_tree_store_append (problems_store, &piter, NULL);
 			gtk_tree_store_set (problems_store, &piter, 0, FALSE,
 				1, ((*it)->description() + "\n" + (*it)->details()).c_str(),
@@ -1359,7 +1388,6 @@ printf ("appending problem: %s\n", (*it)->description().c_str());
 
 			for (zypp::ProblemSolutionList::iterator jt = solutions.begin();
 			     jt != solutions.end(); jt++) {
-printf ("appending solution: %s\n", (*jt)->description().c_str());
 				gtk_tree_store_append (problems_store, &siter, &piter);
 				gtk_tree_store_set (problems_store, &siter, 0, FALSE,
 					1, ((*jt)->description() + "\n" + (*jt)->details()).c_str(),
@@ -1369,38 +1397,31 @@ printf ("appending solution: %s\n", (*jt)->description().c_str());
 			}
 		}
 
-printf ("showing dialog\n");
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 		gtk_widget_show_all (dialog);
 
-printf ("running dialog\n");
 		bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
 
 		if (confirmed) {
-printf ("confirmed\n");
 			// apply user solutions
 			zypp::ProblemSolutionList userChoices;
 
 			GtkTreeIter iter;
 			for (map <GtkTreePath *, zypp::ProblemSolution *>::iterator it
 			     = users_actions.begin(); it != users_actions.end(); it++) {
-printf ("getting user selected solution...%s\n", it->second->description().c_str());
 				gtk_tree_model_get_iter (GTK_TREE_MODEL (problems_store),
 				                         &iter, it->first);
 				gboolean state = FALSE;
 				gtk_tree_model_get (GTK_TREE_MODEL (problems_store), &iter,
 				                    0, &state, -1);
-				if (state) {
-printf ("pushing solutions: %s\n", it->second->description().c_str());
+				if (state)
 					userChoices.push_back (it->second);
-				}
-printf ("applying solutions\n");
-				resolver->applySolutions (userChoices);
+
 				gtk_tree_path_free (it->first);
 			}
+			resolver->applySolutions (userChoices);
 		}
 
-printf ("destroying dialog and returning\n");
 		gtk_widget_destroy (dialog);
 		if (confirmed)
 			// repeate the all process just in case

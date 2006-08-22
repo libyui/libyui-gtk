@@ -468,6 +468,4 @@ void YGUtils::tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 			while (gtk_tree_model_iter_next (model, &child_iter));
 		gtk_tree_store_set (GTK_TREE_STORE (model), &iter, column, TRUE, -1);
 	}
-else
-	printf ("there is not parent for: %s (col: %d)\n", path, *column);
 }
