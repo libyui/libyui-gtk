@@ -62,6 +62,8 @@ static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 	                       G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
+static GdkColor link_color = { 0, 0, 0, 0xeeee };
+
 static void ygtk_richtext_init (YGtkRichText *rtext)
 {
 	rtext->prodname = NULL;
@@ -198,7 +200,6 @@ static void GRTParseState_free (GRTParseState *state)
 }
 
 static char *elide_whitespace (const char *instr, int len);
-static GdkColor link_color = { 0, 0, 0, 0xeeee };
 
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess

@@ -1,3 +1,8 @@
+2006-08-23  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkrichtext.c (ygtk_richtext_init): move link_color
+	upwards, so the constructor can set it up.
+
 2006-08-22  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGDialog.cc: quick fix for the unsupported "one main dialog
