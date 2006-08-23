@@ -954,7 +954,8 @@ public:
 				if (!YGUtils::contains (selectable->name(), search)) {
 					// check also description and rpm provides
 					ZyppObject object = selectable->theObj();
-					if (!YGUtils::contains (object->description(), search)) {
+					if (!YGUtils::contains (object->summary(), search) &&
+					    !YGUtils::contains (object->description(), search)) {
 						// test rpm-provides
 						const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
 						for (zypp::CapSet::const_iterator it = capSet.begin();
