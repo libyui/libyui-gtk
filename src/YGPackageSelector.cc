@@ -306,7 +306,7 @@ public:
 			ZyppSelectable selectable = *it;
 			ZyppPatch patch = tryCastToZyppPatch (selectable->theObj());
 
-			if (patch) {
+			if (patch && !selectable->hasInstalledObj() /*don't show installed ones*/) {
 				GtkTreeIter iter;
 				GtkListStore *store = GTK_LIST_STORE (m_patches_model);
 				gtk_list_store_append (store, &iter);
