@@ -306,8 +306,12 @@ public:
 			ZyppSelectable selectable = *it;
 			ZyppPatch patch = tryCastToZyppPatch (selectable->theObj());
 
-			if (patch && selectable->hasCandidateObj() &&
+			if (patch
+#if 0
+			&& selectable->hasCandidateObj() &&
 			    !selectable->hasInstalledObj() /*don't show installed ones*/) {
+#endif
+) {
 				GtkTreeIter iter;
 				GtkListStore *store = GTK_LIST_STORE (m_patches_model);
 				gtk_list_store_append (store, &iter);
@@ -318,6 +322,15 @@ public:
 		}
 
 		gtk_tree_view_set_model (GTK_TREE_VIEW (m_patches_view), m_patches_model);
+
+		// TODO: maybe we should sort using severity, not using string.
+		YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (m_patches_view));
+		// sort severity by default
+		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (m_patches_model), 2,
+		                                      GTK_SORT_ASCENDING);
+		column = gtk_tree_view_get_column (GTK_TREE_VIEW (m_patches_view), 2);
+		gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
+		gtk_tree_view_column_set_sort_indicator (column, TRUE);
 
 		g_signal_connect (G_OBJECT (m_patches_view), "cursor-changed",
 		                  G_CALLBACK (package_clicked_cb), this);
@@ -1528,7 +1541,7 @@ YGUI::createPackageSelector (YWidget *parent, YWidgetOpt &opt,
 {
 	// TODO: floppyDevice really needed?
 #ifndef DISABLE_PACKAGE_SELECTOR
-	if (opt.youMode.value())
+//	if (opt.youMode.value())
 		return new YGPatchSelector (opt, YGWidget::get (parent));
 	return new YGPackageSelector (opt, YGWidget::get (parent));
 #else

@@ -457,3 +457,79 @@ void YGUtils::tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 		gtk_tree_store_set (GTK_TREE_STORE (model), &iter, column, TRUE, -1);
 	}
 }
+
+static gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
+                             GtkTreeIter *b, gpointer data)
+{
+	IMPL
+	gint col = GPOINTER_TO_INT (data);
+	gchar *str1, *str2;
+	gtk_tree_model_get (model, a, col, &str1, -1);
+	gtk_tree_model_get (model, b, col, &str2, -1);
+	if (str1 && str2)
+		return YGUtils::strcmp (str1, str2);
+	return 0;
+}
+
+static void header_clicked_cb (GtkTreeViewColumn *column, GtkTreeSortable *sortable)
+{
+	IMPL
+	GtkTreeViewColumn *last_sorted =
+		(GtkTreeViewColumn *) g_object_get_data (G_OBJECT (sortable), "last-sorted");
+	int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "id"));
+
+	GtkSortType sort = GTK_SORT_ASCENDING;
+	if (last_sorted == column) {
+		sort = gtk_tree_view_column_get_sort_order (column);
+		sort = (sort == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
+	}
+
+	gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
+	gtk_tree_view_column_set_sort_order (column, sort);
+
+	if (last_sorted)
+		gtk_tree_view_column_set_sort_indicator (last_sorted, FALSE);
+
+	gtk_tree_view_column_set_sort_indicator (column, TRUE);
+	g_object_set_data (G_OBJECT (sortable), "last-sorted", column);
+}
+
+void YGUtils::tree_view_set_sortable (GtkTreeView *view)
+{
+	IMPL
+	/* Set all string columns clickable. */
+	GtkTreeSortable *sortable = GTK_TREE_SORTABLE (gtk_tree_view_get_model (view));
+	// we need a pointer, this function is used by different stuff, so to we'll
+	// use g_object_*_data() to do of garbage collector
+	g_object_set_data (G_OBJECT (sortable), "last-sorted", NULL);
+
+	GList *columns = gtk_tree_view_get_columns (view);
+	for (GList *i = g_list_first (columns); i; i = i->next) {
+		GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
+		int col_nb = g_list_position (columns, i);
+
+		// check if it really is a string column
+		bool string_col = false;
+		GList *renderers = gtk_tree_view_column_get_cell_renderers (column);
+		for (GList *j = g_list_first (renderers); j; j = j->next)
+			if (GTK_IS_CELL_RENDERER_TEXT (j->data)) {
+				string_col = true;
+				break;
+			}
+		g_list_free (renderers);
+		if (!string_col)
+			continue;
+
+		// set sortable and clickable
+		gtk_tree_sortable_set_sort_func (sortable, col_nb, sort_compare_cb,
+		                                 GINT_TO_POINTER (col_nb), NULL);
+		gtk_tree_view_column_set_sort_order (column, GTK_SORT_DESCENDING);
+
+		g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (col_nb));
+
+		gtk_tree_view_column_set_clickable (column, TRUE);
+		g_signal_connect (G_OBJECT (column), "clicked",
+		                  G_CALLBACK (header_clicked_cb), sortable);
+	}
+	g_list_free (columns);
+}

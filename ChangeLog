@@ -39,6 +39,12 @@
 
 	* src/YGPackageSelector.cc: fixed problem solver.
 
+	* src/YGTable.cc, src/YGPackageSelector.cc and YGUtils.cc: set columns
+	sortable on the patch selector, and set it sorted on severity by default.
+	(GTK is nothing trivial on this respect, but it gives us a lot of power,
+	 so we can sort by severity not by string. I mean, the severity string
+	 doesn't necessarly mean the least severe to the most severe...)
+
 2006-08-21  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YWidget.cc: fixed menomnic on scrolled widget and hide label

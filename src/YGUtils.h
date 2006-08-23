@@ -56,6 +56,9 @@ namespace YGUtils
 	/* To be used as a callback for a GtkTreeView with toggle cells. */
 	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	                                gchar *path_str, GtkTreeModel *model);
+
+	/* Sets a tree view of sortable. */
+	void tree_view_set_sortable (GtkTreeView *view);
 };
 
 extern "C" {

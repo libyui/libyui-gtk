@@ -10,8 +10,6 @@
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget
 {
-GtkTreeViewColumn *m_sortedCol;
-
 public:
 	YGTableView (YWidget *y_widget, YGWidget *parent,
 	             const YWidgetOpt &opt, YCPString label)
@@ -19,8 +17,6 @@ public:
 	                    GTK_TYPE_TREE_VIEW, NULL)
 	{
 		IMPL
-		m_sortedCol = 0;
-
 		// Events
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
@@ -75,24 +71,12 @@ public:
 					G_CALLBACK (toggled_cb), YGWidget::get (m_y_widget));
 			}
 
-			if (clickable_headers && show_headers && types[c] == G_TYPE_STRING) {
-				GtkTreeSortable *sortable = GTK_TREE_SORTABLE (getStore());
-				gtk_tree_sortable_set_sort_func (sortable, c, sort_compare_cb,
-				                                 GINT_TO_POINTER (c), NULL);
-				gtk_tree_view_column_set_sort_order (column, GTK_SORT_DESCENDING);
-
-				// there is not really a prettier way to pass stuff to our callback...
-				g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (c));
-				g_object_set_data (G_OBJECT (column), "sortable", sortable);
-
-				gtk_tree_view_column_set_clickable (column, TRUE);
-				g_signal_connect (G_OBJECT (column), "clicked",
-				                  G_CALLBACK (header_clicked_cb), this);
-			}
-
 			gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, c);
 		}
+
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), show_headers);
+		if (clickable_headers && show_headers)
+			YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (getWidget()));
 	}
 
 protected:
@@ -201,52 +185,6 @@ protected:
 
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
-
-	static void header_clicked_cb (GtkTreeViewColumn *column, YGTableView *pThis)
-	{
-		IMPL
-		GtkTreeSortable *sortable;
-fprintf (stderr, "get sortable\n");
-		sortable = (GtkTreeSortable*) g_object_get_data (G_OBJECT (column), "sortable");
-fprintf (stderr, "get id\n");
-		int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "id"));
-
-		GtkSortType sort = GTK_SORT_ASCENDING;
-		if (pThis->m_sortedCol == column) {
-fprintf (stderr, "get sort order\n");
-			sort = gtk_tree_view_column_get_sort_order (column);
-fprintf (stderr, "swap sort order\n");
-			sort = (sort == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
-		}
-
-fprintf (stderr, "set sort column id\n");
-		gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
-fprintf (stderr, "set sort order\n");
-		gtk_tree_view_column_set_sort_order (column, sort);
-
-		if (pThis->m_sortedCol)
-{
-fprintf (stderr, "set sort indicator of previous to false\n");
-			gtk_tree_view_column_set_sort_indicator (pThis->m_sortedCol, FALSE);
-}
-fprintf (stderr, "set sort indicator of current to true\n");
-		gtk_tree_view_column_set_sort_indicator (column, TRUE);
-fprintf (stderr, "cache old sorted column\n");
-		pThis->m_sortedCol = column;
-	}
-
-	static gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
-	                             GtkTreeIter *b, gpointer data)
-	{
-		IMPL
-		gint col = GPOINTER_TO_INT (data);
-		gchar *str1, *str2;
-		gtk_tree_model_get (model, a, col, &str1, -1);
-		gtk_tree_model_get (model, b, col, &str2, -1);
-		if (str1 && str2)
-			return YGUtils::strcmp (str1, str2);
-		return 0;
-  }
 };
 
 #include "YTable.h"
