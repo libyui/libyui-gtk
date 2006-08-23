@@ -54,10 +54,6 @@ namespace YGUtils
 	void print_model (GtkTreeModel *model, int string_col);
 
 	/* To be used as a callback for a GtkTreeView with toggle cells. */
-	void tree_view_toggle_cb (GtkCellRendererToggle *renderer,
-	                          gchar *path_str, GtkTreeModel *model);
-
-	/* Same as before but for radio buttons. */
 	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	                                gchar *path_str, GtkTreeModel *model);
 };

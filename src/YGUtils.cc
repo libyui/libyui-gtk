@@ -438,21 +438,6 @@ void YGUtils::print_model (GtkTreeModel *model, int string_col)
 	}
 }
 
-void YGUtils::tree_view_toggle_cb (GtkCellRendererToggle *renderer,
-                                   gchar *path_str, GtkTreeModel *model)
-{
-	// Toggle the box
-	GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
-	gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
-	GtkTreeIter iter;
-	gtk_tree_model_get_iter (model, &iter, path);
-	gtk_tree_path_free (path);
-
-	gboolean state;
-	gtk_tree_model_get (model, &iter, column, &state, -1);
-	gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
-}
-
 void YGUtils::tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
                                          gchar *path_str, GtkTreeModel *model)
 {

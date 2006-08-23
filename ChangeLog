@@ -3,7 +3,11 @@
 	* src/YGPackageSelector.cc: don't show available packages that are
 	already installed, unless the version is different where it should
 	display its version. Updating a package with a newer version is not
-	yet supported which is kinda of nasty. (not really hard to add...)
+	yet supported which is kinda of nasty.
+	(not really hard to add, but will have to wait.)
+
+	* YGPackageSelector.cc: patch selector: don't show installed packages
+	and do the job properly.
 
 2006-08-23  Michael Meeks  <michael.meeks@novell.com>
 

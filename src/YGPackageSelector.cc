@@ -291,7 +291,7 @@ public:
 		                                                   "active", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_patches_view), column);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
-		                  G_CALLBACK (YGUtils::tree_view_toggle_cb), m_patches_model);
+		                  G_CALLBACK (package_toggled_cb), this);
 
 		column = gtk_tree_view_column_new_with_attributes ("Priority",
 			gtk_cell_renderer_text_new(), "text", 1, NULL);
@@ -376,6 +376,27 @@ public:
 			y2milestone ("Closing PackageSelector with 'cancel'");
 			YGUI::ui()->sendEvent (new YCancelEvent());
 		}
+	}
+
+	static void package_toggled_cb (GtkCellRendererToggle *renderer,
+                                  gchar *path_str, YGPatchSelector *pThis)
+	{
+		IMPL
+		GtkTreeModel *model = pThis->m_patches_model;
+
+		// Toggle the box
+		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
+		gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
+		GtkTreeIter iter;
+		gtk_tree_model_get_iter (model, &iter, path);
+		gtk_tree_path_free (path);
+
+		gboolean state;
+		ZyppSelectablePtr selectable = 0;
+		gtk_tree_model_get (model, &iter, 0, &state, 3, &selectable, -1);
+
+		if (mark_selectable (selectable, !state))
+			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
 	}
 };
 
