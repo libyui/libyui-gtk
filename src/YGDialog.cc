@@ -212,19 +212,45 @@ YGUI::createDialog (YWidgetOpt &opt)
 	return new YGDialog (opt);
 }
 
+
+/* show and closeDialog() don't just show or hide a GtkWindow, but
+   can actually be used to stack main dialogs. ie. if there is already
+   a main window, this new window should replace the contents of main
+   window with theirs. */
+static std::list <YGDialog *> dialogs_stack;
+
 void
-YGUI::showDialog (YDialog *dialog)
+YGUI::showDialog (YDialog *_dialog)
 {
 	IMPL
-	gtk_widget_show (YGWidget::get (dialog)->getWidget());
-	dumpWidgetTree (YGWidget::get (dialog)->getWidget());
+	// FIXME: quick solution
+	YGDialog *dialog = static_cast <YGDialog *> (_dialog);
+
+	if (dialog->hasDefaultSize()) {
+		if (!dialogs_stack.empty())
+			gtk_widget_hide (dialogs_stack.back()->getWidget());
+
+		dialogs_stack.push_back (dialog);
+	}
+
+	gtk_widget_show (dialog->getWidget());
+
+	// debug
+	dumpWidgetTree (dialog->getWidget());
 	dumpYastTree (dialog);
 }
 
 void
-YGUI::closeDialog (YDialog *dialog)
+YGUI::closeDialog (YDialog *_dialog)
 {
-	IMPL // FIXME - destroy ? lifecycle etc. ...
-printf ("close dialog\n");
-	gtk_widget_hide (YGWidget::get (dialog)->getWidget());
+	IMPL
+	YGDialog *dialog = static_cast <YGDialog *> (_dialog);
+	gtk_widget_hide (dialog->getWidget());
+
+	if (dialog->hasDefaultSize()) {
+		dialogs_stack.pop_back();
+
+		if (!dialogs_stack.empty())
+			gtk_widget_show (dialogs_stack.back()->getWidget());
+	}
 }
