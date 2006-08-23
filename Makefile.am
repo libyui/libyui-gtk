@@ -1,2 +1,2 @@
 SUBDIRS=src
-EXTRA_DIST=README yast2.txt autogen.sh
+EXTRA_DIST=README autogen.sh

@@ -33,7 +33,6 @@
 #include <gtk/gtkmarshal.h>
 
 #include "ygtkfieldentry.h"
-#include "utils.h"
 
 struct Field {
 	size_t pos;
