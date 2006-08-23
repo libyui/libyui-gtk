@@ -14,7 +14,7 @@ while true; do
     module=`/opt/gnome/bin/zenity --title "Yast Control Center" \
             --list --column "Available modules:" $module_list`;
     if [ "$module" ]; then
-	$Y2BASE_BINARY "$DEFAULT_DIR/$module" qt &
+#	$Y2BASE_BINARY "$DEFAULT_DIR/$module" qt &
 	$Y2BASE_BINARY "$DEFAULT_DIR/$module" gtk
     else
 	exit 0;
