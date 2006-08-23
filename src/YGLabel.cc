@@ -25,6 +25,7 @@ public:
 	                const YColor *fgColor = 0, const YColor *bgColor = 0)
 	: YGWidget (y_widget, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
+		IMPL
 		if (opt.isOutputField.value()) {
 			m_inner_widget = gtk_entry_new();
 			gtk_editable_set_editable (GTK_EDITABLE (m_inner_widget), FALSE);
@@ -46,7 +47,7 @@ public:
 			pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
 		if (opt.isHeading.value()) {
 			pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
-			int size = YGUtils::getCharsHeight (getWidget(), 1);
+			float size = YGUtils::getCharsHeight (getWidget(), 1);
 			pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
 		}
 		gtk_widget_modify_font (getWidget(), font);

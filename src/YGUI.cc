@@ -404,6 +404,8 @@ bool YGUI::leftHandedMouse()       IMPL_RET(false)
 
 void YGUI::busyCursor()
 {
+// FIXME: obusy cursor should be disabled automatically, like Qt's
+#if 0
 	GtkWidget *window = currentGtkDialog();
 	if (!window) return;
 
@@ -416,13 +418,16 @@ void YGUI::busyCursor()
 	}
 
 	gdk_window_set_cursor (window->window, cursor);
+#endif
 }
 
 void YGUI::normalCursor()
 {
+#if 0
 	GtkWidget *window = currentGtkDialog();
 	if (window)
 		gdk_window_set_cursor (window->window, NULL);
+#endif
 }
 
 void YGUI::redrawScreen()

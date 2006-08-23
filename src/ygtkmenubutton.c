@@ -67,8 +67,7 @@ static void ygtk_menu_button_init (YGtkMenuButton *button)
 
 	GtkWidget *hbox, *arrow;
 	hbox = gtk_hbox_new (FALSE, 0);
-	arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_NONE);
-	gtk_widget_show (arrow);
+	arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_IN);
 
 	if (gtk_widget_get_direction (arrow) == GTK_TEXT_DIR_LTR) {
 		gtk_container_add (GTK_CONTAINER (hbox), button->label);
@@ -82,6 +81,7 @@ static void ygtk_menu_button_init (YGtkMenuButton *button)
 	gtk_box_set_child_packing (GTK_BOX (hbox), arrow, FALSE, FALSE,
 	                           5, GTK_PACK_START);
 
+	gtk_widget_show_all (hbox);
 	gtk_container_add (GTK_CONTAINER (button), hbox);
 
 }

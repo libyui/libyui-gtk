@@ -21,6 +21,8 @@ public:
 		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD, NULL)
 	{
 		IMPL
+//		setMinSize (100, 50);
+
 		gtk_scrolled_window_set_policy
 				(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
 				 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
