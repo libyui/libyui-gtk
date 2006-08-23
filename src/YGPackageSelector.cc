@@ -306,7 +306,8 @@ public:
 			ZyppSelectable selectable = *it;
 			ZyppPatch patch = tryCastToZyppPatch (selectable->theObj());
 
-			if (patch && !selectable->hasInstalledObj() /*don't show installed ones*/) {
+			if (patch && selectable->hasCandidateObj() &&
+			    !selectable->hasInstalledObj() /*don't show installed ones*/) {
 				GtkTreeIter iter;
 				GtkListStore *store = GTK_LIST_STORE (m_patches_model);
 				gtk_list_store_append (store, &iter);
@@ -1506,7 +1507,7 @@ YGUI::createPackageSelector (YWidget *parent, YWidgetOpt &opt,
 {
 	// TODO: floppyDevice really needed?
 #ifndef DISABLE_PACKAGE_SELECTOR
-	if (opt.youMode.value())
+//	if (opt.youMode.value())
 		return new YGPatchSelector (opt, YGWidget::get (parent));
 	return new YGPackageSelector (opt, YGWidget::get (parent));
 #else
