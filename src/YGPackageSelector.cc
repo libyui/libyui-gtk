@@ -680,38 +680,30 @@ public:
 				}
 			}
 
-			string name = selectable->name();
-#if 0
-// TODO: print the version of objects in case there is a candidate
-// available
-			bool hasCandidateObject = selectable->hasCandidateObj();
-			if (selectable->hasBothObjects()) {
-				if (object->edition().version()
-				name += " (" + selectable->candidateObject->edition().version() + ")";
-			}
-#endif
-			gtk_list_store_append (m_packages_list, &list_iter);
-			gtk_list_store_set (m_packages_list, &list_iter,
-				0, name.c_str(), 1, get_pointer (selectable),
-				2, selectable->hasCandidateObj(), 3, selectable->hasInstalledObj(),
-				4, gtk_tree_path_copy (tree_path), -1);
-			GtkTreePath* list_path = gtk_tree_model_get_path
-			                             (GTK_TREE_MODEL (m_packages_list), &list_iter);
-
 			if (!tree_path) {
 				g_warning ("YGPackageSelector: Package with no group."
 				           "Something went wrong.");
 				continue;
 			}
-
 			gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_tree),
 			                         &tree_iter, tree_path);
-			gtk_tree_store_append (m_packages_tree, &iter_t, &tree_iter);
 
-			gtk_tree_store_set (m_packages_tree, &iter_t,
-				0, selectable->name().c_str(), 1, get_pointer (selectable),
-				2, selectable->hasCandidateObj(), 3, selectable->hasInstalledObj(),
-				4, list_path, -1);
+			string installedName = selectable->name(),
+			       availableName = selectable->name();
+			if (selectable->hasBothObjects()) {
+				string installedVersion = selectable->installedObj()->edition().version();
+				string availableVersion = selectable->candidateObj()->edition().version();
+				if (installedVersion == availableVersion)
+					availableName = "";  // mark to not show
+				else {
+					installedName += " (" + installedVersion + ")";
+					availableName += " (" + availableVersion + ")";
+				}
+			}
+
+			addObject (selectable, installedName, false, true, list_iter, iter_t, tree_iter);
+			if (!availableName.empty())  // different version
+				addObject (selectable, availableName, true, false, list_iter, iter_t, tree_iter);
 		}
 
 		// free GtkTreePaths
@@ -759,6 +751,28 @@ public:
 		                  G_CALLBACK (package_clicked_cb), this);
 		g_signal_connect (G_OBJECT (m_available_view), "cursor-changed",
 		                  G_CALLBACK (package_clicked_cb), this);
+	}
+
+	void addObject (ZyppSelectable &selectable, const string &name,
+	                bool available_package, bool installed_package,
+	                GtkTreeIter &list_iter, GtkTreeIter &tree_iter,
+	                GtkTreeIter &tree_parent_iter)
+	{
+		gtk_list_store_append (m_packages_list, &list_iter);
+		gtk_tree_store_append (m_packages_tree, &tree_iter, &tree_parent_iter);
+
+		GtkTreePath* list_path = gtk_tree_model_get_path
+		                             (GTK_TREE_MODEL (m_packages_list), &list_iter);
+		GtkTreePath* tree_path = gtk_tree_model_get_path
+		                             (GTK_TREE_MODEL (m_packages_tree), &tree_iter);
+
+		gtk_list_store_set (m_packages_list, &list_iter,
+			0, name.c_str(), 1, get_pointer (selectable),
+			2, available_package, 3, installed_package, 4, tree_path, -1);
+
+		gtk_tree_store_set (m_packages_tree, &tree_iter,
+			0, selectable->name().c_str(), 1, get_pointer (selectable),
+			2, available_package, 3, installed_package, 4, list_path, -1);
 	}
 
 	GtkWidget *createListWidget (const char *header, const char *icon,
