@@ -219,12 +219,13 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                  G_CALLBACK (button_clicked_cb), wizard);
 
 	wizard->m_button_box = gtk_hbutton_box_new();
+	gtk_button_box_set_layout (GTK_BUTTON_BOX (wizard->m_button_box), GTK_BUTTONBOX_END);
+	gtk_container_set_border_width (GTK_CONTAINER (wizard->m_button_box), 10);
+	gtk_box_set_spacing (GTK_BOX (wizard->m_button_box), 4);
 	gtk_container_add (GTK_CONTAINER (wizard->m_button_box), wizard->m_abort_button);
 	gtk_container_add (GTK_CONTAINER (wizard->m_button_box), wizard->m_back_button);
 	gtk_container_add (GTK_CONTAINER (wizard->m_button_box), wizard->m_next_button);
-	gtk_button_box_set_layout (GTK_BUTTON_BOX (wizard->m_button_box),
-	                           GTK_BUTTONBOX_END);
-	gtk_container_set_border_width (GTK_CONTAINER (wizard->m_button_box), 10);
+
 
 	//** Setting general layouts
 	wizard->m_help_program_pane = gtk_hpaned_new();
