@@ -1,5 +1,7 @@
 // Image test
 {
+	string filename = "image.gif";
+
 	UI::OpenDialog (
 		`VBox (
 			`ReplacePoint (`id (`replace_image),
@@ -38,13 +40,8 @@
 			break;
 
 		any type_opt = nil;
-		string filename = "";
-		if ((boolean) UI::QueryWidget(`id(`static), `Value))
-			filename = "image.png";
-		else {
-			filename = "animation.gif";
+		if (!(boolean) UI::QueryWidget(`id(`static), `Value))
 			type_opt = `animated;
-		}
 
 		any effect_opt = nil;
 		if ((boolean) UI::QueryWidget(`id(`tiled_effect), `Value))
