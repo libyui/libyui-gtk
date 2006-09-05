@@ -653,6 +653,9 @@ void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition)
 		requisition->width += req.width +
 		    gtk_container_get_border_width (GTK_CONTAINER (wizard->m_pane_box));
 	}
+	// pane's handler
+	requisition->width += GTK_PANED (wizard->m_help_program_pane)->handle_pos.width;
+
 	requisition->width += wizard->m_help_vbox->allocation.width
 	                      + CONTENT_PADDING * 2;
 	requisition->width += MAIN_BORDER * 2;
