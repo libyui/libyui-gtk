@@ -11,7 +11,6 @@
 class YGDumbTab : public YDumbTab, public YGWidget
 {
 	GtkRequisition m_label_req;
-
 	GtkWidget *m_fixed;
 
 public:
@@ -21,10 +20,17 @@ public:
 	{
 		IMPL
 		m_fixed = gtk_fixed_new();
+		gtk_widget_show (m_fixed);
 		m_label_req.width = m_label_req.height = 0;
 
 		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
 		                  G_CALLBACK (changed_tab_cb), this);
+	}
+
+	~YGDumbTab()
+	{
+		IMPL
+		g_object_unref (G_OBJECT (m_fixed));
 	}
 
 	virtual GtkFixed* getFixed()
@@ -36,16 +42,20 @@ public:
 	virtual void addTab (const YCPString &label_text)
 	{
 		IMPL
+		// the tab label
 		string str = YGUtils::mapKBAccel (label_text->value_cstr());
 		GtkWidget *label = gtk_label_new (str.c_str());
+		gtk_widget_show (label);
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		g_signal_handlers_block_by_func (notebook, (gpointer) changed_tab_cb, this);
-		gtk_notebook_append_page (notebook, m_fixed, label);
-		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 
-		gtk_widget_show_all (getWidget());
-		gtk_widget_show_all (m_fixed);
+		// Since we're re-using the same widget for all pages, we ref it to avoid
+		// it being destroyed multiple times.
+		g_object_ref (G_OBJECT (m_fixed));
+		gtk_notebook_append_page (notebook, m_fixed, label);
+
+		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 
 		// for setsize and nicesize...
 		int focus_width;
