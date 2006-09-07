@@ -20,15 +20,14 @@
 #include <gtk/gtkhbbox.h>
 #include <gtk/gtkhpaned.h>
 #include <gtk/gtkframe.h>
-#include <gtk/gtkwindow.h>
 #include <glib-object.h>
 #include "ygtkrichtext.h"
 #include "ygtksteps.h"
 
 #define CONTENT_PADDING 15
 #define TITLE_HEIGHT    45
-#define MAIN_BORDER      8
-#define HELP_BOX_CHARS_WIDTH 25
+#define MAIN_BORDER      6
+#define HELP_BOX_CHARS_WIDTH 30
 
 // YGUtils is C++, so this is the bridge
 int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
@@ -408,12 +407,15 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	return TRUE;
 }
 
-void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text)
+void ygtk_wizard_set_header_text (YGtkWizard *wizard, GtkWindow *window,
+                                  const char *text)
 {
 	gtk_label_set_text (GTK_LABEL (wizard->m_title_label), text);
+	if (window)
+		gtk_window_set_title (window, text);
 }
 
-gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWidget *window,
+gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWindow *window,
                                       const char *icon)
 {
 	GError *error = 0;
@@ -423,7 +425,7 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWidget *window,
 
 	gtk_image_set_from_pixbuf (GTK_IMAGE (wizard->m_title_image), pixbuf);
 	if (window)
-		gtk_window_set_icon (GTK_WINDOW (window), pixbuf);
+		gtk_window_set_icon (window, pixbuf);
 	g_object_unref (G_OBJECT (pixbuf));
 	return TRUE;
 }

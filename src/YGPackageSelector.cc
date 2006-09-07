@@ -54,7 +54,7 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 		return true;
 
 	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Confirm License",
-		GTK_WINDOW (YGUI::ui()->currentGtkDialog()), GTK_DIALOG_MODAL,
+		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 		"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
 
 	GtkWidget *license_view, *license_window;
@@ -248,8 +248,9 @@ public:
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_child (YGTK_WIZARD (getWidget()), main_vbox);
-		ygtk_wizard_set_header_text (wizard, "Patch Selector");
-		ygtk_wizard_set_header_icon (wizard, NULL,
+		GtkWindow *window = YGUI::ui()->currentWindow();
+		ygtk_wizard_set_header_text (wizard, window, "Patch Selector");
+		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
 		ygtk_wizard_set_help_text (wizard,
 			"For information on a given patch, just press it and as well as the "
@@ -1098,7 +1099,7 @@ public:
 		setBorder (0);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-		ygtk_wizard_set_header_icon (wizard, NULL,
+		ygtk_wizard_set_header_icon (wizard, YGUI::ui()->currentWindow(),
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
 		ygtk_wizard_set_next_button_label (wizard, "_Accept");
 		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
@@ -1118,7 +1119,7 @@ public:
 			m_patterns_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 			GtkWidget *window = m_patterns_widget;
 			gtk_window_set_transient_for
-				(GTK_WINDOW (window), GTK_WINDOW (YGUI::ui()->currentGtkDialog()));
+				(GTK_WINDOW (window), YGUI::ui()->currentWindow());
 			gtk_window_set_title (GTK_WINDOW (window), "Patterns Selector");
 			gtk_window_set_default_size (GTK_WINDOW (window), -1, 400);
 
@@ -1143,7 +1144,8 @@ public:
 			                  G_CALLBACK (close_patterns_window_cb), this);
 		}
 		else {
-			ygtk_wizard_set_header_text (wizard, "Patterns Selector");
+			ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
+			                             "Patterns Selector");
 			ygtk_wizard_set_help_text (wizard,
 				"Patterns are bundles of software that you may install by pressing them "
 				"and then clicking Accept.<br>"
@@ -1187,7 +1189,8 @@ protected:
 	void set_packages_help()
 	{
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-		ygtk_wizard_set_header_text (wizard, "Package Selector");
+		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
+		                             "Package Selector");
 		ygtk_wizard_set_help_text (wizard,
 			"Two pools are presented; one with the available software, the other "
 			"with the installed one. To install software you choose a package "
@@ -1239,7 +1242,7 @@ protected:
 	{
 		IMPL
 		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Changes Summary",
-			GTK_WINDOW (YGUI::ui()->currentGtkDialog()), GTK_DIALOG_MODAL,
+			YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
 
 		GtkWidget *install_label, *remove_label, *install_view, *remove_view;
@@ -1404,7 +1407,7 @@ protected:
 			return true;
 
 		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
-			GTK_WINDOW (YGUI::ui()->currentGtkDialog()), GTK_DIALOG_MODAL,
+			YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
 
 		GtkWidget *problems_view;

@@ -172,17 +172,18 @@ printf ("Processing wizard command: %s\n", cmd->name().c_str());
 		}
 
 		else if (isCommand (cmd, "SetDialogHeading", 1, 0x1))
-			ygtk_wizard_set_header_text (wizard, getCStringArg (cmd, 0));
+			ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
+			                             getCStringArg (cmd, 0));
 		else if (isCommand (cmd, "SetDialogIcon", 1, 0x1)) {
 			if (!ygtk_wizard_set_header_icon (wizard,
-			         YGUI::ui()->currentGtkDialog(), getCStringArg (cmd, 0))) {
+			         YGUI::ui()->currentWindow(), getCStringArg (cmd, 0))) {
 				y2warning ("YGWizard: could not load image: %s", getCStringArg (cmd, 0));
 				return YCPBoolean (false);
 			}
 		}
 
 		else if (isCommand (cmd, "SetAbortButtonLabel", 1, 0x1) ||
-		         isCommand (cmd, "SetCancelButtonLabel", 1, 0x1)) {
+		          isCommand (cmd, "SetCancelButtonLabel", 1, 0x1)) {
 			string str = YGUtils::mapKBAccel(getCStringArg (cmd, 0));
 			ygtk_wizard_set_abort_button_label (wizard, str.c_str());
 		}

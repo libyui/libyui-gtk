@@ -30,8 +30,6 @@ YGUI::YGUI (int argc, char ** argv,
 	m_argv (NULL)
 {
 	IMPL;
-	GThread *gtk_main_thread = NULL;
-
 	m_argc = argc;
 	m_argv = g_new0 (char *, argc);
 	memcpy (m_argv, argv, sizeof (char *) * argc);
@@ -82,12 +80,6 @@ YGUI::YGUI (int argc, char ** argv,
 
 	m_default_size.width = -1;
 	m_default_size.height = -1;
-
-	// get hostname (used for title)
-	char _hostname [MAXHOSTNAMELEN+1];
-	if (gethostname (_hostname, MAXHOSTNAMELEN) == 0)
-		_hostname [MAXHOSTNAMELEN -1] = '\0'; // make sure it's terminated
-	hostname = _hostname;
 
 	if (macro_file)
 		playMacro (macro_file);
@@ -294,11 +286,11 @@ void YGUI::internalError (const char *msg)
 	gtk_widget_destroy (dialog);
 }
 
-GtkWidget *YGUI::currentGtkDialog()
+GtkWindow *YGUI::currentWindow()
 {
-	YWidget *y_parent = YGUI::ui()->currentDialog();
-	if (y_parent)
-		return ((YGWidget*) y_parent->widgetRep())->getWidget();
+	YWidget *dialog = YGUI::ui()->currentDialog();
+	if (dialog)
+		return GTK_WINDOW (((YGWidget*) dialog->widgetRep())->getWidget());
 	else
 		return NULL;
 }
@@ -312,7 +304,7 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
-		GTK_WINDOW (YGUI::ui()->currentGtkDialog()), action,
+		YGUI::ui()->currentWindow(), action,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
 		NULL);
@@ -406,7 +398,7 @@ void YGUI::busyCursor()
 {
 // FIXME: obusy cursor should be disabled automatically, like Qt's
 #if 0
-	GtkWidget *window = currentGtkDialog();
+	GtkWidget *window = GTK_WIDGET (currentWindow());
 	if (!window) return;
 
 	// NOTE: GdkDisplay won't change for new dialogs, so we don't
@@ -424,7 +416,7 @@ void YGUI::busyCursor()
 void YGUI::normalCursor()
 {
 #if 0
-	GtkWidget *window = currentGtkDialog();
+	GtkWidget *window = GTK_WIDGET (currentWindow());
 	if (window)
 		gdk_window_set_cursor (window->window, NULL);
 #endif
@@ -432,7 +424,7 @@ void YGUI::normalCursor()
 
 void YGUI::redrawScreen()
 {
-	gtk_widget_queue_draw (currentGtkDialog());
+	gtk_widget_queue_draw (GTK_WIDGET (currentWindow()));
 }
 
 YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
@@ -470,7 +462,7 @@ void YGUI::makeScreenShot (string filename)
 	IMPL
 	bool interactive = filename.empty();
 
-	GtkWidget *widget = currentGtkDialog();
+	GtkWidget *widget = GTK_WIDGET (currentWindow());
 	if (!widget) {
 		if (interactive)
 			internalError ("No dialog to take screenshot of.");

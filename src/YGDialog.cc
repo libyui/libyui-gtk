@@ -60,13 +60,12 @@ public:
 		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
 		                      !opt.hasDefaultSize.value());
-		gtk_window_set_title (GTK_WINDOW (m_widget),
-		                      (!opt.hasDefaultSize.value()) ?  "YaST2"
-		                        : ("YaST2@" + YGUI::ui()->hostname).c_str());
+		// empty title -- will be set by wizard
+		gtk_window_set_title (GTK_WINDOW (m_widget), "");
 		{	// set it the icon of the parent (if it exists)
-			GtkWidget *parent = YGUI::ui()->currentGtkDialog();
+			GtkWindow *parent = YGUI::ui()->currentWindow();
 			if (parent) {
-				GdkPixbuf *icon = gtk_window_get_icon (GTK_WINDOW (parent));
+				GdkPixbuf *icon = gtk_window_get_icon (parent);
 				if (icon)
 					gtk_window_set_icon (GTK_WINDOW (getWidget()), icon);
 			}

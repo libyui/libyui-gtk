@@ -210,9 +210,7 @@ public:
 
 	// convience function to be used rather than currentDialog()
 	// NULL if there is no dialog at the moment.
-	GtkWidget *currentGtkDialog();
-
-	string hostname;
+	GtkWindow *currentWindow();
 
 	virtual void busyCursor();
 	virtual void normalCursor();

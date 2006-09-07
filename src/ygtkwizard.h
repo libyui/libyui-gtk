@@ -12,6 +12,7 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtkeventbox.h>
+#include <gtk/gtkwindow.h>
 
 G_BEGIN_DECLS
 
@@ -81,9 +82,10 @@ gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
 void ygtk_wizard_clear_tree (YGtkWizard *wizard);
 gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id);
 
-void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text);
-// you may pass a window widget if you want the icon to be set on it as well
-gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWidget *window,
+// you may pass a window widget if you want the title/icon to be set on it as well
+void ygtk_wizard_set_header_text (YGtkWizard *wizard, GtkWindow *window,
+                                  const char *text);
+gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWindow *window,
                                       const char *icon);
 
 void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text);
