@@ -36,6 +36,7 @@ int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
 static void ygtk_wizard_class_init (YGtkWizardClass *klass);
 static void ygtk_wizard_init       (YGtkWizard      *wizard);
 static void ygtk_wizard_finalize   (GObject         *object);
+static void ygtk_wizard_realize (GtkWidget *widget);
 
 static gboolean expose_event (GtkWidget *widget, GdkEventExpose *event);
 
@@ -43,7 +44,6 @@ static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard);
 static void selected_menu_item_cb (GtkMenuItem *item, const char* id);
 static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard);
 static void gfree_data_cb (gpointer data, GClosure *closure);
-static void help_text_set_background_cb (GtkWidget *widget, gpointer data);
 
 static guint action_triggered_signal;
 
@@ -116,6 +116,7 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	//** Get expose, so we can draw line border
 	widget_class->expose_event = expose_event;
+	widget_class->realize = ygtk_wizard_realize;
 
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->finalize = ygtk_wizard_finalize;
@@ -181,10 +182,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_help_vbox = gtk_vbox_new (FALSE, 0);
 
 	wizard->m_help_widget = ygtk_richtext_new();
-	gtk_container_add (GTK_CONTAINER (help_scrolled_window),
-	                   wizard->m_help_widget);
-	g_signal_connect (G_OBJECT (wizard->m_help_widget), "realize",
-	                  G_CALLBACK (help_text_set_background_cb), NULL);
+	gtk_container_add (GTK_CONTAINER (help_scrolled_window), wizard->m_help_widget);
+	// an image background will be set on realize
 
 	wizard->m_release_notes_button = gtk_button_new_with_mnemonic ("");
 
@@ -262,10 +261,21 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_widget_hide (wizard->m_next_button);
 }
 
-void help_text_set_background_cb (GtkWidget *widget, gpointer data)
+void ygtk_wizard_realize (GtkWidget *widget)
 {
-	ygtk_richtext_set_background (YGTK_RICHTEXT (widget),
+	// realize widgets we contain first
+	GTK_WIDGET_CLASS (parent_class)->realize (widget);
+
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
+	gtk_widget_realize (wizard->m_help_widget);
+	ygtk_richtext_set_background (YGTK_RICHTEXT (wizard->m_help_widget),
 	                              THEMEDIR "/wizard/help-background.png");
+
+	// set next button as default (for when pressing Enter)
+	// must be here, so that the button has already been added to a window...
+	GTK_WIDGET_SET_FLAGS (wizard->m_next_button, GTK_CAN_DEFAULT);
+	gtk_widget_grab_default (wizard->m_next_button);
+	gtk_widget_grab_focus (wizard->m_next_button);
 }
 
 static void ygtk_wizard_finalize (GObject *object)

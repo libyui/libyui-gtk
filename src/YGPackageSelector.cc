@@ -25,6 +25,7 @@ inline ZyppPool zyppPool() { return zypp::getZYpp()->poolProxy(); }
 typedef zypp::ui::Selectable::Ptr ZyppSelectable;
 typedef zypp::ui::Selectable*     ZyppSelectablePtr;
 typedef zypp::ResObject::constPtr ZyppObject;
+typedef zypp::ResObject*          ZyppObjectPtr;
 typedef zypp::Package::constPtr   ZyppPackage;
 typedef zypp::Patch::constPtr     ZyppPatch;
 typedef zypp::Selection::constPtr ZyppSelection;
@@ -40,22 +41,23 @@ inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 
 static bool acceptLicense (ZyppSelectablePtr sel)
 {
-// TODO. This should be done, but results in some linkage problems here.
-// It seems there is some mismatch between the headers and the library. :/
-	return true;
-#if 0
+	if (sel->hasLicenceConfirmed())
+		return true;
+
 	ZyppObject object = sel->candidateObj();
 	ZyppPackage package = tryCastToZyppPkg (object);
 	if (!package)
 		return true;
 
 	const string &license = package->licenseToConfirm();
-	if (license.empty())
+	if (license.empty()) {
+		sel->setLicenceConfirmed (true);
 		return true;
+	}
 
 	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Confirm License",
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
-		"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
+		GTK_STOCK_CANCEL, 0, "C_onfirm", 1, NULL);
 
 	GtkWidget *license_view, *license_window;
 	GtkTextBuffer *buffer = gtk_text_buffer_new (NULL);
@@ -80,13 +82,13 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 
 	sel->setLicenceConfirmed (confirmed);
 	return confirmed;
-#endif
 }
 
-// install / remove ZyppSelectables convinience wrapper
+// install / remove convinience wrapper. You only need to specify an object
+// if you want that particular version to be installed.
 // returns true on sucess
 static bool mark_selectable (ZyppSelectablePtr selectable,
-                             bool install /*or remove*/)
+		bool install /*or remove*/, ZyppObjectPtr object = NULL)
 {
 	zypp::ui::Status status = selectable->status();
 
@@ -94,12 +96,18 @@ static bool mark_selectable (ZyppSelectablePtr selectable,
 		return false;
 
 	if (install) {
-		if (status == zypp::ui::S_KeepInstalled)
-			status = zypp::ui::S_Update;
 		if (status == zypp::ui::S_Del)
 			status = zypp::ui::S_KeepInstalled;
-		else
-			status = zypp::ui::S_Install;
+		else {
+			if (object && !selectable->setCandidate (object)) {
+				y2warning ("YGPackageSelector: package version not available?!");
+				return false;
+			}
+			if (status == zypp::ui::S_KeepInstalled)
+				status = zypp::ui::S_Update;
+			else
+				status = zypp::ui::S_Install;
+		}
 	}
 	else /*remove*/ {
 		if (status == zypp::ui::S_NoInst)
@@ -111,6 +119,120 @@ static bool mark_selectable (ZyppSelectablePtr selectable,
 	}
 
 	return selectable->set_status (status);
+}
+
+// tries to solve possible dependencies problems and asks the user for
+// manual resolution if needed (there is not much space for interface
+// design here)
+static bool solveProblems()
+{
+	IMPL
+	zypp::Resolver_Ptr resolver = zypp::getZYpp()->resolver();
+	if (resolver->resolvePool())
+		return true;
+	zypp::ResolverProblemList problems = resolver->problems();
+	if (problems.empty())
+		return true;
+
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
+		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
+		GTK_STOCK_CANCEL, 0, "C_onfirm", 1, NULL);
+
+	GtkWidget *problems_view;
+	problems_view  = gtk_tree_view_new();
+
+	GtkWidget *problems_window;
+	problems_window = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (problems_window),
+	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_set_shadow_type
+		(GTK_SCROLLED_WINDOW (problems_window), GTK_SHADOW_IN);
+	gtk_container_add (GTK_CONTAINER (problems_window), problems_view);
+
+	GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
+	gtk_box_pack_start (vbox, problems_window,  TRUE, TRUE, 0);
+
+	// create model
+	// the vairous columns are: radio button active (boolean), problem
+	// or solution description (string), is radio button (boolean: always
+	// true), show radio button (boolean; false for problems)
+	GtkTreeStore *problems_store = gtk_tree_store_new (4,
+		G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+	// install view
+	GtkTreeViewColumn *column;
+	GtkCellRenderer *radio_renderer = gtk_cell_renderer_toggle_new();
+	column = gtk_tree_view_column_new_with_attributes ("",
+		radio_renderer, "active", 0, "radio", 2, "visible", 3, NULL);
+	gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
+	g_signal_connect (G_OBJECT (radio_renderer), "toggled",
+	                  G_CALLBACK (YGUtils::tree_view_radio_toggle_cb),
+	                  GTK_TREE_MODEL (problems_store));
+
+	column = gtk_tree_view_column_new_with_attributes ("Problems",
+		gtk_cell_renderer_text_new(), "text", 1, NULL);
+	gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
+
+	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (problems_view), FALSE);
+	gtk_tree_view_set_model (GTK_TREE_VIEW (problems_view),
+	                         GTK_TREE_MODEL (problems_store));
+	g_object_unref (G_OBJECT (problems_store));
+
+	// construct model
+	GtkTreeIter piter, siter;
+	map <GtkTreePath *, zypp::ProblemSolution *> users_actions;
+	for (zypp::ResolverProblemList::iterator it = problems.begin();
+	     it != problems.end(); it++) {
+		zypp::ProblemSolutionList solutions = (*it)->solutions();
+
+// FIXME: probably we should remove '+ "\n" + (*it)->details()' as the
+// only details it gives seems to be version numbers which are useless here
+
+		gtk_tree_store_append (problems_store, &piter, NULL);
+		gtk_tree_store_set (problems_store, &piter, 0, FALSE,
+			1, ((*it)->description() + "\n" + (*it)->details()).c_str(),
+			2, TRUE, 3, FALSE, -1);
+
+		for (zypp::ProblemSolutionList::iterator jt = solutions.begin();
+		     jt != solutions.end(); jt++) {
+			gtk_tree_store_append (problems_store, &siter, &piter);
+			gtk_tree_store_set (problems_store, &siter, 0, FALSE,
+				1, ((*jt)->description() + "\n" + (*jt)->details()).c_str(),
+				2, TRUE, 3, TRUE, -1);
+			users_actions [gtk_tree_model_get_path (GTK_TREE_MODEL (
+				problems_store), &siter)] = get_pointer (*jt);
+		}
+	}
+
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
+	gtk_widget_show_all (dialog);
+
+	bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
+
+	if (confirmed) {
+		// apply user solutions
+		zypp::ProblemSolutionList userChoices;
+
+		GtkTreeIter iter;
+		for (map <GtkTreePath *, zypp::ProblemSolution *>::iterator it
+		     = users_actions.begin(); it != users_actions.end(); it++) {
+			gtk_tree_model_get_iter (GTK_TREE_MODEL (problems_store),
+			                         &iter, it->first);
+			gboolean state = FALSE;
+			gtk_tree_model_get (GTK_TREE_MODEL (problems_store), &iter,
+			                    0, &state, -1);
+			if (state)
+				userChoices.push_back (it->second);
+
+			gtk_tree_path_free (it->first);
+		}
+		resolver->applySolutions (userChoices);
+	}
+
+	gtk_widget_destroy (dialog);
+	if (confirmed)
+		// repeate the all process as things may not yet be solved
+		return solveProblems();
+	return false;
 }
 
 #define INFORMATION_HEIGHT 120
@@ -169,8 +291,8 @@ public:
 			gtk_container_add (GTK_CONTAINER (history_expander), m_history_text);
 			gtk_box_pack_start (GTK_BOX (vbox), history_expander, FALSE, FALSE, 0);
 
-			g_signal_connect (G_OBJECT (vbox), "size-request",
-			                  G_CALLBACK (size_changed_cb), m_scrolled_window);
+//			g_signal_connect (G_OBJECT (vbox), "size-request",
+//			                  G_CALLBACK (size_changed_cb), m_scrolled_window);
 		}
 
 		gtk_widget_set_size_request (m_scrolled_window, -1, INFORMATION_HEIGHT);
@@ -179,12 +301,10 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	void setPackage (ZyppSelectablePtr selectable)
+	void setPackage (ZyppSelectablePtr selectable, ZyppObject object)
 	{
 		string description = "<i>(no package selected)</i>", file_list, history;
 		if (selectable) {
-			ZyppObject object = selectable->theObj();
-
 			description = "<p><b>" + selectable->name() + "</b> - "
 			              + object->summary() + "</p>"
 //FIXME: break authors nicely.
@@ -208,25 +328,27 @@ public:
 		}
 
 		ygtk_richtext_set_text (YGTK_RICHTEXT (m_description_text),
-		                        description.c_str(), FALSE, FALSE);
-		if (m_filelist_text)
+		                        description.c_str(), FALSE, TRUE);
+		if (m_filelist_text && m_history_text) {
 			ygtk_richtext_set_text (YGTK_RICHTEXT (m_filelist_text),
 			                        file_list.c_str(), TRUE, TRUE);
-		if (m_history_text)
 			ygtk_richtext_set_text (YGTK_RICHTEXT (m_history_text),
 			                        history.c_str(), FALSE, TRUE);
+		}
 
-		size_changed_cb (0, 0, m_scrolled_window);
+//		size_changed_cb (0, 0, m_scrolled_window);
 	}
 
 	// This forces GtkScrolledWindow to set "new" scrollbars to reflect
 	// a new box size (due to expanders being activated)
 	// FIXME: ain't working all that well...
+/*
 	static void size_changed_cb (GtkWidget *widget, GtkRequisition *requisition,
 	                             GtkWidget *view)
 	{
 		gtk_scrolled_window_set_vadjustment (GTK_SCROLLED_WINDOW (view), NULL);
 	}
+*/
 };
 
 // YOU patch selector
@@ -292,7 +414,7 @@ public:
 		                                                   "active", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_patches_view), column);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
-		                  G_CALLBACK (package_toggled_cb), this);
+		                  G_CALLBACK (patch_toggled_cb), this);
 
 		column = gtk_tree_view_column_new_with_attributes ("Priority",
 			gtk_cell_renderer_text_new(), "text", 1, NULL);
@@ -307,12 +429,8 @@ public:
 			ZyppSelectable selectable = *it;
 			ZyppPatch patch = tryCastToZyppPatch (selectable->theObj());
 
-			if (patch
-#if 0
-			&& selectable->hasCandidateObj() &&
-			    !selectable->hasInstalledObj() /*don't show installed ones*/) {
-#endif
-) {
+			if (patch && !selectable->hasInstalledObj() &&
+			    selectable->hasCandidateObj() /*don't show installed ones*/) {
 				GtkTreeIter iter;
 				GtkListStore *store = GTK_LIST_STORE (m_patches_model);
 				gtk_list_store_append (store, &iter);
@@ -334,7 +452,7 @@ public:
 		gtk_tree_view_column_set_sort_indicator (column, TRUE);
 
 		g_signal_connect (G_OBJECT (m_patches_view), "cursor-changed",
-		                  G_CALLBACK (package_clicked_cb), this);
+		                  G_CALLBACK (patch_clicked_cb), this);
 	}
 
 	virtual ~YGPatchSelector()
@@ -350,7 +468,7 @@ public:
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_KEYBOARD_FOCUS
 
-	static ZyppSelectablePtr selectedPackage (GtkTreeView *tree_view)
+	static ZyppSelectablePtr selectedPatch (GtkTreeView *tree_view)
 	{
 		IMPL
 		GtkTreePath *path;
@@ -371,11 +489,11 @@ public:
 	}
 
 	// callbacks
-	static void package_clicked_cb (GtkTreeView *tree_view, YGPatchSelector *pThis)
+	static void patch_clicked_cb (GtkTreeView *tree_view, YGPatchSelector *pThis)
 	{
 		IMPL
-		ZyppSelectablePtr sel = selectedPackage (tree_view);
-		pThis->m_information_widget->setPackage (sel);
+		ZyppSelectablePtr sel = selectedPatch (tree_view);
+		pThis->m_information_widget->setPackage (sel, sel->theObj());
 	}
 
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
@@ -384,7 +502,8 @@ public:
 		const gchar *action = (gchar *) id;
 		if (!strcmp (action, "install")) {
 			y2milestone ("Closing PackageSelector with 'accept'");
-			YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
+			if (solveProblems())
+				YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
 		}
 		else if (!strcmp (action, "cancel")) {
 			y2milestone ("Closing PackageSelector with 'cancel'");
@@ -392,8 +511,8 @@ public:
 		}
 	}
 
-	static void package_toggled_cb (GtkCellRendererToggle *renderer,
-                                  gchar *path_str, YGPatchSelector *pThis)
+	static void patch_toggled_cb (GtkCellRendererToggle *renderer,
+                                gchar *path_str, YGPatchSelector *pThis)
 	{
 		IMPL
 		GtkTreeModel *model = pThis->m_patches_model;
@@ -485,8 +604,9 @@ public:
 
 					hbox = gtk_hbox_new (FALSE, 0);
 					button = gtk_check_button_new ();
-					g_signal_connect (G_OBJECT (button), "toggled",
-					                  G_CALLBACK (selection_toggled_cb), selectable);
+// FIXME:
+//					g_signal_connect (G_OBJECT (button), "toggled",
+//					                  G_CALLBACK (selection_toggled_cb), selectable);
 
 					label = gtk_label_new (
 						("<b>" + object->summary() + "</b>\n" + object->description()).c_str());
@@ -540,7 +660,9 @@ public:
 	                                  ZyppSelectablePtr selectable)
 	{
 		IMPL
-		mark_selectable (selectable, gtk_toggle_button_get_active (button));
+// FIXME: re-work this out. Should only mark them at apply, so it can
+// be canceled from the package selector.
+//		mark_selectable (selectable, gtk_toggle_button_get_active (button));
 	}
 
 #if 0
@@ -605,6 +727,7 @@ friend class YGPackageSelector;
 public:
 	PackageSelector (bool show_patterns_button)
 	{
+		IMPL
 		m_widget = gtk_vbox_new (FALSE, 0);
 
 		GtkWidget *packages_hbox = gtk_hbox_new (FALSE, 0);
@@ -662,18 +785,22 @@ public:
 		gtk_widget_show_all (m_widget);
 
 		// Create a model for the package lists
-		// models' columns: package name (string), selectable object (pointer),
-		// is available package (boolean), is_installed_package (boolean),
-		// the correspondent row of the other view (GtkTreePath*)
-		m_packages_list = gtk_list_store_new (5, G_TYPE_STRING,  G_TYPE_POINTER,
-		                         G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_POINTER);
-		m_packages_tree = gtk_tree_store_new (5, G_TYPE_STRING,  G_TYPE_POINTER,
-		                         G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_POINTER);
+		// models' columns: available package name (string), installed package name
+		// (string), has available package (boolean), has installed package (boolean)
+		// selectable object (pointer), available resolvable object (pointer),
+		// installed resolvable object (pointer), the correspondent row of the other
+		// view (GtkTreePath*) = 8
+		m_packages_list = gtk_list_store_new (8, G_TYPE_STRING, G_TYPE_STRING,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER,
+			G_TYPE_POINTER, G_TYPE_POINTER);
+		m_packages_tree = gtk_tree_store_new (8, G_TYPE_STRING, G_TYPE_STRING,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_POINTER,
+			G_TYPE_POINTER, G_TYPE_POINTER);
 
 		// we need to create the categories tree as we iterate packages
 		map <string, GtkTreePath*> tree;
 
-		GtkTreeIter tree_iter, list_iter, iter_t;
+		GtkTreeIter list_iter, tree_iter, parent_tree_iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
 		{
@@ -698,17 +825,19 @@ public:
 					if (it == tree.end()) {
 						// doesn't exist -- create it
 						if (!tree_path)  // root
-							gtk_tree_store_append (m_packages_tree, &iter_t, NULL);
+							gtk_tree_store_append (m_packages_tree, &tree_iter, NULL);
 						else {
 							gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_tree),
-							                         &tree_iter, tree_path);
-							gtk_tree_store_append (m_packages_tree, &iter_t, &tree_iter);
+							                         &parent_tree_iter, tree_path);
+							gtk_tree_store_append (m_packages_tree, &tree_iter, &parent_tree_iter);
 						}
-						gtk_tree_store_set (m_packages_tree, &iter_t,
-							0, node.c_str(), 1, NULL, 2, TRUE, 3, TRUE, -1);
+
+						gtk_tree_store_set (m_packages_tree, &tree_iter,
+							0, node.c_str(), 1, node.c_str(), 2, TRUE, 3, TRUE,
+							4, NULL, 5, NULL, 6, NULL, 7, NULL, -1);
 
 						tree_path = gtk_tree_model_get_path (GTK_TREE_MODEL (m_packages_tree),
-						                                     &iter_t);
+						                                     &tree_iter);
 						tree [node] = tree_path;
 					}
 					else // exists
@@ -717,29 +846,24 @@ public:
 			}
 
 			if (!tree_path) {
-				g_warning ("YGPackageSelector: Package with no group."
-				           "Something went wrong.");
+				y2warning ("YGPackageSelector: Package '%s' has no group.",
+				           selectable->name().c_str());
 				continue;
 			}
 			gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_tree),
-			                         &tree_iter, tree_path);
+			                         &parent_tree_iter, tree_path);
 
-			string installedName = selectable->name(),
-			       availableName = selectable->name();
-			if (selectable->hasBothObjects()) {
-				string installedVersion = selectable->installedObj()->edition().version();
-				string availableVersion = selectable->candidateObj()->edition().version();
-				if (installedVersion == availableVersion)
-					availableName = "";  // mark to not show
-				else {
-					installedName += " (" + installedVersion + ")";
-					availableName += " (" + availableVersion + ")";
-				}
-			}
-
-			addObject (selectable, installedName, false, true, list_iter, iter_t, tree_iter);
-			if (!availableName.empty())  // different version
-				addObject (selectable, availableName, true, false, list_iter, iter_t, tree_iter);
+			// adding package row to both views
+			gtk_list_store_append (m_packages_list, &list_iter);
+			gtk_tree_store_append (m_packages_tree, &tree_iter, &parent_tree_iter);
+			loadPackageRow (&list_iter, &tree_iter, selectable);
+			// one time only setting
+			gtk_list_store_set (m_packages_list, &list_iter,
+				7, gtk_tree_model_get_path (GTK_TREE_MODEL (m_packages_tree),
+				   &tree_iter), -1);
+			gtk_tree_store_set (m_packages_tree, &tree_iter,
+				7, gtk_tree_model_get_path (GTK_TREE_MODEL (m_packages_list),
+				   &list_iter), -1);
 		}
 
 		// free GtkTreePaths
@@ -753,7 +877,7 @@ public:
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_available_view), column);
 
 		column = gtk_tree_view_column_new_with_attributes ("Installed",
-			gtk_cell_renderer_text_new(), "text", 0, NULL);
+			gtk_cell_renderer_text_new(), "text", 1, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_installed_view), column);
 
 		m_installed_list = gtk_tree_model_filter_new
@@ -787,28 +911,10 @@ public:
 		                  G_CALLBACK (package_clicked_cb), this);
 		g_signal_connect (G_OBJECT (m_available_view), "cursor-changed",
 		                  G_CALLBACK (package_clicked_cb), this);
-	}
-
-	void addObject (ZyppSelectable &selectable, const string &name,
-	                bool available_package, bool installed_package,
-	                GtkTreeIter &list_iter, GtkTreeIter &tree_iter,
-	                GtkTreeIter &tree_parent_iter)
-	{
-		gtk_list_store_append (m_packages_list, &list_iter);
-		gtk_tree_store_append (m_packages_tree, &tree_iter, &tree_parent_iter);
-
-		GtkTreePath* list_path = gtk_tree_model_get_path
-		                             (GTK_TREE_MODEL (m_packages_list), &list_iter);
-		GtkTreePath* tree_path = gtk_tree_model_get_path
-		                             (GTK_TREE_MODEL (m_packages_tree), &tree_iter);
-
-		gtk_list_store_set (m_packages_list, &list_iter,
-			0, name.c_str(), 1, get_pointer (selectable),
-			2, available_package, 3, installed_package, 4, tree_path, -1);
-
-		gtk_tree_store_set (m_packages_tree, &tree_iter,
-			0, selectable->name().c_str(), 1, get_pointer (selectable),
-			2, available_package, 3, installed_package, 4, list_path, -1);
+		g_signal_connect (G_OBJECT (m_installed_view), "popup-menu",
+		                  G_CALLBACK (package_popmenu_cb), this);
+		g_signal_connect (G_OBJECT (m_installed_view), "button-press-event",
+		                  G_CALLBACK (package_right_click_cb), this);
 	}
 
 	GtkWidget *createListWidget (const char *header, const char *icon,
@@ -841,6 +947,52 @@ public:
 		return vbox;
 	}
 
+	void loadPackageRow (GtkTreeIter *list_iter, GtkTreeIter *tree_iter,
+	                     ZyppSelectable selectable)
+	{
+		ZyppObject available, install;
+		zypp::ui::Status status = selectable->status();
+		switch (status) {
+			case zypp::ui::S_Install:
+			case zypp::ui::S_Update:
+				available = NULL;
+				install = selectable->candidateObj();
+				break;
+			case zypp::ui::S_Del:
+				available = selectable->installedObj();
+				install = NULL;
+				break;
+			default:
+				available = selectable->candidateObj();
+				install = selectable->installedObj();
+				if (available && install &&
+				    available->edition() == install->edition())
+					available = NULL;
+				break;
+		}
+
+		string availableName = selectable->name(),
+		       installedName = selectable->name();
+		if (available && install) {
+			availableName += " (" + available->edition().version() + ")";
+			installedName += " (" + install->edition().version() + ")";
+		}
+		else if (status == zypp::ui::S_Update)
+			installedName += " (" + install->edition().version() + ")";
+
+		gtk_list_store_set (m_packages_list, list_iter,
+			0, availableName.c_str(), 1, installedName.c_str(),
+			2, available != 0, 3, install != 0,
+			4, get_pointer (selectable),
+			5, get_pointer (available), 6, get_pointer (install), -1);
+
+		gtk_tree_store_set (m_packages_tree, tree_iter,
+			0, availableName.c_str(), 1, installedName.c_str(),
+			2, available != 0, 3, install != 0,
+			4, get_pointer (selectable),
+			5, get_pointer (available), 6, get_pointer (install), -1);
+	}
+
 	void free_tree_paths (GtkTreeModel *model, GtkTreeIter *iter)
 	{
 		if (gtk_tree_model_iter_has_child (model, iter)) {
@@ -850,7 +1002,7 @@ public:
 		}
 
 		gpointer tree_path;
-		gtk_tree_model_get (model, iter, 4, &tree_path, -1);
+		gtk_tree_model_get (model, iter, 7, &tree_path, -1);
 		gtk_tree_path_free ((GtkTreePath *) tree_path);
 
 		if (gtk_tree_model_iter_next (model, iter))
@@ -936,7 +1088,7 @@ public:
 	                              PackageSelector *pThis)
 	{
 		ZyppSelectablePtr selectable = 0;
-		gtk_tree_model_get (model, iter, 1, &selectable, -1);
+		gtk_tree_model_get (model, iter, 4, &selectable, -1);
 #if 0
 // TODO: don't show empty nodes
 // A bit harder than I thouht -- we need to go iterate
@@ -994,12 +1146,18 @@ public:
 			pThis->setPlainView();
 	}
 
-	static ZyppSelectablePtr selectedPackage (GtkTreeView *tree_view,
-	                                          GtkTreePath **list_path = 0,
-	                                          GtkTreePath **tree_path = 0)
+	static bool getSelectedPackage (GtkTreeView *tree_view,
+		ZyppSelectablePtr *package_sel,
+		ZyppObjectPtr *available_obj = 0, ZyppObjectPtr *installed_obj = 0,
+		GtkTreePath **list_path = 0, GtkTreePath **tree_path = 0)
 	{
+		IMPL
 		if (list_path) *list_path = 0;
 		if (tree_path) *tree_path = 0;
+		if (available_obj) *available_obj = 0;
+		if (installed_obj) *installed_obj = 0;
+		*package_sel = NULL;
+
 		GtkTreePath *path = 0;
 		GtkTreeViewColumn *column;
 		gtk_tree_view_get_cursor (tree_view, &path, &column);
@@ -1010,19 +1168,24 @@ public:
 			GtkTreePath *actual_path =
 				gtk_tree_model_filter_convert_path_to_child_path (model_filter, path);
 
-			ZyppSelectablePtr selectable = 0;
 			GtkTreeIter iter;
 			gtk_tree_model_get_iter (model, &iter, actual_path);
-			gtk_tree_model_get (model, &iter, 1, &selectable, -1);
+			gtk_tree_model_get (model, &iter, 4, package_sel, -1);
+			if (available_obj)
+				gtk_tree_model_get (model, &iter, 5, available_obj, -1);
+			if (installed_obj)
+				gtk_tree_model_get (model, &iter, 6, installed_obj, -1);
 
 			if (list_path && tree_path) {
+				// we return here the allocated values of the model to avoid the hassle
+				// of freeing them on the function user
 				if (GTK_IS_LIST_STORE (model)) {
-					gtk_tree_model_get (model, &iter, 4, tree_path, -1);
+					gtk_tree_model_get (model, &iter, 7, tree_path, -1);
 					*tree_path = gtk_tree_path_copy (*tree_path);
 					*list_path = actual_path;
 				}
 				else { //if (GTK_IS_TREE_STORE (model))
-					gtk_tree_model_get (model, &iter, 4, list_path, -1);
+					gtk_tree_model_get (model, &iter, 7, list_path, -1);
 					*list_path = gtk_tree_path_copy (*list_path);
 					*tree_path = actual_path;
 				}
@@ -1030,25 +1193,29 @@ public:
 			else
 				gtk_tree_path_free (actual_path);
 			gtk_tree_path_free (path);
-			return selectable;
+			return true;
 		}
-		return NULL;
+		return false;
 	}
 
-	void setSelectedPackage (GtkTreeView *view, bool available, bool installed)
+	void markSelectedPackage (GtkTreeView *view, bool available, bool installed)
 	{
 		IMPL
-		GtkTreeIter iter;
+		GtkTreeIter list_iter, tree_iter;
 		GtkTreePath *list_path, *tree_path;
-		ZyppSelectablePtr sel = selectedPackage (view, &list_path, &tree_path);
+		ZyppSelectablePtr sel;
+		ZyppObjectPtr obj;
+		if (!getSelectedPackage (view, &sel, &obj, NULL, &list_path, &tree_path))
+			return;  // no package selected
 
-		if (!sel || !mark_selectable (sel, installed))
+		if (!sel || !mark_selectable (sel, installed, obj))
 			goto set_selected_cleanups;
 
-		gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_list), &iter, list_path);
-		gtk_list_store_set (m_packages_list, &iter, 2, available, 3, installed, -1);
-		gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_tree), &iter, tree_path);
-		gtk_tree_store_set (m_packages_tree, &iter, 2, available, 3, installed, -1);
+		gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_list), &list_iter, list_path);
+		gtk_tree_model_get_iter (GTK_TREE_MODEL (m_packages_tree), &tree_iter, tree_path);
+
+		// reload row
+		loadPackageRow (&list_iter, &tree_iter, sel);
 
 		set_selected_cleanups:
 			if (list_path) gtk_tree_path_free (list_path);
@@ -1058,20 +1225,24 @@ public:
 	static void install_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
 	{
 		IMPL
-		pThis->setSelectedPackage (GTK_TREE_VIEW (pThis->m_available_view), false, true);
+		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_available_view), false, true);
 	}
 
 	static void remove_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
 	{
 		IMPL
-		pThis->setSelectedPackage (GTK_TREE_VIEW (pThis->m_installed_view), true, false);
+		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_installed_view), true, false);
 	}
 
 	static void package_clicked_cb (GtkTreeView *tree_view, PackageSelector *pThis)
 	{
 		IMPL
-		ZyppSelectablePtr sel = selectedPackage (tree_view);
-		pThis->m_information_widget->setPackage (sel);
+		ZyppSelectablePtr sel;
+		ZyppObjectPtr avail_obj, inst_obj;
+		getSelectedPackage (tree_view, &sel, &avail_obj, &inst_obj);
+		ZyppObjectPtr obj = (GTK_WIDGET (tree_view) == pThis->m_available_view)
+		                    ? avail_obj : inst_obj;
+		pThis->m_information_widget->setPackage (sel, obj);
 
 		// set the other view as un-selected
 		if (tree_view == GTK_TREE_VIEW (pThis->m_installed_view))
@@ -1080,6 +1251,127 @@ public:
 		else
 			gtk_tree_selection_unselect_all (
 				gtk_tree_view_get_selection (GTK_TREE_VIEW (pThis->m_installed_view)));
+	}
+
+	static gboolean package_right_click_cb (GtkWidget *widget, GdkEventButton *event,
+	                                        PackageSelector *pThis)
+	{
+		IMPL
+		if (event->type == GDK_BUTTON_PRESS && event->button == 3)
+			return package_popmenu_cb (widget, pThis);
+		return FALSE;
+	}
+
+	static gboolean package_popmenu_cb (GtkWidget *widget, PackageSelector *pThis)
+	{
+		IMPL
+		// prepare a popup menu for fine upgrading/downgrading
+		GtkTreePath *list_path, *tree_path;
+		ZyppSelectablePtr sel;
+		ZyppObjectPtr obj;
+		if (!getSelectedPackage (GTK_TREE_VIEW (widget), &sel, NULL, &obj,
+		                          &list_path, &tree_path))
+			return FALSE;
+
+		GtkWidget *item;
+		GtkWidget *upMenu = 0, *downMenu = 0;
+		for (zypp::ui::Selectable::available_iterator it = sel->availableBegin();
+		      it != sel->availableEnd(); it++) {
+			if ((*it)->edition() > obj->edition()) {
+				if (!upMenu)
+					upMenu = gtk_menu_new();
+				item = gtk_menu_item_new_with_label ((*it)->edition().version().c_str());
+				gtk_menu_shell_append (GTK_MENU_SHELL (upMenu), item);
+				// no easier way to pass this stuff... :/
+				g_object_set_data (G_OBJECT (item), "selectable", sel);
+				g_object_set_data (G_OBJECT (item), "resobject",
+					const_cast <gpointer> ((const gpointer) get_pointer (*it)));
+				g_object_set_data (G_OBJECT (item), "list-path", list_path);
+				g_object_set_data (G_OBJECT (item), "tree-path", tree_path);
+				g_signal_connect (G_OBJECT (item), "activate",
+				                  G_CALLBACK (popup_menu_selection_cb), pThis);
+			}
+			else if ((*it)->edition() < obj->edition()) {
+				if (!downMenu)
+					downMenu = gtk_menu_new();
+				item = gtk_menu_item_new_with_label ((*it)->edition().version().c_str());
+				gtk_menu_shell_append (GTK_MENU_SHELL (downMenu), item);
+				g_object_set_data (G_OBJECT (item), "selectable", sel);
+				g_object_set_data (G_OBJECT (item), "resobject",
+					const_cast <gpointer> ((const gpointer) get_pointer (*it)));
+				g_object_set_data (G_OBJECT (item), "list-path", list_path);
+				g_object_set_data (G_OBJECT (item), "tree-path", tree_path);
+				g_signal_connect (G_OBJECT (item), "activate",
+				                  G_CALLBACK (popup_menu_selection_cb), pThis);
+			}
+		}
+
+		if (!upMenu && !downMenu && !sel->hasInstalledObj())
+			return FALSE;
+
+		GtkWidget *menu = gtk_menu_new();
+		g_object_ref (G_OBJECT (menu));
+		if (upMenu) {
+			item = gtk_menu_item_new_with_mnemonic ("_Upgrade to");
+			gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), upMenu);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+		}
+		if (downMenu) {
+			item = gtk_menu_item_new_with_mnemonic ("_Downgrade to");
+			gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), downMenu);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+		}
+		if (sel->hasInstalledObj())		// re-install
+		{
+			item = gtk_check_menu_item_new_with_mnemonic ("_Re-Install");
+			if (sel->status() == zypp::ui::S_Update &&
+			    sel->candidateObj()->edition() == sel->installedObj()->edition())
+				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), TRUE);
+			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+			g_object_set_data (G_OBJECT (item), "selectable", sel);
+			g_object_set_data (G_OBJECT (item), "resobject",
+				const_cast <gpointer> ((const gpointer) get_pointer (sel->installedObj())));
+			g_object_set_data (G_OBJECT (item), "list-path", list_path);
+			g_object_set_data (G_OBJECT (item), "tree-path", tree_path);
+			g_signal_connect (G_OBJECT (item), "activate",
+			                  G_CALLBACK (popup_menu_selection_cb), pThis);
+		}
+
+		g_signal_connect (G_OBJECT (menu), "selection-done",
+		                  G_CALLBACK (destroy_popup_menu_cb), pThis);
+		gtk_widget_show_all (menu);
+		gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL, 0,
+		                gtk_get_current_event_time());
+		return TRUE;
+	}
+
+	static void destroy_popup_menu_cb (GtkMenuShell *menu, PackageSelector *pThis)
+	{
+		IMPL
+		gtk_widget_destroy (GTK_WIDGET (menu));
+		g_object_unref (G_OBJECT (menu));
+	}
+
+	static void popup_menu_selection_cb (GtkMenuItem *item, PackageSelector *pThis)
+	{
+		IMPL
+		ZyppSelectablePtr sel = (ZyppSelectablePtr) g_object_get_data (
+		                            G_OBJECT (item), "selectable");
+		ZyppObjectPtr obj = (ZyppObjectPtr) g_object_get_data (
+		                        G_OBJECT (item), "resobject");
+		GtkTreePath *list_path = (GtkTreePath*) g_object_get_data (
+		                             G_OBJECT (item), "list-path");
+		GtkTreePath *tree_path = (GtkTreePath*) g_object_get_data (
+		                             G_OBJECT (item), "tree-path");
+
+		GtkTreeIter list_iter, tree_iter;
+		gtk_tree_model_get_iter (GTK_TREE_MODEL (pThis->m_packages_list),
+		                         &list_iter, list_path);
+		gtk_tree_model_get_iter (GTK_TREE_MODEL (pThis->m_packages_tree),
+		                         &tree_iter, tree_path);
+
+		if (mark_selectable (sel, true, obj))
+			pThis->loadPackageRow (&list_iter, &tree_iter, sel);
 	}
 };
 
@@ -1241,9 +1533,12 @@ protected:
 	bool confirmChanges()
 	{
 		IMPL
+		if (zyppPool().empty <zypp::Package> ())
+			return false;
+
 		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Changes Summary",
 			YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
-			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
+			GTK_STOCK_CANCEL, 0, "C_onfirm", 1, NULL);
 
 		GtkWidget *install_label, *remove_label, *install_view, *remove_view;
 		install_label = gtk_label_new ("To install:");
@@ -1305,7 +1600,7 @@ protected:
 			if (gtk_tree_model_get_iter_first (packages_model, &packages_iter))
 				do {
 					ZyppSelectablePtr selectable = 0;
-					gtk_tree_model_get (packages_model, &packages_iter, 1, &selectable, -1);
+					gtk_tree_model_get (packages_model, &packages_iter, 4, &selectable, -1);
 
 					if (selectable) {
 						GtkTreeStore *store;
@@ -1369,140 +1664,6 @@ protected:
 
 		return confirmed;
 	}
-#if 0
-	bool licensesAccepted()
-	{
-		y2milestone ("Showing all pending license agreements");
-
-		GtkTreeModel *model = m_package_selector->m_packages_list;
-		GtkTreeIter iter;
-		gtk_tree_model_get_iter_first (model, &iter);
-
-		do {
-			ZyppSelectablePtr selectable = 0;
-			gtk_tree_model_get (model, &iter, 3, &selectable, -1);
-
-			if (selectable && selectable->toInstall()) {
-				ZyppObject object = sel->candidateObj()
-				string license = object->licenseToConfirm();
-				if (!license.empty()) {
-					if (!confirmLicense (license))
-						return false;
-				}
-				selectable->setLicenceConfirmed (true);
-			}
-		} while (gtk_tree_model_iter_next (model, &iter));
-
-		return true;
-	}
-#endif
-	bool solveProblems()
-	{
-		IMPL
-		zypp::Resolver_Ptr resolver = zypp::getZYpp()->resolver();
-		if (resolver->resolvePool())
-			return true;
-		zypp::ResolverProblemList problems = resolver->problems();
-		if (problems.empty())
-			return true;
-
-		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
-			YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
-			"C_onfirm", 1, GTK_STOCK_CANCEL, 0, NULL);
-
-		GtkWidget *problems_view;
-		problems_view  = gtk_tree_view_new();
-
-		GtkWidget *problems_window;
-		problems_window = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (problems_window),
-		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_set_shadow_type
-			(GTK_SCROLLED_WINDOW (problems_window), GTK_SHADOW_IN);
-		gtk_container_add (GTK_CONTAINER (problems_window), problems_view);
-
-		GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
-		gtk_box_pack_start (vbox, problems_window,  TRUE, TRUE, 0);
-
-		// create model
-		// the vairous columns are: radio button active (boolean), problem
-		// or solution description (string), is radio button (boolean: always
-		// true), show radio button (boolean; false for problems)
-		GtkTreeStore *problems_store = gtk_tree_store_new (4,
-			G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
-		// install view
-		GtkTreeViewColumn *column;
-		GtkCellRenderer *radio_renderer = gtk_cell_renderer_toggle_new();
-		column = gtk_tree_view_column_new_with_attributes ("",
-			radio_renderer, "active", 0, "radio", 2, "visible", 3, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
-		g_signal_connect (G_OBJECT (radio_renderer), "toggled",
-		                  G_CALLBACK (YGUtils::tree_view_radio_toggle_cb),
-		                  GTK_TREE_MODEL (problems_store));
-
-		column = gtk_tree_view_column_new_with_attributes ("Problems",
-			gtk_cell_renderer_text_new(), "text", 1, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
-
-		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (problems_view), FALSE);
-		gtk_tree_view_set_model (GTK_TREE_VIEW (problems_view),
-		                         GTK_TREE_MODEL (problems_store));
-		g_object_unref (G_OBJECT (problems_store));
-
-		// construct model
-		GtkTreeIter piter, siter;
-		map <GtkTreePath *, zypp::ProblemSolution *> users_actions;
-		for (zypp::ResolverProblemList::iterator it = problems.begin();
-		     it != problems.end(); it++) {
-			zypp::ProblemSolutionList solutions = (*it)->solutions();
-
-			gtk_tree_store_append (problems_store, &piter, NULL);
-			gtk_tree_store_set (problems_store, &piter, 0, FALSE,
-				1, ((*it)->description() + "\n" + (*it)->details()).c_str(),
-				2, TRUE, 3, FALSE, -1);
-
-			for (zypp::ProblemSolutionList::iterator jt = solutions.begin();
-			     jt != solutions.end(); jt++) {
-				gtk_tree_store_append (problems_store, &siter, &piter);
-				gtk_tree_store_set (problems_store, &siter, 0, FALSE,
-					1, ((*jt)->description() + "\n" + (*jt)->details()).c_str(),
-					2, TRUE, 3, TRUE, -1);
-				users_actions [gtk_tree_model_get_path (GTK_TREE_MODEL (
-					problems_store), &siter)] = get_pointer (*jt);
-			}
-		}
-
-		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
-		gtk_widget_show_all (dialog);
-
-		bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
-
-		if (confirmed) {
-			// apply user solutions
-			zypp::ProblemSolutionList userChoices;
-
-			GtkTreeIter iter;
-			for (map <GtkTreePath *, zypp::ProblemSolution *>::iterator it
-			     = users_actions.begin(); it != users_actions.end(); it++) {
-				gtk_tree_model_get_iter (GTK_TREE_MODEL (problems_store),
-				                         &iter, it->first);
-				gboolean state = FALSE;
-				gtk_tree_model_get (GTK_TREE_MODEL (problems_store), &iter,
-				                    0, &state, -1);
-				if (state)
-					userChoices.push_back (it->second);
-
-				gtk_tree_path_free (it->first);
-			}
-			resolver->applySolutions (userChoices);
-		}
-
-		gtk_widget_destroy (dialog);
-		if (confirmed)
-			// repeate the all process just in case
-			return solveProblems();
-		return false;
-	}
 
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 	                              gint id_type, YGPackageSelector *pThis)
@@ -1523,7 +1684,7 @@ protected:
 			    zyppPool().diffState <zypp::Pattern> () ||
 			    zyppPool().diffState <zypp::Selection>()) {
 				// in case of changes, check problems, ask for confirmation and JFDI.
-				if (pThis->confirmChanges() && pThis->solveProblems()) {
+				if (pThis->confirmChanges() && solveProblems()) {
 					y2milestone ("Closing PackageSelector with 'accept'");
 					YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
 				}

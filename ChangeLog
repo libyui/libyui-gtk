@@ -1,3 +1,8 @@
+2006-09-10  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGPackageSelector.cc: added support for upgrades (fine grading
+	on right click).
+
 2006-08-23  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGPackageSelector.cc: don't show available packages that are

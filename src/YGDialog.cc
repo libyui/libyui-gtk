@@ -4,13 +4,9 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
 #include "YDialog.h"
 #include "YGWidget.h"
 #include <gdk/gdkkeysyms.h>
-
-class YGGenericButton;
-class YGWizard;
 
 class YGDialog : public YDialog, public YGWidget
 {
@@ -30,6 +26,7 @@ public:
 		m_userSize.height = -1;
 		m_padding = 0;
 
+		GtkWindow *window = GTK_WINDOW (getWidget());
 		m_fixed = gtk_fixed_new();
 
 		if (opt.hasWarnColor.value() || opt.hasInfoColor.value()) {
@@ -60,16 +57,22 @@ public:
 		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
 		                      !opt.hasDefaultSize.value());
-		// empty title -- will be set by wizard
-		gtk_window_set_title (GTK_WINDOW (m_widget), "");
+
+		if (!opt.hasDefaultSize.value())
 		{	// set it the icon of the parent (if it exists)
 			GtkWindow *parent = YGUI::ui()->currentWindow();
 			if (parent) {
 				GdkPixbuf *icon = gtk_window_get_icon (parent);
 				if (icon)
-					gtk_window_set_icon (GTK_WINDOW (getWidget()), icon);
+					gtk_window_set_icon (window, icon);
+				gtk_window_set_transient_for (window, parent);
+				gtk_window_set_title (window, "");
 			}
+			else
+				gtk_window_set_title (window, "YaST");
 		}
+		else
+			gtk_window_set_title (window, "YaST");
 
 	// FIXME: set default size to getDefaultSize ?
 	// gtk_window_set_default_size (GTK_WINDOW (m_widget), 250, 250);
@@ -84,13 +87,12 @@ public:
 		                        G_CALLBACK (key_pressed_cb), NULL);
 
 		if (!opt.hasDefaultSize.value()) {
-			gtk_window_set_modal (GTK_WINDOW (getWidget()), TRUE);
-			gtk_window_set_type_hint (GTK_WINDOW (getWidget()),
-			                          GDK_WINDOW_TYPE_HINT_DIALOG);
+			gtk_window_set_modal (window, TRUE);
+			gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
 		}
 
 		if (!hasDefaultSize() && !YGUI::ui()->haveWM())
-			gtk_window_set_has_frame (GTK_WINDOW (getWidget()), TRUE);
+			gtk_window_set_has_frame (window, TRUE);
 	}
 
 	virtual ~YGDialog()
