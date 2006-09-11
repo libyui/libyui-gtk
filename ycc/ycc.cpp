@@ -65,6 +65,7 @@ class View {
 public:
 	View()
 	{
+// FIXME: view port not working. I dunno how to deal with gtk_adjustment :-/
 		adjustment = GTK_ADJUSTMENT (gtk_adjustment_new (0.0, 0.0, 1.0, 1.0, 2.0, 1.0));
 		m_widget = gtk_viewport_new (NULL, adjustment);
 
@@ -170,6 +171,8 @@ int main(int argc, char* argv[])
 
 	View view;
 	{
+		bool is_root = getuid () == 0;
+
 		{  // adding groups
 			GKeyFile *file = g_key_file_new();
 			std::set <std::string> groups = subfiles (YAST_GROUPS);
@@ -202,8 +205,10 @@ int main(int argc, char* argv[])
 				gchar* name = g_key_file_get_locale_string (file, "Desktop Entry", "Name", 0, NULL);
 				gchar *icon = g_key_file_get_string (file, "Desktop Entry", "Icon", NULL);
 				gchar *command = g_key_file_get_string (file, "Desktop Entry", "Exec", NULL);
+				gboolean needs_root = g_key_file_get_boolean (file, "Desktop Entry",
+				                          "X-SuSE-YaST-RootOnly", NULL);
 
-				if (group && name && command)
+				if (group && name && command && (!needs_root || is_root))
 					view.addEntry (group, name, icon, command);
 
 				if (group)   g_free (group);
@@ -213,7 +218,6 @@ int main(int argc, char* argv[])
 			}
 			g_key_file_free (file);
 		}
-
 	}
 
 	gtk_container_add (GTK_CONTAINER (window), view.getWidget());
