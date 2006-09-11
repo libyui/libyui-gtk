@@ -70,8 +70,8 @@ GType ygtk_wizard_get_type (void) G_GNUC_CONST;
 void ygtk_wizard_enable_steps (YGtkWizard *wizard);
 void ygtk_wizard_enable_tree  (YGtkWizard *wizard);
 
+// pass NULL if you just want to unset the current child
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
-void ygtk_wizard_unset_child (YGtkWizard *wizard);
 
 // commands
 // (commands that may fail return a sucess boolean.)

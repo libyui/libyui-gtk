@@ -278,12 +278,18 @@ int YGUI::getDefaultHeight()
 	return MAX(SHRINK(gdk_screen_get_height (getScreen())), 600);
 }
 
-void YGUI::internalError (const char *msg)
+static void errorMsg (const char *msg)
 {
 	GtkWidget* dialog = gtk_message_dialog_new (NULL,
 		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
+}
+
+void YGUI::internalError (const char *msg)
+{
+	errorMsg (msg);
+	abort();		// going down
 }
 
 GtkWindow *YGUI::currentWindow()
@@ -465,7 +471,7 @@ void YGUI::makeScreenShot (string filename)
 	GtkWidget *widget = GTK_WIDGET (currentWindow());
 	if (!widget) {
 		if (interactive)
-			internalError ("No dialog to take screenshot of.");
+			errorMsg ("No dialog to take screenshot of.");
 		return;
 	}
 
@@ -477,7 +483,7 @@ void YGUI::makeScreenShot (string filename)
 
 	if (!shot) {
 		if (interactive)
-			internalError ("Couldn't take a screenshot.");
+			errorMsg ("Couldn't take a screenshot.");
 		return;
 	}
 
@@ -538,7 +544,7 @@ void YGUI::makeScreenShot (string filename)
 		if (interactive) {
 			string msg = "Couldn't save screenshot to file " + filename
 			             + " - " + error->message;
-			internalError (msg.c_str());
+			errorMsg (msg.c_str());
 		}
 		goto makeScreenShot_ret;
 	}

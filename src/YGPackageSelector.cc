@@ -536,8 +536,7 @@ public:
 // Pattern selector
 class PatternSelector
 {
-	GtkWidget *m_widget;
-//	list < pair <GtkWidget *, 
+	GtkWidget *m_widget, *m_buttons;
 
 public:
 	PatternSelector()
@@ -552,8 +551,8 @@ public:
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_widget),
 		                                       view_port);
 
-		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (view_port), vbox);
+		m_buttons = gtk_vbox_new (FALSE, 0);
+		gtk_container_add (GTK_CONTAINER (view_port), m_buttons);
 
 		// before starting to actually create the interface widgets, we need
 		// to store everything to get everything in the right order
@@ -591,7 +590,7 @@ public:
 			GtkWidget *label = gtk_label_new (
 				("<big><b>" + it->first + "</b></big>").c_str());
 			gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-			gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (m_buttons), label, FALSE, FALSE, 6);
 
 			for (unsigned int i = 0; i < patterns.size(); i++) {
 				ZyppSelectablePtr selectable = patterns[i];
@@ -603,10 +602,8 @@ public:
 					GtkWidget *hbox, *button, *image = 0;
 
 					hbox = gtk_hbox_new (FALSE, 0);
-					button = gtk_check_button_new ();
-// FIXME:
-//					g_signal_connect (G_OBJECT (button), "toggled",
-//					                  G_CALLBACK (selection_toggled_cb), selectable);
+					button = gtk_check_button_new();
+					g_object_set_data (G_OBJECT (button), "selectable", selectable);
 
 					label = gtk_label_new (
 						("<b>" + object->summary() + "</b>\n" + object->description()).c_str());
@@ -646,7 +643,7 @@ public:
 					if (selection->isBase() && is_installed)
 						gtk_widget_set_sensitive (button, FALSE);
 
-					gtk_box_pack_start (GTK_BOX (vbox), button, FALSE, FALSE, 6);
+					gtk_box_pack_start (GTK_BOX (m_buttons), button, FALSE, FALSE, 6);
 				}
 			}
 		}
@@ -656,42 +653,48 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	static void selection_toggled_cb (GtkToggleButton *button,
-	                                  ZyppSelectablePtr selectable)
+	// Applies the pattern and returns the packages to install and remove
+	// via arguments references
+	void apply (set <string> &to_install, set <string> &to_remove)
 	{
 		IMPL
-// FIXME: re-work this out. Should only mark them at apply, so it can
-// be canceled from the package selector.
-//		mark_selectable (selectable, gtk_toggle_button_get_active (button));
-	}
-
-#if 0
-	set <string> get_packages_to (bool install)
-	{
-		IMPL
-		zypp::ui::Status status = install ? zypp::ui::S_KeepInstalled
-		                                  : zypp::ui::S_NoInst;
-
-		set <string> packages;
+printf ("get all buttons\n");
 		GList *buttons = gtk_container_get_children (GTK_CONTAINER (m_buttons));
 		GList *i;
 		for (i = g_list_first (buttons); i; i = i->next) {
+printf ("iterating\n");
+			if (!GTK_IS_TOGGLE_BUTTON (i->data))
+				continue;
+printf ("is a button... work\n");
 			GtkToggleButton *button = GTK_TOGGLE_BUTTON (i->data);
-			ZyppSelectablePtr selectable;
-			selectable = (ZyppSelectablePtr) g_object_get_data
-			                                     (G_OBJECT (button), "selectable");
-			if (gtk_toggle_button_get_active (button) && selectable->status() != status) {
-				selectable->set_status (status);
-				const set <string> &_packages =
-					(tryCastToZyppSelection (selectable->theObj()))->install_packages();
-				packages.insert (_packages.begin(), _packages.end());
+			ZyppSelectablePtr selectable = (ZyppSelectablePtr)
+				g_object_get_data (G_OBJECT (button), "selectable");
+
+printf ("checking if it needs to be installed or remove\n");
+			// to install
+			if (gtk_toggle_button_get_active (button)) {
+printf ("needs to be installed\n");
+				if (selectable->set_status (zypp::ui::S_Install)) {
+printf ("installed!\n");
+					const set <string> &packages =
+						(tryCastToZyppSelection (selectable->theObj()))->install_packages();
+					to_install.insert (packages.begin(), packages.end());
+				}
+			}
+			// to remove
+			else {
+printf ("needs to be removed\n");
+				if (selectable->set_status (zypp::ui::S_Del)) {
+printf ("removed!\n");
+					const set <string> &packages =
+						(tryCastToZyppSelection (selectable->theObj()))->install_packages();
+					to_remove.insert (packages.begin(), packages.end());
+				}
 			}
 		}
-
+printf ("done!\n");
 		g_list_free (buttons);
-		return packages;
 	}
-#endif
 };
 
 // Package selector's widget
@@ -1395,71 +1398,46 @@ public:
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
 		ygtk_wizard_set_next_button_label (wizard, "_Accept");
 		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
-		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
-		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
 
 		m_pattern_selector = new PatternSelector();
 		m_package_selector = new PackageSelector (opt.searchMode.value());
 
-		if (opt.searchMode.value()) {
-			set_packages_help();
-			ygtk_wizard_set_child (wizard, m_package_selector->getWidget());
+		if (opt.searchMode.value() && false) {
+			// Patterns dialog
+			m_patterns_widget = gtk_dialog_new_with_buttons ("Patterns Selector",
+				YGUI::ui()->currentWindow(), GtkDialogFlags (0),
+				GTK_STOCK_CANCEL, GTK_RESPONSE_NONE,
+				GTK_STOCK_APPLY, GTK_RESPONSE_APPLY, NULL);
+			gtk_window_set_default_size (GTK_WINDOW (m_patterns_widget), -1, 400);
 
-			// Patterns window
-			m_patterns_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-			GtkWidget *window = m_patterns_widget;
-			gtk_window_set_transient_for
-				(GTK_WINDOW (window), YGUI::ui()->currentWindow());
-			gtk_window_set_title (GTK_WINDOW (window), "Patterns Selector");
-			gtk_window_set_default_size (GTK_WINDOW (window), -1, 400);
+			gtk_container_add (GTK_CONTAINER (GTK_DIALOG (m_patterns_widget)->vbox),
+			                   m_pattern_selector->getWidget());
+			gtk_container_set_border_width (GTK_CONTAINER (m_patterns_widget), 6);
 
-			GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
-			GtkWidget *buttons_box = gtk_hbutton_box_new();
-			GtkWidget *ok_button = gtk_button_new_from_stock (GTK_STOCK_OK);
-			gtk_box_pack_end (GTK_BOX (buttons_box), ok_button, FALSE, FALSE, 0);
-			g_signal_connect (G_OBJECT (ok_button), "clicked",
-			                  G_CALLBACK (patterns_apply_cb), this);
-
-			gtk_box_pack_start (GTK_BOX (vbox), m_pattern_selector->getWidget(),
-			                    TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (vbox), buttons_box, FALSE, FALSE, 8);
-
-			gtk_container_add (GTK_CONTAINER (window), vbox);
-			gtk_container_set_border_width (GTK_CONTAINER (window), 6);
-			gtk_widget_show_all (vbox);
-
+			g_signal_connect (G_OBJECT (m_patterns_widget), "response",
+			                  G_CALLBACK (patterns_response_cb), this);
 			g_signal_connect (G_OBJECT (m_package_selector->m_patterns_button),
 			                  "clicked", G_CALLBACK (show_patterns_cb), this);
-			g_signal_connect (G_OBJECT (window), "delete_event",
-			                  G_CALLBACK (close_patterns_window_cb), this);
+
+			// work
+			setPackagesMode (false);
 		}
 		else {
-			ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
-			                             "Patterns Selector");
-			ygtk_wizard_set_help_text (wizard,
-				"Patterns are bundles of software that you may install by pressing them "
-				"and then clicking Accept.<br>"
-				"If you are an experienced user, you may press Customize to choose "
-				"from individual packages."
-			);
-			ygtk_wizard_set_back_button_label (wizard, "_Customize...");
-			ygtk_wizard_set_back_button_id (wizard, g_strdup ("customize"), g_free);
-
-			// start by displaying a pattern selector that will then toggle to
+			// display a pattern selector that will then toggle to
 			// the package selector if the user wants to (on Customize...)
 			GtkWidget *buttons_box;
 			m_patterns_widget = gtk_vbox_new (FALSE, 0);
 			buttons_box = gtk_hbutton_box_new();
-
 			gtk_box_pack_start (GTK_BOX (m_patterns_widget), m_pattern_selector->getWidget(),
 			                    TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_patterns_widget), buttons_box,
 			                    FALSE, FALSE, 8);
 			gtk_widget_show_all (m_patterns_widget);
 
-			ygtk_wizard_set_child (wizard, m_patterns_widget);
+			// work
+			setPatternsMode();
 		}
 	}
 
@@ -1478,8 +1456,9 @@ public:
 	YGWIDGET_IMPL_KEYBOARD_FOCUS
 
 protected:
-	void set_packages_help()
+	void setPackagesMode (bool use_back_button)
 	{
+		IMPL
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
 		                             "Package Selector");
@@ -1493,41 +1472,143 @@ protected:
 			"A categories view of the software is possible, as well as searching "
 			"for a given package."
 		);
-		ygtk_wizard_set_back_button_label (wizard, "");
+
+		if (use_back_button) {
+			ygtk_wizard_set_back_button_label (wizard, "_Back");
+			ygtk_wizard_set_back_button_id (wizard, g_strdup ("back"), g_free);
+			ygtk_wizard_set_abort_button_label (wizard, "");
+		}
+		else {
+			ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
+			ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
+			ygtk_wizard_set_back_button_label (wizard, "");
+		}
+
+		g_object_ref (G_OBJECT (m_package_selector->getWidget()));  // don't let it die
+		ygtk_wizard_set_child (wizard, m_package_selector->getWidget());
+	}
+
+	void setPatternsMode()
+	{
+		IMPL
+		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
+printf ("set header text\n");
+		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
+		                             "Patterns Selector");
+printf ("set help text\n");
+		ygtk_wizard_set_help_text (wizard,
+			"Patterns are bundles of software that you may install by pressing them "
+			"and then clicking Accept.<br>"
+			"If you are an experienced user, you may press Customize to choose "
+			"from individual packages."
+		);
+printf ("set back button\n");
+		ygtk_wizard_set_back_button_label (wizard, "_Customize...");
+		ygtk_wizard_set_back_button_id (wizard, g_strdup ("customize"), g_free);
+printf ("set abort button\n");
+		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
+		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
+
+printf ("set child\n");
+		g_object_ref (G_OBJECT (m_patterns_widget));  // don't let it die
+		ygtk_wizard_set_child (wizard, m_patterns_widget);
+printf ("done!\n");
+	}
+
+	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
+	                              gint id_type, YGPackageSelector *pThis)
+	{
+		IMPL
+		const gchar *action = (gchar *) id;
+
+		// patterns main window specific
+		if (!strcmp (action, "customize")) {
+			// apply patterns
+			patterns_response_cb (NULL, GTK_RESPONSE_APPLY, pThis);
+			pThis->setPackagesMode (true);
+		}
+		else if (!strcmp (action, "back"))
+			pThis->setPatternsMode();
+		// generic
+		else if (!strcmp (action, "accept")) {
+			if (zyppPool().diffState <zypp::Package> ()) {
+				// in case of changes, check problems, ask for confirmation and JFDI.
+				if (pThis->confirmChanges() && solveProblems()) {
+					y2milestone ("Closing PackageSelector with 'accept'");
+					YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
+				}
+			}
+			else
+				YGUI::ui()->sendEvent (new YCancelEvent());
+		}
+		else if (!strcmp (action, "cancel")) {
+			y2milestone ("Closing PackageSelector with 'cancel'");
+			YGUI::ui()->sendEvent (new YCancelEvent());
+		}
 	}
 
 	static void show_patterns_cb (GtkButton *button, YGPackageSelector *pThis)
 	{
 		IMPL
-		gtk_widget_show (pThis->m_patterns_widget);
+		gtk_widget_show_all (pThis->m_patterns_widget);
 	}
 
-	static gboolean close_patterns_window_cb (GtkWidget *widget, GdkEvent *event,
-	                                          YGPackageSelector *pThis)
-	{
-		gtk_widget_hide (widget);
-		return TRUE;
-	}
-
-	static void patterns_apply_cb (GtkButton *button, YGPackageSelector *pThis)
+	static void patterns_response_cb (GtkDialog *dialog, gint response,
+	                                  YGPackageSelector *pThis)
 	{
 		IMPL
-		if (button)
-			gtk_widget_hide (pThis->m_patterns_widget);
+		// either for cancel button or close window
+		if (dialog)
+			gtk_widget_hide (GTK_WIDGET (dialog));
 
-		// TODO: currently patterns should be being installed, but when a pattern
-		// is selected, its packages should be displayed in the packages list
-#if 0
-		set <string> packages;
-		// to remove
-		packages = pThis->m_pattern_selector->get_packages_to (false);
-		for (set <string>::iterator it = packages.begin(); it != packages.end(); it++)
-			pThis->markPackage (*it, false);
-		// to install
-		packages = pThis->m_pattern_selector->get_packages_to (true);
-		for (set <string>::iterator it = packages.begin(); it != packages.end(); it++)
-			pThis->markPackage (*it, true);
-#endif
+		if (response == GTK_RESPONSE_APPLY) {
+			set <string> to_install, to_remove;
+printf ("apply patterns\n");
+			pThis->m_pattern_selector->apply (to_install, to_remove);
+
+printf ("preparing stuff\n");
+			GtkTreeModel *model =
+				GTK_TREE_MODEL (pThis->m_package_selector->m_packages_list);
+			GtkTreeIter iter;
+			gtk_tree_model_get_iter_first (model, &iter);
+
+			do {
+printf ("get selectable and path\n");
+				ZyppSelectablePtr selectable;
+				gtk_tree_model_get (model, &iter, 4, &selectable, -1);
+
+				GtkTreeIter tree_iter;
+				GtkTreePath *tree_path;
+				gtk_tree_model_get (model, &iter, 7, &tree_path, -1);
+				gtk_tree_model_get_iter (model, &tree_iter, tree_path);
+
+printf ("checking if %s needs to be installed or removed\n", selectable->name().c_str());
+printf ("install check...\n");
+				bool found = false;  // small optimization
+				for (set <string>::iterator it = to_install.begin();
+				      it != to_install.end(); it++) {
+					if (YGUtils::contains (selectable->name(), *it)) {
+printf ("yep, installing\n");
+						mark_selectable (selectable, true);
+						pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
+						found = true;
+						break;
+					}
+				}
+printf ("remove check...\n");
+				if (!found)
+					for (set <string>::iterator it = to_remove.begin();
+					      it != to_remove.end(); it++) {
+						if (YGUtils::contains (selectable->name(), *it)) {
+printf ("yep, removing\n");
+							mark_selectable (selectable, false);
+							pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
+							found = true;
+							break;
+						}
+					}
+			} while (gtk_tree_model_iter_next (model, &iter));
+		}
 	}
 
 	bool confirmChanges()
@@ -1663,39 +1744,6 @@ protected:
 		gtk_widget_destroy (dialog);
 
 		return confirmed;
-	}
-
-	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
-	                              gint id_type, YGPackageSelector *pThis)
-	{
-		IMPL
-		const gchar *action = (gchar *) id;
-		if (!strcmp (action, "customize")) {
-			YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
-
-			ygtk_wizard_unset_child (wizard);
-			patterns_apply_cb (NULL, pThis);
-
-			ygtk_wizard_set_child (wizard, pThis->m_package_selector->getWidget());
-			pThis->set_packages_help();
-		}
-		else if (!strcmp (action, "accept")) {
-			if (zyppPool().diffState <zypp::Package> () ||
-			    zyppPool().diffState <zypp::Pattern> () ||
-			    zyppPool().diffState <zypp::Selection>()) {
-				// in case of changes, check problems, ask for confirmation and JFDI.
-				if (pThis->confirmChanges() && solveProblems()) {
-					y2milestone ("Closing PackageSelector with 'accept'");
-					YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
-				}
-			}
-			else
-				YGUI::ui()->sendEvent (new YCancelEvent());
-		}
-		else if (!strcmp (action, "cancel")) {
-			y2milestone ("Closing PackageSelector with 'cancel'");
-			YGUI::ui()->sendEvent (new YCancelEvent());
-		}
 	}
 };
 #endif /*DISABLE_PACKAGE_SELECTOR*/

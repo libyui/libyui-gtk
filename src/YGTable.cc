@@ -131,13 +131,14 @@ protected:
 	{
 		IMPL
 		GtkTreePath *path;
-		GtkTreeViewColumn *column;
-		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()),
-		                                     &path, &column);
-		if (path == NULL || column == NULL)
+		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()), &path, NULL);
+		if (path == NULL)
 			return -1;
 
-		return *gtk_tree_path_get_indices (path);
+		int row = gtk_tree_path_get_indices (path) [0];
+		gtk_tree_path_free (path);
+printf ("getCurrentRow(): %d\n", row);
+		return row;
 	}
 
 	void setCurrentRow (int row)
@@ -219,16 +220,16 @@ public:
 	}
 
 	virtual void itemsCleared()
-	{ IMPL deleteRows(); }
+	{ IMPL; deleteRows(); }
 
 	virtual void cellChanged (int index, int colnum, const YCPString& text)
-	{ IMPL setItem (text->value(), index, colnum); }
+	{ IMPL; setItem (text->value(), index, colnum); }
 
 	virtual int getCurrentItem()
-	{ IMPL return getCurrentRow (); }
+	{ IMPL; return getCurrentRow(); }
 
 	virtual void setCurrentItem (int index)
-	{ IMPL setCurrentRow (index); }
+	{ IMPL; setCurrentRow (index); }
 };
 
 YWidget *
@@ -263,7 +264,7 @@ public:
 
 	// YSelectionBox
 	virtual int getCurrentItem()
-	{ IMPL; return getCurrentRow (); }
+	{ IMPL; return getCurrentRow(); }
 
 	virtual void setCurrentItem (int index)
 	{ IMPL; setCurrentRow (index); }
@@ -315,7 +316,7 @@ public:
 
 	// YSelectionBox
 	virtual int getCurrentItem()
-	{ IMPL; return getCurrentRow (); }
+	{ IMPL; return getCurrentRow(); }
 
 	virtual void setCurrentItem (int index)
 	{ IMPL; setCurrentRow (index); }

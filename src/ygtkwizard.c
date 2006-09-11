@@ -339,16 +339,13 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 	gtk_widget_show_all (wizard->m_pane_box);
 }
 
-void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget)
+void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *new_child)
 {
-	gtk_container_add (GTK_CONTAINER (wizard->m_containee), widget);
-}
-
-void ygtk_wizard_unset_child (YGtkWizard *wizard)
-{
-	gtk_container_remove (GTK_CONTAINER (wizard->m_containee),
-                        gtk_bin_get_child (GTK_BIN (wizard->m_containee)));
-
+	GtkWidget *cur_child = gtk_bin_get_child (GTK_BIN (wizard->m_containee));
+	if (cur_child)
+		gtk_container_remove (GTK_CONTAINER (wizard->m_containee), cur_child);
+	if (new_child)
+		gtk_container_add (GTK_CONTAINER (wizard->m_containee), new_child);
 }
 
 static gboolean hash_table_clear_cb (gpointer key, gpointer value, gpointer data)
