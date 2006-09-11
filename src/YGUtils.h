@@ -53,6 +53,10 @@ namespace YGUtils
 	/* Prints a GtkTreeModel for debugging purposes. */
 	void print_model (GtkTreeModel *model, int string_col);
 
+	/* To be used as a callback to sort tree views. */
+	gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
+                        GtkTreeIter *b, gpointer data);
+
 	/* To be used as a callback for a GtkTreeView with toggle cells. */
 	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	                                gchar *path_str, GtkTreeModel *model);

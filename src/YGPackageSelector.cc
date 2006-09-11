@@ -45,6 +45,13 @@ inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
 
 static bool acceptLicense (ZyppSelectablePtr sel)
 {
+// linking problems forced me to disable this temporarly...
+	if (sel->hasLicenceConfirmed())
+		return true;
+	sel->setLicenceConfirmed (true);
+	return true;
+
+#if 0
 	if (sel->hasLicenceConfirmed())
 		return true;
 
@@ -86,6 +93,7 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 
 	sel->setLicenceConfirmed (confirmed);
 	return confirmed;
+#endif
 }
 
 // install / remove convinience wrapper. You only need to specify an object
@@ -250,11 +258,11 @@ class PackageInformation
 	GtkWidget *m_scrolled_window;
 
 public:
-	PackageInformation (bool only_description)
+	PackageInformation (const char *expander_text, bool only_description)
 	{
 		// TODO: set white color on expanders
 		GtkWidget *padding_widget, *vbox, *view_port;
-		m_widget = gtk_expander_new ("Package Information");
+		m_widget = gtk_expander_new (expander_text);
 
 		padding_widget = gtk_hbox_new (FALSE, 0);
 
@@ -399,7 +407,7 @@ public:
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_container_add (GTK_CONTAINER (patches_window), m_patches_view);
 
-		m_information_widget = new PackageInformation (true);
+		m_information_widget = new PackageInformation ("Patch Information", true);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		gtk_box_pack_start (GTK_BOX (main_vbox), patches_window, TRUE, TRUE, 6);
@@ -449,11 +457,12 @@ public:
 		// TODO: maybe we should sort using severity, not using string.
 		YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (m_patches_view));
 		// sort severity by default
-		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (m_patches_model), 2,
+		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (m_patches_model), 1,
 		                                      GTK_SORT_ASCENDING);
-		column = gtk_tree_view_get_column (GTK_TREE_VIEW (m_patches_view), 2);
+		column = gtk_tree_view_get_column (GTK_TREE_VIEW (m_patches_view), 1);
 		gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
 		gtk_tree_view_column_set_sort_indicator (column, TRUE);
+		gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_patches_view), 2);
 
 		g_signal_connect (G_OBJECT (m_patches_view), "cursor-changed",
 		                  G_CALLBACK (patch_clicked_cb), this);
@@ -532,8 +541,11 @@ public:
 		ZyppSelectablePtr selectable = 0;
 		gtk_tree_model_get (model, &iter, 0, &state, 3, &selectable, -1);
 
-		if (mark_selectable (selectable, !state))
-			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
+		state = !state;
+printf ("setting patch %s for %d\n", selectable->name().c_str(), state);
+
+		if (mark_selectable (selectable, state))
+			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, state, -1);
 	}
 };
 
@@ -829,7 +841,7 @@ public:
 		g_signal_connect (G_OBJECT (m_search_entry), "changed",
 		                  G_CALLBACK (search_request_cb), this);
 
-		m_information_widget = new PackageInformation (false);
+		m_information_widget = new PackageInformation ("Package Information", false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
@@ -951,6 +963,18 @@ public:
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (m_available_tree),
 		                                        is_package_available, this, NULL);
 
+		// order list
+/*
+		gtk_tree_sortable_set_sort_func (GTK_TREE_SORTABLE (m_available_view), 0,
+		                                 YGUtils::sort_compare_cb, NULL, NULL);
+		gtk_tree_view_column_set_sort_order (gtk_tree_view_get_column (
+			GTK_TREE_VIEW (m_available_view), 0), GTK_SORT_DESCENDING);
+
+		gtk_tree_sortable_set_sort_func (GTK_TREE_SORTABLE (m_installed_view), 0,
+		                                 YGUtils::sort_compare_cb, NULL, NULL);
+		gtk_tree_view_column_set_sort_order (gtk_tree_view_get_column (
+			GTK_TREE_VIEW (m_installed_view), 0), GTK_SORT_DESCENDING);
+*/
 		setPlainView();
 
 		// interface sugar
@@ -1649,6 +1673,24 @@ protected:
 		}
 	}
 
+	bool isInstalled (const string &package)
+	{
+		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
+		      it != zyppPool().byKindEnd <zypp::Package>(); it++) {
+			if ((*it)->hasInstalledObj() || (*it)->toInstall()) {
+				if (YGUtils::contains (package, (*it)->name()))
+					return true;
+				ZyppObject obj = (*it)->theObj();
+				const zypp::CapSet &caps = obj->dep (zypp::Dep::PROVIDES);
+				for (zypp::CapSet::const_iterator jt = caps.begin();
+				      jt != caps.end(); jt++)
+					if (YGUtils::contains (package, jt->asString()))
+						return true;
+			}
+		}
+		return false; // doesn't even exist
+	}
+
 	bool confirmChanges()
 	{
 		IMPL
@@ -1742,6 +1784,10 @@ protected:
 								const zypp::CapSet &capSet = object->dep (zypp::Dep::REQUIRES);
 								for (zypp::CapSet::const_iterator it = capSet.begin();
 								     it != capSet.end(); it++) {
+									// don't show if it is already installed
+									if (isInstalled (it->asString()))
+										continue;
+
 									gtk_tree_store_append (store, &dep_iter, &iter);
 									gtk_tree_store_set (store, &dep_iter,
 									                    0, it->asString().c_str(), -1);
@@ -1756,6 +1802,10 @@ protected:
 							for (ZyppPool::const_iterator it =
 							         zyppPool().byKindBegin <zypp::Package>();
 							     it != zyppPool().byKindEnd <zypp::Package>(); it++) {
+								// don't show if it is already installed
+								if ((*it)->hasInstalledObj())
+									continue;
+
 								ZyppSelectable dep_selectable = *it;
 								ZyppObject dep_object = dep_selectable->theObj();
 

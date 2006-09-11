@@ -6,6 +6,9 @@
 	* src/YGPackageSelector.cc: added installation/removal of languages
 	to the patterns dialog.
 
+	* src/YGPackageSelector.cc: improved accuracy of the dependencies list
+	on confirmation dialog a lot.
+
 2006-09-10  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGPackageSelector.cc: added support for upgrades (fine grading

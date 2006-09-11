@@ -458,8 +458,8 @@ void YGUtils::tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	}
 }
 
-static gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
-                             GtkTreeIter *b, gpointer data)
+gint YGUtils::sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
+                               GtkTreeIter *b, gpointer data)
 {
 	IMPL
 	gint col = GPOINTER_TO_INT (data);
