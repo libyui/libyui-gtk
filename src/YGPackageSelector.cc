@@ -18,6 +18,7 @@
 #include <zypp/Patch.h>
 #include <zypp/Selection.h>
 #include <zypp/Pattern.h>
+#include <zypp/Language.h>
 
 // some typedefs and functions to short Zypp names
 typedef zypp::ResPoolProxy ZyppPool;
@@ -30,6 +31,7 @@ typedef zypp::Package::constPtr   ZyppPackage;
 typedef zypp::Patch::constPtr     ZyppPatch;
 typedef zypp::Selection::constPtr ZyppSelection;
 typedef zypp::Pattern::constPtr   ZyppPattern;
+typedef zypp::Language::constPtr  ZyppLanguage;
 inline ZyppPackage tryCastToZyppPkg (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Package> (obj); }
 inline ZyppPatch tryCastToZyppPatch (ZyppObject obj)
@@ -38,6 +40,8 @@ inline ZyppSelection tryCastToZyppSelection (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Selection> (obj); }
 inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
+inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
+	{ return zypp::dynamic_pointer_cast <const zypp::Language> (obj); }
 
 static bool acceptLicense (ZyppSelectablePtr sel)
 {
@@ -583,6 +587,7 @@ public:
 			}
 		}
 		// create interface
+		// adding patterns
 		for (map <string, vector <ZyppSelectablePtr> >::iterator it = categories.begin();
 		     it != categories.end(); it++) {
 			const vector <ZyppSelectablePtr> &patterns = it->second;
@@ -600,11 +605,10 @@ public:
 
 				if (selection && selection->visible()) {
 					GtkWidget *hbox, *button, *image = 0;
-
-					hbox = gtk_hbox_new (FALSE, 0);
 					button = gtk_check_button_new();
 					g_object_set_data (G_OBJECT (button), "selectable", selectable);
 
+					hbox = gtk_hbox_new (FALSE, 0);
 					label = gtk_label_new (
 						("<b>" + object->summary() + "</b>\n" + object->description()).c_str());
 					gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
@@ -627,7 +631,7 @@ public:
 							icon = "yast-x11";
 
 						if (!icon.empty())
-							icon = THEMEDIR "/icons/48x48/apps/" + icon + ".png";
+							icon = THEMEDIR "/icons/32x32/apps/" + icon + ".png";
 					}
 
 					if (g_file_test (icon.c_str(), G_FILE_TEST_EXISTS))
@@ -647,6 +651,43 @@ public:
 				}
 			}
 		}
+		// adding languages
+		{
+			GtkWidget *hbox, *image, *button, *label;
+
+			hbox = gtk_hbox_new (FALSE, 0);
+			label = gtk_label_new ("<big><b>Languages</b></big>");
+			gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+			if (g_file_test (THEMEDIR "/icons/32x32/apps/yast-yast-language.png",
+			                 G_FILE_TEST_EXISTS)) {
+				image = gtk_image_new_from_file (THEMEDIR
+				            "/icons/32x32/apps/yast-yast-language.png");
+				gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 6);
+			}
+			gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_buttons), hbox, FALSE, FALSE, 6);
+
+			for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Language>();
+			     it != zyppPool().byKindEnd <zypp::Language>(); it++) {
+				ZyppSelectable selectable = *it;
+				ZyppObject object = selectable->theObj();
+				ZyppLanguage language = tryCastToZyppLanguage (object);
+
+				if (language) {
+					button = gtk_check_button_new();
+					g_object_set_data (G_OBJECT (button), "selectable",
+					                   get_pointer (selectable));
+
+					label = gtk_label_new (object->description().c_str());
+					gtk_container_add (GTK_CONTAINER (button), label);
+
+					bool is_installed = selectable->status() == zypp::ui::S_KeepInstalled;
+					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), is_installed);
+
+					gtk_box_pack_start (GTK_BOX (m_buttons), button, FALSE, FALSE, 6);
+				}
+			}
+		}
 		gtk_widget_show_all (m_widget);
 	}
 
@@ -658,41 +699,51 @@ public:
 	void apply (set <string> &to_install, set <string> &to_remove)
 	{
 		IMPL
-printf ("get all buttons\n");
 		GList *buttons = gtk_container_get_children (GTK_CONTAINER (m_buttons));
 		GList *i;
 		for (i = g_list_first (buttons); i; i = i->next) {
-printf ("iterating\n");
 			if (!GTK_IS_TOGGLE_BUTTON (i->data))
 				continue;
-printf ("is a button... work\n");
 			GtkToggleButton *button = GTK_TOGGLE_BUTTON (i->data);
 			ZyppSelectablePtr selectable = (ZyppSelectablePtr)
 				g_object_get_data (G_OBJECT (button), "selectable");
 
-printf ("checking if it needs to be installed or remove\n");
-			// to install
+			ZyppSelection pattern = tryCastToZyppSelection (selectable->theObj());
+			ZyppLanguage lang = tryCastToZyppLanguage (selectable->theObj());
+
+			set <string> *packages;
 			if (gtk_toggle_button_get_active (button)) {
-printf ("needs to be installed\n");
-				if (selectable->set_status (zypp::ui::S_Install)) {
-printf ("installed!\n");
-					const set <string> &packages =
-						(tryCastToZyppSelection (selectable->theObj()))->install_packages();
-					to_install.insert (packages.begin(), packages.end());
-				}
+				if (!selectable->set_status (zypp::ui::S_Install))
+					continue;
+				packages = &to_install;
 			}
-			// to remove
 			else {
-printf ("needs to be removed\n");
-				if (selectable->set_status (zypp::ui::S_Del)) {
-printf ("removed!\n");
-					const set <string> &packages =
-						(tryCastToZyppSelection (selectable->theObj()))->install_packages();
-					to_remove.insert (packages.begin(), packages.end());
+				if (!selectable->set_status (zypp::ui::S_Del))
+					continue;
+				packages = &to_remove;
+			}
+
+			if (pattern) {
+				const set <string> &_packages = pattern->install_packages();
+				packages->insert (_packages.begin(), _packages.end());
+			}
+			else {
+				for (ZyppPool::const_iterator it =
+				          zyppPool().byKindBegin <zypp::Package>();
+				      it != zyppPool().byKindEnd <zypp::Package>(); it++) {
+					ZyppSelectable selectable = *it;
+					ZyppObject object = selectable->theObj();
+
+					const zypp::CapSet &capSet = object->dep (zypp::Dep::FRESHENS);
+					for (zypp::CapSet::const_iterator it = capSet.begin();
+					     it != capSet.end(); it++) {
+						if (it->asString() == lang->name()) {
+							packages->insert (selectable->name());
+						}
+					}
 				}
 			}
 		}
-printf ("done!\n");
 		g_list_free (buttons);
 	}
 };
@@ -782,9 +833,9 @@ public:
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_widget), categories_hbox, FALSE, FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (m_widget), search_hbox, FALSE, FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (m_widget), categories_hbox, FALSE, FALSE, 12);
+		gtk_box_pack_start (GTK_BOX (m_widget), search_hbox, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 12);
 		gtk_widget_show_all (m_widget);
 
 		// Create a model for the package lists
@@ -1404,7 +1455,7 @@ public:
 		m_pattern_selector = new PatternSelector();
 		m_package_selector = new PackageSelector (opt.searchMode.value());
 
-		if (opt.searchMode.value() && false) {
+		if (opt.searchMode.value()) {
 			// Patterns dialog
 			m_patterns_widget = gtk_dialog_new_with_buttons ("Patterns Selector",
 				YGUI::ui()->currentWindow(), GtkDialogFlags (0),
@@ -1492,27 +1543,22 @@ protected:
 	{
 		IMPL
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-printf ("set header text\n");
 		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
 		                             "Patterns Selector");
-printf ("set help text\n");
 		ygtk_wizard_set_help_text (wizard,
 			"Patterns are bundles of software that you may install by pressing them "
 			"and then clicking Accept.<br>"
 			"If you are an experienced user, you may press Customize to choose "
 			"from individual packages."
 		);
-printf ("set back button\n");
+
 		ygtk_wizard_set_back_button_label (wizard, "_Customize...");
 		ygtk_wizard_set_back_button_id (wizard, g_strdup ("customize"), g_free);
-printf ("set abort button\n");
 		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
 		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
 
-printf ("set child\n");
 		g_object_ref (G_OBJECT (m_patterns_widget));  // don't let it die
 		ygtk_wizard_set_child (wizard, m_patterns_widget);
-printf ("done!\n");
 	}
 
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
@@ -1563,17 +1609,14 @@ printf ("done!\n");
 
 		if (response == GTK_RESPONSE_APPLY) {
 			set <string> to_install, to_remove;
-printf ("apply patterns\n");
 			pThis->m_pattern_selector->apply (to_install, to_remove);
 
-printf ("preparing stuff\n");
 			GtkTreeModel *model =
 				GTK_TREE_MODEL (pThis->m_package_selector->m_packages_list);
 			GtkTreeIter iter;
 			gtk_tree_model_get_iter_first (model, &iter);
 
 			do {
-printf ("get selectable and path\n");
 				ZyppSelectablePtr selectable;
 				gtk_tree_model_get (model, &iter, 4, &selectable, -1);
 
@@ -1582,25 +1625,20 @@ printf ("get selectable and path\n");
 				gtk_tree_model_get (model, &iter, 7, &tree_path, -1);
 				gtk_tree_model_get_iter (model, &tree_iter, tree_path);
 
-printf ("checking if %s needs to be installed or removed\n", selectable->name().c_str());
-printf ("install check...\n");
 				bool found = false;  // small optimization
 				for (set <string>::iterator it = to_install.begin();
 				      it != to_install.end(); it++) {
 					if (YGUtils::contains (selectable->name(), *it)) {
-printf ("yep, installing\n");
 						mark_selectable (selectable, true);
 						pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
 						found = true;
 						break;
 					}
 				}
-printf ("remove check...\n");
 				if (!found)
 					for (set <string>::iterator it = to_remove.begin();
 					      it != to_remove.end(); it++) {
 						if (YGUtils::contains (selectable->name(), *it)) {
-printf ("yep, removing\n");
 							mark_selectable (selectable, false);
 							pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
 							found = true;
