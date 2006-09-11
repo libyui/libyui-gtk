@@ -136,26 +136,30 @@ gtk_adjustment_value_changed (adjustment);
 		GtkTreeModel *model = gtk_icon_view_get_model (iconview);
 		GtkTreeIter iter;
 		if (gtk_tree_model_get_iter (model, &iter, path)) {
-			gchar *command;
-			gtk_tree_model_get (model, &iter, 2, &command, -1);
+			gchar *command_;
+			gtk_tree_model_get (model, &iter, 2, &command_, -1);
 
-printf ("running %s\n", command);
-			gtk_widget_hide (window);
+			std::string command = command_;
+			g_free (command_);
 
-// FIXME: we need to flush the g-event stuff so that the window gets really hidden
+			command += " &";
+			printf ("running %s\n", command.c_str());
+			system (command.c_str());
 
-			gchar **argv = g_strsplit (command, " ", 0);
-			g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, NULL, NULL);
-
-// or we could just use:
-//			system (command);
-
-
-			gtk_widget_show (window);
-
-			g_strfreev (argv);
-			g_free (command);
+			static GdkCursor *cursor = NULL;
+			if (!cursor) {
+				GdkDisplay *display = gtk_widget_get_display (window);
+				cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+			}
+			gdk_window_set_cursor (window->window, cursor);
+			g_timeout_add (1500, set_normal_cursor_cb, NULL);
 		}
+	}
+
+	static gboolean set_normal_cursor_cb (gpointer data)
+	{
+		gdk_window_set_cursor (window->window, NULL);
+		return FALSE;
 	}
 };
 
