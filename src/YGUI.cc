@@ -13,15 +13,15 @@
 #include <glib/gthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <rpc/types.h>  // MAXHOSTNAMELEN
 
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
+#define BUSY_CURSOR_TIMEOUT 250
 
 YGUI::YGUI (int argc, char ** argv,
 	    bool with_threads,
 	    const char *macro_file) :
 	YUI (with_threads),
+	busy_timeout (0),
 	m_have_wm (true),
 	m_fullscreen (false),
 	m_no_border (false),
@@ -155,9 +155,12 @@ YGUI::sendEvent (YEvent *event)
 YEvent *
 YGUI::userInput( unsigned long timeout_millisec )
 {
+	IMPL
+	normalCursor();  // waiting for input, so no more busy
+
 	guint timeout = 0;
 	YEvent *event = NULL;
-	LOC;
+
 	if (timeout_millisec > 0)
 		timeout = g_timeout_add (timeout_millisec,
 					(GSourceFunc)set_timeout, this);
@@ -170,6 +173,9 @@ YGUI::userInput( unsigned long timeout_millisec )
 
 	if (timeout)
 		g_source_remove (timeout);
+
+	// if YCP keeps working for more than X time, set busy cursor
+	busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
 	return event;
 }
@@ -400,10 +406,16 @@ bool YGUI::hasFullUtf8Support()    IMPL_RET(true)
 bool YGUI::richTextSupportsTable() IMPL_RET(false)
 bool YGUI::leftHandedMouse()       IMPL_RET(false)
 
+gboolean YGUI::busy_timeout_cb (gpointer data)
+{
+	YGUI *pThis = (YGUI *) data;
+	pThis->busyCursor();
+	pThis->busy_timeout = 0;
+	return FALSE;
+}
+
 void YGUI::busyCursor()
 {
-// FIXME: obusy cursor should be disabled automatically, like Qt's
-#if 0
 	GtkWidget *window = GTK_WIDGET (currentWindow());
 	if (!window) return;
 
@@ -414,18 +426,19 @@ void YGUI::busyCursor()
 		GdkDisplay *display = gtk_widget_get_display (window);
 		cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 	}
-
 	gdk_window_set_cursor (window->window, cursor);
-#endif
 }
 
 void YGUI::normalCursor()
 {
-#if 0
+	if (busy_timeout) {
+		g_source_remove (busy_timeout);
+		busy_timeout = 0;
+	}
+
 	GtkWidget *window = GTK_WIDGET (currentWindow());
 	if (window)
 		gdk_window_set_cursor (window->window, NULL);
-#endif
 }
 
 void YGUI::redrawScreen()
@@ -562,6 +575,16 @@ void YGUI::makeScreenShot (string filename)
 		g_object_unref (G_OBJECT (shot));
 }
 
+#ifdef ENABLE_BEEP
+void YGUI::beep()
+{
+	gdk_beep();
+	GtkWindow *window = currentWindow();
+	if (window)
+		gtk_window_present (window);
+}
+#endif
+
 YCPString YGUI::glyph (const YCPSymbol &symbol)
 {
     string sym = symbol->symbol();
@@ -597,7 +620,6 @@ void YGUI::toggleRecordMacro()
 		gtk_widget_destroy (dialog);
 	}
 	else {
-		normalCursor();
 		YCPValue ret = askForSaveFileName (YCPString (DEFAULT_MACRO_FILE_NAME),
 		                                   YCPString ("*.ycp"),
 		                                   YCPString ("Select Macro File to Record to"));
@@ -610,13 +632,12 @@ void YGUI::toggleRecordMacro()
 
 void YGUI::askPlayMacro()
 {
-	normalCursor();
 	YCPValue ret = askForExistingFile (YCPString (DEFAULT_MACRO_FILE_NAME),
 	                                   YCPString ("*.ycp"),
 	                                   YCPString ("Select Macro File to Play"));
 
 	if (ret->isString()) {
-//		busyCursor();  // we need to stop this...
+		busyCursor();
 		YCPString filename = ret->asString();
 
 		playMacro (filename->value_cstr());

@@ -1,3 +1,18 @@
+2006-09-12  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGComboBox.cc, YGTable.cc: it seems that YSelectionWidget.h supports
+	icons... Qt only honors them for SelectionBox, but I added support for the
+	rest of the YSelectionWidget children classes as well (that is, ComboBox and
+	MultiSelectionBox). Checkout the tests.
+
+	* src/YGTable.cc: bug fix: mismatch of YCP row numbering and GtkListStore that
+	was causing some glitches. Now, we use a double hash to translate between them.
+
+	* src/YGUI.cc: busy cursor should now be set properly when a YCP program is
+	doing work for some time, like Qt. UI::BusyCursor() and UI::NormalCursor()
+	seem to be now obsolet methods with this approach.
+	Added YGUI::beep(), currently disabled, to go with the core patch.
+
 2006-09-11  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGPackageSelector.cc: patterns chosen should now get reflected

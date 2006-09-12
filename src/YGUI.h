@@ -23,6 +23,10 @@ using std::vector;
 #define IMPL_VOID   { LOC; return YCPVoid(); }
 #define IMPL_RET(a) { LOC; return (a); }
 
+#define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
+
+//#define ENABLE_BEEP
+
 class YGUI: public YUI
 {
 public:
@@ -214,8 +218,13 @@ public:
 
 	virtual void busyCursor();
 	virtual void normalCursor();
+	guint busy_timeout;  // for busy cursor
+	static gboolean busy_timeout_cb (gpointer data);
 
-    virtual void makeScreenShot (string filename);
+#ifdef ENABLE_BEEP
+	virtual void beep();
+#endif
+	virtual void makeScreenShot (string filename);
 
     /* File/directory dialogs. */
     virtual YCPValue askForExistingDirectory (const YCPString &startDir,
