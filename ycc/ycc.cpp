@@ -198,64 +198,71 @@ int main(int argc, char* argv[])
 	gtk_window_set_default_size (GTK_WINDOW (window), 650, 400);
 	g_signal_connect(G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
+	bool is_root = getuid () == 0;
+
 	View view;
-	{
-		bool is_root = getuid () == 0;
+	{  // adding groups
+		GKeyFile *file = g_key_file_new();
+		std::set <std::string> groups = subfiles (YAST_GROUPS);
+		for (std::set <std::string>::iterator it = groups.begin();
+		     it != groups.end(); it++) {
+			if (!g_key_file_load_from_file (file, (YAST_GROUPS + (*it)).c_str(),
+			                                G_KEY_FILE_NONE, NULL))
+				continue;
 
-		{  // adding groups
-			GKeyFile *file = g_key_file_new();
-			std::set <std::string> groups = subfiles (YAST_GROUPS);
-			for (std::set <std::string>::iterator it = groups.begin();
-			     it != groups.end(); it++) {
-				if (!g_key_file_load_from_file (file, (YAST_GROUPS + (*it)).c_str(),
-				                                G_KEY_FILE_NONE, NULL))
-					continue;
+			gchar* name = g_key_file_get_locale_string (file, "Desktop Entry", "Name", 0, NULL);
+			gchar *nick = g_key_file_get_string (file, "Desktop Entry", "X-SuSE-YaST-Group", NULL);
+			gchar *icon = g_key_file_get_string (file, "Desktop Entry", "Icon", NULL);
+			gchar *sort_key = g_key_file_get_string (file, "Desktop Entry",
+			                                         "X-SuSE-YaST-SortKey", NULL);
+			if (name && nick)
+				view.addGroup (name, icon, nick, sort_key);
 
-				gchar* name = g_key_file_get_locale_string (file, "Desktop Entry", "Name", 0, NULL);
-				gchar *nick = g_key_file_get_string (file, "Desktop Entry", "X-SuSE-YaST-Group", NULL);
-				gchar *icon = g_key_file_get_string (file, "Desktop Entry", "Icon", NULL);
-				gchar *sort_key = g_key_file_get_string (file, "Desktop Entry",
-				                                         "X-SuSE-YaST-SortKey", NULL);
-				if (name && nick)
-					view.addGroup (name, icon, nick, sort_key);
-
-				if (name)     g_free (name);
-				if (nick)     g_free (nick);
-				if (icon)     g_free (icon);
-				if (sort_key) g_free (sort_key);
-			}
-			g_key_file_free (file);
+			if (name)     g_free (name);
+			if (nick)     g_free (nick);
+			if (icon)     g_free (icon);
+			if (sort_key) g_free (sort_key);
 		}
-		{  // adding entries
-			GKeyFile *file = g_key_file_new();
-			std::set <std::string> entries = subfiles (YAST_ENTRIES);
-			for (std::set <std::string>::iterator it = entries.begin();
-			     it != entries.end(); it++) {
-				if (!g_key_file_load_from_file (file, (YAST_ENTRIES + (*it)).c_str(),
-				                                G_KEY_FILE_NONE, NULL))
-					continue;
+		g_key_file_free (file);
+	}
+	{  // adding entries
+		GKeyFile *file = g_key_file_new();
+		std::set <std::string> entries = subfiles (YAST_ENTRIES);
+		for (std::set <std::string>::iterator it = entries.begin();
+		     it != entries.end(); it++) {
+			if (!g_key_file_load_from_file (file, (YAST_ENTRIES + (*it)).c_str(),
+			                                G_KEY_FILE_NONE, NULL))
+				continue;
 
-				gchar *group = g_key_file_get_string (file, "Desktop Entry", "X-SuSE-YaST-Group", NULL);
-				gchar* name = g_key_file_get_locale_string (file, "Desktop Entry", "Name", 0, NULL);
-				gchar *icon = g_key_file_get_string (file, "Desktop Entry", "Icon", NULL);
-				gchar *command = g_key_file_get_string (file, "Desktop Entry", "Exec", NULL);
-				gboolean needs_root = g_key_file_get_boolean (file, "Desktop Entry",
-				                          "X-SuSE-YaST-RootOnly", NULL);
+			gchar *group = g_key_file_get_string (file, "Desktop Entry", "X-SuSE-YaST-Group", NULL);
+			gchar* name = g_key_file_get_locale_string (file, "Desktop Entry", "Name", 0, NULL);
+			gchar *icon = g_key_file_get_string (file, "Desktop Entry", "Icon", NULL);
+			gchar *command = g_key_file_get_string (file, "Desktop Entry", "Exec", NULL);
+			gboolean needs_root = g_key_file_get_boolean (file, "Desktop Entry",
+			                          "X-SuSE-YaST-RootOnly", NULL);
 
-				if (group && name && command && (!needs_root || is_root))
-					view.addEntry (group, name, icon, command);
+			if (group && name && command && (!needs_root || is_root))
+				view.addEntry (group, name, icon, command);
 
-				if (group)   g_free (group);
-				if (name)    g_free (name);
-				if (icon)    g_free (icon);
-				if (command) g_free (command);
-			}
-			g_key_file_free (file);
+			if (group)   g_free (group);
+			if (name)    g_free (name);
+			if (icon)    g_free (icon);
+			if (command) g_free (command);
 		}
+		g_key_file_free (file);
 	}
 
 	gtk_container_add (GTK_CONTAINER (window), view.getWidget());
 	gtk_widget_show_all (window);
+
+	if (!is_root) {
+		GtkWidget *dialog = gtk_message_dialog_new (GTK_WINDOW (window),
+			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+			"You are executing the control center as an ordinary user.\n"
+			"Only a few modules will be available.");
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+	}
 
 	gtk_main();
 	return 0;
