@@ -54,15 +54,20 @@ public:
 	virtual void setIcon (const YCPString &icon_name)
 	{
 		IMPL
+		string path = icon_name->value();
+		if (path[0] != '/')
+			path = ICON_DIR + path;
+
 		GError *error = 0;
 		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file
-		                    (icon_name->value_cstr(), &error);
-		if (!pixbuf) {
-			g_warning ("Couldn't load push button icon image");
-			return;
+		                    (path.c_str(), &error);
+		if (pixbuf) {
+			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
+			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
 		}
-		GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-		gtk_button_set_image (GTK_BUTTON (getWidget()), image);
+		else
+			y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
+			           "Reason: %s", path.c_str(), error->message);
 	}
 
 	// YWidget

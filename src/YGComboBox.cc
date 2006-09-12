@@ -10,7 +10,7 @@
 
 class YGComboBox : public YComboBox, public YGLabeledWidget
 {
-	int items_nb;
+bool m_showingIcons;
 
 	public:
 		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
@@ -18,25 +18,24 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 		, YGLabeledWidget (this, parent, label, YD_VERT, true,
 		    opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 	{
-		/* Making the combo box accepting text items. */
-		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
-		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()),
-		                         GTK_TREE_MODEL (store));
+		// pixbufs will be enabled if icons are provided
+		m_showingIcons = false;
+
+		GtkListStore *store = gtk_list_store_new (2, G_TYPE_STRING, GDK_TYPE_PIXBUF);
+		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()), GTK_TREE_MODEL (store));
 		g_object_unref (store);
 
-		if(!opt.isEditable.value()) {
+		if(opt.isEditable.value())
+			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()), 0);
+		else {
 			GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
-			gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
+			gtk_cell_layout_pack_end (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
 			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
 			                                "text", 0, NULL);
 		}
-		else
-			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY(getWidget()), 0);
 
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 		                  G_CALLBACK (selected_changed_cb), this);
-
-		items_nb = 0;
 	}
 
 	GtkComboBox *getComboBox() const
@@ -60,12 +59,37 @@ class YGComboBox : public YComboBox, public YGLabeledWidget
 		return GTK_ENTRY (entry);
 	}
 
-	virtual void itemAdded (const YCPString & string, int index, bool selected)
+	virtual void itemAdded (const YCPString &string, int index, bool selected)
 	{
-		gtk_combo_box_insert_text (getComboBox(), index, string->value_cstr());
-		if (selected || index == 0) /* always select the 1st by default */
+		GtkListStore *store = GTK_LIST_STORE (gtk_combo_box_get_model (getComboBox()));
+		GtkTreeIter iter;
+		gtk_list_store_insert (store, &iter, index);
+		gtk_list_store_set (store, &iter, 0, string->value_cstr(), -1);
+
+		if(hasIcons() && !m_showingIcons) {
+			GtkCellRenderer* cell = gtk_cell_renderer_pixbuf_new ();
+			gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, FALSE);
+			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
+			                                "pixbuf", 1, NULL);
+			m_showingIcons = true;
+		}
+
+		if (hasIcons() && !itemIcon (index)->value().empty()) {
+			std::string path = itemIcon (index)->value();
+			if (path[0] != '/')
+				path = ICON_DIR + path;
+
+			GdkPixbuf *pixbuf;
+			GError *error = 0;
+			pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
+			if (!pixbuf)
+				y2warning ("YGComboBox: Could not load icon: %s.\n"
+				           "Because %s", path.c_str(), error->message);
+			gtk_list_store_set (store, &iter, 1, pixbuf, -1);
+		}
+
+		if (selected || index == 0)
 			gtk_combo_box_set_active (getComboBox(), index);
-		items_nb++;
 	}
 
 	virtual void setValue (const YCPString &value)
