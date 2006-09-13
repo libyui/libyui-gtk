@@ -6,9 +6,10 @@
 ZENITY_BINARY=/opt/gnome/bin/zenity
 Y2BASE_BINARY=/usr/lib/YaST2/bin/y2base
 
-# any argument switches to the examples
 DEFAULT_DIR=/usr/share/YaST2/clients
-if [ $# -eq 1 ]; then
+RUN_QT=0
+
+if [ $# -gt 0 ]; then
     if [ "$1" == "z" ]; then
         DEFAULT_DIR=/usr/share/doc/packages/yast2-core/libyui/examples
     fi
@@ -19,13 +20,25 @@ if [ $# -eq 1 ]; then
         #  is running in its own shell.)
         cd "`dirname $0`/test"
     fi
+    if [ "$1" == "help" ]; then
+        echo "ycc.sh usage:"
+        echo "  \"$0\" - yast modules"
+        echo "  \"$0 z\" - yast-core examples"
+        echo "  \"$0 x\" - our set of tests"
+        echo "  pass \"qt\" to also run the qt frontend"
+        echo ""
+        exit
+    fi
+    if [ "$1" == "qt" ]; then
+        RUN_QT=1
+    fi
 fi
 
-RUN_QT=0
-zenity --question --text "Run also the modules with Qt?" && RUN_QT=1
+if [ $# -eq 2 ] && [ "$2" == "qt" ]; then
+    RUN_QT=1
+fi
 
 module_list=`ls $DEFAULT_DIR/*.ycp | sed 's/.*\///'`
-
 while true; do
     module=`$ZENITY_BINARY --title "Yast Control Center" \
             --list --column "Available modules:" $module_list`;

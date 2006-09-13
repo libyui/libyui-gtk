@@ -13,6 +13,9 @@
 	seem to be now obsolet methods with this approach.
 	Added YGUI::beep(), currently disabled, to go with the core patch.
 
+	* ycc.sh: re-worked a bit: pass z for examples and x for our tests. qt to also
+	run the Qt frontend.
+
 2006-09-11  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGPackageSelector.cc: patterns chosen should now get reflected
