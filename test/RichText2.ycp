@@ -9,11 +9,16 @@
 		// the br & hr tags
 		"Drinking <u>ice</u> tea <br> <hr> is <b>good</b> for you.",
 
-		// missing tags
-		"<big>Some text</big>",
-
 		// unclosed tags
 		"No outer tag<p>Unclosed paragraphs<p>several of them <b>unclosed bold</b>",
+
+		// Some more complete text, with an image
+		"<center><h1><font color=blue>Super <font color=red>Man</font></font> "
+		+ "to the rescue</h1></center><a "
+		+ "href=http://en.wikipedia.org/wiki/Superman>Super Man</a> is a very "
+		+ "estimated super hero in Metropolis, but he is looked down by others "
+		+ "like mad scientists and politiceans. <img src=image.gif>"
+
 	];
 
 	UI::OpenDialog (

@@ -42,16 +42,11 @@ public:
 		m_border = border;
 		gtk_widget_show (m_inner_widget);
 
-		PangoFontDescription* font = pango_font_description_new();
 		if (opt.boldFont.value())
-			pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-		if (opt.isHeading.value()) {
-			pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
-			float size = YGUtils::getCharsHeight (getWidget(), 1);
-			pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
-		}
-		gtk_widget_modify_font (getWidget(), font);
-		pango_font_description_free (font);
+			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		if (opt.isHeading.value())
+			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_ULTRABOLD,
+			                        PANGO_SCALE_XX_LARGE);
 
 		if (fgColor)
 			setForegroundColor (fromYColor (*fgColor));

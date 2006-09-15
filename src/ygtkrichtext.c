@@ -8,6 +8,10 @@
 #include <gtk/gtkversion.h>
 #include <string.h>
 
+#define LISTS_MARGIN      10
+#define BLOCKQUOTE_MARGIN 20
+#define PARAGRAPH_SPACING 12
+
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
@@ -101,15 +105,20 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 		size /= PANGO_SCALE;
 
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-	                            "size", (int)(size * PANGO_SCALE_XX_LARGE), NULL);
+	                            "size", (int)(size * PANGO_SCALE_XX_LARGE),
+	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-	                            "size", (int)(size * PANGO_SCALE_X_LARGE), NULL);
+	                            "size", (int)(size * PANGO_SCALE_X_LARGE),
+	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE),
+	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE),
+	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
 	gtk_text_buffer_create_tag (buffer, "h5",
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE),
+	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
 	gtk_text_buffer_create_tag (buffer, "big",
 	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "small",
@@ -118,6 +127,10 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
 	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
+	gtk_text_buffer_create_tag (buffer, "p", "pixels-below-lines", PARAGRAPH_SPACING,
+	                            NULL);
+	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER,
+	                            NULL);
 }
 
 static void ygtk_richtext_finalize (GObject *object)
@@ -153,9 +166,6 @@ static void HTMLList_init (HTMLList *list, gboolean ordered)
 	list->ordered = ordered;
 	list->enumeration = 1;
 }
-
-#define LISTS_MARGIN      10
-#define BLOCKQUOTE_MARGIN 20
 
 typedef struct GRTPTag {
 	GtkTextMark *mark;
@@ -211,26 +221,24 @@ rt_start_element (GMarkupParseContext *context,
                   gpointer             user_data,
                   GError             **error)
 {	// Called for open tags <foo bar="baz">
+	if (!g_ascii_strcasecmp (element_name, "body"))
+		return;
+
 	GRTParseState *state = (GRTParseState*) user_data;
-	if (!g_ascii_strcasecmp (element_name, "p")) {
-		if (state->pre_mode)
-			g_warning ("Odd <p> inside <pre>");
-		return;
-	}
-	if (!g_ascii_strcasecmp (element_name, "br")) {
-		GtkTextIter end;
-		gtk_text_buffer_get_end_iter (state->buffer, &end);
-		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
-		return;
-	}
-	if (!g_ascii_strcasecmp (element_name, "pre"))
-		state->pre_mode = TRUE;
-
 	GRTPTag *tag = g_malloc (sizeof (GRTPTag));
-
 	GtkTextIter iter;
 	gtk_text_buffer_get_end_iter (state->buffer, &iter);
 	tag->mark = gtk_text_buffer_create_mark (state->buffer, NULL, &iter, TRUE);
+
+	if (!g_ascii_strcasecmp (element_name, "pre"))
+		state->pre_mode = TRUE;
+	else if (!g_ascii_strcasecmp (element_name, "p")) {
+		if (state->pre_mode)
+			g_warning ("Odd <p> inside <pre>");
+		// make sure this opens a new paragraph
+		if (!gtk_text_iter_starts_line (&iter))
+			gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
+	}
 
 	char *lower = g_ascii_strdown (element_name, -1);
 	tag->tag = gtk_text_tag_table_lookup (state->tags, lower);
@@ -265,8 +273,8 @@ rt_start_element (GMarkupParseContext *context,
 				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
 				g_free (str);
 			}
-			else {                           // \u2022 for smaller bullets
-				gtk_text_buffer_insert (state->buffer, &iter, "\u25cf", -1);
+			else {                           // \\u25cf for bigger bullets
+				gtk_text_buffer_insert (state->buffer, &iter, "\u2022 ", -1);
 			}
 		}
 		// Tags that affect the margin
@@ -285,8 +293,24 @@ rt_start_element (GMarkupParseContext *context,
 			tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
 			                   "left-margin", state->left_margin, NULL);
 		}
+
+		else if (!g_ascii_strcasecmp (element_name, "img")) {
+			if (!g_ascii_strcasecmp (attribute_names[0], "src")) {
+				GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (attribute_values[0], NULL);
+				gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
+				g_object_unref (G_OBJECT (pixbuf));
+			}
+			else
+				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
+		}
+
+		// for tags like <br/>, GMarkup will pass them through the end
+		// tag callback too, so we'll deal with them there
+		else if (!g_ascii_strcasecmp (element_name, "br"))
+			;
+
 		else
-			g_warning ("Unknown tag '%s'", lower);
+			g_warning ("Unknown tag '%s'", element_name);
 	}
 
 	g_free (lower);
@@ -299,14 +323,12 @@ rt_end_element (GMarkupParseContext *context,
                 gpointer             user_data,
                 GError             **error)
 {	// Called for close tags </foo>
+	if (!g_ascii_strcasecmp (element_name, "body"))
+		return;
+
 	GRTParseState *state = (GRTParseState*) user_data;
 	GtkTextIter start, end;
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
-
-	if (!g_ascii_strcasecmp (element_name, "p")) {
-		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
-		return;
-	}
 
 	if (g_list_length (state->htags) == 0) {
 		g_warning ("Urgh - empty tag queue closing '%s'", element_name);
@@ -320,20 +342,30 @@ rt_end_element (GMarkupParseContext *context,
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
 
 	gboolean appendNewline = FALSE;
-	if (g_ascii_tolower (element_name[0]) == 'h' &&
-		g_ascii_isdigit (element_name[1]) &&
-		element_name[2] == '\0') // heading - implies newline:
-		appendNewline = TRUE;
 
-	if (!g_ascii_strcasecmp (element_name, "pre")) {
-		state->pre_mode = FALSE;
-		char *txt = gtk_text_buffer_get_text (state->buffer,
-		                                      &start, &end, TRUE);
-		char endc = txt ? txt[strlen(txt) - 1] : '\0';
-		if (endc != '\r' && endc != '\n')
+	// Check if this tag is of paragraph type
+	if (tag->tag) {
+		gint spacing;
+		g_object_get (G_OBJECT (tag->tag), "pixels-below-lines", &spacing, NULL);
+		if (spacing > 0) {  // is paragraph
 			appendNewline = TRUE;
+			// if last paragraph didn't set "pixe-below-lines", set "pixels-above-lines"
+			GtkTextIter last_p = start;
+			gint offset = gtk_text_iter_get_offset (&last_p) - 1;
+			if (offset >= 0) {
+				gtk_text_buffer_get_iter_at_offset (state->buffer, &last_p, offset);
+				if (!gtk_text_iter_has_tag (&last_p,
+				         gtk_text_tag_table_lookup (state->tags, "p"))) {
+					GtkTextTag *tag;
+					tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+					          "pixels-above-lines", PARAGRAPH_SPACING, NULL);
+					gtk_text_buffer_apply_tag (state->buffer, tag, &start, &end);
+				}
+			}
+		}
 	}
-	else if (!g_ascii_strcasecmp (element_name, "li"))
+
+	if (!g_ascii_strcasecmp (element_name, "li"))
 		appendNewline = TRUE;
 
 	else if (!g_ascii_strcasecmp (element_name, "blockquote"))
@@ -346,9 +378,20 @@ rt_end_element (GMarkupParseContext *context,
 		state->html_list = g_list_remove (state->html_list, last_list);
 		g_free (last_list);
 	}
-
 	else if (!g_ascii_strcasecmp (element_name, "font"))
 		state->default_color = TRUE;
+
+	else if (!g_ascii_strcasecmp (element_name, "pre")) {
+		state->pre_mode = FALSE;
+		char *txt = gtk_text_buffer_get_text (state->buffer,
+		                                      &start, &end, TRUE);
+		char endc = txt ? txt[strlen(txt) - 1] : '\0';
+		appendNewline = endc != '\r' && endc != '\n';
+		g_free (txt);
+	}
+
+	else if (!g_ascii_strcasecmp (element_name, "br"))
+		appendNewline = TRUE;
 
 	if (appendNewline) {
 		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
@@ -375,8 +418,7 @@ rt_text (GMarkupParseContext *context,
 	gtk_text_buffer_get_end_iter (state->buffer, &start);
 	if (state->pre_mode)
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
-		                                  text, text_len,
-		                                  NULL, NULL);
+		                                  text, text_len, NULL, NULL);
 	else {
 		char *real = elide_whitespace (text, text_len);
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
@@ -549,17 +591,15 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
                              gboolean plain_text, gboolean honor_br_char)
 {
+printf ("\n** setting rich text text:\n%s\n\n", text);
+
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
 	if (plain_text) {
-		gtk_text_view_set_pixels_below_lines (GTK_TEXT_VIEW (rtext), 0);
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
-
-	// only set space on paragraphs for html text
-	gtk_text_view_set_pixels_below_lines (GTK_TEXT_VIEW (rtext), 12);
 
 	// remove any possible existing text
 	gtk_text_buffer_set_text (buffer, "", 0);
@@ -572,6 +612,7 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
 
 	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname,
 	                                                !honor_br_char);
+printf ("retouched to:\n%s\n\n", xml);
 
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))

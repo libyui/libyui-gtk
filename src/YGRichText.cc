@@ -21,10 +21,11 @@ public:
 	: YRichText (opt, text),
 	  YGScrolledWidget (this, parent, true, YGTK_TYPE_RICHTEXT, NULL)
 	{
-		IMPL;
-		m_plainText = opt.plainTextMode.value();
-		m_shrinkable = opt.isShrinkable.value();
+		IMPL
+		if (!opt.isShrinkable.value())
+			setMinSize (35, 16);
 
+		m_plainText = opt.plainTextMode.value();
 		ygtk_richttext_set_prodname (YGTK_RICHTEXT (getWidget()),
 		                             YUI::ui()->productName().c_str());
 

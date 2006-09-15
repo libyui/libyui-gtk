@@ -1,3 +1,9 @@
+2006-09-15  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/ygtkrichtext.c: some love to it: only set paragraph spacing for p, h1 and
+	alike, fixed html not rendering on tools like the printer, added center and
+	img tag.
+
 2006-09-12  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGComboBox.cc, YGTable.cc: it seems that YSelectionWidget.h supports

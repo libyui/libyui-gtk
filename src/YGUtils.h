@@ -36,6 +36,9 @@ namespace YGUtils
 	int getCharsWidth (GtkWidget *widget, int chars_nb);
 	int getCharsHeight (GtkWidget *widget, int chars_nb);
 
+	/* Sets some widget font proprities. */
+	void setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
+
 	/* A more sane strcmp() from the user point of view that honors numbers. */
 	int strcmp (const char *str1, const char *str2);
 
@@ -68,6 +71,7 @@ namespace YGUtils
 extern "C" {
 	int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
 	int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
+	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,

@@ -32,6 +32,7 @@
 // YGUtils is C++, so this is the bridge
 int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
 int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
+void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
 static void ygtk_wizard_class_init (YGtkWizardClass *klass);
 static void ygtk_wizard_init       (YGtkWizard      *wizard);
@@ -157,12 +158,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                      &wizard->m_title_label->style->fg[GTK_STATE_SELECTED]);
 
 	// set a strong font to the heading label
-	PangoFontDescription* font = pango_font_description_new();
-	int size = ygutils_getCharsHeight (wizard->m_title_label, 1);
-	pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
-	pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
-	gtk_widget_modify_font (wizard->m_title_label, font);
-	pango_font_description_free (font);
+	ygutils_setWidgetFont (wizard->m_title_label, PANGO_WEIGHT_ULTRABOLD,
+	                       PANGO_SCALE_XX_LARGE);
 
 	gtk_box_pack_start (GTK_BOX (wizard->m_title_hbox), wizard->m_title_label,
 	                    FALSE, FALSE, 4);

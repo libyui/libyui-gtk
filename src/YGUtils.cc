@@ -178,8 +178,10 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 
 	skipSpace (instr, i);
 
-	gboolean addOuterTag = FALSE;
-	if ((addOuterTag = (instr[i] != '<')))
+	// We must add an outer tag to make GMarkup happy
+	gboolean addOuterTag = TRUE;
+//	gboolean addOuterTag = FALSE;
+//	if ((addOuterTag = (instr[i] != '<')))
 		g_string_append (outp, "<body>");
 
 	for (; instr[i] != '\0'; i++)
@@ -308,18 +310,29 @@ int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 {
 	PangoFontDescription *font_desc = widget->style->font_desc;
-	int size = pango_font_description_get_size (font_desc);
-	if (pango_font_description_get_size_is_absolute (font_desc))
-		size /= PANGO_SCALE;
+	int size = pango_font_description_get_size (font_desc) / PANGO_SCALE;
 	return size * chars_nb;
+}
+
+void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
+{
+	PangoFontDescription *font_desc = widget->style->font_desc;
+	int size = pango_font_description_get_size (font_desc);
+
+	PangoFontDescription* font = pango_font_description_new();
+	pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
+	pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
+
+	gtk_widget_modify_font (widget, font);
+	pango_font_description_free (font);
 }
 
 int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb)
 { return YGUtils::getCharsWidth (widget, chars_nb); }
-
 int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb)
 { return YGUtils::getCharsHeight (widget, chars_nb); }
-
+void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
+{ YGUtils::setWidgetFont (widget, weight, scale); }
 
 #define IS_DIGIT(x) (x >= '0' && x <= '9')
 int YGUtils::strcmp (const char *str1, const char *str2)

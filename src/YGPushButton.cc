@@ -21,7 +21,8 @@ public:
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, NULL)
 {
 	IMPL
-	setMinSize (14, 0);
+	if (!opt.isShrinkable.value())
+		setMinSize (14, 0);
 
 #ifdef USE_STOCK_ICONS
 	if (opt.setIcon.defined()) {

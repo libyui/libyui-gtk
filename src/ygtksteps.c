@@ -10,6 +10,9 @@
 #include <gtk/gtklabel.h>
 #include <gtk/gtkimage.h>
 
+// YGUtils is C++, so this is the bridge
+void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
+
 static void ygtk_steps_class_init (YGtkStepsClass *klass);
 static void ygtk_steps_init       (YGtkSteps      *step);
 static void ygtk_steps_finalize   (GObject        *object);
@@ -193,12 +196,7 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	gtk_widget_show (step->label);
 
 	// set a heading font
-	PangoFontDescription *font = pango_font_description_new();
-	pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-	int size = pango_font_description_get_size (step->label->style->font_desc);
-	pango_font_description_set_size   (font, size * PANGO_SCALE_LARGE);
-	gtk_widget_modify_font (step->label, font);
-	pango_font_description_free (font);
+	ygutils_setWidgetFont (step->label, PANGO_WEIGHT_BOLD, PANGO_SCALE_LARGE);
 }
 
 void ygtk_steps_advance (YGtkSteps *steps)
