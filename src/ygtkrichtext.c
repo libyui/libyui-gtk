@@ -591,8 +591,6 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
                              gboolean plain_text, gboolean honor_br_char)
 {
-printf ("\n** setting rich text text:\n%s\n\n", text);
-
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
@@ -612,8 +610,6 @@ printf ("\n** setting rich text text:\n%s\n\n", text);
 
 	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname,
 	                                                !honor_br_char);
-printf ("retouched to:\n%s\n\n", xml);
-
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
 		g_warning ("Markup parse error '%s'", error ? error->message : "Unknown");
