@@ -232,13 +232,6 @@ rt_start_element (GMarkupParseContext *context,
 
 	if (!g_ascii_strcasecmp (element_name, "pre"))
 		state->pre_mode = TRUE;
-	else if (!g_ascii_strcasecmp (element_name, "p")) {
-		if (state->pre_mode)
-			g_warning ("Odd <p> inside <pre>");
-		// make sure this opens a new paragraph
-		if (!gtk_text_iter_starts_line (&iter))
-			gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
-	}
 
 	char *lower = g_ascii_strdown (element_name, -1);
 	tag->tag = gtk_text_tag_table_lookup (state->tags, lower);
@@ -311,6 +304,17 @@ rt_start_element (GMarkupParseContext *context,
 
 		else
 			g_warning ("Unknown tag '%s'", element_name);
+	}
+
+	// Check if this tag is of paragraph type
+	if (tag->tag) {
+		gint spacing;
+		g_object_get (G_OBJECT (tag->tag), "pixels-below-lines", &spacing, NULL);
+		if (spacing > 0) {  // is paragraph
+			// make sure this opens a new paragraph
+			if (!gtk_text_iter_starts_line (&iter))
+				gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
+		}
 	}
 
 	g_free (lower);

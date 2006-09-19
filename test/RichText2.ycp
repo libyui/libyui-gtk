@@ -1,5 +1,4 @@
-// RichText test
-
+// RichText test (with a list of examples)
 {
 	list texts = [
 		// simple
@@ -17,8 +16,30 @@
 		+ "to the rescue</h1></center><a "
 		+ "href=http://en.wikipedia.org/wiki/Superman>Super Man</a> is a very "
 		+ "estimated super hero in Metropolis, but he is looked down by others "
-		+ "like mad scientists and politiceans. <img src=image.gif>"
+		+ "like mad scientists and politiceans. <img src=image.gif>",
 
+		// table (from SlideShow)
+		"<table cellspacing=\"10\" cellpadding=\"5\">"
+		+ "<tr>"
+		+ "<td width =\"*\">"
+		+ "<img src=\"/opt/gnome/share/icons/hicolor/32x32/apps/gnome-media-player.png\""
+		+ "width=\"100\" align=\"left\">"
+		+ "</td>"
+		+ "<td width=\"*\">"
+		+ "<p><font color=\"#00007f\"><b>XMMS and JuK - Powerful Jukeboxes</b></font></p>"
+		+ "<p>XMMS is an excellent sound player for Linux. It is easy to use and supports"
+		+ "various formats, including audio CDs. Test the many visualization plug-ins or"
+		+ "download your favorite XMMS skins from the web.</p>"
+		+ "<p>New in KDE: JuK, which classifies your MP3s and organizes your music"
+		+ "collection.</p>"
+		+ "<p><b>Want More?</b></p>"
+		+ "<p>The SUSE distribution features a wide range of applications for playing"
+		+ "your CDs and MP3 songs. For example, KsCD is a user-friendly CD player. The"
+		+ "track information for most CDs is available on the Internet. Simply activate"
+		+ "the respective function to display the list.</p>"
+		+ "</td>"
+		+ "</tr>"
+		+ "</table>"
 	];
 
 	UI::OpenDialog (
