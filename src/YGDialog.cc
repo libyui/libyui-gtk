@@ -84,7 +84,7 @@ public:
 		                  G_CALLBACK (close_window_cb), this);
 
 		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
-		                        G_CALLBACK (key_pressed_cb), NULL);
+		                        G_CALLBACK (key_pressed_cb), this);
 
 		if (!opt.hasDefaultSize.value()) {
 			gtk_window_set_modal (window, TRUE);
@@ -178,6 +178,12 @@ public:
 	static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
 	                                YGDialog *pThis)
 	{
+		// if not main dialog, close it on escape
+		if (!event->state && event->keyval == GDK_Escape &&
+		    !pThis->hasDefaultSize())
+			return close_window_cb (widget, NULL, pThis);
+
+		// special key combinations
 		if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
 		    && (event->state & GDK_MOD1_MASK)) {
 			y2milestone ("Caught YaST2 magic key combination");

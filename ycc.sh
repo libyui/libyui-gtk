@@ -4,7 +4,7 @@
 # examples. 'x' for our own set of tests.
 
 ZENITY_BINARY=/opt/gnome/bin/zenity
-Y2BASE_BINARY=/usr/lib/YaST2/bin/y2base
+Y2BASE_BINARY="/usr/lib/YaST2/bin/y2base -l /dev/stderr"
 
 DEFAULT_DIR=/usr/share/YaST2/clients
 RUN_QT=0

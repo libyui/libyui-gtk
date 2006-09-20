@@ -51,7 +51,6 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 	sel->setLicenceConfirmed (true);
 	return true;
 
-#if 0
 	if (sel->hasLicenceConfirmed())
 		return true;
 
@@ -93,7 +92,6 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 
 	sel->setLicenceConfirmed (confirmed);
 	return confirmed;
-#endif
 }
 
 // install / remove convinience wrapper. You only need to specify an object
@@ -850,6 +848,9 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 12);
 		gtk_widget_show_all (m_widget);
 
+		g_object_ref (G_OBJECT (m_widget));
+		gtk_object_sink (GTK_OBJECT (m_widget));
+
 		// Create a model for the package lists
 		// models' columns: available package name (string), installed package name
 		// (string), has available package (boolean), has installed package (boolean)
@@ -1109,6 +1110,9 @@ public:
 		g_object_unref (G_OBJECT (m_available_list));
 		g_object_unref (G_OBJECT (m_installed_tree));
 		g_object_unref (G_OBJECT (m_available_tree));
+
+		gtk_widget_destroy (m_widget);
+		g_object_unref (G_OBJECT (m_widget));
 	}
 
 	GtkWidget *getWidget()
@@ -1511,6 +1515,9 @@ public:
 			                    FALSE, FALSE, 8);
 			gtk_widget_show_all (m_patterns_widget);
 
+			g_object_ref (G_OBJECT (m_patterns_widget));
+			gtk_object_sink (GTK_OBJECT (m_patterns_widget));
+
 			// work
 			setPatternsMode();
 		}
@@ -1559,7 +1566,6 @@ protected:
 			ygtk_wizard_set_back_button_label (wizard, "");
 		}
 
-		g_object_ref (G_OBJECT (m_package_selector->getWidget()));  // don't let it die
 		ygtk_wizard_set_child (wizard, m_package_selector->getWidget());
 	}
 
@@ -1581,7 +1587,6 @@ protected:
 		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
 		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
 
-		g_object_ref (G_OBJECT (m_patterns_widget));  // don't let it die
 		ygtk_wizard_set_child (wizard, m_patterns_widget);
 	}
 

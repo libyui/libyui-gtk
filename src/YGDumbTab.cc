@@ -13,6 +13,9 @@ class YGDumbTab : public YDumbTab, public YGWidget
 	GtkRequisition m_label_req;
 	GtkWidget *m_fixed;
 
+	GtkWidget *m_last_tab;
+	vector <GtkWidget *> m_tab_widgets;
+
 public:
 	YGDumbTab (const YWidgetOpt &opt, YGWidget *parent)
 		: YDumbTab (opt),
@@ -21,6 +24,10 @@ public:
 		IMPL
 		m_fixed = gtk_fixed_new();
 		gtk_widget_show (m_fixed);
+		g_object_ref (G_OBJECT (m_fixed));
+		gtk_object_sink (GTK_OBJECT (m_fixed));
+
+		m_last_tab = 0;
 		m_label_req.width = m_label_req.height = 0;
 
 		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
@@ -30,7 +37,9 @@ public:
 	~YGDumbTab()
 	{
 		IMPL
+		gtk_widget_destroy (m_fixed);
 		g_object_unref (G_OBJECT (m_fixed));
+
 	}
 
 	virtual GtkFixed* getFixed()
@@ -52,8 +61,14 @@ public:
 
 		// Since we're re-using the same widget for all pages, we ref it to avoid
 		// it being destroyed multiple times.
-		g_object_ref (G_OBJECT (m_fixed));
-		gtk_notebook_append_page (notebook, m_fixed, label);
+		GtkWidget *empty = gtk_event_box_new();
+		gtk_widget_show (empty);
+
+		gtk_notebook_append_page (notebook, empty, label);
+		m_tab_widgets.push_back (empty);
+
+		if (!m_last_tab)
+			change_tab (0);
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 
@@ -70,6 +85,18 @@ public:
 		m_label_req.height = MAX (req.height, m_label_req.height);
 	}
 
+	// to re-use the same widget in all tabs (m_fixed), we will remove and
+	// add to the tabs' child as tabs are changed
+	void change_tab (int tab_nb)
+	{
+		if (m_last_tab)
+			gtk_container_remove (GTK_CONTAINER (m_last_tab), m_fixed);
+
+		GtkWidget *tab = m_tab_widgets [tab_nb];
+		gtk_container_add (GTK_CONTAINER (tab), m_fixed);
+		m_last_tab = tab;
+	}
+
 	virtual int getSelectedTabIndex()
 	{
 		IMPL
@@ -79,6 +106,8 @@ public:
 	virtual void setSelectedTab (int index)
 	{
 		IMPL
+		change_tab (index);
+
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) changed_tab_cb, this);
 		gtk_notebook_set_current_page (GTK_NOTEBOOK (getWidget()), index);
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) changed_tab_cb, this);
@@ -119,16 +148,19 @@ public:
 	}
 
 	static void changed_tab_cb (GtkNotebook *notebook, GtkNotebookPage *page,
-	                            gint tab, YGDumbTab *pThis)
+	                            gint tab_nb, YGDumbTab *pThis)
 	{
-		YCPValue id = pThis->_tabs[tab].id();
+printf ("tab changed\n");
+		YCPValue id = pThis->_tabs[tab_nb].id();
 		YGUI::ui()->sendEvent (new YMenuEvent (id));
+
+		pThis->change_tab (tab_nb);
 	}
 };
 
 YWidget *
 YGUI::createDumbTab (YWidget *parent, YWidgetOpt &opt)
 {
-	IMPL;
+	IMPL
 	return new YGDumbTab (opt, YGWidget::get (parent));
 }
