@@ -546,7 +546,7 @@ public:
 		gtk_tree_model_get (model, &iter, 0, &state, 3, &selectable, -1);
 
 		state = !state;
-printf ("setting patch %s for %d\n", selectable->name().c_str(), state);
+//printf ("setting patch %s for %d\n", selectable->name().c_str(), state);
 
 		if (mark_selectable (selectable, state))
 			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, state, -1);
@@ -740,7 +740,7 @@ public:
 					continue;
 				packages = &to_remove;
 			}
-printf ("installing pattern: %s\n", selectable->name().c_str());
+
 			if (pattern) {
 				const set <string> &_packages = pattern->install_packages();
 				packages->insert (_packages.begin(), _packages.end());
@@ -994,10 +994,8 @@ public:
 			GTK_TREE_VIEW (m_installed_view), 0), GTK_SORT_DESCENDING);
 */
 		// disk usage...
-		if (zypp::getZYpp()->diskUsage().empty()) {
-printf ("setting partitions\n");
+		if (zypp::getZYpp()->diskUsage().empty())
 			zypp::getZYpp()->setPartitions (zypp::DiskUsageCounter::detectMountPoints());
-}
 		checkDiskUsage();
 
 		setPlainView();
@@ -1251,7 +1249,7 @@ printf ("setting partitions\n");
 		for (zypp::DiskUsageCounter::MountPointSet::iterator it = diskUsage.begin();
 		      it != diskUsage.end(); it++) {
 			const zypp::DiskUsageCounter::MountPoint &partition = *it;
-printf ("checking partition: %s\n", partition.dir.c_str());
+
 			int used = partition.used_size / 1024;  // to MB
 			int total = partition.total_size / 1024;
 
@@ -1712,13 +1710,13 @@ protected:
 				GtkTreeIter tree_iter;
 				GtkTreePath *tree_path;
 				gtk_tree_model_get (model, &iter, 7, &tree_path, -1);
-				gtk_tree_model_get_iter (model, &tree_iter, tree_path);
+				gtk_tree_model_get_iter (GTK_TREE_MODEL (
+					pThis->m_package_selector->m_packages_tree), &tree_iter, tree_path);
 
 				bool found = false;  // small optimization
 				for (set <string>::iterator it = to_install.begin();
 				      it != to_install.end(); it++) {
 					if (YGUtils::contains (selectable->name(), *it)) {
-printf ("installing %s (contains of %s)\n", selectable->name().c_str(), it->c_str());
 						if (mark_selectable (selectable, true))
 							pThis->m_package_selector->loadPackageRow
 								(&iter, &tree_iter, selectable);
@@ -1730,7 +1728,6 @@ printf ("installing %s (contains of %s)\n", selectable->name().c_str(), it->c_st
 					for (set <string>::iterator it = to_remove.begin();
 					      it != to_remove.end(); it++) {
 						if (YGUtils::contains (selectable->name(), *it)) {
-printf ("removing %s (contains of %s)\n", selectable->name().c_str(), it->c_str());
 							if (mark_selectable (selectable, false))
 								pThis->m_package_selector->loadPackageRow
 									(&iter, &tree_iter, selectable);
