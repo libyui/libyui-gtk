@@ -149,6 +149,7 @@ public:
 	, YGTextView (this, parent, opt, label, YCPString(""))
 	{
 		gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
+		gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
 	}
 
 	virtual ~YGLogView() {}
