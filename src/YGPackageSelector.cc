@@ -788,6 +788,11 @@ friend class YGPackageSelector;
 	guint search_timeout_id;
 	GtkWidget *m_categories_view_check;
 
+	// Disk usage warning label
+	//-- FIXME: should be in YGPackageSelector, so that it also appears
+	// on pattern selector
+	GtkWidget *m_du_warn_label;
+
 public:
 	PackageSelector (bool show_patterns_button)
 	{
@@ -842,10 +847,14 @@ public:
 		m_information_widget = new PackageInformation ("Package Information", false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
+		// disk usage warning label
+		m_du_warn_label = gtk_label_new (NULL);
+
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), categories_hbox, FALSE, FALSE, 12);
 		gtk_box_pack_start (GTK_BOX (m_widget), search_hbox, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 12);
+		gtk_box_pack_start (GTK_BOX (m_widget), m_du_warn_label, FALSE, FALSE, 0);
 		gtk_widget_show_all (m_widget);
 
 		g_object_ref (G_OBJECT (m_widget));
@@ -976,6 +985,13 @@ public:
 		gtk_tree_view_column_set_sort_order (gtk_tree_view_get_column (
 			GTK_TREE_VIEW (m_installed_view), 0), GTK_SORT_DESCENDING);
 */
+		// disk usage...
+		if (zypp::getZYpp()->diskUsage().empty()) {
+printf ("setting partitions\n");
+			zypp::getZYpp()->setPartitions (zypp::DiskUsageCounter::detectMountPoints());
+}
+		checkDiskUsage();
+
 		setPlainView();
 
 		// interface sugar
@@ -1217,6 +1233,41 @@ public:
 		gtk_entry_set_text (GTK_ENTRY (m_search_entry), "");
 	}
 
+	void checkDiskUsage()
+	{
+		IMPL
+		string warning;
+
+		zypp::DiskUsageCounter::MountPointSet diskUsage
+			= zypp::getZYpp()->diskUsage();
+		for (zypp::DiskUsageCounter::MountPointSet::iterator it = diskUsage.begin();
+		      it != diskUsage.end(); it++) {
+			const zypp::DiskUsageCounter::MountPoint &partition = *it;
+printf ("checking partition: %s\n", partition.dir.c_str());
+			int used = partition.used_size / 1024;  // to MB
+			int total = partition.total_size / 1024;
+
+			if (used + 700 >= total) {
+				if (!warning.empty())
+					warning += '\n';
+
+				// std::string doesn't read integers nicely...
+				gchar *warning_cstr = g_strdup_printf ("<b>Warning</b>: %s is getting "
+					"full (%d MB used out of %d MB)", partition.dir.c_str(), used, total);
+				warning += warning_cstr;
+				g_free (warning_cstr);
+			}
+		}
+
+		if (!warning.empty()) {
+			gtk_label_set_markup (GTK_LABEL (m_du_warn_label),
+				("<span foreground='red'>" + warning + "</span>").c_str());
+			gtk_widget_show (m_du_warn_label);
+		}
+		else
+			gtk_widget_hide (m_du_warn_label);
+	}
+
 	// callbacks
 	static void toggle_packages_view_cb  (GtkToggleButton *button,
 	                                      PackageSelector *pThis)
@@ -1298,6 +1349,7 @@ public:
 
 		// reload row
 		loadPackageRow (&list_iter, &tree_iter, sel);
+		checkDiskUsage();
 
 		set_selected_cleanups:
 			if (list_path) gtk_tree_path_free (list_path);

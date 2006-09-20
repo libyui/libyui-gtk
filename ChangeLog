@@ -3,6 +3,9 @@
 	* src/YGDumbTab.cc: bug fix: show default tab at start, and got rid of
 	warnings.
 
+	* src/YGPackageSelector.cc: show disk usage warning when it starts getting
+	full.
+
 2006-09-15  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/ygtkrichtext.c: some love to it: only set paragraph spacing for p, h1 and
