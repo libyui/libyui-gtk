@@ -5,7 +5,7 @@
 		`VBox (
 			`RichText (`id (`rtext), ""),
 			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", ""),
-			`PushButton (`id (`close), `opt(`icon ("close")), "&Close")
+			`PushButton (`id (`close), `opt(`default), "&Close")
 		)
 	);
 

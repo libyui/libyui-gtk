@@ -8,9 +8,6 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-// comment next line for older core versions:
-//#define USE_STOCK_ICONS
-
 class YGPushButton : public YPushButton, public YGWidget
 {
 public:
@@ -24,13 +21,10 @@ public:
 	if (!opt.isShrinkable.value())
 		setMinSize (14, 0);
 
-#ifdef USE_STOCK_ICONS
-	if (opt.setIcon.defined()) {
-		string stock = "gtk-" + opt.setIcon.value();
-		GtkWidget *icon = gtk_image_new_from_stock (stock.c_str(), GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (getWidget()), icon);
+	if (opt.isDefaultButton.value()) {
+		GTK_WIDGET_SET_FLAGS (getWidget(), GTK_CAN_DEFAULT);
+		gtk_widget_grab_default (getWidget());
 	}
-#endif
 
 	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 	g_signal_connect (G_OBJECT (getWidget ()), "clicked",

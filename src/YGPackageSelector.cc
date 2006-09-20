@@ -87,7 +87,7 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 	gtk_widget_show_all (dialog);
 
-	bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
+	bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog)) == 1;
 	gtk_widget_destroy (dialog);
 
 	sel->setLicenceConfirmed (confirmed);
@@ -149,7 +149,7 @@ static bool solveProblems()
 		GTK_STOCK_CANCEL, 0, "C_onfirm", 1, NULL);
 
 	GtkWidget *problems_view;
-	problems_view  = gtk_tree_view_new();
+	problems_view = gtk_tree_view_new();
 
 	GtkWidget *problems_window;
 	problems_window = gtk_scrolled_window_new (NULL, NULL);
@@ -186,6 +186,9 @@ static bool solveProblems()
 	gtk_tree_view_set_model (GTK_TREE_VIEW (problems_view),
 	                         GTK_TREE_MODEL (problems_store));
 	g_object_unref (G_OBJECT (problems_store));
+	// disable selections
+	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+		GTK_TREE_VIEW (problems_view)), GTK_SELECTION_NONE);;
 
 	// construct model
 	GtkTreeIter piter, siter;
@@ -199,14 +202,14 @@ static bool solveProblems()
 
 		gtk_tree_store_append (problems_store, &piter, NULL);
 		gtk_tree_store_set (problems_store, &piter, 0, FALSE,
-			1, ((*it)->description() + "\n" + (*it)->details()).c_str(),
+			1, ((*it)->description() /*+ "\n" + (*it)->details()*/).c_str(),
 			2, TRUE, 3, FALSE, -1);
 
 		for (zypp::ProblemSolutionList::iterator jt = solutions.begin();
 		     jt != solutions.end(); jt++) {
 			gtk_tree_store_append (problems_store, &siter, &piter);
 			gtk_tree_store_set (problems_store, &siter, 0, FALSE,
-				1, ((*jt)->description() + "\n" + (*jt)->details()).c_str(),
+				1, ((*jt)->description() /*+ "\n" + (*jt)->details()*/).c_str(),
 				2, TRUE, 3, TRUE, -1);
 			users_actions [gtk_tree_model_get_path (GTK_TREE_MODEL (
 				problems_store), &siter)] = get_pointer (*jt);
@@ -216,7 +219,7 @@ static bool solveProblems()
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 	gtk_widget_show_all (dialog);
 
-	bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
+	bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog)) == 1;
 
 	if (confirmed) {
 		// apply user solutions
@@ -441,10 +444,13 @@ public:
 
 			if (patch && !selectable->hasInstalledObj() &&
 			    selectable->hasCandidateObj() /*don't show installed ones*/) {
+				// select them all
+				selectable->set_status (zypp::ui::S_Install);
+
 				GtkTreeIter iter;
 				GtkListStore *store = GTK_LIST_STORE (m_patches_model);
 				gtk_list_store_append (store, &iter);
-				gtk_list_store_set (store, &iter, 0, FALSE,
+				gtk_list_store_set (store, &iter, 0, selectable->toInstall(),
 					1, patch->category().c_str(), 2, selectable->name().c_str(),
 					3, get_pointer (selectable), -1);
 			}
@@ -717,6 +723,8 @@ public:
 			GtkToggleButton *button = GTK_TOGGLE_BUTTON (i->data);
 			ZyppSelectablePtr selectable = (ZyppSelectablePtr)
 				g_object_get_data (G_OBJECT (button), "selectable");
+			if (!selectable)
+				continue;
 
 			ZyppSelection pattern = tryCastToZyppSelection (selectable->theObj());
 			ZyppLanguage lang = tryCastToZyppLanguage (selectable->theObj());
@@ -732,7 +740,7 @@ public:
 					continue;
 				packages = &to_remove;
 			}
-
+printf ("installing pattern: %s\n", selectable->name().c_str());
 			if (pattern) {
 				const set <string> &_packages = pattern->install_packages();
 				packages->insert (_packages.begin(), _packages.end());
@@ -1199,7 +1207,7 @@ printf ("setting partitions\n");
 
 		// search
 		gboolean visible = TRUE;
-		if (GTK_IS_LIST_STORE (model)) {
+		if (GTK_IS_LIST_STORE (model) && selectable) {
 			string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
 			if (!search.empty()) {
 				if (!YGUtils::contains (selectable->name(), search)) {
@@ -1247,7 +1255,7 @@ printf ("checking partition: %s\n", partition.dir.c_str());
 			int used = partition.used_size / 1024;  // to MB
 			int total = partition.total_size / 1024;
 
-			if (used + 700 >= total) {
+			if (used + 700 >= total && used >= total * 0.80) {
 				if (!warning.empty())
 					warning += '\n';
 
@@ -1710,8 +1718,10 @@ protected:
 				for (set <string>::iterator it = to_install.begin();
 				      it != to_install.end(); it++) {
 					if (YGUtils::contains (selectable->name(), *it)) {
-						mark_selectable (selectable, true);
-						pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
+printf ("installing %s (contains of %s)\n", selectable->name().c_str(), it->c_str());
+						if (mark_selectable (selectable, true))
+							pThis->m_package_selector->loadPackageRow
+								(&iter, &tree_iter, selectable);
 						found = true;
 						break;
 					}
@@ -1720,8 +1730,10 @@ protected:
 					for (set <string>::iterator it = to_remove.begin();
 					      it != to_remove.end(); it++) {
 						if (YGUtils::contains (selectable->name(), *it)) {
-							mark_selectable (selectable, false);
-							pThis->m_package_selector->loadPackageRow (&iter, &tree_iter, selectable);
+printf ("removing %s (contains of %s)\n", selectable->name().c_str(), it->c_str());
+							if (mark_selectable (selectable, false))
+								pThis->m_package_selector->loadPackageRow
+									(&iter, &tree_iter, selectable);
 							found = true;
 							break;
 						}
@@ -1798,6 +1810,9 @@ protected:
 			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (install_view), FALSE);
 			gtk_tree_view_set_model (GTK_TREE_VIEW (install_view),
 			                         GTK_TREE_MODEL (install_store));
+			g_object_unref (G_OBJECT (install_store));
+			gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+				GTK_TREE_VIEW (install_view)), GTK_SELECTION_NONE);;
 
 			// remove view
 			column = gtk_tree_view_column_new_with_attributes ("Remove packages",
@@ -1807,9 +1822,9 @@ protected:
 			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (remove_view), FALSE);
 			gtk_tree_view_set_model (GTK_TREE_VIEW (remove_view),
 			                         GTK_TREE_MODEL (remove_store));
-
-			g_object_unref (G_OBJECT (install_store));
 			g_object_unref (G_OBJECT (remove_store));
+			gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+				GTK_TREE_VIEW (remove_view)), GTK_SELECTION_NONE);;
 
 			// construct model
 			GtkTreeModel *packages_model = GTK_TREE_MODEL (
@@ -1859,21 +1874,20 @@ protected:
 							for (ZyppPool::const_iterator it =
 							         zyppPool().byKindBegin <zypp::Package>();
 							     it != zyppPool().byKindEnd <zypp::Package>(); it++) {
-								// don't show if it is already installed
-								if ((*it)->hasInstalledObj())
-									continue;
+								// only show if it is installed
+								if ((*it)->hasInstalledObj() || (*it)->toInstall()) {
+									ZyppSelectable dep_selectable = *it;
+									ZyppObject dep_object = dep_selectable->theObj();
 
-								ZyppSelectable dep_selectable = *it;
-								ZyppObject dep_object = dep_selectable->theObj();
-
-								const zypp::CapSet &capSet = dep_object->dep (zypp::Dep::REQUIRES);
-								for (zypp::CapSet::const_iterator it = capSet.begin();
-								     it != capSet.end(); it++) {
-									if (YGUtils::contains (it->asString(), selectable->name())) {
-										gtk_tree_store_append (store, &req_iter, &iter);
-										gtk_tree_store_set (store, &req_iter,
-										                    0, dep_selectable->name().c_str(), -1);
-										break;
+									const zypp::CapSet &capSet = dep_object->dep (zypp::Dep::REQUIRES);
+									for (zypp::CapSet::const_iterator it = capSet.begin();
+									     it != capSet.end(); it++) {
+										if (YGUtils::contains (it->asString(), selectable->name())) {
+											gtk_tree_store_append (store, &req_iter, &iter);
+											gtk_tree_store_set (store, &req_iter,
+											                    0, dep_selectable->name().c_str(), -1);
+											break;
+										}
 									}
 								}
 							}
@@ -1885,7 +1899,7 @@ protected:
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 		gtk_widget_show_all (dialog);
 
-		bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog));
+		bool confirmed = gtk_dialog_run (GTK_DIALOG (dialog)) == 1;
 		gtk_widget_destroy (dialog);
 
 		return confirmed;
