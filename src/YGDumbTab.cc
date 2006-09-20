@@ -59,8 +59,6 @@ public:
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		g_signal_handlers_block_by_func (notebook, (gpointer) changed_tab_cb, this);
 
-		// Since we're re-using the same widget for all pages, we ref it to avoid
-		// it being destroyed multiple times.
 		GtkWidget *empty = gtk_event_box_new();
 		gtk_widget_show (empty);
 
@@ -150,7 +148,6 @@ public:
 	static void changed_tab_cb (GtkNotebook *notebook, GtkNotebookPage *page,
 	                            gint tab_nb, YGDumbTab *pThis)
 	{
-printf ("tab changed\n");
 		YCPValue id = pThis->_tabs[tab_nb].id();
 		YGUI::ui()->sendEvent (new YMenuEvent (id));
 
