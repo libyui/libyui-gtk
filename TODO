@@ -26,12 +26,14 @@
 	  just the I and R keys would also be good.
 
 * Patterns
-	+ when user chooses a pattern, set the packages of the pattern selected.
+	+ we probably should re-design this interface a bit to make it more intuitive.
+	  Like using two install / remove buttons rather than the check boxes. Per item
+	  or global? We probably should also provide a re-install / auto-update button.
 
-	+ show available languages together with them.
-
-	+ we should prolly interpolate the icon down in size to a fixed 32x32 or
-	  something and of course, leave the same space for items without icons.
+* Patch selector (YOU)
+	+ we should also list installed patches and maybe a way to remove them
+	  (downgrade of version should work for most cases -- check how qt does it).
+	  Probably a tab for this?
 
 * Others
 	+ sometimes scrollbars are not presented on the package information.
@@ -41,10 +43,6 @@
 	  case still to fix...
 
 	+ use icons for the "install >" and "< remove" buttons.
-
-	+ show version number when there is a better candidate.
-
-	+ show popup menu when right clicking a package (for actions like update)
 
 
 = Yast quirk requests =
