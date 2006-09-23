@@ -22,6 +22,7 @@ public:
 		            GTK_TYPE_WINDOW, "type", GTK_WINDOW_TOPLEVEL,
 		            "allow_shrink", TRUE, NULL)
 	{
+		IMPL
 		m_userSize.width = -1;
 		m_userSize.height = -1;
 		m_padding = 0;
@@ -54,7 +55,6 @@ public:
 			gtk_widget_show (m_fixed);
 		}
 
-		fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC);
 		gtk_window_set_modal (GTK_WINDOW (m_widget),
 		                      !opt.hasDefaultSize.value());
 
@@ -105,21 +105,31 @@ public:
 		long nice;
 		if (hasDefaultSize())
 		{
+#ifdef IMPL_DEBUG
 			fprintf (stderr, "YGDialog:: has default size\n");
+#endif
 			if (userResized()) {
+#ifdef IMPL_DEBUG
 				fprintf (stderr, "YGDialog:: has user size\n");
+#endif
 				nice = dim == YD_HORIZ ? m_userSize.width : m_userSize.height;
 
 			} else {
+#ifdef IMPL_DEBUG
 				fprintf (stderr, "YGDialog:: get default size\n");
+#endif
 				nice = YGUI::ui()->defaultSize (dim);
 			}
 		} else {
+#ifdef IMPL_DEBUG
 			fprintf (stderr, "YGDialog:: no default size\n");
+#endif
 			nice = YDialog::nicesize (dim) + m_padding;
 		}
+#ifdef IMPL_DEBUG
 		fprintf (stderr, "YGDialog::nicesize %s = %ld\n",
 			 dim == YD_HORIZ ? "width" : "height", nice);
+#endif
 		return nice;
 	}
 
@@ -162,10 +172,12 @@ public:
 		if (event->width != widget->allocation.width ||
 		    event->height != widget->allocation.height) {
 
+#ifdef IMPL_DEBUG
 			fprintf (stderr, "configure event %d, %d (%d %d)\n",
 				 event->width, event->height,
 				 widget->allocation.width,
 				 widget->allocation.height);
+#endif
 
 			pThis->setSize (event->width, event->height);
 			pThis->m_userSize.width = event->width;

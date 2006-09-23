@@ -12,16 +12,16 @@ using std::string;
 using std::vector;
 
 /* Comment the following line to disable debug messages */
-#define IMPL_DEBUG
+// #define IMPL_DEBUG
 #define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
 #ifdef IMPL_DEBUG
 	#define IMPL      { LOC; }
 #else
 	#define IMPL      { }
 #endif
-#define IMPL_NULL   { LOC; return NULL; }
-#define IMPL_VOID   { LOC; return YCPVoid(); }
-#define IMPL_RET(a) { LOC; return (a); }
+#define IMPL_NULL   { IMPL; return NULL; }
+#define IMPL_VOID   { IMPL; return YCPVoid(); }
+#define IMPL_RET(a) { IMPL; return (a); }
 
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
 
@@ -38,17 +38,17 @@ public:
     static YGUI *ui() { return (YGUI *)YUI::ui(); }
 
     // non abstract loop bits:
-    virtual void blockEvents (bool block = true) { LOC; }
-    virtual bool eventsBlocked() const { LOC; return false; }
+    virtual void blockEvents (bool block = true) IMPL
+    virtual bool eventsBlocked() const IMPL_RET (false)
     virtual void internalError (const char *msg);
     virtual void idleLoop (int fd_ycp);
     virtual YEvent * userInput (unsigned long timeout_millisec);
-    virtual YEvent * pollInput();
+    virtual YEvent * pollInput() IMPL_NULL
 
     virtual void showDialog (YDialog *dialog);
     virtual void closeDialog (YDialog *dialog);
     // Non abstract virtuals:
-    virtual YCPValue setLanguage (const YCPTerm & term) IMPL_VOID;
+    virtual YCPValue setLanguage (const YCPTerm & term) IMPL_VOID
 
     // event pieces:
  private:

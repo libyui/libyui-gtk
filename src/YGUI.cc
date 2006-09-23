@@ -36,16 +36,18 @@ YGUI::YGUI (int argc, char ** argv,
 	if (!with_threads)
 		checkInit();
 
+#ifdef IMPL_DEBUG
 	fprintf (stderr, "I'm initialized '%s' - come & get me !\n",
 		with_threads ? "with threads !" : "no threads");
+#endif
 
-	for (int i = 0; i < m_argc; i++)
+	for (int i = 1; i < m_argc; i++)
 	{
 		const char *argp = m_argv[i];
 		if (!argp) continue;
 		if (argp[0] != '-')
 		{
-			fprintf (stderr, "Unknown argument '%s'\n", argp);
+			printf ("Unknown argument '%s'\n", argp);
 			continue;
 		}
 		argp++;
@@ -63,7 +65,7 @@ YGUI::YGUI (int argc, char ** argv,
 
 		else if (!strcmp (argp, "help"))
 		{
-			fprintf( stderr,
+			printf (
 				 "Command line options for the YaST2 Gtk UI:\n"
 				 "\n"
 				 "--nothreads   run without additional UI threads\n"
@@ -180,17 +182,11 @@ YGUI::userInput( unsigned long timeout_millisec )
 	return event;
 }
 
-YEvent *
-YGUI::pollInput()
-{
-	LOC;
-	return NULL;
-}
-
 // dialog bits
 
 void dumpWidgetTree (GtkWidget *widget, int indent)
 {
+#ifdef IMPL_DEBUG
 	for (int i = 0; i < indent; i++)
 		fprintf (stderr, "\t");
 
@@ -212,10 +208,12 @@ void dumpWidgetTree (GtkWidget *widget, int indent)
 	for (GList *l = children; l; l = l->next)
 		dumpWidgetTree ((GtkWidget *)l->data, indent + 1);
 	g_list_free (children);
+#endif
 }
 
 void dumpYastTree (YWidget *widget, int indent)
 {
+#ifdef IMPL_DEBUG
 	YContainerWidget *cont = NULL;
 
 	for (int i = 0; i < indent; i++)
@@ -234,6 +232,7 @@ void dumpYastTree (YWidget *widget, int indent)
 	if (cont)
 		for (int i = 0; i < cont->numChildren(); i++)
 			dumpYastTree (cont->child (i), indent + 1);
+#endif
 }
 
 static GdkScreen *
@@ -448,7 +447,6 @@ void YGUI::redrawScreen()
 
 YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
 {
-printf ("runPkgSelection()\n");
 	y2milestone ("Running package selection...");
 
 	// TODO: we may have to do some trickery here to disable close button
@@ -656,8 +654,6 @@ long YGUI::defaultSize (YUIDimension dim)
 	// FIXME: check for panel etc. bits available vs. full screen size
 	GtkRequisition availableSize = { getDisplayWidth(), getDisplayHeight() };
 
-	fprintf (stderr, "YGUI::defaultSize %d %d\n", m_fullscreen, haveWM());
-
 	if (m_fullscreen || !haveWM())
 		return dim == YD_HORIZ ? getDisplayWidth() : getDisplayHeight();
 
@@ -669,12 +665,16 @@ long YGUI::defaultSize (YUIDimension dim)
 	    m_default_size.height < 600) {
 		if (getDisplayWidth() >= 1024 &&
 		    getDisplayHeight() >= 768) { // 70% of screen size
+#ifdef IMPL_DEBUG
 			fprintf (stderr, "YGUI::defaultSize - set 70%%\n");
+#endif
 			m_default_size.width = MAX ((int)(availableSize.width * 0.7), 800);
 			m_default_size.height = MAX ((int)(availableSize.height * 0.7), 600);
 		}
 	} else {
+#ifdef IMPL_DEBUG
 		fprintf (stderr, "YGUI::defaultSize - has sane m_default_size already\n");
+#endif
 		m_default_size = availableSize;
 	}
 	

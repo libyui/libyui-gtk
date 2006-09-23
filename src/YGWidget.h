@@ -68,6 +68,8 @@ protected:
 #define YGWIDGET_IMPL_SET_ENABLING \
 		virtual void setEnabling (bool enabled) \
 			{ IMPL; gtk_widget_set_sensitive (getWidget(), enabled); }
+
+#ifdef IMPL_DEBUG
 #define YGWIDGET_IMPL_SET_SIZE \
 		virtual void setSize (long newWidth, long newHeight) { \
 			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
@@ -87,6 +89,22 @@ protected:
 			         child ? get(child)->getWidget():NULL, child, newx, newy);  \
 			doMoveChild (child, newx, newy); \
 		}
+#else
+#define YGWIDGET_IMPL_SET_SIZE \
+		virtual void setSize (long newWidth, long newHeight) { \
+			doSetSize (newWidth, newHeight); \
+		}
+#define YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass) \
+		virtual void setSize (long newWidth, long newHeight) { \
+			doSetSize (newWidth, newHeight); \
+			ParentClass::setSize (newWidth, newHeight); \
+		}
+#define YGWIDGET_IMPL_MOVE_CHILD \
+		virtual void moveChild (YWidget *child, long newx, long newy) {       \
+			doMoveChild (child, newx, newy); \
+		}
+#endif
+
 #define YGWIDGET_IMPL_KEYBOARD_FOCUS \
 		virtual bool setKeyboardFocus() { \
 			gtk_widget_grab_focus (GTK_WIDGET(getWidget())); \
@@ -117,8 +135,7 @@ class YGLabeledWidget : public YGWidget
 
 #define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)                    \
 	virtual void setLabel (const YCPString &label) {                          \
-		fprintf (stderr, "%s:%s -G%p-Y%p- '%s' + chain\n", G_STRLOC, G_STRFUNC, \
-		         m_widget, m_y_widget, label->value_cstr());                    \
+		IMPL                                                                    \
 		doSetLabel (label);                                                     \
 		ParentClass::setLabel (label);                                          \
 	}

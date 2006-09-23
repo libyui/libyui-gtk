@@ -15,7 +15,9 @@ public:
 	virtual YUI *createUI (int argc, char **argv,
 			       bool with_threads, const char * macro_file)
 	{
+#ifdef IMPL_DEBUG
 		fprintf (stderr, "Create a gtk+ UI: %d '%s' !\n", with_threads, macro_file);
+#endif
 		return new YGUI (argc, argv, with_threads, macro_file);
 	}
 };

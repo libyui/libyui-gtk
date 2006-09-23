@@ -12,17 +12,24 @@
 #include "YReplacePoint.h"
 #include "YGWidget.h"
 
-#define YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
-	virtual long nicesize (YUIDimension dim) \
-	{ \
-		long ret = ParentClass::nicesize (dim); \
-		fprintf (stderr, "NiceSize for '%s' %s %ld\n", \
+#ifdef IMPL_DEBUG
+#define YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass)                  \
+	virtual long nicesize (YUIDimension dim) {                        \
+		long ret = ParentClass::nicesize (dim);                         \
+		fprintf (stderr, "NiceSize for '%s' %s %ld\n",                  \
 			 getWidgetName(), dim == YD_HORIZ ? "width" : "height", ret); \
-		return ret; \
+		return ret;                                                     \
 	}
+#else
+#define YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
+	virtual long nicesize (YUIDimension dim) {       \
+		long ret = ParentClass::nicesize (dim);        \
+		return ret;                                    \
+	}
+#endif
 
 #define YGWIDGET_CONTAINER_IMPL(ParentClass) \
-	YGWIDGET_IMPL_SET_ENABLING \
+	YGWIDGET_IMPL_SET_ENABLING                 \
 	YGWIDGET_DEBUG_NICESIZE_CHAIN(ParentClass) \
 	YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass)  \
 	virtual bool setKeyboardFocus() IMPL_RET(false)

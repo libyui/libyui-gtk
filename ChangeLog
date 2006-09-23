@@ -1,3 +1,8 @@
+2006-09-23  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGUI.h and others: disabled the debugging printing by default.
+	Uncomment #define IMPL_DEBUG on YGUI.h to enable it.
+
 2006-09-19  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGDumbTab.cc: bug fix: show default tab at start, and got rid of

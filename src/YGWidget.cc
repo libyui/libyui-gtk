@@ -22,9 +22,8 @@ YGWidget::construct (YWidget *y_widget, YGWidget *parent,
 	y_widget->setWidgetRep ((void *) this);
 #ifdef IMPL_DEBUG
 	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
+	fprintf (stderr, "border for %s: %d\n", y_widget->widgetClass(), m_border);
 #endif
-
-printf ("border for %s: %d\n", y_widget->widgetClass(), m_border);
 
 	if (parent) {
 		y_widget->setParent (parent->m_y_widget);
@@ -89,7 +88,9 @@ void YGWidget::setBorder (unsigned int border)
 	// NOTE: setBorder() is meant to be called from the constructor
 	// only, otherwise we would need to recalculate the all layout.
 	m_border = border;
-printf ("border for %s: %d (priori)\n", m_y_widget->widgetClass(), m_border);
+#ifdef IMPL_DEBUG
+fprintf (stderr, "border for %s: %d (posteriori)\n", m_y_widget->widgetClass(), m_border);
+#endif
 	gtk_fixed_move (YGWidget::getFixed(), m_widget, m_border, m_border);
 }
 
