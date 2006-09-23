@@ -7,40 +7,22 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-GdkColor fromYColor (const YColor &ycolor)
-{
-	GdkColor color = { 0, ycolor.red << 8, ycolor.green << 8, ycolor.blue << 8 };
-	return color;
-}
+#include "YLabel.h"
 
-class YGGenericLabel : public YGWidget
+class YGLabel : public YLabel, public YGWidget
 {
-protected:
-	GtkWidget *m_inner_widget;
-	int m_border;
-
 public:
-	YGGenericLabel (YWidget *y_widget, YGWidget *parent, const YWidgetOpt &opt,
-	                YCPString text, int border = 0,
-	                const YColor *fgColor = 0, const YColor *bgColor = 0)
-	: YGWidget (y_widget, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	YGLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text)
+	: YLabel (opt, text),
+	  YGWidget (this, parent, true, opt.isOutputField.value() ? GTK_TYPE_ENTRY
+	                                : GTK_TYPE_LABEL, NULL)
 	{
-		IMPL
 		if (opt.isOutputField.value()) {
-			m_inner_widget = gtk_entry_new();
-			gtk_editable_set_editable (GTK_EDITABLE (m_inner_widget), FALSE);
-			// insensitive GtkEntrys don't really look like it, so...
+			gtk_editable_set_editable (GTK_EDITABLE (getWidget()), FALSE);
+			// not editable GtkEntrys don't really look like it, so...
 			gtk_widget_modify_base (getWidget(), GTK_STATE_NORMAL,
 			                        &getWidget()->style->base [GTK_STATE_INSENSITIVE]);
 		}
-		else
-			m_inner_widget = gtk_label_new ("");
-
-		gtk_container_add (GTK_CONTAINER (YGWidget::getWidget()), getWidget());
-		// NOTE: we can't just use gtk_container_set_border_width() because the color
-		// would not expand to the borders
-		m_border = border;
-		gtk_widget_show (m_inner_widget);
 
 		if (opt.boldFont.value())
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -48,64 +30,42 @@ public:
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_ULTRABOLD,
 			                        PANGO_SCALE_XX_LARGE);
 
-		if (fgColor)
-			setForegroundColor (fromYColor (*fgColor));
-		if (bgColor)
-			setBackgroundColor (fromYColor (*bgColor));
-
-		doSetLabel (text);
+		setLabel (text);
 	}
-
-	virtual ~YGGenericLabel() {}
-
-	virtual GtkWidget* getWidget()
-	{ return m_inner_widget; }
-
-	void doSetLabel (const YCPString &label)
-	{
-		if (GTK_IS_LABEL (getWidget()))
-			gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
-		else
-			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
-	}
-
-	void setForegroundColor (const GdkColor &color)
-	{ gtk_widget_modify_fg (getWidget(), GTK_STATE_NORMAL, &color); }
-	void setBackgroundColor (const GdkColor &color)
-	{ gtk_widget_modify_bg (YGWidget::getWidget(), GTK_STATE_NORMAL, &color); }
-};
-
-#define YG_GENERIC_LABEL_IMPL_NICESIZE \
-	virtual long nicesize (YUIDimension dim) { \
-		return getNiceSize (dim) + 2*m_border; \
-	}
-#define YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS \
-	virtual bool setKeyboardFocus() {          \
-		if (GTK_IS_ENTRY (getWidget())) {        \
-			gtk_widget_grab_focus (GTK_WIDGET(getWidget()));      \
-			return gtk_widget_is_focus (GTK_WIDGET(getWidget())); \
-			}                                      \
-		return false;                            \
-	}
-
-#include "YLabel.h"
-
-class YGLabel : public YLabel, public YGGenericLabel
-{
-public:
-	YGLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text)
-	: YLabel (opt, text)
-	, YGGenericLabel (this, parent, opt, text)
-	{ }
 
 	// YGWidget
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YG_GENERIC_LABEL_IMPL_NICESIZE
-	// YGLabeledWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YLabel)
-	// YGGenericLabel
-	YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS
+//	YGWIDGET_IMPL_NICESIZE
+
+virtual long nicesize (YUIDimension dim)
+{
+long size = getNiceSize (dim);
+printf ("%s nice size for label %s: %ld\n",
+	dim == YD_HORIZ ? "horizontal" : "vertical", debugLabel().c_str(), size);
+return size;
+}
+
+
+	virtual bool setKeyboardFocus()
+	{
+		if (GTK_IS_ENTRY (getWidget())) {
+			gtk_widget_grab_focus (GTK_WIDGET(getWidget()));
+			return gtk_widget_is_focus (GTK_WIDGET(getWidget()));
+			}
+		else  // GtkLabel
+			return false;
+	}
+
+	virtual void setLabel (const YCPString &label)
+	{
+		if (GTK_IS_ENTRY (getWidget()))
+			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
+		else  // GtkLabel
+			gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
+
+		YLabel::setLabel (label);
+	}
 };
 
 YWidget *
@@ -117,21 +77,67 @@ YGUI::createLabel (YWidget *parent, YWidgetOpt &opt,
 
 #include "YColoredLabel.h"
 
-class YGColoredLabel : public YColoredLabel, public YGGenericLabel
+class YGColoredLabel : public YColoredLabel, public YGWidget
 {
+	GtkWidget *m_label;
+	int m_border;
+
 public:
 	YGColoredLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text,
 	                const YColor &fgColor, const YColor &bgColor, int margin)
-	: YColoredLabel (opt, text)
-	, YGGenericLabel (this, parent, opt, text, margin, &fgColor, &bgColor)
-	{ }
+	: YColoredLabel (opt, text),
+	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	{
+		IMPL
+		m_label = gtk_label_new (NULL);
+		gtk_widget_show (m_label);
+		gtk_container_add (GTK_CONTAINER (getWidget()), m_label);
+
+		// NOTE: we can't just use gtk_container_set_border_width() because the color
+		// would not expand to the borders
+		m_border = margin;
+
+		if (opt.boldFont.value())
+			YGUtils::setWidgetFont (m_label, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		if (opt.isHeading.value())
+			YGUtils::setWidgetFont (m_label, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_XX_LARGE);
+
+		setForegroundColor (fgColor);
+		setBackgroundColor (bgColor);
+
+		setLabel (text);
+	}
+
+	virtual ~YGColoredLabel() {}
+
+	static GdkColor fromYColor (const YColor &ycolor)
+	{
+		GdkColor color = { 0, ycolor.red << 8, ycolor.green << 8, ycolor.blue << 8 };
+		return color;
+	}
+
+	void setForegroundColor (const YColor &ycolor)
+	{
+		GdkColor gcolor = fromYColor (ycolor);
+		gtk_widget_modify_fg (m_label, GTK_STATE_NORMAL, &gcolor);
+	}
+
+	void setBackgroundColor (const YColor &ycolor)
+	{
+		GdkColor gcolor = fromYColor (ycolor);
+		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &gcolor);
+	}
+
 
 	// YGWidget
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-	YG_GENERIC_LABEL_IMPL_NICESIZE
-	// YGLabeledWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YColoredLabel)
+
+	virtual long nicesize (YUIDimension dim)
+	{ return getNiceSize (dim) + (m_border * 2); }
+
+	virtual void setLabel (const YCPString &label)
+	{ gtk_label_set_label (GTK_LABEL (m_label), label->value_cstr()); }
 };
 
 YWidget *

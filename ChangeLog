@@ -3,6 +3,21 @@
 	* src/YGUI.h and others: disabled the debugging printing by default.
 	Uncomment #define IMPL_DEBUG on YGUI.h to enable it.
 
+	* src/YGDialog.cc: handle more than one main window properly. The bug
+	that was avoiding this commit was that a label with our own pango font
+	description set wasn't returning a proper size request (and this may
+	happen in other cases). Setting the father container in a GtkWindow,
+	rather than doing that only on showWindow() seemed to solve the issue.
+	I wonder if there is a more elegant way to fix this and why it needs a
+	GtkWindow as the base of the hierarchy to work...
+
+	TO do: abstract YGWindow further. We will have to make it a GObject to
+	use its signal system. And support --geometry & friends.
+
+	TO fix: I would like to catch the escape key to send a Cancel event to
+	YWidgets for popup dialogs. Somehow that doesn't seem to work -- check
+	key_pressed_cb().
+
 2006-09-19  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGDumbTab.cc: bug fix: show default tab at start, and got rid of

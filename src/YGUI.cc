@@ -297,15 +297,6 @@ void YGUI::internalError (const char *msg)
 	abort();		// going down
 }
 
-GtkWindow *YGUI::currentWindow()
-{
-	YWidget *dialog = YGUI::ui()->currentDialog();
-	if (dialog)
-		return GTK_WINDOW (((YGWidget*) dialog->widgetRep())->getWidget());
-	else
-		return NULL;
-}
-
 /* File/directory dialogs. */
 #include <sstream>
 

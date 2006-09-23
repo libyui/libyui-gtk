@@ -174,11 +174,6 @@ YGWidget::getNiceSize (YUIDimension dim)
 	long ret;
 	GtkRequisition req;
 
-#ifdef IMPL_DEBUG
-	fprintf (stderr, "Get nice size request for:\n");
-	dumpWidgetTree (m_widget);
-#endif
-
 	gtk_widget_ensure_style (m_widget);
 	g_signal_emit_by_name (m_widget, "size_request", &req);
 
