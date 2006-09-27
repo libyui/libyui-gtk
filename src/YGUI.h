@@ -31,8 +31,7 @@ class YGUI: public YUI
 {
 public:
     YGUI (int argc, char **argv,
-	  bool with_threads,
-	  const char *macro_file);
+          bool with_threads, const char *macro_file);
     virtual ~YGUI();
 
     static YGUI *ui() { return (YGUI *)YUI::ui(); }
@@ -59,140 +58,137 @@ public:
     bool    eventPendingFor (YWidget *widget) const { return m_event_handler.eventPendingFor (widget); }
 
     // container widgets
-    virtual YDialog *createDialog (YWidgetOpt & opt);
-    virtual YContainerWidget *createSplit (YWidget *parent, YWidgetOpt & opt, YUIDimension dimension);
-    virtual YContainerWidget *createReplacePoint (YWidget *parent, YWidgetOpt & opt);
-    virtual YContainerWidget *createAlignment (YWidget *parent, YWidgetOpt & opt,
-					       YAlignmentType halign,
-					       YAlignmentType valign);
-    virtual YContainerWidget *createSquash (YWidget *parent, YWidgetOpt & opt,
-					    bool hsquash, bool vsquash);
-    virtual YContainerWidget *createRadioButtonGroup (YWidget *parent, YWidgetOpt & opt);
-    virtual YContainerWidget *createFrame (YWidget *parent, YWidgetOpt & opt,
-					   const YCPString & label);
+    virtual YDialog *createDialog (YWidgetOpt &opt);
+    virtual YContainerWidget *createSplit (YWidget *parent, YWidgetOpt &opt, YUIDimension dimension);
+    virtual YContainerWidget *createReplacePoint (YWidget *parent, YWidgetOpt &opt);
+    virtual YContainerWidget *createAlignment (YWidget *parent, YWidgetOpt &opt,
+                                               YAlignmentType halign,
+                                               YAlignmentType valign);
+    virtual YContainerWidget *createSquash (YWidget *parent, YWidgetOpt &opt,
+                                            bool hsquash, bool vsquash);
+    virtual YContainerWidget *createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt);
+    virtual YContainerWidget *createFrame (YWidget *parent, YWidgetOpt &opt,
+                                           const YCPString &label);
 
     // leaf widgets
-    virtual YWidget *createEmpty (YWidget *parent, YWidgetOpt & opt);
-    virtual YWidget *createSpacing (YWidget *parent, YWidgetOpt & opt, float size,
-				    bool horizontal, bool vertical);
-    virtual YWidget *createLabel (YWidget *parent, YWidgetOpt & opt,
-				  const YCPString & text);
-    virtual YWidget *createRichText (YWidget *parent, YWidgetOpt & opt,
-					const YCPString & text);
-    virtual YWidget *createLogView (YWidget *parent, YWidgetOpt & opt,
-				    const YCPString & label, int visibleLines,
-				    int maxLines);
-    virtual YWidget *createPushButton (YWidget *parent, YWidgetOpt & opt,
-				       const YCPString & label);
-    virtual YWidget *createMenuButton (YWidget *parent, YWidgetOpt & opt,
-				       const YCPString & label);
-    virtual YWidget *createRadioButton (YWidget *parent, YWidgetOpt & opt,
-					YRadioButtonGroup *rbg, const YCPString & label,
-					bool checked);
-    virtual YWidget *createCheckBox (YWidget *parent, YWidgetOpt & opt,
-				     const YCPString & label, bool checked);
-    virtual YWidget *createTextEntry (YWidget *parent, YWidgetOpt & opt,
-				      const YCPString & label, const YCPString & text);
-    virtual YWidget *createMultiLineEdit (YWidget *parent, YWidgetOpt & opt,
-					  const YCPString & label, const YCPString & text);
-    virtual YWidget *createSelectionBox (YWidget *parent, YWidgetOpt & opt,
-					 const YCPString & label);
-    virtual YWidget *createMultiSelectionBox (YWidget *parent, YWidgetOpt & opt,
-					      const YCPString & label);
-    virtual YWidget *createComboBox (YWidget *parent, YWidgetOpt & opt,
-				     const YCPString & label);
-    virtual YWidget *createTree (YWidget *parent, YWidgetOpt & opt,
-				 const YCPString & label);
-    virtual YWidget *createTable (YWidget *parent, YWidgetOpt & opt,
-				  std::vector<std::string> header);
-    virtual YWidget *createProgressBar (YWidget *parent, YWidgetOpt & opt,
-					const YCPString & label,
-					const YCPInteger & maxprogress,
-					const YCPInteger & progress);
-    virtual YWidget *createImage (YWidget *parent, YWidgetOpt & opt,
-				  YCPByteblock imagedata, YCPString defaulttext);
-    virtual YWidget *createImage (YWidget *parent, YWidgetOpt & opt,
-				  YCPString file_name, YCPString defaulttext);
-    virtual YWidget *createIntField (YWidget *parent, YWidgetOpt & opt,
-				     const YCPString & label,
-				     int minValue, int maxValue, int initialValue);
+    virtual YWidget *createEmpty (YWidget *parent, YWidgetOpt &opt);
+    virtual YWidget *createSpacing (YWidget *parent, YWidgetOpt &opt, float size,
+                                    bool horizontal, bool vertical);
+    virtual YWidget *createLabel (YWidget *parent, YWidgetOpt &opt,
+                                  const YCPString &text);
+    virtual YWidget *createRichText (YWidget *parent, YWidgetOpt &opt,
+                                     const YCPString &text);
+    virtual YWidget *createLogView (YWidget *parent, YWidgetOpt &opt,
+                                    const YCPString &label, int visibleLines,
+                                    int maxLines);
+    virtual YWidget *createPushButton (YWidget *parent, YWidgetOpt &opt,
+                                       const YCPString & label);
+    virtual YWidget *createMenuButton (YWidget *parent, YWidgetOpt &opt,
+                                       const YCPString & label);
+    virtual YWidget *createRadioButton (YWidget *parent, YWidgetOpt &opt,
+                                        YRadioButtonGroup *rbg,
+                                        const YCPString &label, bool checked);
+    virtual YWidget *createCheckBox (YWidget *parent, YWidgetOpt &opt,
+                                     const YCPString &label, bool checked);
+    virtual YWidget *createTextEntry (YWidget *parent, YWidgetOpt &opt,
+                                      const YCPString &label, const YCPString &text);
+    virtual YWidget *createMultiLineEdit (YWidget *parent, YWidgetOpt &opt,
+                                          const YCPString &label,
+                                          const YCPString &text);
+    virtual YWidget *createSelectionBox (YWidget *parent, YWidgetOpt &opt,
+                                         const YCPString &label);
+    virtual YWidget *createMultiSelectionBox (YWidget *parent, YWidgetOpt &opt,
+                                              const YCPString &label);
+    virtual YWidget *createComboBox (YWidget *parent, YWidgetOpt &opt,
+                                     const YCPString &label);
+    virtual YWidget *createTree (YWidget *parent, YWidgetOpt &opt,
+                                 const YCPString &label);
+    virtual YWidget *createTable (YWidget *parent, YWidgetOpt &opt,
+                                  std::vector<std::string> header);
+    virtual YWidget *createProgressBar (YWidget *parent, YWidgetOpt &opt,
+                                        const YCPString &label,
+                                        const YCPInteger &maxprogress,
+                                        const YCPInteger &progress);
+    virtual YWidget *createImage (YWidget *parent, YWidgetOpt &opt,
+                                  YCPByteblock imagedata, YCPString defaulttext);
+    virtual YWidget *createImage (YWidget *parent, YWidgetOpt &opt,
+                                  YCPString file_name, YCPString defaulttext);
+    virtual YWidget *createIntField (YWidget *parent, YWidgetOpt &opt,
+                                     const YCPString &label, int minValue,
+                                     int maxValue, int initialValue);
 
-	// Package selector
-	virtual YWidget *createPackageSelector (YWidget *parent, YWidgetOpt &opt,
-	                                        const YCPString &floppyDevice);
-	virtual YWidget *createPkgSpecial (YWidget *parent, YWidgetOpt &opt,
-	                                   const YCPString &subwidget);
-	virtual YCPValue runPkgSelection (YWidget *packageSelector);
+    // Package selector
+    virtual YWidget *createPackageSelector (YWidget *parent, YWidgetOpt &opt,
+                                            const YCPString &floppyDevice);
+    virtual YWidget *createPkgSpecial (YWidget *parent, YWidgetOpt &opt,
+                                       const YCPString &subwidget);
+    virtual YCPValue runPkgSelection (YWidget *packageSelector);
 
     // Optional widgets
-    virtual YWidget *createDummySpecialWidget (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
+    virtual YWidget *createDummySpecialWidget (YWidget *parent, YWidgetOpt &opt)
+        IMPL_NULL;
     virtual bool     hasDummySpecialWidget() { return false; }
 
-	virtual YWidget *createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
-	                                         const YCPString &label,
-	                                         const YCPString &filename,
-	                                         int expectedSize);
-	virtual bool     hasDownloadProgress() { return true; }
+    virtual YWidget *createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
+                                             const YCPString &label,
+                                             const YCPString &filename,
+                                             int expectedSize);
+    virtual bool     hasDownloadProgress() { return true; }
 
     virtual YWidget *createBarGraph (YWidget *parent, YWidgetOpt &opt);
     virtual bool hasBarGraph() { return true; }
-	
+
     virtual YWidget *createColoredLabel (YWidget *parent, YWidgetOpt &opt,
-					 YCPString label,
-					 YColor foreground, YColor background,
-					 int margin);
+                                         YCPString label, YColor foreground,
+                                         YColor background, int margin);
     virtual bool hasColoredLabel() { return true; }
 
-	virtual YWidget *createDate (YWidget         *parent,
-	                             YWidgetOpt      &opt,
-	                             const YCPString &label,
-	                             const YCPString &date);
-	virtual bool     hasDate() { return true; }
+    virtual YWidget *createDate (YWidget *parent, YWidgetOpt &opt,
+                                 const YCPString &label, const YCPString &date);
+    virtual bool     hasDate() { return true; }
 
-	virtual YWidget *createTime (YWidget         *parent,
-	                             YWidgetOpt      &opt,
-	                             const YCPString &label,
-	                             const YCPString &time);
-	virtual bool     hasTime() { return true; }
+    virtual YWidget *createTime (YWidget *parent, YWidgetOpt &opt,
+                                 const YCPString &label, const YCPString &time);
+    virtual bool     hasTime() { return true; }
 
-	virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt);
-	virtual bool     hasDumbTab() { return true; }
+    virtual YWidget *createDumbTab (YWidget *parent, YWidgetOpt &opt);
+    virtual bool     hasDumbTab() { return true; }
 
-	virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt & opt,
-	                                  bool horizontal, const YCPList & maxValues);
-	virtual bool     hasMultiProgressMeter() { return true; }
+    virtual YWidget *createMultiProgressMeter (YWidget *parent, YWidgetOpt &opt,
+                                      bool horizontal, const YCPList & maxValues);
+    virtual bool     hasMultiProgressMeter() { return true; }
 
     virtual YWidget *createSlider (YWidget *parent, YWidgetOpt &opt,
-				   const YCPString &label,
-				   int min, int max, int initial);
+                                   const YCPString &label, int min,
+                                   int max, int initial);
     virtual bool hasSlider() { return true; }
 
-	virtual YWidget *createPartitionSplitter (YWidget    *parent,
-	                                          YWidgetOpt &opt,
-	                                          int         usedSize,
-	                                          int         totalFreeSize,
-	                                          int         newPartSize,
-	                                          int         minNewPartSize,
-	                                          int         minFreeSize,
-	                                     const YCPString &usedLabel,
-	                                     const YCPString &freeLabel,
-	                                     const YCPString &newPartLabel,
-	                                     const YCPString &freeFieldLabel,
-	                                     const YCPString &newPartFieldLabel);
-	virtual bool     hasPartitionSplitter()  { return true; }
+    virtual YWidget *createPartitionSplitter (YWidget    *parent,
+                                              YWidgetOpt &opt,
+                                              int         usedSize,
+                                              int         totalFreeSize,
+                                              int         newPartSize,
+                                              int         minNewPartSize,
+                                              int         minFreeSize,
+                                         const YCPString &usedLabel,
+                                         const YCPString &freeLabel,
+                                         const YCPString &newPartLabel,
+                                         const YCPString &freeFieldLabel,
+                                         const YCPString &newPartFieldLabel);
+    virtual bool     hasPartitionSplitter()  { return true; }
 
-    virtual YWidget *createPatternSelector (YWidget *parent, YWidgetOpt & opt) IMPL_NULL;
+    virtual YWidget *createPatternSelector (YWidget *parent, YWidgetOpt &opt) IMPL_NULL;
     virtual bool     hasPatternSelector() { return false; }
 
-	virtual YWidget *createWizard (YWidget *parent,
-	                            YWidgetOpt &opt,
-	                        const YCPValue &backButtonId,
-	                       const YCPString &backButtonLabel,
-	                        const YCPValue &abortButtonId,
-	                       const YCPString &abortButtonLabel,
-	                        const YCPValue &nextButtonId,
-	                       const YCPString &nextButtonLabel);
-	virtual bool     hasWizard() { return true; }
+    virtual YWidget *createWizard (YWidget *parent,
+                                YWidgetOpt &opt,
+                            const YCPValue &backButtonId,
+                           const YCPString &backButtonLabel,
+                            const YCPValue &abortButtonId,
+                           const YCPString &abortButtonLabel,
+                            const YCPValue &nextButtonId,
+                           const YCPString &nextButtonLabel);
+    virtual bool     hasWizard() { return true; }
 
     virtual int  getDisplayWidth();
     virtual int  getDisplayHeight();
@@ -209,59 +205,64 @@ public:
     virtual bool richTextSupportsTable();
     virtual bool leftHandedMouse();
 
-	virtual YCPString glyph (const YCPSymbol &glyph);
-	virtual void redrawScreen();
+    virtual YCPString glyph (const YCPSymbol &glyph);
+    virtual void redrawScreen();
 
-	// convience function to be used rather than currentDialog()
-	// NULL if there is no dialog at the moment.
-	GtkWindow *currentWindow();
+    // convience function to be used rather than currentDialog()
+    // NULL if there is no dialog at the moment.
+    GtkWindow *currentWindow();
 
-	virtual void busyCursor();
-	virtual void normalCursor();
-	guint busy_timeout;  // for busy cursor
-	static gboolean busy_timeout_cb (gpointer data);
+    virtual void busyCursor();
+    virtual void normalCursor();
+    guint busy_timeout;  // for busy cursor
+    static gboolean busy_timeout_cb (gpointer data);
 
 #ifdef ENABLE_BEEP
-	virtual void beep();
+    virtual void beep();
 #endif
-	virtual void makeScreenShot (string filename);
+    virtual void makeScreenShot (string filename);
 
     /* File/directory dialogs. */
     virtual YCPValue askForExistingDirectory (const YCPString &startDir,
-					      const YCPString &headline);
+                                              const YCPString &headline);
     virtual YCPValue askForExistingFile (const YCPString &startWith,
-					 const YCPString &filter, const YCPString &headline);
+                                         const YCPString &filter,
+                                         const YCPString &headline);
     virtual YCPValue askForSaveFileName (const YCPString &startWith,
-					 const YCPString &filter, const YCPString &headline);
+                                         const YCPString &filter,
+                                         const YCPString &headline);
 
-	// Starts macro recording and asks for a filename to save it to
-	// If there is already one in progress, it just resumes/pauses as appropriate
-	// activated by Ctrl-Shift-Alt-M
-	void toggleRecordMacro();
+    // Starts macro recording and asks for a filename to save it to
+    // If there is already one in progress, it just resumes/pauses as appropriate
+    // activated by Ctrl-Shift-Alt-M
+    void toggleRecordMacro();
 
-	// Plays a macro, opening a dialog first to ask for the filename
-	// activated by Ctrl-Shift-Alt-P
-	void askPlayMacro();
+    // Plays a macro, opening a dialog first to ask for the filename
+    // activated by Ctrl-Shift-Alt-P
+    void askPlayMacro();
 
  private:
-    bool m_have_wm;
-    bool m_fullscreen;
-    bool m_no_border;
+    // window-related arguments
+    bool m_have_wm, m_no_border, m_fullscreen;
     GtkRequisition m_default_size;
+
     // for delayed gtk+ init in the right thread
     bool   m_done_init;
     int    m_argc;
     char **m_argv;
     void  checkInit();
 
-	// for screenshots:
-	map <string, int> screenShotNb;
-	string screenShotNameTemplate;
+    // for screenshots:
+    map <string, int> screenShotNb;
+    string screenShotNameTemplate;
 
  public:
     // Helpers for internal use [ visibility hidden ]
-    long defaultSize(YUIDimension dim);
-    bool haveWM() const;
+    long defaultSize(YUIDimension dim)
+        { return (dim == YD_HORIZ) ? getDefaultWidth() : getDefaultHeight(); }
+    bool setFullscreen() const { return m_fullscreen || !m_have_wm; }
+    bool hasWM() const { return m_have_wm; }
+    bool unsetBorder() const { return m_no_border; }
 };
 
 // debug helpers.

@@ -4,36 +4,34 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YDialog.h"
 #include "YGWidget.h"
 #include <gdk/gdkkeysyms.h>
 
-/* NOTE: In the main dialog case (when opt.hasDefaultSize is set), it doesn't
+/* In the main dialog case (when opt.hasDefaultSize is set), it doesn't
    necessarly have a window of its own. If there is already a main window, it
    should replace its content -- and when closed, the previous dialog restored.
-   For that, we use two classes:
-     YGWindow: this one is a simple class that does the window-ing work.
-     YGDialog: does the YDialog work and has a refence to some YGWindow, which
-     may not be exclusive in the case of a main dialog.
-     showDialog() and hideDialog() are the calls that set the current dialog.
-*/
 
-/*
-  FIXME: YGWindow should know nothing about YGDialog. Instead, it should
-  be a GObject (or GtkWindow-inherited) and use Gtk signal mechanism. */
+   Therefore, we have a YGDialog (the YDialog implementation), and a YGWindow
+   that does the windowing work and has a YWidget has its children, which can
+   be a YGDialog and is swap-able.
+   They communicate like: YWidgets <-> YGDialog <-> YGWindow
+   Both, YGDialog and YGWindow, keep references for each. It has been thought
+   of making YGWindow totally blind communicating to its YGDialogs via signals
+   (GTK+'s ones), but keeping a reference allows us to be more efficient by
+   just notifying the current children of the new size while having a simple
+   design.
+*/
 
 class YGWindow;
 static YGWindow *main_window = NULL;
 
 class YGWindow
 {
-	GtkRequisition m_userSize;
-
 	GtkWidget *m_widget;
 	int m_refcount;
+	bool m_userResized;
 
-	// we need some cross-reference here for setSize()
-	YDialog *m_ydialog;
+	YWidget *m_containee;
 
 public:
 	YGWindow (bool main_window)
@@ -43,14 +41,23 @@ public:
 		g_object_ref (G_OBJECT (m_widget));
 		gtk_object_sink (GTK_OBJECT (m_widget));
 
-		m_userSize.width = m_userSize.height = -1;
 		m_refcount = 0;
-		m_ydialog = 0;
+		m_userResized = false;
+		m_containee = 0;
 		if (main_window)
 			::main_window = this;
 
-		if (main_window)
-			gtk_window_set_title (GTK_WINDOW (m_widget), "YaST");
+		if (main_window) {
+			GtkWindow *window = GTK_WINDOW (m_widget);
+
+			gtk_window_set_title (window, "YaST");
+			setSize (YGUI::ui()->getDefaultWidth(), YGUI::ui()->getDefaultHeight());
+
+			if (YGUI::ui()->setFullscreen())
+				gtk_window_fullscreen (window);
+			if (YGUI::ui()->unsetBorder())
+				gtk_window_set_decorated (window, FALSE);
+		}
 		else {
 			// set the icon of the parent (if it exists)
 			GtkWindow *parent = YGUI::ui()->currentWindow();
@@ -66,46 +73,45 @@ public:
 			else
 				gtk_window_set_title (window, "YaST");
 
-			gtk_window_set_modal (GTK_WINDOW (m_widget), TRUE);
-			gtk_window_set_type_hint (GTK_WINDOW (m_widget),
-			                          GDK_WINDOW_TYPE_HINT_DIALOG);
-			if (!YGUI::ui()->haveWM())
-				gtk_window_set_has_frame (GTK_WINDOW (m_widget), TRUE);
+			gtk_window_set_modal (window, TRUE);
+			gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
+
+			if (!YGUI::ui()->hasWM())
+				g_signal_connect (G_OBJECT (m_widget), "expose-event",
+				                  G_CALLBACK (draw_border_cb), this);
 		}
 
 		g_signal_connect (G_OBJECT (m_widget), "configure_event",
 		                  G_CALLBACK (configure_event_cb), this);
 		g_signal_connect (G_OBJECT (m_widget), "delete_event",
 		                  G_CALLBACK (close_window_cb), this);
-		g_signal_connect (G_OBJECT (m_widget), "key-press-event",
-		                  G_CALLBACK (key_pressed_cb), NULL);
+		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
+		                        G_CALLBACK (key_pressed_cb), this);
 	}
 
 	~YGWindow()
 	{
 		IMPL
-		setChild (NULL, NULL);
+		setChild (NULL);
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
 	}
 
-	void setChild (GtkWidget *new_child, YDialog *new_child_y)
+	void setChild (YWidget *new_child)
 	{
 		IMPL
+		m_containee = new_child;
+
 		GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
 		if (child)
 			gtk_container_remove (GTK_CONTAINER (m_widget), child);
 		if (new_child) {
-			gtk_container_add (GTK_CONTAINER (m_widget), new_child);
+			child = YGWidget::get (new_child)->getWidget();
+			gtk_container_add (GTK_CONTAINER (m_widget), child);
 
-			// signal our size to the dialog
-			if (new_child_y->hasChildren()) {
-				int width, height;
-				gtk_window_get_size (GTK_WINDOW (m_widget), &width, &height);
-				new_child_y->child (0)->setSize (width, height);
-			}
+			// notify our size to the containee
+			setSize (0, 0);
 		}
-		m_ydialog = new_child_y;
 	}
 
 	// YGDialog should not destroy its YGWindow. Instead, they should use this
@@ -126,27 +132,38 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	bool userResized ()
-	{ return m_userSize.width > 0 && m_userSize.height > 0; }
+	bool userResized () const
+	{ return m_userResized; }
 
 	long getSize (YUIDimension dim)
 	{
-		if (dim == YD_HORIZ)
-			return m_userSize.width;
-		else
-			return m_userSize.height;
+		GtkAllocation *alloc = &m_widget->allocation;
+		return (dim == YD_HORIZ) ? alloc->width : alloc->height;
 	}
 
-	void setSize (long width, long height)
+	// sets a size to the window. Pass width=0 and height=0 to just notify
+	// containee of current size
+	void setSize (int width, int height)
 	{
 		IMPL
-		int reqw, reqh;
-		gtk_window_get_default_size (GTK_WINDOW (m_widget), &reqw, &reqh);
-		if (reqw == width && reqh == height)
-				return;
-		gtk_window_resize (GTK_WINDOW (m_widget), width, height);
-		if (m_ydialog && m_ydialog->hasChildren())
-			m_ydialog->child (0)->setSize (width /*- m_padding*/, height);
+		// we will call containee setSize(), so this is a lock to let
+		// containee call this function on its setSize() in case it was
+		// called by another party.
+		static bool lock = false;
+
+		if (!lock) {
+			lock = true;
+
+			if (width && height)
+				gtk_window_resize (GTK_WINDOW (m_widget), width, height);
+			else
+				gtk_window_get_size (GTK_WINDOW (m_widget), &width, &height);
+
+			if (m_containee)
+				m_containee->setSize (width, height);
+
+			lock = false;
+		}
 	}
 
 	static gboolean close_window_cb (GtkWidget *widget, GdkEvent  *event,
@@ -172,8 +189,7 @@ public:
 #endif
 
 			pThis->setSize (event->width, event->height);
-			pThis->m_userSize.width = event->width;
-			pThis->m_userSize.height = event->height;
+			pThis->m_userResized = true;
 		}
 
 		return FALSE;
@@ -214,7 +230,26 @@ public:
 		}
 		return FALSE;
 	}
+
+	static gboolean draw_border_cb (GtkWidget *widget, GdkEventExpose *event,
+	                                YGWindow *pThis)
+	{
+		IMPL
+		// to avoid background from overlapping, we emit the expose to the containee
+		// ourselves
+		gtk_container_propagate_expose (GTK_CONTAINER (widget),
+		                                gtk_bin_get_child (GTK_BIN (widget)),
+		                                event);
+
+		GtkAllocation *alloc = &widget->allocation;
+		gtk_draw_shadow (gtk_widget_get_style (widget), widget->window,
+		                 GTK_STATE_NORMAL, GTK_SHADOW_ETCHED_OUT,
+		                 alloc->x, alloc->y, alloc->width, alloc->height);
+		return TRUE;
+	}
 };
+
+#include "YDialog.h"
 
 class YGDialog : public YDialog, public YGWidget
 {
@@ -256,10 +291,11 @@ public:
 			gtk_box_pack_start (GTK_BOX (getWidget()), m_fixed, TRUE, TRUE, 0);
 		gtk_widget_show_all (getWidget());
 
-		// NOTE: we need to add this containter to the window, else weird stuff
-		// happens (like if we set a pango font description to a GtkLabel, size
-		// request would output the size without that description set...)
-		m_window->setChild (m_widget, this);
+		// NOTE: we need to add this containter to the window right here, else
+		// weird stuff happens (like if we set a pango font description to a
+		// GtkLabel, size request would output the size without that description
+		// set...)
+		m_window->setChild (this);
 	}
 
 	virtual ~YGDialog()
@@ -270,13 +306,14 @@ public:
 	void showWindow()
 	{
 		IMPL
-		m_window->setChild (m_widget, this);
+		m_window->setChild (this);
 		gtk_widget_show (m_window->getWidget());
 	}
 
 	void hideWindow()
 	{
 		IMPL
+		m_window->setChild (NULL);
 		gtk_widget_hide (m_window->getWidget());
 	}
 
@@ -306,6 +343,8 @@ public:
 	{
 		IMPL
 		m_window->setSize (width, height);
+		if (hasChildren())
+			child (0)->setSize (width - m_padding, height);
 	}
 };
 

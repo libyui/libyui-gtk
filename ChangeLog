@@ -1,3 +1,10 @@
+2006-09-27  Ricardo Cruz    <rpcmruz@clix.pt>
+
+	* src/YGDialog.cc: cleanups; decided not to make use of signals for
+	YGWindow.
+	* src/YGDialog.cc & YGUI.cc: added support for --geometry, --fullscreen,
+	--noborder and --nowm.
+
 2006-09-23  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGUI.h and others: disabled the debugging printing by default.

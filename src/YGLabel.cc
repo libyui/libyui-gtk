@@ -36,17 +36,7 @@ public:
 	// YGWidget
 	YGWIDGET_IMPL_SET_SIZE
 	YGWIDGET_IMPL_SET_ENABLING
-//	YGWIDGET_IMPL_NICESIZE
-
-virtual long nicesize (YUIDimension dim)
-{
-long size = getNiceSize (dim);
-printf ("%s nice size for label %s: %ld\n",
-	dim == YD_HORIZ ? "horizontal" : "vertical", debugLabel().c_str(), size);
-return size;
-}
-
-
+	YGWIDGET_IMPL_NICESIZE
 	virtual bool setKeyboardFocus()
 	{
 		if (GTK_IS_ENTRY (getWidget())) {

@@ -22,14 +22,15 @@ YGUI::YGUI (int argc, char ** argv,
 	    const char *macro_file) :
 	YUI (with_threads),
 	busy_timeout (0),
-	m_have_wm (true),
-	m_fullscreen (false),
-	m_no_border (false),
 	m_done_init (false),
 	m_argc (0),
 	m_argv (NULL)
 {
-	IMPL;
+	IMPL
+	m_have_wm = true;
+	m_no_border = m_fullscreen = false;
+	m_default_size.width = m_default_size.height = 0;
+
 	m_argc = argc;
 	m_argv = g_new0 (char *, argc);
 	memcpy (m_argv, argv, sizeof (char *) * argc);
@@ -45,43 +46,46 @@ YGUI::YGUI (int argc, char ** argv,
 	{
 		const char *argp = m_argv[i];
 		if (!argp) continue;
-		if (argp[0] != '-')
-		{
-			printf ("Unknown argument '%s'\n", argp);
+		if (argp[0] != '-') {
+			printf ("Warning: Unknown argument '%s'\n", argp);
 			continue;
 		}
 		argp++;
 		if (argp[0] == '-') argp++;
+
 		if (!strcmp (argp, "no-wm"))
 			m_have_wm = false;
-
 		else if (!strcmp (argp, "fullscreen"))
 			m_fullscreen = true;
-
 		else if (!strcmp (argp, "noborder"))
 			m_no_border = true;
-
-		// FIXME: handle/parse geometry option
-
-		else if (!strcmp (argp, "help"))
-		{
+		else if (!strcmp (argp, "geometry")) {
+			argp = argv [++i];
+			if (i == argc)
+				printf ("Warning: no value passed to --geometry\n");
+			else if (sscanf (argp, "%dx%d", &m_default_size.width,
+			                 &m_default_size.height) == EOF) {
+				printf ("Warning: invalid --geometry value: %s\n", argp);
+				m_default_size.width = m_default_size.height = 0;
+			}
+		}
+		else if (!strcmp (argp, "help")) {
 			printf (
 				 "Command line options for the YaST2 Gtk UI:\n"
 				 "\n"
-				 "--nothreads   run without additional UI threads\n"
 				 "--no-wm       assume no window manager is running\n"
-				 "--fullscreen  use full screen for `opt(`defaultsize) dialogs\n"
-				 "--noborder    no window manager border for `opt(`defaultsize) dialogs\n"
-				 "--help        this help text\n"
+				 "--noborder    no window manager border for main dialogs\n"
+				 "--fullscreen  use full screen for main dialogs\n"
+				 "--geomtry WxH sets a default size of W per H to main dialogs\n"
+				 "--nothreads   run without additional UI threads\n"
+				 "--help        prints this help text\n"
 				 "\n"
 				 );
-
-			// FIXME: raiseFatalError
+			exit (0);
 		}
+		else
+			printf ("Warning: Unknown argument '--%s'\n", argp);
 	}
-
-	m_default_size.width = -1;
-	m_default_size.height = -1;
 
 	if (macro_file)
 		playMacro (macro_file);
@@ -98,8 +102,8 @@ YGUI::~YGUI()
 
 static gboolean
 ycp_wakeup_fn (GIOChannel   *source,
-				GIOCondition  condition,
-				gpointer      data)
+               GIOCondition  condition,
+               gpointer      data)
 {
 	*(int *)data = TRUE;
 	return TRUE;
@@ -115,8 +119,7 @@ void YGUI::checkInit()
 void
 YGUI::idleLoop (int fd_ycp)
 {
-	IMPL;
-
+	IMPL
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -130,7 +133,7 @@ YGUI::idleLoop (int fd_ycp)
 
 	int woken = FALSE;
 	guint watch_tag = g_io_add_watch (wakeup, (GIOCondition)(G_IO_IN | G_IO_PRI),
-					  ycp_wakeup_fn, &woken);
+	                                  ycp_wakeup_fn, &woken);
 	while (!woken)
 		g_main_iteration (TRUE);
 
@@ -197,7 +200,8 @@ void dumpWidgetTree (GtkWidget *widget, int indent)
 	if (GTK_IS_CONTAINER (widget))
 		children = gtk_container_get_children (GTK_CONTAINER (widget));
 
-	fprintf (stderr, "Widget %p (%s) [%s] children (%d) req (%d,%d) alloc (%d,%d, %d,%d)\n",
+	fprintf (stderr, "Widget %p (%s) [%s] children (%d) req (%d,%d) "
+	                 "alloc (%d,%d, %d,%d)\n",
 		widget, g_type_name_from_instance ((GTypeInstance *)widget),
 		GTK_WIDGET_VISIBLE (widget) ? "visible" : "invisible",
 		g_list_length (children),
@@ -235,52 +239,49 @@ void dumpYastTree (YWidget *widget, int indent)
 #endif
 }
 
-static GdkScreen *
-getScreen ()
+static GdkScreen *getScreen ()
 {
-	return gdk_display_get_default_screen (
-		gdk_display_get_default());
+	return gdk_display_get_default_screen (gdk_display_get_default());
 }
 
-int
-YGUI::getDisplayWidth()
+int YGUI::getDisplayWidth()
 {
-	IMPL;
+	IMPL
 	return gdk_screen_get_width (getScreen());
 }
 
-int
-YGUI::getDisplayHeight()
+int YGUI::getDisplayHeight()
 {
-	IMPL;
+	IMPL
 	return gdk_screen_get_height (getScreen());
 }
 
 int YGUI::getDisplayDepth()
 {
-	IMPL;
+	IMPL
 	return 24; // FIXME: what is this used for ?
 }
 
 long YGUI::getDisplayColors()
 {
-	IMPL;
+	IMPL
 	return 256*256*256; // FIXME: what is this used for ?
 }
 
-// 70% of screen size ... (or 800x600)
-#define SHRINK(a) (int)(0.7 * (a))
 int YGUI::getDefaultWidth()
 {
-	// FIXME: -fullscreen option ?
-	IMPL;
-	return MAX(SHRINK(gdk_screen_get_width (getScreen())), 800);
+	IMPL
+	if (!m_default_size.width)
+		m_default_size.width = MIN (800, getDisplayWidth());
+	return m_default_size.width;
 }
 
 int YGUI::getDefaultHeight()
 {
-	IMPL;
-	return MAX(SHRINK(gdk_screen_get_height (getScreen())), 600);
+	IMPL
+	if (!m_default_size.height)
+		m_default_size.height = MIN (640, getDisplayHeight());
+	return m_default_size.height;
 }
 
 static void errorMsg (const char *msg)
@@ -632,42 +633,4 @@ void YGUI::askPlayMacro()
 		playMacro (filename->value_cstr());
 		sendEvent (new YEvent());  // flush
 	}
-}
-
-// Internal helper functions
-bool YGUI::haveWM() const
-{
-	return m_have_wm;
-}
-
-long YGUI::defaultSize (YUIDimension dim)
-{
-	// FIXME: check for panel etc. bits available vs. full screen size
-	GtkRequisition availableSize = { getDisplayWidth(), getDisplayHeight() };
-
-	if (m_fullscreen || !haveWM())
-		return dim == YD_HORIZ ? getDisplayWidth() : getDisplayHeight();
-
-	// FIXME: should parse --geometry options ?
-	m_default_size.width = -1;
-	m_default_size.height = -1;
-
-	if (m_default_size.width  < 800 ||
-	    m_default_size.height < 600) {
-		if (getDisplayWidth() >= 1024 &&
-		    getDisplayHeight() >= 768) { // 70% of screen size
-#ifdef IMPL_DEBUG
-			fprintf (stderr, "YGUI::defaultSize - set 70%%\n");
-#endif
-			m_default_size.width = MAX ((int)(availableSize.width * 0.7), 800);
-			m_default_size.height = MAX ((int)(availableSize.height * 0.7), 600);
-		}
-	} else {
-#ifdef IMPL_DEBUG
-		fprintf (stderr, "YGUI::defaultSize - has sane m_default_size already\n");
-#endif
-		m_default_size = availableSize;
-	}
-	
-	return (dim == YD_HORIZ) ? m_default_size.width : m_default_size.height;
 }
