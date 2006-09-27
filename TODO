@@ -3,10 +3,18 @@
 = Look and feel =
 
 * BarGraph / RatioBox
-	Let tiny widgets still have some pixels visible for popup menu.
+  Let tiny widgets still have some pixels visible for popup menu.
 
-* Wizard appears to have a load of padding around the edge.
+* Wizard appears to have a load of padding around the edge. The interface
+  code could use a review anyway.
 
+* YGRichText should use GtkHtml when available, so that we get support for
+  tables.
+
+* YGtkFieldEntry is just too damn big. Could use a re-write.
+
+* Accessibility and internationalization (from the package selector) needs to be
+  implemented.
 
 = Package Selector =
 (this little monster diserves a section of its own. =))
