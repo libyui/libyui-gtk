@@ -271,16 +271,24 @@ long YGUI::getDisplayColors()
 int YGUI::getDefaultWidth()
 {
 	IMPL
-	if (!m_default_size.width)
-		m_default_size.width = MIN (800, getDisplayWidth());
+	if (!m_default_size.width) {
+		if (m_fullscreen)
+			m_default_size.width = getDisplayWidth();
+		else
+			m_default_size.width = MIN (800, getDisplayWidth());
+	}
 	return m_default_size.width;
 }
 
 int YGUI::getDefaultHeight()
 {
 	IMPL
-	if (!m_default_size.height)
-		m_default_size.height = MIN (640, getDisplayHeight());
+	if (!m_default_size.height) {
+		if (m_fullscreen)
+			m_default_size.height = getDisplayHeight();
+		else
+			m_default_size.height = MIN (640, getDisplayHeight());
+	}
 	return m_default_size.height;
 }
 

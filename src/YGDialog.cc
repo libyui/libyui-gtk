@@ -49,12 +49,8 @@ public:
 
 		if (main_window) {
 			GtkWindow *window = GTK_WINDOW (m_widget);
-
 			gtk_window_set_title (window, "YaST");
-			setSize (YGUI::ui()->getDefaultWidth(), YGUI::ui()->getDefaultHeight());
 
-			if (YGUI::ui()->setFullscreen())
-				gtk_window_fullscreen (window);
 			if (YGUI::ui()->unsetBorder())
 				gtk_window_set_decorated (window, FALSE);
 		}

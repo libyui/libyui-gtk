@@ -261,8 +261,8 @@ public:
     long defaultSize(YUIDimension dim)
         { return (dim == YD_HORIZ) ? getDefaultWidth() : getDefaultHeight(); }
     bool setFullscreen() const { return m_fullscreen || !m_have_wm; }
-    bool hasWM() const { return m_have_wm; }
-    bool unsetBorder() const { return m_no_border; }
+    bool hasWM() const         { return m_have_wm; }
+    bool unsetBorder() const   { return m_no_border; }
 };
 
 // debug helpers.
