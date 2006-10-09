@@ -1,5 +1,8 @@
 2006-10-09  Michael Meeks  <michael.meeks@novell.com>
 
+	* gtkize-iso: 1st pass at a tool to 'gtk'ize an
+	existing install ISO.
+
 	* src/ygtkrichtext.c (ygtk_richtext_init): add 'tt' -> monospace.
 
 2006-10-09  Thomas Meeks  <thomas@imaginator.com>

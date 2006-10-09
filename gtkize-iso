@@ -1,0 +1,50 @@
+#!/bin/sh
+
+SUDO=sudo
+MOUNTBASE=/tmp
+rootimage=/boot/i386/root
+
+printhelp()
+{
+    echo "Usage: $0 [OPTIONS] <source-ISO> <dest-ISO>"
+    echo
+    echo "OPTIONS:"
+    echo "    -h, --help: help";
+    echo
+}
+
+if (test "z$1" = 'z-h') || (test "z$1" = 'z--help'); then
+    printhelp; exit 0;
+fi
+
+source=$1
+dest=$2
+
+if (test "z$source" = "z") || (test "z$dest" = "z"); then
+    printhelp; exit 1;
+fi
+
+echo "copy from $source $dest";
+
+ISODIR=`mktemp -d $MOUNTBASE/ygtk-iso.XXXXXX`
+$SUDO mount -o loop $source $ISODIR
+echo "Mounted $source"
+
+ROOTDIR=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
+$SUDO mount -o loop "$ISODIR$rootimage" $ROOTDIR
+echo "Mounted old root"
+
+NEWROOT=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
+echo "Creating new root at $NEWROOT"
+echo -n "  copying..."
+# do this to preserve hard links
+$SUDO tar -C $ROOTDIR -O -c . | $SUDO tar -x -C $NEWROOT >& /dev/null
+echo " done"
+
+
+$SUDO umount $ROOTDIR
+rmdir $ROOTDIR
+$SUDO umount $ISODIR
+rmdir $ISODIR
+echo "Done new iso in $dest."
+
