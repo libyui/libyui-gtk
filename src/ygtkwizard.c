@@ -133,6 +133,8 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 
 static void ygtk_wizard_init (YGtkWizard *wizard)
 {
+	GtkWidget *spacer = gtk_hbox_new (FALSE, 0);
+
 	wizard->menu_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                          destroy_strings, NULL);
 	wizard->tree_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
@@ -215,7 +217,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	wizard->m_button_box = gtk_hbutton_box_new();
 	gtk_button_box_set_layout (GTK_BUTTON_BOX (wizard->m_button_box), GTK_BUTTONBOX_END);
-	gtk_container_set_border_width (GTK_CONTAINER (wizard->m_button_box), 10);
+	gtk_container_set_border_width (GTK_CONTAINER (wizard->m_button_box), 0);
 	gtk_box_set_spacing (GTK_BOX (wizard->m_button_box), 4);
 	gtk_container_add (GTK_CONTAINER (wizard->m_button_box), wizard->m_abort_button);
 	gtk_container_add (GTK_CONTAINER (wizard->m_button_box), wizard->m_back_button);
@@ -235,6 +237,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_box_pack_start (GTK_BOX (main_vbox), wizard->m_menu, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (main_vbox), wizard->m_title_hbox, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (main_vbox), wizard->m_help_program_pane, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (main_vbox), spacer, FALSE, FALSE, 4);
 	gtk_box_pack_start (GTK_BOX (main_vbox), wizard->m_button_box, FALSE, TRUE, 0);
 
 	wizard->m_main_hbox = gtk_hbox_new (FALSE, 0);

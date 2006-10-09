@@ -1,3 +1,15 @@
+2006-10-09  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkrichtext.c (ygtk_richtext_init): add 'tt' -> monospace.
+
+2006-10-09  Thomas Meeks  <thomas@imaginator.com>
+
+	* src/YGWidget.cc (doSetSize): don't set request < -1 ever,
+	prunes warning.
+
+	* src/ygtkwizard.c (ygtk_wizard_init): add spacer & re-arrange
+	padding to improve bottom button box spacing.
+
 2006-09-27  Ricardo Cruz    <rpcmruz@clix.pt>
 
 	* src/YGDialog.cc: cleanups; decided not to make use of signals for

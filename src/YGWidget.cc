@@ -141,7 +141,7 @@ YGWidget::doSetSize (long width, long height)
 	// leave some blank space around...
 	width  -= m_border * 2;
 	height -= m_border * 2;
-	gtk_widget_set_size_request (getWidget(), width, height);
+	gtk_widget_set_size_request (getWidget(), MAX(width, -1), MAX(height, -1));
 }
 
 void
