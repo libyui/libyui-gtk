@@ -24,6 +24,12 @@ if (test "z$source" = "z") || (test "z$dest" = "z"); then
     printhelp; exit 1;
 fi
 
+mkcromfs=`which mkcromfs 2>/dev/null`
+if (test "z$mkcromfs" = "z") || (! test -x $mkcromfs); then
+	echo "Must have cromfs installed see http://iki.fi/bisqwit/source/cromfs.html"
+	exit 1;
+fi
+
 echo "copy from $source $dest";
 
 ISODIR=`mktemp -d $MOUNTBASE/ygtk-iso.XXXXXX`
@@ -34,17 +40,36 @@ ROOTDIR=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
 $SUDO mount -o loop "$ISODIR$rootimage" $ROOTDIR
 echo "Mounted old root"
 
-NEWROOT=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
 echo "Creating new root at $NEWROOT"
+NEWROOT=`mktemp -d $MOUNTBASE/ygtk-newroot.XXXXXX`
 echo -n "  copying..."
 # do this to preserve hard links
 $SUDO tar -C $ROOTDIR -O -c . | $SUDO tar -x -C $NEWROOT >& /dev/null
 echo " done"
-
-
 $SUDO umount $ROOTDIR
 rmdir $ROOTDIR
+
+# Do the interesting work ...
+echo "Do something !"
+# End of interesting work ...
+
+echo -n "Compressing image..."
+NEWROOTFS=`mktemp $MOUNTBASE/ygtk-cromfs.XXXXXX`
+$SUDO $mkcromfs $NEWROOT $NEWROOTFS
+echo " done"
+
+echo -n "Creating new CD image..."
+NEWIMAGE=`mktemp $MOUNTBASE/ygtk-cromfs.XXXXXX`
+$SUDO cp -a $ISODIR $NEWIMAGE
+$SUDO cp -a $NEWROOTFS "$NEWIMAGE$rootimage"
 $SUDO umount $ISODIR
 rmdir $ISODIR
-echo "Done new iso in $dest."
+echo " done"
 
+$SUDO mkisofs -p "Yast-GTK installer" -publisher "Fools, Inc." \
+     -r -J -f -pad -no-emul-boot -boot-load-size 4 -boot-info-table \
+    -b boot/i386/loader/isolinux.bin -c boot/i386/boot.catalog -hide \
+    boot/i386/boot.catalog -hide-joliet boot/i386/boot.catalog -A \
+    "SUSE-Yast-GTK#0" -V SU1010.001 -o $dest $NEWROOTFS
+
+echo "Done new iso in $dest."
