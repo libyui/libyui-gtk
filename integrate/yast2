@@ -1,0 +1,280 @@
+#!/bin/bash
+
+# File:         /sbin/yast2
+# Module:       yast2
+# Summary:      YaST2 launch script
+#
+# This script is responsable to start the YaST setup tools. If no arguments
+# are given, a control center should be launched that will call this same script
+# with the wanted setup tool as an argument. In which case, we shall detect the
+# best YaST frontend to provide (eg. gtk for gnome, qt for kde, ncurses for console).
+#
+
+export PATH=/sbin:/usr/sbin:$PATH
+
+# load common script functions
+# (like the detection of frontend plugins)
+. /usr/lib/YaST2/bin/yast2-funcs
+
+# allow user to over-rule the default frontend via a global file
+FRONTEND="auto"
+if test -f /etc/sysconfig/yast2; then
+    . /etc/sysconfig/yast2
+fi
+
+# Arguments to be passed for frontend and the control center (like the --fullscreen)
+YAST_ARGS=""
+
+printhelp()
+{
+	echo "Usage: $0 [OPTIONS] [MODULE] [module specific parameters]"
+	echo
+	echo "OPTIONS:"
+	echo "	-l, --list      list all available modules"
+	echo "	-g, --geometry  default window size (graphical frontend only)"
+	echo "	--noborder      no window manager border for main window (graphical frontend only)"
+	echo "	--fullscreen    use full screen (graphical frontend only)"
+	echo "	-s, --style     widget style (qt only)"
+	echo "	-h, --help      this message"
+	echo
+	echo "exceptional case for installing packages:"
+	echo "$0 OPTION <package> [<package> [...]]"
+	echo
+	echo "OPTION:"
+	echo "	-i, --install   install rpm package"
+	echo
+	echo "<package> can be a single short package name (e.g. gvim)"
+	echo "which will be installed with dependency checking, or the full"
+	echo "path to an rpm package (e.g /tmp/gvim.rpm) which will be"
+	echo "installed without dependency checking"
+	echo
+}
+
+listmodules()
+{
+	list=`/bin/ls -1 /usr/share/applications/YaST2/*.desktop 2>/dev/null`
+
+	if [ -z "$list" ] ; then
+		echo "No modules installed"
+	else
+		echo "Available modules:"
+		echo
+		grep -h "Exec=/sbin/yast2 " $list | \
+			sed 's|Exec=/sbin/yast2 \([^ ]\+\)\( .*\)\?|\1|' | \
+			sort -u
+	fi
+}
+
+run_yast_menu()
+{
+	if [ $FRONTEND == "ncurses" ]; then
+		while true ; do
+			$ybindir/y2base menu ncurses $YAST_ARGS
+			if [ ! -e "/var/lib/YaST2/restart_menu" ] ; then
+				break
+			fi
+		done
+	else  # gtk or qt
+		if [ $WINDOWMANAGER | grep -qi "gnome" ] &&
+		   [ -e "/usr/bin/y2controlcenter-gnome" ]; then
+			$y2controlcenter-gnome $YAST_ARGS
+		elif [ -e "$ybindir/y2controlcenter" ]; then
+			$ybindir/y2controlcenter $YAST_ARGS
+		else
+			# run the same YCP menu, like ncurses
+			$ybindir/y2base "menu" $FRONTEND $YAST_ARGS
+		fi
+	fi
+}
+
+## PARSE arguments
+TEMP=`/usr/bin/getopt -o hlg:s:Si --long help,list,kcontrol,geometry:,style:,strings,install,fullscreen,noborder \
+     -n 'yast2' -- "$@"`
+
+if [ $? != 0 ] ; then
+	echo "Exit." >&2
+	exit 1
+fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$TEMP"
+
+while true ; do
+	case "$1" in
+		-h|--help)     printhelp; exit 0 ;;
+		-l|--list)     listmodules; exit 0 ;;
+		-g|--geometry) YAST_ARGS="$YAST_ARGS -geometry $2"; shift 2; ;;
+		-i|--install)  Y2_INSTALL_PACKAGES=true; shift ;;
+		--fullscreen)  YAST_ARGS="$YAST_ARGS --fullscreen"; shift ;;
+		--noborder)    YAST_ARGS="$YAST_ARGS --noborder"  ; shift ;;
+		--kcontrol)    YAST_ARGS="$YAST_ARGS --kcontrol_id YaST" ; shift ;;
+		--) shift ; break ;;
+		*)  echo "Unrecognized option $1" ; exit 1 ;;
+
+		# IMPORTANT: Remember to change that "getopt" call above, too
+		# if you change anything here!
+	esac
+done
+
+if [ "$Y2_INSTALL_PACKAGES" = "true" ]; then
+	export module=sw_single
+else
+	# allow module as argument, defaults to "menu"
+	export module="${1-menu}"
+	shift
+fi
+
+case "`/usr/bin/basename $0`" in
+	YaST|yast|yast1|zast)
+		unset DISPLAY
+	;;
+esac
+
+if [ "$UID" = 0 ]; then
+    echo $$ > /var/run/yast.pid
+fi
+
+# set lang from sysconfig
+set_lang_from_sysconfig
+
+## CHECK what frontend we should use
+if [ $FRONTEND != "ncurses" ] && [ $FRONTEND != "qt" ] && [ $FRONTEND != "gtk" ] && \
+   [ $FRONTEND != "auto" ]; then
+	echo "Warning: specified frontend $FRONTEND is unknown."
+	FRONTEND="auto"
+fi
+
+if [ $FRONTEND == "auto" ]; then
+	if [ -z "$DISPLAY" ]; then
+		# using the terminal
+		FRONTEND="ncurses"
+	else
+		# running on X11
+		# TODO: maybe GTK could be the default one? ;-)
+		if echo $WINDOWMANAGER | grep -qi "gnome" || \
+		   echo $WINDOWMANAGER | grep -qi "xfce"  ; then
+			FRONTEND="gtk"
+		else
+			FRONTEND="qt"
+		fi
+	fi
+fi
+
+# fallbacks should go here so that an user preferred frontend also fallback
+if [ $FRONTEND == "gtk" ] && ! check_gtk && check_qt ; then
+	FRONTEND="qt"
+fi
+if [ $FRONTEND == "qt" ] && ! check_qt && check_gtk ; then
+	FRONTEND="gtk"
+fi
+if [ $FRONTEND != "ncurses" ] && ! check_qt && ! check_gtk ; then
+	FRONTEND="ncurses"
+fi
+if [ $FRONTEND == "ncurses" ] && ! check_ncurses; then
+	echo "Error: please install yast2-ncurses to use the YaST2 text mode interface"
+	exit 1
+fi
+
+## SET frontend specific environment settings and whatever they need
+if [ $FRONTEND == "ncurses" ]; then
+	TTY=`/usr/bin/tty`
+	# on console, start yast in UTF-8 locale (only on a 'local' console)
+	if [ "$TERM" = "linux" -a \( "$TTY" = /dev/console -o "$TTY" != "${TTY#/dev/tty[0-9]}" \) ] ; then
+		case "$LANG" in
+			# if it is known that a language doesn't yet work well with ncurses
+			# on console use English instead:
+			ja*|ko*|zh*)
+				export LANG=en_US.UTF-8
+				export LC_CTYPE=en_US.UTF-8
+				;;
+			*)
+				# get rid of encoding and/or modifier
+				export LANG=${LANG%%[.@]*}.UTF-8
+				export LC_CTYPE=${LANG%%[.@]*}.UTF-8
+				;;
+		esac
+		if /bin/testutf8 ; [ $? -ne 2 ] ; then
+			/usr/bin/test -x /bin/unicode_start && /bin/unicode_start
+			uc_started=1
+		fi
+	else
+		case "$TERM" in
+			vt*|xterm*|linux|screen*)
+				# probe terminal and fix lang settings
+				UTF8TESTED=0
+				# binary /bin/testutf8 is missing at least on s390x, #158001
+				/usr/bin/test -x /bin/testutf8 && UTF8TESTED=1 && /bin/testutf8
+				# return code of the /bin/testutf8
+				# 0=utf-unknown, 1=utf-ok, 2=utf-err
+				UTF8STATUS=$?
+
+				# not tested or not working UTF-8 support
+				if [ "$UTF8TESTED" == "1" ] && [ $UTF8STATUS -ne 2 ] ; then
+					/usr/bin/test -n "$LANG" && LANG=${LANG%.UTF-8}
+					/usr/bin/test -n "$LC_CTYPE" && LC_CTYPE=${LC_CTYPE%.UTF-8}
+				else
+					/usr/bin/test -n "$LANG" && LANG=${LANG%%[.@]*}.UTF-8
+					/usr/bin/test -n "$LC_CTYPE" && LC_CTYPE=${LC_CTYPE%%[.@]*}.UTF-8
+				fi
+				;;
+		esac
+	fi
+
+	# this fixes launching of interactive subprocesses, #150799
+	YAST_ARGS="$YAST_ARGS --nothreads"
+fi
+
+if [ $FRONTEND == "qt" ]; then
+	set_qt_home_dir
+
+	# FIXME: why the hack was this done? full screening something that
+	# takes so much time to load is just annoying!
+	if  echo $WINDOWMANAGER | grep -qi "kde" ; then
+		if [ $module == "sw_single" ] ; then
+			case "$YAST_ARGS" in
+				*fullscreen*) ;;
+				*) YAST_ARGS="$YAST_ARGS --fullscreen" ;;
+			esac
+		fi
+	fi
+fi
+
+## RUN the requested module
+if [ $module == "menu" ]; then
+	run_yast_menu
+else
+	# we do a cycle because we want to keep the online_update module alive as long
+	# as there are pending patches
+	while true ; do
+		# Transform every argument into a ycp string, that is surround all
+		# args by ("...").  args may contain spaces.
+		# FIXME: what the hack is this for? Can't it be solved other way?
+		a=("$@")
+		b=("${a[@]/#/(\"}")
+		c=("${b[@]/%/\")}")
+		set -- "${c[@]}"
+
+		$ybindir/y2base $module "$@" $FRONTEND "$YAST_ARGS"
+
+		if [ ! $module == "online_update" ] || [ ! -e "/var/lib/YaST2/selected_patches.ycp" ] ; then
+			break
+		fi
+	done
+fi
+
+## LAST frontend specific changes
+if [ $FRONTEND == "ncurses" ]; then
+	if [ "$uc_started" ] ; then
+		/usr/bin/test -x /bin/unicode_stop && /bin/unicode_stop
+	fi
+fi
+
+## EXIT
+exit_code=$?
+
+if [ "$UID" = 0 ]; then
+    rm -f /var/run/yast.pid
+fi
+
+exit $exit_code
+
