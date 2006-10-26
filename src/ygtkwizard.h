@@ -1,20 +1,62 @@
 //                       YaST2-GTK                                //
 // YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
 
-/* YGtkWizard is a widget similar that offers a wizard interface
-   (eg. buttons and side help text) based on the look of GtkAssistance
-   that we couldn't use for several reasons (for starters, it is
-   a window of its own and we need a widget).
+/* YGtkWizard is a widget based on GtkAssistant, which we couldn't
+   use (for starters, GtkAssistant comes from GtkWindow and we need
+   a widget, not a window).
 */
 
 #ifndef YGTK_WIZARD_H
 #define YGTK_WIZARD_H
 
 #include <gdk/gdk.h>
-#include <gtk/gtkeventbox.h>
+#include <gtk/gtkbin.h>
 #include <gtk/gtkwindow.h>
+#include <gtk/gtksizegroup.h>
 
 G_BEGIN_DECLS
+
+// YGtkHelpDialog (for showing help text)
+/* Shows help text. It is GtkWindow-inherited, rather than GtkDialog, because
+   we want to place a search entry next to the buttons. */
+
+#define YGTK_TYPE_HELP_DIALOG            (ygtk_help_dialog_get_type ())
+#define YGTK_HELP_DIALOG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                          YGTK_TYPE_HELP_DIALOG, YGtkHelpDialog))
+#define YGTK_HELP_DIALOG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                          YGTK_TYPE_HELP_DIALOG, YGtkHelpDialogClass))
+#define IS_YGTK_HELP_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                          YGTK_TYPE_HELP_DIALOG))
+#define IS_YGTK_HELP_DIALOG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                          YGTK_TYPE_HELP_DIALOG))
+#define YGTK_HELP_DIALOG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                          YGTK_TYPE_HELP_DIALOG, YGtkHelpDialogClass))
+
+typedef struct _YGtkHelpDialog       YGtkHelpDialog;
+typedef struct _YGtkHelpDialogClass  YGtkHelpDialogClass;
+
+struct _YGtkHelpDialog
+{
+	GtkWindow window;
+
+	// members (private)
+	GtkWidget *title_box, *title_label, *title_image;
+	GtkWidget *help_box, *help_text;
+	GtkWidget *search_entry, *close_button;
+	GtkWidget *vbox;
+};
+
+struct _YGtkHelpDialogClass
+{
+	GtkWindowClass parent_class;
+};
+
+GtkWidget *ygtk_help_dialog_new (GtkWindow *parent);
+GType ygtk_help_dialog_get_type (void) G_GNUC_CONST;
+
+void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
+
+// YGtkWiazrd
 
 #define YGTK_TYPE_WIZARD            (ygtk_wizard_get_type ())
 #define YGTK_WIZARD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -33,36 +75,36 @@ typedef struct _YGtkWizardClass  YGtkWizardClass;
 
 struct _YGtkWizard
 {
-	GtkEventBox box;
+	GtkBin bin;
 
-	// members
+	// members (private)
 	/* Hash tables to assign Yast Ids to Gtk entries. */
-	GHashTable *menu_ids;   /* gchar* -> GtkWidget* */
-	GHashTable *tree_ids;   /* gchar* -> GtkTreePath* */
-	GHashTable *steps_ids;  /* gchar* -> guint */
+	GHashTable *menu_ids;   /* gchar* -> GtkWidget*    */
+	GHashTable *tree_ids;   /* gchar* -> GtkTreePath*  */
+	GHashTable *steps_ids;  /* gchar* -> guint         */
 
-	/* Widgets that we need to have access to. */
-	GtkWidget *m_menu, *m_title_label, *m_title_image, *m_help_widget,
-	          *m_steps_widget, *m_tree_widget, *m_release_notes_button;
-	GtkWidget *m_back_button, *m_abort_button, *m_next_button;
+	/* Widgets for layout. */
+	GtkWidget *m_menu, *m_title, *m_navigation, *m_buttons;
+	// containee can be accessed via GTK_BIN (wizard)->child
 
-	GtkWidget *m_containee;  // containee
+	/* Widgets we need to have access to. */
+	GtkWidget *m_title_label, *m_title_image, *m_navigation_widget,
+	          *m_back_button, *m_abort_button, *m_next_button, *m_help_button,
+	          *m_release_notes_button;
 
-	/* Layouts that we need for size_request. */
-	GtkWidget *m_button_box, *m_pane_box, *m_help_vbox, *m_title_hbox,
-	          *m_main_hbox;
-	GtkWidget *m_help_program_pane;
+	/* The help text. */
+	GtkWidget *m_help_dialog;
 };
 
 struct _YGtkWizardClass
 {
-	GtkEventBoxClass parent_class;
+	GtkBinClass parent_class;
 
 	// signal
 	void (*action_triggered) (YGtkWizard *wizard, gpointer id, gint id_type);
 };
 
-GtkWidget* ygtk_wizard_new();
+GtkWidget *ygtk_wizard_new();
 GType ygtk_wizard_get_type (void) G_GNUC_CONST;
 
 // Enable a steps or tree pane widget -- should be called right after
@@ -70,7 +112,8 @@ GType ygtk_wizard_get_type (void) G_GNUC_CONST;
 void ygtk_wizard_enable_steps (YGtkWizard *wizard);
 void ygtk_wizard_enable_tree  (YGtkWizard *wizard);
 
-// pass NULL if you just want to unset the current child
+// convinience method that removes the current child, if set, and swaps it by
+// the given one (you may pass NULL to just remove current child)
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
 
 // commands
@@ -129,8 +172,9 @@ const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
 // to honor next_button protect flag
 void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive);
 
-// gets the nice size of the widget with the exception of the given child
-void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition);
+// extension to GtkWidget's size_request that allows one not to calculate the child
+void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition,
+                               gboolean around_child);
 
 G_END_DECLS
 

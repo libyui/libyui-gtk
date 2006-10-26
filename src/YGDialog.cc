@@ -196,7 +196,7 @@ public:
 	{
 		IMPL
 		// if not main dialog, close it on escape
-		if (!event->state && event->keyval == GDK_Escape &&
+		if (event->keyval == GDK_Escape &&
 		    /* not main window */ main_window != pThis)
 			return close_window_cb (widget, NULL, pThis);
 

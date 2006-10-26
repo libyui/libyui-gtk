@@ -57,9 +57,6 @@ public:
 		}
 
 		YGtkWizard *ygtk_wizard = YGTK_WIZARD (getWidget());
-		g_signal_connect_after (G_OBJECT (ygtk_wizard->m_help_program_pane),
-		                        "notify::position", G_CALLBACK (help_pane_moved_cb),
-		                        this);
 
 		//** Steps/tree pane
 		bool steps_enabled = opt.stepsEnabled.value();
@@ -280,7 +277,7 @@ public:
 			ygtk_wizard_show_release_notes_button (wizard, FALSE);
 
 		else if (isCommand (cmd, "RetranslateInternalButtons", 0, 0))
-			;  // NOTE: we don't need this as we don't use switch buttons
+			;  // we don't need this as we don't use switch buttons
 
 		else {
 			y2error ("Unsupported wizard command (or invalid arguments): %s\n",
@@ -294,7 +291,8 @@ public:
 	long size_request (YUIDimension dim)
 	{
 		GtkRequisition req;
-		ygtk_wizard_size_request (YGTK_WIZARD (getWidget()), &req);
+		ygtk_wizard_size_request (YGTK_WIZARD (getWidget()), &req, TRUE);
+printf ("wizard without child: %d x %d\n", req.width, req.height);
 		return dim == YD_HORIZ ? req.width : req.height;
 	}
 
@@ -316,37 +314,6 @@ public:
 			width  -= size_request (YD_HORIZ);
 			height -= size_request (YD_VERT);
 			child (0)->setSize (width, height);
-		}
-	}
-
-	// Give size to child on sixe allocation
-	static void set_child_size_cb (GtkWidget *widget, GtkAllocation *allocation,
-	                               YGWizard *pThis)
-	{
-		if (pThis->hasChildren())
-			pThis->child (0)->setSize (allocation->width, allocation->height);
-	}
-
-// callbacks
-	static void help_pane_moved_cb (GtkWidget *widget, GParamSpec *pspec,
-	                                YGWizard *pThis)
-	{
-		IMPL
-		if (pThis->hasChildren()) {
-			YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
-
-			gint handle_width, border, pos;
-//			g_object_get (G_OBJECT (widget), "handle_size", &handle_width, NULL);
-			// the above line doesn't seem to work, so we'll access it directly...
-
-			handle_width = GTK_PANED (widget)->handle_pos.width;
-			pos = gtk_paned_get_position (GTK_PANED (widget));
-			border = gtk_container_get_border_width (GTK_CONTAINER (widget)) * 2;
-
-			long width = widget->allocation.width - pos - handle_width - border;
-			long height = wizard->m_containee->allocation.height;
-
-			pThis->child (0)->setSize (width, height);
 		}
 	}
 

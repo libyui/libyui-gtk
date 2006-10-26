@@ -14,7 +14,7 @@
 
 static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass);
 static void ygtk_menu_button_init       (YGtkMenuButton      *button);
-static void ygtk_menu_button_finalize   (GObject             *object);
+static void ygtk_menu_button_destroy    (GtkObject           *object);
 
 static gint ygtk_menu_button_button_press (GtkWidget          *widget,
                                            GdkEventButton     *event);
@@ -28,30 +28,15 @@ static gint popup_key_press (GtkWidget *widget, GdkEventKey *event,
 static gint popup_button_press (GtkWidget *widget, GdkEventButton *event,
                                 YGtkMenuButton *button);
 
+G_DEFINE_TYPE (YGtkMenuButton, ygtk_menu_button, GTK_TYPE_TOGGLE_BUTTON)
 static GtkToggleButtonClass *parent_class = NULL;
-
-GType ygtk_menu_button_get_type()
-{
-	static GType type = 0;
-	if (!type) {
-		static const GTypeInfo info = {
-			sizeof (YGtkMenuButtonClass),
-			NULL, NULL, (GClassInitFunc) ygtk_menu_button_class_init, NULL, NULL,
-			sizeof (YGtkMenuButton), 0, (GInstanceInitFunc) ygtk_menu_button_init, NULL
-		};
-
-		type = g_type_register_static (GTK_TYPE_TOGGLE_BUTTON, "YGtkMenuButton",
-		                               &info, (GTypeFlags) 0);
-	}
-	return type;
-}
 
 static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass)
 {
 	parent_class = g_type_class_peek_parent (klass);
 
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	gobject_class->finalize = ygtk_menu_button_finalize;
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_menu_button_destroy;
 
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->button_press_event = ygtk_menu_button_button_press;
@@ -95,10 +80,10 @@ static void ygtk_menu_button_free_popup (YGtkMenuButton *button)
 	}
 }
 
-void ygtk_menu_button_finalize (GObject *object)
+void ygtk_menu_button_destroy (GtkObject *object)
 {
 	ygtk_menu_button_free_popup (YGTK_MENU_BUTTON (object));
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	GTK_OBJECT_CLASS (parent_class)->destroy (object);
 }
 
 GtkWidget *ygtk_menu_button_new()

@@ -57,6 +57,10 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname);
 // Set a background image -- widget must have be realized
 void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image);
 
+// To be used together with an entry box to search for text
+gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text);
+gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text);  // F3
+
 G_END_DECLS
 
 #endif /* YGTK_RICHTEXT_H */

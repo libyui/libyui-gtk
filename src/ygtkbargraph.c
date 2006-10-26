@@ -16,23 +16,8 @@ static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
 static void ygtk_bar_graph_size_request  (GtkWidget      *widget,
                                           GtkRequisition *requisition);
 
+G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, YGTK_TYPE_RATIO_HBOX)
 static YGtkRatioHBoxClass *parent_class = NULL;
-
-GType ygtk_bar_graph_get_type()
-{
-	static GType bar_type = 0;
-	if (!bar_type) {
-		static const GTypeInfo bar_info = {
-			sizeof (YGtkBarGraphClass),
-			NULL, NULL, (GClassInitFunc) ygtk_bar_graph_class_init, NULL, NULL,
-			sizeof (YGtkBarGraph), 0, (GInstanceInitFunc) ygtk_bar_graph_init, NULL
-		};
-
-		bar_type = g_type_register_static (YGTK_TYPE_RATIO_HBOX, "YGtkBarGraph",
-		                                   &bar_info, (GTypeFlags) 0);
-	}
-	return bar_type;
-}
 
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
 {

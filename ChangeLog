@@ -1,3 +1,27 @@
+2006-10-26  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* ygtkwizard.c: re-write of it and made it based on GtkBin
+	rather than GtkEventBox. We now do all the container work
+	in a similar way to GtkAssistant, so the two style changeable
+	settings (content-padding and header-padding) should reflect
+	in this "clone" of ours as well.
+	Help information is displayed in a dialog, rather than on the
+	usual box.
+
+	* ygtksteps.c: re-write and made it based on GtkWidget rather
+	than GtkVBox, steps being "hand" drawn by ourselves now, rather
+	than being GtkLabels. This allows for a better integration with
+	YGtkWizard.
+
+	* made a couple of improvements to the other native GTK widgets
+	of ours.
+
+	NOTE: This is all unstable work and there are known crashes and
+	bugs. But I would prefer to have this on svn because it is get-
+	-ting to be a pretty big change... Should we open an unstable branch?
+	Or just advice the packager to stick with some svn version?
+	Either way, shouldn't be too hard to squish the bugs.
+
 2006-10-09  Michael Meeks  <michael.meeks@novell.com>
 
 	* integrate/*: add Ricardo's touched files

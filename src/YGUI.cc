@@ -585,7 +585,7 @@ void YGUI::beep()
 
 YCPString YGUI::glyph (const YCPSymbol &symbol)
 {
-    string sym = symbol->symbol();
+	string sym = symbol->symbol();
 	if (sym == YUIGlyph_ArrowLeft)
 		return YCPString ("\u2190");
 	if (sym == YUIGlyph_ArrowRight)

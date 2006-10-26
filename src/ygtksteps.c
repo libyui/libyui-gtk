@@ -9,194 +9,112 @@
 #include <gtk/gtkalignment.h>
 #include <gtk/gtklabel.h>
 #include <gtk/gtkimage.h>
+#include <string.h>
 
-// YGUtils is C++, so this is the bridge
-void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
+#define BORDER 6
+#define STEPS_HEADER_SPACING 8
+#define STEPS_SPACING        2
+#define STEPS_IDENTATION    30
+#define CURRENT_MARK_ANIMATION_TIME  250
+#define CURRENT_MARK_ANIMATION_OFFSET  3
+#define CURRENT_MARK_FRAMES_NB (CURRENT_MARK_ANIMATION_OFFSET*2)
 
 static void ygtk_steps_class_init (YGtkStepsClass *klass);
 static void ygtk_steps_init       (YGtkSteps      *step);
-static void ygtk_steps_finalize   (GObject        *object);
-static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb);
-static void ygtk_steps_size_allocate (GtkWidget     *widget,
-                                      GtkAllocation *allocation);
+static void ygtk_steps_destroy    (GtkObject      *object);
+static void ygtk_steps_size_request (GtkWidget      *widget,
+                                     GtkRequisition *requisition);
+static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event);
+// PangoContext change signals
+static void ygtk_steps_direction_changed (GtkWidget *widget, GtkTextDirection dir);
+static void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style);
 
-static GtkVBoxClass *parent_class = NULL;
+static YGtkSingleStep *ygtk_steps_get_step (YGtkSteps *steps, guint step_nb);
+static void ygtk_step_invalidate_layout (YGtkSingleStep *step);
+// should be called rather than accessing step->layout
+static PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb);
+static gboolean current_mark_animation_cb (void *steps);
 
-// Graphics for the current and done icons
-static const char *current_xpm[] = {
-"12 12 2 1",
-" 	c None",
-".	c #000000",
-"    .       ",
-"    ..      ",
-"    ...     ",
-"    ....    ",
-"    .....   ",
-"    ......  ",
-"    .....   ",
-"    ....    ",
-"    ...     ",
-"    ..      ",
-"    .       ",
-"            "};
+G_DEFINE_TYPE (YGtkSteps, ygtk_steps, GTK_TYPE_WIDGET)
+static GtkWidgetClass *parent_class = NULL;
 
-static const char *done_xpm[] = {
-"12 12 15 1",
-" 	c None",
-".	c #000000",
-"+	c #B3C2A7",
-"@	c #708C58",
-"#	c #859D71",
-"$	c #627B4D",
-"%	c #566C43",
-"&	c #A2BD9E",
-"*	c #789774",
-"=	c #88AC84",
-"-	c #5E764A",
-";	c #698566",
-">	c #6D8855",
-",	c #668050",
-"'	c #4F633E",
-"        ..  ",
-"       .+@. ",
-"       .#$. ",
-" ..   .#%.  ",
-".&*. .#@.   ",
-".==...@%.   ",
-" .=*.-@.    ",
-" .==;>%.    ",
-"  .==,.     ",
-"   .='.     ",
-"    ..      ",
-"    .       "};
-
-static GdkPixbuf *current_pixbuf = 0;
-static GdkPixbuf *done_pixbuf    = 0;
-static guint ref_icons = 0;
-
-GType ygtk_steps_get_type()
+void ygtk_steps_class_init (YGtkStepsClass *klass)
 {
-	static GType step_type = 0;
-	if (!step_type) {
-		static const GTypeInfo step_info = {
-			sizeof (YGtkStepsClass),
-			NULL, NULL, (GClassInitFunc) ygtk_steps_class_init, NULL, NULL,
-			sizeof (YGtkSteps), 0, (GInstanceInitFunc) ygtk_steps_init, NULL
-		};
-
-		step_type = g_type_register_static (GTK_TYPE_VBOX, "YGtkSteps",
-		                                    &step_info, (GTypeFlags) 0);
-	}
-	return step_type;
-}
-
-static void ygtk_steps_class_init (YGtkStepsClass *klass)
-{
-	parent_class = (GtkVBoxClass*) g_type_class_peek_parent (klass);
+	parent_class = g_type_class_peek_parent (klass);
 
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->size_allocate  = ygtk_steps_size_allocate;
+	widget_class->expose_event = ygtk_steps_expose_event;
+	widget_class->size_request = ygtk_steps_size_request;
+	widget_class->direction_changed = ygtk_steps_direction_changed;
+	widget_class->style_set = ygtk_steps_style_set;
 
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	gobject_class->finalize = ygtk_steps_finalize;
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_steps_destroy;
 }
 
-static void ygtk_steps_init (YGtkSteps *steps)
+void ygtk_steps_init (YGtkSteps *steps)
 {
-	steps->steps = NULL;
-	steps->current_step = 0;
-	gtk_box_set_spacing (GTK_BOX (steps), 2);
-	gtk_container_set_border_width (GTK_CONTAINER (steps), 4);
+	GTK_WIDGET_SET_FLAGS (steps, GTK_NO_WINDOW);
 
-	// load images
-	if (!ref_icons) {
-		done_pixbuf    = gdk_pixbuf_new_from_xpm_data (done_xpm);
-		current_pixbuf = gdk_pixbuf_new_from_xpm_data (current_xpm);
-	}
-	ref_icons++;
+	PangoContext *context = gtk_widget_get_pango_context (GTK_WIDGET (steps));
+	steps->check_mark_layout = pango_layout_new (context);
+	steps->current_mark_layout = pango_layout_new (context);
+	pango_layout_set_markup (steps->check_mark_layout, "\u2714", -1);
+	pango_layout_set_markup (steps->current_mark_layout, "<b>\u2192</b>", -1);
+	steps->current_mark_timeout_id = steps->current_mark_frame = 0;
 }
 
-static void ygtk_steps_finalize (GObject *object)
+void ygtk_steps_destroy (GtkObject *object)
 {
-	ygtk_steps_clear (YGTK_STEPS (object));
-	if (--ref_icons == 0) {
-		g_object_unref (G_OBJECT (done_pixbuf));
-		g_object_unref (G_OBJECT (current_pixbuf));
-	}
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	YGtkSteps *steps = YGTK_STEPS (object);
+
+	if (steps->current_mark_timeout_id)
+		g_source_remove (steps->current_mark_timeout_id);
+	g_object_unref (steps->check_mark_layout);
+	g_object_unref (steps->current_mark_layout);
+	ygtk_steps_clear (steps);
+
+	GTK_OBJECT_CLASS (parent_class)->destroy (object);
 }
 
 GtkWidget* ygtk_steps_new()
 {
-	YGtkSteps* steps = (YGtkSteps*) g_object_new (YGTK_TYPE_STEPS, NULL);
-	return GTK_WIDGET (steps);
+	return g_object_new (YGTK_TYPE_STEPS, NULL);
 }
 
 guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 {
-	YGtkSingleStep *last_step = 0;
-	if (ygtk_steps_total (steps))
-		last_step = g_list_last (steps->steps)->data;
+	gint steps_nb = ygtk_steps_total (steps);
 
-	// Don't add the same step twice -- but emulate like if you did
-	if (last_step && !g_strcasecmp (step_text,
-	        gtk_label_get_text (GTK_LABEL (last_step->label)))) {
-		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
-		step->is_heading = FALSE;
-		step->label = last_step->label;
-		step->image = last_step->image;
-		step->is_alias = TRUE;
-		steps->steps = g_list_append (steps->steps, step);
-		return ygtk_steps_total (steps) - 1;
+	// check if the text is the same as the previous...
+	if (steps_nb) {
+		YGtkSingleStep *last_step = g_list_last (steps->steps)->data;
+		if (!g_strcasecmp (last_step->text, step_text)) {
+			last_step->strength++;
+			return steps_nb-1;
+		}
 	}
+
 	// New step
-	else {
-		YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
-		step->is_heading = FALSE;
-		step->is_alias = FALSE;
-		steps->steps = g_list_append (steps->steps, step);
+	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
+	step->is_heading = FALSE;
+	step->text = g_strdup (step_text);
+	step->strength = 1;
+	step->layout = NULL;
 
-		GtkWidget *box = gtk_hbox_new (FALSE, 0);
-		step->image = gtk_image_new();
-		step->label = gtk_label_new (step_text);
-
-		gtk_container_add (GTK_CONTAINER (box), step->image);
-		gtk_container_add (GTK_CONTAINER (box), step->label);
-		gtk_box_set_child_packing (GTK_BOX (box), step->image,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (box), step->label,
-		                           FALSE, FALSE, 5, GTK_PACK_START);
-
-		GtkWidget *alignment = gtk_alignment_new (0, 0.5, 0, 0);
-		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 2, 2, 20, 0);
-		gtk_container_add (GTK_CONTAINER (alignment), box);
-
-		gtk_container_add (GTK_CONTAINER (steps), alignment);
-		gtk_widget_show_all (alignment);
-
-		guint step_nb = g_list_length (steps->steps) - 1;
-		ygtk_steps_update_step (steps, step_nb);
-		return step_nb;
-	}
+	steps->steps = g_list_append (steps->steps, step);
+	return steps_nb;
 }
 
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
 	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
 	step->is_heading = TRUE;
-	step->label = gtk_label_new (heading);
-	step->image = NULL;
-	step->is_alias = FALSE;
+	step->text = g_strdup (heading);
+	step->strength = 1;  // not important anyway
+	step->layout = NULL;
+
 	steps->steps = g_list_append (steps->steps, step);
-
-	gtk_misc_set_alignment (GTK_MISC (step->label), 0, 0.5);
-	gtk_misc_set_padding (GTK_MISC (step->label), 0, 6);
-
-	gtk_container_add (GTK_CONTAINER (steps), step->label);
-	gtk_widget_show (step->label);
-
-	// set a heading font
-	ygutils_setWidgetFont (step->label, PANGO_WEIGHT_BOLD, PANGO_SCALE_LARGE);
 }
 
 void ygtk_steps_advance (YGtkSteps *steps)
@@ -211,11 +129,29 @@ void ygtk_steps_set_current (YGtkSteps *steps, guint step)
 	steps->current_step = step;
 
 	// update step icons
-	guint min, max, i;
-	min = MIN (old_step, step);
-	max = MAX (old_step, step);
-	for (i = min; i <= max; i++)
-		ygtk_steps_update_step (steps, i);
+	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, old_step));
+	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, step));
+
+	steps->current_mark_frame = 0;
+	steps->current_mark_timeout_id = g_timeout_add
+		(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
+		current_mark_animation_cb, steps);
+}
+
+gboolean current_mark_animation_cb (void *steps_ptr)
+{
+	YGtkSteps *steps = steps_ptr;
+
+	// ugly -- should use gtk_widget_queue_draw_area (widget, x, y, w, h)
+	// but we need to iterate through all steps to get current location and
+	// all, so...
+	gtk_widget_queue_draw (GTK_WIDGET (steps));
+
+	if (++steps->current_mark_frame == CURRENT_MARK_FRAMES_NB) {
+		steps->current_mark_frame = 0;
+		return FALSE;
+	}
+	return TRUE;
 }
 
 guint ygtk_steps_total (YGtkSteps *steps)
@@ -225,61 +161,143 @@ guint ygtk_steps_total (YGtkSteps *steps)
 
 void ygtk_steps_clear (YGtkSteps *steps)
 {
-	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	GList *it;
-	for (it = children; it; it = it->next)
-		gtk_container_remove (GTK_CONTAINER (steps), GTK_WIDGET (it->data));
-	g_list_free (children);
-
-	for (it = steps->steps; it; it = it->next)
-		g_free ((YGtkSingleStep *) it->data);
-
+	for (it = steps->steps; it; it = it->next) {
+		YGtkSingleStep *step = it->data;
+		ygtk_step_invalidate_layout (step);
+		g_free (step->text);
+		g_free (step);
+	}
 	g_list_free (steps->steps);
 	steps->steps = NULL;
 }
 
-static void ygtk_steps_update_step (YGtkSteps *steps, guint step_nb)
+YGtkSingleStep *ygtk_steps_get_step (YGtkSteps *steps, guint step_nb)
 {
-	YGtkSingleStep *step = g_list_nth_data (steps->steps, step_nb);
-	if (step->is_heading)
-		return;
-	if (step->is_alias && step_nb > steps->current_step)
-		return;
+	return g_list_nth_data (steps->steps, step_nb);
+}
 
-	// update step label -- set bold if current step
-	PangoFontDescription *font = pango_font_description_new();
-	if (step_nb == steps->current_step)
-		pango_font_description_set_weight (font, PANGO_WEIGHT_BOLD);
-	gtk_widget_modify_font (step->label, font);
-	pango_font_description_free (font);
-
-	// update step icon
-	GtkWidget *image = step->image;
-	if (step_nb < steps->current_step)
-		gtk_image_set_from_pixbuf (GTK_IMAGE (image), done_pixbuf);
-	else if (step_nb == steps->current_step)
-		gtk_image_set_from_pixbuf (GTK_IMAGE (image), current_pixbuf);
-	else {
-		// Looks like GtkImage doesn't ask for a redraw on its place when
-		// setting image clear, thus this work-around.
-		gtk_widget_queue_draw_area (image->parent, image->allocation.x,
-			image->allocation.y, image->allocation.width, image->allocation.height);
-
-		gtk_image_clear (GTK_IMAGE (image));
-
-		// Set the clear image to have the same size of the others
-		gtk_widget_set_size_request (image, gdk_pixbuf_get_width (done_pixbuf),
-		                             gdk_pixbuf_get_height (done_pixbuf));
+void ygtk_step_invalidate_layout (YGtkSingleStep *step)
+{
+	if (step->layout) {
+		g_object_unref (G_OBJECT (step->layout));
+		step->layout = NULL;
 	}
 }
 
-static void ygtk_steps_size_allocate (GtkWidget     *widget,
-                                      GtkAllocation *allocation)
+PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
 {
-	// Don't let the steps widget expand besides a certain point
-	GtkRequisition requisition;
-	gtk_widget_size_request (widget, &requisition);
-	allocation->height = MIN (requisition.height, allocation->height);
+	YGtkSingleStep *step = ygtk_steps_get_step (steps, step_nb);
 
-	(* GTK_WIDGET_CLASS (parent_class)->size_allocate) (widget, allocation);
+	if (!step->layout) {
+		step->layout = pango_layout_new (gtk_widget_get_pango_context
+		                                     (GTK_WIDGET (steps)));
+		gchar *text;
+		if (step->is_heading) {
+			text = g_strdup_printf ("<span size=\"x-large\" weight=\"heavy\">%s</span>",
+			                        step->text);
+			pango_layout_set_spacing (step->layout, STEPS_HEADER_SPACING * PANGO_SCALE);
+		}
+		else {
+			if (steps->current_step == step_nb)
+				text = g_strdup_printf ("<b>%s</b>", step->text);
+			else
+				text = g_strdup (step->text);
+			pango_layout_set_indent (step->layout, STEPS_IDENTATION * PANGO_SCALE);
+			pango_layout_set_spacing (step->layout, STEPS_SPACING * PANGO_SCALE);
+		}
+
+		pango_layout_set_markup (step->layout, text, -1);
+		g_free (text);
+	}
+
+	return step->layout;
+}
+
+// If PangoContext got invalidated (eg. system language change), re-compute it!
+static void ygtk_steps_recompute_layout (YGtkSteps *steps)
+{
+	GList *it;
+	for (it = steps->steps; it; it = it->next) {
+		YGtkSingleStep *step = it->data;
+		if (step->layout)
+			pango_layout_context_changed (step->layout);
+	}
+}
+
+void ygtk_steps_direction_changed (GtkWidget *widget, GtkTextDirection dir)
+{
+	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
+	GTK_WIDGET_CLASS (parent_class)->direction_changed (widget, dir);
+}
+
+void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style)
+{
+	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
+	GTK_WIDGET_CLASS (parent_class)->style_set (widget, style);
+}
+
+void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
+{
+	GTK_WIDGET_CLASS (parent_class)->size_request (widget, requisition);
+
+	YGtkSteps *steps = YGTK_STEPS (widget);
+	int i;
+	for (i = 0; i < ygtk_steps_total (steps); i++) {
+		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
+
+		int w, h;
+		pango_layout_get_pixel_size (layout, &w, &h);
+		w += PANGO_PIXELS (pango_layout_get_indent (layout));
+		h += PANGO_PIXELS (pango_layout_get_spacing (layout));
+
+		requisition->width = MAX (w, requisition->width);
+		requisition->height += h;
+	}
+
+	requisition->width += BORDER * 2;
+	requisition->height += BORDER * 2;
+}
+
+gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+	int x = widget->allocation.x + BORDER, y = widget->allocation.y + BORDER;
+	GtkStyle *style = gtk_widget_get_style (widget);
+
+	YGtkSteps *steps = YGTK_STEPS (widget);
+	int i;
+	for (i = 0; i < ygtk_steps_total (steps); i++) {
+		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
+
+		// as opposite to identation, we need to apply spacing ourselves, since we aren't
+		// really using paragraphs
+		y += PANGO_PIXELS (pango_layout_get_spacing (layout));
+
+		gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
+		                  NULL, /*event->area,*/ widget, NULL, x, y, layout);
+
+		if (i <= steps->current_step && !ygtk_steps_get_step (steps, i)->is_heading) {
+			PangoLayout *mark = (i == steps->current_step) ? steps->current_mark_layout
+			                                               : steps->check_mark_layout;
+			int x_;
+			pango_layout_get_pixel_size (mark, &x_, NULL);
+			x_ = x + STEPS_IDENTATION - x_ - 6;
+			if (i == steps->current_step) {
+				if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
+					x_ -= steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
+				else
+					x_ -= (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
+					      CURRENT_MARK_ANIMATION_OFFSET;
+			}
+
+			gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
+			                  NULL, /*event->area,*/ widget, NULL, x_, y, mark);
+		}
+
+		int h;
+		pango_layout_get_pixel_size (layout, NULL, &h);
+		// we need spacing for both sides
+		y += h + PANGO_PIXELS (pango_layout_get_spacing (layout));
+	}
+	return FALSE;
 }

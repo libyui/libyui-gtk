@@ -19,7 +19,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 
 static void ygtk_richtext_class_init (YGtkRichTextClass *klass);
 static void ygtk_richtext_init       (YGtkRichText      *rich_text);
-static void ygtk_richtext_finalize   (GObject           *object);
+static void ygtk_richtext_destroy    (GtkObject         *object);
 
 // slots
 static gboolean event_after (GtkWidget *text_view, GdkEvent *ev);
@@ -27,6 +27,7 @@ static gboolean motion_notify_event (GtkWidget *text_view, GdkEventMotion *event
 static gboolean visibility_notify_event (GtkWidget          *text_view,
                                          GdkEventVisibility *event);
 
+G_DEFINE_TYPE (YGtkRichText, ygtk_richtext, GTK_TYPE_TEXT_VIEW)
 static GtkTextViewClass *parent_class = NULL;
 
 static GdkCursor *hand_cursor, *regular_cursor;
@@ -34,41 +35,22 @@ static guint ref_cursor = 0;
 
 static guint link_pressed_signal;
 
-GType ygtk_richtext_get_type()
+void ygtk_richtext_class_init (YGtkRichTextClass *klass)
 {
-	static GType rtext_type = 0;
-	if (!rtext_type) {
-		static const GTypeInfo rtext_info = {
-			sizeof (YGtkRichTextClass),
-			NULL, NULL, (GClassInitFunc) ygtk_richtext_class_init, NULL, NULL,
-			sizeof (YGtkRichText), 0, (GInstanceInitFunc) ygtk_richtext_init, NULL
-		};
+	parent_class = g_type_class_peek_parent (klass);
 
-		rtext_type = g_type_register_static (GTK_TYPE_TEXT_VIEW, "YGtkRichText",
-		                                     &rtext_info, (GTypeFlags) 0);
-	}
-	return rtext_type;
-}
-
-static void ygtk_richtext_class_init (YGtkRichTextClass *klass)
-{
-	parent_class = (GtkTextViewClass*) g_type_class_peek_parent (klass);
-
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	gobject_class->finalize = ygtk_richtext_finalize;
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_richtext_destroy;
 
 	link_pressed_signal = g_signal_new ("link-pressed",
-	                       G_TYPE_FROM_CLASS (gobject_class),
-	                       G_SIGNAL_RUN_LAST,
-	                       G_STRUCT_OFFSET (YGtkRichTextClass, link_pressed),
-	                       NULL, NULL,
-	                       g_cclosure_marshal_VOID__STRING,
-	                       G_TYPE_NONE, 1, G_TYPE_STRING);
+		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (YGtkRichTextClass, link_pressed), NULL, NULL,
+		g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
 static GdkColor link_color = { 0, 0, 0, 0xeeee };
 
-static void ygtk_richtext_init (YGtkRichText *rtext)
+void ygtk_richtext_init (YGtkRichText *rtext)
 {
 	rtext->prodname = NULL;
 
@@ -133,9 +115,10 @@ static void ygtk_richtext_init (YGtkRichText *rtext)
 	                            NULL);
 	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER,
 	                            NULL);
+	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow", NULL);
 }
 
-static void ygtk_richtext_finalize (GObject *object)
+static void ygtk_richtext_destroy (GtkObject *object)
 {
 	if (--ref_cursor == 0) {
 		gdk_cursor_unref (hand_cursor);
@@ -146,13 +129,12 @@ static void ygtk_richtext_finalize (GObject *object)
 	if (rtext->prodname)
 		g_free (rtext->prodname);
 
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	GTK_OBJECT_CLASS (parent_class)->destroy (object);
 }
 
-GtkWidget* ygtk_richtext_new()
+GtkWidget *ygtk_richtext_new()
 {
-	YGtkRichText* rtext = (YGtkRichText*) g_object_new (YGTK_TYPE_RICHTEXT, NULL);
-	return GTK_WIDGET (rtext);
+	return g_object_new (YGTK_TYPE_RICHTEXT, NULL);
 }
 
 /* Rich Text parsing methods. */
@@ -651,4 +633,80 @@ void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
 	g_object_unref (G_OBJECT (pixbuf));
 
 	gdk_window_set_back_pixmap (window, pixmap, FALSE);
+}
+
+static gboolean ygtk_richtext_advance_mark (YGtkRichText *rtext,
+	GtkTextIter *start_iter, GtkTextIter *end_iter, const gchar *key)
+{
+printf ("advance mark...\n");
+	// This isn't case insensitive, so we will just roll our own search
+	//return gtk_text_iter_forward_search (&iter, text, 0, start_iter, end_iter, NULL);
+
+	if (*key == '\0')
+		return FALSE;
+
+	const gchar *k;
+	while (!gtk_text_iter_is_end (start_iter)) {
+		*end_iter = *start_iter;
+		for (k = key; (g_ascii_tolower (*k) ==
+		     g_ascii_tolower (gtk_text_iter_get_char (end_iter))) && (*k);
+		     k++, gtk_text_iter_forward_char (end_iter))
+			;
+		if (!*k)
+			return TRUE;
+		gtk_text_iter_forward_char (start_iter);
+	}
+	return FALSE;
+}
+
+gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
+{
+printf ("mark %s\n", text);
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	GtkTextIter start_iter, end_iter;
+	gboolean found = FALSE;
+
+printf ("get bounds\n");
+	gtk_text_buffer_get_bounds (buffer, &start_iter, &end_iter);
+	gtk_text_buffer_remove_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
+
+	gtk_text_buffer_select_range (buffer, &start_iter, &start_iter);
+	if (*text == '\0')
+		return TRUE;
+
+	if (text)
+		while (ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text)) {
+printf ("found!\n");
+			found = TRUE;
+			gtk_text_buffer_apply_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
+			start_iter = end_iter;
+		}
+	return found;
+}
+
+gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
+{
+printf ("forward mark\n");
+	GtkTextIter start_iter, end_iter;
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_get_iter_at_mark (buffer, &start_iter,
+	                                  gtk_text_buffer_get_selection_bound (buffer));
+
+printf ("advancing\n");
+	gboolean found;
+	found = ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text);
+	if (!found) {
+		gtk_text_buffer_get_start_iter (buffer, &start_iter);
+		found = ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text);
+	}
+
+	if (found) {
+printf ("scrolling\n");
+		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (rtext), &start_iter, 0.10,
+		                              FALSE, 0, 0);
+printf ("selecting\n");
+		gtk_text_buffer_select_range (buffer, &start_iter, &end_iter);
+		return TRUE;
+	}
+	return FALSE;
 }
