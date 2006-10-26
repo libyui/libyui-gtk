@@ -15,22 +15,21 @@ public:
 	              YGWidget         *parent,
 	              YCPString         label)
 	:  YPushButton (opt, label),
-	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, NULL)
-{
-	IMPL
-	if (!opt.isShrinkable.value())
-		setMinSize (14, 0);
+	   YGWidget (this, parent, true, GTK_TYPE_BUTTON,
+		     "can-default", TRUE, NULL)
+	{
+		IMPL
+		if (!opt.isShrinkable.value())
+			setMinSize (14, 0);
 
-	if (opt.isDefaultButton.value()) {
-		GTK_WIDGET_SET_FLAGS (getWidget(), GTK_CAN_DEFAULT);
-		gtk_widget_grab_default (getWidget());
+		if (opt.isDefaultButton.value())
+			gtk_widget_grab_default (getWidget());
+
+		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
+		g_signal_connect (G_OBJECT (getWidget ()), "clicked",
+				  G_CALLBACK (clicked_cb), this);
+		setLabel (label);
 	}
-
-	gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-	g_signal_connect (G_OBJECT (getWidget ()), "clicked",
-	                  G_CALLBACK (clicked_cb), this);
-	setLabel (label);
-}
 
 	virtual ~YGPushButton() {}
 

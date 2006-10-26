@@ -1,3 +1,29 @@
+2006-10-26  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkwizard.c (hash_table_clear_cb, hash_table_clear) 
+	(ygtk_wizard_clear_tree, ygtk_wizard_clear_steps): use
+	g_hash_table_remove_all instead.
+	(enable_widget): rename macros to upper-case, add _str
+	variant that can handle NULL too (defensively)
+	(ygtk_wizard_set_help_text): set m_help instead of
+	the widget itself. (help_button_clicked_cb): set the
+	help here if we show it.
+	(ygtk_help_dialog_init): hide help widget on delete
+	rather than destroying it & causing problems later.
+
+	* src/YGPushButton.cc (YGPushButton): set can-default
+	on all push-buttons, makes ok/cancel type dialogs
+	prettier.
+
+	* src/ygtkwizard.c (ygtk_wizard_destroy, destroy_hash):
+	cope with double destroys.
+	(ygtk_help_dialog_init): use pack_end, scope var decls,
+	set CAN_DEFAULT on close button to get spacing right.
+	(ygtk_wizard_realize): use gtk_wiget_get_ancestor instead
+	of custom code, make static.
+	(button_new): split out - and set CAN_DEFAULT.
+	(destroy_string): use g_free instead.
+
 2006-10-26  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* ygtkwizard.c: re-write of it and made it based on GtkBin

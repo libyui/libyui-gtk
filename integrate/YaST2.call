@@ -26,6 +26,9 @@
 #
 #set -x
 
+echo "Start YaST2.call"
+sleep 1
+
 # use the following graphical interface:
 GUI=gtk
 
@@ -483,6 +486,7 @@ log "Starting prequalification checks..."
 log "==================================="
 # 3.1.1) GUI plugin check...
 if ! check_gui ; then
+    echo "GUI plugin check failed"
 	log "\tGUI plugin check failed -> Medium $GUI disabled"
 	MEDIUM[0]=0
 fi
@@ -675,6 +679,8 @@ fi
 #---------------------------------------------
 Y2_MODULE_NAME=${1:-installation}; shift
 Y2_MODULE_ARGS=\(\"$*\"\)
+echo "About to start yast '$Y2_MODULE_NAME' '$Y2_MODULE_ARGS'"
+sleep 32
 start_yast
 
 #=============================================

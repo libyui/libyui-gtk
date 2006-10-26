@@ -190,8 +190,9 @@ Morphing Suse to use Yast-GTK
 
   8. Edit my_root/usr/lib/YaST2/startup/YaST2.class to replace qt by gtk
   (careful about automatic replaces: set_inst_qt_env and clr_inst_qt_env are
-   executables, so better let them be for now...).
+   functions in usr/lib/YaST2/bin/yast2-funcs, so better let them be for now...).
   You may use this one: http://rpmcruz.planetaclix.pt/trash/YaST2.call
+	+ these functions just setup a few unnecessary bits, not using qt.
 
   9. Remove a few (and be generous to avoid getting here again) packages from
      my_cd/suse/i586 (because the cd is already very tight...)

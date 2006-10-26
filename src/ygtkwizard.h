@@ -93,6 +93,7 @@ struct _YGtkWizard
 	          *m_release_notes_button;
 
 	/* The help text. */
+	gchar     *m_help;
 	GtkWidget *m_help_dialog;
 };
 
@@ -104,7 +105,7 @@ struct _YGtkWizardClass
 	void (*action_triggered) (YGtkWizard *wizard, gpointer id, gint id_type);
 };
 
-GtkWidget *ygtk_wizard_new();
+GtkWidget *ygtk_wizard_new (void);
 GType ygtk_wizard_get_type (void) G_GNUC_CONST;
 
 // Enable a steps or tree pane widget -- should be called right after

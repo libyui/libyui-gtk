@@ -3,6 +3,51 @@
 SUDO=sudo
 MOUNTBASE=/tmp
 rootimage=/boot/i386/root
+srcfiles=/opt/yast/public/gtk
+
+rewrite()
+{
+    dir=$1
+    yastlib="$dir/usr/lib/YaST2"
+    yastshare="$dir/usr/share/YaST2"
+    echo "Re-writing $1"
+    echo -n "  pruning qt..."
+    $SUDO cp -f "$srcfiles/integrate/YaST2.call" \
+		"$yastlib/startup"
+#debugging
+    $SUDO cp -f "$srcfiles/integrate/YaST2.Second-Stage" \
+		"$yastlib/startup"
+    $SUDO cp -f "$srcfiles/integrate/logging.sh" \
+		"$yastlib/startup/common"
+#/debugging
+    $SUDO rm -f "$yastshare/locale/*/LC_MESSAGES/packages-qt.mo"
+    $SUDO rm -f "$yastdir/plugin/libpy2qt*"
+    $SUDO rm -Rf "$dir/usr/lib/qt3"
+    $SUDO rm -f "$dir/usr/lib/libqt-mt*"
+    echo " done"
+
+    echo -n "  installing gtk..."
+    $SUDO cp -a /usr/lib/YaST2/plugin/libpy2gtk* "$yastlib/plugin"
+    echo " done"
+
+    # gnome libs
+    for lib in libgtk-x11-2.0.so.0 libgdk-x11-2.0.so.0 libatk-1.0.so.0 libgdk_pixbuf-2.0.so.0 libpangocairo-1.0.so.0 libpango-1.0.so.0 libgmodule-2.0.so.0 libgthread-2.0.so.0 libpangoft2-1.0.so.0; do
+	$SUDO cp -a /opt/gnome/lib/$lib* "$dir/opt/gnome/lib"
+	$SUDO strip $dir/opt/gnome/lib/$lib*
+    done
+
+    # system libs
+    # FIXME - if for same system, use same libzypp ...
+    for lib in libcairo.so.2 libglitz.so.1 libdbus-1.so.2 libzypp.so.1; do
+	$SUDO cp -a /usr/lib/$lib* "$dir/usr/lib"
+	$SUDO strip $dir/usr/lib/$lib*
+    done
+
+    echo "  testing..."
+    if LD_LIBRARY_PATH="$dir/lib:$dir/usr/lib:$dir/opt/gnome/lib" ldd $yastlib/plugin/libpy2gtk.so > /dev/null; then
+	echo "warning: failed to link";
+    fi
+}
 
 printhelp()
 {
@@ -50,7 +95,7 @@ $SUDO umount $ROOTDIR
 rmdir $ROOTDIR
 
 # Do the interesting work ...
-echo "Do something !"
+rewrite $NEWROOT
 # End of interesting work ...
 
 echo -n "Compressing image..."

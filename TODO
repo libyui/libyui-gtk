@@ -68,6 +68,8 @@
 	o to consider: only report value change when the widget is stalled.
 		To use g_idle functionality.
 
+* Timezone
+	Accept - & timezone selection foo ...
 
 = Yast-Core =
 
