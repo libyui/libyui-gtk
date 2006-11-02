@@ -1,9 +1,15 @@
 #!/bin/sh
 
 SUDO=sudo
-MOUNTBASE=/tmp
+MOUNTBASE=/data/tmp
 rootimage=/boot/i386/root
 srcfiles=/opt/yast/public/gtk
+
+copy_file()
+{
+    $SUDO mkdir -p "$1/$2"
+    $SUDO cp -a "$2/$3" "$1/$2"
+}
 
 rewrite()
 {
@@ -43,6 +49,21 @@ rewrite()
 	$SUDO strip $dir/usr/lib/$lib*
     done
 
+    # pango modules
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-basic-fc.so"
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-indic-fc.so"
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-arabic-fc.so"
+    # generate config ...
+    PANGORC=`mktemp $MOUNTBASE/ygtk-pangorc.XXXXXX`
+    PANGO_MODULES=`mktemp $MOUNTBASE/ygtk-modules.XXXXXX`
+echo "[Pango]
+ModulesPath=$dir/opt/gnome/lib/pango/1.4.0/modules
+" > $PANGORC
+    PANGO_RC_FILE=$PANGORC pango-querymodules | sed "s|$dir||g" > $PANGO_MODULES
+    $SUDO mkdir -p "$dir/etc/opt/gnome/pango"
+    $SUDO mv $PANGO_MODULES "$dir/etc/opt/gnome/pango/pango.modules"
+    rm -f $PANGORC
+
     echo "  testing..."
     if LD_LIBRARY_PATH="$dir/lib:$dir/usr/lib:$dir/opt/gnome/lib" ldd $yastlib/plugin/libpy2gtk.so > /dev/null; then
 	echo "warning: failed to link";
@@ -71,7 +92,7 @@ fi
 
 mkcramfs=`which mkcramfs 2>/dev/null`
 if (test "z$mkcramfs" = "z") || (! test -x $mkcramfs); then
-	echo "Must have cromfs installed see http://iki.fi/bisqwit/source/cromfs.html"
+	echo "Must have cramfs installed."
 	exit 1;
 fi
 
@@ -85,8 +106,8 @@ ROOTDIR=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
 $SUDO mount -o loop "$ISODIR$rootimage" $ROOTDIR
 echo "Mounted old root"
 
-echo "Creating new root at $NEWROOT"
 NEWROOT=`mktemp -d $MOUNTBASE/ygtk-newroot.XXXXXX`
+echo "Creating new root at $NEWROOT"
 echo -n "  copying..."
 # do this to preserve hard links
 $SUDO tar -C $ROOTDIR -O -c . | $SUDO tar -x -C $NEWROOT >& /dev/null
@@ -99,7 +120,7 @@ rewrite $NEWROOT
 # End of interesting work ...
 
 echo -n "Compressing image..."
-NEWROOTFS=`mktemp $MOUNTBASE/ygtk-cromfs.XXXXXX`
+NEWROOTFS=`mktemp $MOUNTBASE/ygtk-cramfs.XXXXXX`
 $SUDO $mkcramfs $NEWROOT $NEWROOTFS
 echo " done"
 
@@ -118,3 +139,7 @@ cd $NEWIMAGE ; $SUDO mkisofs -p "Yast-GTK installer" -publisher "Fools, Inc." \
     "SUSE-Yast-GTK#0" -V SU1010.001 -o $dest .
 
 echo "Done new iso in $dest."
+echo -n "Cleaning up..."
+$SUDO rm -Rf $NEWROOTFS
+$SUDO rm -Rf $NEWIMAGE
+echo " done."

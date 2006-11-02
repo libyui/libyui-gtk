@@ -1,3 +1,17 @@
+2006-10-30  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGWizard.cc: don't return failure if
+	SetDialogIcon command fails - it breaks the installer.
+
+	* HACKING: update to use gtkize-iso, removing 8 steps.
+
+	* integrate/YaST2.call: do minimal hacks instead to
+	get gtk bits running, set LD_LIBRARY_PATH too, appears
+	to actually work [!]
+
+	* gtkize-iso: s/cromfs/cramfs/ & include critical
+	pango modules.
+
 2006-10-26  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/ygtkwizard.c (hash_table_clear_cb, hash_table_clear) 

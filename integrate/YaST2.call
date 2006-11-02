@@ -21,16 +21,12 @@
 #               : - VNC Installation via browser
 #               : 
 #               :
-# STATUS        : $Id: YaST2.call 30531 2006-04-27 09:25:41Z ms $
+# STATUS        : $Id: YaST2.call 32688 2006-09-04 14:05:17Z locilka $
 #----------------
 #
 #set -x
 
-echo "Start YaST2.call"
-sleep 1
-
-# use the following graphical interface:
-GUI=gtk
+. /etc/YaST2/XVersion
 
 #=============================================
 # Functions...
@@ -101,13 +97,75 @@ function get_bus_id () {
 	done
 }
 
-#----[ prepare_for_gui ]----#
-function prepare_for_gui () {
+#----[ count_qt_geometry ]----#
+function count_qt_geometry () {
+    # current X-resolution, display 0
+    XRES=$(/usr/sbin/xquery -d :0 -r)
+
+    log "\t===Qt Geometry==="
+    log "\tResolution: ${XRES}"
+
+    # current X and Y resolution
+    XRES_X=$(echo $XRES | sed 's|[0123456789]\+ \([0123456789]\+\)x[0123456789]\+|\1|') #'
+    XRES_Y=$(echo $XRES | sed 's|[0123456789]\+ [0123456789]\+x\([0123456789]\+\)|\1|') #'
+
+    log "\tX: ${XRES_X}"
+    log "\tY: ${XRES_Y}"
+
+    # default values, minimal window 640x480
+    WINDOW_SIZE_X=640
+    WINDOW_SIZE_Y=480
+    OFFSET_X=0
+    OFFSET_Y=0
+    BACKGROUND_IMAGE=""
+
+    # cannot get any X-resolution
+    if [ "${XRES}" == "" ]; then
+	# cannot find out X resolution
+	WINDOW_SIZE_X=800
+	WINDOW_SIZE_Y=600
+    # reasonable
+    else
+	# FIXME: recount background image
+	BACKGROUND_IMAGE="/usr/lib/YaST2/startup/bkg.png"
+
+	# must be bigger or equal to 1400x1050
+	if [ "$(expr $XRES_X \>= 1400)" == "1" ] && [ "$(expr $XRES_Y \>= 1050)" == "1" ]; then
+	    WINDOW_SIZE_X=1024
+	    WINDOW_SIZE_Y=786
+	# must be bigger or equal to 800x600
+	elif [ "$(expr $XRES_X \>= 800)" == "1" ] && [ "$(expr $XRES_Y \>= 600)" == "1" ]; then
+	    WINDOW_SIZE_X=800
+	    WINDOW_SIZE_Y=600
+	fi
+
+	# X and Y offsets
+	OFFSET_X=$(expr ${XRES_X} - ${WINDOW_SIZE_X})
+	OFFSET_X=$(expr ${OFFSET_X} / 2)
+	OFFSET_Y=$(expr ${XRES_Y} - ${WINDOW_SIZE_Y})
+	OFFSET_Y=$(expr ${OFFSET_Y} / 2)
+    fi
+
+    log "\tWindow size X: ${WINDOW_SIZE_X}"
+    log "\tWindow size X: ${WINDOW_SIZE_Y}"
+    log "\tOffset X: ${OFFSET_X}"
+    log "\tOffset X: ${OFFSET_Y}"
+
+    # final window geometry, 'Window_XxWindow_Y+Offset_X+Offset_Y'
+    X_GEOMETRY="${WINDOW_SIZE_X}x${WINDOW_SIZE_Y}+${OFFSET_X}+${OFFSET_Y}"
+
+    log "\tUsed geometry: ${X_GEOMETRY}"
+}
+
+#----[ prepare_for_qt ]----#
+function prepare_for_qt () {
 #------------------------------------------------------
-# prepare graphical installation 
+# prepare Qt installation 
 # ---
+	export LD_LIBRARY_PATH="/opt/gnome/lib:$LD_LIBRARY_PATH"
+
 	#=============================================
-	# Setup graphical environment
+	# Setup Qt environment
 	#---------------------------------------------
 	set_inst_qt_env
 	set_splash 100
@@ -155,8 +213,8 @@ function prepare_for_gui () {
 	#---------------------------------------------
 	if [ ! -z "$NEED_XSERVER" ];then
 		export DISPLAY=:0
-		ln -snf /usr/X11R6/bin/XFree86 /var/X11R6/bin/X
-		X -deferglyphs 16 2>/dev/tty8 1>&2 vt07 &
+		[ -z $Xstartpath ] || ln -snf $Xbindir/XFree86 /var/X11R6/bin/X
+		$Xexecutable -deferglyphs 16 2>/dev/tty8 1>&2 vt07 &
 		xserver_pid=$!
 		wait_for_x11
 		if [ "$server_running" = 1 ];then
@@ -164,10 +222,14 @@ function prepare_for_gui () {
 		fi
 	fi
 	#=============================================
-	# set YaST2 GUI options for local displays
+	# set YaST2 Qt options for local displays
 	#---------------------------------------------
 	if [ ! -z "$NEED_XSERVER" ];then
-		Y2_UI_ARGS="--fullscreen --noborder --auto-fonts"
+		Y2_UI_ARGS="--noborder --auto-fonts"
+		count_qt_geometry
+		if [ "${X_GEOMETRY}" != "" ]; then
+		    Y2_UI_ARGS="${Y2_UI_ARGS} -geometry ${X_GEOMETRY}"
+		fi
 	fi
 }
 
@@ -219,7 +281,9 @@ function prepare_for_vnc () {
 	#=============================================
 	# Setup y2base options
 	#---------------------------------------------
-	Y2_UI_ARGS="--fullscreen --noborder --auto-fonts"
+	# xxx
+	#Y2_UI_ARGS="--fullscreen --noborder --auto-fonts"
+	Y2_UI_ARGS="--noborder --auto-fonts"
 
 	#=============================================
 	# Setup VNC server and start it
@@ -235,10 +299,16 @@ function prepare_for_vnc () {
 	fi
 }
 
-#----[ check_GUI ]----#
-function check_gui () {
+function check_gtk()
+{
+    echo "silly stub check_gtk"
+    return 0
+}
+
+#----[ check_Qt ]----#
+function check_Qt () {
 #------------------------------------------------------
-# check if the prepared $GUI medium is valid
+# check if the prepared medium Qt is valid
 # ---
 	if [ ! -z "$NEED_XSERVER" ];then
 		if [ "$server_running" = 0 ];then
@@ -279,11 +349,11 @@ function check_network () {
 		fatalError
 	fi
 	if [ ! -z "$DISPLAY" ];then
-		log "\tDisplay: $DISPLAY found for ssh install"
-		Y2_MODE=$GUI
+		log "\tDisplay: $DISPLAY found for network install"
+		Y2_MODE=gtk
 	fi
-	if ! check_gui ; then
-		log "\t$GUI plugin check failed falling back to ncurses"
+	if ! check_gtk ; then
+		log "\tQt plugin check failed falling back to ncurses"
 		Y2_MODE=ncurses
 	fi
 }
@@ -325,6 +395,18 @@ function start_yast () {
 	fi
 	export QT_IM_MODULE=xim
 
+	if [ "$RUN_FBITERM" = "1" ]; then
+	    OPT_FBITERM=/usr/bin/fbiterm
+	else
+	    OPT_FBITERM=
+	fi
+
+	# set up a background if any needed
+	if [ "${BACKGROUND_IMAGE}" != "" ]; then
+	    log "\tUsing background: ${BACKGROUND_IMAGE}"
+	    fvwm-root --dither ${BACKGROUND_IMAGE}
+	fi
+
 	log "\tStarting YaST2:"
 	log "\tMODULE_NAME: $Y2_MODULE_NAME"
 	log "\tMODE_FLAGS:  $Y2_MODE_FLAGS"
@@ -332,12 +414,6 @@ function start_yast () {
 	log "\tMODE:        $Y2_MODE"
 	log "\tUI_ARGS:     $Y2_UI_ARGS"
 	log "\tQT_IM_MODULE:$QT_IM_MODULE"
-
-	if [ "$RUN_FBITERM" = "1" ]; then
-	    OPT_FBITERM=/usr/bin/fbiterm
-	else
-	    OPT_FBITERM=
-	fi
 	$OPT_FBITERM y2base \
 			"$Y2_MODULE_NAME"   \
 			$Y2_MODE_FLAGS      \
@@ -361,7 +437,7 @@ function start_yast () {
 		#---------------------------------------------
 		log "\t$Y2_OK_MESSAGE"
 	fi
-	if [ $SELECTED_MEDIUM = "SSH" ];then
+	if [ $SELECTED_MEDIUM = "SSH" ] && [ ! "$VNC" = 1 ];then
 		echo "*** Preparing SSH installation for reboot ***"
 		echo "*** NOTE: after reboot, you have to reconnect and call ***"
 		echo "*** /usr/lib/YaST2/startup/YaST2.ssh ***"
@@ -429,13 +505,14 @@ set_syslog ; set_proxy
 # 2) Initialize...
 #---------------------------------------------
 # 2.1) setup PATH
-PATH=/var/X11R6/bin:$ybindir:$PATH
+PATH=$ybindir:$PATH
+[ -z Xstartpath ] || PATH=/var/X11R6/bin:$PATH
 #=============================================
 # 2.2) get X11 driver directory
 #---------------------------------------------
-X11_DRIVER_DIR=/usr/X11R6/lib/modules/drivers
-if [ -d /usr/X11R6/lib64/modules/drivers ];then
-	X11_DRIVER_DIR=/usr/X11R6/lib64/modules/drivers
+X11_DRIVER_DIR=$Xdriverpath
+if [ -d $Xdriver64path ];then
+	X11_DRIVER_DIR=$Xdriver64path
 fi
 #=============================================
 # 2.3) obtain RAM size in Kb
@@ -472,7 +549,7 @@ LOG_PREFIX="Stage [call]"
 # 3) Medium prequalification
 #---------------------------------------------
 # Check which installation mediums can be used. There are
-# four mediums available: GUI(0) SSH(1), VNC(2) and NCURSES(3).
+# four mediums available: Qt(0) SSH(1), VNC(2) and NCURSES(3).
 # The following checks will create an array which contains
 # the possible mediums. An index of 1 indicates "can be used"
 # an index of 0 indicated "cannot be used"
@@ -480,14 +557,13 @@ LOG_PREFIX="Stage [call]"
 MEDIUM=(1 1 1 1)
 
 #=============================================
-# 3.1) prequalification checks for the GUI
+# 3.1) prequalification checks for Qt
 #---------------------------------------------
 log "Starting prequalification checks..."
 log "==================================="
-# 3.1.1) GUI plugin check...
-if ! check_gui ; then
-    echo "GUI plugin check failed"
-	log "\tGUI plugin check failed -> Medium $GUI disabled"
+# 3.1.1) Qt plugin check...
+if ! check_gtk ; then
+	log "\tQt plugin check failed -> Medium Qt disabled"
 	MEDIUM[0]=0
 fi
 # 3.1.2) X-Server module check...
@@ -497,7 +573,7 @@ ia64_check_x11
 XServerAccel=$XServer
 if [ "$XServer" = "vmware" ];then
 	if [ ! -f "$X11_DRIVER_DIR/${XServer}_drv.so" ];then
-		log "\t$XServer driver not installed -> Medium $GUI disabled"
+		log "\t$XServer driver not installed -> Medium Qt disabled"
 		MEDIUM[0]=0
 	fi
 	X11_CONFIG_ID=vmware
@@ -508,7 +584,7 @@ else
 		XServer=vesa
 	fi
 	if [ ! -f "$X11_DRIVER_DIR/${XServer}_drv.so" ];then
-		log "\t$XServer driver not installed -> Medium $GUI disabled"
+		log "\t$XServer driver not installed -> Medium Qt disabled"
 		MEDIUM[0]=0
 	fi
 	X11_CONFIG_ID=$XServer
@@ -523,9 +599,9 @@ if [ "$acceleratedx" = "1" ];then
 		X11_CONFIG_ID=0
 	fi
 fi
-# 3.1.3) Memory check >= 90MB for the $GUI/X11...
+# 3.1.3) Memory check >= 90MB for Qt/X11...
 if [ $MEM_TOTAL -lt "$MEM_NEEDED" ];then
-	log "\tMemory requirement > 90MB not fulfilled -> Medium $GUI disabled"
+	log "\tMemory requirement > 90MB not fulfilled -> Medium Qt disabled"
 	MEDIUM[0]=0
 fi
 # 3.1.4) Check if we need to start our own X11 server...
@@ -534,21 +610,21 @@ if [ -z "$DISPLAY" ];then
 fi
 # 3.1.5) Check for xorg.conf...
 if [ ! -f /etc/X11/xorg.conf ];then
-if [ ! -f /usr/X11R6/lib/X11/xorg.conf ];then
-	log "\tNo X11 configuration template found -> Medium $GUI disabled"
+if [ ! -f $Xorgconftempl ];then
+	log "\tNo X11 configuration template found -> Medium Qt disabled"
 	MEDIUM[0]=0
 else
-	cp /usr/X11R6/lib/X11/xorg.conf /etc/X11/xorg.conf
+	cp $Xorgconftempl /etc/X11/xorg.conf
 fi
 fi 
 # 3.1.6) Check for WindowManager configuration
-if [ ! -f /usr/X11R6/share/fvwm/fvwmrc.yast2 ];then
-	log "\tNo Windowmanager configuration found -> Medium $GUI disabled"
+if [ ! -f $Xsharedir/fvwm/fvwmrc.yast2 ];then
+	log "\tNo Windowmanager configuration found -> Medium Qt disabled"
 	MEDIUM[0]=0
 fi
 # 3.1.7) Check for remote display usage
 if [ ! -z $Display_IP ];then
-	log "\tRemote Display usage -> Medium $GUI enabled"
+	log "\tRemote Display usage -> Medium Qt enabled"
 	log "\tExporting DISPLAY to host: $Display_IP:0.0"
 	export DISPLAY="$Display_IP:0.0"
 	NEED_XSERVER=""
@@ -570,12 +646,12 @@ fi
 # 3.3) prequalification checks for VNC
 #---------------------------------------------
 # 3.3.1) Check for WindowManager configuration
-if [ ! -f /usr/X11R6/share/fvwm/fvwmrc.yast2 ];then
+if [ ! -f $Xsharedir/fvwm/fvwmrc.yast2 ];then
 	log "\tNo Windowmanager configuration found -> Medium VNC disabled"
 	MEDIUM[2]=0
 fi
 # 3.3.2) Check for VNC X-Server binary
-if [ ! -x /usr/X11R6/bin/Xvnc ] ; then
+if [ ! -x $Xbindir/Xvnc ] ; then
 	log "\tNo Xvnc server installed -> Medium VNC disabled"
 	MEDIUM[2]=0
 fi
@@ -591,13 +667,13 @@ fi
 # At this point we are evaluating the variables which have
 # been imported from the install.inf file into the current
 # environment. The standard method of installing the system
-# should be $GUI based. Refering to the variables Textmode,
+# should be Qt based. Refering to the variables Textmode,
 # Braille, UseSSH and VNC another medium could be selected
 # VNC overrides UseSSH
 # ---
 log "Evaluate medium selection..."
 log "============================"
-SELECTED_MEDIUM="GUI"
+SELECTED_MEDIUM="QT"
 if [ "$Textmode" = 1 ];then
 	log "\tMedium Textmode (ncurses) has been selected"
 	SELECTED_MEDIUM="NCURSES"
@@ -627,9 +703,9 @@ log "Check selected medium..."
 log "========================"
 log "\tWished medium is: $SELECTED_MEDIUM"
 case $SELECTED_MEDIUM in
-	GUI)  {
+	QT)  {
 		if [ ${MEDIUM[0]} -eq 0 ];then
-			log "\tMedium $GUI not available, falling back to ncurses"
+			log "\tMedium Qt not available, falling back to ncurses"
 			SELECTED_MEDIUM="NCURSES"
 		fi
 	} ;;
@@ -652,9 +728,9 @@ log "\tSelected medium is: $SELECTED_MEDIUM"
 # 6) Prepare selected medium
 #---------------------------------------------
 case $SELECTED_MEDIUM in
-	GUI)     prepare_for_gui     ; Y2_MODE=$GUI    ;;
+	QT)      prepare_for_qt      ; Y2_MODE=gtk     ;;
 	SSH)     prepare_for_ssh     ; Y2_MODE=ncurses ;;
-	VNC)     prepare_for_vnc     ; Y2_MODE=$GUI    ;;
+	VNC)     prepare_for_vnc     ; Y2_MODE=gtk     ;;
 	NCURSES) prepare_for_ncurses ; Y2_MODE=ncurses ;;
 esac
 
@@ -662,7 +738,7 @@ esac
 # 7) Check prepared medium
 #---------------------------------------------
 case $SELECTED_MEDIUM in
-	GUI) check_gui      ;;
+	QT)  check_Qt      ;;
 	SSH) check_network ;;
 	VNC) check_vnc     ;;
 esac
@@ -679,14 +755,12 @@ fi
 #---------------------------------------------
 Y2_MODULE_NAME=${1:-installation}; shift
 Y2_MODULE_ARGS=\(\"$*\"\)
-echo "About to start yast '$Y2_MODULE_NAME' '$Y2_MODULE_ARGS'"
-sleep 32
 start_yast
 
 #=============================================
 # 9) Clean sweep
 #---------------------------------------------
-# 9.1) clear GUI environment...
+# 9.1) clear Qt environment...
 clr_inst_qt_env
 
 # 9.2) kill X-Server...
@@ -701,3 +775,5 @@ fi
 # 10) exit with YaST2 exit code
 #---------------------------------------------
 exit $Y2_EXIT_CODE
+
+

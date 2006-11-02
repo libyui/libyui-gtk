@@ -174,7 +174,7 @@ public:
 			if (!ygtk_wizard_set_header_icon (wizard,
 			         YGUI::ui()->currentWindow(), getCStringArg (cmd, 0))) {
 				y2warning ("YGWizard: could not load image: %s", getCStringArg (cmd, 0));
-				return YCPBoolean (false);
+//				return YCPBoolean (false); - installer relies on this succeeding
 			}
 		}
 
