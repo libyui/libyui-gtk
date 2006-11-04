@@ -84,7 +84,7 @@ YGUI::createTime (YWidget *parent, YWidgetOpt &opt,
 
 class YGDate : public YDate, public YGLabeledWidget
 {
-	GtkWidget *m_entry, *m_calendar;
+	GtkWidget *m_entry, *m_calendar, *m_popup_calendar;
 
 public:
 	YGDate (const YWidgetOpt &opt, YGWidget *parent,
@@ -98,7 +98,9 @@ public:
 
 		GtkWidget *menu_button = ygtk_menu_button_new();
 		m_calendar = gtk_calendar_new();
-		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), m_calendar);
+		gtk_widget_show (m_calendar);
+		GtkWidget *popup = ygtk_popup_window_new (m_calendar);
+		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
 
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_entry);
 		gtk_container_add (GTK_CONTAINER (getWidget()), menu_button);

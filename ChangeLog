@@ -1,3 +1,16 @@
+2006-11-04  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* src/YGLabel.cc: attempt at making YGColoredLabel
+	working properly on KDE (for gtk-qt theme), by
+	using expose, rather than putting the GtkLabel in
+	a GtkEventBox. Unfortunately, it doesn't like
+	filling rectangles with a frame (but I really liked
+	the frame look, so I will just hope gtk-qt has fixed
+	this). Either way, the code	is nicer this way.
+
+	* ygtkmenubutton.c: use, either explicitely or
+	implicitely, an aid widget to popup regular widgets.
+
 2006-10-30  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGWizard.cc: don't return failure if
