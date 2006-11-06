@@ -69,9 +69,6 @@ YGWidget::~YGWidget()
 
 void YGWidget::realize_cb (GtkWidget *widget, YGWidget *pThis)
 {
-printf ("realized %s (%s)\n", pThis->getWidgetName(), gtk_widget_get_name (widget));
-//	pThis->setMinSize (pThis->m_min_width, pThis->m_min_height);
-
 	YWidget *ywidget = pThis->m_y_widget;
 	pThis->setStretchable (YD_HORIZ, ywidget->stretchable (YD_HORIZ) ||
 	                                 ywidget->hasWeight (YD_HORIZ));
@@ -118,7 +115,6 @@ void YGWidget::emitEvent (YEvent::EventReason reason, bool if_notify,
 
 void YGWidget::setBorder (unsigned int border)
 {
-printf ("setting %s border to %d\n", getWidgetName(), border);
 	gtk_container_set_border_width (GTK_CONTAINER (m_alignment), border);
 }
 
@@ -145,7 +141,6 @@ static GValue floatToGValue (float num)  // helper
 
 void YGWidget::setStretchable (YUIDimension dim, bool stretch)
 {
-printf ("%s - set stretchable in %d? %d\n", getWidgetName(), dim, stretch);
 	m_y_widget->setStretchable (dim, stretch);
 
 	GValue scale = floatToGValue (stretch ? 1.0 : 0.0);

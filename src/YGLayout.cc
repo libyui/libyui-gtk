@@ -34,7 +34,6 @@ public:
 		if (ychild->hasWeight (dimension()))
 			ratio = ychild->weight (dimension());
 
-printf ("split child (%s) padding: %d\n", ygchild->getWidgetName(), ygchild->getBorder());
 		ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), child, ratio, TRUE, 0);
 	}
 
@@ -50,7 +49,6 @@ printf ("split child (%s) padding: %d\n", ygchild->getWidgetName(), ygchild->get
 YContainerWidget *
 YGUI::createSplit (YWidget *parent, YWidgetOpt &opt, YUIDimension dimension)
 {
-printf ("using ygsplit\n");
 	IMPL
 	return new YGSplit (opt, YGWidget::get (parent), dimension);
 }
@@ -154,7 +152,6 @@ YContainerWidget *
 YGUI::createAlignment (YWidget *parent, YWidgetOpt &opt,
                        YAlignmentType halign, YAlignmentType valign)
 {
-printf ("using ygalignment\n");
 	IMPL
 	return new YGAlignment (opt, YGWidget::get (parent), halign, valign);
 }
@@ -176,7 +173,6 @@ public:
 YWidget *
 YGUI::createEmpty (YWidget *parent, YWidgetOpt &opt)
 {
-printf ("using ygempty\n");
 	IMPL
 	return new YGEmpty (opt, YGWidget::get (parent));
 }
@@ -201,7 +197,6 @@ YWidget *
 YGUI::createSpacing (YWidget *parent, YWidgetOpt & opt, float size,
                      bool horiz, bool vert)
 {
-printf ("using ygspacing\n");
 	IMPL
 	return new YGSpacing (opt, YGWidget::get (parent), size, horiz, vert);
 }
@@ -226,7 +221,6 @@ public:
 YContainerWidget *
 YGUI::createReplacePoint( YWidget *parent, YWidgetOpt & opt )
 {
-printf ("using ygreplacepoint\n");
 	IMPL
 	return new YGReplacePoint (opt, YGWidget::get (parent));
 }
@@ -263,7 +257,6 @@ YContainerWidget *
 YGUI::createSquash (YWidget *parent, YWidgetOpt &opt,
                     bool hsquash, bool vsquash)
 {
-printf ("using ygsquash\n");
 	IMPL
 	return new YGSquash (opt, YGWidget::get (parent), hsquash, vsquash);
 }
