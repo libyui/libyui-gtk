@@ -30,6 +30,13 @@ class YGImage : public YImage, public YGWidget
 		m_imageLoaded   = false;
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
+
+if (m_hasZeroWidth || m_isScaled || m_isTiled)
+	YGWidget::setStretchable (YD_HORIZ, true);
+if (m_hasZeroHeight || m_isScaled || m_isTiled)
+	YGWidget::setStretchable (YD_VERT, true);
+
+
 		m_isAnimation   = opt.animated.value();
 		m_isScaled      = opt.scaleToFit.value();
 		m_isTiled       = opt.tiled.value();
@@ -58,6 +65,8 @@ class YGImage : public YImage, public YGWidget
 
 		m_imageLoaded = true;
 		m_pixbuf = pixbuf;
+		gtk_widget_set_size_request (getWidget(), gdk_pixbuf_get_width (pixbuf),
+		                             gdk_pixbuf_get_height (pixbuf));
 	}
 
 	void loadAnimation (GdkPixbufAnimation *pixbuf, const char *error_msg)
@@ -139,39 +148,6 @@ public:
 		g_free (alt_text);
 	}
 
-	// YWidget
-	virtual bool stretchable (YUIDimension dim) const
-	{
-		IMPL
-		if (m_isScaled)
-			return true;
-		return (dim == YD_HORIZ) ? m_hasZeroWidth : m_hasZeroHeight;
-	}
-
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		if (!m_imageLoaded)
-			return getNiceSize (dim);
-
-		if (dim == YD_HORIZ && m_hasZeroWidth)  return 0;
-		if (dim == YD_VERT  && m_hasZeroHeight) return 0;
-
-		if (m_isAnimation) {
-			if (dim == YD_HORIZ)
-				return gdk_pixbuf_animation_get_width (m_animation->pixbuf) + m_border*2;
-			else
-				return gdk_pixbuf_animation_get_height (m_animation->pixbuf) + m_border*2;
-		}
-		else {
-			if (dim == YD_HORIZ)
-				return gdk_pixbuf_get_width (m_pixbuf) + m_border*2;
-			else
-				return gdk_pixbuf_get_height (m_pixbuf) + m_border*2;
-		}
-	}
-	YGWIDGET_IMPL_SET_SIZE
-
 	// callback for image loading
 	static void image_loaded_cb (GdkPixbufLoader *loader, YGImage *pThis)
 	{
@@ -214,6 +190,9 @@ public:
 		if (delay != -1)
 			animation->timeout_id = g_timeout_add (delay, advance_frame_cb, pThis);
 
+		GdkPixbuf *pixbuf = gdk_pixbuf_animation_iter_get_pixbuf (pThis->m_animation->frame);
+		gtk_widget_set_size_request (pThis->getWidget(), gdk_pixbuf_get_width (pixbuf),
+		                             gdk_pixbuf_get_height (pixbuf));
 		return FALSE;
 	}
 
@@ -222,8 +201,8 @@ public:
 	{
 		IMPL
 		int x, y, width, height;
-		x = widget->allocation.x + pThis->m_border;
-		y = widget->allocation.y + pThis->m_border;
+		x = widget->allocation.x + 6;
+		y = widget->allocation.y + 6;
 		width  = widget->allocation.width;
 		height = widget->allocation.height;
 
@@ -274,6 +253,17 @@ public:
 		cairo_destroy (cr);
 		return TRUE;
 	}
+
+	YGWIDGET_IMPL_COMMON
+/*
+	virtual bool stretchable (YUIDimension dim) const
+	{
+		IMPL
+		if (m_isScaled)
+			return true;
+		return (dim == YD_HORIZ) ? m_hasZeroWidth : m_hasZeroHeight;
+	}
+*/
 };
 
 YWidget *

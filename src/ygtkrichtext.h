@@ -18,9 +18,9 @@ G_BEGIN_DECLS
                                        YGTK_TYPE_RICHTEXT, YGtkRichText))
 #define YGTK_RICHTEXT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                        YGTK_TYPE_RICHTEXT, YGtkRichTextClass))
-#define IS_YGTK_RICHTEXT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_RICHTEXT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                        YGTK_TYPE_RICHTEXT))
-#define IS_YGTK_RICHTEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_RICHTEXT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                        YGTK_TYPE_RICHTEXT))
 #define YGTK_RICHTEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                        YGTK_TYPE_RICHTEXT, YGtkRichTextClass))

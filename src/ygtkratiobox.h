@@ -15,8 +15,7 @@
    feel free to contact us that we may give you hand in accomplishing that.
 
    Limitations:
-     * containees visibility is not supported
-     * text direction is not honored
+     * containees visibility is not supported properly
 */
 
 #ifndef YGTK_RATIO_BOX_H
@@ -32,9 +31,9 @@ G_BEGIN_DECLS
                                         YGTK_TYPE_RATIO_BOX, YGtkRatioBox))
 #define YGTK_RATIO_BOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                         YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
-#define IS_YGTK_RATIO_BOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_RATIO_BOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                         YGTK_TYPE_RATIO_BOX))
-#define IS_YGTK_RATIO_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_RATIO_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                         YGTK_TYPE_RATIO_BOX))
 #define YGTK_RATIO_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
@@ -90,9 +89,9 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child, gflo
                                         YGTK_TYPE_RATIO_HBOX, YGtkRatioHBox))
 #define YGTK_RATIO_HBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                         YGTK_TYPE_RATIO_HBOX, YGtkRatioHBoxClass))
-#define IS_YGTK_RATIO_HBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_RATIO_HBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                         YGTK_TYPE_RATIO_HBOX))
-#define IS_YGTK_RATIO_HBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_RATIO_HBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                         YGTK_TYPE_RATIO_HBOX))
 #define YGTK_RATIO_HBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_HBOX, YGtkRatioHBoxClass))
@@ -120,9 +119,9 @@ GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
                                         YGTK_TYPE_RATIO_VBOX, YGtkRatioVBox))
 #define YGTK_RATIO_VBOX_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                         YGTK_TYPE_RATIO_VBOX, YGtkRatioVBoxClass))
-#define IS_YGTK_RATIO_VBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_RATIO_VBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                         YGTK_TYPE_RATIO_VBOX))
-#define IS_YGTK_RATIO_VBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_RATIO_VBOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                         YGTK_TYPE_RATIO_VBOX))
 #define YGTK_RATIO_VBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_VBOX, YGtkRatioVBoxClass))
@@ -144,5 +143,47 @@ GtkWidget* ygtk_ratio_vbox_new (gint spacing);
 GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
-
 #endif /* YGTK_RATIO_BOX_H */
+
+/* YGtkMinSize is container where a widget may be installed so that one can
+   set a minimum size to it. */
+#ifndef YGTK_MIN_SIZE_H
+#define YGTK_MIN_SIZE_H
+
+#include <gtk/gtkbin.h>
+G_BEGIN_DECLS
+
+#define YGTK_TYPE_MIN_SIZE            (ygtk_min_size_get_type ())
+#define YGTK_MIN_SIZE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                       YGTK_TYPE_MIN_SIZE, YGtkMinSize))
+#define YGTK_MIN_SIZE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                       YGTK_TYPE_MIN_SIZE, YGtkMinSizeClass))
+#define YGTK_IS_MIN_SIZE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                       YGTK_TYPE_MIN_SIZE))
+#define YGTK_IS_MIN_SIZE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                       YGTK_TYPE_MIN_SIZE))
+#define YGTK_MIN_SIZE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                       YGTK_TYPE_MIN_SIZE, YGtkMinSizeClass))
+
+typedef struct _YGtkMinSize       YGtkMinSize;
+typedef struct _YGtkMinSizeClass  YGtkMinSizeClass;
+
+struct _YGtkMinSize
+{
+	GtkBin bin;
+	// members
+	guint min_width, min_height;
+};
+
+struct _YGtkMinSizeClass
+{
+	GtkBinClass parent_class;
+};
+
+GType ygtk_min_size_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_min_size_new (guint min_width, guint min_height);
+
+void ygtk_min_size_set (YGtkMinSize *min_size, guint min_width, guint min_height);
+
+G_END_DECLS
+#endif /*YGTK_MIN_SIZE_H*/

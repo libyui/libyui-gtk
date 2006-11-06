@@ -12,8 +12,6 @@
 #include <gdk/gdk.h>
 #include <gtk/gtkbin.h>
 #include <gtk/gtkwindow.h>
-#include <gtk/gtksizegroup.h>
-
 G_BEGIN_DECLS
 
 // YGtkHelpDialog (for showing help text)
@@ -25,9 +23,9 @@ G_BEGIN_DECLS
                                           YGTK_TYPE_HELP_DIALOG, YGtkHelpDialog))
 #define YGTK_HELP_DIALOG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                           YGTK_TYPE_HELP_DIALOG, YGtkHelpDialogClass))
-#define IS_YGTK_HELP_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_HELP_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                           YGTK_TYPE_HELP_DIALOG))
-#define IS_YGTK_HELP_DIALOG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_HELP_DIALOG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                           YGTK_TYPE_HELP_DIALOG))
 #define YGTK_HELP_DIALOG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                           YGTK_TYPE_HELP_DIALOG, YGtkHelpDialogClass))
@@ -63,9 +61,9 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
                                      YGTK_TYPE_WIZARD, YGtkWizard))
 #define YGTK_WIZARD_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                      YGTK_TYPE_WIZARD, YGtkWizardClass))
-#define IS_YGTK_WIZARD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_WIZARD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                      YGTK_TYPE_WIZARD))
-#define IS_YGTK_WIZARD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_WIZARD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                      YGTK_TYPE_WIZARD))
 #define YGTK_WIZARD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                      YGTK_TYPE_WIZARD, YGtkWizardClass))
@@ -173,10 +171,5 @@ const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
 // to honor next_button protect flag
 void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive);
 
-// extension to GtkWidget's size_request that allows one not to calculate the child
-void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition,
-                               gboolean around_child);
-
 G_END_DECLS
-
 #endif /* YGTK_WIZARD_H */

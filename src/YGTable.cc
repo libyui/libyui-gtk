@@ -265,11 +265,6 @@ public:
 		setLabelVisible (false);
 	}
 
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
 	virtual void itemAdded (vector<string> elements, int index)
 	{
 		IMPL
@@ -289,6 +284,8 @@ public:
 
 	virtual void setCurrentItem (int index)
 	{ IMPL; setCurrentRow (index); }
+
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *
@@ -318,11 +315,6 @@ public:
 		// pixbuf column will be added later, if needed
 	}
 
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
 	// YSelectionBox
 	virtual int getCurrentItem()
 	{ IMPL; return getCurrentRow(); }
@@ -349,6 +341,8 @@ public:
 
 	virtual void deleteAllItems()
 	{ IMPL; deleteRows(); }
+
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *
@@ -379,11 +373,6 @@ public:
 		insertColumn (2, "", G_TYPE_STRING);
 		// pixbuf column will be added later, if needed
 	}
-
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
 
 	// YSelectionBox
 	virtual int getCurrentItem()
@@ -457,6 +446,8 @@ public:
 			try { itemSelected (i, false); }
 				catch (...) { break; }
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *

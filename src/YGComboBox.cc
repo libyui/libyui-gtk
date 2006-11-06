@@ -118,15 +118,6 @@ bool m_showingIcons;
 		gtk_entry_set_width_chars (getEntry(), numberOfChars->asInteger()->value());
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
-	// YGLabelWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YComboBox)
-	
 	// Events notifications
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{
@@ -149,6 +140,9 @@ bool m_showingIcons;
 		else
 			pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YComboBox)
 };
 
 YWidget *

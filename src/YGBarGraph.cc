@@ -26,10 +26,7 @@ public:
 			                             label(i).c_str(), value(i));
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_NICESIZE
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *
@@ -75,12 +72,8 @@ public:
 		labels_box = gtk_hbox_new (FALSE, 0);
 		free_label = gtk_label_new (freeFieldLabel->value_cstr());
 		new_part_label = gtk_label_new (newPartFieldLabel->value_cstr());
-		gtk_container_add (GTK_CONTAINER (labels_box), free_label);
-		gtk_container_add (GTK_CONTAINER (labels_box), new_part_label);
-		gtk_box_set_child_packing (GTK_BOX (labels_box), free_label,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (labels_box), new_part_label,
-		                           FALSE, FALSE, 0, GTK_PACK_END);
+		gtk_box_pack_start (GTK_BOX (labels_box), free_label, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (labels_box), new_part_label, FALSE, FALSE, 0);
 
 		/* Slider and the spinners */
 		m_showDelta = opt.countShowDelta.value();
@@ -92,13 +85,10 @@ public:
 			(minFreeSize(), maxFreeSize(), 1);
 		m_new_spin  = gtk_spin_button_new_with_range
 			(minNewPartSize(), maxNewPartSize(), 1);
-		gtk_container_add (GTK_CONTAINER (slider_box), m_free_spin);
-		gtk_container_add (GTK_CONTAINER (slider_box), m_scale);
-		gtk_container_add (GTK_CONTAINER (slider_box), m_new_spin);
-		gtk_box_set_child_packing (GTK_BOX (slider_box), m_free_spin,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (slider_box), m_new_spin,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
+
+		gtk_box_pack_start (GTK_BOX (slider_box), m_free_spin, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (slider_box), m_scale, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (slider_box), m_new_spin, FALSE, FALSE, 0);
 
 		g_signal_connect (G_OBJECT (m_scale), "value-changed",
 		                  G_CALLBACK (scale_changed_cb), this);
@@ -108,13 +98,9 @@ public:
 		                  G_CALLBACK (new_spin_changed_cb), this);
 
 		/* Main layout */
-		gtk_container_add (GTK_CONTAINER (getWidget()), graph);
-		gtk_container_add (GTK_CONTAINER (getWidget()), labels_box);
-		gtk_container_add (GTK_CONTAINER (getWidget()), slider_box);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), labels_box,
-		                           FALSE, FALSE, 2, GTK_PACK_START);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), slider_box,
-		                           FALSE, FALSE, 2, GTK_PACK_START);
+		gtk_box_pack_start (GTK_BOX (getWidget()), graph, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (getWidget()), labels_box, FALSE, TRUE, 2);
+		gtk_box_pack_start (GTK_BOX (getWidget()), slider_box, FALSE, TRUE, 2);
 
 		setValue (newPartSize());  // initialization
 		gtk_widget_show_all (getWidget());
@@ -188,10 +174,7 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_NICESIZE
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *

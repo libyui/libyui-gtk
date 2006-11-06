@@ -51,15 +51,6 @@ public:
 		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
-	// YGLabelWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YTextEntry)
-
 	static void text_inserted_cb (GtkEditable *editable, gchar *text,
 	                              gint length, gint *position,
 	                              YGTextEntry *pThis)
@@ -78,6 +69,9 @@ public:
 	{
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YTextEntry)
 };
 
 YWidget *

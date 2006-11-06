@@ -30,10 +30,8 @@ public:
 			gtk_widget_set_size_request (m_slider,
 				YGUtils::getCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS), -1);
 
-			gtk_container_add (GTK_CONTAINER (getWidget()), m_slider);
-			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);
-			gtk_box_set_child_packing (GTK_BOX (getWidget()), m_spiner,
-			                      FALSE, FALSE, 5, GTK_PACK_START);
+			gtk_box_pack_start (GTK_BOX (getWidget()), m_slider, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (getWidget()), m_spiner, FALSE, FALSE, 5);
 			gtk_widget_show (m_slider);
 		}
 		else {
@@ -107,14 +105,8 @@ public:
 	, YGSpinBox (this, parent, opt, label, minValue, maxValue, initialValue, false)
 	{ }
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-	// YGLabelWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YIntField)
-	// YGSpinBox
 	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
 };
 
@@ -139,14 +131,8 @@ public:
 	, YGSpinBox (this, parent, opt, label, minValue, maxValue, initialValue, true)
 	{ }
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-	// YGLabelWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YSlider)
-	// YGSpinBox
 	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YSlider)
 };
 

@@ -20,14 +20,14 @@ public:
 	{
 		IMPL
 		if (!opt.isShrinkable.value())
-			setMinSize (14, 0);
+			setMinSize (10, 0);
 
 		if (opt.isDefaultButton.value())
 			gtk_widget_grab_default (getWidget());
 
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		g_signal_connect (G_OBJECT (getWidget ()), "clicked",
-				  G_CALLBACK (clicked_cb), this);
+		                  G_CALLBACK (clicked_cb), this);
 		setLabel (label);
 	}
 
@@ -53,8 +53,7 @@ public:
 			path = ICON_DIR + path;
 
 		GError *error = 0;
-		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file
-		                    (path.c_str(), &error);
+		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
 		if (pixbuf) {
 			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
 			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
@@ -64,10 +63,7 @@ public:
 			           "Reason: %s", path.c_str(), error->message);
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_COMMON
 };
 
 

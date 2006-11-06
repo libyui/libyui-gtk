@@ -18,9 +18,9 @@ G_BEGIN_DECLS
                                         YGTK_TYPE_BAR_GRAPH, YGtkBarGraph))
 #define YGTK_BAR_GRAPH_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                         YGTK_TYPE_BAR_GRAPH, YGtkBarGraphClass))
-#define IS_YGTK_BAR_GRAPH(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_BAR_GRAPH(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                         YGTK_TYPE_BAR_GRAPH))
-#define IS_YGTK_BAR_GRAPH_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_BAR_GRAPH_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                         YGTK_TYPE_BAR_GRAPH))
 #define YGTK_BAR_GRAPH_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_BAR_GRAPH, YGtkBarGraphClass))

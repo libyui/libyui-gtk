@@ -19,9 +19,8 @@ public:
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
-		guint fields_width[2] = { 2, 2 };
-		ygtk_field_entry_set(YGTK_FIELD_ENTRY (getWidget()), 2, fields_width,
-		                     ':', YGTK_FIELD_ALIGN_CENTER);
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':', 2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':', 2, "0123456789");
 		setNewTime (time);
 
 		g_signal_connect (G_OBJECT (getWidget()), "field-text-changed",
@@ -56,19 +55,13 @@ public:
 		return str;
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
-	// YGLabelWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YTime)
-
 	// callbacks
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
 	                              YGTime *pThis)
 	{ IMPL; pThis->emitEvent (YEvent::ValueChanged); }
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YTime)
 };
 
 YWidget *
@@ -93,8 +86,10 @@ public:
 	  YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_HBOX, NULL)
 	{
 		IMPL
-		guint fields_width[3] = { 4, 2, 2 };
-		m_entry = ygtk_field_entry_new (3, fields_width, '-', YGTK_FIELD_ALIGN_CENTER);
+		m_entry = ygtk_field_entry_new();
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 4, "0123456789");
 
 		GtkWidget *menu_button = ygtk_menu_button_new();
 		m_calendar = gtk_calendar_new();
@@ -102,10 +97,8 @@ public:
 		GtkWidget *popup = ygtk_popup_window_new (m_calendar);
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
 
-		gtk_container_add (GTK_CONTAINER (getWidget()), m_entry);
-		gtk_container_add (GTK_CONTAINER (getWidget()), menu_button);
-		gtk_box_set_child_packing (GTK_BOX (getWidget()), menu_button,
-		                           FALSE, FALSE, 0, GTK_PACK_START);
+		gtk_box_pack_start (GTK_BOX (getWidget()), m_entry, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 0);
 		gtk_widget_show_all (getWidget());
 
 		setNewDate (date);
@@ -115,7 +108,7 @@ public:
 		g_signal_connect (G_OBJECT (m_calendar), "day-selected",
 		                  G_CALLBACK (calendar_changed_cb), this);
 		g_signal_connect (G_OBJECT (m_calendar), "day-selected-double-click",
-		                  G_CALLBACK (double_click_cb), this);
+		                  G_CALLBACK (double_click_cb), popup);
 	}
 
 	virtual ~YGDate() {}
@@ -157,15 +150,6 @@ public:
 		g_free (time);
 		return str;
 	}
-
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
-	// YGLabelWidget
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YDate)
 
 	// callbacks
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
@@ -222,11 +206,14 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	static void double_click_cb (GtkCalendar *calendar, YGDate *pThis)
+	static void double_click_cb (GtkCalendar *calendar, YGtkPopupWindow *popup)
 	{
 		// close popup
-		gtk_widget_hide (GTK_WIDGET (calendar));
+		gtk_widget_hide (GTK_WIDGET (popup));
 	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YDate)
 };
 
 YWidget *

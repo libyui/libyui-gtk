@@ -120,12 +120,7 @@ public:
 	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
 	{ YGTextView::setCharsNb (numberOfChars->asInteger()->value()); }
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-	// YGLabelWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YMultiLineEdit)
 };
 
@@ -141,13 +136,12 @@ YGUI::createMultiLineEdit (YWidget *parent, YWidgetOpt & opt,
 class YGLogView : public YLogView, public YGTextView
 {
 public:
-	YGLogView (const YWidgetOpt &opt,
-	           YGWidget *parent,
-	           const YCPString &label,
-	           int visibleLines, int maxLines)
+	YGLogView (const YWidgetOpt &opt, YGWidget *parent,
+	           const YCPString &label, int visibleLines, int maxLines)
 	: YLogView (opt, label, visibleLines, maxLines)
 	, YGTextView (this, parent, opt, label, YCPString(""))
 	{
+		setMinSize (0, visibleLines);
 		gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
 		gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
 	}
@@ -161,19 +155,7 @@ public:
 		YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-	YGWIDGET_IMPL_SET_SIZE
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		if (dim == YD_HORIZ) return getNiceSize (dim);
-		return MAX (getNiceSize (dim),
-		            YGUtils::getCharsHeight (getWidget(), visibleLines()));
-	}
-
-	// YGLabelWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YLogView)
 };
 

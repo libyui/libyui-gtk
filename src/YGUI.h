@@ -196,6 +196,9 @@ public:
     virtual long getDisplayColors();
     virtual int  getDefaultWidth();
     virtual int  getDefaultHeight();
+    virtual long deviceUnits (YUIDimension dim, float size);
+    virtual float layoutUnits (YUIDimension dim, long device_units);
+
     virtual bool textMode();
     virtual bool hasImageSupport();
     virtual bool hasLocalImageSupport();

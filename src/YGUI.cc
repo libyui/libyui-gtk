@@ -292,6 +292,20 @@ int YGUI::getDefaultHeight()
 	return m_default_size.height;
 }
 
+// YWidget layout units -> pixels conversion. Same as yast-qt's.
+long YGUI::deviceUnits (YUIDimension dim, float size)
+{
+	if (dim == YD_HORIZ) return (long) ((size * (640.0/80)) + 0.5);
+	else                 return (long) ((size * (480.0/25)) + 0.5);
+}
+
+float YGUI::layoutUnits (YUIDimension dim, long device_units)
+{
+	float size = (float) device_units;
+	if (dim == YD_HORIZ) return size * (80/640.0);
+	else                 return size * (25/480.0);
+}
+
 static void errorMsg (const char *msg)
 {
 	GtkWidget* dialog = gtk_message_dialog_new (NULL,

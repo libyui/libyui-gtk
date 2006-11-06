@@ -98,9 +98,7 @@ public:
 	}
 
 	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_COMMON
 
 	// callbacks
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
@@ -135,12 +133,12 @@ public:
 	YGRadioButtonGroup(const YWidgetOpt &opt,
 	                   YGWidget         *parent)
 	: YRadioButtonGroup (opt),
-	  YGWidget (this, parent)
+	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{ }
 
-	// YWidget
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE_CHAIN (YRadioButtonGroup)
+	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
+	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 };
 
 YContainerWidget *
@@ -231,10 +229,7 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *

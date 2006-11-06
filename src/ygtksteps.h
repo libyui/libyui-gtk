@@ -26,9 +26,9 @@ G_BEGIN_DECLS
                                     YGTK_TYPE_STEPS, YGtkSteps))
 #define YGTK_STEPS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
                                     YGTK_TYPE_STEPS, YGtkStepsClass))
-#define IS_YGTK_STEPS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+#define YGTK_IS_STEPS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                     YGTK_TYPE_STEPS))
-#define IS_YGTK_STEPS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+#define YGTK_IS_STEPS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                     YGTK_TYPE_STEPS))
 #define YGTK_STEPS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                     YGTK_TYPE_STEPS, YGtkStepsClass))

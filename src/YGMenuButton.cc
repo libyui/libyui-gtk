@@ -36,8 +36,9 @@ public:
 	// YMenuButton
 	virtual void createMenu()
 	{
-		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (getWidget()),
-			doCreateMenu (getToplevelMenu()->itemList()));
+		GtkWidget *menu = doCreateMenu (getToplevelMenu()->itemList());
+		gtk_widget_show_all (menu);
+		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (getWidget()), menu);
 	}
 
 	static GtkWidget* doCreateMenu (YMenuItemList &items)
@@ -66,10 +67,7 @@ public:
 		YGUI::ui()->sendEvent (new YMenuEvent (yitem->getId()));
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
+	YGWIDGET_IMPL_COMMON
 };
 
 YWidget *

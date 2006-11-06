@@ -50,22 +50,12 @@ public:
 		YRichText::setText (text);
 	}
 
-	// YWidget
-	// TODO: used by a few more widgets... maybe use some macro approach for this?
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		long size = getNiceSize (dim);
-		return MAX (m_shrinkable ? 10 : 100, size);
-	}
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
 	static void link_pressed_cb (YGtkRichText *rtext, const char *url, YGRichText *pThis)
 	{
 		YGUI::ui()->sendEvent (new YMenuEvent (YCPString (url)));
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 
 

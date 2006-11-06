@@ -11,8 +11,8 @@
 class YGDumbTab : public YDumbTab, public YGWidget
 {
 	GtkRequisition m_label_req;
-	GtkWidget *m_fixed;
 
+	GtkWidget *m_containee;
 	GtkWidget *m_last_tab;
 	vector <GtkWidget *> m_tab_widgets;
 
@@ -22,10 +22,11 @@ public:
 		  YGWidget (this, parent, true, GTK_TYPE_NOTEBOOK, NULL)
 	{
 		IMPL
-		m_fixed = gtk_fixed_new();
-		gtk_widget_show (m_fixed);
-		g_object_ref (G_OBJECT (m_fixed));
-		gtk_object_sink (GTK_OBJECT (m_fixed));
+		m_containee = gtk_event_box_new();
+//		m_fixed = gtk_fixed_new();
+		gtk_widget_show (m_containee);
+		g_object_ref (G_OBJECT (m_containee));
+		gtk_object_sink (GTK_OBJECT (m_containee));
 
 		m_last_tab = 0;
 		m_label_req.width = m_label_req.height = 0;
@@ -37,17 +38,16 @@ public:
 	~YGDumbTab()
 	{
 		IMPL
-		gtk_widget_destroy (m_fixed);
-		g_object_unref (G_OBJECT (m_fixed));
-
+		gtk_widget_destroy (m_containee);
+		g_object_unref (G_OBJECT (m_containee));
 	}
-
+/*
 	virtual GtkFixed* getFixed()
 	{
 		IMPL
 		return GTK_FIXED (m_fixed);
 	}
-
+*/
 	virtual void addTab (const YCPString &label_text)
 	{
 		IMPL
@@ -88,10 +88,10 @@ public:
 	void change_tab (int tab_nb)
 	{
 		if (m_last_tab)
-			gtk_container_remove (GTK_CONTAINER (m_last_tab), m_fixed);
+			gtk_container_remove (GTK_CONTAINER (m_last_tab), m_containee);
 
 		GtkWidget *tab = m_tab_widgets [tab_nb];
-		gtk_container_add (GTK_CONTAINER (tab), m_fixed);
+		gtk_container_add (GTK_CONTAINER (tab), m_containee);
 		m_last_tab = tab;
 	}
 
@@ -111,40 +111,6 @@ public:
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) changed_tab_cb, this);
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_SET_ENABLING
-
-	virtual void setSize (long width, long height)
-	{
-		IMPL
-		doSetSize (width, height);
-
-		if (hasChildren()) {
-			int border = GTK_CONTAINER (getWidget())->border_width;
-			width -= 2*xthickness() + 2*border;
-			height -= 2*ythickness() + 2*border + m_label_req.height;
-
-			YContainerWidget::child(0)->setSize (width, height);
-		}
-	}
-
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		long niceSize = 0;
-		if (hasChildren())
-			niceSize = YContainerWidget::child(0)->nicesize (dim);
-
-		if (dim == YD_HORIZ)
-			niceSize = MAX (niceSize, m_label_req.width);
-		else
-			niceSize += m_label_req.height;
-
-		niceSize += GTK_CONTAINER (getWidget())->border_width;
-		niceSize += thickness (dim) * 2;
-		return niceSize;
-	}
-
 	static void changed_tab_cb (GtkNotebook *notebook, GtkNotebookPage *page,
 	                            gint tab_nb, YGDumbTab *pThis)
 	{
@@ -153,6 +119,10 @@ public:
 
 		pThis->change_tab (tab_nb);
 	}
+
+	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 
 YWidget *

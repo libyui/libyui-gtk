@@ -4,13 +4,11 @@
 #include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
-#include "YGLayout.h"
 #include "ygtkwizard.h"
 #include "YWizard.h"
 
 class YGWizard : public YWizard, public YGWidget
 {
-	GtkWidget *m_fixed;
 	bool m_verboseCommands;
 
 public:
@@ -28,31 +26,21 @@ public:
 		m_verboseCommands = false;
 
 		//** Application area
-		m_fixed = gtk_fixed_new();
-		ygtk_wizard_set_child (YGTK_WIZARD (getWidget()), m_fixed);
-		gtk_widget_show (m_fixed);
-
 		{
 			// We need to have a ReplacePoint that will then have as a kid the actual
 			// content
-			YWidgetOpt alignment_opt;
-			alignment_opt.isHStretchable.setValue (true);
-			alignment_opt.isVStretchable.setValue (true);
-			YGAlignment *contents = new YGAlignment
-				(alignment_opt, this, YAlignCenter, YAlignCenter);
-			contents->setParent (this);
+			YWidget *contents, *replace_point, *empty;
+			YWidgetOpt opt;
+			opt.isHStretchable.setValue (true);
+			opt.isVStretchable.setValue (true);
 
-			YWidgetOpt emptyOpt;
-			YGReplacePoint *replace_point = new YGReplacePoint (emptyOpt, contents);
+			contents = YGUI::ui()->createAlignment (this, opt, YAlignCenter, YAlignCenter);
+			replace_point = YGUI::ui()->createReplacePoint (contents, opt);
 			replace_point->setId (YCPSymbol (YWizardContentsReplacePointID));
-			replace_point->setParent (contents);
+			empty = YGUI::ui()->createEmpty (replace_point, opt);
 
-			// We need to add a kid to YReplacePoint until it gets replaced
-			YGEmpty *empty = new YGEmpty (emptyOpt, replace_point);
-			empty->setParent (replace_point);
-
-			replace_point->addChild (empty);
-			contents->addChild (replace_point);
+			((YContainerWidget *) replace_point)->addChild (empty);
+			((YContainerWidget *) contents)->addChild (replace_point);
 			addChild (contents);
 		}
 
@@ -91,12 +79,6 @@ public:
 		                  G_CALLBACK (action_triggered_cb), this);
 	}
 
-	virtual GtkFixed* getFixed()
-	{
-		IMPL
-		return GTK_FIXED (m_fixed);
-	}
-
 	/* The purpose of this function is to do some sanity checks, besides
 	   the simple test "cmd->name() == func".
 	     args_type is a reverse hexadecimal number where
@@ -117,14 +99,14 @@ public:
 					case 0x1:
 						if (!cmd->value(i)->isString()) {
 							y2error ("YGWizard: expected string as the %d argument for the '%s'"
-											" command.", i+1, func);
+							         " command.", i+1, func);
 							return false;
 						}
 						break;
 					case 0x2:
 						if (!cmd->value(i)->isBoolean()) {
 							y2error ("YGWizard: expected boolean as the %d argument for the '%s'"
-											" command.", i+1, func);
+							         " command.", i+1, func);
 							return false;
 						}
 						break;
@@ -287,42 +269,6 @@ public:
 		return YCPBoolean (true);
 	}
 
-	// nicesize, but only for the GTK widget
-	long size_request (YUIDimension dim)
-	{
-		GtkRequisition req;
-		ygtk_wizard_size_request (YGTK_WIZARD (getWidget()), &req, TRUE);
-printf ("wizard without child: %d x %d\n", req.width, req.height);
-		return dim == YD_HORIZ ? req.width : req.height;
-	}
-
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		long ret = size_request (dim);
-		if (hasChildren())
-			ret += child (0)->nicesize(dim);
-		return ret;
-	}
-
-	virtual void setSize (long width, long height)
-	{
-		IMPL
-		doSetSize (width, height);
-
-		if (hasChildren()) {
-			width  -= size_request (YD_HORIZ);
-			height -= size_request (YD_VERT);
-			child (0)->setSize (width, height);
-		}
-	}
-
-	virtual void setEnabling (bool enable)
-	{
-		IMPL
-		ygtk_wizard_set_sensitive (YGTK_WIZARD (getWidget()), enable);
-	}
-
 	static void action_triggered_cb (YGtkWizard *wizard, gpointer id,
 	                                 gint id_type, YGWizard *pThis)
 	{
@@ -337,6 +283,11 @@ printf ("wizard without child: %d x %d\n", req.width, req.height);
 
 	static void delete_data_cb (gpointer data)
 	{ delete (YCPValue*) data; }
+
+
+	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
 YWidget *

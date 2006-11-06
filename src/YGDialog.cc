@@ -36,8 +36,11 @@ class YGWindow
 public:
 	YGWindow (bool main_window)
 	{
+		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+/*
 		m_widget = (GtkWidget *) g_object_new (GTK_TYPE_WINDOW,
 			"type", GTK_WINDOW_TOPLEVEL, "allow_shrink", TRUE, NULL);
+*/
 		g_object_ref (G_OBJECT (m_widget));
 		gtk_object_sink (GTK_OBJECT (m_widget));
 
@@ -50,6 +53,8 @@ public:
 		if (main_window) {
 			GtkWindow *window = GTK_WINDOW (m_widget);
 			gtk_window_set_title (window, "YaST");
+			int w = YGUI::ui()->getDefaultWidth(), h = YGUI::ui()->getDefaultHeight();
+			gtk_window_resize (window, w, h);
 
 			if (YGUI::ui()->unsetBorder())
 				gtk_window_set_decorated (window, FALSE);
@@ -102,7 +107,7 @@ public:
 		if (child)
 			gtk_container_remove (GTK_CONTAINER (m_widget), child);
 		if (new_child) {
-			child = YGWidget::get (new_child)->getWidget();
+			child = YGWidget::get (new_child)->getLayout();
 			gtk_container_add (GTK_CONTAINER (m_widget), child);
 
 			// notify our size to the containee
@@ -151,7 +156,10 @@ public:
 			lock = true;
 
 			if (width && height)
+{
+printf ("resize window (%d, %d)\n", width, height);
 				gtk_window_resize (GTK_WINDOW (m_widget), width, height);
+}
 			else
 				gtk_window_get_size (GTK_WINDOW (m_widget), &width, &height);
 
@@ -170,24 +178,12 @@ public:
 		return TRUE;
 	}
 
-	static gboolean configure_event_cb (GtkWidget *widget,
-	                                    GdkEventConfigure *event,
+	static gboolean configure_event_cb (GtkWidget *widget, GdkEventConfigure *event,
 	                                    YGWindow  *pThis)
 	{
 		if (event->width != widget->allocation.width ||
-		    event->height != widget->allocation.height) {
-
-#ifdef IMPL_DEBUG
-			fprintf (stderr, "configure event %d, %d (%d %d)\n",
-				 event->width, event->height,
-				 widget->allocation.width,
-				 widget->allocation.height);
-#endif
-
-			pThis->setSize (event->width, event->height);
+		    event->height != widget->allocation.height)
 			pThis->m_userResized = true;
-		}
-
 		return FALSE;
 	}
 
@@ -249,8 +245,8 @@ public:
 
 class YGDialog : public YDialog, public YGWidget
 {
-	GtkWidget *m_fixed;
 	int m_padding;
+	GtkWidget *m_containee;
 
 	YGWindow *m_window;
 
@@ -260,13 +256,12 @@ public:
 		  YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)
 	{
 		m_padding = 0;
+		m_containee = gtk_event_box_new();
 		if (hasDefaultSize() && main_window)
 			m_window = main_window;
 		else
 			m_window = new YGWindow (hasDefaultSize());
 		YGWindow::ref (m_window);
-
-		m_fixed = gtk_fixed_new();
 
 		if (hasWarnColor() || hasInfoColor()) {
 			// emulate a warning / info dialog
@@ -277,14 +272,14 @@ public:
 			gtk_misc_set_padding   (GTK_MISC (icon), 0, 12);
 
 			gtk_box_pack_start (GTK_BOX (getWidget()), icon,    FALSE, FALSE, 12);
-			gtk_box_pack_start (GTK_BOX (getWidget()), m_fixed, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (getWidget()), m_containee, TRUE, TRUE, 0);
 
 			GtkRequisition req;
 			gtk_widget_size_request (icon, &req);
 			m_padding = req.width + 24;
 		}
 		else
-			gtk_box_pack_start (GTK_BOX (getWidget()), m_fixed, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (getWidget()), m_containee, TRUE, TRUE, 0);
 		gtk_widget_show_all (getWidget());
 
 		// NOTE: we need to add this containter to the window right here, else
@@ -313,35 +308,12 @@ public:
 		gtk_widget_hide (m_window->getWidget());
 	}
 
-	// YGWidget
-	GtkFixed *getFixed()
-	{ return GTK_FIXED (m_fixed); }
-
 	GtkWindow *getWindow()
 	{ return GTK_WINDOW (m_window->getWidget()); }
 
-	long nicesize (YUIDimension dim)
-	{
-		IMPL
-		long nice;
-		if (hasDefaultSize()) {
-			if (m_window && m_window->userResized())
-				nice = m_window->getSize (dim);
-			else
-				nice = YGUI::ui()->defaultSize (dim);
-		}
-		else
-			nice = child (0)->nicesize (dim) + m_padding;
-		return nice;
-	}
-
-	void setSize (long width, long height)
-	{
-		IMPL
-		m_window->setSize (width, height);
-		if (hasChildren())
-			child (0)->setSize (width - m_padding, height);
-	}
+	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 
 YDialog *

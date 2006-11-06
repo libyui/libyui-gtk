@@ -151,8 +151,8 @@ static void ygtk_bar_graph_size_request (GtkWidget      *widget,
                                          GtkRequisition *requisition)
 {
 	GTK_WIDGET_CLASS (parent_class)->size_request (widget, requisition);
-	//	const int max_width = 250;
-	//	if (requisition->width > max_width)
-	//		requisition->width = max_width;
+	const int max_width = 250;
+	if (requisition->width > max_width)
+		requisition->width = max_width;
 	requisition->height += YPADDING;
 }

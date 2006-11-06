@@ -13,6 +13,8 @@
 #include "ygtkrichtext.h"
 #include "ygtksteps.h"
 
+#define BUTTON_SPACING 6
+
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
@@ -311,8 +313,8 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass);
 static void ygtk_wizard_init       (YGtkWizard      *wizard);
 static void ygtk_wizard_destroy    (GtkObject       *object);
 static void ygtk_wizard_realize    (GtkWidget       *widget);
-static void ygtk_wizard_internal_size_request  (GtkWidget      *widget,
-                                                GtkRequisition *requisition);
+static void ygtk_wizard_size_request  (GtkWidget      *widget,
+                                       GtkRequisition *requisition);
 static void ygtk_wizard_size_allocate (GtkWidget      *widget,
                                        GtkAllocation  *allocation);
 static gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event);
@@ -371,7 +373,7 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	//** Get expose, so we can draw line border
 	widget_class->expose_event = ygtk_wizard_expose_event;
 	widget_class->realize = ygtk_wizard_realize;
-	widget_class->size_request  = ygtk_wizard_internal_size_request;
+	widget_class->size_request  = ygtk_wizard_size_request;
 	widget_class->size_allocate = ygtk_wizard_size_allocate;
 
 	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
@@ -404,8 +406,6 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                                          g_free, destroy_tree_path);
 	wizard->steps_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                           g_free, NULL);
-
-	gtk_container_set_border_width (GTK_CONTAINER (wizard), 6);
 
 	//** Title
 printf ("creating the title\n");
@@ -457,14 +457,14 @@ printf ("creating the title\n");
 	gtk_widget_set_parent (wizard->m_buttons, GTK_WIDGET (wizard));
 	gtk_widget_show (wizard->m_buttons);
 
-       // make buttons all having the same size
-       GtkSizeGroup *buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
-       gtk_size_group_add_widget (buttons_group, wizard->m_help_button);
-       gtk_size_group_add_widget (buttons_group, wizard->m_release_notes_button);
-       gtk_size_group_add_widget (buttons_group, wizard->m_next_button);
-       gtk_size_group_add_widget (buttons_group, wizard->m_back_button);
-       gtk_size_group_add_widget (buttons_group, wizard->m_abort_button);
-       g_object_unref (G_OBJECT (buttons_group)); 
+	// make buttons all having the same size
+	GtkSizeGroup *buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
+	gtk_size_group_add_widget (buttons_group, wizard->m_help_button);
+	gtk_size_group_add_widget (buttons_group, wizard->m_release_notes_button);
+	gtk_size_group_add_widget (buttons_group, wizard->m_next_button);
+	gtk_size_group_add_widget (buttons_group, wizard->m_back_button);
+	gtk_size_group_add_widget (buttons_group, wizard->m_abort_button);
+	g_object_unref (G_OBJECT (buttons_group)); 
 
 	//** The menu and the navigation widget will be created when requested.
 	//** Help dialog will be build on realize so we can give it a parent window.
@@ -579,7 +579,9 @@ printf ("set child\n");
 
 void ygtk_wizard_set_help_text (YGtkWizard *wizard, const char *text)
 {
-	wizard->m_help = g_strdup (text);	
+	if (wizard->m_help)
+		g_free (wizard->m_help);
+	wizard->m_help = g_strdup (text);
 	if (wizard->m_help_dialog)
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog), text);
 	ENABLE_WIDGET_STR (text, wizard->m_help_button);
@@ -890,10 +892,16 @@ void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive)
 		gtk_widget_set_sensitive (wizard->m_next_button, TRUE);
 }
 
-void ygtk_wizard_size_request (YGtkWizard *wizard, GtkRequisition *requisition,
-                               gboolean around_child)
+//** internal stuff
+
+#define PRINT_GTK_ALLOCATION(label, alloc) \
+	printf ("allocating " label " - x: %d, y: %d, width: %d, height: %d\n", \
+		alloc.x, alloc.y, alloc.width, alloc.height);
+
+void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 printf ("getting size request...\n");
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
 	requisition->width = requisition->height = 0;
 
 	gint border = GTK_CONTAINER (wizard)->border_width;
@@ -903,8 +911,7 @@ printf ("getting size request...\n");
 
 	if (wizard->m_menu) {
 		gtk_widget_size_request (wizard->m_menu, &req);
-		if (!around_child)
-			requisition->width = req.width;
+		requisition->width = req.width;
 		requisition->height += req.height;
 	}
 
@@ -913,14 +920,13 @@ printf ("getting size request...\n");
 		// title
 		GtkRequisition title_req;
 		gtk_widget_size_request (wizard->m_title, &title_req);
-		if (!around_child)
-			requisition->width = MAX (title_req.width + header_padding*2, requisition->width);
+		requisition->width = MAX (title_req.width + header_padding*2, requisition->width);
 		requisition->height += title_req.height + header_padding*2;
 
 		// content
 		int content_height = 0;
 		GtkWidget *child = GTK_BIN (wizard)->child;
-		if (child && !around_child) {
+		if (child) {
 			gtk_widget_size_request (child, &req);
 			requisition->width = MAX (req.width + content_padding*2, requisition->width);
 			content_height += req.height;
@@ -931,8 +937,7 @@ printf ("getting size request...\n");
 		if (wizard->m_navigation) {
 			gtk_widget_size_request (wizard->m_navigation, &req);
 			requisition->width += req.width + content_padding*2;
-			if (!around_child)
-				navigation_height += req.height;
+			navigation_height += req.height;
 		}
 
 		// body result
@@ -943,22 +948,10 @@ printf ("getting size request...\n");
 
 	// buttons
 	gtk_widget_size_request (wizard->m_buttons, &req);
-	if (!around_child)
-		requisition->width = MAX (req.width, requisition->width);
-	requisition->height += req.height + border;
+	requisition->width = MAX (req.width, requisition->width);
+	requisition->height += req.height + BUTTON_SPACING;
 
-printf ("wizard size request (%s): %d x %d\n", around_child ? "around child" : "normal", requisition->width, requisition->height);
-}
-
-//** internal stuff
-
-#define PRINT_GTK_ALLOCATION(label, alloc) \
-	printf ("allocating " label " - x: %d, y: %d, width: %d, height: %d\n", \
-		alloc.x, alloc.y, alloc.width, alloc.height);
-
-void ygtk_wizard_internal_size_request (GtkWidget *widget, GtkRequisition *requisition)
-{
-	ygtk_wizard_size_request (YGTK_WIZARD (widget), requisition, FALSE);
+printf ("wizard size request: %d x %d\n", requisition->width, requisition->height);
 }
 
 void ygtk_wizard_size_allocate (GtkWidget     *widget,
@@ -988,7 +981,8 @@ printf ("size allocate\n");
 	// buttons
 	gtk_widget_get_child_requisition (wizard->m_buttons, &req);
 	buttons_alloc.x = allocation->x + border;
-	buttons_alloc.y = (allocation->y + allocation->height) - req.height - border;
+	buttons_alloc.y = (allocation->y + allocation->height) - req.height -
+	                  border;
 	buttons_alloc.width = allocation->width - border*2;
 	buttons_alloc.height = req.height;
 
@@ -1012,7 +1006,8 @@ printf ("size allocate\n");
 	title_alloc.height = req.height;
 
 	// navigation Y
-	navigation_alloc.y = title_alloc.y + title_alloc.height + header_padding + content_padding;
+	navigation_alloc.y = title_alloc.y + title_alloc.height + header_padding +
+	                     content_padding;
 	navigation_alloc.height = buttons_alloc.y - navigation_alloc.y - header_padding
 	                          - content_padding;
 
@@ -1023,31 +1018,19 @@ printf ("size allocate\n");
 			child_alloc.x = navigation_alloc.x + navigation_alloc.width + content_padding*2;
 		else
 			child_alloc.x = border + content_padding;
-		child_alloc.y = title_alloc.y + title_alloc.height + header_padding + content_padding;
+		child_alloc.y = navigation_alloc.y;
 		child_alloc.width = allocation->width - child_alloc.x - border - content_padding;
-		child_alloc.height = allocation->height - child_alloc.y - buttons_alloc.height
-		                     - content_padding;
+		child_alloc.height = navigation_alloc.height;
 	}
 
 	gtk_widget_size_allocate (wizard->m_title, &title_alloc);
-PRINT_GTK_ALLOCATION ("title", title_alloc)
 	gtk_widget_size_allocate (wizard->m_buttons, &buttons_alloc);
-PRINT_GTK_ALLOCATION ("buttons", buttons_alloc)
 	if (wizard->m_menu)
-{
 		gtk_widget_size_allocate (wizard->m_menu, &menu_alloc);
-PRINT_GTK_ALLOCATION ("menu", menu_alloc)
-}
 	if (wizard->m_navigation)
-{
 		gtk_widget_size_allocate (wizard->m_navigation, &navigation_alloc);
-PRINT_GTK_ALLOCATION ("navigation", navigation_alloc)
-}
 	if (child)
-{
 		gtk_widget_size_allocate (child, &child_alloc);
-PRINT_GTK_ALLOCATION ("child", child_alloc)
-}
 
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->size_allocate (widget, allocation);
 }
@@ -1071,7 +1054,7 @@ gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	if (wizard->m_menu)
 		y += wizard->m_menu->allocation.height;
 	w = widget->allocation.width - border*2;
-	h = wizard->m_buttons->allocation.y - y - border;
+	h = wizard->m_buttons->allocation.y - y - BUTTON_SPACING;
 
 //printf ("outer rectangle: %d, %d x %d, %d\n", x, y, w, h);
 	gdk_cairo_set_source_color (cr, &widget->style->bg [GTK_STATE_SELECTED]);
@@ -1134,7 +1117,7 @@ void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
 		wizard->m_help_dialog = ygtk_help_dialog_new
 			((GtkWindow *) gtk_widget_get_ancestor (button, GTK_TYPE_WINDOW));
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
-					   wizard->m_help);
+		                           wizard->m_help);
 	}
 
 	gtk_widget_show (wizard->m_help_dialog);

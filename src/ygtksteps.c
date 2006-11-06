@@ -190,8 +190,13 @@ PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
 	YGtkSingleStep *step = ygtk_steps_get_step (steps, step_nb);
 
 	if (!step->layout) {
+
+
+		step->layout = gtk_widget_create_pango_layout (GTK_WIDGET (steps), NULL);
+/*
 		step->layout = pango_layout_new (gtk_widget_get_pango_context
 		                                     (GTK_WIDGET (steps)));
+*/
 		gchar *text;
 		if (step->is_heading) {
 			text = g_strdup_printf ("<span size=\"x-large\" weight=\"heavy\">%s</span>",
@@ -239,6 +244,7 @@ void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style)
 
 void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
+printf ("steps size request\n");
 	GTK_WIDGET_CLASS (parent_class)->size_request (widget, requisition);
 
 	YGtkSteps *steps = YGTK_STEPS (widget);
@@ -251,12 +257,15 @@ void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
 		w += PANGO_PIXELS (pango_layout_get_indent (layout));
 		h += PANGO_PIXELS (pango_layout_get_spacing (layout));
 
+		printf ("layout for %s is %d x %d\n", ygtk_steps_get_step (steps, i)->text, w, h);
+
 		requisition->width = MAX (w, requisition->width);
 		requisition->height += h;
 	}
 
 	requisition->width += BORDER * 2;
 	requisition->height += BORDER * 2;
+printf ("requisition: %d x %d\n\n", requisition->width, requisition->height);
 }
 
 gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)

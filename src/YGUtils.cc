@@ -41,6 +41,12 @@ string YGUtils::filterText (const char* text, int length, const char *valid_char
 	return str;
 }
 
+gchar *ygutils_filterText (const char* text, int length, const char *valid_chars)
+{
+	string str = YGUtils::filterText (text, length, valid_chars);
+	return g_strdup (str.c_str());
+}
+
 void YGUtils::filterText (GtkEditable *editable, int pos, int length,
                           const char *valid_chars)
 {
@@ -298,20 +304,25 @@ int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 {
 	PangoContext *context = gtk_widget_get_pango_context (widget);
 	PangoFontMetrics *metrics = pango_context_get_metrics (context,
-		widget->style->font_desc, pango_context_get_language (context));
+		widget->style->font_desc, NULL);
 
-	int char_width = pango_font_metrics_get_approximate_char_width (metrics);
-	char_width /= PANGO_SCALE;
+	int width = pango_font_metrics_get_approximate_char_width (metrics);
 	pango_font_metrics_unref (metrics);
 
-	return char_width * chars_nb;
+	return PANGO_PIXELS (width) * chars_nb;
 }
 
 int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 {
-	PangoFontDescription *font_desc = widget->style->font_desc;
-	int size = pango_font_description_get_size (font_desc) / PANGO_SCALE;
-	return size * chars_nb;
+	PangoContext *context = gtk_widget_get_pango_context (widget);
+	PangoFontMetrics *metrics = pango_context_get_metrics (context,
+		widget->style->font_desc, NULL);
+
+	int height = pango_font_metrics_get_ascent (metrics) +
+	             pango_font_metrics_get_descent (metrics);
+	pango_font_metrics_unref (metrics);
+
+	return PANGO_PIXELS (height) * chars_nb;
 }
 
 void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)

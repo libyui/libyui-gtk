@@ -479,12 +479,6 @@ public:
 		delete m_information_widget;
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
 	static ZyppSelectablePtr selectedPatch (GtkTreeView *tree_view)
 	{
 		IMPL
@@ -551,6 +545,8 @@ public:
 		if (mark_selectable (selectable, state))
 			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, state, -1);
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 
 // Pattern selector
@@ -1589,12 +1585,6 @@ public:
 		delete m_pattern_selector;
 	}
 
-	// YWidget
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-
 protected:
 	void setPackagesMode (bool use_back_button)
 	{
@@ -1901,6 +1891,8 @@ protected:
 
 		return confirmed;
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 #endif /*DISABLE_PACKAGE_SELECTOR*/
 

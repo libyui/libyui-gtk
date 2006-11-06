@@ -17,6 +17,7 @@
 class YGFrame : public YFrame, public YGWidget
 {
 	GtkRequisition m_label_req;
+
 public:
 	YGFrame (const YWidgetOpt &opt,
 		 YGWidget         *parent,
@@ -28,8 +29,7 @@ public:
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;
 
-		gtk_container_add (GTK_CONTAINER (getWidget()), gtk_fixed_new());
-		gtk_widget_show_all (getWidget());
+//		gtk_widget_show_all (getWidget());
 		setLabel (label);
 	}
 
@@ -52,59 +52,17 @@ public:
 		gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
 	}
 
-	// ident children a bit
-	virtual void addChild (YWidget *child)
-	{
-		YContainerWidget::addChild (child);
-		doMoveChild (child, CHILDREN_IDENTATION, 0);
+	YGWIDGET_IMPL_COMMON
+	virtual void childAdded (YWidget *ychild)
+	{  // add children with some identation
+		YGWidget *ygchild = YGWidget::get (ychild);
+		ygchild->setPadding (0, 0, 15, 0);
+		ygchild->setBorder (0);
+
+		GtkWidget *child = ygchild->getLayout();
+		gtk_container_add (GTK_CONTAINER (getWidget()), child);
 	}
-
-	// YGWidget
-	GtkFixed *getFixed()
-	{
-		return GTK_FIXED (gtk_bin_get_child (GTK_BIN (getWidget())));
-	}
-
-	// YWidget
-	YGWIDGET_IMPL_SET_ENABLING
-
-	virtual void setSize (long width, long height)
-	{
-		doSetSize (width, height);
-
-		if (hasChildren()) {
-			int border = GTK_CONTAINER (getWidget())->border_width;
-			width -= 2*xthickness() + border + CHILDREN_IDENTATION;
-			height -= 2*ythickness() + border + m_label_req.height;
-
-			YContainerWidget::child(0)->setSize (width, height);
-		}
-	}
-
-	virtual long nicesize (YUIDimension dim)
-	{
-		IMPL
-		long niceSize = 0;
-		if (hasChildren())
-			niceSize = YContainerWidget::child(0)->nicesize (dim);
-		GtkFrame *frame = GTK_FRAME (getWidget());
-
-		if (frame->label_widget && GTK_WIDGET_VISIBLE (frame->label_widget)) {
-			gtk_widget_size_request (frame->label_widget, &m_label_req);
-			m_label_req.width += 6;
-			m_label_req.height = MAX (0, m_label_req.height -
-			                             GTK_WIDGET (frame)->style->ythickness);
-			if (dim == YD_HORIZ)
-				niceSize = MAX (niceSize, m_label_req.width) + CHILDREN_IDENTATION;
-			else
-				niceSize += m_label_req.height;
-		}
-
-		niceSize += GTK_CONTAINER (frame)->border_width;
-		niceSize += thickness (dim) * 2;
-
-		return niceSize;
-	}
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
 YContainerWidget *

@@ -9,51 +9,56 @@
 class YGWidget
 {
 public:
-	YGWidget(YWidget *y_container, YGWidget *parent,
-			 const char *property_name = NULL, ...);
-	YGWidget(YWidget *y_widget, YGWidget *parent,
-			 bool show, GType type,
-			 const char *property_name, ...);
+	YGWidget(YWidget *y_widget, YGWidget *parent, bool show,
+	         GType type, const char *property_name, ...);
 	virtual ~YGWidget();
 
-	GtkWidget *getWidget() { return m_widget; }
+	virtual GtkWidget *getWidget() { return m_widget; }
 	const char *getWidgetName() { return m_y_widget->widgetClass(); }
-	virtual GtkFixed *getFixed();
+	void show();
 
-	long getNiceSize (YUIDimension dim);
-	void show ();
-	void doSetSize (long newWidth, long newHeight);
-	void doMoveChild (YWidget *child, long newx, long newy);
-	int xthickness();
-	int ythickness();
-	int thickness (YUIDimension dim)
-		{ return dim == YD_HORIZ ? xthickness() : ythickness(); }
+	// containers should use this call rather than getWidget()
+	GtkWidget *getLayout() { return m_alignment; }
 
-	/* Get the YGWidget associated with this YWidget */
+	// Get the YGWidget associated with a YWidget
 	static YGWidget *get (YWidget *y_widget);
 
+	// for YWidget
+	virtual bool doSetKeyboardFocus();
+	virtual void doSetEnabling (bool enabled);
+
 	// Event handling
-	void emitEvent(YEvent::EventReason reason,
-	               bool if_notify = true, bool if_not_pending = false);
+	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
+	               bool if_not_pending = false);
 
 	// Layout
 	void setBorder (unsigned int border);  // in pixels
-	void setMinSize (unsigned int min_xsize, unsigned int min_ysize);  // in characters
+	unsigned int getBorder();
+
+	void setMinSize (int min_width, int min_height);  // in characters
+	void setStretchable (YUIDimension dim, bool stretch);
+	void setAlignment (YAlignmentType halign, YAlignmentType valign);
+	void setPadding (int top, int bottom, int left, int right);
 
 protected:
-	/* The associated GTK+ widget. */
-	GtkWidget *m_widget;
+	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
+	YWidget *m_y_widget;  // associated YWidget
+	GtkWidget *m_alignment;  // associated GtkWidget where this widget is installed
+	                         // so we may set border and other things
+	GtkWidget *m_min_size;  // installed on m_widget, allows setting a min size
 
-	// no RTTI for dynamic_cast ?
-	YWidget   *m_y_widget;
-	GtkAllocation m_alloc;
 	void construct (YWidget *y_widget, YGWidget *parent,
 	                bool show, GType type,
 	                const char *property_name, va_list args);
 
+	// callbacks
+	GtkAllocation m_alloc;
+	static void realize_cb (GtkWidget *widget, YGWidget *pThis);
+	static void size_allocate_cb (GtkWidget *widget, GtkAllocation *allocation,
+	                              YGWidget *pThis);
+
 	// parameters to set the layout prettier
-	unsigned int m_border;
-	unsigned int m_min_xsize, m_min_ysize;  // 0 = disabled
+	int m_min_width, m_min_height;
 };
 
 /*
@@ -61,56 +66,27 @@ protected:
  * methods and the (multiply inherited) YGWidget base implementation
  * for GTK+.
  */
+// FIXME: we should set parent to setstretchable
+#define YGWIDGET_IMPL_COMMON                                   \
+	virtual bool setKeyboardFocus()                              \
+	    { return doSetKeyboardFocus(); }                         \
+	virtual void setEnabling (bool enabled)                      \
+	    { doSetEnabling (enabled); }                             \
+	virtual long nicesize (YUIDimension dim) { return 0; }       \
+	virtual void moveChild (YWidget *child, long x, long y) {}   \
+	virtual void setSize (long width, long height) {}
 
-#define YGWIDGET_IMPL_NICESIZE \
-		virtual long nicesize (YUIDimension dim) \
-			{ IMPL; return getNiceSize (dim); }
-#define YGWIDGET_IMPL_SET_ENABLING \
-		virtual void setEnabling (bool enabled) \
-			{ IMPL; gtk_widget_set_sensitive (getWidget(), enabled); }
-
-#ifdef IMPL_DEBUG
-#define YGWIDGET_IMPL_SET_SIZE \
-		virtual void setSize (long newWidth, long newHeight) { \
-			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
-			         m_widget, m_y_widget, newWidth, newHeight); \
-			doSetSize (newWidth, newHeight); \
-		}
-#define YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass) \
-		virtual void setSize (long newWidth, long newHeight) { \
-			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld + chain\n", G_STRLOC, G_STRFUNC, \
-			         m_widget, m_y_widget, newWidth, newHeight); \
-			doSetSize (newWidth, newHeight); \
-			ParentClass::setSize (newWidth, newHeight); \
-		}
-#define YGWIDGET_IMPL_MOVE_CHILD \
-		virtual void moveChild (YWidget *child, long newx, long newy) {       \
-			fprintf (stderr, "%s:%s -G%p-Y%p- %ld, %ld\n", G_STRLOC, G_STRFUNC, \
-			         child ? get(child)->getWidget():NULL, child, newx, newy);  \
-			doMoveChild (child, newx, newy); \
-		}
-#else
-#define YGWIDGET_IMPL_SET_SIZE \
-		virtual void setSize (long newWidth, long newHeight) { \
-			doSetSize (newWidth, newHeight); \
-		}
-#define YGWIDGET_IMPL_SET_SIZE_CHAIN(ParentClass) \
-		virtual void setSize (long newWidth, long newHeight) { \
-			doSetSize (newWidth, newHeight); \
-			ParentClass::setSize (newWidth, newHeight); \
-		}
-#define YGWIDGET_IMPL_MOVE_CHILD \
-		virtual void moveChild (YWidget *child, long newx, long newy) {       \
-			doMoveChild (child, newx, newy); \
-		}
-#endif
-
-#define YGWIDGET_IMPL_KEYBOARD_FOCUS \
-		virtual bool setKeyboardFocus() { \
-			gtk_widget_grab_focus (GTK_WIDGET(getWidget())); \
-			return gtk_widget_is_focus (GTK_WIDGET(getWidget())); \
-			}
-
+// for containers
+#define YGWIDGET_IMPL_CHILD_ADDED(container)                  \
+	virtual void childAdded (YWidget *ychild) {                 \
+	    GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
+	    gtk_container_add (GTK_CONTAINER (container), child);   \
+	}
+#define YGWIDGET_IMPL_CHILD_REMOVED(container)                 \
+	virtual void childRemoved (YWidget *ychild) {                \
+	    GtkWidget *child = YGWidget::get (ychild)->getLayout();  \
+	    gtk_container_remove (GTK_CONTAINER (container), child); \
+	}
 
 /* This is a convenience class that allows for a label next to the
    intended widget. It should be used, in case you have the need for

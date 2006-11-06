@@ -36,7 +36,6 @@ libpy2gtk_la_SOURCES = \
 	YGTree.cc \
 	YGMenuButton.cc \
 	YGBarGraph.cc \
-	YGMultiProgressMeter.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
 	YGTime.cc \

@@ -36,12 +36,6 @@ public:
 
 	virtual ~YGTree() { }
 
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	YGWIDGET_IMPL_KEYBOARD_FOCUS
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTree)
-
 	GtkTreeStore *getStore()
 	{ return GTK_TREE_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
 	GtkTreeModel *getModel()
@@ -146,6 +140,9 @@ protected:
 		if (pThis->getNotify())
 			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
 	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTree)
 };
 
 YWidget *
