@@ -1,3 +1,34 @@
+2006-11-07  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* YGLayout.cc & YGWidget.cc: changed layout code to use
+	our own GTK based solution for the layout rather than
+	the YWidget provided one. Still some minor problems, but
+	it is working pretty well. The code actually was reduced
+	in size because we no longer need the setSize and nicesize,
+	which were also easily broken code.
+
+	The layout uses YGtkRatioBox for the YSplit to support
+	weights. Each widget is contained in a YGtkMinSize, that
+	allows us to set a minimum size, which is itself contained
+	in a GtkAlignment, so we may specific the widget has
+	stretchable or not, among others. We could cut YGtkMinSize
+	on most widgets by having that value passed by the YGWidget
+	constructor, but too many arguments there would obviously
+	not be very nice...
+
+	So, this layout code has the advantages of: being simpler,
+	faster and not suffering from the labels getting truncated
+	problem. It also gives us let us do some hacks like, for
+	instance, having labels and entries aligned horizontally...
+
+	* YGLayout.h: removed.
+
+	* ygtkratiobox.c: honor right-to-left languages. The API
+	needs to be modified a bit in order to let it be possible
+	to set a widget to be fully stretchable, independent from
+	the weight. We need to fix this limitation for Layout-mixed.ycp
+	test.
+
 2006-11-04  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* src/YGLabel.cc: attempt at making YGColoredLabel
