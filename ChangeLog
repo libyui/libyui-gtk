@@ -29,6 +29,9 @@
 	the weight. We need to fix this limitation for Layout-mixed.ycp
 	test.
 
+	* ygtkfilterentry.c: written a smaller (1110 to 230 lines), and
+	what I think is more intuitve, replacement.
+
 2006-11-04  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* src/YGLabel.cc: attempt at making YGColoredLabel

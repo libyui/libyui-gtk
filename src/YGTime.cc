@@ -23,7 +23,8 @@ public:
 		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':', 2, "0123456789");
 		setNewTime (time);
 
-		g_signal_connect (G_OBJECT (getWidget()), "field-text-changed",
+		gtk_widget_show_all (getWidget());
+		g_signal_connect (G_OBJECT (getWidget()), "field-entry-changed",
 		                  G_CALLBACK (value_changed_cb), this);
 	}
 
@@ -87,9 +88,9 @@ public:
 	{
 		IMPL
 		m_entry = ygtk_field_entry_new();
-		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
-		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
 		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 4, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (m_entry), '-', 2, "0123456789");
 
 		GtkWidget *menu_button = ygtk_menu_button_new();
 		m_calendar = gtk_calendar_new();
@@ -102,7 +103,7 @@ public:
 		gtk_widget_show_all (getWidget());
 
 		setNewDate (date);
-		g_signal_connect (G_OBJECT (m_entry), "field-text-changed",
+		g_signal_connect (G_OBJECT (m_entry), "field-entry-changed",
 		                  G_CALLBACK (value_changed_cb), this);
 
 		g_signal_connect (G_OBJECT (m_calendar), "day-selected",

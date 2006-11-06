@@ -85,7 +85,7 @@ struct _YGtkFieldEntryClass
 {
 	GtkHBoxClass parent_class;
 
-	void (* value_changed) (YGtkFieldEntry *entry, gint field_nb);
+	void (* filter_entry_changed) (YGtkFieldEntry *entry, gint field_nb);
 };
 
 GtkWidget* ygtk_field_entry_new();
@@ -96,8 +96,6 @@ GType ygtk_field_entry_get_type (void) G_GNUC_CONST;
 void ygtk_field_entry_add_field (YGtkFieldEntry *entry, gchar separator,
                                  guint max_length, const gchar *valid_chars);
 
-YGtkFilterEntry *ygtk_field_entry_get_field (YGtkFieldEntry *entry, guint nb);
-guint ygtk_field_entry_entries_nb (YGtkFieldEntry *entry);
 // convinience
 void ygtk_field_entry_set_field_text (YGtkFieldEntry *entry, guint nb, const gchar *text);
 const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *entry, guint nb);
