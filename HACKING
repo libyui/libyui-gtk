@@ -95,23 +95,48 @@ Code structure
 On specific widgets
 
   Layout widgets
-    Yast-core is the one responsible for the layout geometry stuff.
-    This is why we use GtkFixed and this means that this part of
-    the code is almost inexistant.
-    We still need to create those classes though; they provide
-    a GtkFixed for their children to sit on top, but they have almost
-    no code. That's because the required functions (that is, moveChild()
-    and setSize()) are provided on YGWidget and inherited by them.
 
-    YGAlignment
-      As opposite to the other layouts, this one uses a GtkEventBox
-      on bottom of the GtkFixed and overrides getFixed() as
-      appropriate.
-      This is because GtkFixed doesn't have an associated GtkWindow
-      that we need because we may have to draw a background image
-      if requested.
+    Old approach
+      What yast-ncurses and -qt do, and we used to follow, is to let
+      YWidget layout framework do that work for us.
 
-      YGFrame and YGDumbTab containers use the same approach.
+      Every container widget we implemented had an associated GtkFixed
+      that it returned with a getFixed(). Other widgets getFixed()
+      would request the parent's getFixed().
+
+      However this approach was actually quite complicated, because we
+      had to implement nicesize() and setSize() on container widgets in
+      a way that the containee would be placed there correctly. So, for
+      instance, for YGDumbTab, we had to request informations like the
+      tabs labels height, the frame around the page, etc. Furthermore,
+      the ultimate decision to drop the approach was when we redesigned
+      YGtkWizard. This time the steps widget was dynamic and the work
+      to check of any size change and report to YWidget just felt too
+      hackish. Attempts at abstracting this were successful, but not
+      very satisfactory from a code's point of view.
+
+    Current approach
+      Currently, we just implement the layout widgets ourselves. The
+      most important is YGSplit, which would be the equivalent of
+      GtkBox (though we use our YGtkRatioBox to support the weight
+      childs attribute).
+
+      The YGLayout code is just a little bigger than the previous, it's
+      easy to understand, and overall it made the code base smaller.
+      Furthermore, YWidgets had bugs like labels getting truncated
+      (which had to be avoided by an explicit request for recalculating
+      the whole layout geometry) that we don't suffer. The layout is
+      also a lot faster.
+
+      To set minimum size to widgets, to make them look prettier, we
+      install all widgets in our YGtkMinSize container. To be able
+      to honor the stretchable attribute, we also install this
+      into a GtkAlignment. So, YGWidget's getWidget() returns the
+      inner widget that is the one that our YWidget implementation ask
+      it to create, while getLayout() should be used for layouts to get
+      the outter widget, which would be the GtkAlignment. Furthermore
+      the GtkAlignment allows us to align the widget on YGAlignment
+      (which is just a proxy).
 
   Most of the widgets are a no brainer. Any other widget should have
   some comments as appropriate.
