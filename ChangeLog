@@ -3,6 +3,10 @@
 	* YGTextEntry.cc: use YGtkFilterEntry, from YGtkFieldEntry,
 	rather than doing that work itself.
 
+	* ygtkwizard.c: first try at a11y-it based on GtkAssitance.
+	GOK doesn't seem to work here though (but then it doesn't
+	work on many other guis, including GnomeDruid).
+
 2006-11-07  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc & YGWidget.cc: changed layout code to use

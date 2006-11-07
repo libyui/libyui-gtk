@@ -19,8 +19,10 @@ public:
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
-		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':', 2, "0123456789");
-		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':', 2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':',
+		                            2, "0123456789");
+		ygtk_field_entry_add_field (YGTK_FIELD_ENTRY (getWidget()), ':',
+		                            2, "0123456789");
 		setNewTime (time);
 
 		gtk_widget_show_all (getWidget());
