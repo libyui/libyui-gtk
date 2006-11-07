@@ -73,8 +73,6 @@ extern "C" {
 	int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
-	gchar *ygutils_filterText (const char* text, int length, const char *valid_chars);
-
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
 	                                           gboolean cut_breaklines);

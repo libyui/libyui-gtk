@@ -41,12 +41,6 @@ string YGUtils::filterText (const char* text, int length, const char *valid_char
 	return str;
 }
 
-gchar *ygutils_filterText (const char* text, int length, const char *valid_chars)
-{
-	string str = YGUtils::filterText (text, length, valid_chars);
-	return g_strdup (str.c_str());
-}
-
 void YGUtils::filterText (GtkEditable *editable, int pos, int length,
                           const char *valid_chars)
 {

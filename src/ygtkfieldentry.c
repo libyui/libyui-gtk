@@ -10,8 +10,6 @@
 
 /* YGtkFilterEntry */
 
-gchar *ygutils_filterText (const char *text, int length, const char *valid_chars);
-
 static void ygtk_filter_entry_class_init (YGtkFilterEntryClass *klass);
 static void ygtk_filter_entry_init       (YGtkFilterEntry      *entry);
 static void ygtk_filter_entry_destroy    (GtkObject            *object);
@@ -60,6 +58,8 @@ void ygtk_filter_entry_insert_text (GtkEditable *editable, const gchar *new_text
                                     gint new_text_length, gint *position)
 {
 	const gchar *valid_chars = YGTK_FILTER_ENTRY (editable)->valid_chars;
+	if (!valid_chars)
+		return;
 	const gchar *i, *j;
 	for (i = new_text; *i; i++) {
 		for (j = valid_chars; *j; j++) {

@@ -19,15 +19,15 @@ G_BEGIN_DECLS
 
 #define YGTK_TYPE_FILTER_ENTRY            (ygtk_filter_entry_get_type ())
 #define YGTK_FILTER_ENTRY(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-                                           YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntry))
+                                       YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntry))
 #define YGTK_FILTER_ENTRY_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
-                                           YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntryClass))
+                                 YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntryClass))
 #define YGTK_IS_FILTER_ENTRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                            YGTK_TYPE_FILTER_ENTRY))
 #define YGTK_IS_FILTER_ENTRY_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                            YGTK_TYPE_FILTER_ENTRY))
 #define YGTK_FILTER_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-                                           YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntryClass))
+                                  YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntryClass))
 
 typedef struct _YGtkFilterEntry       YGtkFilterEntry;
 typedef struct _YGtkFilterEntryClass  YGtkFilterEntryClass;
@@ -47,7 +47,8 @@ struct _YGtkFilterEntryClass
 GtkWidget* ygtk_filter_entry_new();
 GType ygtk_filter_entry_get_type (void) G_GNUC_CONST;
 
-void ygtk_filter_entry_set_valid_chars (YGtkFilterEntry *entry, const gchar *valid_chars);
+void ygtk_filter_entry_set_valid_chars (YGtkFilterEntry *entry,
+                                        const gchar *valid_chars);
 
 G_END_DECLS
 #endif /*YGTK_FILTER_ENTRY_H*/

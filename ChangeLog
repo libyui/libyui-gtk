@@ -1,3 +1,8 @@
+2006-11-08  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* YGTextEntry.cc: use YGtkFilterEntry, from YGtkFieldEntry,
+	rather than doing that work itself.
+
 2006-11-07  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc & YGWidget.cc: changed layout code to use

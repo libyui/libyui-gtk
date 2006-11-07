@@ -5,18 +5,17 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YTextEntry.h"
-#include "YGUtils.h"
 #include "YGWidget.h"
+#include "ygtkfieldentry.h"
 
 class YGTextEntry : public YTextEntry, public YGLabeledWidget
 {
 public:
-	YGTextEntry (const YWidgetOpt &opt,
-		             YGWidget *parent,
-		             const YCPString &label,
-		             const YCPString &text)
-		: YTextEntry (opt, label)
-		, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_ENTRY, NULL)
+	YGTextEntry (const YWidgetOpt &opt, YGWidget *parent,
+	             const YCPString &label, const YCPString &text)
+	: YTextEntry (opt, label),
+	  YGLabeledWidget (this, parent, label, YD_VERT, true,
+	                   YGTK_TYPE_FILTER_ENTRY, NULL)
 	{
 		setText (text);
 
@@ -24,10 +23,8 @@ public:
 			gtk_entry_set_visibility (GTK_ENTRY (getWidget()), FALSE);
 
 		// Signals to know of any text modification
-		g_signal_connect (G_OBJECT (getWidget()), "insert-text",
-		                  G_CALLBACK (text_inserted_cb), this);
-		g_signal_connect (G_OBJECT (getWidget()), "delete-text",
-		                  G_CALLBACK (text_deleted_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "changed",
+		                  G_CALLBACK (text_changed_cb), this);
 	}
 
 	virtual ~YGTextEntry() {}
@@ -38,12 +35,6 @@ public:
 		return YCPString (gtk_entry_get_text (GTK_ENTRY (getWidget())));
 	}
 
-	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
-	{
-		gtk_entry_set_width_chars (GTK_ENTRY (getWidget()),
-		                           numberOfChars->asInteger()->value());
-	}
-
 	virtual void setText (const YCPString &text)
 	{
 		/* No need to check for valid chars as that's the responsible of the YCP
@@ -51,21 +42,20 @@ public:
 		gtk_entry_set_text (GTK_ENTRY (getWidget()), text->value_cstr());
 	}
 
-	static void text_inserted_cb (GtkEditable *editable, gchar *text,
-	                              gint length, gint *position,
-	                              YGTextEntry *pThis)
+	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
 	{
-		if (YGUtils::filterText (text, length, pThis->getValidChars()->value_cstr())
-		    != text) {
-			g_signal_stop_emission_by_name (editable, "insert_text");
-			gdk_beep();
-		}
-		else
-			pThis->emitEvent (YEvent::ValueChanged);
+		gtk_entry_set_width_chars (GTK_ENTRY (getWidget()),
+		                           numberOfChars->asInteger()->value());
 	}
 
-	static void text_deleted_cb (GtkEditable *editable, gint start_pos,
-	                             gint end_pos, YGTextEntry *pThis)
+	virtual void setValidChars (const YCPString &validChars)
+	{
+		ygtk_filter_entry_set_valid_chars (YGTK_FILTER_ENTRY (getWidget()),
+		                                   validChars->value_cstr());
+		YTextEntry::setValidChars (validChars);
+	}
+
+	static void text_changed_cb (GtkEditable *editable, YGTextEntry *pThis)
 	{
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
