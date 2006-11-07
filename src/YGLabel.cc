@@ -26,6 +26,7 @@ public:
 		else {
 			gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
 			gtk_misc_set_padding (GTK_MISC (getWidget()), margin, margin);
+			setAlignment (YAlignUnchanged, YAlignCenter);
 		}
 
 		if (opt.boldFont.value())
@@ -70,7 +71,7 @@ public:
 	}
 
 	// YWidget
-	bool doSetKeyboardFocus()
+	virtual bool doSetKeyboardFocus()
 	{
 		if (GTK_IS_ENTRY (getWidget())) {
 			gtk_widget_grab_focus (GTK_WIDGET(getWidget()));
@@ -91,11 +92,6 @@ public:
 	}
 };
 
-#define YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS   \
-		virtual bool setKeyboardFocus() {          \
-			return doSetKeyboardFocus();             \
-		}
-
 #include "YLabel.h"
 
 class YGLabel : public YLabel, public YGGenericLabel
@@ -105,14 +101,8 @@ public:
 	: YLabel (opt, text), YGGenericLabel (this, parent, opt, text)
 	{ }
 
-	// YGWidget
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	// YGLabeledWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YLabel)
-	// YGGenericLabel
-	YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS
 };
 
 YWidget *
@@ -133,14 +123,8 @@ public:
 	, YGGenericLabel (this, parent, opt, text, &fgColor, &bgColor, margin)
 	{ }
 
-	// YGWidget
-	YGWIDGET_IMPL_SET_SIZE
-	YGWIDGET_IMPL_NICESIZE
-	YGWIDGET_IMPL_SET_ENABLING
-	// YGLabeledWidget
+	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YColoredLabel)
-	// YGGenericLabel
-	YG_GENERIC_LABEL_IMPL_KEYBOARD_FOCUS
 };
 
 YWidget *

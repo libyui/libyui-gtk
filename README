@@ -44,6 +44,6 @@ Running
 
 Documentation
 
-  A code overview is given on HACKING.
-  For documentation on YaST in general:
+  A code overview is given on the HACKING file.
+  For documentation of YaST in general:
     http://developer.novell.com/wiki/index.php/Special:Downloads/yast/doc
