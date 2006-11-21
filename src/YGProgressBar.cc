@@ -16,7 +16,7 @@ public:
 	               const YCPString& label,
 	               const YCPInteger& maxprogress, const YCPInteger& progress)
 	: YProgressBar (opt, label, maxprogress, progress)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{ }
 
@@ -57,7 +57,7 @@ public:
 	                    const YCPString& label,
 	                    const YCPString &filename, int expectedSize)
 	: YDownloadProgress (opt, label, filename, expectedSize)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{
 		timeout_id = g_timeout_add (250, timeout_cb, this);
@@ -110,6 +110,7 @@ public:
 	, YGWidget (this, parent, true,
 	            horizontal ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
+		ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (getWidget()), TRUE);
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 
 		for (int i = 0; i < segments(); i++) {
@@ -124,8 +125,8 @@ public:
 			else
 				gtk_widget_set_size_request (bar, -1, min_size);
 
-			ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), bar,
-			                     maxValue (i), TRUE, 0);
+			ygtk_ratio_box_pack_start (YGTK_RATIO_BOX (getWidget()), bar,
+			                           maxValue (i), TRUE, 0);
 		}
 
 		gtk_widget_show_all (getWidget());

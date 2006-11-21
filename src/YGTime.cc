@@ -15,7 +15,7 @@ public:
 	YGTime (const YWidgetOpt &opt, YGWidget *parent,
 	        const YCPString &label, const YCPString &time)
 	: YTime (opt, label),
-	  YGLabeledWidget (this, parent, label, YD_VERT, true,
+	  YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
@@ -86,7 +86,7 @@ public:
 	YGDate (const YWidgetOpt &opt, YGWidget *parent,
 	        const YCPString &label, const YCPString &date)
 	: YDate (opt, label),
-	  YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_HBOX, NULL)
+	  YGLabeledWidget (this, parent, label, YD_HORIZ, true, GTK_TYPE_HBOX, NULL)
 	{
 		IMPL
 		m_entry = ygtk_field_entry_new();
@@ -101,7 +101,7 @@ public:
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
 
 		gtk_box_pack_start (GTK_BOX (getWidget()), m_entry, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);
 		gtk_widget_show_all (getWidget());
 
 		setNewDate (date);

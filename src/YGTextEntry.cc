@@ -14,9 +14,10 @@ public:
 	YGTextEntry (const YWidgetOpt &opt, YGWidget *parent,
 	             const YCPString &label, const YCPString &text)
 	: YTextEntry (opt, label),
-	  YGLabeledWidget (this, parent, label, YD_VERT, true,
+	  YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   YGTK_TYPE_FILTER_ENTRY, NULL)
 	{
+		gtk_entry_set_activates_default (GTK_ENTRY (getWidget()), TRUE);
 		setText (text);
 
 		if (opt.passwordMode.value())

@@ -15,7 +15,7 @@ bool m_showingIcons;
 	public:
 		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
 		: YComboBox (opt, label)
-		, YGLabeledWidget (this, parent, label, YD_VERT, true,
+		, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 		    opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 	{
 		// pixbufs will be enabled if icons are provided

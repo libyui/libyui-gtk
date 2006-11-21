@@ -68,10 +68,17 @@ void ygtk_steps_destroy (GtkObject *object)
 {
 	YGtkSteps *steps = YGTK_STEPS (object);
 
-	if (steps->current_mark_timeout_id)
+	if (steps->current_mark_timeout_id) {
 		g_source_remove (steps->current_mark_timeout_id);
+		steps->current_mark_timeout_id = 0;
+	}
+
 	g_object_unref (steps->check_mark_layout);
+	steps->check_mark_layout = NULL;
+
 	g_object_unref (steps->current_mark_layout);
+	steps->current_mark_layout = NULL;
+	
 	ygtk_steps_clear (steps);
 
 	GTK_OBJECT_CLASS (parent_class)->destroy (object);
@@ -103,6 +110,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 	step->layout = NULL;
 
 	steps->steps = g_list_append (steps->steps, step);
+	gtk_widget_queue_resize (GTK_WIDGET (steps));
 	return steps_nb;
 }
 
@@ -115,6 +123,7 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	step->layout = NULL;
 
 	steps->steps = g_list_append (steps->steps, step);
+	gtk_widget_queue_resize (GTK_WIDGET (steps));
 }
 
 void ygtk_steps_advance (YGtkSteps *steps)
@@ -244,8 +253,7 @@ void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style)
 
 void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
-printf ("steps size request\n");
-	GTK_WIDGET_CLASS (parent_class)->size_request (widget, requisition);
+	requisition->width = requisition->height = 0;
 
 	YGtkSteps *steps = YGTK_STEPS (widget);
 	int i;
@@ -255,9 +263,7 @@ printf ("steps size request\n");
 		int w, h;
 		pango_layout_get_pixel_size (layout, &w, &h);
 		w += PANGO_PIXELS (pango_layout_get_indent (layout));
-		h += PANGO_PIXELS (pango_layout_get_spacing (layout));
-
-		printf ("layout for %s is %d x %d\n", ygtk_steps_get_step (steps, i)->text, w, h);
+		h += PANGO_PIXELS (pango_layout_get_spacing (layout)) * 2;
 
 		requisition->width = MAX (w, requisition->width);
 		requisition->height += h;
@@ -265,7 +271,6 @@ printf ("steps size request\n");
 
 	requisition->width += BORDER * 2;
 	requisition->height += BORDER * 2;
-printf ("requisition: %d x %d\n\n", requisition->width, requisition->height);
 }
 
 gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)

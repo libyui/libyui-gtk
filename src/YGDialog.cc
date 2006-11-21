@@ -14,12 +14,6 @@
    Therefore, we have a YGDialog (the YDialog implementation), and a YGWindow
    that does the windowing work and has a YWidget has its children, which can
    be a YGDialog and is swap-able.
-   They communicate like: YWidgets <-> YGDialog <-> YGWindow
-   Both, YGDialog and YGWindow, keep references for each. It has been thought
-   of making YGWindow totally blind communicating to its YGDialogs via signals
-   (GTK+'s ones), but keeping a reference allows us to be more efficient by
-   just notifying the current children of the new size while having a simple
-   design.
 */
 
 class YGWindow;
@@ -29,61 +23,52 @@ class YGWindow
 {
 	GtkWidget *m_widget;
 	int m_refcount;
-	bool m_userResized;
-
-	YWidget *m_containee;
 
 public:
 	YGWindow (bool main_window)
 	{
 		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-/*
-		m_widget = (GtkWidget *) g_object_new (GTK_TYPE_WINDOW,
-			"type", GTK_WINDOW_TOPLEVEL, "allow_shrink", TRUE, NULL);
-*/
 		g_object_ref (G_OBJECT (m_widget));
 		gtk_object_sink (GTK_OBJECT (m_widget));
 
 		m_refcount = 0;
-		m_userResized = false;
-		m_containee = 0;
 		if (main_window)
 			::main_window = this;
 
-		if (main_window) {
-			GtkWindow *window = GTK_WINDOW (m_widget);
-			gtk_window_set_title (window, "YaST");
-			int w = YGUI::ui()->getDefaultWidth(), h = YGUI::ui()->getDefaultHeight();
-			gtk_window_resize (window, w, h);
-
-			if (YGUI::ui()->unsetBorder())
-				gtk_window_set_decorated (window, FALSE);
-		}
-		else {
-			// set the icon of the parent (if it exists)
+		{
 			GtkWindow *parent = YGUI::ui()->currentWindow();
 			GtkWindow *window = GTK_WINDOW (m_widget);
+
 			if (parent) {
+				// if there is a parent, this would be a dialog
 				GdkPixbuf *icon = gtk_window_get_icon (parent);
 				if (icon)
 					gtk_window_set_icon (window, icon);
 
 				gtk_window_set_transient_for (window, parent);
 				gtk_window_set_title (window, "");
+
+				gtk_window_set_modal (window, TRUE);
+				gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
 			}
-			else
+			else {
 				gtk_window_set_title (window, "YaST");
+				if (YGUI::ui()->unsetBorder())
+					gtk_window_set_decorated (window, FALSE);
+			}
 
-			gtk_window_set_modal (window, TRUE);
-			gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
+			if (main_window) {
+				int w = YGUI::ui()->getDefaultSize (YD_HORIZ),
+				    h = YGUI::ui()->getDefaultSize (YD_VERT);
+				gtk_window_set_default_size (window, w, h);
+			}
 
+			gtk_window_set_role (window, "yast-gtk");
 			if (!YGUI::ui()->hasWM())
 				g_signal_connect (G_OBJECT (m_widget), "expose-event",
 				                  G_CALLBACK (draw_border_cb), this);
 		}
 
-		g_signal_connect (G_OBJECT (m_widget), "configure_event",
-		                  G_CALLBACK (configure_event_cb), this);
 		g_signal_connect (G_OBJECT (m_widget), "delete_event",
 		                  G_CALLBACK (close_window_cb), this);
 		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
@@ -101,17 +86,12 @@ public:
 	void setChild (YWidget *new_child)
 	{
 		IMPL
-		m_containee = new_child;
-
 		GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
 		if (child)
 			gtk_container_remove (GTK_CONTAINER (m_widget), child);
 		if (new_child) {
 			child = YGWidget::get (new_child)->getLayout();
 			gtk_container_add (GTK_CONTAINER (m_widget), child);
-
-			// notify our size to the containee
-			setSize (0, 0);
 		}
 	}
 
@@ -133,58 +113,12 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	bool userResized () const
-	{ return m_userResized; }
-
-	long getSize (YUIDimension dim)
-	{
-		GtkAllocation *alloc = &m_widget->allocation;
-		return (dim == YD_HORIZ) ? alloc->width : alloc->height;
-	}
-
-	// sets a size to the window. Pass width=0 and height=0 to just notify
-	// containee of current size
-	void setSize (int width, int height)
-	{
-		IMPL
-		// we will call containee setSize(), so this is a lock to let
-		// containee call this function on its setSize() in case it was
-		// called by another party.
-		static bool lock = false;
-
-		if (!lock) {
-			lock = true;
-
-			if (width && height)
-{
-printf ("resize window (%d, %d)\n", width, height);
-				gtk_window_resize (GTK_WINDOW (m_widget), width, height);
-}
-			else
-				gtk_window_get_size (GTK_WINDOW (m_widget), &width, &height);
-
-			if (m_containee)
-				m_containee->setSize (width, height);
-
-			lock = false;
-		}
-	}
-
 	static gboolean close_window_cb (GtkWidget *widget, GdkEvent  *event,
 	                                 YGWindow  *pThis)
 	{
 		IMPL
 		YGUI::ui()->sendEvent (new YCancelEvent());
 		return TRUE;
-	}
-
-	static gboolean configure_event_cb (GtkWidget *widget, GdkEventConfigure *event,
-	                                    YGWindow  *pThis)
-	{
-		if (event->width != widget->allocation.width ||
-		    event->height != widget->allocation.height)
-			pThis->m_userResized = true;
-		return FALSE;
 	}
 
 	static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
@@ -255,6 +189,7 @@ public:
 		: YDialog (opt),
 		  YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)
 	{
+		setBorder (0);
 		m_padding = 0;
 		m_containee = gtk_event_box_new();
 		if (hasDefaultSize() && main_window)
@@ -312,7 +247,14 @@ public:
 	{ return GTK_WINDOW (m_window->getWidget()); }
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
+
+	virtual void childAdded (YWidget *ychild)
+	{
+		// This widget must align to the top, not be in the center of the window
+		YGWidget *child = YGWidget::get (ychild);
+		gtk_container_add (GTK_CONTAINER (m_containee), child->getLayout());
+		child->setAlignment (YAlignUnchanged, YAlignBegin);
+	}
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 

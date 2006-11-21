@@ -1,3 +1,6 @@
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 #ifndef YGWIDGET_H
 #define YGWIDGET_H
 
@@ -35,10 +38,18 @@ public:
 	void setBorder (unsigned int border);  // in pixels
 	unsigned int getBorder();
 
-	void setMinSize (int min_width, int min_height);  // in characters
+	// These functions don't notify YWidget about changes
+	void setMinSize (unsigned int min_width, unsigned int min_height);
+	void setMinSizeInChars (unsigned int min_width, unsigned int min_height);
 	void setStretchable (YUIDimension dim, bool stretch);
 	void setAlignment (YAlignmentType halign, YAlignmentType valign);
 	void setPadding (int top, int bottom, int left, int right);
+
+	// just calls setStretchable() with YWidget stretchable property
+	void sync_stretchable();
+	// alternative to YWidget::stretchable() that avoids crashes on some
+	// YContainerWidgets when they don't have children
+	bool isStretchable (YUIDimension dim);
 
 protected:
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
@@ -51,12 +62,6 @@ protected:
 	                bool show, GType type,
 	                const char *property_name, va_list args);
 
-	// callbacks
-	GtkAllocation m_alloc;
-	static void realize_cb (GtkWidget *widget, YGWidget *pThis);
-	static void size_allocate_cb (GtkWidget *widget, GtkAllocation *allocation,
-	                              YGWidget *pThis);
-
 	// parameters to set the layout prettier
 	int m_min_width, m_min_height;
 };
@@ -66,7 +71,6 @@ protected:
  * methods and the (multiply inherited) YGWidget base implementation
  * for GTK+.
  */
-// FIXME: we should set parent to setstretchable
 #define YGWIDGET_IMPL_COMMON                                   \
 	virtual bool setKeyboardFocus()                              \
 	    { return doSetKeyboardFocus(); }                         \
@@ -105,8 +109,13 @@ class YGLabeledWidget : public YGWidget
 		void setLabelVisible(bool show);
 		void setBuddy (GtkWidget *widget);
 		virtual void doSetLabel (const YCPString &label);
+
+		YUIDimension orientation() { return m_orientation; }
+		GtkWidget *getLabelWidget() { return m_label; }
+
 	protected:
 		GtkWidget *m_label, *m_field;
+		YUIDimension m_orientation;
 };
 
 #define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)                    \

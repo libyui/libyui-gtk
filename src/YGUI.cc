@@ -256,40 +256,26 @@ int YGUI::getDisplayHeight()
 	return gdk_screen_get_height (getScreen());
 }
 
-int YGUI::getDisplayDepth()
+int YGUI::getDefaultSize (YUIDimension dim)
 {
-	IMPL
-	return 24; // FIXME: what is this used for ?
-}
-
-long YGUI::getDisplayColors()
-{
-	IMPL
-	return 256*256*256; // FIXME: what is this used for ?
-}
-
-int YGUI::getDefaultWidth()
-{
-	IMPL
-	if (!m_default_size.width) {
-		if (m_fullscreen)
-			m_default_size.width = getDisplayWidth();
-		else
-			m_default_size.width = MIN (800, getDisplayWidth());
+	if (dim == YD_HORIZ) {
+		if (!m_default_size.width) {
+			if (m_fullscreen)
+				m_default_size.width = getDisplayWidth();
+			else
+				m_default_size.width = MIN (600, getDisplayWidth());
+		}
+		return m_default_size.width;
 	}
-	return m_default_size.width;
-}
-
-int YGUI::getDefaultHeight()
-{
-	IMPL
-	if (!m_default_size.height) {
-		if (m_fullscreen)
-			m_default_size.height = getDisplayHeight();
-		else
-			m_default_size.height = MIN (640, getDisplayHeight());
+	else {  // YD_VERT
+		if (!m_default_size.height) {
+			if (m_fullscreen)
+				m_default_size.height = getDisplayHeight();
+			else
+				m_default_size.height = MIN (450, getDisplayHeight());
+		}
+		return m_default_size.height;
 	}
-	return m_default_size.height;
 }
 
 // YWidget layout units -> pixels conversion. Same as yast-qt's.

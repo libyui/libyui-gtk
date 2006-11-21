@@ -61,6 +61,7 @@ public:
 
 		GtkWidget *child = ygchild->getLayout();
 		gtk_container_add (GTK_CONTAINER (getWidget()), child);
+		sync_stretchable();
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };

@@ -31,11 +31,14 @@ class YGImage : public YImage, public YGWidget
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
 
-if (m_hasZeroWidth || m_isScaled || m_isTiled)
-	YGWidget::setStretchable (YD_HORIZ, true);
-if (m_hasZeroHeight || m_isScaled || m_isTiled)
-	YGWidget::setStretchable (YD_VERT, true);
-
+		if (m_hasZeroWidth || m_isScaled || m_isTiled) {
+			YWidget::setStretchable (YD_HORIZ, true);
+			YGWidget::setStretchable (YD_HORIZ, true);
+		}
+		if (m_hasZeroHeight || m_isScaled || m_isTiled) {
+			YWidget::setStretchable (YD_VERT, true);
+			YGWidget::setStretchable (YD_VERT, true);
+		}
 
 		m_isAnimation   = opt.animated.value();
 		m_isScaled      = opt.scaleToFit.value();
@@ -65,8 +68,8 @@ if (m_hasZeroHeight || m_isScaled || m_isTiled)
 
 		m_imageLoaded = true;
 		m_pixbuf = pixbuf;
-		gtk_widget_set_size_request (getWidget(), gdk_pixbuf_get_width (pixbuf),
-		                             gdk_pixbuf_get_height (pixbuf));
+		gtk_widget_set_size_request (getWidget(), m_hasZeroWidth ? -1 : gdk_pixbuf_get_width (pixbuf),
+		                             m_hasZeroHeight ? -1 : gdk_pixbuf_get_height (pixbuf));
 	}
 
 	void loadAnimation (GdkPixbufAnimation *pixbuf, const char *error_msg)

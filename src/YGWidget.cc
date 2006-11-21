@@ -7,14 +7,14 @@
 #include "ygtkratiobox.h"
 
 // default widgets border -- may be overlapped with a setBorder(..)
-#define DEFAULT_BORDER 6
+#define DEFAULT_BORDER       6
 #define LABEL_WIDGET_SPACING 4
 
 /* YGWidget follows */
 
 YGWidget::YGWidget(YWidget *y_widget, YGWidget *parent, bool show,
-                   GtkType type, const char *property_name, ...) :
-	m_y_widget (y_widget)
+                   GtkType type, const char *property_name, ...)
+	: m_y_widget (y_widget)
 {
 	va_list args;
 	va_start (args, property_name);
@@ -30,7 +30,7 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 	if (type == GTK_TYPE_WINDOW)
 		m_alignment = m_widget;
 	else {
-		m_alignment = gtk_alignment_new (0.5, 0, 1, 1);
+		m_alignment = gtk_alignment_new (0.5, 0.5, 1, 1);
 		g_object_ref (G_OBJECT (m_alignment));
 		gtk_object_sink (GTK_OBJECT (m_alignment));
 		gtk_widget_show (m_alignment);
@@ -42,6 +42,15 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 	}
 
 	y_widget->setWidgetRep ((void *) this);
+
+	// Ordinary widgets stretchable attribute is fetched at constructor,
+	// while container widget is fetched at every addChild() because
+	// they generally depend on the child for their stretchable attribute.
+	if (!y_widget->isContainer())
+			sync_stretchable();
+
+	// Just set parent after set stretch because we don't want it to notify
+	// to its container parent, since it isn't yet added to it...
 	if (parent)
 		y_widget->setParent (parent->m_y_widget);
 
@@ -52,10 +61,6 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
 
-	// We wait for realize to ask some layout attributes because some are
-	// not yet initialized in some cases (like stretchable for YWidget contaienrs)
-	g_signal_connect (G_OBJECT (m_widget), "realize", G_CALLBACK (realize_cb), this);
-
 	if (_show)
 		show();
 }
@@ -65,15 +70,6 @@ YGWidget::~YGWidget()
 	IMPL
 	gtk_widget_destroy (m_alignment);
 	g_object_unref (G_OBJECT (m_alignment));
-}
-
-void YGWidget::realize_cb (GtkWidget *widget, YGWidget *pThis)
-{
-	YWidget *ywidget = pThis->m_y_widget;
-	pThis->setStretchable (YD_HORIZ, ywidget->stretchable (YD_HORIZ) ||
-	                                 ywidget->hasWeight (YD_HORIZ));
-	pThis->setStretchable (YD_VERT, ywidget->stretchable (YD_VERT) ||
-	                                ywidget->hasWeight (YD_VERT));
 }
 
 void YGWidget::show()
@@ -123,12 +119,21 @@ unsigned int YGWidget::getBorder()
 	return gtk_container_get_border_width (GTK_CONTAINER (m_alignment));
 }
 
-void YGWidget::setMinSize (int width, int height)
+void YGWidget::setMinSize (unsigned int width, unsigned int height)
 {
-	if (width)  width = YGUtils::getCharsWidth (getWidget(), width);
-	if (height) height = YGUtils::getCharsHeight (getWidget(), height);
+	if (width)
+		ygtk_min_size_set_width (YGTK_MIN_SIZE (m_min_size), width);
+	if (height)
+		ygtk_min_size_set_height (YGTK_MIN_SIZE (m_min_size), height);
+}
 
-	ygtk_min_size_set (YGTK_MIN_SIZE (m_min_size), width, height);
+void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
+{
+	if (width)
+		width = YGUtils::getCharsWidth (getWidget(), width);
+	if (height)
+		height = YGUtils::getCharsHeight (getWidget(), height);
+	setMinSize (width, height);
 }
 
 static GValue floatToGValue (float num)  // helper
@@ -139,15 +144,34 @@ static GValue floatToGValue (float num)  // helper
 	return value;
 }
 
+/* Just tells the widget to fill the space it is given or not. You should
+   also ensure its container gives it space accordingly.
+   NOTE: this property should only be set during the gui construction, since
+   we don't report stretchable changes to its container. The only gui dynamic
+   changes are done by YReplacePoint, so we do that work there. */
 void YGWidget::setStretchable (YUIDimension dim, bool stretch)
 {
-	m_y_widget->setStretchable (dim, stretch);
-
 	GValue scale = floatToGValue (stretch ? 1.0 : 0.0);
-	if (dim == YD_HORIZ)
-		g_object_set_property (G_OBJECT (m_alignment), "xscale", &scale);
-	else // YD_VERT
-		g_object_set_property (G_OBJECT (m_alignment), "yscale", &scale);
+	g_object_set_property (G_OBJECT (m_alignment),
+	                       (dim == YD_HORIZ) ? "xscale" : "yscale", &scale);
+}
+
+void YGWidget::sync_stretchable()
+{
+	setStretchable (YD_HORIZ, isStretchable (YD_HORIZ));
+	setStretchable (YD_VERT, isStretchable (YD_VERT));
+}
+
+bool YGWidget::isStretchable (YUIDimension dim)
+{
+	YContainerWidget *container = dynamic_cast <YContainerWidget *> (m_y_widget);
+	if (container && !container->hasChildren())
+		return false;
+/*
+	if (m_y_widget->isLayoutStretch (dim))
+		return false;  // layout stretches be damn
+*/
+	return m_y_widget->stretchable (dim) || m_y_widget->hasWeight (dim);
 }
 
 // helper -- converts YWidget YAlignmentType to Gtk's align float
@@ -196,16 +220,20 @@ YGLabeledWidget::YGLabeledWidget (YWidget *y_widget, YGWidget *parent,
 
 	// Create the label
 	m_label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
+	gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);
 	if(show) {
 		gtk_widget_show (m_label);
 		gtk_widget_show (m_field);
 	}
+
 	setBuddy (m_field);
 	doSetLabel (label_text);
 
 	// Set the container and show widgets
 	gtk_box_pack_start (GTK_BOX (m_widget), m_label, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (m_widget), m_field, TRUE, TRUE, 0);
+	m_orientation = label_ori;
 }
 
 void YGLabeledWidget::setLabelVisible (bool show)
@@ -227,6 +255,13 @@ void YGLabeledWidget::doSetLabel (const YCPString &label)
 	if (str.empty())
 		gtk_widget_hide (m_label);
 	else {
+		// label tweaking
+		if (str [str.length()-1] != ':')
+			str += ':';
+		unsigned int first_ch = (str [0] == '_') ? 1 : 0;
+		if (str [first_ch] >= 'a' && str [first_ch] <= 'z')
+			str [first_ch] += 'A' - 'a';
+
 		gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
 		gtk_label_set_use_underline (GTK_LABEL (m_label), TRUE);
 	}

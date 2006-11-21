@@ -18,7 +18,7 @@ public:
 	           const YWidgetOpt &opt, const YCPString &label,
 	           int minValue, int maxValue, int initialValue,
 	           bool show_slider)
-	: YGLabeledWidget (y_widget, parent, label, YD_VERT, true,
+	: YGLabeledWidget (y_widget, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_HBOX, NULL)
 	{
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);

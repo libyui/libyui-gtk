@@ -11,24 +11,22 @@
 class YGPushButton : public YPushButton, public YGWidget
 {
 public:
-	YGPushButton (const YWidgetOpt &opt,
-	              YGWidget         *parent,
-	              YCPString         label)
+	YGPushButton (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
 	:  YPushButton (opt, label),
-	   YGWidget (this, parent, true, GTK_TYPE_BUTTON,
-		     "can-default", TRUE, NULL)
+	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL
 		if (!opt.isShrinkable.value())
-			setMinSize (10, 0);
-
-		if (opt.isDefaultButton.value())
-			gtk_widget_grab_default (getWidget());
+			setMinSizeInChars (10, 0);
 
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
+		setLabel (label);
+
 		g_signal_connect (G_OBJECT (getWidget ()), "clicked",
 		                  G_CALLBACK (clicked_cb), this);
-		setLabel (label);
+		if (opt.isDefaultButton.value())
+			g_signal_connect (G_OBJECT (getWidget ()), "realize",
+			                  G_CALLBACK (set_default_cb), this);
 	}
 
 	virtual ~YGPushButton() {}
@@ -41,9 +39,6 @@ public:
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YPushButton::setLabel (label);
 	}
-
-	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
-	{ pThis->emitEvent (YEvent::Activated, false); }
 
 	virtual void setIcon (const YCPString &icon_name)
 	{
@@ -61,6 +56,14 @@ public:
 		else
 			y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
 			           "Reason: %s", path.c_str(), error->message);
+	}
+
+	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
+	{ pThis->emitEvent (YEvent::Activated, false); }
+
+	static void set_default_cb (GtkButton *button, YGPushButton *pThis)
+	{
+		gtk_widget_grab_default (GTK_WIDGET (button));
 	}
 
 	YGWIDGET_IMPL_COMMON

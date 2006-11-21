@@ -120,7 +120,8 @@ void ygtk_richtext_init (YGtkRichText *rtext)
 
 static void ygtk_richtext_destroy (GtkObject *object)
 {
-	if (--ref_cursor == 0) {
+	// FIXME: if we have multiple richtexts, one will unref too many
+	if (ref_cursor > 0 && (--ref_cursor == 0)) {
 		gdk_cursor_unref (hand_cursor);
 		gdk_cursor_unref (regular_cursor);
 	}
@@ -128,6 +129,7 @@ static void ygtk_richtext_destroy (GtkObject *object)
 	YGtkRichText *rtext = YGTK_RICHTEXT (object);
 	if (rtext->prodname)
 		g_free (rtext->prodname);
+	rtext->prodname = NULL;
 
 	GTK_OBJECT_CLASS (parent_class)->destroy (object);
 }

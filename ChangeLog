@@ -1,3 +1,27 @@
+2006-11-21  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	Layout still has a couple of bugs (as can be seen in
+	test/Layout-Split-Split.ycp and test/Layout-Wizard3.ycp),
+	but better commit this or spiders may start creating webs
+	here. :P
+
+	* ygtkratiobox.c: added fully extandable flag which is the
+	equivalent to set the maximum weight (that we need in YSplit
+	because we don't know the max weights while adding children).
+	size_request and size_allocate was re-written. Support for
+	right-to-left languages and hidden widgets.
+
+	* ygtkwizard.c: re-written size_request and size_allocate to
+	comply with recent changes and simplify them.
+
+	* YGWidget.cc / YGLayout.cc: 
+
+	* YGLayout.cc and some YGLabeledWidget.cc-based widgets: a first
+	try at having the labels horizontally aligned. Currently, it just
+	checks if a YSplit child is a labeled widget, so if it is inside
+	a container, it doesn't apply the same-width code to it. So,
+	we must iterate through those.
+
 2006-11-08  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGTextEntry.cc: use YGtkFilterEntry, from YGtkFieldEntry,

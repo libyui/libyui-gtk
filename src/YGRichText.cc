@@ -15,15 +15,13 @@ class YGRichText : public YRichText, public YGScrolledWidget
 	bool m_plainText;
 
 public:
-	YGRichText(const YWidgetOpt &opt,
-	           YGWidget *parent,
-	           const YCPString &text)
+	YGRichText(const YWidgetOpt &opt, YGWidget *parent, const YCPString &text)
 	: YRichText (opt, text),
 	  YGScrolledWidget (this, parent, true, YGTK_TYPE_RICHTEXT, NULL)
 	{
 		IMPL
 		if (!opt.isShrinkable.value())
-			setMinSize (35, 16);
+			setMinSizeInChars (20, 8);
 
 		m_plainText = opt.plainTextMode.value();
 		ygtk_richttext_set_prodname (YGTK_RICHTEXT (getWidget()),

@@ -18,6 +18,7 @@ Build pre-requisites
   (at a minimum):
 
   yast2-devel yast2-devtools yast2-core-devel libzypp libzypp-devel
+  gettext-devel
 
   They all are distributed with Suse's CDs.
 

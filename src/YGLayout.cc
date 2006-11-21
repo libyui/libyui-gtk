@@ -12,6 +12,11 @@
 // GtkBox-like container (actually, more like our YGtkRatioBox)
 class YGSplit : public YSplit, public YGWidget
 {
+	// This group is meant to set all YGLabeledWidget with horizontal label
+	// to share the same width (if they belong to the same YSplit), so they
+	// look right
+	GtkSizeGroup *m_labels_group;
+
 public:
 	YGSplit (const YWidgetOpt &opt, YGWidget *parent, YUIDimension dim)
 	: YSplit (opt, dim),
@@ -19,10 +24,18 @@ public:
 	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		setBorder (0);
+		m_labels_group = NULL;
+	}
+
+	~YGSplit()
+	{
+		if (m_labels_group)
+			g_object_unref (G_OBJECT (m_labels_group));
 	}
 
 	virtual void childAdded (YWidget *ychild)
 	{
+		IMPL
 		YUIDimension this_dir, opposite_dir;
 		this_dir = primaryDimension();
 		opposite_dir = secondaryDimension();
@@ -30,17 +43,45 @@ public:
 		YGWidget *ygchild = YGWidget::get (ychild);
 		GtkWidget *child = ygchild->getLayout();
 
-		float ratio = ychild->stretchable (this_dir) ? 1 : 0;
-		if (ychild->hasWeight (dimension()))
-			ratio = ychild->weight (dimension());
-
-		ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), child, ratio, TRUE, 0);
+		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
+		ygtk_ratio_box_pack_start (box, child, ychild->weight (this_dir), TRUE, 0);
+		if (ychild->hasWeight (this_dir))
+			ygchild->setStretchable (this_dir, true);
+		setChildStretchable (ychild);
+#ifdef IMPL_DEBUG
+		fprintf (stderr, "added child: %s - stretch: %d - weight: %ld\n", ygchild->getWidgetName(),
+		         ychild->stretchable (this_dir), ychild->weight (this_dir));
+#endif
+		// stretchable property changes at every addchild for containers
+//		YGWidget::setStretchable (this_dir, YWidget::stretchable (this_dir));
+//		YGWidget::setStretchable (opposite_dir, YWidget::stretchable (opposite_dir));
+		if (!YWidget::stretchable (opposite_dir))
+			YGWidget::setAlignment (YAlignCenter, YAlignCenter);
+printf ("split will be set stretchable: %d x %d\n", YWidget::stretchable (this_dir), YWidget::stretchable (opposite_dir));
+		// set labels of YGLabeledWidgets to the same width
+		YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
+		if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
+			if (!m_labels_group)
+				m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+			gtk_size_group_add_widget (m_labels_group, labeled_child->getLabelWidget());
+		}
 	}
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 
-	virtual void childRemoved (YWidget *ychild)
+	void setChildStretchable (YWidget *ychild)
 	{
-		GtkWidget *child = YGWidget::get (ychild)->getLayout();
-		gtk_container_remove (GTK_CONTAINER (getWidget()), child);
+		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
+		YUIDimension dim = dimension();
+		YGWidget *child = YGWidget::get (ychild);
+
+		if (ychild->hasWeight (dim))
+			ygtk_ratio_box_set_child_ratio (box, child->getLayout(), ychild->weight (dim));
+		else if (child->isStretchable (dim))
+			ygtk_ratio_box_set_child_expand (YGTK_RATIO_BOX (getWidget()),
+		                                   child->getLayout(), TRUE);
+		else
+			ygtk_ratio_box_set_child_expand (YGTK_RATIO_BOX (getWidget()),
+		                                   child->getLayout(), FALSE);
 	}
 
 	virtual void moveChild (YWidget *, long, long) {};  // ignore
@@ -83,23 +124,22 @@ public:
 		YGWidget *child = YGWidget::get (ychild);
 		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
 
+		child->setAlignment (align [YD_HORIZ], align [YD_VERT]);
+		/* The padding is set to make things nicer for yast-qt wizard, but it doesn't for us
+		   -- just ignore it. */
+		//child->setPadding (topMargin(), bottomMargin(), leftMargin(), rightMargin());
+		child->setMinSize (minWidth(), minHeight());
+
+		// don't let children fill up given space if alignment is set
 		if (align [YD_HORIZ] != YAlignUnchanged)
 			child->setStretchable (YD_HORIZ, false);
 		if (align [YD_VERT] != YAlignUnchanged)
 			child->setStretchable (YD_VERT, false);
-		child->setAlignment (align [YD_HORIZ], align [YD_VERT]);
-		child->setPadding (topMargin(), bottomMargin(), leftMargin(), rightMargin());
-		child->setMinSize (minWidth(), minHeight());
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 
 	virtual void setBackgroundPixmap (string filename)
 	{
-		if (!hasChildren()) {
-			y2warning ("setting a background pixmap on a YAlignment with no children");
-			return;
-		}
-
 		// YAlignment will prepend a path to the image
 		YAlignment::setBackgroundPixmap (filename);
 		filename = YAlignment::backgroundPixmap();
@@ -127,22 +167,20 @@ public:
 	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
 	                                 YGAlignment *pThis)
 	{
-		int x, y, width, height;
-		x = widget->allocation.x;
-		y = widget->allocation.y;
-		width = widget->allocation.width;
-		height = widget->allocation.height;
-
+		GtkAllocation *alloc = &widget->allocation;
 		cairo_t *cr = gdk_cairo_create (widget->window);
 
 		gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
 		cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
 
-		cairo_rectangle (cr, x, y, width, height);
+		cairo_rectangle (cr, alloc->x, alloc->y, alloc->width, alloc->height);
 		cairo_fill (cr);
 
 		cairo_destroy (cr);
-		return FALSE;
+
+		gtk_container_propagate_expose (GTK_CONTAINER (widget),
+		                                GTK_BIN (widget)->child, event);
+		return TRUE;
 	}
 
 	virtual void moveChild (YWidget *, long, long) {};  // ignore
@@ -184,7 +222,7 @@ class YGSpacing : public YSpacing, public YGWidget
 {
 public:
 	YGSpacing (const YWidgetOpt &opt, YGWidget *parent,
-	                      float size, bool horizontal, bool vertical)
+	           float size, bool horizontal, bool vertical)
 	: YSpacing (opt, size, horizontal, vertical),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
@@ -214,8 +252,22 @@ public:
 		setBorder (0);
 	}
 
-	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
+	virtual void childAdded (YWidget *ychild)
+	{
+		GtkWidget *child_widget = YGWidget::get (ychild)->getLayout();
+		gtk_container_add (GTK_CONTAINER (getWidget()), child_widget);
+
+		// notify parent container of stretchable changes
+		YWidget *parent, *child;
+		for (parent = yParent(), child = this; parent;
+		     child = parent, parent = parent->yParent()) {
+			YSplit *split = dynamic_cast <YSplit *> (parent);
+			if (split && split->hasChildren())
+				((YGSplit *) split)->setChildStretchable (child);
+		}
+	}
+
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
 YContainerWidget *
@@ -240,17 +292,8 @@ public:
 		setBorder (0);
 	}
 
-	virtual void childAdded (YWidget *ychild)
-	{
-		YGWidget *child = YGWidget::get (ychild);
-		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
-
-		if (ychild->stretchable (YD_HORIZ))
-			child->setStretchable (YD_HORIZ, !squash [YD_HORIZ]);
-		if (ychild->stretchable (YD_VERT))
-			child->setStretchable (YD_VERT, !squash [YD_VERT]);
-	}
-	YGWIDGET_IMPL_CHILD_REMOVED(m_widget)
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
 YContainerWidget *

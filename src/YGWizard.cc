@@ -1,4 +1,6 @@
-/* Yast-GTK */
+//                       YaST2-GTK                                //
+// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
@@ -29,19 +31,19 @@ public:
 		{
 			// We need to have a ReplacePoint that will then have as a kid the actual
 			// content
-			YWidget *contents, *replace_point, *empty;
 			YWidgetOpt opt;
 			opt.isHStretchable.setValue (true);
 			opt.isVStretchable.setValue (true);
 
-			contents = YGUI::ui()->createAlignment (this, opt, YAlignCenter, YAlignCenter);
-			replace_point = YGUI::ui()->createReplacePoint (contents, opt);
-			replace_point->setId (YCPSymbol (YWizardContentsReplacePointID));
-			empty = YGUI::ui()->createEmpty (replace_point, opt);
+			YWidget *content, *empty;
+			content = YGUI::ui()->createReplacePoint (this, opt);
+			content->setId (YCPSymbol (YWizardContentsReplacePointID));
 
-			((YContainerWidget *) replace_point)->addChild (empty);
-			((YContainerWidget *) contents)->addChild (replace_point);
-			addChild (contents);
+			// we must add a YEmpty to the replace point, else YWidget will crash
+			empty = YGUI::ui()->createEmpty (content, opt);
+			((YContainerWidget *) content)->addChild (empty);
+
+			addChild (content);
 		}
 
 		YGtkWizard *ygtk_wizard = YGTK_WIZARD (getWidget());
@@ -286,7 +288,14 @@ public:
 
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
+	virtual void childAdded (YWidget *ychild)
+	{
+		YGWidget *child = YGWidget::get (ychild);
+		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
+		// in ordinary windows, the content, is aligned to the top, but on
+		// a wizard we want stuff to be vertically centered.
+		child->setAlignment (YAlignCenter, YAlignCenter);
+	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 

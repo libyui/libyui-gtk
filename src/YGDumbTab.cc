@@ -23,7 +23,6 @@ public:
 	{
 		IMPL
 		m_containee = gtk_event_box_new();
-//		m_fixed = gtk_fixed_new();
 		gtk_widget_show (m_containee);
 		g_object_ref (G_OBJECT (m_containee));
 		gtk_object_sink (GTK_OBJECT (m_containee));
@@ -41,13 +40,7 @@ public:
 		gtk_widget_destroy (m_containee);
 		g_object_unref (G_OBJECT (m_containee));
 	}
-/*
-	virtual GtkFixed* getFixed()
-	{
-		IMPL
-		return GTK_FIXED (m_fixed);
-	}
-*/
+
 	virtual void addTab (const YCPString &label_text)
 	{
 		IMPL

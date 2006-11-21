@@ -190,12 +190,18 @@ public:
                            const YCPString &nextButtonLabel);
     virtual bool     hasWizard() { return true; }
 
+
     virtual int  getDisplayWidth();
     virtual int  getDisplayHeight();
-    virtual int  getDisplayDepth();
-    virtual long getDisplayColors();
-    virtual int  getDefaultWidth();
-    virtual int  getDefaultHeight();
+    // let's fool YWidgets here because it tries to be smart if our default
+    // dialog size is too small
+    virtual int  getDefaultWidth()  { return 10000; }
+    virtual int  getDefaultHeight() { return 10000; }
+    // Dunno where this is used in practice, but these can be got by a YCP
+    // apps, so better implement them.
+    virtual int  getDisplayDepth()  { return 24;    }
+    virtual long getDisplayColors() { return 256*256*256; }
+
     virtual long deviceUnits (YUIDimension dim, float size);
     virtual float layoutUnits (YUIDimension dim, long device_units);
 
@@ -261,8 +267,7 @@ public:
 
  public:
     // Helpers for internal use [ visibility hidden ]
-    long defaultSize(YUIDimension dim)
-        { return (dim == YD_HORIZ) ? getDefaultWidth() : getDefaultHeight(); }
+    int getDefaultSize (YUIDimension dim);
     bool setFullscreen() const { return m_fullscreen || !m_have_wm; }
     bool hasWM() const         { return m_have_wm; }
     bool unsetBorder() const   { return m_no_border; }

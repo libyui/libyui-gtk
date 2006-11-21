@@ -13,20 +13,18 @@ class YGTextView : public YGScrolledWidget
 int maxChars;
 
 public:
-	YGTextView (YWidget *y_widget, YGWidget *parent,
-	            const YWidgetOpt &opt,
-	            const YCPString &label,
-	            const YCPString &text)
+	YGTextView (YWidget *y_widget, YGWidget *parent, const YWidgetOpt &opt,
+	            const YCPString &label, const YCPString &text)
 		: YGScrolledWidget (y_widget, parent, label, YD_VERT, true,
 		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD, NULL)
 	{
 		IMPL
 		if (!opt.isShrinkable.value())
-			setMinSize (35, 16);
+			setMinSizeInChars (20, 10);
 
 		gtk_scrolled_window_set_policy
 				(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
-				 GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
 		maxChars = -1;
 		setText (text);
@@ -100,10 +98,8 @@ public:
 class YGMultiLineEdit : public YMultiLineEdit, public YGTextView
 {
 public:
-	YGMultiLineEdit (const YWidgetOpt &opt,
-	                 YGWidget *parent,
-	                 const YCPString &label,
-	                 const YCPString &text)
+	YGMultiLineEdit (const YWidgetOpt &opt, YGWidget *parent,
+	                 const YCPString &label, const YCPString &text)
 	: YMultiLineEdit (opt, label)
 	, YGTextView (this, parent, opt, label, text)
 	{ }
@@ -141,7 +137,7 @@ public:
 	: YLogView (opt, label, visibleLines, maxLines)
 	, YGTextView (this, parent, opt, label, YCPString(""))
 	{
-		setMinSize (0, visibleLines);
+		setMinSizeInChars (0, visibleLines);
 		gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
 		gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
 	}

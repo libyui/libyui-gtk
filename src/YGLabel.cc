@@ -7,14 +7,15 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-class YGGenericLabel : public YGWidget
+#include "YLabel.h"
+
+class YGLabel : public YLabel, public YGWidget
 {
 public:
-	YGGenericLabel (YWidget *y_widget, YGWidget *parent, const YWidgetOpt &opt,
-	                YCPString text, const YColor *fgColor = 0, const YColor *bgColor = 0,
-	                int margin = 0)
-	: YGWidget (y_widget, parent, true, opt.isOutputField.value() ? GTK_TYPE_ENTRY
-	                                    : GTK_TYPE_LABEL, NULL)
+	YGLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text)
+	: YLabel (opt, text),
+	  YGWidget (this, parent, true, opt.isOutputField.value() ? GTK_TYPE_ENTRY
+	                                  : GTK_TYPE_LABEL, NULL)
 	{
 		IMPL
 		if (opt.isOutputField.value()) {
@@ -25,7 +26,6 @@ public:
 		}
 		else {
 			gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
-			gtk_misc_set_padding (GTK_MISC (getWidget()), margin, margin);
 			setAlignment (YAlignUnchanged, YAlignCenter);
 		}
 
@@ -33,41 +33,16 @@ public:
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		if (opt.isHeading.value())
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_XX_LARGE);
-		doSetLabel (text);
-
-		if (fgColor)
-			setForegroundColor (*fgColor);
-		if (bgColor) {
-			setBackgroundColor (*bgColor);
-			g_signal_connect (G_OBJECT (getWidget()), "expose-event",
-			                  G_CALLBACK (expose_event), NULL);
-		}
+		setLabel (text);
 	}
 
-	void doSetLabel (const YCPString &label)
+	virtual void setLabel (const YCPString &label)
 	{
 		if (GTK_IS_LABEL (getWidget()))
 			gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
 		else
 			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
-	}
-
-	static GdkColor fromYColor (const YColor &ycolor)
-	{
-		GdkColor color = { 0, ycolor.red << 8, ycolor.green << 8, ycolor.blue << 8 };
-		return color;
-	}
-
-	void setForegroundColor (const YColor &ycolor)
-	{
-		GdkColor color = fromYColor (ycolor);
-		gtk_widget_modify_fg (getWidget(), GTK_STATE_NORMAL, &color);
-	}
-
-	void setBackgroundColor (const YColor &ycolor)
-	{
-		GdkColor color = fromYColor (ycolor);
-		gtk_widget_modify_bg (getWidget(), GTK_STATE_NORMAL, &color);
+		YLabel::setLabel (label);
 	}
 
 	// YWidget
@@ -81,28 +56,7 @@ public:
 			return false;
 	}
 
-	// callbacks
-	static gboolean expose_event (GtkWidget *widget, GdkEventExpose *event)
-	{
-		GtkStyle *style = gtk_widget_get_style (widget);
-		GtkAllocation *alloc = &widget->allocation;
-		gtk_paint_box (style, widget->window, GTK_STATE_NORMAL, GTK_SHADOW_OUT, &event->area,
-		               widget, NULL, alloc->x, alloc->y, alloc->width, alloc->height);
-		return FALSE;
-	}
-};
-
-#include "YLabel.h"
-
-class YGLabel : public YLabel, public YGGenericLabel
-{
-public:
-	YGLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text)
-	: YLabel (opt, text), YGGenericLabel (this, parent, opt, text)
-	{ }
-
 	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YLabel)
 };
 
 YWidget *
@@ -113,25 +67,46 @@ YGUI::createLabel (YWidget *parent, YWidgetOpt &opt,
 }
 
 #include "YColoredLabel.h"
+#include "ygtkbargraph.h"
 
-class YGColoredLabel : public YColoredLabel, public YGGenericLabel
+class YGColoredLabel : public YColoredLabel, public YGWidget
 {
 public:
 	YGColoredLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text,
 	                const YColor &fgColor, const YColor &bgColor, int margin)
-	: YColoredLabel (opt, text)
-	, YGGenericLabel (this, parent, opt, text, &fgColor, &bgColor, margin)
-	{ }
+	: YColoredLabel (opt, text),
+	  YGWidget (this, parent, true, YGTK_TYPE_COLORED_LABEL, NULL)
+	{
+		IMPL
+		gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
+		gtk_misc_set_padding (GTK_MISC (getWidget()), margin, margin);
+		setAlignment (YAlignUnchanged, YAlignCenter);
+
+		if (opt.boldFont.value())
+			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		if (opt.isHeading.value())
+			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_XX_LARGE);
+		setLabel (text);
+
+		YGtkColoredLabel *color_label = YGTK_COLORED_LABEL (getWidget());
+		ygtk_colored_label_set_shadow_type (color_label, GTK_SHADOW_OUT);
+		ygtk_colored_label_set_foreground (color_label, fgColor.red, fgColor.green, fgColor.blue);
+		ygtk_colored_label_set_background (color_label, bgColor.red, bgColor.green, bgColor.blue);
+	}
+
+	virtual void setLabel (const YCPString &label)
+	{
+		gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
+		YColoredLabel::setLabel (label);
+	}
 
 	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YColoredLabel)
 };
 
 YWidget *
-YGUI::createColoredLabel (YWidget *parent, YWidgetOpt &opt,
-                          YCPString label, YColor fgColor,
-                          YColor bgColor, int margin)
+YGUI::createColoredLabel (YWidget *parent, YWidgetOpt &opt, YCPString label,
+                          YColor fgColor, YColor bgColor, int margin)
 {
 	return new YGColoredLabel (opt, YGWidget::get (parent), label,
-	                           fgColor, bgColor, margin);
+	                             fgColor, bgColor, margin);
 }

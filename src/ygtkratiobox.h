@@ -2,20 +2,12 @@
 // YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
 
 /* YGtkRatioBox is an improvement over the GtkBox container that
-   allows the programmer to set the size containees as a ratio,
-   as opposed to just define their size as expandable or not.
-   (ratio = 0 would be the equivalent of expand = FALSE, while
-    ratio = 1 is the equivalent to expand = TRUE.)
+   allows the programmer to set stretch weights to containees.
 
-   YGtkRatioBox could be API (and ABI for the matter) compatible with
-   GtkBox, but isn't, as there is no compelling reason for that, since it
-   would require not only initial work, but the code would get bigger,
-   which is obviously undesirable for maintance.
-   However, if you want to use YGtkRatioBox as a replacement for GtkBox,
-   feel free to contact us that we may give you hand in accomplishing that.
-
-   Limitations:
-     * containees visibility is not supported properly
+   It is similar to GtkBox in usage but instead of feeding an
+   expand boolean, a weight is given instead. In fact, it should
+   behave just the same as a GtkBox if you give 0 for not expand
+   and 1 to.
 */
 
 #ifndef YGTK_RATIO_BOX_H
@@ -23,7 +15,6 @@
 
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
-
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_RATIO_BOX            (ygtk_ratio_box_get_type ())
@@ -46,12 +37,10 @@ struct _YGtkRatioBox
 {
 	GtkContainer container;
 
-	/*< public (read-only) >*/
+	// members (read-only)
 	GList *children;
 	gint16 spacing;
-
-	/*< private >*/
-	gfloat ratios_sum;
+	gboolean homogeneous;
 };
 
 struct _YGtkRatioBoxClass
@@ -64,23 +53,32 @@ struct _YGtkRatioBoxChild
 	GtkWidget *widget;
 	// Proprieties
 	guint16 padding;
-	guint fill : 1;
 	gfloat ratio;
+	guint fill : 1;
+	guint pack : 1;
+	guint fully_expandable : 1;
 };
 
 GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
+void ygtk_ratio_box_set_homogeneous (YGtkRatioBox *box, gboolean homogeneous);
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
-gint ygtk_ratio_box_get_spacing (YGtkRatioBox *box);
 
-void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child,
-                          gfloat ratio, gboolean fill, guint padding);
+void ygtk_ratio_box_pack_start (YGtkRatioBox *box, GtkWidget *child,
+                                gfloat ratio, gboolean fill, guint padding);
+void ygtk_ratio_box_pack_end (YGtkRatioBox *box, GtkWidget *child,
+                              gfloat ratio, gboolean fill, guint padding);
 
-void ygtk_ratio_box_query_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                         gfloat *ratio, gboolean *fill,
-                                         guint *padding);
-void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
-                                       gboolean fill, guint padding);
+// Since ratio may be of any value, this function is provided to let programmers
+// specify this child to be fully expandable (avoid its use; stick to some fixed range)
+void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
+                                      gboolean expand);
+
+void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
+                                     gfloat ratio);
+void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
+                                       gfloat ratio, gboolean fill, guint padding,
+                                       GtkPackType pack_type);
 
 /* RatioHBox */
 
@@ -109,7 +107,7 @@ struct _YGtkRatioHBoxClass
 	YGtkRatioBoxClass parent_class;
 };
 
-GtkWidget* ygtk_ratio_hbox_new (gint spacing);
+GtkWidget* ygtk_ratio_hbox_new (gboolean homogeneous, gint spacing);
 GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
 
 /* RatioVBox */
@@ -139,7 +137,7 @@ struct _YGtkRatioVBoxClass
 	YGtkRatioBoxClass parent_class;
 };
 
-GtkWidget* ygtk_ratio_vbox_new (gint spacing);
+GtkWidget* ygtk_ratio_vbox_new (gboolean homogeneous, gint spacing);
 GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS
@@ -183,7 +181,8 @@ struct _YGtkMinSizeClass
 GType ygtk_min_size_get_type (void) G_GNUC_CONST;
 GtkWidget* ygtk_min_size_new (guint min_width, guint min_height);
 
-void ygtk_min_size_set (YGtkMinSize *min_size, guint min_width, guint min_height);
+void ygtk_min_size_set_width (YGtkMinSize *min_size, guint min_width);
+void ygtk_min_size_set_height (YGtkMinSize *min_size, guint min_height);
 
 G_END_DECLS
 #endif /*YGTK_MIN_SIZE_H*/
