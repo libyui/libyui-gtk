@@ -14,7 +14,7 @@
 	* ygtkwizard.c: re-written size_request and size_allocate to
 	comply with recent changes and simplify them.
 
-	* YGWidget.cc / YGLayout.cc: 
+	* YGWidget.cc / YGLayout.cc: work on having a proper layout.
 
 	* YGLayout.cc and some YGLabeledWidget.cc-based widgets: a first
 	try at having the labels horizontally aligned. Currently, it just
