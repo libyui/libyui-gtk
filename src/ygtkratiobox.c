@@ -280,10 +280,14 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		GtkRequisition child_req;
 		gtk_widget_get_child_requisition (box_child->widget, &child_req);
 
-		if (orientation == GTK_ORIENTATION_HORIZONTAL)
-			expansable_length -= child_req.width;
-		else
-			expansable_length -= child_req.height;
+		if (box->homogeneous && box_child->ratio)
+			;
+		else {
+			if (orientation == GTK_ORIENTATION_HORIZONTAL)
+				expansable_length -= child_req.width;
+			else
+				expansable_length -= child_req.height;
+		}
 		expansable_length -= box->spacing - box_child->padding;
 	}
 
@@ -308,10 +312,14 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			GtkRequisition child_req;
 			gtk_widget_get_child_requisition (box_child->widget, &child_req);
 
-			if (orientation == GTK_ORIENTATION_HORIZONTAL)
-				length = child_req.width;
-			else
-				length = child_req.height;
+			if (box->homogeneous && box_child->ratio)
+				length = 0;
+			else {
+				if (orientation == GTK_ORIENTATION_HORIZONTAL)
+					length = child_req.width;
+				else
+					length = child_req.height;
+			}
 
 			if (box_child->ratio)
 				length += ((box_child->ratio / ratios_sum) * expansable_length);

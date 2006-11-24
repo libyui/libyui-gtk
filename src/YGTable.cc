@@ -69,7 +69,7 @@ public:
 			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
 			g_object_set (renderer, "xalign", xalign, NULL);
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-				renderer, "text", col_nb, NULL);
+			             renderer, "text", col_nb, NULL);
 		}
 		else if (type == G_TYPE_BOOLEAN) {  // toggle button
 			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
@@ -89,6 +89,7 @@ public:
 		else
 			g_error ("YGTable: no support for column of given type");
 
+		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, col_nb);
 		m_colsNb++;
 	}

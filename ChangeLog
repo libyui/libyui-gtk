@@ -1,3 +1,8 @@
+2006-11-24  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* ygtkratiobox.c: fixed badly given space when homogeneous
+	is set.
+
 2006-11-21  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	Layout still has a couple of bugs (as can be seen in
