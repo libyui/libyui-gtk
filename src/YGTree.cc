@@ -55,8 +55,7 @@ public:
 				GtkTreePath* path = gtk_tree_model_get_path (getModel(), &iter);
 				// get current index...
 				gint depth = gtk_tree_path_get_depth (path);
-				gint *index, *indices = gtk_tree_path_get_indices (path);
-				for (index = indices; index+1 < indices + depth; index++) printf("%d ", *index);
+				gint *index = gtk_tree_path_get_indices (path) + depth - 1;
 				items[i]->setData (GINT_TO_POINTER (*index));
 				gtk_tree_path_free (path);
 			}

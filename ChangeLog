@@ -1,3 +1,7 @@
+2006-11-28  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* YGTree.cc: stuff was being printed. Got rid of that.
+
 2006-11-24  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* ygtkratiobox.c: fixed badly given space when homogeneous
