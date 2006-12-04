@@ -499,6 +499,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 
 	gtk_widget_set_parent (wizard->m_navigation, GTK_WIDGET (wizard));
 	gtk_widget_show_all (wizard->m_navigation);
+	gtk_widget_queue_draw (GTK_WIDGET (wizard));
 }
 
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *new_child)
@@ -707,6 +708,7 @@ void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
 	if (!wizard->m_menu) {
 		wizard->m_menu = gtk_menu_bar_new();
 		gtk_widget_set_parent (wizard->m_menu, GTK_WIDGET (wizard));
+		gtk_widget_queue_draw (GTK_WIDGET (wizard));
 	}
 
 	GtkWidget *entry = gtk_menu_item_new_with_mnemonic (text);

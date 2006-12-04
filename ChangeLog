@@ -13,7 +13,8 @@
 	* ygtkwizard.c: removed the non-functional search icon code.
 	Better to see how someone else does this.
 
-	* ygtkwizard.c: no more gtk warnings on destroy.
+	* ygtkwizard.c: fixed gtk warnings on destroy.
+	* ygtkwizard.c: fixed visual glitches on autoyast at start.
 
 2006-11-28  Ricardo Cruz  <rpmcruz@clix.pt>
 
