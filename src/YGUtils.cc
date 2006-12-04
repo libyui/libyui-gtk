@@ -172,7 +172,6 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
                                            gboolean cut_breaklines)
 {
-printf ("text to convert to xhtml: %s\n", instr);
 	GString *outp = g_string_new ("");
 	GQueue *tag_queue = g_queue_new();
 	int i = 0;

@@ -12,7 +12,7 @@ using std::string;
 using std::vector;
 
 /* Comment the following line to disable debug messages */
-#define IMPL_DEBUG
+//#define IMPL_DEBUG
 #define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
 #ifdef IMPL_DEBUG
 	#define IMPL      { LOC; }
