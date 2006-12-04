@@ -43,6 +43,10 @@ public:
 		else
 			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
 		YLabel::setLabel (label);
+
+		// Some YCP progs have crap like no labeled labels cluttering the layout
+		label->value().empty() ? gtk_widget_hide (getWidget())
+		                       : gtk_widget_show (getWidget());
 	}
 
 	// YWidget

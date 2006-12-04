@@ -8,6 +8,7 @@
 
 #include "YSplit.h"
 #include "ygtkratiobox.h"
+#include "YSpacing.h"
 
 // GtkBox-like container (actually, more like our YGtkRatioBox)
 class YGSplit : public YSplit, public YGWidget
@@ -48,22 +49,30 @@ public:
 		if (ychild->hasWeight (this_dir))
 			ygchild->setStretchable (this_dir, true);
 		setChildStretchable (ychild);
-#ifdef IMPL_DEBUG
-		fprintf (stderr, "added child: %s - stretch: %d - weight: %ld\n", ygchild->getWidgetName(),
-		         ychild->stretchable (this_dir), ychild->weight (this_dir));
-#endif
-		// stretchable property changes at every addchild for containers
-//		YGWidget::setStretchable (this_dir, YWidget::stretchable (this_dir));
-//		YGWidget::setStretchable (opposite_dir, YWidget::stretchable (opposite_dir));
-		if (!YWidget::stretchable (opposite_dir))
-			YGWidget::setAlignment (YAlignCenter, YAlignCenter);
-printf ("split will be set stretchable: %d x %d\n", YWidget::stretchable (this_dir), YWidget::stretchable (opposite_dir));
+		YGWidget::sync_stretchable();
+
 		// set labels of YGLabeledWidgets to the same width
-		YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
-		if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
-			if (!m_labels_group)
-				m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-			gtk_size_group_add_widget (m_labels_group, labeled_child->getLabelWidget());
+		while (ychild) {
+			if (ychild->isContainer()) {
+				// try to see if there is a YGLabeledWidget at start
+				// (and ignore YSpacings)
+				YContainerWidget *container = (YContainerWidget *) ychild;
+				for (int i = 0; i < container->numChildren(); i++) {
+					ychild = container->child (i);
+					if (dynamic_cast <YSpacing *> (ychild) == NULL)
+						break;
+				}
+			}
+			else {
+				ygchild = YGWidget::get (ychild);
+				YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
+				if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
+					if (!m_labels_group)
+						m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+					gtk_size_group_add_widget (m_labels_group, labeled_child->getLabelWidget());
+				}
+				break;
+			}
 		}
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
@@ -265,6 +274,10 @@ public:
 			if (split && split->hasChildren())
 				((YGSplit *) split)->setChildStretchable (child);
 		}
+
+		// debug
+		::dumpWidgetTree (child_widget);
+		dumpYastTree (ychild);
 	}
 
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())

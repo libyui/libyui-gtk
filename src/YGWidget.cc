@@ -166,11 +166,7 @@ bool YGWidget::isStretchable (YUIDimension dim)
 {
 	YContainerWidget *container = dynamic_cast <YContainerWidget *> (m_y_widget);
 	if (container && !container->hasChildren())
-		return false;
-/*
-	if (m_y_widget->isLayoutStretch (dim))
-		return false;  // layout stretches be damn
-*/
+		return false;  // some YWidget containers would crash if they don't have kids
 	return m_y_widget->stretchable (dim) || m_y_widget->hasWeight (dim);
 }
 
@@ -252,11 +248,12 @@ void YGLabeledWidget::setBuddy (GtkWidget *widget)
 void YGLabeledWidget::doSetLabel (const YCPString &label)
 {
 	string str = YGUtils::mapKBAccel (label->value_cstr());
-	if (str.empty())
+	if (str.empty()) {
 		gtk_widget_hide (m_label);
+	}
 	else {
 		// label tweaking
-		if (str [str.length()-1] != ':')
+		if (str [str.length()-1] != ':' && str [str.length()-1] != '.')
 			str += ':';
 		unsigned int first_ch = (str [0] == '_') ? 1 : 0;
 		if (str [first_ch] >= 'a' && str [first_ch] <= 'z')

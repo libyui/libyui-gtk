@@ -1,3 +1,9 @@
+2006-12-04  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* YGLayout.cc: a fix to a better behavior on YSplits
+	inside YSplits. Labeled widgets should now get aligned
+	for all pratical cases.
+
 2006-11-28  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGTree.cc: stuff was being printed. Got rid of that.

@@ -172,6 +172,7 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
                                            gboolean cut_breaklines)
 {
+printf ("text to convert to xhtml: %s\n", instr);
 	GString *outp = g_string_new ("");
 	GQueue *tag_queue = g_queue_new();
 	int i = 0;
@@ -223,7 +224,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			      !strncmp (tag->str, "br", 2)) &&
 			     tag->str[tag->len - 1] != '/')
 				g_string_append_c (tag, '/');
-			
+
 			// Add quoting for un-quoted attributes
 			for (j = 0; j < (signed) tag->len; j++) {
 				if (tag->str[j] == '=' && tag->str[j+1] != '"') {
@@ -273,13 +274,16 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			// 1 Magic entity
 			g_string_append (outp, product);
 			i += sizeof (PROD_ENTITY) - 2;
-			
 		}
 
-		// removing new-lines chars, sure isn't a xhtml conversion
+		// removing new-lines chars sure isn't a xhtml conversion
 		// but it's still valid xhtml and GtkTextView appreciates it
-		else if (cut_breaklines && instr[i] == '\n')
-			;
+		else if (cut_breaklines && instr[i] == '\n') {
+			// In HTML a breakline should be treated as a white space when
+			// not in the start of a paragraph.
+			if (i > 0 && instr[i-1] != '>' && !g_ascii_isspace (instr[i-1]))
+				g_string_append_c (outp, ' ');
+		}
 
 		else // Normal text
 			g_string_append_c (outp, instr[i]);

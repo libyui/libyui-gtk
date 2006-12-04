@@ -346,7 +346,6 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 				child_alloc.x = allocation->width - child_alloc.x - child_alloc.width;
 
 			gtk_widget_size_allocate (box_child->widget, &child_alloc);
-
 			child_pos += length + box->spacing + box_child->padding;
 		}
 }

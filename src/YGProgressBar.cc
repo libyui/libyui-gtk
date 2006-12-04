@@ -4,7 +4,6 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
-#include "YEvent.h"
 #include "YGWidget.h"
 
 #include "YProgressBar.h"
@@ -16,9 +15,12 @@ public:
 	               const YCPString& label,
 	               const YCPInteger& maxprogress, const YCPInteger& progress)
 	: YProgressBar (opt, label, maxprogress, progress)
-	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
+	, YGLabeledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{ }
+	// NOTE: its label widget is positionated at the vertical, because its label
+	// may change often and so will its size, which will look odd (we may want
+	// to make the label widget to only grow).
 
 	virtual ~YGProgressBar() {}
 
@@ -37,9 +39,8 @@ public:
 
 YWidget *
 YGUI::createProgressBar (YWidget* parent, YWidgetOpt& opt,
-                         const YCPString& label,
-                         const YCPInteger& maxprogress,
-                         const YCPInteger& progress )
+                         const YCPString& label, const YCPInteger& maxprogress,
+                         const YCPInteger& progress)
 {
 	IMPL;
 	return new YGProgressBar (opt, YGWidget::get (parent),
@@ -54,8 +55,8 @@ class YGDownloadProgress : public YDownloadProgress, public YGLabeledWidget
 
 public:
 	YGDownloadProgress (const YWidgetOpt &opt, YGWidget *parent,
-	                    const YCPString& label,
-	                    const YCPString &filename, int expectedSize)
+	                    const YCPString& label, const YCPString &filename,
+	                    int expectedSize)
 	: YDownloadProgress (opt, label, filename, expectedSize)
 	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
@@ -89,11 +90,10 @@ public:
 
 YWidget *
 YGUI::createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
-                                 const YCPString &label,
-                                 const YCPString &filename,
-                                 int expectedSize)
+                              const YCPString &label, const YCPString &filename,
+                              int expectedSize)
 {
-	IMPL;
+	IMPL
 	return new YGDownloadProgress (opt, YGWidget::get (parent),
 	                               label, filename, expectedSize);
 }
