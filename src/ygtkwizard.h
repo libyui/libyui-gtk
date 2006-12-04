@@ -42,7 +42,6 @@ struct _YGtkHelpDialog
 	GtkWidget *help_box, *help_text;
 	GtkWidget *search_entry, *close_button;
 	GtkWidget *vbox;
-	GdkPixbuf *search_pixbuf;
 };
 
 struct _YGtkHelpDialogClass

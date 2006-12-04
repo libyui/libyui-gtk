@@ -10,6 +10,9 @@
 	 would be caught, where we just want to catch single F3
 	 key instances.)
 
+	* ygtkwizard.c: removed the non-functional search icon code.
+	Better to see how someone else does this.
+
 2006-11-28  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGTree.cc: stuff was being printed. Got rid of that.

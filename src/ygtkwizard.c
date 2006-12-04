@@ -21,36 +21,12 @@ extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
 
 /** YGtkHelpDialog **/
-
-/* XPM */
-static const char *search_icon_xpm [] = {
-	"20 14 2 1",
-	" 	c None",
-	".	c #DEDEDE",
-	" ....         ...   ",
-	" ...          ...   ",
-	"...            ...  ",
-	"...            ...  ",
-	"...            ...  ",
-	"...            ...  ",
-	" ...          ...   ",
-	" ....        ....   ",
-	"  ....      .....   ",
-	"  ......  .......   ",
-	"   ...............  ",
-	"     .............. ",
-	"        ..    ......",
-	"               ....."};
-
 static YGtkHelpDialogClass *help_dialog_parent_class = NULL;
 
 static void ygtk_help_dialog_realize (GtkWidget *widget);
 static gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event);
-static void ygtk_help_dialog_destroy (GtkObject *object);
 // callbacks
 static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog);
-static gboolean search_entry_expose_cb (GtkWidget *widget, GdkEventExpose *event,
-                                        YGtkHelpDialog *dialog);
 static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog);
 static void ygtk_help_dialog_close (YGtkHelpDialog *dialog);
 static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
@@ -68,9 +44,6 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->expose_event = ygtk_help_dialog_expose_event;
 	widget_class->realize = ygtk_help_dialog_realize;
-
-	GtkObjectClass* object_class = GTK_OBJECT_CLASS (klass);
-	object_class->destroy = ygtk_help_dialog_destroy;
 
 	// key bindings (eg. F3 for next word)
 	g_signal_new ("find_next", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
@@ -140,22 +113,10 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 4);
 	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
 
-	g_signal_connect (G_OBJECT (dialog->search_entry), "expose-event",
-	                  G_CALLBACK (search_entry_expose_cb), dialog);
 	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
 	                  G_CALLBACK (search_entry_modified_cb), dialog);
-/*
-	g_signal_connect (G_OBJECT (dialog), "find-next",
-	                  G_CALLBACK (find_next_cb), NULL);
-*/
 	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
-/*
-	g_signal_connect (G_OBJECT (dialog), "close",
-	                  G_CALLBACK (gtk_widget_hide), NULL);
-*/
-	g_signal_connect (G_OBJECT (dialog->close_button), "clicked",
-	                  G_CALLBACK (close_button_clicked_cb), dialog);
 
 	// glue it
 	dialog->vbox = gtk_vbox_new (FALSE, 12);
@@ -165,11 +126,10 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_add (GTK_CONTAINER (dialog), dialog->vbox);
 	gtk_widget_show_all (dialog->vbox);
 
+	g_signal_connect (G_OBJECT (dialog->close_button), "clicked",
+	                  G_CALLBACK (close_button_clicked_cb), dialog);
 	g_signal_connect (G_OBJECT (dialog), "delete-event",
 	                  G_CALLBACK (gtk_widget_hide_on_delete), NULL);
-
-	// the search icon
-	dialog->search_pixbuf = gdk_pixbuf_new_from_xpm_data (search_icon_xpm);
 }
 
 void ygtk_help_dialog_realize (GtkWidget *widget)
@@ -186,17 +146,6 @@ void ygtk_help_dialog_realize (GtkWidget *widget)
 	gtk_widget_grab_default (dialog->close_button);
 	gtk_widget_grab_focus (dialog->close_button);
 }
-
-void ygtk_help_dialog_destroy (GtkObject *object)
-{
-	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (object);
-	if (dialog->search_pixbuf) {
-		g_object_unref (G_OBJECT (dialog->search_pixbuf));
-		dialog->search_pixbuf = NULL;
-	}
-	GTK_OBJECT_CLASS (ygtk_help_dialog_parent_class)->destroy (object);
-}
-
 
 gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
@@ -234,27 +183,6 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
 	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
-}
-
-gboolean search_entry_expose_cb (GtkWidget *widget, GdkEventExpose *event,
-                                 YGtkHelpDialog *dialog)
-{
-// FIXME: not working properly
-#if 0
-	int x, y, w, h;
-	w = gdk_pixbuf_get_width (dialog->search_pixbuf);
-	h = gdk_pixbuf_get_height (dialog->search_pixbuf); //widget->allocation.height;
-	x = widget->allocation.width - w; // x=0;  works?!
-	y = 0;
-printf ("drawing icon at %d x %d , %d x %d\n", x, y, w, h);
-	cairo_t *cr = gdk_cairo_create (widget->window);
-	gdk_cairo_set_source_pixbuf (cr, dialog->search_pixbuf, 0, 0);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_fill (cr);
-
-	cairo_destroy (cr);
-#endif
-	return FALSE;
 }
 
 void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
