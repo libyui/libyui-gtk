@@ -51,8 +51,10 @@ static void ygtk_help_dialog_destroy (GtkObject *object);
 static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog);
 static gboolean search_entry_expose_cb (GtkWidget *widget, GdkEventExpose *event,
                                         YGtkHelpDialog *dialog);
-static gboolean help_dialog_key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
-                                            YGtkHelpDialog *dialog);
+static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog);
+static void ygtk_help_dialog_close (YGtkHelpDialog *dialog);
+static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
+{ ygtk_help_dialog_find_next (dialog); }
 
 G_DEFINE_TYPE (YGtkHelpDialog, ygtk_help_dialog, GTK_TYPE_WINDOW)
 
@@ -60,12 +62,29 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 {
 	help_dialog_parent_class = g_type_class_peek_parent (klass);
 
+	klass->find_next = ygtk_help_dialog_find_next;
+	klass->close = ygtk_help_dialog_close;
+
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->expose_event = ygtk_help_dialog_expose_event;
 	widget_class->realize = ygtk_help_dialog_realize;
 
 	GtkObjectClass* object_class = GTK_OBJECT_CLASS (klass);
 	object_class->destroy = ygtk_help_dialog_destroy;
+
+	// key bindings (eg. F3 for next word)
+	g_signal_new ("find_next", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
+	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	              G_STRUCT_OFFSET (YGtkHelpDialogClass, find_next),
+	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+	g_signal_new ("close", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
+	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	              G_STRUCT_OFFSET (YGtkHelpDialogClass, close),
+	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
+	gtk_binding_entry_add_signal (binding_set, GDK_F3, 0, "find_next", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
 }
 
 static void close_button_clicked_cb (GtkButton *button, YGtkHelpDialog *dialog)
@@ -125,6 +144,16 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	                  G_CALLBACK (search_entry_expose_cb), dialog);
 	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
 	                  G_CALLBACK (search_entry_modified_cb), dialog);
+/*
+	g_signal_connect (G_OBJECT (dialog), "find-next",
+	                  G_CALLBACK (find_next_cb), NULL);
+*/
+	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
+	                  G_CALLBACK (search_entry_activated_cb), dialog);
+/*
+	g_signal_connect (G_OBJECT (dialog), "close",
+	                  G_CALLBACK (gtk_widget_hide), NULL);
+*/
 	g_signal_connect (G_OBJECT (dialog->close_button), "clicked",
 	                  G_CALLBACK (close_button_clicked_cb), dialog);
 
@@ -136,8 +165,6 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_add (GTK_CONTAINER (dialog), dialog->vbox);
 	gtk_widget_show_all (dialog->vbox);
 
-	g_signal_connect (G_OBJECT (dialog), "key-press-event",
-	                  G_CALLBACK (help_dialog_key_pressed_cb), dialog);
 	g_signal_connect (G_OBJECT (dialog), "delete-event",
 	                  G_CALLBACK (gtk_widget_hide_on_delete), NULL);
 
@@ -230,23 +257,15 @@ printf ("drawing icon at %d x %d , %d x %d\n", x, y, w, h);
 	return FALSE;
 }
 
-gboolean help_dialog_key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
-                                     YGtkHelpDialog *dialog)
+void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
 {
-// FIXME: do proper key binding
-	if (event->keyval == GDK_Escape) {
-		gtk_widget_hide (widget);
-		return TRUE;
-	}
+	gtk_widget_hide (GTK_WIDGET (dialog));
+}
 
-	if (event->keyval == GDK_F3 || (GTK_WIDGET_HAS_FOCUS (dialog->search_entry) &&
-	    event->keyval == GDK_Return)) {
-		const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
-		ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
-		return TRUE;
-	}
-
-	return FALSE;
+void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
+{
+	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
+	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
 }
 
 void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)

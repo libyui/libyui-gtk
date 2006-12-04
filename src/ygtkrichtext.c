@@ -640,9 +640,8 @@ void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
 static gboolean ygtk_richtext_advance_mark (YGtkRichText *rtext,
 	GtkTextIter *start_iter, GtkTextIter *end_iter, const gchar *key)
 {
-printf ("advance mark...\n");
-	// This isn't case insensitive, so we will just roll our own search
 	//return gtk_text_iter_forward_search (&iter, text, 0, start_iter, end_iter, NULL);
+	// (This isn't case insensitive, so we will just roll our own search)
 
 	if (*key == '\0')
 		return FALSE;
@@ -663,12 +662,10 @@ printf ("advance mark...\n");
 
 gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
 {
-printf ("mark %s\n", text);
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 	GtkTextIter start_iter, end_iter;
 	gboolean found = FALSE;
 
-printf ("get bounds\n");
 	gtk_text_buffer_get_bounds (buffer, &start_iter, &end_iter);
 	gtk_text_buffer_remove_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
 
@@ -678,7 +675,6 @@ printf ("get bounds\n");
 
 	if (text)
 		while (ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text)) {
-printf ("found!\n");
 			found = TRUE;
 			gtk_text_buffer_apply_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
 			start_iter = end_iter;
@@ -688,13 +684,11 @@ printf ("found!\n");
 
 gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
 {
-printf ("forward mark\n");
 	GtkTextIter start_iter, end_iter;
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 	gtk_text_buffer_get_iter_at_mark (buffer, &start_iter,
 	                                  gtk_text_buffer_get_selection_bound (buffer));
 
-printf ("advancing\n");
 	gboolean found;
 	found = ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text);
 	if (!found) {
@@ -703,10 +697,8 @@ printf ("advancing\n");
 	}
 
 	if (found) {
-printf ("scrolling\n");
 		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (rtext), &start_iter, 0.10,
 		                              FALSE, 0, 0);
-printf ("selecting\n");
 		gtk_text_buffer_select_range (buffer, &start_iter, &end_iter);
 		return TRUE;
 	}

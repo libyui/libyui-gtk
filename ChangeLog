@@ -4,6 +4,12 @@
 	inside YSplits. Labeled widgets should now get aligned
 	for all pratical cases.
 
+	* ygtkwizard.c: YGtkHelpDialog use GtkBinding to catch
+	keys rather than the key_pressed GtkWidget signal.
+	(using this last would mean, for instance, Ctrl+Alt+F3
+	 would be caught, where we just want to catch single F3
+	 key instances.)
+
 2006-11-28  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGTree.cc: stuff was being printed. Got rid of that.

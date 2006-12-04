@@ -48,6 +48,10 @@ struct _YGtkHelpDialog
 struct _YGtkHelpDialogClass
 {
 	GtkWindowClass parent_class;
+
+	// signals
+	void (*find_next) (YGtkHelpDialog *dialog);
+	void (*close) (YGtkHelpDialog *dialog);
 };
 
 GtkWidget *ygtk_help_dialog_new (GtkWindow *parent);
