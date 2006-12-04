@@ -428,22 +428,27 @@ static void ygtk_wizard_destroy (GtkObject *object)
 		wizard->m_help = NULL;
 	}
 
-	if (wizard->m_title)
-		gtk_widget_destroy (wizard->m_title);
-	if (wizard->m_buttons)
-		gtk_widget_destroy (wizard->m_buttons);
-	if (wizard->m_menu)
-		gtk_widget_destroy (wizard->m_menu);
-	if (wizard->m_navigation)
-		gtk_widget_destroy (wizard->m_navigation);
-	if (wizard->m_help_dialog)
-		gtk_widget_destroy (wizard->m_help_dialog);
+/* We must unparent these widgets from the wizard as they would try
+   to use gtk_container_remove() on it. We ref them since we still
+   want to call destroy on them so they children die. */
+#define DESTROY_WIDGET(widget)          \
+	if (widget) {                         \
+		g_object_ref (G_OBJECT (widget));   \
+		gtk_widget_unparent (widget);       \
+		gtk_widget_destroy (widget);        \
+		widget = NULL;                      \
+	}
+	DESTROY_WIDGET (wizard->m_title)
+	DESTROY_WIDGET (wizard->m_buttons)
+	DESTROY_WIDGET (wizard->m_menu)
+	DESTROY_WIDGET (wizard->m_navigation)
+	DESTROY_WIDGET (wizard->m_title)
+#undef DESTROY_WIDGET
 
-	wizard->m_title = NULL;
-	wizard->m_buttons = NULL;
-	wizard->m_menu = NULL;
-	wizard->m_navigation = NULL;
-	wizard->m_help_dialog = NULL;
+	if (wizard->m_help_dialog) {
+		gtk_widget_destroy (wizard->m_help_dialog);
+		wizard->m_help_dialog = NULL;
+	}
 
 	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
 }
