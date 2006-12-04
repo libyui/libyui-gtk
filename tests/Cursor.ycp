@@ -1,0 +1,21 @@
+// Cursor test
+{
+	UI::OpenDialog (
+		`VBox (
+			`IntField (`id (`time), "Work for (secs):", 0, 10, 2),
+			`PushButton (`id (`work), "&Work!"),
+			`PushButton (`id (`cancel), "&Close")
+			)
+		);
+
+	any ret = nil;
+	repeat {
+		ret = UI::UserInput();
+
+		if (ret == `work)
+			sleep ((integer) UI::QueryWidget (`time, `Value) * 1000);
+
+	} until (ret == `cancel);
+
+	UI::CloseDialog();
+}

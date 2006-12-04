@@ -1,0 +1,19 @@
+// Test for UI::Beep()
+{
+	UI::OpenDialog (
+		`Label ("Doing some operations...")
+	);
+	sleep (4000);
+	UI::CloseDialog();
+
+	UI::OpenDialog (
+		`VBox (
+			`Label ("Done. Now prooceed to answer the next questions."),
+			`PushButton ("Ok")
+		)
+	);
+	UI::Beep();
+
+	UI::UserInput();
+	UI::CloseDialog();
+}
