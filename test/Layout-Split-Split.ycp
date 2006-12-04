@@ -3,7 +3,7 @@
 UI::OpenDialog (`opt (`defaultsize), `HBox (`PushButton ("Okay")));
 UI::UserInput();
 
-UI::OpenDialog (`opt (`defaultsize), `HBox (`VBox(`PushButton ("Okay")), `VBox (`PushButton ("Nay"), `PushButton ("Pay"))));
+UI::OpenDialog (`opt (`defaultsize), `HBox (`PushButton ("Okay"), `VBox (`PushButton ("Nay"), `PushButton ("Pay"))));
 UI::UserInput();
 
 UI::OpenDialog(`opt (`defaultsize), `Wizard (`back, "&Back", `abort, "Ab&ort", `next, "&Next"));
