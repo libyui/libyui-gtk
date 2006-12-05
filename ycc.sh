@@ -15,10 +15,10 @@ if [ $# -gt 0 ]; then
     fi
     if [ "$1" == "x" ]; then
         DEFAULT_DIR=.
-        # go to the test directory
+        # go to the tests directory
         # (this doesn't affect user's cwd because this
         #  is running in its own shell.)
-        cd "`dirname $0`/test"
+        cd "`dirname $0`/tests"
     fi
     if [ "$1" == "help" ]; then
         echo "ycc.sh usage:"
