@@ -223,7 +223,7 @@ void dumpYastTree (YWidget *widget, GtkWindow *parent_window)
 	                                          G_TYPE_STRING);
 	dumpYastTree (widget, store, NULL);
 
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets tree",
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets Tree",
 		parent_window,
 		GtkDialogFlags (GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_NO_SEPARATOR),
 		GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
