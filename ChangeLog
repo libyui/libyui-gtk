@@ -17,6 +17,10 @@
 	* YGUI.cc: turned dumpYastTree into a graphical window.
 	(press ctrl+atl+shift+T)
 
+	* integrate/yast2: fixed syntax error:
+	if [ $WINDOWMANAGER | grep -qi "gnome" ]
+	-> if echo $WINDOWMANAGER | grep -qi "gnome"
+
 2006-12-04  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc: a fix to a better behavior on YSplits

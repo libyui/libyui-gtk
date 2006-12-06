@@ -75,7 +75,7 @@ run_yast_menu()
 			fi
 		done
 	else  # gtk or qt
-		if [ $WINDOWMANAGER | grep -qi "gnome" ] &&
+		if echo $WINDOWMANAGER | grep -qi "gnome" &&
 		   [ -e "/usr/bin/y2controlcenter-gnome" ]; then
 			$y2controlcenter-gnome $YAST_ARGS
 		elif [ -e "$ybindir/y2controlcenter" ]; then
