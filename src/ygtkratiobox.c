@@ -111,6 +111,26 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 	}
 }
 
+void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
+                                       gfloat *ratio, gboolean *xfill,
+                                       gboolean *yfill, guint *padding,
+                                       gboolean *expand, GtkPackType *pack)
+{
+	YGtkRatioBoxChild *child_info;
+	child_info = ygtk_ratio_get_child_info (box, child);
+
+	if (child_info) {
+		gtk_widget_freeze_child_notify (child);
+
+		if (ratio)   *ratio   = child_info->ratio;
+		if (xfill)   *xfill   = child_info->xfill;
+		if (yfill)   *yfill   = child_info->yfill;
+		if (padding) *padding = child_info->padding;
+		if (expand)  *expand  = child_info->fully_expandable;
+		if (pack)    *pack    = child_info->pack;
+	}
+}
+
 void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
                                       gboolean expand)
 {

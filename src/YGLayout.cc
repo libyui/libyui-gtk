@@ -23,7 +23,8 @@ public:
 	YGSplit (const YWidgetOpt &opt, YGWidget *parent, YUIDimension dim)
 	: YSplit (opt, dim),
 	  YGWidget (this, parent, true,
-	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
+	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX
+	                            : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		setBorder (0);
 		m_labels_group = NULL;
@@ -41,7 +42,6 @@ public:
 		YGWidget *ygchild = YGWidget::get (ychild);
 
 		gtk_container_add (GTK_CONTAINER (getWidget()), ygchild->getLayout());
-		stretch_safe = true;
 		sync_stretchable (ychild);
 
 		// set labels of YGLabeledWidgets to the same width
@@ -63,7 +63,8 @@ public:
 				if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
 					if (!m_labels_group)
 						m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-					gtk_size_group_add_widget (m_labels_group, labeled_child->getLabelWidget());
+					gtk_size_group_add_widget (m_labels_group,
+					          labeled_child->getLabelWidget());
 				}
 				break;
 			}
@@ -128,11 +129,11 @@ public:
 		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
 
 		setAlignment (align [YD_HORIZ], align [YD_VERT]);
-		/* The padding is used for stuff like making YCP progs nicer for yast-qt wizard,
-		   so it hurts us -- it's disabled. */
-		//child->setPadding (topMargin(), bottomMargin(), leftMargin(), rightMargin());
+		/* The padding is used for stuff like making YCP progs nicer for
+		   yast-qt wizard, so it hurts us -- it's disabled. */
+		//child->setPadding (topMargin(), bottomMargin(),
+		//                   leftMargin(), rightMargin());
 		setMinSize (minWidth(), minHeight());
-		stretch_safe = true;
 		sync_stretchable();
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
@@ -154,7 +155,8 @@ public:
 
 	void setPadding (int top, int bottom, int left, int right)
 	{
-		gtk_alignment_set_padding (GTK_ALIGNMENT (getWidget()), top, bottom, left, right);
+		gtk_alignment_set_padding (GTK_ALIGNMENT (getWidget()),
+		                           top, bottom, left, right);
 	}
 
 	virtual void setBackgroundPixmap (string filename)

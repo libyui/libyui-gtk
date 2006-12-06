@@ -76,13 +76,19 @@ void ygtk_ratio_box_pack_end (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
 // since it is lost.
 void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
                                       gboolean expand);
-
 void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
                                      gfloat ratio);
+
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gfloat ratio, gboolean xfill,
                                        gboolean yfill, guint padding,
                                        GtkPackType pack_type);
+
+void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
+                                       gfloat *ratio, gboolean *xfill,
+                                       gboolean *yfill, guint *padding,
+                                       gboolean *fully_expandable,
+                                       GtkPackType *pack_type);
 
 /* RatioHBox */
 

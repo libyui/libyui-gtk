@@ -48,11 +48,6 @@ public:
 	// against crashes that some YContainerWidgets lead to
 	bool isStretchable (YUIDimension dim);
 
-	// YWidgets containers crash when they don't have children, so we need this
-	// stuff. To be removed in the future.
-	bool safe_container() const;
-	bool stretch_safe;  // true when stretchable is safe to be called
-
 protected:
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
 	YWidget *m_y_widget;  // associated YWidget
@@ -85,14 +80,12 @@ protected:
 	virtual void childAdded (YWidget *ychild) {                 \
 	    GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
 	    gtk_container_add (GTK_CONTAINER (container), child);   \
-	    stretch_safe = true;                                    \
 	    sync_stretchable();                                     \
 	}
 #define YGWIDGET_IMPL_CHILD_REMOVED(container)                 \
 	virtual void childRemoved (YWidget *ychild) {                \
 	    GtkWidget *child = YGWidget::get (ychild)->getLayout();  \
 	    gtk_container_remove (GTK_CONTAINER (container), child); \
-	    if (!hasChildren()) stretch_safe = false;                \
 	}
 
 /* This is a convenience class that allows for a label next to the

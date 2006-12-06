@@ -61,7 +61,6 @@ public:
 		GtkWidget *child = YGWidget::get (ychild)->getLayout();
 		gtk_container_add (GTK_CONTAINER (alignment), child);
 		gtk_container_add (GTK_CONTAINER (getWidget()), alignment);
-		stretch_safe = true;
 		sync_stretchable();
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())

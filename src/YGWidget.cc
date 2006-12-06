@@ -50,7 +50,6 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 
 	if (_show)
 		show();
-	stretch_safe = false;
 }
 
 YGWidget::~YGWidget()
@@ -134,14 +133,14 @@ void YGWidget::sync_stretchable (YWidget *child)
 /* Checks everywhere in a container to see if there are children (so
    he is completely initialized) so that we may ask him for stretchable()
    because some YContainerWidgets crash when they don't have children. */
-bool YGWidget::safe_container() const
+static bool safe_stretchable (YWidget *widget)
 {
-	YContainerWidget *container = dynamic_cast <YContainerWidget *> (m_y_widget);
+	YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
 	if (container) {
-		if (!stretch_safe)
+		if (!container->hasChildren())
 			return false;
 		for (int i = 0; i < container->numChildren(); i++)
-			if (!YGWidget::get (container->child (i))->safe_container())
+			if (!safe_stretchable (container->child (i)))
 				return false;
 	}
 	return true;
@@ -149,7 +148,7 @@ bool YGWidget::safe_container() const
 
 bool YGWidget::isStretchable (YUIDimension dim)
 {
-	if (safe_container())
+	if (safe_stretchable (m_y_widget))
 		return m_y_widget->stretchable (dim);
 	return false;
 }
