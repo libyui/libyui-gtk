@@ -126,7 +126,7 @@ public:
 				gtk_widget_set_size_request (bar, -1, min_size);
 
 			ygtk_ratio_box_pack_start (YGTK_RATIO_BOX (getWidget()), bar,
-			                           maxValue (i), TRUE, 0);
+			                           maxValue (i), TRUE, TRUE, 0);
 		}
 
 		gtk_widget_show_all (getWidget());

@@ -24,10 +24,8 @@ public:
 			gtk_widget_modify_base (getWidget(), GTK_STATE_NORMAL,
 			                        &getWidget()->style->base [GTK_STATE_INSENSITIVE]);
 		}
-		else {
+		else
 			gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
-			setAlignment (YAlignUnchanged, YAlignCenter);
-		}
 
 		if (opt.boldFont.value())
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -84,7 +82,6 @@ public:
 		IMPL
 		gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
 		gtk_misc_set_padding (GTK_MISC (getWidget()), margin, margin);
-		setAlignment (YAlignUnchanged, YAlignCenter);
 
 		if (opt.boldFont.value())
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);

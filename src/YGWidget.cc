@@ -28,29 +28,16 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 
 	if (type == GTK_TYPE_WINDOW)
-		m_alignment = m_widget;
+		m_min_size = m_widget;
 	else {
-		m_alignment = gtk_alignment_new (0.5, 0.5, 1, 1);
-		g_object_ref (G_OBJECT (m_alignment));
-		gtk_object_sink (GTK_OBJECT (m_alignment));
-		gtk_widget_show (m_alignment);
-
 		m_min_size = ygtk_min_size_new (0, 0);
+		g_object_ref (G_OBJECT (m_min_size));
+		gtk_object_sink (GTK_OBJECT (m_min_size));
 		gtk_widget_show (m_min_size);
-		gtk_container_add (GTK_CONTAINER (m_alignment), m_min_size);
 		gtk_container_add (GTK_CONTAINER (m_min_size), m_widget);
 	}
 
 	y_widget->setWidgetRep ((void *) this);
-
-	// Ordinary widgets stretchable attribute is fetched at constructor,
-	// while container widget is fetched at every addChild() because
-	// they generally depend on the child for their stretchable attribute.
-	if (!y_widget->isContainer())
-			sync_stretchable();
-
-	// Just set parent after set stretch because we don't want it to notify
-	// to its container parent, since it isn't yet added to it...
 	if (parent)
 		y_widget->setParent (parent->m_y_widget);
 
@@ -63,13 +50,14 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 
 	if (_show)
 		show();
+	stretch_safe = false;
 }
 
 YGWidget::~YGWidget()
 {
 	IMPL
-	gtk_widget_destroy (m_alignment);
-	g_object_unref (G_OBJECT (m_alignment));
+	gtk_widget_destroy (m_min_size);
+	g_object_unref (G_OBJECT (m_min_size));
 }
 
 void YGWidget::show()
@@ -111,16 +99,13 @@ void YGWidget::emitEvent (YEvent::EventReason reason, bool if_notify,
 
 void YGWidget::setBorder (unsigned int border)
 {
-	gtk_container_set_border_width (GTK_CONTAINER (m_alignment), border);
-}
-
-unsigned int YGWidget::getBorder()
-{
-	return gtk_container_get_border_width (GTK_CONTAINER (m_alignment));
+	IMPL
+	gtk_container_set_border_width (GTK_CONTAINER (m_min_size), border);
 }
 
 void YGWidget::setMinSize (unsigned int width, unsigned int height)
 {
+	IMPL
 	if (width)
 		ygtk_min_size_set_width (YGTK_MIN_SIZE (m_min_size), width);
 	if (height)
@@ -129,6 +114,7 @@ void YGWidget::setMinSize (unsigned int width, unsigned int height)
 
 void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
 {
+	IMPL
 	if (width)
 		width = YGUtils::getCharsWidth (getWidget(), width);
 	if (height)
@@ -136,66 +122,36 @@ void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
 	setMinSize (width, height);
 }
 
-static GValue floatToGValue (float num)  // helper
+void YGWidget::sync_stretchable (YWidget *child)
 {
-	GValue value = { 0 };
-	g_value_init (&value, G_TYPE_FLOAT);
-	g_value_set_float (&value, num);
-	return value;
+	IMPL
+	YWidget *parent = m_y_widget->yParent();
+	if (parent)
+		// tell parent to sync too!
+		YGWidget::get (parent)->sync_stretchable (m_y_widget);
 }
 
-/* Just tells the widget to fill the space it is given or not. You should
-   also ensure its container gives it space accordingly.
-   NOTE: this property should only be set during the gui construction, since
-   we don't report stretchable changes to its container. The only gui dynamic
-   changes are done by YReplacePoint, so we do that work there. */
-void YGWidget::setStretchable (YUIDimension dim, bool stretch)
+/* Checks everywhere in a container to see if there are children (so
+   he is completely initialized) so that we may ask him for stretchable()
+   because some YContainerWidgets crash when they don't have children. */
+bool YGWidget::safe_container() const
 {
-	GValue scale = floatToGValue (stretch ? 1.0 : 0.0);
-	g_object_set_property (G_OBJECT (m_alignment),
-	                       (dim == YD_HORIZ) ? "xscale" : "yscale", &scale);
-}
-
-void YGWidget::sync_stretchable()
-{
-	setStretchable (YD_HORIZ, isStretchable (YD_HORIZ));
-	setStretchable (YD_VERT, isStretchable (YD_VERT));
+	YContainerWidget *container = dynamic_cast <YContainerWidget *> (m_y_widget);
+	if (container) {
+		if (!stretch_safe)
+			return false;
+		for (int i = 0; i < container->numChildren(); i++)
+			if (!YGWidget::get (container->child (i))->safe_container())
+				return false;
+	}
+	return true;
 }
 
 bool YGWidget::isStretchable (YUIDimension dim)
 {
-	YContainerWidget *container = dynamic_cast <YContainerWidget *> (m_y_widget);
-	if (container && !container->hasChildren())
-		return false;  // some YWidget containers would crash if they don't have kids
-	return m_y_widget->stretchable (dim) || m_y_widget->hasWeight (dim);
-}
-
-// helper -- converts YWidget YAlignmentType to Gtk's align float
-static float yToGtkAlign (YAlignmentType align)
-{
-	switch (align) {
-		case YAlignBegin:  return 0.0;
-		case YAlignCenter: return 0.5;
-		case YAlignEnd:    return 1.0;
-		default: return -1;
-	}
-}
-
-void YGWidget::setAlignment (YAlignmentType halign, YAlignmentType valign)
-{
-	if (halign != YAlignUnchanged) {
-		GValue xalign = floatToGValue (yToGtkAlign (halign));
-		g_object_set_property (G_OBJECT (m_alignment), "xalign", &xalign);
-	}
-	if (valign != YAlignUnchanged) {
-		GValue yalign = floatToGValue (yToGtkAlign (valign));
-		g_object_set_property (G_OBJECT (m_alignment), "yalign", &yalign);
-	}
-}
-
-void YGWidget::setPadding (int top, int bottom, int left, int right)
-{
-	gtk_alignment_set_padding (GTK_ALIGNMENT (m_alignment), top, bottom, left, right);
+	if (safe_container())
+		return m_y_widget->stretchable (dim);
+	return false;
 }
 
 /* YGLabeledWidget follows */

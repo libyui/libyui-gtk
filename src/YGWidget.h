@@ -17,11 +17,12 @@ public:
 	virtual ~YGWidget();
 
 	virtual GtkWidget *getWidget() { return m_widget; }
-	const char *getWidgetName() { return m_y_widget->widgetClass(); }
+	const char *getWidgetName() const
+	{ return const_cast <YWidget *> (m_y_widget)->widgetClass(); }
 	void show();
 
 	// containers should use this call rather than getWidget()
-	GtkWidget *getLayout() { return m_alignment; }
+	GtkWidget *getLayout() { return m_min_size; }
 
 	// Get the YGWidget associated with a YWidget
 	static YGWidget *get (YWidget *y_widget);
@@ -34,28 +35,27 @@ public:
 	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
 	               bool if_not_pending = false);
 
-	// Layout
+	// Aesthicts
 	void setBorder (unsigned int border);  // in pixels
-	unsigned int getBorder();
-
-	// These functions don't notify YWidget about changes
 	void setMinSize (unsigned int min_width, unsigned int min_height);
 	void setMinSizeInChars (unsigned int min_width, unsigned int min_height);
-	void setStretchable (YUIDimension dim, bool stretch);
-	void setAlignment (YAlignmentType halign, YAlignmentType valign);
-	void setPadding (int top, int bottom, int left, int right);
 
-	// just calls setStretchable() with YWidget stretchable property
-	void sync_stretchable();
-	// alternative to YWidget::stretchable() that avoids crashes on some
-	// YContainerWidgets when they don't have children
+	// whenever the stretchable property may change (eg. when adding a child
+	// for a container), call this function to make sure it is honored.
+	virtual void sync_stretchable (YWidget *child = 0);
+
+	// should be used instead of YWidget::stretchable() as this has some safeguards
+	// against crashes that some YContainerWidgets lead to
 	bool isStretchable (YUIDimension dim);
+
+	// YWidgets containers crash when they don't have children, so we need this
+	// stuff. To be removed in the future.
+	bool safe_container() const;
+	bool stretch_safe;  // true when stretchable is safe to be called
 
 protected:
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
 	YWidget *m_y_widget;  // associated YWidget
-	GtkWidget *m_alignment;  // associated GtkWidget where this widget is installed
-	                         // so we may set border and other things
 	GtkWidget *m_min_size;  // installed on m_widget, allows setting a min size
 
 	void construct (YWidget *y_widget, YGWidget *parent,
@@ -85,11 +85,14 @@ protected:
 	virtual void childAdded (YWidget *ychild) {                 \
 	    GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
 	    gtk_container_add (GTK_CONTAINER (container), child);   \
+	    stretch_safe = true;                                    \
+	    sync_stretchable();                                     \
 	}
 #define YGWIDGET_IMPL_CHILD_REMOVED(container)                 \
 	virtual void childRemoved (YWidget *ychild) {                \
 	    GtkWidget *child = YGWidget::get (ychild)->getLayout();  \
 	    gtk_container_remove (GTK_CONTAINER (container), child); \
+	    if (!hasChildren()) stretch_safe = false;                \
 	}
 
 /* This is a convenience class that allows for a label next to the

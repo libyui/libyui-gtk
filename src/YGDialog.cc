@@ -23,6 +23,9 @@ class YGWindow
 {
 	GtkWidget *m_widget;
 	int m_refcount;
+	// we keep a pointer of the child just for debugging
+	// (ie. dump yast tree)
+	YWidget *m_child;
 
 public:
 	YGWindow (bool main_window)
@@ -34,6 +37,7 @@ public:
 		m_refcount = 0;
 		if (main_window)
 			::main_window = this;
+		m_child = NULL;
 
 		{
 			GtkWindow *parent = YGUI::ui()->currentWindow();
@@ -93,6 +97,7 @@ public:
 			child = YGWidget::get (new_child)->getLayout();
 			gtk_container_add (GTK_CONTAINER (m_widget), child);
 		}
+		m_child = new_child;
 	}
 
 	// YGDialog should not destroy its YGWindow. Instead, they should use this
@@ -149,6 +154,9 @@ public:
 				case GDK_X:
 					y2milestone ("Starting xterm");
 					system ("/usr/bin/xterm &");
+					return TRUE;
+				case GDK_T:
+					dumpYastTree (pThis->m_child, GTK_WINDOW (pThis->getWidget()));
 					return TRUE;
 				default:
 					return FALSE;
@@ -248,13 +256,7 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 
-	virtual void childAdded (YWidget *ychild)
-	{
-		// This widget must align to the top, not be in the center of the window
-		YGWidget *child = YGWidget::get (ychild);
-		gtk_container_add (GTK_CONTAINER (m_containee), child->getLayout());
-		child->setAlignment (YAlignUnchanged, YAlignBegin);
-	}
+	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 
@@ -275,10 +277,6 @@ YGUI::showDialog (YDialog *_dialog)
 	if (dialog->hasDefaultSize())
 		dialogs_stack.push_back (dialog);
 	dialog->showWindow();
-
-	// debug
-	dumpWidgetTree (dialog->getWidget());
-	dumpYastTree (dialog);
 }
 
 void

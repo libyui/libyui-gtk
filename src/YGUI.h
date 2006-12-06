@@ -274,8 +274,6 @@ public:
 };
 
 // debug helpers.
-void dumpWidgetTree (GtkWidget *widget, int indent = 0);
-void dumpYastTree (YWidget *widget, int indent = 0);
-
+void dumpYastTree (YWidget *widget, GtkWindow *parent_window = 0);
 
 #endif // YGUI_H

@@ -168,7 +168,7 @@ YGUI::userInput( unsigned long timeout_millisec )
 
 	if (timeout_millisec > 0)
 		timeout = g_timeout_add (timeout_millisec,
-					(GSourceFunc)set_timeout, this);
+		                         (GSourceFunc) set_timeout, this);
 
 	// FIXME: do it only if currentDialog (?) ...
 	while (!pendingEvent())
@@ -187,56 +187,72 @@ YGUI::userInput( unsigned long timeout_millisec )
 
 // dialog bits
 
-void dumpWidgetTree (GtkWidget *widget, int indent)
+static void dumpYastTree (YWidget *widget, GtkTreeStore *store,
+                          GtkTreeIter *parent_node)
 {
-#ifdef IMPL_DEBUG
-	for (int i = 0; i < indent; i++)
-		fprintf (stderr, "\t");
+	GtkTreeIter iter;
+	gtk_tree_store_append (store, &iter, parent_node);
 
 	if (!widget)
-		fprintf (stderr, "NULL widget\n");
+		gtk_tree_store_set (store, &iter, 0, "(no children)", -1);
+	else {
+		YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
 
-	GList *children = NULL;
-	if (GTK_IS_CONTAINER (widget))
-		children = gtk_container_get_children (GTK_CONTAINER (widget));
+		YGWidget *ygwidget = YGWidget::get (widget);
+		gchar *props = g_strdup_printf ("stretch: %d x %d - weight: %ld x %ld",
+		               ygwidget->isStretchable (YD_HORIZ),
+		               ygwidget->isStretchable (YD_VERT), widget->weight (YD_HORIZ),
+		               widget->weight (YD_VERT));
+		gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
+			1, container ? "" : widget->debugLabel().c_str(), 2, props, -1);
+		g_free (props);
 
-	fprintf (stderr, "Widget %p (%s) [%s] children (%d) req (%d,%d) "
-	                 "alloc (%d,%d, %d,%d)\n",
-		widget, g_type_name_from_instance ((GTypeInstance *)widget),
-		GTK_WIDGET_VISIBLE (widget) ? "visible" : "invisible",
-		g_list_length (children),
-		widget->requisition.width, widget->requisition.height,
-		widget->allocation.x, widget->allocation.y,
-		widget->allocation.width, widget->allocation.height);
-
-	for (GList *l = children; l; l = l->next)
-		dumpWidgetTree ((GtkWidget *)l->data, indent + 1);
-	g_list_free (children);
-#endif
+		if (container)
+			for (int i = 0; i < container->numChildren(); i++)
+				dumpYastTree (container->child (i), store, &iter);
+	}
 }
 
-void dumpYastTree (YWidget *widget, int indent)
+static void destroy_dialog (GtkDialog *dialog, gint arg)
+{ IMPL; gtk_widget_destroy (GTK_WIDGET (dialog)); }
+
+void dumpYastTree (YWidget *widget, GtkWindow *parent_window)
 {
-#ifdef IMPL_DEBUG
-	YContainerWidget *cont = NULL;
+	IMPL
+	GtkTreeStore *store = gtk_tree_store_new (3, G_TYPE_STRING, G_TYPE_STRING,
+	                                          G_TYPE_STRING);
+	dumpYastTree (widget, store, NULL);
 
-	for (int i = 0; i < indent; i++)
-		fprintf (stderr, "\t");
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets tree",
+		parent_window,
+		GtkDialogFlags (GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_NO_SEPARATOR),
+		GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 300);
 
-	if (!widget)
-		fprintf (stderr, "NULL widget\n");
+	GtkWidget *view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
+	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
+		gtk_tree_view_column_new_with_attributes ("Type",
+		gtk_cell_renderer_text_new(), "text", 0, NULL));
+	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
+		gtk_tree_view_column_new_with_attributes ("Label",
+		gtk_cell_renderer_text_new(), "text", 1, NULL));
+	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
+		gtk_tree_view_column_new_with_attributes ("Properties",
+		gtk_cell_renderer_text_new(), "text", 2, NULL));
+	gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
 
-	if (widget->isContainer())
-		cont = (YContainerWidget *) widget;
+	GtkWidget *scroll_win = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_win),
+	                                     GTK_SHADOW_OUT);
+	gtk_scrolled_window_set_policy  (GTK_SCROLLED_WINDOW (scroll_win),
+		GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 
-	fprintf (stderr, "Widget %p (%s) children (%d)\n",
-		widget, widget->widgetClass(),
-		cont ? cont->numChildren() : -1);
+	gtk_container_add (GTK_CONTAINER (scroll_win), view);
+	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll_win);
+	gtk_widget_show_all (dialog);
 
-	if (cont)
-		for (int i = 0; i < cont->numChildren(); i++)
-			dumpYastTree (cont->child (i), indent + 1);
-#endif
+	g_signal_connect (G_OBJECT (dialog), "response",
+	                  G_CALLBACK (destroy_dialog), 0);
 }
 
 static GdkScreen *getScreen ()

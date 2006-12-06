@@ -7,7 +7,7 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-#define SLIDER_NICESIZE_IN_CHARS 25
+#define SLIDER_NICESIZE_IN_CHARS 15
 
 class YGSpinBox : public YGLabeledWidget
 {

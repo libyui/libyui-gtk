@@ -31,14 +31,10 @@ class YGImage : public YImage, public YGWidget
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
 
-		if (m_hasZeroWidth || m_isScaled || m_isTiled) {
-			YWidget::setStretchable (YD_HORIZ, true);
-			YGWidget::setStretchable (YD_HORIZ, true);
-		}
-		if (m_hasZeroHeight || m_isScaled || m_isTiled) {
-			YWidget::setStretchable (YD_VERT, true);
-			YGWidget::setStretchable (YD_VERT, true);
-		}
+		if (m_hasZeroWidth || m_isScaled || m_isTiled)
+			setStretchable (YD_HORIZ, true);
+		if (m_hasZeroHeight || m_isScaled || m_isTiled)
+			setStretchable (YD_VERT, true);
 
 		m_isAnimation   = opt.animated.value();
 		m_isScaled      = opt.scaleToFit.value();

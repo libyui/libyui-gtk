@@ -554,3 +554,11 @@ void YGUtils::tree_view_set_sortable (GtkTreeView *view)
 	}
 	g_list_free (columns);
 }
+
+GValue YGUtils::floatToGValue (float num)
+{
+	GValue value = { 0 };
+	g_value_init (&value, G_TYPE_FLOAT);
+	g_value_set_float (&value, num);
+	return value;
+}

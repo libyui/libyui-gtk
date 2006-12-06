@@ -1,3 +1,22 @@
+2006-12-06  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* YGLayout.cc: re-designed layout stuff; it got simplified
+	and reduced. And should be more reliable as the layout notifies
+	better modifications (this forced to create bigger "crash safe"
+	measures; some YContainerWidget crash when asked for stretchable()
+	and they don't have children).
+	The responsability for a widget to fill a hole is now of YGSplit, not
+	of the YGWidgets. The alignment is now the responsability of YGAlignment,
+	not of the YGWidgets. GtkAlignment container is now longer installed on
+	YGWidgets (only YGtkMinSize now -- so we may specify a min size and a
+	border).
+
+	* ygtkratiobox.c: fill argument splitted into two for horizontal and
+	vertical directions.
+
+	* YGUI.cc: turned dumpYastTree into a graphical window.
+	(press ctrl+atl+shift+T)
+
 2006-12-04  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc: a fix to a better behavior on YSplits

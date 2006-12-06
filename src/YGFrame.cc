@@ -28,8 +28,6 @@ public:
 	{
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;
-
-//		gtk_widget_show_all (getWidget());
 		setLabel (label);
 	}
 
@@ -54,13 +52,16 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	virtual void childAdded (YWidget *ychild)
-	{  // add children with some identation
-		YGWidget *ygchild = YGWidget::get (ychild);
-		ygchild->setPadding (0, 0, 15, 0);
-		ygchild->setBorder (0);
+	{
+		// install children on a GtkAlignment, so we can set some identation
+		GtkWidget *alignment = gtk_alignment_new (0, 0, 1, 1);
+		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 0, 0, 15, 0);
+		gtk_widget_show (alignment);
 
-		GtkWidget *child = ygchild->getLayout();
-		gtk_container_add (GTK_CONTAINER (getWidget()), child);
+		GtkWidget *child = YGWidget::get (ychild)->getLayout();
+		gtk_container_add (GTK_CONTAINER (alignment), child);
+		gtk_container_add (GTK_CONTAINER (getWidget()), alignment);
+		stretch_safe = true;
 		sync_stretchable();
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())

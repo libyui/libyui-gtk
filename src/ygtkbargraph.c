@@ -9,7 +9,7 @@
 #include <gtk/gtkframe.h>
 #include <gtk/gtkeventbox.h>
 
-#define YPADDING 10
+#define YPADDING 6
 
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass);
 static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
@@ -97,8 +97,8 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 	}
 
 	// Set proportion
-	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box,
-	                                  MAX (value, 1), TRUE, 0, GTK_PACK_START);
+	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1),
+	                                  TRUE, TRUE, 0, GTK_PACK_START);
 
 	// Set background color
 	// The Tango palette

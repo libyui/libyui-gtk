@@ -5,6 +5,7 @@
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
+#include "YGUtils.h"
 
 #include "YSplit.h"
 #include "ygtkratiobox.h"
@@ -37,21 +38,14 @@ public:
 	virtual void childAdded (YWidget *ychild)
 	{
 		IMPL
-		YUIDimension this_dir, opposite_dir;
-		this_dir = primaryDimension();
-		opposite_dir = secondaryDimension();
-
 		YGWidget *ygchild = YGWidget::get (ychild);
-		GtkWidget *child = ygchild->getLayout();
 
-		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
-		ygtk_ratio_box_pack_start (box, child, ychild->weight (this_dir), TRUE, 0);
-		if (ychild->hasWeight (this_dir))
-			ygchild->setStretchable (this_dir, true);
-		setChildStretchable (ychild);
-		YGWidget::sync_stretchable();
+		gtk_container_add (GTK_CONTAINER (getWidget()), ygchild->getLayout());
+		stretch_safe = true;
+		sync_stretchable (ychild);
 
 		// set labels of YGLabeledWidgets to the same width
+		// we have to do quite some work due to over-clutter on YCP progs
 		while (ychild) {
 			if (ychild->isContainer()) {
 				// try to see if there is a YGLabeledWidget at start
@@ -77,20 +71,23 @@ public:
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 
-	void setChildStretchable (YWidget *ychild)
+	virtual void sync_stretchable (YWidget *ychild)
 	{
+		IMPL
 		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
-		YUIDimension dim = dimension();
 		YGWidget *child = YGWidget::get (ychild);
 
-		if (ychild->hasWeight (dim))
-			ygtk_ratio_box_set_child_ratio (box, child->getLayout(), ychild->weight (dim));
-		else if (child->isStretchable (dim))
-			ygtk_ratio_box_set_child_expand (YGTK_RATIO_BOX (getWidget()),
-		                                   child->getLayout(), TRUE);
-		else
-			ygtk_ratio_box_set_child_expand (YGTK_RATIO_BOX (getWidget()),
-		                                   child->getLayout(), FALSE);
+		YUIDimension dim = dimension();
+		bool horiz_fill = child->isStretchable (YD_HORIZ) ||
+		                 ychild->hasWeight (YD_HORIZ);
+		bool vert_fill  = child->isStretchable (YD_VERT) ||
+		                 ychild->hasWeight (YD_VERT);
+
+		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
+		                                  horiz_fill, vert_fill, 0, GTK_PACK_START);
+		ygtk_ratio_box_set_child_expand (box, child->getLayout(),
+		                                 child->isStretchable (dim));
+		YGWidget::sync_stretchable();
 	}
 
 	virtual void moveChild (YWidget *, long, long) {};  // ignore
@@ -105,9 +102,6 @@ YGUI::createSplit (YWidget *parent, YWidgetOpt &opt, YUIDimension dimension)
 
 #include "YAlignment.h"
 
-// GtkAlignment-like container , but we make it of type GtkEventBox because
-// we already install widgets on GtkAlignments, so this is not much more
-// than a proxy.
 class YGAlignment : public YAlignment, public YGWidget
 {
 	GdkPixbuf *m_background_pixbuf;
@@ -116,7 +110,7 @@ public:
 	YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
 	             YAlignmentType halign, YAlignmentType valign)
 	: YAlignment (opt, halign, valign),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_ALIGNMENT, NULL)
 	{
 		setBorder (0);
 		m_background_pixbuf = 0;
@@ -133,19 +127,37 @@ public:
 		YGWidget *child = YGWidget::get (ychild);
 		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
 
-		child->setAlignment (align [YD_HORIZ], align [YD_VERT]);
-		/* The padding is set to make things nicer for yast-qt wizard, but it doesn't for us
-		   -- just ignore it. */
+		setAlignment (align [YD_HORIZ], align [YD_VERT]);
+		/* The padding is used for stuff like making YCP progs nicer for yast-qt wizard,
+		   so it hurts us -- it's disabled. */
 		//child->setPadding (topMargin(), bottomMargin(), leftMargin(), rightMargin());
-		child->setMinSize (minWidth(), minHeight());
-
-		// don't let children fill up given space if alignment is set
-		if (align [YD_HORIZ] != YAlignUnchanged)
-			child->setStretchable (YD_HORIZ, false);
-		if (align [YD_VERT] != YAlignUnchanged)
-			child->setStretchable (YD_VERT, false);
+		setMinSize (minWidth(), minHeight());
+		stretch_safe = true;
+		sync_stretchable();
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
+
+	void setAlignment (YAlignmentType halign, YAlignmentType valign)
+	{
+		GValue zero = YGUtils::floatToGValue (0.0);
+		if (halign != YAlignUnchanged) {
+			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
+			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
+//			if (!_stretch [YD_HORIZ])
+				g_object_set_property (G_OBJECT (getWidget()), "xscale", &zero);
+		}
+		if (valign != YAlignUnchanged) {
+			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
+			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
+//			if (!_stretch [YD_VERT])
+				g_object_set_property (G_OBJECT (getWidget()), "yscale", &zero);
+		}
+	}
+
+	void setPadding (int top, int bottom, int left, int right)
+	{
+		gtk_alignment_set_padding (GTK_ALIGNMENT (getWidget()), top, bottom, left, right);
+	}
 
 	virtual void setBackgroundPixmap (string filename)
 	{
@@ -193,6 +205,17 @@ public:
 	}
 
 	virtual void moveChild (YWidget *, long, long) {};  // ignore
+
+	// helper -- converts YWidget YAlignmentType to Gtk's align float
+	static float yToGtkAlign (YAlignmentType align)
+	{
+		switch (align) {
+			case YAlignBegin:  return 0.0;
+			case YAlignCenter: return 0.5;
+			case YAlignEnd:    return 1.0;
+			default: return -1;
+		}
+	}
 };
 
 YContainerWidget *
@@ -261,25 +284,7 @@ public:
 		setBorder (0);
 	}
 
-	virtual void childAdded (YWidget *ychild)
-	{
-		GtkWidget *child_widget = YGWidget::get (ychild)->getLayout();
-		gtk_container_add (GTK_CONTAINER (getWidget()), child_widget);
-
-		// notify parent container of stretchable changes
-		YWidget *parent, *child;
-		for (parent = yParent(), child = this; parent;
-		     child = parent, parent = parent->yParent()) {
-			YSplit *split = dynamic_cast <YSplit *> (parent);
-			if (split && split->hasChildren())
-				((YGSplit *) split)->setChildStretchable (child);
-		}
-
-		// debug
-		::dumpWidgetTree (child_widget);
-		dumpYastTree (ychild);
-	}
-
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 

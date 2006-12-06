@@ -29,21 +29,19 @@ public:
 
 		//** Application area
 		{
-			// We need to have a ReplacePoint that will then have as a kid the actual
-			// content
+			// We set a YReplacePoint as child with a certain id and it will then be
+			// replaced by the actual content. We put a YEmpty on it because it would
+			// crash otherwise (stretchable() functions should really check for
+			// hasChildren() first!).
+
 			YWidgetOpt opt;
-			opt.isHStretchable.setValue (true);
-			opt.isVStretchable.setValue (true);
+			YWidget *rp, *empty;
+			rp = YGUI::ui()->createReplacePoint (this, opt);
+			rp->setId (YCPSymbol (YWizardContentsReplacePointID));
+			empty = YGUI::ui()->createEmpty (rp, opt);
 
-			YWidget *content, *empty;
-			content = YGUI::ui()->createReplacePoint (this, opt);
-			content->setId (YCPSymbol (YWizardContentsReplacePointID));
-
-			// we must add a YEmpty to the replace point, else YWidget will crash
-			empty = YGUI::ui()->createEmpty (content, opt);
-			((YContainerWidget *) content)->addChild (empty);
-
-			addChild (content);
+			((YContainerWidget *) rp)->addChild (empty);
+			this->addChild (rp);
 		}
 
 		YGtkWizard *ygtk_wizard = YGTK_WIZARD (getWidget());
@@ -288,14 +286,7 @@ public:
 
 
 	YGWIDGET_IMPL_COMMON
-	virtual void childAdded (YWidget *ychild)
-	{
-		YGWidget *child = YGWidget::get (ychild);
-		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
-		// in ordinary windows, the content, is aligned to the top, but on
-		// a wizard we want stuff to be vertically centered.
-		child->setAlignment (YAlignCenter, YAlignCenter);
-	}
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
