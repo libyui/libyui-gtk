@@ -143,14 +143,12 @@ public:
 		if (halign != YAlignUnchanged) {
 			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
 			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-//			if (!_stretch [YD_HORIZ])
-				g_object_set_property (G_OBJECT (getWidget()), "xscale", &zero);
+			g_object_set_property (G_OBJECT (getWidget()), "xscale", &zero);
 		}
 		if (valign != YAlignUnchanged) {
 			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
 			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-//			if (!_stretch [YD_VERT])
-				g_object_set_property (G_OBJECT (getWidget()), "yscale", &zero);
+			g_object_set_property (G_OBJECT (getWidget()), "yscale", &zero);
 		}
 	}
 
