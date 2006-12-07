@@ -10,7 +10,7 @@
 #include "ygtkrichtext.h"
 #include "ygtkwizard.h"
 
-#define DISABLE_PACKAGE_SELECTOR
+//#define DISABLE_PACKAGE_SELECTOR
 
 #ifndef DISABLE_PACKAGE_SELECTOR
 #include <zypp/ZYppFactory.h>
