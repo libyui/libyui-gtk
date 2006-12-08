@@ -1,3 +1,17 @@
+2006-12-08  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	Started reviewing the package selector. Some features will be
+	removed temporarly or not work. Check the TODO for planed changes.
+
+	* YGPackageSelector.cc: no more sync between view modes. They are
+	just reloaded when changed. This reduces the code size and complexity,
+	and makes adding other view modes easier (we will probably want
+	to change the patterns dialog by making it a view mode). But there
+	is a drawback: performance. It can take some seconds to change
+	views. This should be acceptable as the user rarely needs to change
+	view modes. Users with slower machines suffer more... But then,
+	they also have less memory and this reduces memory usage.
+
 2006-12-06  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc: re-designed layout stuff; it got simplified
