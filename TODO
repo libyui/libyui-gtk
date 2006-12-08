@@ -5,19 +5,18 @@
 * BarGraph / RatioBox
   Let tiny widgets still have some pixels visible for popup menu.
 
-* Wizard appears to have a load of padding around the edge. The interface
-  code could use a review anyway.
-
 * YGRichText should use GtkHtml when available, so that we get support for
   tables.
-
-* YGtkFieldEntry is just too damn big. Could use a re-write.
 
 * Accessibility and internationalization (from the package selector) needs to be
   implemented.
 
 = Package Selector =
 (this little monster diserves a section of its own. =))
+
+* Packages list
+	+ different versions of a package should probably be available through
+	  a node rather than the popup menu.
 
 * Categories view
 	+ hide nodes that have no children on categories view
@@ -50,19 +49,11 @@
 	  doesn't seem to deal well with dynamic containers), but there is some weird
 	  case still to fix...
 
-	+ use icons for the "install >" and "< remove" buttons.
-
-
-= Yast quirk requests =
-
-* Shrinkable option
-	o Maybe add some macro for that.
-		Some widgets need to report a different nice size than Gtk,
-		like with some margin. To be looked together.
+	* we should let user see disk usage. Unlike yast-qt, which displays it on
+	  its entirely, maybe we could have use a combo box and only display the
+	  size used for that partition. Or maybe use an expander.
 
 = Internal affairs =
-
-* beef up test.sh to improve layout: add -geometry argument ?
 
 * IntField / Slider
 	o to consider: only report value change when the widget is stalled.
@@ -73,30 +64,9 @@
 
 = Yast-Core =
 
-* It has been reported that a 80Mb computer is able to proceed during
-  all the text mode installation process, but the partition custom
-  setup. I suspect this is due to the Yast-core table and not really
-  ncurses'. Something that might be nice to see together with the previous
-  point... For more information, contact jdd@dodin.org .
-
 * Stock images for wizard
 	Already patched stock icons supports for regular button (even if not
 	currently being used), but not for wizard ones.
 
 * Simple dialogs API
 	So that we could display native dialogs.
-
-
-== Layout ==
-
-* Yast2 sizing:	
-    + setSize - recurses down from the 'top' to the bottom widgets
-	+ for contained widgets - it triggers pairs of:
-	    + setSize, moveChild calls.
-
-* Gtk sizing:
-    + gtksizegroup.c:
-	+ code always emits the gtk+ size_request signal
-	  [ which we should prolly emit ourselves incidentally ]
-	+ GtkWidgetAuxInfo's clobbered 'width' / 'height' that
-	  override the requisition information
