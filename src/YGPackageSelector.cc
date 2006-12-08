@@ -45,6 +45,9 @@ inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Language> (obj); }
 
+// Computer icon comes from Tango, but may not be installed, or not initialized.
+#include "computer.xpm"
+
 static bool acceptLicense (ZyppSelectablePtr sel)
 {
 	if (sel->hasLicenceConfirmed())
@@ -310,9 +313,9 @@ public:
 		string description = "<i>(no package selected)</i>", file_list, history;
 		if (selectable) {
 			description = "<p><b>" + selectable->name() + "</b> - "
-			              + object->summary() + "</p>"
+			              + YGUtils::escape_markup (object->summary()) + "</p>"
 //FIXME: break authors nicely.
-			 + "<p>" + object->description() + "</p>";
+			 + "<p>" + YGUtils::escape_markup (object->description()) + "</p>";
 
 			if (m_filelist_text && m_history_text) {
 				ZyppPackage package = tryCastToZyppPkg (object);
@@ -770,9 +773,10 @@ friend class YGPackageSelector;
 	PackageInformation *m_information_widget;
 
 	// Search gizmos
-	GtkWidget *m_search_entry;
+	GtkWidget *m_search_entry, *m_plain_view;
 	guint search_timeout_id;
-	GtkWidget *m_categories_view_check;
+	GtkWidget *m_search_options_dialog;
+	bool name_opt, summary_opt, descr_opt, provides_opt, requires_opt;
 
 public:
 	PackageSelector (bool enablePatterns = true)
@@ -793,10 +797,10 @@ public:
 			G_TYPE_POINTER);
 
 		available_box = createListWidget ("<b>Available Software:</b>",
-		                                  "gtk-cdrom", m_available_view,
+		                                  "gtk-cdrom", NULL, m_available_view,
 		                                  is_package_available);
 		installed_box = createListWidget ("<b>Installed Software:</b>",
-		                                  "computer", m_installed_view,
+		                                  NULL, computer_xpm, m_installed_view,
 		                                  is_package_installed);
 		g_object_unref (G_OBJECT (m_packages_store));
 
@@ -817,28 +821,51 @@ public:
 		                                             FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (packages_hbox), installed_box, TRUE, TRUE, 0);
 
-		GtkWidget *categories_hbox;
-		categories_hbox = gtk_hbox_new (FALSE, 0);
-		m_categories_view_check = gtk_check_button_new_with_mnemonic ("View in categories");
-		gtk_box_pack_start (GTK_BOX (categories_hbox), m_categories_view_check,
-		                    TRUE, TRUE, 0);
+		GtkWidget *view_box, *view_label, *view_categories, *view_patterns;
+		view_label = gtk_label_new ("View packages:");
+		m_plain_view = gtk_radio_button_new_with_mnemonic (NULL, "as _plain list");
+		view_categories = gtk_radio_button_new_with_mnemonic_from_widget
+		                      (GTK_RADIO_BUTTON (m_plain_view), "in _categories");
+		view_patterns = gtk_radio_button_new_with_mnemonic_from_widget
+		                      (GTK_RADIO_BUTTON (m_plain_view), "in _patterns");
+		view_box = gtk_hbox_new (FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (view_box), view_label, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (view_box), m_plain_view, FALSE, FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_categories, FALSE, FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_patterns, FALSE, FALSE, 4);
+		g_signal_connect (G_OBJECT (m_plain_view), "toggled",
+		                  G_CALLBACK (view_plain_mode_cb), this);
+		g_signal_connect (G_OBJECT (view_categories), "toggled",
+		                  G_CALLBACK (view_categories_mode_cb), this);
+		g_signal_connect (G_OBJECT (view_patterns), "toggled",
+		                  G_CALLBACK (view_patterns_mode_cb), this);
 
-		GtkWidget *search_hbox, *search_label;
+		GtkWidget *search_hbox, *search_label, *search_options_button;
 		search_hbox = gtk_hbox_new (FALSE, 0);
 		search_label = gtk_label_new_with_mnemonic ("_Search:");
+		search_options_button = gtk_button_new_with_mnemonic ("Search _Options...");
 		m_search_entry = gtk_entry_new();
 		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), m_search_entry);
 		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (search_hbox), search_options_button,
+		                    FALSE, FALSE, 4);
 		search_timeout_id = 0;
 		g_signal_connect (G_OBJECT (m_search_entry), "changed",
 		                  G_CALLBACK (search_request_cb), this);
+		g_signal_connect (G_OBJECT (m_search_entry), "activate",
+		                  G_CALLBACK (search_activate_cb), this);
+		g_signal_connect (G_OBJECT (search_options_button), "clicked",
+		                  G_CALLBACK (search_options_cb), this);
+		m_search_options_dialog = NULL;
+		name_opt = summary_opt = descr_opt = provides_opt = true;
+		requires_opt = false;
 
 		m_information_widget = new PackageInformation ("Package Information", false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_widget), categories_hbox, FALSE, FALSE, 12);
+		gtk_box_pack_start (GTK_BOX (m_widget), view_box, FALSE, FALSE, 12);
 		gtk_box_pack_start (GTK_BOX (m_widget), search_hbox, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 12);
 		gtk_widget_show_all (m_widget);
@@ -851,8 +878,6 @@ public:
 		                  G_CALLBACK (install_button_clicked_cb), this);
 		g_signal_connect (G_OBJECT (remove_button), "clicked",
 		                  G_CALLBACK (remove_button_clicked_cb), this);
-		g_signal_connect (G_OBJECT (m_categories_view_check), "toggled",
-		                  G_CALLBACK (toggle_packages_view_cb), this);
 
 		g_signal_connect (G_OBJECT (m_installed_view), "cursor-changed",
 		                  G_CALLBACK (package_clicked_cb), this);
@@ -861,8 +886,9 @@ public:
 	}
 
 	// create widgets functions to cut down on code
-	GtkWidget *createListWidget (const char *header, const char *icon,
-		GtkWidget *&list, GtkTreeModelFilterVisibleFunc visible_packages)
+	GtkWidget *createListWidget (const char *header, const char *stock_icon,
+		const char **xpm_icon,  GtkWidget *&list,
+		GtkTreeModelFilterVisibleFunc visible_packages)
 	{
 		GtkWidget *vbox, *header_hbox, *image, *label, *scrolled_window;
 
@@ -875,10 +901,17 @@ public:
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		list = gtk_tree_view_new();
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (list), FALSE);
+		gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (list), TRUE);
 		gtk_container_add (GTK_CONTAINER (scrolled_window), list);
 
 		header_hbox = gtk_hbox_new (FALSE, 0);
-		image = gtk_image_new_from_icon_name (icon, GTK_ICON_SIZE_BUTTON);
+		if (stock_icon)
+			image = gtk_image_new_from_icon_name (stock_icon, GTK_ICON_SIZE_BUTTON);
+		else {
+			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_xpm_data (xpm_icon);
+			image = gtk_image_new_from_pixbuf (pixbuf);
+			g_object_unref (G_OBJECT (pixbuf));
+		}
 		label = gtk_label_new_with_mnemonic (header);
 		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
 		gtk_label_set_mnemonic_widget (GTK_LABEL (label), list);
@@ -897,7 +930,7 @@ public:
 		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (filter),
 		                                        visible_packages, this, NULL);
 		column = gtk_tree_view_column_new_with_attributes (header,
-			gtk_cell_renderer_text_new(), "text", 0, NULL);
+			gtk_cell_renderer_text_new(), "markup", 0, NULL);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_AUTOSIZE);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
 
@@ -973,8 +1006,9 @@ public:
 						else  // create at root
 							gtk_tree_store_append (m_packages_store, &iter, NULL);
 
+						string name = "<b>" + node + "</b>";
 						gtk_tree_store_set (m_packages_store, &iter,
-							0, node.c_str(), 1, node.c_str(), 2, TRUE, 3, TRUE,
+							0, name.c_str(), 1, name.c_str(), 2, TRUE, 3, TRUE,
 							4, NULL, 5, NULL, 6, NULL, -1);
 
 						path = gtk_tree_model_get_path (
@@ -1024,20 +1058,25 @@ public:
 				break;
 		}
 
-		string availableName = selectable->name(),
-		       installedName = selectable->name();
-		if (available && install) {
-			availableName += " (" + available->edition().version() + ")";
-			installedName += " (" + install->edition().version() + ")";
-		}
-		else if (status == zypp::ui::S_Update)
-			installedName += " (" + install->edition().version() + ")";
+		const zypp::ResObject *available_ptr = get_pointer (available),
+		                      *install_ptr   = get_pointer (install);
+
+		string availableName, installedName;
+		availableName = selectable->name();
+		installedName = selectable->name();
+		if (available_ptr)
+			availableName += " (" + available->edition().version() + ")\n" +
+			                 "<small>" + YGUtils::escape_markup (available->summary()) +
+			                 "</small>";
+		if (install_ptr)
+			installedName += " (" + install->edition().version() + ")\n" +
+			                 "<small>" + YGUtils::escape_markup (install->summary()) +
+			                 "</small>";
 
 		gtk_tree_store_set (m_packages_store, iter,
 			0, availableName.c_str(), 1, installedName.c_str(),
-			2, available != 0, 3, install != 0,
-			4, get_pointer (selectable), 5, get_pointer (available),
-			6, get_pointer (install), -1);
+			2, available_ptr != 0, 3, install_ptr != 0,
+			4, get_pointer (selectable), 5, available_ptr, 6, install_ptr, -1);
 	}
 
 	virtual ~PackageSelector()
@@ -1046,6 +1085,9 @@ public:
 		if (search_timeout_id)
 			g_source_remove (search_timeout_id);
 
+		if (m_search_options_dialog)
+			gtk_widget_destroy (m_search_options_dialog);
+
 		delete m_information_widget;
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
@@ -1053,6 +1095,25 @@ public:
 
 	GtkWidget *getWidget()
 	{ return m_widget; }
+
+	void clear_search_entry (bool dont_load)
+	{
+		if (dont_load)
+			g_signal_handlers_block_by_func (m_search_entry,
+			             (gpointer) search_request_cb, this);
+		gtk_entry_set_text (GTK_ENTRY (m_search_entry), "");
+		if (dont_load)
+			g_signal_handlers_unblock_by_func (m_search_entry,
+			               (gpointer) search_request_cb, this);
+	}
+
+	static void search_activate_cb (GtkEntry *entry, PackageSelector *pThis)
+	{
+		IMPL
+		if (pThis->search_timeout_id)
+			g_source_remove (pThis->search_timeout_id);
+		search_cb (pThis);
+	}
 
 	static void search_request_cb (GtkEditable *editable, PackageSelector *pThis)
 	{
@@ -1067,23 +1128,102 @@ public:
 	static gboolean search_cb (gpointer data)
 	{
 		IMPL
-printf ("search!\n");
 		PackageSelector *pThis = (PackageSelector *) data;
 		pThis->search_timeout_id = 0;
 
-		// force a re-filter
-		GtkTreeModel *available_model =
-			gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_available_view));
-		GtkTreeModel *installed_model =
-			gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_installed_view));
-		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (available_model));
-		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (installed_model));
-
 		string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
-		if (!search.empty())
-			gtk_toggle_button_set_active (
-				GTK_TOGGLE_BUTTON (pThis->m_categories_view_check), FALSE);
+		bool plain_view = gtk_toggle_button_get_active (
+		                      GTK_TOGGLE_BUTTON (pThis->m_plain_view));
+		if (!search.empty() && !plain_view) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pThis->m_plain_view), TRUE);
+			plain_view = true;
+		}
+
+		// force a re-filter
+		if (plain_view) {
+			GtkTreeModel *available_model =
+				gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_available_view));
+			GtkTreeModel *installed_model =
+				gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_installed_view));
+			gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (available_model));
+			gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (installed_model));
+		}
 		return FALSE;
+	}
+
+	static void search_options_cb (GtkButton *button, PackageSelector *pThis)
+	{
+		if (!pThis->m_search_options_dialog) {
+			GtkWidget *frame = gtk_frame_new ("<b>Search on:</b>");
+			GtkWidget *frame_label = gtk_frame_get_label_widget (GTK_FRAME (frame));
+			gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
+			gtk_frame_set_shadow_type (GTK_FRAME (frame), GTK_SHADOW_NONE);
+
+			GtkWidget *name_opt, *summary_opt, *descr_opt, *provides_opt, *requires_opt;
+			name_opt = gtk_check_button_new_with_mnemonic ("_Name");
+			summary_opt = gtk_check_button_new_with_mnemonic ("_Summary");
+			descr_opt = gtk_check_button_new_with_mnemonic ("_Description");
+			provides_opt = gtk_check_button_new_with_mnemonic ("RPM _Provides");
+			requires_opt = gtk_check_button_new_with_mnemonic ("RPM _Requires");
+
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (name_opt),
+			                              pThis->name_opt);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (summary_opt),
+			                              pThis->summary_opt);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (descr_opt),
+			                              pThis->descr_opt);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (provides_opt),
+			                              pThis->provides_opt);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (requires_opt),
+			                              pThis->requires_opt);
+
+			GtkWidget *box = gtk_vbox_new (FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), name_opt, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), summary_opt, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), descr_opt, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), provides_opt, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (box), requires_opt, FALSE, FALSE, 0);
+
+			// add some padding to box since it's inside a frame
+			GtkWidget *frame_box = gtk_hbox_new (FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (frame_box), box, TRUE, TRUE, 15);
+			gtk_container_add (GTK_CONTAINER (frame), frame_box);
+			gtk_widget_show_all (frame);
+
+			g_signal_connect_after (G_OBJECT (name_opt), "toggled",
+			                        G_CALLBACK (search_option_change_cb), &pThis->name_opt);
+			g_signal_connect_after (G_OBJECT (summary_opt), "toggled",
+			                        G_CALLBACK (search_option_change_cb), &pThis->summary_opt);
+			g_signal_connect_after (G_OBJECT (descr_opt), "toggled",
+			                        G_CALLBACK (search_option_change_cb), &pThis->descr_opt);
+			g_signal_connect_after (G_OBJECT (provides_opt), "toggled",
+			                        G_CALLBACK (search_option_change_cb), &pThis->provides_opt);
+			g_signal_connect_after (G_OBJECT (requires_opt), "toggled",
+			                        G_CALLBACK (search_option_change_cb), &pThis->requires_opt);
+
+			pThis->m_search_options_dialog = gtk_dialog_new_with_buttons ("",
+				YGUI::ui()->currentWindow(), GtkDialogFlags (0),
+				GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+
+			GtkWidget *dialog = pThis->m_search_options_dialog;
+			gtk_window_set_default_size (GTK_WINDOW (dialog), 250, -1);
+			gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+			gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), frame);
+			g_signal_connect (G_OBJECT (dialog), "delete-event",
+			                  G_CALLBACK (gtk_widget_hide_on_delete), NULL);
+			g_signal_connect (G_OBJECT (dialog), "response",
+			                  G_CALLBACK (hide_dialog_cb), NULL);
+		}
+		gtk_widget_show (pThis->m_search_options_dialog);
+	}
+	static void hide_dialog_cb (GtkDialog *dialog, gint response)
+	{ gtk_widget_hide (GTK_WIDGET (dialog)); }
+
+	static void search_option_change_cb (GtkToggleButton *button, bool *option)
+	{
+printf ("option was: %d\n", *option);
+		*option = gtk_toggle_button_get_active (button);
+printf ("option is now: %d\n", *option);
 	}
 
 	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
@@ -1115,38 +1255,83 @@ printf ("search!\n");
 		gtk_tree_model_get (model, iter, 4, &selectable, -1);
 		if (!selectable)
 			return true;  // group
-#if 0
-// TODO: don't show empty nodes
-// A bit harder than I thouht -- we need to go iterate
-// through all children and see if they don't have
-// packages either -- consider caching this.
-		if (!selectable)  // this means it's a category
-			if (!gtk_tree_model_iter_has_child (model, iter))
-				return FALSE;
-#endif
 
 		// search
-		gboolean visible = TRUE;
 		string search = gtk_entry_get_text (GTK_ENTRY (pThis->m_search_entry));
-		if (!search.empty()) {
-			if (!YGUtils::contains (selectable->name(), search)) {
-				// check also description and rpm provides
-				ZyppObject object = selectable->theObj();
-				if (!YGUtils::contains (object->summary(), search) &&
-				    !YGUtils::contains (object->description(), search)) {
-					// test rpm-provides
-					const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
-					for (zypp::CapSet::const_iterator it = capSet.begin();
-					     it != capSet.end(); it++)
-						if ((visible = YGUtils::contains (it->asString(), search)) == TRUE)
-							break;
-				}
-			}
+		if (search.empty())
+			return TRUE;
+		if (pThis->name_opt && YGUtils::contains (selectable->name(), search))
+			return TRUE;
+		ZyppObject object = selectable->theObj();
+		if (pThis->summary_opt && YGUtils::contains (object->summary(), search))
+			return TRUE;
+		if (pThis->descr_opt && YGUtils::contains (object->description(), search))
+			return TRUE;
+		if (pThis->provides_opt) {
+			const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
+			for (zypp::CapSet::const_iterator it = capSet.begin();
+			     it != capSet.end(); it++)
+				if (YGUtils::contains (it->asString(), search))
+					return TRUE;
 		}
-		return visible;
+		if (pThis->requires_opt) {
+			const zypp::CapSet &capSet = object->dep (zypp::Dep::REQUIRES);
+			for (zypp::CapSet::const_iterator it = capSet.begin();
+			     it != capSet.end(); it++)
+				if (YGUtils::contains (it->asString(), search))
+					return TRUE;
+		}
+		return FALSE;
+	}
+
+	static GtkWidget *please_wait_window()
+	{
+		GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_window_set_title (GTK_WINDOW (window), "");
+		gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
+		gtk_window_set_transient_for (GTK_WINDOW (window), YGUI::ui()->currentWindow());
+		gtk_window_set_modal (GTK_WINDOW (window), TRUE);
+		gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DIALOG);
+		GtkWidget *label = gtk_label_new ("Loading view...");
+		gtk_container_add (GTK_CONTAINER (window), label);
+		gtk_widget_realize (label);
+		gtk_widget_show_all (window);
+		// flush the window since there will be a long operation...
+		while (gtk_events_pending())
+			gtk_main_iteration();
+		return window;
 	}
 
 	// callbacks
+	static void view_plain_mode_cb  (GtkToggleButton *button,
+	                                 PackageSelector *pThis)
+	{
+		if (!gtk_toggle_button_get_active (button)) return;
+		GtkWidget *wait_window = please_wait_window();
+		pThis->loadPackagesListAsPlain();
+		gtk_widget_destroy (wait_window);
+	}
+
+	static void view_categories_mode_cb  (GtkToggleButton *button,
+	                                      PackageSelector *pThis)
+	{
+		if (!gtk_toggle_button_get_active (button)) return;
+		GtkWidget *wait_window = please_wait_window();
+		pThis->clear_search_entry (true);
+		pThis->loadPackagesListByCategory();
+		gtk_widget_destroy (wait_window);
+	}
+
+	static void view_patterns_mode_cb  (GtkToggleButton *button,
+	                                    PackageSelector *pThis)
+	{
+		if (!gtk_toggle_button_get_active (button)) return;
+		GtkWidget *wait_window = please_wait_window();
+		pThis->clear_search_entry (true);
+//		pThis->loadPackagesListByPattern();
+		gtk_widget_destroy (wait_window);
+	}
+
 	static void toggle_packages_view_cb  (GtkToggleButton *button,
 	                                      PackageSelector *pThis)
 	{

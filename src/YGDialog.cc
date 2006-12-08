@@ -45,10 +45,6 @@ public:
 
 			if (parent) {
 				// if there is a parent, this would be a dialog
-				GdkPixbuf *icon = gtk_window_get_icon (parent);
-				if (icon)
-					gtk_window_set_icon (window, icon);
-
 				gtk_window_set_transient_for (window, parent);
 				gtk_window_set_title (window, "");
 

@@ -77,6 +77,22 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 
 #define PROD_ENTITY "&product;"
 
+string YGUtils::escape_markup (const string &str)
+{
+	string res;
+	for (unsigned int i = 0; i != str.length(); i++) {
+		if (str[i] == '<')
+			res += "&lt;";
+		else if (str[i] == '>')
+			res += "&gt;";
+		else if (str[i] == '&')
+			res += "&amp;";
+		else
+			res += str[i];
+	}
+	return res;
+}
+
 inline void skipSpace(const char *instr, int &i)
 {
 	while (g_ascii_isspace (instr[i])) i++;

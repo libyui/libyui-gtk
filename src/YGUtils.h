@@ -29,6 +29,9 @@ namespace YGUtils
 	void filterText (GtkEditable *editable, int pos, int length,
 	                 const char *valid_chars);
 
+	/* Escapes markup text (eg. changes '<' by '\<') */
+	string escape_markup (const string &str);
+
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
 

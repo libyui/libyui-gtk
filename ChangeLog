@@ -12,6 +12,10 @@
 	view modes. Users with slower machines suffer more... But then,
 	they also have less memory and this reduces memory usage.
 
+	* YGPackageSelector.cc: added computer icon to code as it is not
+	available in some cases. Added a search options dialog. Added more
+	information into the packages list (not fully working).
+
 2006-12-06  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* YGLayout.cc: re-designed layout stuff; it got simplified
