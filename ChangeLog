@@ -1,6 +1,6 @@
 2006-12-08  Ricardo Cruz  <rpmcruz@clix.pt>
 
-	Started reviewing the package selector. Some features will be
+	* Started reviewing the package selector. Some features will be
 	removed temporarly or not work. Check the TODO for planed changes.
 
 	* YGPackageSelector.cc: no more sync between view modes. They are
