@@ -213,7 +213,8 @@ void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 
 static gint get_header_padding (GtkWidget *widget)
 {
-#if GTK_CHECK_VERSION(2,10,0)
+#if 0
+// TODO: read GtkAssistance style_rc attributes
 	gint padding;
 	gtk_widget_style_get (widget, "header-padding", &padding, NULL);
 	return padding;
@@ -224,7 +225,7 @@ static gint get_header_padding (GtkWidget *widget)
 
 static gint get_content_padding (GtkWidget *widget)
 {
-#if GTK_CHECK_VERSION(2,10,0)
+#if 0
 	gint padding;
 	gtk_widget_style_get (widget, "content-padding", &padding, NULL);
 	return padding;
@@ -997,6 +998,8 @@ void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 
 gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
+	if (!GTK_WIDGET_DRAWABLE (widget))
+		return FALSE;
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 
 	gint border = GTK_CONTAINER (wizard)->border_width;

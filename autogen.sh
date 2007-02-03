@@ -10,7 +10,7 @@ autoconf || exit 1;
 libdir=`pkg-config --print-errors --variable=libdir yast2-core`;
 
 if test "z$PKG_CONFIG_PATH" = "z"; then
-    export PKG_CONFIG_PATH="/opt/gnome/lib64/pkgconfig:/usr/lib64/pkgconfig;/opt/gnome/lib/pkgconfig:/usr/lib/pkgconfige"
+    export PKG_CONFIG_PATH="/opt/gnome/lib64/pkgconfig:/usr/lib64/pkgconfig;/opt/gnome/lib/pkgconfig:/usr/lib/pkgconfig"
 fi
 
 if test "z$@" = "z"; then

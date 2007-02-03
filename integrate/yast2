@@ -65,24 +65,27 @@ listmodules()
 	fi
 }
 
+YCP_MENU="$ybindir/y2base menu"
+QT_MENU="$ybindir/y2controlcenter"
+GTK_MENU="/opt/gnome/bin/control-center"
 run_yast_menu()
 {
 	if [ $FRONTEND == "ncurses" ]; then
 		while true ; do
-			$ybindir/y2base menu ncurses $YAST_ARGS
+			$YCP_MENU ncurses $YAST_ARGS
 			if [ ! -e "/var/lib/YaST2/restart_menu" ] ; then
 				break
 			fi
 		done
 	else  # gtk or qt
 		if echo $WINDOWMANAGER | grep -qi "gnome" &&
-		   [ -e "/usr/bin/y2controlcenter-gnome" ]; then
-			$y2controlcenter-gnome $YAST_ARGS
-		elif [ -e "$ybindir/y2controlcenter" ]; then
-			$ybindir/y2controlcenter $YAST_ARGS
+		   [ -e $GTK_MENU ]; then
+			$GTK_MENU $YAST_ARGS
+		elif [ -e $QT_CONTROL_CENTER ]; then
+			$QT_MENU $YAST_ARGS
 		else
-			# run the same YCP menu, like ncurses
-			$ybindir/y2base "menu" $FRONTEND $YAST_ARGS
+			# run the same YCP menu of ncurses
+			$YCP_MENU $FRONTEND $YAST_ARGS
 		fi
 	fi
 }
@@ -133,8 +136,6 @@ esac
 if [ "$UID" = 0 ]; then
     echo $$ > /var/run/yast.pid
 fi
-
-# set lang from sysconfig
 set_lang_from_sysconfig
 
 ## CHECK what frontend we should use
@@ -248,7 +249,6 @@ else
 	while true ; do
 		# Transform every argument into a ycp string, that is surround all
 		# args by ("...").  args may contain spaces.
-		# FIXME: what the hack is this for? Can't it be solved other way?
 		a=("$@")
 		b=("${a[@]/#/(\"}")
 		c=("${b[@]/%/\")}")

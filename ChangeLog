@@ -1,3 +1,18 @@
+2006-02-03  Ricardo Cruz  <rpmcruz@clix.pt>
+
+	* autogen.sh: use yast2-core to get libdir (the other doesn't
+	seem set on 10.2)
+
+	* computer.xpm: added. This is the Tango "computer" stock icon. Doesn't
+	seem to get set on some other desktop enviornments than Gnome.
+
+	* ygtkwizard.c: commented wrong style code.
+
+	* integrate/yast2: use the slab thing on gnome (todo: make configurable).
+
+	* there seems to be some unstability that may be linked with the drawing
+	errors on gtk 2.10; check where this is.
+
 2006-12-08  Ricardo Cruz  <rpmcruz@clix.pt>
 
 	* Started reviewing the package selector. Some features will be
