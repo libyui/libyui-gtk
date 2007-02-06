@@ -24,13 +24,10 @@ Build pre-requisites
 
 Building / Installing
 
-  ./autogen.sh              [1]
-  make && sudo make install [2]
+  make -f Makefile.cvs
+  make && sudo make install [1]
 
-  [1] - don't pass "--prefix" as the YaST2 auto-foo system uses
-        ${prefix}/include/YaST2 to find the yast2-core-devel headers (sigh)
-
-  [2] - if you want sudo not to ask you a password, add yourself to the
+  [1] - if you want sudo not to ask you a password, add yourself to the
         wheel group, and uncomment the related lines in /etc/sudoers
 
 Running
