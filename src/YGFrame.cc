@@ -10,7 +10,7 @@
 
 #define CHILDREN_IDENTATION 15
 
-// Instead of tradicional looking frames, we use Gnome convention
+// Instead of traditional looking frames, we use Gnome convention
 // for the frame's look. That is, don't draw a frame, use bold
 // header and pad children.
 
@@ -37,12 +37,7 @@ public:
 	virtual void setLabel (const YCPString &label)
 	{
 		string str = "<b>" + label->value() + "</b>";
-		// elminate '&' that some YCP applications seem to set and have
-		// no use for a GtkFrame -- they actually interfer with the markup
-		string::size_type i = 0;
-		while ((i = str.find ("&", i)) != string::npos)
-			str.erase (i, 1);
-
+        str = YGUtils::mapKBAccel(str.c_str());
 		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
 		YFrame::setLabel (label);
 
@@ -73,3 +68,81 @@ YGUI::createFrame (YWidget *parent, YWidgetOpt &opt,
 	IMPL;
 	return new YGFrame (opt, YGWidget::get (parent), label);
 }
+
+#if YAST2_VERSION >= 2014000
+
+#include "YCheckBoxFrame.h"
+
+class YGCheckBoxFrame : public YCheckBoxFrame, public YGWidget
+{
+	GtkRequisition m_label_req;
+    GtkLabel      *m_label;
+
+public:
+	YGCheckBoxFrame (const YWidgetOpt &opt,
+                     YGWidget         *parent,
+                     const YCPString  &label,
+                     bool              checked) :
+		YCheckBoxFrame (opt, label),
+		YGWidget (this, parent, true,
+		          GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
+	{
+		IMPL;
+		m_label_req.width = m_label_req.height = 0;
+        GtkWidget *button = gtk_check_button_new_with_label("");
+        m_label = GTK_LABEL(GTK_BIN(button)->child);
+        gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
+		gtk_widget_show_all (button);
+		setLabel (label);
+        setValue( checked );
+	}
+
+	virtual ~YGCheckBoxFrame() {}
+
+	// YFrame
+	virtual void setLabel (const YCPString &label)
+	{
+		string str = "<b>" + label->value() + "</b>";
+        str = YGUtils::mapKBAccel(str.c_str());
+        gtk_label_set_text_with_mnemonic (m_label, str.c_str());
+		gtk_label_set_use_markup (GTK_LABEL (m_label), TRUE);
+		YCheckBoxFrame::setLabel (label);
+	}
+
+    bool getValue()
+    {
+        GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
+        return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button));
+    }
+
+    void setValue (bool newValue)
+    {
+        GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
+        return gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), newValue);
+#warning "Need to adapt to change !"
+    }
+
+	YGWIDGET_IMPL_COMMON
+	virtual void childAdded (YWidget *ychild)
+	{
+		// install children on a GtkAlignment, so we can set some identation
+		GtkWidget *alignment = gtk_alignment_new (0, 0, 1, 1);
+		gtk_alignment_set_padding (GTK_ALIGNMENT (alignment), 0, 0, 15, 0);
+		gtk_widget_show (alignment);
+
+		GtkWidget *child = YGWidget::get (ychild)->getLayout();
+		gtk_container_add (GTK_CONTAINER (alignment), child);
+		gtk_container_add (GTK_CONTAINER (getWidget()), alignment);
+		sync_stretchable();
+	}
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+};
+
+YContainerWidget *
+YGUI::createCheckBoxFrame (YWidget *parent, YWidgetOpt &opt,
+                           const YCPString &label, bool checked)
+{
+	IMPL;
+	return new YGCheckBoxFrame (opt, YGWidget::get (parent), label, checked);
+}
+#endif

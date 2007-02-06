@@ -1,6 +1,7 @@
 //                       YaST2-GTK                                //
 // YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
 
+#include <config.h>
 #include <YGUI.h>
 
 int main (int argc, char **argv)
