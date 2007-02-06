@@ -78,6 +78,13 @@ class YGCheckBoxFrame : public YCheckBoxFrame, public YGWidget
 	GtkRequisition m_label_req;
     GtkLabel      *m_label;
 
+	static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
+    {
+        pThis->setEnabling (true);
+        if (pThis->getNotify())
+            YGUI::ui()->sendEvent( new YWidgetEvent( pThis, YEvent::ValueChanged ) );
+    }
+
 public:
 	YGCheckBoxFrame (const YWidgetOpt &opt,
                      YGWidget         *parent,
@@ -90,6 +97,9 @@ public:
 		IMPL;
 		m_label_req.width = m_label_req.height = 0;
         GtkWidget *button = gtk_check_button_new_with_label("");
+		g_signal_connect (G_OBJECT (button), "toggled",
+                          G_CALLBACK (toggled_cb), this);
+
         m_label = GTK_LABEL(GTK_BIN(button)->child);
         gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
 		gtk_widget_show_all (button);
@@ -119,10 +129,18 @@ public:
     {
         GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
         return gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), newValue);
-#warning "Need to adapt to change !"
     }
 
-	YGWIDGET_IMPL_COMMON
+	virtual void setEnabling (bool enabled)
+    {
+        GtkWidget *frame = getWidget();
+        // strange behavior
+        gtk_widget_set_sensitive (frame, TRUE);
+        if (GTK_BIN(frame)->child)
+            gtk_widget_set_sensitive (GTK_BIN(frame)->child,
+                                      enabled && getValue());
+    }
+
 	virtual void childAdded (YWidget *ychild)
 	{
 		// install children on a GtkAlignment, so we can set some identation
