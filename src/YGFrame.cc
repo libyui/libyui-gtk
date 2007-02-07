@@ -134,11 +134,8 @@ public:
 	virtual void setEnabling (bool enabled)
     {
         GtkWidget *frame = getWidget();
-        // strange behavior
         gtk_widget_set_sensitive (frame, TRUE);
-        if (GTK_BIN(frame)->child)
-            gtk_widget_set_sensitive (GTK_BIN(frame)->child,
-                                      enabled && getValue());
+        handleChildrenEnablement (getValue());
     }
 
 	virtual void childAdded (YWidget *ychild)

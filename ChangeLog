@@ -1,3 +1,10 @@
+2007-02-07  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGFrame.cc (YGCheckBoxFrame::setEnabling):
+	call handleChildrenEnablement.
+
+	* Makefile.cvs: use PREFIX ?= /usr for non-pfx builds
+
 2007-02-06  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGFrame.cc (toggled_cb): impl.
