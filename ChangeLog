@@ -1,6 +1,6 @@
 2007-02-07  Michael Meeks  <michael.meeks@novell.com>
 
-	* Version 2.15.0
+	* Version 2.15.0 - Rev 388
 
 	* src/Makefile.am (EXTRA_DIST): computer.xpm
 
