@@ -45,7 +45,6 @@ AC_SUBST(GTK_LIBS)
 
 verstxt=`y2tool version`
 vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
-echo "Vers: '$vers'"
 AC_DEFINE_UNQUOTED(YAST2_VERSION, $vers, [yast version for compile conditionals])
 
 AC_OUTPUT([Makefile src/Makefile])
