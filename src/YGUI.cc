@@ -329,6 +329,7 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 		const YCPString &path, const YCPString &filter_pattern,
 		const YCPString &title)
 {
+	IMPL
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title->value_cstr(),
 		YGUI::ui()->currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -374,8 +375,9 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 }
 
 YCPValue YGUI::askForExistingDirectory (const YCPString &path,
-		const YCPString &title)
+                                        const YCPString &title)
 {
+	IMPL
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
 	                              YCPString (""), title);
 }
@@ -383,12 +385,14 @@ YCPValue YGUI::askForExistingDirectory (const YCPString &path,
 YCPValue YGUI::askForExistingFile (const YCPString &path,
 		const YCPString &filter, const YCPString &title)
 {
+	IMPL
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
 }
 
 YCPValue YGUI::askForSaveFileName (const YCPString &path,
 		const YCPString &filter, const YCPString &title)
 {
+	IMPL
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
