@@ -69,7 +69,7 @@ public:
     virtual YContainerWidget *createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt);
     virtual YContainerWidget *createFrame (YWidget *parent, YWidgetOpt &opt,
                                            const YCPString &label);
-#if YAST2_VERSION >= 2014000
+#if HAS_YCHECKBOXFRAME
     virtual YContainerWidget *createCheckBoxFrame( YWidget *parent, YWidgetOpt & opt, const YCPString & label, bool checked );
 #endif
 

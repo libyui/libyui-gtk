@@ -326,48 +326,31 @@ void YGUI::internalError (const char *msg)
 #include <sstream>
 
 static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
-		const YCPString &startWith, const YCPString &filter_pattern,
-		const YCPString &headline)
+		const YCPString &path, const YCPString &filter_pattern,
+		const YCPString &title)
 {
 	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new (headline->value_cstr(),
-		YGUI::ui()->currentWindow(), action,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		GTK_STOCK_OPEN,   GTK_RESPONSE_ACCEPT,
+	dialog = gtk_file_chooser_dialog_new (title->value_cstr(),
+		YGUI::ui()->currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 		NULL);
 
-	// Yast gives startWith as an URL that can be a directory or a file
-	// All this chunck of code is because GTK+ likes to get those
-	// in separated.
-	if (g_file_test (startWith->value_cstr(), G_FILE_TEST_EXISTS)) {
-		if (action == GTK_FILE_CHOOSER_ACTION_OPEN ||
-		    action == GTK_FILE_CHOOSER_ACTION_SAVE) {
-				if (g_file_test (startWith->value_cstr(), G_FILE_TEST_IS_DIR))
-					gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
-					                                     startWith->value_cstr());
-				else {
-					string dirname, filename;
-					YGUtils::splitPath (startWith->value(), dirname, filename);
-					gtk_file_chooser_set_current_folder
-						(GTK_FILE_CHOOSER (dialog),dirname.c_str());
-					gtk_file_chooser_set_current_name
-						(GTK_FILE_CHOOSER (dialog), filename.c_str());
-				}
-		}
-		else
-			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),
-			                                     startWith->value_cstr());
-	}
-	else if (!startWith->value().empty() &&
-	         action == GTK_FILE_CHOOSER_ACTION_SAVE)
-		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),
-		                                   startWith->value_cstr());
+	// Yast gives the path as an URL that can be a directory or a file.
+	// We need to pass only the directory path and then select that file.
+	string dirpath (path->value()), filename;
+	if (!dirpath.empty() && !g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR))
+		YGUtils::splitPath (path->value(), dirpath, filename);
+	if (!dirpath.empty())
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), dirpath.c_str());
+	if (!filename.empty())
+		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), filename.c_str());
 
-	if (action != GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER) {
+	string filter_str (filter_pattern->value());
+	if (filter_str != "" && filter_str != "*") {
 		GtkFileFilter *filter = gtk_file_filter_new();
-		gtk_file_filter_set_name (filter, filter_pattern->value_cstr());
+		gtk_file_filter_set_name (filter, filter_str.c_str());
 		// cut filter_pattern into chuncks like GTK likes
-		std::istringstream stream (filter_pattern->value());
+		std::istringstream stream (filter_str);
 		while (!stream.eof()) {
 			string str;
 			stream >> str;
@@ -378,7 +361,6 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
 	}
 
-	YCPValue ret;
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 		YCPString ret (filename);
@@ -391,25 +373,23 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 	return YCPVoid();
 }
 
-YCPValue YGUI::askForExistingDirectory (const YCPString &startDir,
-		const YCPString &headline)
+YCPValue YGUI::askForExistingDirectory (const YCPString &path,
+		const YCPString &title)
 {
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, startDir,
-	                              YCPString ("*"), headline);
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
+	                              YCPString (""), title);
 }
 
-YCPValue YGUI::askForExistingFile (const YCPString &startWith,
-		const YCPString &filter, const YCPString &headline)
+YCPValue YGUI::askForExistingFile (const YCPString &path,
+		const YCPString &filter, const YCPString &title)
 {
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, startWith,
-	                              filter, headline);
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
 }
 
-YCPValue YGUI::askForSaveFileName (const YCPString &startWith,
-		const YCPString &filter, const YCPString &headline)
+YCPValue YGUI::askForSaveFileName (const YCPString &path,
+		const YCPString &filter, const YCPString &title)
 {
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, startWith,
-	                              filter, headline);
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
 bool YGUI::textMode()              IMPL_RET(false)

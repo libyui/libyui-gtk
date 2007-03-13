@@ -7,8 +7,7 @@
 #
 
 #where devtools are
-PREFIX := $(shell pkg-config --print-errors --variable=prefix yast2-devtools)
-Y2TOOL = $(PREFIX)/bin/y2tool
+Y2TOOL = $(Y2DEVTOOLS_PREFIX)/bin/y2tool
 
 VERSION			= $(shell cat $(srcdir)/VERSION)
 RPMNAME 		= $(shell cat $(srcdir)/RPMNAME)
@@ -20,7 +19,7 @@ HAS_YAST_LICENSE	= $(shell test -e $(srcdir)/YAST_LICENSE && echo YAST_LICENSE)
 # do we do Makefile.am for devtools? It is a little special...
 IS_DEVTOOLS		= $(findstring yast2-devtools,$(RPMNAME))
 
-DEVTOOLS_DIR 		= $(if $(IS_DEVTOOLS),$(srcdir)/devtools,$(PREFIX)/share/YaST2/data/devtools)
+DEVTOOLS_DIR 		= $(if $(IS_DEVTOOLS),$(srcdir)/devtools,$(Y2DEVTOOLS_PREFIX)/share/YaST2/data/devtools)
 ALL_PACKAGES		= $(DEVTOOLS_DIR)/admin/all-packages
 LEGALESE_DIR		= $(if $(HAS_YAST_LICENSE),$(DEVTOOLS_DIR)/admin/copyright/yast,$(DEVTOOLS_DIR)/admin/copyright/gpl)
 
@@ -34,7 +33,7 @@ extra_COPYRIGHT_files =  $(if $(HAS_YAST_LICENSE), $(COPYRIGHT_files_yast), $(CO
 AUTOMAKE_OPTIONS = foreign dist-bzip2
 # where devtools instal m4 snippets
 # argh, executed literally
-#ACLOCAL_AMFLAGS = -I $(PREFIX)/share/aclocal
+#ACLOCAL_AMFLAGS = -I $(Y2DEVTOOLS_PREFIX)/share/aclocal
 ACLOCAL_AMFLAGS = -I `if test -d ./devtools/admin; then echo ./devtools/admin; else pkg-config --print-errors --variable=datadir yast2-devtools; fi`/aclocal
 
 Makefile.am.common: $(DEVTOOLS_DIR)/admin/Makefile.am.common
@@ -67,7 +66,7 @@ if CREATE_PKGCONFIG
 # because the prerequisite is made here (not anymore!)
 # and we don't want any paths in y2autoconf
 # info '(autoconf)config.status Invocation'
-$(RPMNAME).pc: $(RPMNAME).pc.in
+$(RPMNAME).pc: $(RPMNAME).pc.in config.status
 	./config.status --file=$@:$<
 
 if CREATE_PKGCONFIG_NOARCH

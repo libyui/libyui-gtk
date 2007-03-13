@@ -3,6 +3,16 @@
 	* YGPackageSelector.cc: made the package information to
 	use tabs.
 
+	* YGUI.cc: couldn't reproduce bug #247802, but cleaned
+	up file chooser code as it is not good. Done a few tests;
+	all fine.
+
+	* configure.in.in & config.h.in: added HAS_CHECKBOXFRAME
+	define according to if YCheckBoxFrame.h is available or
+	not. YAST2_VERSION would work nice, if yast guys would
+	have changed the version number since the opensuse 10.2
+	release. :/
+
 2007-02-07  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.0 - Rev 388
