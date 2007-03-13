@@ -1,3 +1,8 @@
+2007-03-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* YGPackageSelector.cc: made the package information to
+	use tabs.
+
 2007-02-07  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.0 - Rev 388

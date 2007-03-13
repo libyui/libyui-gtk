@@ -242,67 +242,42 @@ static bool solveProblems()
 	return false;
 }
 
-#define INFORMATION_HEIGHT 120
+#define INFORMATION_HEIGHT 140
 
 // Expander widget with the package information
 class PackageInformation
 {
 	GtkWidget *m_widget;
 	// Information text
-	GtkWidget *m_description_text, *m_filelist_text, *m_history_text;
-	GtkWidget *m_scrolled_window;
+	GtkWidget *m_about_text, *m_authors_text, *m_filelist_text, *m_history_text;
 
 public:
 	PackageInformation (const char *expander_text, bool only_description)
 	{
-		// TODO: set white color on expanders
-		GtkWidget *padding_widget, *vbox, *view_port;
 		m_widget = gtk_expander_new (expander_text);
-
-		padding_widget = gtk_hbox_new (FALSE, 0);
-
-		view_port = gtk_viewport_new (NULL, NULL);
-		gtk_viewport_set_shadow_type (GTK_VIEWPORT (view_port), GTK_SHADOW_NONE);
-		m_scrolled_window = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scrolled_window),
-		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport
-			(GTK_SCROLLED_WINDOW (m_scrolled_window), view_port);
-
-		vbox = gtk_vbox_new (FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (view_port), vbox);
-		gtk_box_pack_start (GTK_BOX (padding_widget), m_scrolled_window,
-		                    TRUE, TRUE, 15);
-		gtk_container_add (GTK_CONTAINER (m_widget), padding_widget);
-
-		m_description_text = ygtk_richtext_new ();
-		ygtk_richtext_set_text (YGTK_RICHTEXT (m_description_text),
-		                        "<i>(no package selected)</i>", FALSE, TRUE);
-		gtk_box_pack_start (GTK_BOX (vbox), m_description_text, FALSE, FALSE, 0);
+		gtk_widget_set_sensitive (m_widget, FALSE);
 
 		if (only_description) {
-			m_filelist_text = NULL;
-			m_history_text = NULL;
+			GtkWidget *about_win = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (about_win),
+			                                GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+			m_about_text = ygtk_richtext_new();
+			gtk_container_add (GTK_CONTAINER (about_win), m_about_text);
+			gtk_container_add (GTK_CONTAINER (m_widget), about_win);
+			m_authors_text = m_filelist_text = m_history_text = NULL;
 		}
 		else {
-			GtkWidget *filelist_expander, *history_expander;
-//			GdkColor white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+			GtkWidget *notebook = gtk_notebook_new();
+			gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook), GTK_POS_BOTTOM);
+			gtk_container_add (GTK_CONTAINER (m_widget), notebook);
 
-			filelist_expander = gtk_expander_new ("File listing");
-			m_filelist_text = ygtk_richtext_new ();
-			gtk_container_add (GTK_CONTAINER (filelist_expander), m_filelist_text);
-			gtk_box_pack_start (GTK_BOX (vbox), filelist_expander, FALSE, FALSE, 0);
-
-			history_expander = gtk_expander_new ("Packaging History");
-			m_history_text = ygtk_richtext_new ();
-			gtk_container_add (GTK_CONTAINER (history_expander), m_history_text);
-			gtk_box_pack_start (GTK_BOX (vbox), history_expander, FALSE, FALSE, 0);
-
-//			g_signal_connect (G_OBJECT (vbox), "size-request",
-//			                  G_CALLBACK (size_changed_cb), m_scrolled_window);
+			m_about_text = add_text_tab (notebook, "Description");
+			m_filelist_text = add_text_tab (notebook, "File List");
+			m_history_text = add_text_tab (notebook, "History");
+			m_authors_text = add_text_tab (notebook, "Authors");
 		}
-
-		gtk_widget_set_size_request (m_scrolled_window, -1, INFORMATION_HEIGHT);
+		gtk_widget_set_size_request (gtk_bin_get_child (GTK_BIN (m_widget)),
+		                             -1, INFORMATION_HEIGHT);
 	}
 
 	GtkWidget *getWidget()
@@ -310,52 +285,55 @@ public:
 
 	void setPackage (ZyppSelectablePtr selectable, ZyppObject object)
 	{
-		string description = "<i>(no package selected)</i>", file_list, history;
-		if (selectable) {
-			description = "<p><b>" + selectable->name() + "</b> - "
-			              + YGUtils::escape_markup (object->summary()) + "</p>"
-//FIXME: break authors nicely.
-			 + "<p>" + YGUtils::escape_markup (object->description()) + "</p>";
+		gtk_widget_set_sensitive (m_widget, TRUE);
 
-			if (m_filelist_text && m_history_text) {
-				ZyppPackage package = tryCastToZyppPkg (object);
-
-				const std::list <string> &filenames = package->filenames();
-				for (std::list <string>::const_iterator it = filenames.begin();
-				     it != filenames.end(); it++)
-					file_list += (*it) + "\n";
-
-				const std::list <zypp::ChangelogEntry> &changelog = package->changelog();
-				for (std::list <zypp::ChangelogEntry>::const_iterator it = changelog.begin();
-				     it != changelog.end(); it++)
-					history += "<p><i>" + it->date().asString() + "</i> "
-					           "<b>" + it->author() + "</b></p>"
-					           "<p>" + it->text() + "</p>";
-			}
+		if (m_about_text) {
+			string description = object->description();//YGUtils::escape_markup (object->description());
+			set_text (m_about_text, description);
+			// TODO: cut "Authors:" and following "-----" line to some authors string
 		}
-
-		ygtk_richtext_set_text (YGTK_RICHTEXT (m_description_text),
-		                        description.c_str(), FALSE, TRUE);
-		if (m_filelist_text && m_history_text) {
-			ygtk_richtext_set_text (YGTK_RICHTEXT (m_filelist_text),
-			                        file_list.c_str(), TRUE, TRUE);
-			ygtk_richtext_set_text (YGTK_RICHTEXT (m_history_text),
-			                        history.c_str(), FALSE, TRUE);
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (m_filelist_text) {
+			string filelist;
+			const std::list <string> &filenames = package->filenames();
+			for (std::list <string>::const_iterator it = filenames.begin();
+			     it != filenames.end(); it++)
+				filelist += (*it) + "\n";
+			set_text (m_filelist_text, filelist);
 		}
-
-//		size_changed_cb (0, 0, m_scrolled_window);
+		if (m_history_text) {
+			string history;
+			const std::list <zypp::ChangelogEntry> &changelog = package->changelog();
+			for (std::list <zypp::ChangelogEntry>::const_iterator it = changelog.begin();
+			     it != changelog.end(); it++)
+				history += "<p><i>" + it->date().asString() + "</i> "
+				           "<b>" + it->author() + "</b><br>" +
+				           it->text() + "</p>";
+			set_text (m_history_text, history);
+		}
 	}
 
-	// This forces GtkScrolledWindow to set "new" scrollbars to reflect
-	// a new box size (due to expanders being activated)
-	// FIXME: ain't working all that well...
-/*
-	static void size_changed_cb (GtkWidget *widget, GtkRequisition *requisition,
-	                             GtkWidget *view)
+	// auxiliaries to cut down on code
+	static GtkWidget *add_text_tab (GtkWidget *notebook, const char *label)
 	{
-		gtk_scrolled_window_set_vadjustment (GTK_SCROLLED_WINDOW (view), NULL);
+		GtkWidget *widget, *scroll_win;
+		scroll_win = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll_win),
+		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+		widget = ygtk_richtext_new();
+		gtk_container_add (GTK_CONTAINER (scroll_win), widget);
+
+		gtk_notebook_append_page (GTK_NOTEBOOK (notebook), scroll_win,
+		                          gtk_label_new (label));
+		return widget;
 	}
-*/
+
+	static void set_text (GtkWidget *widget, const string &text)
+	{
+		GtkTextIter iter;
+		gtk_text_view_get_iter_at_location (GTK_TEXT_VIEW (widget), &iter, 0, 0);
+		ygtk_richtext_set_text (YGTK_RICHTEXT (widget), text.c_str(), FALSE, TRUE);
+	}
 };
 
 // YOU patch selector
@@ -1284,52 +1262,28 @@ printf ("option is now: %d\n", *option);
 		return FALSE;
 	}
 
-	static GtkWidget *please_wait_window()
-	{
-		GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_window_set_title (GTK_WINDOW (window), "");
-		gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
-		gtk_window_set_transient_for (GTK_WINDOW (window), YGUI::ui()->currentWindow());
-		gtk_window_set_modal (GTK_WINDOW (window), TRUE);
-		gtk_window_set_type_hint (GTK_WINDOW (window), GDK_WINDOW_TYPE_HINT_DIALOG);
-		GtkWidget *label = gtk_label_new ("Loading view...");
-		gtk_container_add (GTK_CONTAINER (window), label);
-		gtk_widget_realize (label);
-		gtk_widget_show_all (window);
-		// flush the window since there will be a long operation...
-		while (gtk_events_pending())
-			gtk_main_iteration();
-		return window;
-	}
-
 	// callbacks
 	static void view_plain_mode_cb  (GtkToggleButton *button,
 	                                 PackageSelector *pThis)
 	{
 		if (!gtk_toggle_button_get_active (button)) return;
-		GtkWidget *wait_window = please_wait_window();
 		pThis->loadPackagesListAsPlain();
-		gtk_widget_destroy (wait_window);
 	}
 
 	static void view_categories_mode_cb  (GtkToggleButton *button,
 	                                      PackageSelector *pThis)
 	{
 		if (!gtk_toggle_button_get_active (button)) return;
-		GtkWidget *wait_window = please_wait_window();
 		pThis->clear_search_entry (true);
 		pThis->loadPackagesListByCategory();
-		gtk_widget_destroy (wait_window);
 	}
 
 	static void view_patterns_mode_cb  (GtkToggleButton *button,
 	                                    PackageSelector *pThis)
 	{
 		if (!gtk_toggle_button_get_active (button)) return;
-		GtkWidget *wait_window = please_wait_window();
 		pThis->clear_search_entry (true);
 //		pThis->loadPackagesListByPattern();
-		gtk_widget_destroy (wait_window);
 	}
 
 	static void toggle_packages_view_cb  (GtkToggleButton *button,
