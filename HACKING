@@ -1,7 +1,7 @@
 /* Documentation on YaST-GTK */
 
 YaST basis
-
+test
   Yast-core is a simple byte-code interpreted programming
   language. It is splitted into two threads: one with the
   interpreter that runs the YCP application, the other
