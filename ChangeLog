@@ -17,6 +17,9 @@
 	string (which mapKBAccel() now uses). Fixed bug on setWidgetFont()
 	(arguments were not being honored).
 
+	* src/YGUI.cc: cleaned up the file selection code wrt path fed.
+	* tests/FileDialog.ycp: easy app to test the file/folder selectors.
+
 2007-03-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* YGPackageSelector.cc: made the package information to

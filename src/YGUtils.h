@@ -52,10 +52,6 @@ namespace YGUtils
 	/* Checks if a std::string contains some other string (case insensitive). */
 	bool contains (const string &haystack, const string &needle);
 
-	/* Splits a path to a filename by the path expect the file that is
-	   then written to filename. */
-	void splitPath (const string &path, string &dirname, string &filename);
-
 	/* Splits a string into parts as separated by the separator characters.
 	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
 	std::list <string> splitString (const string &str, char separator);

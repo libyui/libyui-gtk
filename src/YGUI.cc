@@ -335,12 +335,44 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 		YGUI::ui()->currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 		NULL);
+	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
 
-	// Yast gives the path as an URL that can be a directory or a file.
-	// We need to pass only the directory path and then select that file.
+	// Yast likes to pass the path and suggested filename as a whole. We will need to
+	// split that up for GTK+.
 	string dirpath (path->value()), filename;
-	if (!dirpath.empty() && !g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR))
-		YGUtils::splitPath (path->value(), dirpath, filename);
+	if (!dirpath.empty()) {
+		string::size_type i;
+		// we don't support local paths
+		if (dirpath [0] != '/') {
+			filename = dirpath;
+			dirpath = "";
+		}
+		else if (!(g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR))) {
+			i = dirpath.find_last_of ("/");
+			if (i == string::npos) {
+				filename = dirpath;
+				dirpath = "";
+			}
+			else {
+				string path (dirpath);
+				dirpath = path.substr (0, i+1);
+				filename = path.substr (i+1);
+			}
+		}
+
+		// check if dirpath and filename are valid
+		if (!dirpath.empty())
+			if (!g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR)) {
+				y2warning ("Path passed to file dialog isn't valid: '%s'", path->value_cstr());
+				dirpath = "";
+			}
+		i = filename.find ("/");
+		if (i != string::npos) {
+			y2warning ("Path passed to file dialog isn't valid: '%s'", path->value_cstr());
+			filename = "";
+		}
+	}
+
 	if (!dirpath.empty())
 		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), dirpath.c_str());
 	if (!filename.empty())

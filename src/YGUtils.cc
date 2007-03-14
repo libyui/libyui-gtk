@@ -403,19 +403,6 @@ bool YGUtils::contains (const string &haystack, const string &needle)
 	return false;
 }
 
-void YGUtils::splitPath (const string &path, string &dirname, string &filename)
-{
-	string::size_type i = path.find_last_of ("/");
-	if (i == string::npos) {
-		dirname = path;
-		filename = "";
-	}
-	else {
-		dirname = path.substr (0, i);
-		filename = path.substr (i+1);
-	}
-}
-
 std::list <string> YGUtils::splitString (const string &str, char separator)
 {
 	std::list <string> parts;
