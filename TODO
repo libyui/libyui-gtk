@@ -2,6 +2,9 @@
 
 = Look and feel =
 
+* Layout (tests/Layout-Split-Split.ycp)
+  Center stuff on wizards.
+
 * BarGraph / RatioBox
   Let tiny widgets still have some pixels visible for popup menu.
 
@@ -43,12 +46,6 @@
 	  Probably a tab for this?
 
 * Others
-	+ sometimes scrollbars are not presented on the package information.
-	  We already do some work arounds so that GtkScrolledWindow scrollbars are
-	  recalculated when an expander is pressed (it, or the GtkViewPort, inside
-	  doesn't seem to deal well with dynamic containers), but there is some weird
-	  case still to fix...
-
 	* we should let user see disk usage. Unlike yast-qt, which displays it on
 	  its entirely, maybe we could have use a combo box and only display the
 	  size used for that partition. Or maybe use an expander.
