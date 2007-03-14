@@ -69,8 +69,7 @@ YGUI::createFrame (YWidget *parent, YWidgetOpt &opt,
 	return new YGFrame (opt, YGWidget::get (parent), label);
 }
 
-#if HAS_YCHECKBOXFRAME
-
+#if YAST2_VERSION > 2014004
 #include "YCheckBoxFrame.h"
 
 class YGCheckBoxFrame : public YCheckBoxFrame, public YGWidget
@@ -161,4 +160,4 @@ YGUI::createCheckBoxFrame (YWidget *parent, YWidgetOpt &opt,
 	return new YGCheckBoxFrame (opt, YGWidget::get (parent), label, checked);
 }
 
-#endif /*HAS_YCHECKBOXFRAME*/
+#endif /*YAST2_VERSION*/
