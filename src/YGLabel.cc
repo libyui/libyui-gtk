@@ -14,18 +14,12 @@ class YGLabel : public YLabel, public YGWidget
 public:
 	YGLabel (const YWidgetOpt &opt, YGWidget *parent, YCPString text)
 	: YLabel (opt, text),
-	  YGWidget (this, parent, true, opt.isOutputField.value() ? GTK_TYPE_ENTRY
-	                                  : GTK_TYPE_LABEL, NULL)
+	  YGWidget (this, parent, true, GTK_TYPE_LABEL, NULL)
 	{
 		IMPL
-		if (opt.isOutputField.value()) {
-			gtk_editable_set_editable (GTK_EDITABLE (getWidget()), FALSE);
-			// not editable GtkEntrys don't really look like it, so...
-			gtk_widget_modify_base (getWidget(), GTK_STATE_NORMAL,
-			                        &getWidget()->style->base [GTK_STATE_INSENSITIVE]);
-		}
-		else
-			gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
+		gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
+		if (opt.isOutputField.value())
+			gtk_label_set_selectable (GTK_LABEL (getWidget()), TRUE);
 
 		if (opt.boldFont.value())
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -36,28 +30,17 @@ public:
 
 	virtual void setLabel (const YCPString &label)
 	{
-		if (GTK_IS_LABEL (getWidget()))
-			gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
-		else
-			gtk_entry_set_text (GTK_ENTRY (getWidget()), label->value_cstr());
+		gtk_label_set_label (GTK_LABEL (getWidget()), label->value_cstr());
 		YLabel::setLabel (label);
 
-		// Some YCP progs have crap like no labeled labels cluttering the layout
+		// Some YCP progs have no labeled labels cluttering the layout
 		label->value().empty() ? gtk_widget_hide (getWidget())
 		                       : gtk_widget_show (getWidget());
 	}
 
 	// YWidget
 	virtual bool doSetKeyboardFocus()
-	{
-		if (GTK_IS_ENTRY (getWidget())) {
-			gtk_widget_grab_focus (GTK_WIDGET(getWidget()));
-			return gtk_widget_is_focus (GTK_WIDGET(getWidget()));
-			}
-		else  // GtkLabel
-			return false;
-	}
-
+	{ return false; }
 	YGWIDGET_IMPL_COMMON
 };
 

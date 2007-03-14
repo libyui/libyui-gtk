@@ -5,22 +5,18 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 
-string YGUtils::mapKBAccel(const char *src)
+void YGUtils::replace (std::string &str, char from, char to)
 {
-	string str;
-	int length = strlen (src);
+	for (unsigned int i = 0; i < str.length(); i++)
+		if (str [i] == from)
+			str [i] = to;
+}
 
-	str.reserve (length);
-	for (int i = 0; i < length; i++) {
-		if (src[i] == '_')
-			str += "__";
-		else if (src[i] == '&')
-			str += '_';
-		else
-			str += src[i];
-	}
-
-	return str;
+string YGUtils::mapKBAccel (const char *src)
+{
+	string dst (src);
+	replace (dst, '&', '_');
+	return dst;
 }
 
 string YGUtils::filterText (const char* text, int length, const char *valid_chars)
@@ -344,8 +340,8 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale
 	int size = pango_font_description_get_size (font_desc);
 
 	PangoFontDescription* font = pango_font_description_new();
-	pango_font_description_set_weight (font, PANGO_WEIGHT_ULTRABOLD);
-	pango_font_description_set_size   (font, (int)(size * PANGO_SCALE_XX_LARGE));
+	pango_font_description_set_weight (font, weight);
+	pango_font_description_set_size   (font, (int)(size * scale));
 
 	gtk_widget_modify_font (widget, font);
 	pango_font_description_free (font);

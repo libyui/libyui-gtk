@@ -14,8 +14,12 @@
 
 namespace YGUtils
 {
-	/* Replaces '&' accelerator like Yast likes by the '_' that Gnome prefers. */
-	string mapKBAccel(const char *src);
+	/* Replaces all characters 'from' by characters 'to' on the string passed. */
+	void replace (std::string &str, char from, char to);
+
+	/* Convinience function, from the above. Replaces '&' accelerator like Yast
+	   likes by the '_' that Gnome prefers. */
+	string mapKBAccel (const char *src);
 
 	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
