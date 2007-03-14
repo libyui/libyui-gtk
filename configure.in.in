@@ -43,17 +43,9 @@ PKG_CHECK_MODULES( GTK, gtk+-2.0 glib-2.0 gthread-2.0 gobject-2.0 )
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
-verstxt=`y2tool version`
+verstxt=`pkg-config --modversion yast2-core`
 vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 AC_DEFINE_UNQUOTED(YAST2_VERSION, $vers, [yast version for compile conditionals])
-
-# The problem with using "y2tool version" is that they haven't updated the version number
-# since the stable release. We must check for api changes the hard way (hopefully, just for now).
-# FIXME: should base yast includes path on a variable (not really important since this is
-# just temporary)
-
-checkboxframe_support=`test -f /usr/include/YaST2/yui/YCheckBoxFrame.h && echo 1 || echo 0`
-AC_DEFINE_UNQUOTED(HAS_YCHECKBOXFRAME, $checkboxframe_support, [does yui ask for YCheckBoxFrame support])
 
 AC_OUTPUT([Makefile src/Makefile])
 
