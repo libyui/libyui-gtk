@@ -51,11 +51,14 @@ public:
 				// try to see if there is a YGLabeledWidget at start
 				// (and ignore YSpacings)
 				YContainerWidget *container = (YContainerWidget *) ychild;
-				for (int i = 0; i < container->numChildren(); i++) {
-					ychild = container->child (i);
-					if (dynamic_cast <YSpacing *> (ychild) == NULL)
-						break;
-				}
+				if (container->numChildren())
+					for (int i = 0; i < container->numChildren(); i++) {
+						ychild = container->child (i);
+						if (!dynamic_cast <YSpacing *> (ychild))
+							break;
+					}
+				else  // no kids
+					break;
 			}
 			else {
 				ygchild = YGWidget::get (ychild);

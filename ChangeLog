@@ -16,6 +16,10 @@
 	* src/YGIntField.cc: set scale to not jump much for small
 	values.
 
+	* src/YGLayout.cc: fixes bug #247683 (crash on language.ycp).
+	This also happen in programs like network.ycp, wrt a
+	childless container.
+
 2007-02-07  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.0 - Rev 388
