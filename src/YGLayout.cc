@@ -131,28 +131,44 @@ public:
 		YGWidget *child = YGWidget::get (ychild);
 		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
 
-		setAlignment (align [YD_HORIZ], align [YD_VERT]);
 		/* The padding is used for stuff like making YCP progs nicer for
 		   yast-qt wizard, so it hurts us -- it's disabled. */
 		//child->setPadding (topMargin(), bottomMargin(),
 		//                   leftMargin(), rightMargin());
 		setMinSize (minWidth(), minHeight());
-		sync_stretchable();
+
+		sync_stretchable (ychild);  // alignment will be set here
 	}
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 
+	virtual void sync_stretchable (YWidget *child)
+	{
+		IMPL
+		setAlignment (align [YD_HORIZ], align [YD_VERT]);
+		YGWidget::sync_stretchable (m_y_widget);
+	}
+
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
 	{
-		GValue zero = YGUtils::floatToGValue (0.0);
+		// special case (which YAlignment.cc also uses); let stretchable
+		// children stretch if opt.stretch is set (exploitable by the wizard)
+		GValue hstretch, vstretch;
+		hstretch = YGUtils::floatToGValue (0);
+		if (_stretch [YD_HORIZ] && YGWidget::get (child (0))->isStretchable (YD_HORIZ))
+			hstretch = YGUtils::floatToGValue (1);
+		vstretch = YGUtils::floatToGValue (0);
+		if (_stretch [YD_VERT] && YGWidget::get (child (0))->isStretchable (YD_VERT))
+			vstretch = YGUtils::floatToGValue (1);
+
 		if (halign != YAlignUnchanged) {
 			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
 			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-			g_object_set_property (G_OBJECT (getWidget()), "xscale", &zero);
+			g_object_set_property (G_OBJECT (getWidget()), "xscale", &hstretch);
 		}
 		if (valign != YAlignUnchanged) {
 			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
 			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-			g_object_set_property (G_OBJECT (getWidget()), "yscale", &zero);
+			g_object_set_property (G_OBJECT (getWidget()), "yscale", &vstretch);
 		}
 	}
 

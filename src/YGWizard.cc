@@ -34,14 +34,19 @@ public:
 			// crash otherwise (stretchable() functions should really check for
 			// hasChildren() first!).
 
-			YWidgetOpt opt;
-			YWidget *rp, *empty;
-			rp = YGUI::ui()->createReplacePoint (this, opt);
+			YWidgetOpt opt, stretchOpt;
+			stretchOpt.isHStretchable.setValue( true );
+			stretchOpt.isVStretchable.setValue( true );
+
+			YWidget *align, *rp, *empty;
+			align = YGUI::ui()->createAlignment (this, stretchOpt, YAlignCenter, YAlignCenter);
+			rp = YGUI::ui()->createReplacePoint (align, opt);
 			rp->setId (YCPSymbol (YWizardContentsReplacePointID));
 			empty = YGUI::ui()->createEmpty (rp, opt);
 
+			((YContainerWidget *) align)->addChild (rp);
 			((YContainerWidget *) rp)->addChild (empty);
-			this->addChild (rp);
+			this->addChild (align);
 		}
 
 		YGtkWizard *ygtk_wizard = YGTK_WIZARD (getWidget());

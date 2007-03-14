@@ -4,6 +4,11 @@
 	"pkg-config --modversion yast2-core" as suggested by
 	Martin Vidner. Removed my has_checkboxframe check.
 
+	* YGLayout.cc (YGAlignment): honor child stretchable when set
+	stretchable (special case that YAlignment does).
+	* YGWizard.cc: make use of previous; things like loading messages
+	on some modules were not centered -- this fixes that.
+
 2007-03-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* YGPackageSelector.cc: made the package information to
