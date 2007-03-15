@@ -179,7 +179,7 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 	return dialog;
 }
 
-void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text)
+void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
 	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
@@ -205,7 +205,7 @@ void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 		gdk_beep();
 	}
 	gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &background_clr);
-	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
+//	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }
 
@@ -519,7 +519,7 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *new_child)
 
 /* Commands */
 
-void ygtk_wizard_set_help_text (YGtkWizard *wizard, const char *text)
+void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 {
 	if (wizard->m_help)
 		g_free (wizard->m_help);
@@ -1080,7 +1080,6 @@ void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
 		                           wizard->m_help);
 	}
-
 	gtk_widget_show (wizard->m_help_dialog);
 }
 

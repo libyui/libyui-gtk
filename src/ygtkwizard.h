@@ -121,7 +121,7 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
 
 // commands
 // (commands that may fail return a sucess boolean.)
-void ygtk_wizard_set_help_text (YGtkWizard *wizard, const char *text);
+void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text);
 
 gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
                                     const char *text, const char *id);

@@ -1,3 +1,8 @@
+2007-03-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: fix bug 247682: convert the key to unicode.
+	And some cleaning.
+
 2007-03-15  Michael Meeks  <michael.meeks@novell.com>
 
 	* Makefile.am: remove generated file.
@@ -5,7 +10,7 @@
 	* src/YGUI.h, src/YGFrame.cc: createCheckBoxFrame crept
 	into the stable release post 2.13.32, adapt to that too.
 
-2007-03-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2007-03-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* configure.in.in: use the version numbering from
 	"pkg-config --modversion yast2-core" as suggested by
@@ -31,7 +36,10 @@
 	padding value for size request... This tiny little thing was
 	reponsible for a weird warning and wasting my time. :/
 
-2007-03-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+	* src/ygtkrichtext.c: fix bug 247682: convert the key to unicode.
+	And some cleaning.
+
+2007-03-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* YGPackageSelector.cc: made the package information to
 	use tabs.

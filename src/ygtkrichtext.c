@@ -58,6 +58,7 @@ void ygtk_richtext_init (YGtkRichText *rtext)
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
 	gtk_text_view_set_editable (tview, FALSE);
 	gtk_text_view_set_cursor_visible (tview, FALSE);
+	gtk_text_view_set_pixels_below_lines (tview, 6);
 
 	// Init link support
 	if (!ref_cursor) {
@@ -637,25 +638,39 @@ void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
 	gdk_window_set_back_pixmap (window, pixmap, FALSE);
 }
 
-static gboolean ygtk_richtext_advance_mark (YGtkRichText *rtext,
-	GtkTextIter *start_iter, GtkTextIter *end_iter, const gchar *key)
+/* gtk_text_iter_forward_search() is case-sensitive so we roll our own.
+   The idea is to keep use get_text and strstr there, but to be more
+   efficient we check per line. */
+static gboolean ygtk_richtext_forward_search (const GtkTextIter *begin,
+	const GtkTextIter *end, const gchar *_key, GtkTextIter *match_start,
+	GtkTextIter *match_end)
 {
-	//return gtk_text_iter_forward_search (&iter, text, 0, start_iter, end_iter, NULL);
-	// (This isn't case insensitive, so we will just roll our own search)
-
-	if (*key == '\0')
+	if (*_key == 0)
 		return FALSE;
 
-	const gchar *k;
-	while (!gtk_text_iter_is_end (start_iter)) {
-		*end_iter = *start_iter;
-		for (k = key; (g_ascii_tolower (*k) ==
-		     g_ascii_tolower (gtk_text_iter_get_char (end_iter))) && (*k);
-		     k++, gtk_text_iter_forward_char (end_iter))
+	/* gtk_text_iter_get_char() returns a gunichar (ucs4 coding), so we
+	   convert the given string (which is utf-8, like anyhting in gtk+) */
+	gunichar *key = g_utf8_to_ucs4 (_key, -1, NULL, NULL, NULL);
+	if (!key)  // conversion error -- should not happen
+		return FALSE;
+
+	// convert key to lower case, to avoid work later
+	gunichar *k;
+	for (k = key; *k; k++)
+		*k = g_unichar_tolower (*k);
+
+	GtkTextIter iter = *begin, iiter;
+	while (!gtk_text_iter_is_end (&iter) && gtk_text_iter_compare (&iter, end) <= 0) {
+		iiter = iter;
+		for (k = key; *k == g_unichar_tolower (gtk_text_iter_get_char (&iiter)) && (*k);
+		     k++, gtk_text_iter_forward_char (&iiter))
 			;
-		if (!*k)
+		if (!*k) {
+			*match_start = iter;
+			*match_end = iiter;
 			return TRUE;
-		gtk_text_iter_forward_char (start_iter);
+		}
+		gtk_text_iter_forward_char (&iter);
 	}
 	return FALSE;
 }
@@ -663,22 +678,23 @@ static gboolean ygtk_richtext_advance_mark (YGtkRichText *rtext,
 gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
 {
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
-	GtkTextIter start_iter, end_iter;
-	gboolean found = FALSE;
+	GtkTextIter iter, end, match_start, match_end;
 
-	gtk_text_buffer_get_bounds (buffer, &start_iter, &end_iter);
-	gtk_text_buffer_remove_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
+	gtk_text_buffer_get_bounds (buffer, &iter, &end);
+	gtk_text_buffer_remove_tag_by_name (buffer, "keyword", &iter, &end);
 
-	gtk_text_buffer_select_range (buffer, &start_iter, &start_iter);
-	if (*text == '\0')
+	gtk_text_buffer_select_range (buffer, &iter, &iter);  // unselect text
+	if (!text || *text == '\0')
 		return TRUE;
 
-	if (text)
-		while (ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text)) {
-			found = TRUE;
-			gtk_text_buffer_apply_tag_by_name (buffer, "keyword", &start_iter, &end_iter);
-			start_iter = end_iter;
-		}
+	gboolean found = FALSE;
+	while (ygtk_richtext_forward_search (&iter, &end, text,
+	                                     &match_start, &match_end)) {
+		found = TRUE;
+		gtk_text_buffer_apply_tag_by_name (buffer, "keyword", &match_start, &match_end);
+		iter = match_end;
+		gtk_text_iter_forward_char (&iter);
+	}
 	return found;
 }
 
@@ -688,12 +704,15 @@ gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 	gtk_text_buffer_get_iter_at_mark (buffer, &start_iter,
 	                                  gtk_text_buffer_get_selection_bound (buffer));
+	gtk_text_buffer_get_end_iter (buffer, &end_iter);
 
 	gboolean found;
-	found = ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text);
+	found = ygtk_richtext_forward_search (&start_iter, &end_iter, text,
+	                                      &start_iter, &end_iter);
 	if (!found) {
 		gtk_text_buffer_get_start_iter (buffer, &start_iter);
-		found = ygtk_richtext_advance_mark (rtext, &start_iter, &end_iter, text);
+		found = ygtk_richtext_forward_search (&start_iter, &end_iter, text,
+		                                      &start_iter, &end_iter);
 	}
 
 	if (found) {
