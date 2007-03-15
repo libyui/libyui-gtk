@@ -259,10 +259,6 @@ public:
 		for (int i = 0; i < numCols(); i++)
 			insertColumn (i, headers[i], types[i]);
 
-#if GTK_CHECK_VERSION(2,10,0)
-		gtk_tree_view_set_grid_lines (GTK_TREE_VIEW (getWidget()),
-		                              GTK_TREE_VIEW_GRID_LINES_BOTH);
-#endif
 		setLabelVisible (false);
 	}
 
