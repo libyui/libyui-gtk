@@ -1,3 +1,10 @@
+2007-03-15  Michael Meeks  <michael.meeks@novell.com>
+
+	* Makefile.am: remove generated file.
+
+	* src/YGUI.h, src/YGFrame.cc: createCheckBoxFrame crept
+	into the stable release post 2.13.32, adapt to that too.
+
 2007-03-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* configure.in.in: use the version numbering from
