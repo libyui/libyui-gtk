@@ -512,6 +512,11 @@ void ygtk_min_size_set_height (YGtkMinSize *min_size, guint min_height)
 	min_size->min_height = min_height;
 }
 
+void ygtk_min_size_set_only_expand (YGtkMinSize *min_size, gboolean only_expand)
+{
+	min_size->only_expand = only_expand;
+}
+
 void ygtk_min_size_size_request (GtkWidget      *widget,
                                  GtkRequisition *requisition)
 {
@@ -526,6 +531,11 @@ void ygtk_min_size_size_request (GtkWidget      *widget,
 		YGtkMinSize *min_size = YGTK_MIN_SIZE (widget);
 		requisition->width = MAX (requisition->width, min_size->min_width);
 		requisition->height = MAX (requisition->height, min_size->min_height);
+
+		if (min_size->only_expand) {
+			min_size->min_width = requisition->width;
+			min_size->min_height = requisition->height;
+		}
 	}
 }
 

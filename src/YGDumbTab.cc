@@ -8,10 +8,10 @@
 #include "YGUtils.h"
 #include "YDumbTab.h"
 
+#include "ygtkratiobox.h"
+
 class YGDumbTab : public YDumbTab, public YGWidget
 {
-	GtkRequisition m_label_req;
-
 	GtkWidget *m_containee;
 	GtkWidget *m_last_tab;
 	vector <GtkWidget *> m_tab_widgets;
@@ -28,7 +28,10 @@ public:
 		gtk_object_sink (GTK_OBJECT (m_containee));
 
 		m_last_tab = 0;
-		m_label_req.width = m_label_req.height = 0;
+		// GTK+ keeps the notebook size set to the biggset page. We can't
+		// do this since this is dynamic, but at least don't let the notebook
+		// reduce its size.
+		ygtk_min_size_set_only_expand (YGTK_MIN_SIZE (m_min_size), TRUE);
 
 		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
 		                  G_CALLBACK (changed_tab_cb), this);
@@ -62,18 +65,6 @@ public:
 			change_tab (0);
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
-
-		// for setsize and nicesize...
-		int focus_width;
-		gtk_widget_style_get (getWidget(), "focus-line-width", &focus_width, NULL);
-
-		GtkRequisition req;
-		gtk_widget_size_request (label, &req);
-		req.width  += (focus_width + notebook->tab_hborder + 2) * 2 + 1;
-		req.height += (focus_width + notebook->tab_vborder + 2) * 2;
-
-		m_label_req.width += req.width;
-		m_label_req.height = MAX (req.height, m_label_req.height);
 	}
 
 	// to re-use the same widget in all tabs (m_fixed), we will remove and
@@ -115,7 +106,13 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+
+//	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+	virtual void childRemoved (YWidget *ychild)
+	{
+		GtkWidget *child = YGWidget::get (ychild)->getLayout();
+		gtk_container_remove (GTK_CONTAINER (m_containee), child);
+	}
 };
 
 YWidget *

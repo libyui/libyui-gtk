@@ -3,6 +3,10 @@
 	* src/ygtkrichtext.c: fix bug 247682: convert the key to unicode.
 	And some cleaning.
 
+	* src/ygtkratiobox.h/c (YGtkMinSize): added set_only_expand() property
+	which makes the child greed :), always asking for more space.
+	* YGDumbTab.cc: make use of it.
+
 2007-03-15  Michael Meeks  <michael.meeks@novell.com>
 
 	* Makefile.am: remove generated file.
