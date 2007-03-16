@@ -7,6 +7,13 @@
 	which makes the child greed :), always asking for more space.
 	* YGDumbTab.cc: make use of it.
 
+	* src/YGWidget.cc (safe_stretchability): made it an exception to consider
+	safe to ask for the stretchability of a ysplit without children (bug fix:
+	notebook from edit in network.ycp goes stretchable in one page and not
+	stretchable in the other).
+	This work around for the fact that stretchable() crashes when it has no
+	children should really be fixed upstream.
+
 2007-03-15  Michael Meeks  <michael.meeks@novell.com>
 
 	* Makefile.am: remove generated file.

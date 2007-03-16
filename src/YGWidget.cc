@@ -133,12 +133,21 @@ void YGWidget::sync_stretchable (YWidget *child)
 /* Checks everywhere in a container to see if there are children (so
    he is completely initialized) so that we may ask him for stretchable()
    because some YContainerWidgets crash when they don't have children. */
+#include "YSplit.h"
 static bool safe_stretchable (YWidget *widget)
 {
 	YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
 	if (container) {
-		if (!container->hasChildren())
-			return false;
+		YSplit *split = dynamic_cast <YSplit *> (widget);
+		// in the case of YSplit its safe to ask for stretchability with no kids
+		if (split) {
+			if (!split->hasChildren())
+				return true;
+		}
+		else
+			if (!container->hasChildren())
+				return false;
+
 		for (int i = 0; i < container->numChildren(); i++)
 			if (!safe_stretchable (container->child (i)))
 				return false;
