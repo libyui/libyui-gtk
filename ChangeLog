@@ -1,5 +1,9 @@
 2007-03-16  Michael Meeks  <michael.meeks@novell.com>
 
+	* Version 2.15.1 
+
+2007-03-16  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/YGFrame.cc (YGCheckBoxFrame::setLabel),
 	(YGFrame::setLabel): fix daft accelerator translation
 	bug & refactor to:
