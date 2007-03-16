@@ -561,3 +561,14 @@ GValue YGUtils::floatToGValue (float num)
 	g_value_set_float (&value, num);
 	return value;
 }
+
+void YGUtils::setLabel (GtkLabel *widget, const YCPString &label, bool bold)
+{
+    string str;
+    if (bold)
+        str = "<b>" + label->value() + "</b>";
+    else
+        str = label->value();
+    str = YGUtils::mapKBAccel(str.c_str());
+    gtk_label_set_markup_with_mnemonic (widget, str.c_str());
+}

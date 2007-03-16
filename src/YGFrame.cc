@@ -36,13 +36,11 @@ public:
 	// YFrame
 	virtual void setLabel (const YCPString &label)
 	{
-		string str = "<b>" + label->value() + "</b>";
-        str = YGUtils::mapKBAccel(str.c_str());
-		gtk_frame_set_label (GTK_FRAME (getWidget()), str.c_str());
+        GtkWidget *lab_widget = gtk_label_new(NULL);
+        gtk_widget_show (lab_widget);
+        YGUtils::setLabel (GTK_LABEL (lab_widget), label);
+		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), lab_widget);
 		YFrame::setLabel (label);
-
-		GtkWidget *frame_label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-		gtk_label_set_use_markup (GTK_LABEL (frame_label), TRUE);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -111,10 +109,7 @@ public:
 	// YFrame
 	virtual void setLabel (const YCPString &label)
 	{
-		string str = "<b>" + label->value() + "</b>";
-        str = YGUtils::mapKBAccel(str.c_str());
-        gtk_label_set_text_with_mnemonic (m_label, str.c_str());
-		gtk_label_set_use_markup (GTK_LABEL (m_label), TRUE);
+		YGUtils::setLabel (GTK_LABEL (m_label), label);
 		YCheckBoxFrame::setLabel (label);
 	}
 

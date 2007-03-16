@@ -48,15 +48,16 @@ public:
 		doSetValue (initialValue);
 		g_signal_connect (G_OBJECT (m_spiner), "value-changed",
 		                  G_CALLBACK (spiner_changed_cb), this);
-		g_signal_connect (G_OBJECT (m_slider), "value-changed",
-		                  G_CALLBACK (slider_changed_cb), this);
+        if (m_slider)
+		    g_signal_connect (G_OBJECT (m_slider), "value-changed",
+                              G_CALLBACK (slider_changed_cb), this);
 	}
 
 	GtkSpinButton *getSpiner()
 	{ return GTK_SPIN_BUTTON (m_spiner); }
 
 	bool useSlider()
-	{ return m_slider != NULL; }
+    { return m_slider != NULL; }
 	GtkHScale *getSlider()
 	{ return GTK_HSCALE (m_slider); }
 

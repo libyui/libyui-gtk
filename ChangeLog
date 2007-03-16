@@ -1,3 +1,13 @@
+2007-03-16  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGFrame.cc (YGCheckBoxFrame::setLabel),
+	(YGFrame::setLabel): fix daft accelerator translation
+	bug & refactor to:
+	* src/YGUtils.cc (setLabel): impl. helper
+
+	* src/YGIntField.cc (class YGSpinBox): only connect to
+	slider signal if we have a slider.
+
 2007-03-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.c: fix bug 247682: convert the key to unicode.

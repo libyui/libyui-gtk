@@ -21,6 +21,10 @@ namespace YGUtils
 	   likes by the '_' that Gnome prefers. */
 	string mapKBAccel (const char *src);
 
+    /* Set a label to the contents of this string, with suitable
+       accelerator / mnemonic translation etc. */
+    void setLabel (GtkLabel *widget, const YCPString &label, bool bold = true);
+
 	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
 	   terminated (you may pass -1, if it is).
