@@ -1,3 +1,11 @@
+2007-03-26  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGFrame.cc / src/YGUI.h: the pre-processor yast version
+	check was set as "#if YAST2_VERSION > 2014004 || YAST2_VERSION > 2013032",
+	which is obviously the same as "#if YAST2_VERSION > 2013032". And
+	this is not implemented for "YAST2_VERSION == 2014004" (the one
+	from opensuse 10.2.
+
 2007-03-16  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.1 - Rev 412
