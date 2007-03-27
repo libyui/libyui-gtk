@@ -152,23 +152,19 @@ public:
 	{
 		// special case (which YAlignment.cc also uses); let stretchable
 		// children stretch if opt.stretch is set (exploitable by the wizard)
-		GValue hstretch, vstretch;
-		hstretch = YGUtils::floatToGValue (0);
+		int hstretch = 0, vstretch = 0;
 		if (_stretch [YD_HORIZ] && YGWidget::get (child (0))->isStretchable (YD_HORIZ))
-			hstretch = YGUtils::floatToGValue (1);
-		vstretch = YGUtils::floatToGValue (0);
+			hstretch = 1;
 		if (_stretch [YD_VERT] && YGWidget::get (child (0))->isStretchable (YD_VERT))
-			vstretch = YGUtils::floatToGValue (1);
+			vstretch = 1;
 
 		if (halign != YAlignUnchanged) {
-			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
-			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-			g_object_set_property (G_OBJECT (getWidget()), "xscale", &hstretch);
+			g_object_set (G_OBJECT (getWidget()), "xalign", yToGtkAlign (halign), NULL);
+			g_object_set (G_OBJECT (getWidget()), "xscale", hstretch, NULL);
 		}
 		if (valign != YAlignUnchanged) {
-			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
-			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-			g_object_set_property (G_OBJECT (getWidget()), "yscale", &vstretch);
+			g_object_set (G_OBJECT (getWidget()), "yalign", yToGtkAlign (valign), NULL);
+			g_object_set (G_OBJECT (getWidget()), "yscale", vstretch, NULL);
 		}
 	}
 
@@ -230,9 +226,9 @@ public:
 	{
 		switch (align) {
 			case YAlignBegin:  return 0.0;
+			default:
 			case YAlignCenter: return 0.5;
 			case YAlignEnd:    return 1.0;
-			default: return -1;
 		}
 	}
 };

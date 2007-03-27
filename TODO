@@ -2,9 +2,6 @@
 
 = Look and feel =
 
-* Layout (tests/Layout-Split-Split.ycp)
-  Center stuff on wizards.
-
 * BarGraph / RatioBox
   Let tiny widgets still have some pixels visible for popup menu.
 
@@ -65,5 +62,7 @@
 	Already patched stock icons supports for regular button (even if not
 	currently being used), but not for wizard ones.
 
-* Simple dialogs API
-	So that we could display native dialogs.
+* Button order
+	Should be possible to specify button order. eg: [Ok] [Cancel] vs [Cancel] [Ok]
+	We could hack this through if we had stock images support (may depend
+	on the way they are implemented).

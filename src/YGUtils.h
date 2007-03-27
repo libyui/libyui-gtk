@@ -73,9 +73,6 @@ namespace YGUtils
 
 	/* Sets a tree view of sortable. */
 	void tree_view_set_sortable (GtkTreeView *view);
-
-	/* Converts stuff to GValues */
-	GValue floatToGValue (float num);
 };
 
 extern "C" {
