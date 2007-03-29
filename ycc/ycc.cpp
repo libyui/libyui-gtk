@@ -11,7 +11,7 @@
 /* Definitions */
 #define YAST_GROUPS  "/usr/share/applications/YaST2/groups/"
 #define YAST_ENTRIES "/usr/share/applications/YaST2/"
-#define ICONS "/usr/share/YaST2/theme/SuSELinux/icons/32x32/apps/"
+#define ICONS "/usr/share/YaST2/theme/current/icons/32x32/apps/"
 
 /* Globals */
 static GtkWidget *window;
