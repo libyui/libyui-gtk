@@ -1,3 +1,8 @@
+2007-03-29  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* ycc/ycc.cpp: use /usr/share/YaST2/theme/current/ for icons,
+	not /usr/share/YaST2/theme/SuSELinux/.
+
 2007-03-26  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGFrame.cc / src/YGUI.h: the pre-processor yast version
