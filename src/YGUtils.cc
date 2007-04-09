@@ -483,12 +483,18 @@ gint YGUtils::sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
 {
 	IMPL
 	gint col = GPOINTER_TO_INT (data);
-	gchar *str1, *str2;
+	gchar *str1 = 0, *str2 = 0;
 	gtk_tree_model_get (model, a, col, &str1, -1);
 	gtk_tree_model_get (model, b, col, &str2, -1);
+	gint cmp = 0;
 	if (str1 && str2)
-		return YGUtils::strcmp (str1, str2);
-	return 0;
+		cmp = YGUtils::strcmp (str1, str2);
+
+	if (str1)
+		g_free (str1);
+	if (str2)
+		g_free (str2);
+	return cmp;
 }
 
 static void header_clicked_cb (GtkTreeViewColumn *column, GtkTreeSortable *sortable)
@@ -512,6 +518,13 @@ static void header_clicked_cb (GtkTreeViewColumn *column, GtkTreeSortable *sorta
 
 	gtk_tree_view_column_set_sort_indicator (column, TRUE);
 	g_object_set_data (G_OBJECT (sortable), "last-sorted", column);
+}
+
+void YGUtils::tree_model_set_col_sortable (GtkTreeSortable *sortable, int col_nb)
+{
+	gtk_tree_sortable_set_sort_func (sortable, col_nb, sort_compare_cb,
+	                                 GINT_TO_POINTER (col_nb), NULL);
+	gtk_tree_sortable_set_sort_column_id (sortable, col_nb, GTK_SORT_ASCENDING);
 }
 
 void YGUtils::tree_view_set_sortable (GtkTreeView *view)
@@ -541,15 +554,15 @@ void YGUtils::tree_view_set_sortable (GtkTreeView *view)
 			continue;
 
 		// set sortable and clickable
-		gtk_tree_sortable_set_sort_func (sortable, col_nb, sort_compare_cb,
-		                                 GINT_TO_POINTER (col_nb), NULL);
+		tree_model_set_col_sortable (sortable, col_nb);
 		gtk_tree_view_column_set_sort_order (column, GTK_SORT_DESCENDING);
 
-		g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (col_nb));
-
-		gtk_tree_view_column_set_clickable (column, TRUE);
-		g_signal_connect (G_OBJECT (column), "clicked",
-		                  G_CALLBACK (header_clicked_cb), sortable);
+		if (gtk_tree_view_get_headers_visible (view)) {
+			g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (col_nb));
+			gtk_tree_view_column_set_clickable (column, TRUE);
+			g_signal_connect (G_OBJECT (column), "clicked",
+			                  G_CALLBACK (header_clicked_cb), sortable);
+		}
 	}
 	g_list_free (columns);
 }
@@ -563,4 +576,42 @@ void YGUtils::setLabel (GtkLabel *widget, const YCPString &label, bool bold)
         str = label->value();
     str = YGUtils::mapKBAccel(str.c_str());
     gtk_label_set_markup_with_mnemonic (widget, str.c_str());
+}
+
+#define SCROLLING_TIME 1000
+#define SCROLLING_STEP 100
+struct ScrollData {
+	int orix, oriy, diffx, diffy, time;
+	GtkTreeView *view;
+};
+
+static gboolean scroll_timeout (gpointer _data) {
+	ScrollData *data = (ScrollData *) _data;
+	data->time += SCROLLING_STEP;
+
+	int x = data->orix + data->diffx;
+	int y = ((data->diffy * data->time) / SCROLLING_TIME) + data->oriy;
+
+	gtk_tree_view_scroll_to_point (data->view, x, y);
+	return data->time != SCROLLING_TIME;
+}
+
+void YGUtils::tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y) {
+	GdkRectangle rect;
+	gtk_tree_view_get_visible_rect (view, &rect);
+	if (rect.x == x && rect.y == y)
+		return;
+
+	ScrollData *data = (ScrollData *) g_malloc (sizeof (ScrollData));
+	data->orix = rect.x;
+	data->oriy = rect.y;
+	data->diffx = x - rect.x;
+	data->diffy = y - rect.y;
+	data->time = 0;
+	data->view = view;
+
+	static int id = 0;
+	if (id)
+		g_source_remove (id);
+	id = g_timeout_add_full (G_PRIORITY_DEFAULT, SCROLLING_STEP, scroll_timeout, data, g_free);
 }

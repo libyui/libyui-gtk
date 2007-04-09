@@ -1,5 +1,5 @@
-/* Computer icon from Tango */
-static const char *computer_xpm[] = {
+/* XPM */
+static char const * computer_xpm[] = {
 "24 24 159 2",
 "  	c None",
 ". 	c #82847F",

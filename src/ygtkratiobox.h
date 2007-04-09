@@ -195,7 +195,7 @@ GtkWidget* ygtk_min_size_new (guint min_width, guint min_height);
 void ygtk_min_size_set_width (YGtkMinSize *min_size, guint min_width);
 void ygtk_min_size_set_height (YGtkMinSize *min_size, guint min_height);
 
-/* Only allow the child to ask for bigger sizes. */
+/* Only allow the child to grow (ie. to ask for bigger sizes). */
 void ygtk_min_size_set_only_expand (YGtkMinSize *min_size, gboolean only_expand);
 
 G_END_DECLS

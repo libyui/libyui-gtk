@@ -72,7 +72,11 @@ namespace YGUtils
 	                                gchar *path_str, GtkTreeModel *model);
 
 	/* Sets a tree view of sortable. */
+	void tree_model_set_col_sortable (GtkTreeSortable *sortable, int col);
 	void tree_view_set_sortable (GtkTreeView *view);
+
+	/* Like gtk_tree_view_scroll_to_point(), but does smooth scroll. */
+	void tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y);
 };
 
 extern "C" {

@@ -1,3 +1,30 @@
+2007-04-09  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: added alternative to gtk_tree_view_scroll_to_point()
+	that does smooth scroll.
+
+	* src/ygtkarrowcellrenererarrow.c: a cell renderer that
+	displays two arrow buttons (up and down) which can be used
+	as another representation of a combo or spin box.
+
+	* src/YGPackageSelector.cc: when a package is selected, scroll the
+	other view to the same point. TODO: as the user scrolls one view, also
+	make the other view scroll with respect to the sorting.
+
+	* src/YGPackageSelector.cc: added a another column to the available
+	packages view with arrow renderers. If more than one version is
+	available the user can choose it using it. Most users just want to choose
+	the latest version (and only tune it, less often), so this renderers
+	let the user see there is no newer version, as opposite to a combo box.
+	It is also much lighter than the combo box renderer. Showing all
+	the different versions packages in the view would be clutter and not
+	as straight forward to implement. We could put them in the same node, but
+	now we have the same problem of the combo box, added with quite some
+	complexity.
+
+	* src/YGPackageSelector.cc: Not exactly what else I did; some cleanups
+	I guess. Still some rather important work to do.
+
 2007-03-29  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* ycc/ycc.cpp: use /usr/share/YaST2/theme/current/ for icons,

@@ -46,7 +46,8 @@ libpy2gtk_la_SOURCES = \
 	ygtksteps.c \
 	ygtkfieldentry.c \
 	ygtkmenubutton.c \
-	ygtkwizard.c
+	ygtkwizard.c \
+	ygtkcellrendererarrow.c
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
