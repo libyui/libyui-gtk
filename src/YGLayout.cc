@@ -83,9 +83,9 @@ public:
 
 		YUIDimension dim = dimension();
 		bool horiz_fill = child->isStretchable (YD_HORIZ) ||
-		                 ychild->hasWeight (YD_HORIZ);
+		                  ychild->hasWeight (YD_HORIZ);
 		bool vert_fill  = child->isStretchable (YD_VERT) ||
-		                 ychild->hasWeight (YD_VERT);
+		                  ychild->hasWeight (YD_VERT);
 
 		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
 		                                  horiz_fill, vert_fill, 0, GTK_PACK_START);
@@ -152,19 +152,23 @@ public:
 	{
 		// special case (which YAlignment.cc also uses); let stretchable
 		// children stretch if opt.stretch is set (exploitable by the wizard)
-		int hstretch = 0, vstretch = 0;
+		GValue hstretch, vstretch;
+		hstretch = YGUtils::floatToGValue (0);
 		if (_stretch [YD_HORIZ] && YGWidget::get (child (0))->isStretchable (YD_HORIZ))
-			hstretch = 1;
+			hstretch = YGUtils::floatToGValue (1);
+		vstretch = YGUtils::floatToGValue (0);
 		if (_stretch [YD_VERT] && YGWidget::get (child (0))->isStretchable (YD_VERT))
-			vstretch = 1;
+			vstretch = YGUtils::floatToGValue (1);
 
 		if (halign != YAlignUnchanged) {
-			g_object_set (G_OBJECT (getWidget()), "xalign", yToGtkAlign (halign), NULL);
-			g_object_set (G_OBJECT (getWidget()), "xscale", hstretch, NULL);
+			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
+			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
+			g_object_set_property (G_OBJECT (getWidget()), "xscale", &hstretch);
 		}
 		if (valign != YAlignUnchanged) {
-			g_object_set (G_OBJECT (getWidget()), "yalign", yToGtkAlign (valign), NULL);
-			g_object_set (G_OBJECT (getWidget()), "yscale", vstretch, NULL);
+			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
+			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
+			g_object_set_property (G_OBJECT (getWidget()), "yscale", &vstretch);
 		}
 	}
 

@@ -25,6 +25,9 @@
 	* src/YGPackageSelector.cc: Not exactly what else I did; some cleanups
 	I guess. Still some rather important work to do.
 
+	* src/YGLayout.cc / src/YGUtils*: got back necessary use of GValue.
+	It seems g_object_set() != g_object_set_property().
+
 2007-03-29  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* ycc/ycc.cpp: use /usr/share/YaST2/theme/current/ for icons,

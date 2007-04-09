@@ -77,6 +77,9 @@ namespace YGUtils
 
 	/* Like gtk_tree_view_scroll_to_point(), but does smooth scroll. */
 	void tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y);
+
+	/* Converts stuff to GValues */
+	GValue floatToGValue (float num);
 };
 
 extern "C" {
