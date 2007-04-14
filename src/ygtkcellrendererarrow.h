@@ -30,8 +30,6 @@ typedef struct YGtkCellRendererArrow
 {
 	GtkCellRenderer cell_renderer;
 
-	GdkPixbuf *up_arrow_pixbuf, *down_arrow_pixbuf;
-
 	// proprieties:
 	gboolean can_go_up, can_go_down;
 } YGtkCellRendererArrow;
