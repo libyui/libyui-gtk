@@ -226,33 +226,37 @@ static void ygtk_cell_renderer_arrow_render (GtkCellRenderer *cell,
 	}
 }
 
+static GtkArrowType point_under_arrow (YGtkCellRendererArrow *cell_arrow,
+                                       GdkRectangle *cell_area, gint x, gint y)
+{
+	GtkArrowType arrow = GTK_ARROW_NONE;
+	x -= cell_area->x;
+	y -= cell_area->y;
+
+	int cx, cy, cw, ch;
+	ygtk_cell_renderer_arrow_get_size (GTK_CELL_RENDERER (cell_arrow), NULL,
+	                                   cell_area, &cx, &cy, &cw, &ch);
+
+	if (x >= cx && x <= cx + cw && y >= cy && y <= cy + ch) {
+		if (cell_arrow->can_go_up && y <= ARROW_HEIGHT)
+			arrow = GTK_ARROW_UP;
+		else if (cell_arrow->can_go_down && y >= ARROW_HEIGHT+8)
+			arrow = GTK_ARROW_DOWN;
+	}
+	return arrow;
+}
+
 static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
 	GdkEvent *event, GtkWidget *widget, const gchar *path,
 	GdkRectangle *background_area, GdkRectangle *cell_area, GtkCellRendererState flags)
 {
 	YGtkCellRendererArrow *cell_arrow = YGTK_CELL_RENDERER_ARROW (cell);
-
 	if (event->type == GDK_BUTTON_PRESS) {
-		int pressed_x, pressed_y;
-		pressed_x = event->button.x - cell_area->x;
-		pressed_y = event->button.y - cell_area->y;
-
-		int ox, oy, w, h;
-		ygtk_cell_renderer_arrow_get_size (cell, widget, cell_area, &ox, &oy, &w, &h);
-		if (pressed_x >= ox && pressed_x <= ox + w &&
-		    pressed_y >= oy && pressed_y <= oy + h) {
-			guint arrow_type = GTK_ARROW_NONE;
-			h = ARROW_HEIGHT;
-
-			if (cell_arrow->can_go_up && pressed_y <= h)
-				arrow_type = GTK_ARROW_UP;
-			else if (cell_arrow->can_go_down && pressed_y >= h+8)
-				arrow_type = GTK_ARROW_DOWN;
-
-			if (arrow_type != GTK_ARROW_NONE) {
-				g_signal_emit (cell, pressed_signal, 0, arrow_type, path);
-				return TRUE;
-			}
+		GtkArrowType arrow = point_under_arrow (cell_arrow, cell_area,
+			                                    event->button.x, event->button.y);
+		if (arrow != GTK_ARROW_NONE) {
+			g_signal_emit (cell, pressed_signal, 0, arrow, path);
+			return TRUE;
 		}
 	}
 	return FALSE;

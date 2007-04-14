@@ -2,6 +2,8 @@
 
 	* src/ygtkcellrendererarrow.c: arrows now drawn with cairo, instead of
 	the pixmaps. I'm surprised they fit pretty well.
+	* src/ygtkcellrendererarrow.c: trying to have pressed/normal state, but
+	the events of a cell renderer are limitated to pressing. Cleanup anyway.
 
 2007-04-09  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 

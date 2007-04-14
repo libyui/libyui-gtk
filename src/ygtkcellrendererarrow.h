@@ -31,7 +31,8 @@ typedef struct YGtkCellRendererArrow
 	GtkCellRenderer cell_renderer;
 
 	// proprieties:
-	gboolean can_go_up, can_go_down;
+	guint can_go_up : 1;
+	guint can_go_down : 1;
 } YGtkCellRendererArrow;
 
 typedef struct YGtkCellRendererArrowClass
