@@ -1,3 +1,8 @@
+2007-04-14  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrendererarrow.c: arrows now drawn with cairo, instead of
+	the pixmaps. I'm surprised they fit pretty well.
+
 2007-04-09  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: added alternative to gtk_tree_view_scroll_to_point()
