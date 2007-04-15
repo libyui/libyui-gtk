@@ -149,7 +149,6 @@ void ygtk_field_entry_entry_changed (GtkEditable *editable, YGtkFieldEntry *fiel
 	gint nb = g_list_index (children, YGTK_FILTER_ENTRY (editable)) / 2;
 	g_list_free (children);
 
-printf ("entry changed: %d\n", nb);
 	g_signal_emit (fields, filter_entry_signal, 0, nb);
 }
 
