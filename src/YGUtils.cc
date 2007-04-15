@@ -5,18 +5,22 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 
-void YGUtils::replace (std::string &str, char from, char to)
-{
-	for (unsigned int i = 0; i < str.length(); i++)
-		if (str [i] == from)
-			str [i] = to;
-}
-
 string YGUtils::mapKBAccel (const char *src)
 {
-	string dst (src);
-	replace (dst, '&', '_');
-	return dst;
+	// we won't use use replace since we also want to escape _ to __
+	string str;
+	int length = strlen (src);
+	str.reserve (length);
+
+	for (int i = 0; i < length; i++) {
+		if (src[i] == '_')
+			str += "__";
+		else if (src[i] == '&')
+			str += '_';
+		else
+			str += src[i];
+	}
+	return str;
 }
 
 string YGUtils::filterText (const char* text, int length, const char *valid_chars)
@@ -354,39 +358,34 @@ int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb)
 void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
 { YGUtils::setWidgetFont (widget, weight, scale); }
 
-#define IS_DIGIT(x) (x >= '0' && x <= '9')
 int YGUtils::strcmp (const char *str1, const char *str2)
 {
 	// (if you think this is ugly, just wait for the Perl version! :P)
 	const char *i, *j;
-	for (i = str1, j = str2; *i || *j; i++, j++) {
+	for (i = str1, j = str2; *i && *j; i++, j++) {
 		// number comparasion
-		if (IS_DIGIT (*i) && IS_DIGIT (*j)) {
-			int n1 = 0, n2 = 0;
-			for (; IS_DIGIT (*i); i++)
+		if (isdigit (*i) && isdigit (*j)) {
+			int n1, n2;
+			for (n1 = 0; isdigit (*i); i++)
 				n1 = (*i - '0') + (n1 * 10);
-			for (; IS_DIGIT (*j); j++)
+			for (n2 = 0; isdigit (*j); j++)
 				n2 = (*j - '0') + (n2 * 10);
 
-			if (n1 != n2) {
-				if (n1 < n2)
-					return -1;
-				// if (n1 > n2)
-					return +1;
-			}
+			if (n1 != n2)
+				return n1 - n2;
+
 			// prepare for loop
 			i--; j--;
 		}
 
 		// regular character comparasion
-		else if (g_ascii_tolower (*i) != g_ascii_tolower(*j)) {
-			if (g_ascii_tolower (*i) < g_ascii_tolower (*j))
-				return -1;
-			// if (g_ascii_tolower (*i) > g_ascii_tolower (*j))
-				return +1;
-		}
-			break;
+		else if (g_ascii_tolower (*i) != g_ascii_tolower(*j))
+			return g_ascii_tolower (*i) - g_ascii_tolower (*j);
 	}
+	if (*i)
+		return -1;
+	if (*j)
+		return 1;
 	return 0;  // identicals
 }
 

@@ -5,6 +5,10 @@
 	* src/ygtkcellrendererarrow.c: trying to have pressed/normal state, but
 	the events of a cell renderer are limitated to pressing. Cleanup anyway.
 
+	* src/YGUtils.cc: correction to strcmp for different length strings
+	(for him, "aa" == "aaa").
+	* src/test.cc: added strcmp case.
+
 2007-04-09  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: added alternative to gtk_tree_view_scroll_to_point()

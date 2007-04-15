@@ -14,9 +14,6 @@
 
 namespace YGUtils
 {
-	/* Replaces all characters 'from' by characters 'to' on the string passed. */
-	void replace (std::string &str, char from, char to);
-
 	/* Convinience function, from the above. Replaces '&' accelerator like Yast
 	   likes by the '_' that Gnome prefers. */
 	string mapKBAccel (const char *src);
