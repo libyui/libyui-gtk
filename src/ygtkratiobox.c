@@ -27,8 +27,8 @@ static void ygtk_ratio_box_class_init (YGtkRatioBoxClass *klass)
 	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
 	container_class->add = ygtk_ratio_box_add;
 	container_class->remove = ygtk_ratio_box_remove;
-  container_class->forall = ygtk_ratio_box_forall;
-  container_class->child_type = ygtk_ratio_box_child_type;
+	container_class->forall = ygtk_ratio_box_forall;
+	container_class->child_type = ygtk_ratio_box_child_type;
 }
 
 static void ygtk_ratio_box_init (YGtkRatioBox *box)

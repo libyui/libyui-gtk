@@ -11,6 +11,7 @@
 #include <string.h>
 #include "ygtkrichtext.h"
 #include "ygtksteps.h"
+#include "ygtkfindentry.h"
 
 #define BUTTONS_SPACING 12
 #define BORDER           4
@@ -65,18 +66,17 @@ static void close_button_clicked_cb (GtkButton *button, YGtkHelpDialog *dialog)
 
 static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 {
-	GtkStockItem help_item;
-	GtkWidget *bottom_box, *label;
-	
 	gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
 	gtk_window_set_type_hint (GTK_WINDOW (dialog), GDK_WINDOW_TYPE_HINT_DIALOG);
 
-	gtk_stock_lookup (GTK_STOCK_HELP, &help_item);
 
 	gtk_window_set_title (GTK_WINDOW (dialog), "Help");
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 350);
 
 	// title
+	GtkStockItem help_item;
+	gtk_stock_lookup (GTK_STOCK_HELP, &help_item);
+
 	dialog->title_box = gtk_hbox_new (FALSE, 6);
 	gtk_container_set_border_width (GTK_CONTAINER (dialog->title_box), 6);
 	dialog->title_image = gtk_image_new_from_stock (GTK_STOCK_HELP,
@@ -101,21 +101,20 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_add (GTK_CONTAINER (dialog->help_box), dialog->help_text);
 
 	// bottom part (search entry + close button)
+	GtkWidget *bottom_box;
 	bottom_box = gtk_hbox_new (FALSE, 0);
-	dialog->search_entry = gtk_entry_new();
+	dialog->search_entry = ygtk_find_entry_new (FALSE);
+	YGtkFindEntry *find_entry = YGTK_FIND_ENTRY (dialog->search_entry);
+	gtk_widget_set_size_request (dialog->search_entry, 140, -1);
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
 	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
 
-	label = gtk_label_new_with_mnemonic ("_Find:");
-	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
-
-	gtk_box_pack_start (GTK_BOX (bottom_box), label, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 4);
+	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 0);
 	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
 
-	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
+	g_signal_connect (G_OBJECT (find_entry->entry), "changed",
 	                  G_CALLBACK (search_entry_modified_cb), dialog);
-	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
+	g_signal_connect (G_OBJECT (find_entry->entry), "activate",
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
 	// glue it
@@ -151,7 +150,7 @@ gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event
 {
 	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (widget);
 
-	// draw little gradient on title
+	// draw rect on title
 	int x, y, w, h;
 	x = dialog->title_box->allocation.x;
 	y = dialog->title_box->allocation.y;
@@ -181,7 +180,8 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
-	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
+	GtkWidget *entry = YGTK_FIND_ENTRY (dialog->search_entry)->entry;
+	gtk_editable_delete_text (GTK_EDITABLE (entry), 0, -1);
 	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
 }
 
@@ -192,7 +192,8 @@ void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
 
 void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 {
-	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
+	GtkWidget *entry = YGTK_FIND_ENTRY (dialog->search_entry)->entry;
+	const gchar *text = gtk_entry_get_text (GTK_ENTRY (entry));
 	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
 }
 
@@ -204,8 +205,9 @@ void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 		background_clr.green = background_clr.blue = 0;
 		gdk_beep();
 	}
-	gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &background_clr);
-//	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
+	gtk_widget_modify_base (YGTK_FIND_ENTRY (dialog->search_entry)->entry,
+	                        GTK_STATE_NORMAL, &background_clr);
+	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }
 
