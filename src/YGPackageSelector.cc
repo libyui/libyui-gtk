@@ -1156,10 +1156,8 @@ public:
 		if (search_timeout_id)
 			g_source_remove (search_timeout_id);
 
-		if (m_optionsMenu) {
+		if (m_optionsMenu)
 			gtk_widget_destroy (m_optionsMenu);
-			g_object_unref (G_OBJECT (m_optionsMenu));
-		}
 
 		delete m_information_widget;
 		gtk_widget_destroy (m_widget);
