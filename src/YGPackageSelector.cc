@@ -1156,8 +1156,8 @@ public:
 		if (search_timeout_id)
 			g_source_remove (search_timeout_id);
 
-		if (m_optionsMenu)
-			gtk_widget_destroy (m_optionsMenu);
+		/* We shouldn't destroy m_optionsMenu as it gets associated to
+		   the find icon of the find entry which will destroy it. */
 
 		delete m_information_widget;
 		gtk_widget_destroy (m_widget);
