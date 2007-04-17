@@ -1,5 +1,9 @@
 2007-04-17  Michael Meeks  <michael.meeks@novell.com>
 
+	* Version 2.15.2
+
+2007-04-17  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/ygtksteps.c (ygtk_steps_new): explicit void prototype.
 	(ygtk_steps_append, ygtk_steps_append_heading): add pre-conditions,
 	works around crash on start in update.ycp
