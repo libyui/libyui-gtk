@@ -27,6 +27,17 @@ using std::vector;
 
 //#define ENABLE_BEEP
 
+/* Compatibility */
+#if YAST2_VERSION > 2014004
+#  define YAST2_YGUI_CHECKBOX_FRAME 1
+#elif YAST2_VERSION >= 2014000
+#  define YAST2_YGUI_CHECKBOX_FRAME 0
+#elif YAST2_VERSION > 2013032
+#  define YAST2_YGUI_CHECKBOX_FRAME 1
+#else
+#  define YAST2_YGUI_CHECKBOX_FRAME 0
+#endif
+
 class YGUI: public YUI
 {
 public:
@@ -69,8 +80,7 @@ public:
     virtual YContainerWidget *createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt);
     virtual YContainerWidget *createFrame (YWidget *parent, YWidgetOpt &opt,
                                            const YCPString &label);
-#if YAST2_VERSION > 2014004
-// || YAST2_VERSION > 2013032
+#if YAST2_YGUI_CHECKBOX_FRAME
     virtual YContainerWidget *createCheckBoxFrame( YWidget *parent, YWidgetOpt & opt, const YCPString & label, bool checked );
 #endif
 

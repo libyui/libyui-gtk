@@ -65,7 +65,7 @@ struct _YGtkSingleStep
 	PangoLayout *layout;  // cache
 };
 
-GtkWidget* ygtk_steps_new();
+GtkWidget* ygtk_steps_new (void);
 GType ygtk_steps_get_type (void) G_GNUC_CONST;
 
 guint ygtk_steps_append (YGtkSteps *steps, const gchar *label);

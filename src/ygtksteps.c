@@ -84,14 +84,18 @@ void ygtk_steps_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (parent_class)->destroy (object);
 }
 
-GtkWidget* ygtk_steps_new()
+GtkWidget* ygtk_steps_new (void)
 {
 	return g_object_new (YGTK_TYPE_STEPS, NULL);
 }
 
 guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 {
-	gint steps_nb = ygtk_steps_total (steps);
+	gint steps_nb;
+
+    g_return_val_if_fail (YGTK_IS_STEPS (steps), 0);
+
+    steps_nb = ygtk_steps_total (steps);
 
 	// check if the text is the same as the previous...
 	if (steps_nb) {
@@ -103,7 +107,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 	}
 
 	// New step
-	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
+	YGtkSingleStep *step = g_new0 (YGtkSingleStep, 1);
 	step->is_heading = FALSE;
 	step->text = g_strdup (step_text);
 	step->strength = 1;
@@ -116,7 +120,11 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
-	YGtkSingleStep *step = g_malloc (sizeof (YGtkSingleStep));
+	YGtkSingleStep *step;
+
+    g_return_if_fail (YGTK_IS_STEPS (steps));
+
+    step = g_new0 (YGtkSingleStep, 1);
 	step->is_heading = TRUE;
 	step->text = g_strdup (heading);
 	step->strength = 1;  // not important anyway

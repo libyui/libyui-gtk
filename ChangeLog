@@ -1,3 +1,16 @@
+2007-04-17  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtksteps.c (ygtk_steps_new): explicit void prototype.
+	(ygtk_steps_append, ygtk_steps_append_heading): add pre-conditions,
+	works around crash on start in update.ycp
+
+	* src/ygtkcellrendererarrow.c (point_under_arrow): don't use
+	GTK_ARROW_NONE for signalling - not present in gtk 2.8
+
+	* src/YGUI.h: create new YAST2_YGUI_CHECKBOX_FRAME define, that
+	(hopefully) captures the correct semantics of when the checkboxframe
+	is available.
+
 2007-04-16  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.c/h: new widget; a GtkEntry with a clear icon on

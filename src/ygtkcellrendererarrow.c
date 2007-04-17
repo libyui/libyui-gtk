@@ -226,10 +226,11 @@ static void ygtk_cell_renderer_arrow_render (GtkCellRenderer *cell,
 	}
 }
 
-static GtkArrowType point_under_arrow (YGtkCellRendererArrow *cell_arrow,
-                                       GdkRectangle *cell_area, gint x, gint y)
+static gboolean
+point_under_arrow (YGtkCellRendererArrow *cell_arrow,
+                   GdkRectangle *cell_area, gint x, gint y,
+                   GtkArrowType *arrow)
 {
-	GtkArrowType arrow = GTK_ARROW_NONE;
 	x -= cell_area->x;
 	y -= cell_area->y;
 
@@ -238,12 +239,16 @@ static GtkArrowType point_under_arrow (YGtkCellRendererArrow *cell_arrow,
 	                                   cell_area, &cx, &cy, &cw, &ch);
 
 	if (x >= cx && x <= cx + cw && y >= cy && y <= cy + ch) {
-		if (cell_arrow->can_go_up && y <= ARROW_HEIGHT)
-			arrow = GTK_ARROW_UP;
-		else if (cell_arrow->can_go_down && y >= ARROW_HEIGHT+8)
-			arrow = GTK_ARROW_DOWN;
+		if (cell_arrow->can_go_up && y <= ARROW_HEIGHT) {
+			*arrow = GTK_ARROW_UP;
+            return TRUE;
+        }
+		else if (cell_arrow->can_go_down && y >= ARROW_HEIGHT+8) {
+			*arrow = GTK_ARROW_DOWN;
+            return TRUE;
+        }
 	}
-	return arrow;
+	return FALSE;
 }
 
 static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
@@ -252,9 +257,11 @@ static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
 {
 	YGtkCellRendererArrow *cell_arrow = YGTK_CELL_RENDERER_ARROW (cell);
 	if (event->type == GDK_BUTTON_PRESS) {
-		GtkArrowType arrow = point_under_arrow (cell_arrow, cell_area,
-			                                    event->button.x, event->button.y);
-		if (arrow != GTK_ARROW_NONE) {
+		GtkArrowType arrow;
+        if (point_under_arrow (cell_arrow, cell_area,
+                               event->button.x, event->button.y,
+                               &arrow))
+        {
 			g_signal_emit (cell, pressed_signal, 0, arrow, path);
 			return TRUE;
 		}
