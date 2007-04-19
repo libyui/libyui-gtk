@@ -875,6 +875,8 @@ public:
 		gtk_box_pack_start (GTK_BOX (search_hbox), search_entry, TRUE, TRUE, 4);
 		search_timeout_id = 0;
 		m_optionsMenu = NULL;
+		g_signal_connect (G_OBJECT (m_search_entry), "activate",  // when Enter
+		                  G_CALLBACK (search_request_cb), this);  // is pressed
 		g_signal_connect (G_OBJECT (m_search_entry), "changed",
 		                  G_CALLBACK (search_request_cb), this);
 		g_signal_connect (G_OBJECT (YGTK_FIND_ENTRY (search_entry)->find_icon),

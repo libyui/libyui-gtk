@@ -1,3 +1,9 @@
+2007-04-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: re-allowed user to press Enter on search
+	entry to re-do search. TODO: probably we want when a search option
+	is changed for the search to be re-done.
+
 2007-04-17  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.2, Revision 431
