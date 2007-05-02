@@ -92,9 +92,6 @@ typedef struct _YGtkFindEntryClass
 GtkWidget* ygtk_find_entry_new();
 GType ygtk_find_entry_get_type (void) G_GNUC_CONST;
 
-/* Use this instead of GtkWidget's modify_base() (pass NULL to restore) */
-void ygtk_find_entry_modify_base (YGtkFindEntry *entry, const GdkColor *color);
-
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *popup_menu);
 
 G_END_DECLS

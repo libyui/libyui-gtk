@@ -48,6 +48,23 @@ static void ygtk_ext_entry_unmap (GtkWidget *widget)
 	}
 }
 
+/* Syncronize border windows to entry's color. */
+static void ygtk_ext_entry_style_set (GtkWidget *widget, GtkStyle *prev_style)
+{
+	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->style_set (widget, prev_style);
+
+	/* We don't use gtk_style_set_background() since we want to reflect
+	   gtk_widget_modify_base() color, if changed. */
+	GdkColor color = widget->style->base [GTK_STATE_NORMAL];
+	gdk_rgb_find_color (gtk_widget_get_colormap (widget), &color);
+
+	YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
+	if (entry->left_window)
+		gdk_window_set_background (entry->left_window, &color);
+	if (entry->right_window)
+		gdk_window_set_background (entry->right_window, &color);
+}
+
 GdkWindow *ygtk_ext_entry_get_window (YGtkExtEntry *entry,
                                       YGtkExtEntryWindowType type)
 {
@@ -103,7 +120,8 @@ void ygtk_ext_entry_set_border_window_size (YGtkExtEntry *entry,
 			*window = gdk_window_new (widget->window,
 			                          &attributes, attributes_mask);
 			gdk_window_set_user_data (*window, widget);
-			gtk_style_set_background (widget->style, *window, GTK_STATE_NORMAL);
+			// set background style
+			ygtk_ext_entry_style_set (widget, NULL);
 	
 			if (GTK_WIDGET_MAPPED (widget))
 				gdk_window_show (*window);
@@ -139,20 +157,6 @@ gint ygtk_ext_entry_get_border_window_size (YGtkExtEntry *entry,
 	return size;
 }
 
-static void ygtk_ext_entry_style_set (GtkWidget *widget, GtkStyle *prev_style)
-{
-	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->style_set (widget, prev_style);
-	if (prev_style /* external style change? */) {
-		YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
-		if (entry->left_window)
-			gtk_style_set_background (widget->style, entry->left_window,
-			                          GTK_STATE_NORMAL);
-		if (entry->right_window)
-			gtk_style_set_background (widget->style, entry->right_window,
-			                          GTK_STATE_NORMAL);
-	}
-}
-
 static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 {
 	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_request (widget, req);
@@ -162,8 +166,6 @@ static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 	                                                     YGTK_EXT_ENTRY_LEFT_WIN);
 	req->width += ygtk_ext_entry_get_border_window_size (entry,
 	                                                     YGTK_EXT_ENTRY_RIGHT_WIN);
-	req->height = MAX (gdk_pixbuf_get_height (YGTK_FIND_ENTRY (entry)->find_icon),
-	                   req->height);
 }
 
 static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
@@ -174,7 +176,6 @@ static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
 
 	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_allocate
 	                                                    (widget, allocation);
-
 	YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
 
 	gint left_border, right_border;
@@ -284,6 +285,17 @@ static void ygtk_find_entry_map (GtkWidget *widget)
 	}
 }
 
+static void ygtk_find_entry_size_request (GtkWidget *widget, GtkRequisition *req)
+{
+	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->size_request (widget, req);
+	// ensure height is enough for icons
+	YGtkFindEntry *entry = YGTK_FIND_ENTRY (widget);
+	if (entry->find_icon)
+		req->height = MAX (gdk_pixbuf_get_height (entry->find_icon), req->height);
+	if (entry->clear_icon)
+		req->height = MAX (gdk_pixbuf_get_height (entry->clear_icon), req->height);
+}
+
 static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event)
 {
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
@@ -309,6 +321,8 @@ static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
 	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (widget);
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
 	if (event->window == eentry->left_window) {
+		// If the entry has an associated context menu, use it.
+		// Otherwise, find icon selects entry's text.
 		if (fentry->context_menu)
 			gtk_menu_popup (fentry->context_menu, NULL, NULL, NULL,
 			                NULL, event->button, event->time);
@@ -354,26 +368,6 @@ static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
 	}
 }
 
-static void set_window_color (GtkWidget *widget, GdkWindow *window,
-                              GdkColor *color)
-{
-	gdk_rgb_find_color (gtk_widget_get_colormap (widget), color);
-	gdk_window_set_background (window, color);
-}
-
-void ygtk_find_entry_modify_base (YGtkFindEntry *entry, const GdkColor *color)
-{
-	GtkWidget *widget = GTK_WIDGET (entry);
-	gtk_widget_modify_base (widget, GTK_STATE_NORMAL, color);
-	if (!color)
-		color = &widget->style->base [GTK_STATE_NORMAL];
-
-	GdkColor c = *color;
-	set_window_color (widget, YGTK_EXT_ENTRY (entry)->left_window, &c);
-	set_window_color (widget, YGTK_EXT_ENTRY (entry)->right_window, &c);
-	gtk_widget_queue_draw (widget);
-}
-
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
 {
 	if (entry->context_menu)
@@ -391,6 +385,7 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_find_entry_realize;
 	gtkwidget_class->map = ygtk_find_entry_map;
+	gtkwidget_class->size_request = ygtk_find_entry_size_request;
 	gtkwidget_class->expose_event = ygtk_find_entry_expose;
 	gtkwidget_class->button_press_event = ygtk_find_entry_button_press_event;
 }
