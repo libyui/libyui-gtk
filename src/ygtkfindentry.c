@@ -18,10 +18,8 @@ static void ygtk_ext_entry_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_ext_entry_parent_class)->destroy (object);
 
 	YGtkExtEntry *entry = YGTK_EXT_ENTRY (object);
-	if (entry->left_window)
-		ygtk_ext_entry_set_border_window_size (entry, YGTK_EXT_ENTRY_LEFT_WIN, 0);
-	if (entry->right_window)
-		ygtk_ext_entry_set_border_window_size (entry, YGTK_EXT_ENTRY_RIGHT_WIN, 0);
+	ygtk_ext_entry_set_border_window_size (entry, YGTK_EXT_ENTRY_LEFT_WIN, 0);
+	ygtk_ext_entry_set_border_window_size (entry, YGTK_EXT_ENTRY_RIGHT_WIN, 0);
 }
 
 static void ygtk_ext_entry_map (GtkWidget *widget)
@@ -141,6 +139,20 @@ gint ygtk_ext_entry_get_border_window_size (YGtkExtEntry *entry,
 	return size;
 }
 
+static void ygtk_ext_entry_style_set (GtkWidget *widget, GtkStyle *prev_style)
+{
+	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->style_set (widget, prev_style);
+	if (prev_style /* external style change? */) {
+		YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
+		if (entry->left_window)
+			gtk_style_set_background (widget->style, entry->left_window,
+			                          GTK_STATE_NORMAL);
+		if (entry->right_window)
+			gtk_style_set_background (widget->style, entry->right_window,
+			                          GTK_STATE_NORMAL);
+	}
+}
+
 static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 {
 	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_request (widget, req);
@@ -150,6 +162,8 @@ static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 	                                                     YGTK_EXT_ENTRY_LEFT_WIN);
 	req->width += ygtk_ext_entry_get_border_window_size (entry,
 	                                                     YGTK_EXT_ENTRY_RIGHT_WIN);
+	req->height = MAX (gdk_pixbuf_get_height (YGTK_FIND_ENTRY (entry)->find_icon),
+	                   req->height);
 }
 
 static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
@@ -213,6 +227,7 @@ static void ygtk_ext_entry_class_init (YGtkExtEntryClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->map = ygtk_ext_entry_map;
 	gtkwidget_class->unmap = ygtk_ext_entry_unmap;
+	gtkwidget_class->style_set = ygtk_ext_entry_style_set;
 	gtkwidget_class->size_request = ygtk_ext_entry_size_request;
 	gtkwidget_class->size_allocate = ygtk_ext_entry_size_allocate;
 
