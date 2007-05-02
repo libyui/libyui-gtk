@@ -48,21 +48,25 @@ static void ygtk_ext_entry_unmap (GtkWidget *widget)
 	}
 }
 
-/* Syncronize border windows to entry's color. */
-static void ygtk_ext_entry_style_set (GtkWidget *widget, GtkStyle *prev_style)
+static void ygtk_ext_entry_sync_color (YGtkExtEntry *entry)
 {
-	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->style_set (widget, prev_style);
-
 	/* We don't use gtk_style_set_background() since we want to reflect
 	   gtk_widget_modify_base() color, if changed. */
+
+	GtkWidget *widget = GTK_WIDGET (entry);
 	GdkColor color = widget->style->base [GTK_STATE_NORMAL];
 	gdk_rgb_find_color (gtk_widget_get_colormap (widget), &color);
 
-	YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
 	if (entry->left_window)
 		gdk_window_set_background (entry->left_window, &color);
 	if (entry->right_window)
 		gdk_window_set_background (entry->right_window, &color);
+}
+
+static void ygtk_ext_entry_style_set (GtkWidget *widget, GtkStyle *prev_style)
+{
+	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->style_set (widget, prev_style);
+	ygtk_ext_entry_sync_color (YGTK_EXT_ENTRY (widget));
 }
 
 GdkWindow *ygtk_ext_entry_get_window (YGtkExtEntry *entry,
@@ -121,7 +125,7 @@ void ygtk_ext_entry_set_border_window_size (YGtkExtEntry *entry,
 			                          &attributes, attributes_mask);
 			gdk_window_set_user_data (*window, widget);
 			// set background style
-			ygtk_ext_entry_style_set (widget, NULL);
+			ygtk_ext_entry_sync_color (entry);
 	
 			if (GTK_WIDGET_MAPPED (widget))
 				gdk_window_show (*window);

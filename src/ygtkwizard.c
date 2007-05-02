@@ -199,11 +199,11 @@ void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 	gchar *key = gtk_editable_get_chars (editable, 0, -1);
 	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
 		GdkColor red = { 0, 255 << 8, 0, 0 };
-		ygtk_find_entry_modify_base (YGTK_FIND_ENTRY (dialog->search_entry), &red);
+		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
 		gdk_beep();
 	}
 	else
-		ygtk_find_entry_modify_base (YGTK_FIND_ENTRY (dialog->search_entry), NULL);
+		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
 	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }
