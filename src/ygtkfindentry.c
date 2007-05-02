@@ -254,6 +254,56 @@ static void ygtk_find_entry_init (YGtkFindEntry *entry)
 {
 }
 
+static void ygtk_find_entry_destroy (GtkObject *object)
+{
+	GTK_OBJECT_CLASS (ygtk_find_entry_parent_class)->destroy (object);
+
+	YGtkFindEntry *entry = YGTK_FIND_ENTRY (object);
+
+#define DESTROY_ICON(icon) \
+	if (icon) { g_object_unref (G_OBJECT (icon)); icon = NULL; }
+
+	DESTROY_ICON (entry->find_icon)
+	DESTROY_ICON (entry->find_hover_icon)
+	DESTROY_ICON (entry->clear_icon)
+	DESTROY_ICON (entry->clear_hover_icon)
+#undef DESTROY_ICON
+}
+
+// Code from Banshee: shades a pixbuf a bit, used to provide the hover effect
+static inline guchar pixel_clamp (int val)
+{ return MAX (0, MIN (255, val)); }
+static GdkPixbuf *pixbuf_color_shift (const GdkPixbuf *src, int shift)
+{
+	if (!src)
+		return NULL;
+
+	int width = gdk_pixbuf_get_width (src), height = gdk_pixbuf_get_height (src);
+	gboolean has_alpha = gdk_pixbuf_get_has_alpha (src);
+
+	GdkPixbuf *dest = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (src),
+		has_alpha, gdk_pixbuf_get_bits_per_sample (src), width, height);
+
+	guchar *src_pixels_orig = gdk_pixbuf_get_pixels (src);
+	guchar *dest_pixels_orig = gdk_pixbuf_get_pixels (dest);
+
+	int src_rowstride = gdk_pixbuf_get_rowstride (src);
+	int dest_rowstride = gdk_pixbuf_get_rowstride (dest);
+	int i, j;
+	for (i = 0; i < height; i++) {
+		guchar *src_pixels = src_pixels_orig + (i * src_rowstride);
+		guchar *dest_pixels = dest_pixels_orig + (i * dest_rowstride);
+		for (j = 0; j < width; j++) {
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			if (has_alpha)
+				*(dest_pixels++) = *(src_pixels++);
+		}
+	}
+	return dest;
+}
+
 static void ygtk_find_entry_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->realize (widget);
@@ -265,10 +315,13 @@ static void ygtk_find_entry_realize (GtkWidget *widget)
 	fentry->clear_icon = gtk_widget_render_icon (widget, GTK_STOCK_CLEAR,
 	                                             GTK_ICON_SIZE_MENU, NULL);
 
+	fentry->find_hover_icon = pixbuf_color_shift (fentry->find_icon, 30);
+	fentry->clear_hover_icon = pixbuf_color_shift (fentry->clear_icon, 30);
+
 	ygtk_ext_entry_set_border_window_size (eentry,
-		YGTK_EXT_ENTRY_LEFT_WIN, gdk_pixbuf_get_width (fentry->find_icon) + 4);
+		YGTK_EXT_ENTRY_LEFT_WIN, gdk_pixbuf_get_width (fentry->find_icon) + 2);
 	ygtk_ext_entry_set_border_window_size (eentry,
-		YGTK_EXT_ENTRY_RIGHT_WIN, gdk_pixbuf_get_width (fentry->clear_icon) + 4);
+		YGTK_EXT_ENTRY_RIGHT_WIN, gdk_pixbuf_get_width (fentry->clear_icon) + 2);
 
 	GdkDisplay *display = gtk_widget_get_display (widget);
 	GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_HAND1);
@@ -293,19 +346,40 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 {
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
 	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (widget);
-	if (event->window == eentry->left_window)
+
+	GdkWindow *hover_window = gdk_display_get_window_at_pointer (
+		gtk_widget_get_display (widget), NULL, NULL);
+
+	if (event->window == eentry->left_window) {
+		GdkPixbuf *pixbuf = (hover_window == eentry->left_window) ?
+		                        fentry->find_hover_icon : fentry->find_icon;
 		gdk_draw_pixbuf (GDK_DRAWABLE (eentry->left_window),
-		                 widget->style->fg_gc[0],
-		                 fentry->find_icon, 0, 0, 2, 0, -1, -1,
+		                 widget->style->fg_gc[0], pixbuf, 0, 0, 1, 0, -1, -1,
 		                 GDK_RGB_DITHER_NONE, 0, 0);
-	else if (event->window == eentry->right_window)
+	}
+	else if (event->window == eentry->right_window) {
+		GdkPixbuf *pixbuf = (hover_window == eentry->right_window) ?
+		                        fentry->clear_hover_icon : fentry->clear_icon;
 		gdk_draw_pixbuf (GDK_DRAWABLE (eentry->right_window),
-		                 widget->style->fg_gc[0],
-		                 fentry->clear_icon, 0, 0, 2, 0, -1, -1,
+		                 widget->style->fg_gc[0], pixbuf, 0, 0, 1, 0, -1, -1,
 		                 GDK_RGB_DITHER_NONE, 0, 0);
+	}
 	else
 		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->expose_event (widget, event);
 	return TRUE;
+}
+
+/* Re-draw find/clear windows on mouse hover. */
+static gboolean ygtk_find_entry_enter_leave_notify_event (GtkWidget *widget,
+                                                          GdkEventCrossing *event)
+{
+	if (widget == gtk_get_event_widget ((GdkEvent*) event)) {
+		YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
+		if (event->window == eentry->left_window ||
+		    event->window == eentry->right_window)
+			gdk_window_invalidate_rect (event->window, NULL, FALSE);
+	}
+	return FALSE;
 }
 
 static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
@@ -379,7 +453,12 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 	gtkwidget_class->realize = ygtk_find_entry_realize;
 	gtkwidget_class->map = ygtk_find_entry_map;
 	gtkwidget_class->expose_event = ygtk_find_entry_expose;
+	gtkwidget_class->enter_notify_event = ygtk_find_entry_enter_leave_notify_event;
+	gtkwidget_class->leave_notify_event = ygtk_find_entry_enter_leave_notify_event;
 	gtkwidget_class->button_press_event = ygtk_find_entry_button_press_event;
+
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_find_entry_destroy;
 }
 
 static void ygtk_find_entry_editable_init (GtkEditableClass *iface)

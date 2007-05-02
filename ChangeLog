@@ -34,6 +34,8 @@
 	ygtk_find_entry_modify_base() method as opposite to gtk_widget_modify_base().
 	Made sure size_request was enough for the icon.
 
+	* src/ygtkfindentry.c: added Banshee-based nice hover effect.
+
 2007-04-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: re-allowed user to press Enter on search

@@ -80,7 +80,7 @@ typedef struct _YGtkFindEntry
 {
 	YGtkExtEntry parent;
 	// members
-	GdkPixbuf *find_icon, *clear_icon;
+	GdkPixbuf *find_icon, *clear_icon, *find_hover_icon, *clear_hover_icon;
 	GtkMenu *context_menu;
 } YGtkFindEntry;
 
