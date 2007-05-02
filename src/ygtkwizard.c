@@ -103,8 +103,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	// bottom part (search entry + close button)
 	GtkWidget *bottom_box;
 	bottom_box = gtk_hbox_new (FALSE, 0);
-	dialog->search_entry = ygtk_find_entry_new (FALSE);
-	YGtkFindEntry *find_entry = YGTK_FIND_ENTRY (dialog->search_entry);
+	dialog->search_entry = ygtk_find_entry_new();
 	gtk_widget_set_size_request (dialog->search_entry, 140, -1);
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
 	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
@@ -112,9 +111,9 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 0);
 	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
 
-	g_signal_connect (G_OBJECT (find_entry->entry), "changed",
+	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
 	                  G_CALLBACK (search_entry_modified_cb), dialog);
-	g_signal_connect (G_OBJECT (find_entry->entry), "activate",
+	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
 	// glue it
@@ -180,8 +179,7 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
-	GtkWidget *entry = YGTK_FIND_ENTRY (dialog->search_entry)->entry;
-	gtk_editable_delete_text (GTK_EDITABLE (entry), 0, -1);
+	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
 	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
 }
 
@@ -192,21 +190,20 @@ void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
 
 void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 {
-	GtkWidget *entry = YGTK_FIND_ENTRY (dialog->search_entry)->entry;
-	const gchar *text = gtk_entry_get_text (GTK_ENTRY (entry));
+	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
 	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
 }
 
 void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
 	gchar *key = gtk_editable_get_chars (editable, 0, -1);
-	GdkColor background_clr = { 0, 255 << 8, 255 << 8, 255 << 8 };  // red, if not found
 	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
-		background_clr.green = background_clr.blue = 0;
+		GdkColor red = { 0, 255 << 8, 0, 0 };
+		ygtk_find_entry_modify_base (YGTK_FIND_ENTRY (dialog->search_entry), &red);
 		gdk_beep();
 	}
-	gtk_widget_modify_base (YGTK_FIND_ENTRY (dialog->search_entry)->entry,
-	                        GTK_STATE_NORMAL, &background_clr);
+	else
+		ygtk_find_entry_modify_base (YGTK_FIND_ENTRY (dialog->search_entry), NULL);
 	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }
@@ -775,6 +772,7 @@ gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 {
+g_assert (wizard->m_navigation_widget != NULL);
 	ygtk_steps_append_heading (YGTK_STEPS (wizard->m_navigation_widget), text);
 }
 

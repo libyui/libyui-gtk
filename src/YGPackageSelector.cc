@@ -788,7 +788,6 @@ friend class YGPackageSelector;
 
 	// Search gizmos
 	GtkWidget *m_search_entry, *m_plain_view;
-	GtkWidget *m_optionsMenu;
 	guint search_timeout_id;
 	bool name_opt, summary_opt, descr_opt, provides_opt, requires_opt;
 	bool m_searching;
@@ -865,25 +864,24 @@ public:
 		g_signal_connect (G_OBJECT (view_patterns), "toggled",
 		                  G_CALLBACK (view_patterns_mode_cb), this);
 
+		// default search fields
+		name_opt = summary_opt = descr_opt = provides_opt = true;
+		requires_opt = false;
+
 		GtkWidget *search_hbox, *search_label;
 		search_hbox = gtk_hbox_new (FALSE, 0);
 		search_label = gtk_label_new_with_mnemonic ("_Search:");
-		GtkWidget *search_entry = ygtk_find_entry_new (TRUE);
-		m_search_entry = YGTK_FIND_ENTRY (search_entry)->entry;
+		m_search_entry = ygtk_find_entry_new();
 		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), m_search_entry);
 		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (search_hbox), search_entry, TRUE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
 		search_timeout_id = 0;
-		m_optionsMenu = NULL;
 		g_signal_connect (G_OBJECT (m_search_entry), "activate",  // when Enter
 		                  G_CALLBACK (search_request_cb), this);  // is pressed
 		g_signal_connect (G_OBJECT (m_search_entry), "changed",
 		                  G_CALLBACK (search_request_cb), this);
-		g_signal_connect (G_OBJECT (YGTK_FIND_ENTRY (search_entry)->find_icon),
-			"button-press-event", G_CALLBACK (search_options_clicked_cb), this);
-
-		name_opt = summary_opt = descr_opt = provides_opt = true;
-		requires_opt = false;
+		ygtk_find_entry_attach_menu (YGTK_FIND_ENTRY (m_search_entry),
+		                             create_search_menu());
 
 		m_information_widget = new PackageInformation ("Package Information", false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
@@ -1158,9 +1156,6 @@ public:
 		if (search_timeout_id)
 			g_source_remove (search_timeout_id);
 
-		/* We shouldn't destroy m_optionsMenu as it gets associated to
-		   the find icon of the find entry which will destroy it. */
-
 		delete m_information_widget;
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
@@ -1270,6 +1265,18 @@ public:
 		return FALSE;
 	}
 
+	GtkMenu *create_search_menu()
+	{
+		GtkWidget *menu = gtk_menu_new();
+		append_option_item (menu, "Name", &name_opt);
+		append_option_item (menu, "Summary", &summary_opt);
+		append_option_item (menu, "Description", &descr_opt);
+		append_option_item (menu, "RPM Provides", &provides_opt);
+		append_option_item (menu, "RPM Requires", &requires_opt);
+		gtk_widget_show_all (menu);
+		return GTK_MENU (menu);
+	}
+
 	static void append_option_item (GtkWidget *menu, const char *label, bool *option)
 	{
 		GtkWidget *item = gtk_check_menu_item_new_with_label (label);
@@ -1280,30 +1287,7 @@ public:
 	}
 
 	static void search_option_change_cb (GtkCheckMenuItem *item, bool *option)
-	{
-		*option = item->active;
-	}
-
-	static void search_options_clicked_cb (GtkWidget *options_icon, GdkEventButton *event,
-	                                       PackageSelector *pThis)
-	{
-		if (event->type == GDK_BUTTON_PRESS) {
-			if (!pThis->m_optionsMenu) {
-				GtkWidget *menu = pThis->m_optionsMenu = gtk_menu_new();
-
-				append_option_item (menu, "Name", &pThis->name_opt);
-				append_option_item (menu, "Summary", &pThis->summary_opt);
-				append_option_item (menu, "Description", &pThis->descr_opt);
-				append_option_item (menu, "RPM Provides", &pThis->provides_opt);
-				append_option_item (menu, "RPM Requires", &pThis->requires_opt);
-				gtk_widget_show_all (menu);
-
-				gtk_menu_attach_to_widget (GTK_MENU (menu), options_icon, NULL);
-			}
-			gtk_menu_popup (GTK_MENU (pThis->m_optionsMenu), NULL, NULL, NULL,
-			                NULL, event->button, event->time);
-		}
-	}
+	{ *option = item->active; }
 
 	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)

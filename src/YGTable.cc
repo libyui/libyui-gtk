@@ -95,9 +95,9 @@ public:
 	}
 
 protected:
-	GtkListStore *getStore()
+	inline GtkListStore *getStore()
 	{ return GTK_LIST_STORE (getModel()); }
-	GtkTreeModel *getModel()
+	inline GtkTreeModel *getModel()
 	{ return gtk_tree_view_get_model (GTK_TREE_VIEW (getWidget())); }
 
 	/* NOTE: gtk_list_store_insert() doesn't necessarly put the row in the
@@ -202,6 +202,8 @@ protected:
 
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
 		gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
+		gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
+		                              TRUE, 0.5, 0.5);
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
 
 		gtk_tree_path_free (path);

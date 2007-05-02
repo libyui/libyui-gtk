@@ -1,3 +1,35 @@
+2007-05-02  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.c: re-written it to my initial vision. Before,
+	it was based on the music player's Banshee one, though it did some more
+	work to look closer to a GtkEntry. When I sent a patch to the guys,
+	they reported a couple of visual issues. They were minor and I even
+	fixed one of them; the other, having it integrated into external
+	focus style entries, seemed to require a different approach. Few
+	styles use this, and it looked okay anyway. But was getting unhappy
+	with the code, so did this re-write, which I'm really happy with. :)
+
+	* src/ygtkfindentry.h: from the description:
+	YGtkExtEntry extends GtkEntry adding two optional GdkWindows, at each
+	horizontal corner, which are created at demand. Very useful to create
+	a panel, an icon or something inside of it.
+	GtkTextView provides something similar and would be nice to have this
+	right on GtkEntry; in fact, GtkSpinButton could be simplified if it
+	were for this.
+	Right-to-left is supported at this level (borders are mirrored, if it
+	is set). If you don't want that, use gtk_widget_set_direction().
+
+	YGtkFindEntry is a convinience widget that has a find icon, with an
+	optional menu, at the left, and an erase icon at the right.
+
+	(Will ask Aaron Bockover to look at the code; won't be porting it
+	to C# anytime soon though.)
+
+	* src/YGPackageSelector.cc / src/ygtkwizard.c: modified to cope with
+	new API.
+
+	* src/YGTable.cc: when selecting a row, also center it in the view.
+
 2007-04-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: re-allowed user to press Enter on search
