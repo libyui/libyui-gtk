@@ -289,17 +289,6 @@ static void ygtk_find_entry_map (GtkWidget *widget)
 	}
 }
 
-static void ygtk_find_entry_size_request (GtkWidget *widget, GtkRequisition *req)
-{
-	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->size_request (widget, req);
-	// ensure height is enough for icons
-	YGtkFindEntry *entry = YGTK_FIND_ENTRY (widget);
-	if (entry->find_icon)
-		req->height = MAX (gdk_pixbuf_get_height (entry->find_icon), req->height);
-	if (entry->clear_icon)
-		req->height = MAX (gdk_pixbuf_get_height (entry->clear_icon), req->height);
-}
-
 static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event)
 {
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
@@ -389,7 +378,6 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_find_entry_realize;
 	gtkwidget_class->map = ygtk_find_entry_map;
-	gtkwidget_class->size_request = ygtk_find_entry_size_request;
 	gtkwidget_class->expose_event = ygtk_find_entry_expose;
 	gtkwidget_class->button_press_event = ygtk_find_entry_button_press_event;
 }
