@@ -9,29 +9,24 @@
 #include <gtk/gtkframe.h>
 #include <gtk/gtkeventbox.h>
 
-#define YPADDING 6
-
-static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass);
-static void ygtk_bar_graph_init       (YGtkBarGraph      *bar);
-static void ygtk_bar_graph_size_request  (GtkWidget      *widget,
-                                          GtkRequisition *requisition);
-
 G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, YGTK_TYPE_RATIO_HBOX)
 
-void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
-{
-	ygtk_bar_graph_parent_class = g_type_class_peek_parent (klass);
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->size_request  = ygtk_bar_graph_size_request;
-}
-
-void ygtk_bar_graph_init (YGtkBarGraph *bar)
+static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
 	ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (bar), TRUE);
 
 	bar->m_tooltips = gtk_tooltips_new();
 	gtk_container_set_border_width (GTK_CONTAINER (bar), 12);
+}
+
+/* Just to avoid the size getting too big, when we have little bars. */
+static void ygtk_bar_graph_size_request (GtkWidget *widget, GtkRequisition *requisition)
+{
+	GTK_WIDGET_CLASS (ygtk_bar_graph_parent_class)->size_request (widget, requisition);
+	const int max_width = 250;
+	if (requisition->width > max_width)
+		requisition->width = max_width;
+	requisition->height += 6;
 }
 
 GtkWidget *ygtk_bar_graph_new (void)
@@ -138,43 +133,37 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 	ygtk_colored_label_set_background (color_label, color[0], color[1], color[2]);
 }
 
-/* Just to avoid the size getting too big, when we have little
-   bars. */
-void ygtk_bar_graph_size_request (GtkWidget *widget, GtkRequisition *requisition)
+static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
 {
-	GTK_WIDGET_CLASS (ygtk_bar_graph_parent_class)->size_request (widget, requisition);
-	const int max_width = 250;
-	if (requisition->width > max_width)
-		requisition->width = max_width;
-	requisition->height += YPADDING;
+	ygtk_bar_graph_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->size_request  = ygtk_bar_graph_size_request;
 }
 
-// YGtkColoredLabel
-
-static void ygtk_colored_label_class_init (YGtkColoredLabelClass *klass);
-static void ygtk_colored_label_init       (YGtkColoredLabel      *label);
-static gboolean ygtk_colored_label_expose_event (GtkWidget       *widget,
-                                                 GdkEventExpose  *event);
+//** YGtkColoredLabel
 
 G_DEFINE_TYPE (YGtkColoredLabel, ygtk_colored_label, GTK_TYPE_LABEL)
 
-void ygtk_colored_label_class_init (YGtkColoredLabelClass *klass)
-{
-	ygtk_colored_label_parent_class = g_type_class_peek_parent (klass);
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->expose_event  = ygtk_colored_label_expose_event;
-}
-
-void ygtk_colored_label_init (YGtkColoredLabel *label)
+static void ygtk_colored_label_init (YGtkColoredLabel *label)
 {
 	label->shadow = GTK_SHADOW_NONE;
 }
 
-GtkWidget *ygtk_colored_label_new (void)
+static gboolean ygtk_colored_label_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
-	return g_object_new (YGTK_TYPE_COLORED_LABEL, NULL);
+	GtkStyle *style = gtk_widget_get_style (widget);
+	GtkAllocation *alloc = &widget->allocation;
+	gtk_paint_box (style, widget->window, GTK_STATE_NORMAL,
+	               YGTK_COLORED_LABEL (widget)->shadow, &event->area,
+	               widget, NULL, alloc->x, alloc->y, alloc->width, alloc->height);
+
+	GTK_WIDGET_CLASS (ygtk_colored_label_parent_class)->expose_event (widget, event);
+	return FALSE;
 }
+
+GtkWidget *ygtk_colored_label_new (void)
+{ return g_object_new (YGTK_TYPE_COLORED_LABEL, NULL); }
 
 void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, guint red,
                                         guint green, guint blue)
@@ -195,14 +184,10 @@ void ygtk_colored_label_set_shadow_type (YGtkColoredLabel *label, GtkShadowType 
 	label->shadow = type;
 }
 
-gboolean ygtk_colored_label_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static void ygtk_colored_label_class_init (YGtkColoredLabelClass *klass)
 {
-	GtkStyle *style = gtk_widget_get_style (widget);
-	GtkAllocation *alloc = &widget->allocation;
-	gtk_paint_box (style, widget->window, GTK_STATE_NORMAL,
-	               YGTK_COLORED_LABEL (widget)->shadow, &event->area,
-	               widget, NULL, alloc->x, alloc->y, alloc->width, alloc->height);
+	ygtk_colored_label_parent_class = g_type_class_peek_parent (klass);
 
-	GTK_WIDGET_CLASS (ygtk_colored_label_parent_class)->expose_event (widget, event);
-	return FALSE;
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->expose_event  = ygtk_colored_label_expose_event;
 }

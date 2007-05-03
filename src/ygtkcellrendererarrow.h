@@ -26,16 +26,16 @@ G_BEGIN_DECLS
 #define YGTK_CELL_RENDERER_ARROW_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS ((obj), \
 	YGTK_TYPE_CELL_RENDERER_ARROW, YGtkCellRendererArrowClass))
 
-typedef struct YGtkCellRendererArrow
+typedef struct _YGtkCellRendererArrow
 {
-	GtkCellRenderer cell_renderer;
+	GtkCellRenderer parent;
 
-	// proprieties:
+	// private:
 	guint can_go_up : 1;
 	guint can_go_down : 1;
 } YGtkCellRendererArrow;
 
-typedef struct YGtkCellRendererArrowClass
+typedef struct _YGtkCellRendererArrowClass
 {
 	GtkCellRendererClass parent_class;
 	// signals:

@@ -29,9 +29,9 @@ typedef struct _YGtkBarGraphClass  YGtkBarGraphClass;
 
 struct _YGtkBarGraph
 {
-	YGtkRatioHBox ratio_box;
+	YGtkRatioHBox parent;
 
-	// private:
+	// private
 	GtkTooltips *m_tooltips;
 };
 
@@ -71,27 +71,24 @@ G_BEGIN_DECLS
 #define YGTK_COLORED_LABEL_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                             YGTK_TYPE_COLORED_LABEL, YGtkColoredLabelClass))
 
-typedef struct _YGtkColoredLabel       YGtkColoredLabel;
-typedef struct _YGtkColoredLabelClass  YGtkColoredLabelClass;
-
-struct _YGtkColoredLabel
+typedef struct _YGtkColoredLabel
 {
-	GtkLabel label;
+	GtkLabel parent;
 
-	// private:
+	// private
 	GtkShadowType shadow;
-};
+} YGtkColoredLabel;
 
-struct _YGtkColoredLabelClass
+typedef struct _YGtkColoredLabelClass
 {
 	GtkLabelClass parent_class;
-};
+} YGtkColoredLabelClass;
 
 GtkWidget *ygtk_colored_label_new (void);
 GType ygtk_colored_label_get_type (void) G_GNUC_CONST;
 
-// A convinience function -- you may use gtk_widget_modify_fg() and
-// gtk_widget_modify_bg() instead -- colors range is [0, 255]
+// A convenience function (you may use gtk_widget_modify_fg() and
+// gtk_widget_modify_bg() instead), where colors range is [0, 255]
 void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, guint red,
                                         guint green, guint blue);
 void ygtk_colored_label_set_background (YGtkColoredLabel *label, guint red,

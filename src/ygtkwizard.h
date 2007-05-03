@@ -30,35 +30,32 @@ G_BEGIN_DECLS
 #define YGTK_HELP_DIALOG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                           YGTK_TYPE_HELP_DIALOG, YGtkHelpDialogClass))
 
-typedef struct _YGtkHelpDialog       YGtkHelpDialog;
-typedef struct _YGtkHelpDialogClass  YGtkHelpDialogClass;
-
-struct _YGtkHelpDialog
+typedef struct _YGtkHelpDialog
 {
-	GtkWindow window;
+	GtkWindow parent;
 
-	// members (private)
+	// parent:
 	GtkWidget *title_box, *title_label, *title_image;
 	GtkWidget *help_box, *help_text;
 	GtkWidget *search_entry, *close_button;
 	GtkWidget *vbox;
-};
+} YGtkHelpDialog;
 
-struct _YGtkHelpDialogClass
+typedef struct _YGtkHelpDialogClass
 {
 	GtkWindowClass parent_class;
 
 	// signals
 	void (*find_next) (YGtkHelpDialog *dialog);
 	void (*close) (YGtkHelpDialog *dialog);
-};
+} YGtkHelpDialogClass;
 
 GtkWidget *ygtk_help_dialog_new (GtkWindow *parent);
 GType ygtk_help_dialog_get_type (void) G_GNUC_CONST;
 
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
 
-// YGtkWiazrd
+// YGtkWizard
 
 #define YGTK_TYPE_WIZARD            (ygtk_wizard_get_type ())
 #define YGTK_WIZARD(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
@@ -72,14 +69,11 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
 #define YGTK_WIZARD_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                      YGTK_TYPE_WIZARD, YGtkWizardClass))
 
-typedef struct _YGtkWizard       YGtkWizard;
-typedef struct _YGtkWizardClass  YGtkWizardClass;
-
-struct _YGtkWizard
+typedef struct _YGtkWizard
 {
 	GtkBin bin;
 
-	// members (private)
+	// private:
 	/* Hash tables to assign Yast Ids to Gtk entries. */
 	GHashTable *menu_ids;   /* gchar* -> GtkWidget*    */
 	GHashTable *tree_ids;   /* gchar* -> GtkTreePath*  */
@@ -97,15 +91,15 @@ struct _YGtkWizard
 	/* The help text. */
 	gchar     *m_help;
 	GtkWidget *m_help_dialog;
-};
+} YGtkWizard;
 
-struct _YGtkWizardClass
+typedef struct _YGtkWizardClass
 {
 	GtkBinClass parent_class;
 
-	// signal
+	// signals:
 	void (*action_triggered) (YGtkWizard *wizard, gpointer id, gint id_type);
-};
+} YGtkWizardClass;
 
 GtkWidget *ygtk_wizard_new (void);
 GType ygtk_wizard_get_type (void) G_GNUC_CONST;

@@ -29,20 +29,18 @@ G_BEGIN_DECLS
 #define YGTK_FILTER_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                   YGTK_TYPE_FILTER_ENTRY, YGtkFilterEntryClass))
 
-typedef struct _YGtkFilterEntry       YGtkFilterEntry;
-typedef struct _YGtkFilterEntryClass  YGtkFilterEntryClass;
-
-struct _YGtkFilterEntry
+typedef struct _YGtkFilterEntry
 {
-	GtkEntry entry;
+	GtkEntry parent;
 
+	// private:
 	gchar *valid_chars;
-};
+} YGtkFilterEntry;
 
-struct _YGtkFilterEntryClass
+typedef struct _YGtkFilterEntryClass
 {
 	GtkEntryClass parent_class;
-};
+} YGtkFilterEntryClass;
 
 GtkWidget* ygtk_filter_entry_new();
 GType ygtk_filter_entry_get_type (void) G_GNUC_CONST;
@@ -71,23 +69,21 @@ G_BEGIN_DECLS
 #define YGTK_FIELD_ENTRY_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                           YGTK_TYPE_FIELD_ENTRY, YGtkFieldEntryClass))
 
-typedef struct _YGtkFieldEntry       YGtkFieldEntry;
-typedef struct _YGtkFieldEntryClass  YGtkFieldEntryClass;
-
-struct _YGtkFieldEntry
+typedef struct _YGtkFieldEntry
 {
-	GtkHBox hbox;
+	GtkHBox parent;
 
+	// private:
 	// used to disable separator for the first field
 	gboolean use_separator;
-};
+} YGtkFieldEntry;
 
-struct _YGtkFieldEntryClass
+typedef struct _YGtkFieldEntryClass
 {
 	GtkHBoxClass parent_class;
 
 	void (* filter_entry_changed) (YGtkFieldEntry *entry, gint field_nb);
-};
+} YGtkFieldEntryClass;
 
 GtkWidget* ygtk_field_entry_new();
 GType ygtk_field_entry_get_type (void) G_GNUC_CONST;

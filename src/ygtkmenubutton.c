@@ -8,28 +8,9 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
-/* YGtkPopupWindow */
-
-static void ygtk_popup_window_class_init (YGtkPopupWindowClass *klass);
-static void ygtk_popup_window_init       (YGtkPopupWindow      *popup);
-
-static gboolean ygtk_popup_window_key_press_event (GtkWidget   *widget,
-                                                   GdkEventKey *key);
-static gboolean ygtk_popup_window_button_press_event (GtkWidget      *widget,
-                                                      GdkEventButton *key);
-static void ygtk_popup_window_hide (GtkWidget *widget);
+//** YGtkPopupWindow
 
 G_DEFINE_TYPE (YGtkPopupWindow, ygtk_popup_window, GTK_TYPE_WINDOW)
-
-static void ygtk_popup_window_class_init (YGtkPopupWindowClass *klass)
-{
-	ygtk_popup_window_parent_class = g_type_class_peek_parent (klass);
-
-	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->key_press_event = ygtk_popup_window_key_press_event;
-	widget_class->button_press_event = ygtk_popup_window_button_press_event;
-	widget_class->hide = ygtk_popup_window_hide;
-}
 
 static void ygtk_popup_window_init (YGtkPopupWindow *popup)
 {
@@ -42,11 +23,45 @@ static void ygtk_popup_window_init (YGtkPopupWindow *popup)
 	gtk_container_add (GTK_CONTAINER (window), frame);
 }
 
+static void ygtk_popup_window_hide (GtkWidget *widget)
+{
+	gtk_grab_remove (widget);
+	GTK_WIDGET_CLASS (ygtk_popup_window_parent_class)->hide (widget);
+}
+
+static gboolean ygtk_popup_window_key_press_event (GtkWidget *widget, GdkEventKey *event)
+{
+	if (event->keyval == GDK_Escape) {
+		gtk_widget_hide (widget);
+		return TRUE;
+	}
+	return GTK_WIDGET_CLASS (ygtk_popup_window_parent_class)->key_press_event
+	                                                              (widget, event);
+}
+
+static gboolean ygtk_popup_window_button_press_event (GtkWidget *widget,
+                                                      GdkEventButton *event)
+{
+	// NOTE: You can't rely on events x and y since the event may take place
+	// outside of the window.
+	// So, we'll check if this widget (or any of its kids) got the event
+	// If that's not the case, close the menu
+
+	GtkWidget *child = gtk_get_event_widget ((GdkEvent *) event);
+	if (child != widget)
+		while (child) {
+			if (child == widget)
+				return FALSE;
+			child = child->parent;
+		}
+	gtk_widget_hide (widget);
+	return TRUE;
+}
+
 GtkWidget *ygtk_popup_window_new (GtkWidget *child)
 {
 	GtkWidget *widget = g_object_new (YGTK_TYPE_POPUP_WINDOW,
 	                                  "type", GTK_WINDOW_POPUP, NULL);
-
 	GtkWidget *frame = gtk_bin_get_child (GTK_BIN (widget));
 	gtk_container_add (GTK_CONTAINER (frame), child);
 	return widget;
@@ -67,69 +82,19 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 			gdk_pointer_ungrab(activate_time);
 }
 
-void ygtk_popup_window_hide (GtkWidget *widget)
+static void ygtk_popup_window_class_init (YGtkPopupWindowClass *klass)
 {
-	gtk_grab_remove (widget);
-	GTK_WIDGET_CLASS (ygtk_popup_window_parent_class)->hide (widget);
-}
-
-gboolean ygtk_popup_window_key_press_event (GtkWidget *widget, GdkEventKey *event)
-{
-	if (event->keyval == GDK_Escape) {
-//		g_signal_stop_emission_by_name(widget, "key_press_event");
-		gtk_widget_hide (widget);
-		return TRUE;
-	}
-	return FALSE;
-}
-
-gboolean ygtk_popup_window_button_press_event (GtkWidget      *widget,
-                                               GdkEventButton *event)
-{
-	// NOTE: You can't rely on events x and y since the event may take place
-	// outside of the window.
-	// So, we'll check if this widget (or any of its kids) got the event
-	// If that's not the case, close the menu
-
-	GtkWidget *child = gtk_get_event_widget ((GdkEvent *) event);
-	if (child != widget)
-		while (child) {
-			if (child == widget)
-				return FALSE;
-			child = child->parent;
-		}
-	gtk_widget_hide (widget);
-	return TRUE;
-}
-
-/* YGtkMenuButton */
-
-static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass);
-static void ygtk_menu_button_init       (YGtkMenuButton      *button);
-static void ygtk_menu_button_finalize   (GObject             *object);
-
-static gint ygtk_menu_button_button_press (GtkWidget          *widget,
-                                           GdkEventButton     *event);
-static void ygtk_menu_button_button_toggle (GtkToggleButton   *button);
-
-static void ygtk_menu_button_show_popup (YGtkMenuButton *button);
-static void ygtk_menu_button_hide_popup (YGtkMenuButton *button);
-
-G_DEFINE_TYPE (YGtkMenuButton, ygtk_menu_button, GTK_TYPE_TOGGLE_BUTTON)
-
-static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass)
-{
-	ygtk_menu_button_parent_class = g_type_class_peek_parent (klass);
-
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	gobject_class->finalize = ygtk_menu_button_finalize;
+	ygtk_popup_window_parent_class = g_type_class_peek_parent (klass);
 
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->button_press_event = ygtk_menu_button_button_press;
-
-	GtkToggleButtonClass *toggle_button_class = GTK_TOGGLE_BUTTON_CLASS (klass);
-	toggle_button_class->toggled = ygtk_menu_button_button_toggle;
+	widget_class->key_press_event = ygtk_popup_window_key_press_event;
+	widget_class->button_press_event = ygtk_popup_window_button_press_event;
+	widget_class->hide = ygtk_popup_window_hide;
 }
+
+//** YGtkMenuButton
+
+G_DEFINE_TYPE (YGtkMenuButton, ygtk_menu_button, GTK_TYPE_TOGGLE_BUTTON)
 
 static void ygtk_menu_button_init (YGtkMenuButton *button)
 {
@@ -165,42 +130,10 @@ static void ygtk_menu_button_free_popup (YGtkMenuButton *button)
 	}
 }
 
-void ygtk_menu_button_finalize (GObject *object)
+static void ygtk_menu_button_finalize (GObject *object)
 {
 	ygtk_menu_button_free_popup (YGTK_MENU_BUTTON (object));
 	G_OBJECT_CLASS (ygtk_menu_button_parent_class)->finalize (object);
-}
-
-GtkWidget *ygtk_menu_button_new()
-{
-	return g_object_new (YGTK_TYPE_MENU_BUTTON, NULL);
-}
-
-void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
-{
-	gtk_label_set_text_with_mnemonic (GTK_LABEL (button->label), label);
-	gtk_widget_show (button->label);
-}
-
-static void menu_button_hide_popup (GtkWidget *widget, YGtkMenuButton *button)
-{ ygtk_menu_button_hide_popup (button); }
-
-void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
-{
-	ygtk_menu_button_free_popup (button);
-
-	if (!GTK_IS_MENU (popup) && !IS_YGTK_POPUP_WINDOW (popup)) {
-		// install widget on a YGtkPopupMenu
-		button->popup = ygtk_popup_window_new (popup);
-	}
-	else
-		button->popup = popup;
-
-	g_object_ref (G_OBJECT (button->popup));
-	gtk_object_sink (GTK_OBJECT (button->popup));
-
-	g_signal_connect (G_OBJECT (popup), "hide",
-	                  G_CALLBACK (menu_button_hide_popup), button);
 }
 
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
@@ -248,7 +181,7 @@ static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
 	*push_in = FALSE;
 }
 
-void ygtk_menu_button_show_popup (YGtkMenuButton *button)
+static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 {
 	GtkWidget *widget = GTK_WIDGET (button);
 	GtkWidget *popup = button->popup;
@@ -273,12 +206,12 @@ void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 		gtk_widget_set_size_request (popup, widget->allocation.width, -1);
 }
 
-void ygtk_menu_button_hide_popup (YGtkMenuButton *button)
+static void ygtk_menu_button_hide_popup (YGtkMenuButton *button)
 {
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
 }
 
-void ygtk_menu_button_button_toggle (GtkToggleButton *button)
+static void ygtk_menu_button_button_toggle (GtkToggleButton *button)
 {
 	if (gtk_toggle_button_get_active (button))
 		ygtk_menu_button_show_popup (YGTK_MENU_BUTTON (button));
@@ -286,7 +219,7 @@ void ygtk_menu_button_button_toggle (GtkToggleButton *button)
 		ygtk_menu_button_hide_popup (YGTK_MENU_BUTTON (button));
 }
 
-gint ygtk_menu_button_button_press (GtkWidget *widget, GdkEventButton *event)
+static gint ygtk_menu_button_button_press (GtkWidget *widget, GdkEventButton *event)
 {
 	if (event->type == GDK_BUTTON_PRESS && event->button == 1) {
 		if (!gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
@@ -298,4 +231,50 @@ gint ygtk_menu_button_button_press (GtkWidget *widget, GdkEventButton *event)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+GtkWidget *ygtk_menu_button_new()
+{
+	return g_object_new (YGTK_TYPE_MENU_BUTTON, NULL);
+}
+
+void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
+{
+	gtk_label_set_text_with_mnemonic (GTK_LABEL (button->label), label);
+	gtk_widget_show (button->label);
+}
+
+static void menu_button_hide_popup (GtkWidget *widget, YGtkMenuButton *button)
+{ ygtk_menu_button_hide_popup (button); }
+
+void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
+{
+	ygtk_menu_button_free_popup (button);
+
+	if (!GTK_IS_MENU (popup) && !IS_YGTK_POPUP_WINDOW (popup)) {
+		// install widget on a YGtkPopupMenu
+		button->popup = ygtk_popup_window_new (popup);
+	}
+	else
+		button->popup = popup;
+
+	g_object_ref (G_OBJECT (button->popup));
+	gtk_object_sink (GTK_OBJECT (button->popup));
+
+	g_signal_connect (G_OBJECT (popup), "hide",
+	                  G_CALLBACK (menu_button_hide_popup), button);
+}
+
+static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass)
+{
+	ygtk_menu_button_parent_class = g_type_class_peek_parent (klass);
+
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class->finalize = ygtk_menu_button_finalize;
+
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->button_press_event = ygtk_menu_button_button_press;
+
+	GtkToggleButtonClass *toggle_button_class = GTK_TOGGLE_BUTTON_CLASS (klass);
+	toggle_button_class->toggled = ygtk_menu_button_button_toggle;
 }

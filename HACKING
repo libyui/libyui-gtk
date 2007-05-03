@@ -158,10 +158,13 @@ Code practices
   http://pantransit.reptiles.org/prog/CodingStyle.html
   There may be some differences as it obviously doesn't mention
   C++ classes.
-  I also use tabs for identation and spaces for layout so that
-  the code looks nice no matter your tab stops. But the only
-  requirement is that it looks nice on 4 tab stops, so you may
-  want to set that definition.
+  For identations, tabs are used. For layout, spaces are used.
+  Example:
+  <tab>int variable_with_very_long_name = function (arg1,
+  <tab>.............................................arg2);
+  This ensures the code lays well in whatever editor the reader uses.
+  Lines must just be ensured to be breaked before the 80th column on
+  4 stop tabs.
 
   Speaking of classes, we don't use headers, unless we have to, as
   opposite to the other interfaces code. There is no reason to
@@ -174,6 +177,10 @@ Code practices
   for the most part. Our Gtk widgets (on ygtk* files) are written
   in C and follow this_name_style to fit better with GTK+ one.
   We always prefix m_ to class memeber variables.
+
+  For GTK+ widgets, we follow some scheme. Most standing, we avoid declaring
+  functions, and do the class initilization, where the overloading is set,
+  at the bottom. When doing a widget, just copy and paste from another.
 
 Morphing Suse to use Yast-GTK
 

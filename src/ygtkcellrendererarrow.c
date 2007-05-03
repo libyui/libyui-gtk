@@ -9,21 +9,6 @@
 #define ARROW_WIDTH  18
 #define ARROW_HEIGHT 14
 
-static void ygtk_cell_renderer_arrow_get_property (GObject *object,
-	guint param_id, GValue *value, GParamSpec *pspec);
-static void ygtk_cell_renderer_arrow_set_property (GObject *object,
-	guint param_id, const GValue *value, GParamSpec *pspec);
-
-static void ygtk_cell_renderer_arrow_get_size (GtkCellRenderer *cell,
-	GtkWidget *widget, GdkRectangle *cell_area, gint *x_offset, gint *y_offset,
-	gint *width, gint*height);
-static void ygtk_cell_renderer_arrow_render (GtkCellRenderer *cell,
-	GdkWindow *window, GtkWidget *widget, GdkRectangle *background_area,
-	GdkRectangle *cell_area, GdkRectangle *expose_area, GtkCellRendererState flags);
-static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
-	GdkEvent *event, GtkWidget *widget, const gchar *path,
-	GdkRectangle *background_area, GdkRectangle *cell_area, GtkCellRendererState flags);
-
 enum {
   PROP_0,
   PROP_CAN_GO_UP,
@@ -57,6 +42,7 @@ static void ygtk_marshal_VOID__UINT_STRING (GClosure *closure, GValue *return_va
 }
 
 G_DEFINE_TYPE (YGtkCellRendererArrow, ygtk_cell_renderer_arrow, GTK_TYPE_CELL_RENDERER)
+
 static void ygtk_cell_renderer_arrow_init (YGtkCellRendererArrow *cell_arrow)
 {
 	GTK_CELL_RENDERER (cell_arrow)->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE;
@@ -66,34 +52,6 @@ static void ygtk_cell_renderer_arrow_init (YGtkCellRendererArrow *cell_arrow)
 	GTK_CELL_RENDERER (cell_arrow)->ypad = 0;
 
 	cell_arrow->can_go_up = cell_arrow->can_go_down = TRUE;
-}
-
-static void ygtk_cell_renderer_arrow_class_init (YGtkCellRendererArrowClass *class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	GtkCellRendererClass *cell_class = GTK_CELL_RENDERER_CLASS (class);
-
-	object_class->get_property = ygtk_cell_renderer_arrow_get_property;
-	object_class->set_property = ygtk_cell_renderer_arrow_set_property;
-
-	cell_class->get_size = ygtk_cell_renderer_arrow_get_size;
-	cell_class->render   = ygtk_cell_renderer_arrow_render;
-	cell_class->activate = ygtk_cell_renderer_arrow_activate;
-
-	g_object_class_install_property (object_class, PROP_CAN_GO_UP,
-		g_param_spec_boolean ("can-go-up", "Can Go Up",
-		"Whether the up arrow can be pressed", TRUE,
-		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
-	g_object_class_install_property (object_class, PROP_CAN_GO_DOWN,
-		g_param_spec_boolean ("can-go-down", "Can Go Down",
-		"Whether the down arrow can be pressed", TRUE,
-		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
-
-	/* signal sent when an arrow is pressed */
-	pressed_signal = g_signal_new ("pressed", G_OBJECT_CLASS_TYPE (object_class),
-		G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (YGtkCellRendererArrowClass, pressed),
-		NULL, NULL, ygtk_marshal_VOID__UINT_STRING, G_TYPE_NONE, 2,
-		G_TYPE_UINT, G_TYPE_STRING);
 }
 
 static void ygtk_cell_renderer_arrow_get_property (GObject *object,
@@ -129,9 +87,6 @@ static void ygtk_cell_renderer_arrow_set_property (GObject *object,
 			break;
 	}
 }
-
-GtkCellRenderer *ygtk_cell_renderer_arrow_new()
-{ return g_object_new (YGTK_TYPE_CELL_RENDERER_ARROW, NULL); }
 
 static void ygtk_cell_renderer_arrow_get_size (GtkCellRenderer *cell,
 	GtkWidget *widget, GdkRectangle *cell_area, gint *x_offset, gint *y_offset,
@@ -267,4 +222,35 @@ static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
 		}
 	}
 	return FALSE;
+}
+
+GtkCellRenderer *ygtk_cell_renderer_arrow_new()
+{ return g_object_new (YGTK_TYPE_CELL_RENDERER_ARROW, NULL); }
+
+static void ygtk_cell_renderer_arrow_class_init (YGtkCellRendererArrowClass *class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	GtkCellRendererClass *cell_class = GTK_CELL_RENDERER_CLASS (class);
+
+	object_class->get_property = ygtk_cell_renderer_arrow_get_property;
+	object_class->set_property = ygtk_cell_renderer_arrow_set_property;
+
+	cell_class->get_size = ygtk_cell_renderer_arrow_get_size;
+	cell_class->render   = ygtk_cell_renderer_arrow_render;
+	cell_class->activate = ygtk_cell_renderer_arrow_activate;
+
+	g_object_class_install_property (object_class, PROP_CAN_GO_UP,
+		g_param_spec_boolean ("can-go-up", "Can Go Up",
+		"Whether the up arrow can be pressed", TRUE,
+		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
+	g_object_class_install_property (object_class, PROP_CAN_GO_DOWN,
+		g_param_spec_boolean ("can-go-down", "Can Go Down",
+		"Whether the down arrow can be pressed", TRUE,
+		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
+
+	/* signal sent when an arrow is pressed */
+	pressed_signal = g_signal_new ("pressed", G_OBJECT_CLASS_TYPE (object_class),
+		G_SIGNAL_RUN_LAST, G_STRUCT_OFFSET (YGtkCellRendererArrowClass, pressed),
+		NULL, NULL, ygtk_marshal_VOID__UINT_STRING, G_TYPE_NONE, 2,
+		G_TYPE_UINT, G_TYPE_STRING);
 }

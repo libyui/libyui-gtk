@@ -10,7 +10,6 @@
 #define YGTK_RICHTEXT_H
 
 #include <gtk/gtktextview.h>
-
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_RICHTEXT            (ygtk_richtext_get_type ())
@@ -25,23 +24,20 @@ G_BEGIN_DECLS
 #define YGTK_RICHTEXT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                        YGTK_TYPE_RICHTEXT, YGtkRichTextClass))
 
-typedef struct _YGtkRichText       YGtkRichText;
-typedef struct _YGtkRichTextClass  YGtkRichTextClass;
-
-struct _YGtkRichText
+typedef struct _YGtkRichText
 {
-	GtkTextView text_view;
-
+	GtkTextView parent;
+	// private:
 	char *prodname;
-};
+} YGtkRichText;
 
-struct _YGtkRichTextClass
+typedef struct _YGtkRichTextClass
 {
 	GtkTextViewClass parent_class;
 
-	// signal
+	// signals:
 	void (*link_pressed) (YGtkRichText *rich_text, const gchar* link);
-};
+} YGtkRichTextClass;
 
 GtkWidget* ygtk_richtext_new();
 GType ygtk_richtext_get_type (void) G_GNUC_CONST;
@@ -54,7 +50,7 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
 
 void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname);
 
-// Set a background image -- widget must have be realized
+// Set a background image -- widget must be realized
 void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image);
 
 // To be used together with an entry box to search for text
@@ -62,5 +58,4 @@ gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text);
 gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text);  // F3
 
 G_END_DECLS
-
 #endif /* YGTK_RICHTEXT_H */

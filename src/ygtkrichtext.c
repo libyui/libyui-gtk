@@ -17,38 +17,66 @@
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
                                            gboolean cut_breaklines);
 
-static void ygtk_richtext_class_init (YGtkRichTextClass *klass);
-static void ygtk_richtext_init       (YGtkRichText      *rich_text);
-static void ygtk_richtext_destroy    (GtkObject         *object);
-
-// slots
-static gboolean event_after (GtkWidget *text_view, GdkEvent *ev);
-static gboolean motion_notify_event (GtkWidget *text_view, GdkEventMotion *event);
-static gboolean visibility_notify_event (GtkWidget          *text_view,
-                                         GdkEventVisibility *event);
-
 G_DEFINE_TYPE (YGtkRichText, ygtk_richtext, GTK_TYPE_TEXT_VIEW)
-static GtkTextViewClass *parent_class = NULL;
 
 static GdkCursor *hand_cursor, *regular_cursor;
 static guint ref_cursor = 0;
-
 static guint link_pressed_signal;
+static GdkColor link_color = { 0, 0, 0, 0xeeee };
 
-void ygtk_richtext_class_init (YGtkRichTextClass *klass)
+// utilities
+// Looks at all tags covering the position of iter in the text view,
+// and returns the link the text points to, in case that text is a link.
+static const char* get_link (GtkTextView *text_view, gint x, gint y)
 {
-	parent_class = g_type_class_peek_parent (klass);
+	GtkTextIter iter;
+	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
 
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_richtext_destroy;
+	char *link = NULL;
+	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
+	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
+		GtkTextTag *tag = (GtkTextTag*) tagp->data;
+		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
+		if (link)
+			break;
+	}
 
-	link_pressed_signal = g_signal_new ("link-pressed",
-		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
-		G_STRUCT_OFFSET (YGtkRichTextClass, link_pressed), NULL, NULL,
-		g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
+	if (tags)
+		g_slist_free (tags);
+	return link;
 }
 
-static GdkColor link_color = { 0, 0, 0, 0xeeee };
+// callbacks
+// Links can also be activated by clicking.
+static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
+{
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+	GdkEventButton *event;
+	gint x, y;
+
+	if (ev->type != GDK_BUTTON_RELEASE)
+		return FALSE;
+
+	event = (GdkEventButton *)ev;
+	if (event->button != 1)
+		return FALSE;
+
+	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
+
+	// We shouldn't follow a link if the user is selecting something.
+	gtk_text_buffer_get_selection_bounds (buffer, &start, &end);
+	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
+		return FALSE;
+
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
+
+	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
+	if (link)  // report link
+		g_signal_emit (YGTK_RICHTEXT (text_view), link_pressed_signal, 0, link);
+	return FALSE;
+}
 
 void ygtk_richtext_init (YGtkRichText *rtext)
 {
@@ -74,10 +102,6 @@ void ygtk_richtext_init (YGtkRichText *rtext)
 
 	g_signal_connect (tview, "event-after",
 	                  G_CALLBACK (event_after), NULL);
-	g_signal_connect (tview, "motion-notify-event",
-	                  G_CALLBACK (motion_notify_event), NULL);
-	g_signal_connect (tview, "visibility-notify-event",
-	                  G_CALLBACK (visibility_notify_event), NULL);
 
 	// Init tags
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
@@ -132,12 +156,56 @@ static void ygtk_richtext_destroy (GtkObject *object)
 		g_free (rtext->prodname);
 	rtext->prodname = NULL;
 
-	GTK_OBJECT_CLASS (parent_class)->destroy (object);
+	GTK_OBJECT_CLASS (ygtk_richtext_parent_class)->destroy (object);
 }
 
-GtkWidget *ygtk_richtext_new()
+// Change the cursor to the "hands" cursor typically used by web browsers,
+// if there is a link in the given position.
+static void set_cursor_if_appropriate (GtkTextView *text_view, gint x, gint y)
+	{
+	static gboolean hovering_over_link = FALSE;
+	gboolean hovering = get_link (text_view, x, y) != NULL;
+
+	if (hovering != hovering_over_link) {
+		hovering_over_link = hovering;
+
+		if (hovering_over_link)
+			gdk_window_set_cursor (gtk_text_view_get_window
+					(text_view, GTK_TEXT_WINDOW_TEXT), hand_cursor);
+		else
+			gdk_window_set_cursor (gtk_text_view_get_window
+					(text_view, GTK_TEXT_WINDOW_TEXT), regular_cursor);
+		}
+}
+
+// Update the cursor image if the pointer moved.
+static gboolean ygtk_richtext_motion_notify_event (GtkWidget *text_view,
+                                                   GdkEventMotion *event)
 {
-	return g_object_new (YGTK_TYPE_RICHTEXT, NULL);
+	gint x, y;
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+	                                       GTK_TEXT_WINDOW_WIDGET,
+	                                       (gint) event->x, (gint) event->y,
+	                                       &x, &y);
+	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), x, y);
+
+	gdk_window_get_pointer (text_view->window, NULL, NULL, NULL);
+	return TRUE;
+}
+
+// Also update the cursor image if the window becomes visible
+// (e.g. when a window covering it got iconified).
+static gboolean ygtk_richtext_visibility_notify_event (GtkWidget *text_view,
+                                                       GdkEventVisibility *event)
+{
+	gint wx, wy, bx, by;
+
+	gdk_window_get_pointer (text_view->window, &wx, &wy, NULL);
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view), 
+	                                       GTK_TEXT_WINDOW_WIDGET,
+	                                       wx, wy, &bx, &by);
+	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), bx, by);
+	return TRUE;
 }
 
 /* Rich Text parsing methods. */
@@ -444,105 +512,9 @@ static GMarkupParser rt_parser = {
 	rt_error
 };
 
-// Looks at all tags covering the position of iter in the text view,
-// and returns the link the text points to, in case that text is a link.
-static const char* get_link (GtkTextView *text_view, gint x, gint y)
+GtkWidget *ygtk_richtext_new()
 {
-	GtkTextIter iter;
-	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
-
-	char *link = NULL;
-	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
-	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
-		GtkTextTag *tag = (GtkTextTag*) tagp->data;
-		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
-		if (link)
-			break;
-	}
-
-	if (tags)
-		g_slist_free (tags);
-	return link;
-}
-
-// Links can also be activated by clicking.
-static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
-{
-	GtkTextIter start, end;
-	GtkTextBuffer *buffer;
-	GdkEventButton *event;
-	gint x, y;
-
-	if (ev->type != GDK_BUTTON_RELEASE)
-		return FALSE;
-
-	event = (GdkEventButton *)ev;
-	if (event->button != 1)
-		return FALSE;
-
-	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
-
-	// We shouldn't follow a link if the user is selecting something.
-	gtk_text_buffer_get_selection_bounds (buffer, &start, &end);
-	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
-		return FALSE;
-
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
-
-	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
-	if (link)  // report link
-		g_signal_emit (YGTK_RICHTEXT (text_view), link_pressed_signal, 0, link);
-	return FALSE;
-}
-
-// Change the cursor to the "hands" cursor typically used by web browsers,
-// if there is a link in the given position.
-static void set_cursor_if_appropriate (GtkTextView *text_view, gint x, gint y)
-	{
-	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (text_view, x, y) != NULL;
-
-	if (hovering != hovering_over_link) {
-		hovering_over_link = hovering;
-
-		if (hovering_over_link)
-			gdk_window_set_cursor (gtk_text_view_get_window
-					(text_view, GTK_TEXT_WINDOW_TEXT), hand_cursor);
-		else
-			gdk_window_set_cursor (gtk_text_view_get_window
-					(text_view, GTK_TEXT_WINDOW_TEXT), regular_cursor);
-		}
-}
-
-// Update the cursor image if the pointer moved.
-static gboolean motion_notify_event (GtkWidget *text_view, GdkEventMotion *event)
-{
-	gint x, y;
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-	                                       GTK_TEXT_WINDOW_WIDGET,
-	                                       (gint) event->x, (gint) event->y,
-	                                       &x, &y);
-	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), x, y);
-
-	gdk_window_get_pointer (text_view->window, NULL, NULL, NULL);
-	return FALSE;
-}
-
-// Also update the cursor image if the window becomes visible
-// (e.g. when a window covering it got iconified).
-static gboolean visibility_notify_event (GtkWidget          *text_view,
-                                         GdkEventVisibility *event)
-{
-	gint wx, wy, bx, by;
-
-	gdk_window_get_pointer (text_view->window, &wx, &wy, NULL);
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view), 
-	                                       GTK_TEXT_WINDOW_WIDGET,
-	                                       wx, wy, &bx, &by);
-	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), bx, by);
-
-	return FALSE;
+	return g_object_new (YGTK_TYPE_RICHTEXT, NULL);
 }
 
 /* String preparation methods. */
@@ -722,4 +694,19 @@ gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+void ygtk_richtext_class_init (YGtkRichTextClass *klass)
+{
+	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
+	gtkwidget_class->motion_notify_event = ygtk_richtext_motion_notify_event;
+	gtkwidget_class->visibility_notify_event = ygtk_richtext_visibility_notify_event;
+
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_richtext_destroy;
+
+	link_pressed_signal = g_signal_new ("link-pressed",
+		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (YGtkRichTextClass, link_pressed), NULL, NULL,
+		g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
 }

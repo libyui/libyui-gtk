@@ -3,7 +3,8 @@
 
 /* YGtkMenuButton is a button that displays a widget when pressed.
    This widget can either be of type GtkMenu or another, like a
-   GtkCalendar and we'll do the proper "emulation".
+   GtkCalendar and we'll do the proper "emulation" (the work of
+   the YGtkPopupWindow widget).
 */
 
 #ifndef YGTK_POPUP_WINDOW_H
@@ -24,18 +25,15 @@ G_BEGIN_DECLS
 #define YGTK_POPUP_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                           YGTK_TYPE_POPUP_WINDOW, YGtkPopupWindowClass))
 
-typedef struct _YGtkPopupWindow       YGtkPopupWindow;
-typedef struct _YGtkPopupWindowClass  YGtkPopupWindowClass;
-
-struct _YGtkPopupWindow
+typedef struct _YGtkPopupWindow
 {
-	GtkWindow window;
-};
+	GtkWindow parent;
+} YGtkPopupWindow;
 
-struct _YGtkPopupWindowClass
+typedef struct _YGtkPopupWindowClass
 {
 	GtkWindowClass parent_class;
-};
+} YGtkPopupWindowClass;
 
 // don't forget to use gtk_widget_show() on the child!
 GtkWidget* ygtk_popup_window_new (GtkWidget *child);
@@ -65,20 +63,18 @@ G_BEGIN_DECLS
 #define YGTK_MENU_BUTTON_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                           YGTK_TYPE_MENU_BUTTON, YGtkMenuButtonClass))
 
-typedef struct _YGtkMenuButton       YGtkMenuButton;
-typedef struct _YGtkMenuButtonClass  YGtkMenuButtonClass;
-
-struct _YGtkMenuButton
+typedef struct _YGtkMenuButton
 {
-	GtkToggleButton button;
+	GtkToggleButton parent;
 
+	// private:
 	GtkWidget *label, *popup;
-};
+} YGtkMenuButton;
 
-struct _YGtkMenuButtonClass
+typedef struct _YGtkMenuButtonClass
 {
 	GtkToggleButtonClass parent_class;
-};
+} YGtkMenuButtonClass;
 
 GtkWidget* ygtk_menu_button_new();
 GType ygtk_menu_button_get_type (void) G_GNUC_CONST;
@@ -86,7 +82,7 @@ GType ygtk_menu_button_get_type (void) G_GNUC_CONST;
 void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label);
 
 /* Popup must be either a GtkMenu or a YGtkPopupWindow. */
-// You may hide your popup "manually" with gtk_widget_hide() on it
+// You may hide your popup "manually" issueing a gtk_widget_hide() on it
 void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup);
 
 G_END_DECLS

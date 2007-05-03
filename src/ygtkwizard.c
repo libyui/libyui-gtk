@@ -21,46 +21,32 @@
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
 
-/** YGtkHelpDialog **/
-static YGtkHelpDialogClass *help_dialog_parent_class = NULL;
-
-static void ygtk_help_dialog_realize (GtkWidget *widget);
-static gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event);
-// callbacks
-static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog);
-static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog);
-static void ygtk_help_dialog_close (YGtkHelpDialog *dialog);
-static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
-{ ygtk_help_dialog_find_next (dialog); }
+//** YGtkHelpDialog
 
 G_DEFINE_TYPE (YGtkHelpDialog, ygtk_help_dialog, GTK_TYPE_WINDOW)
 
-static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
+// callbacks
+static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 {
-	help_dialog_parent_class = g_type_class_peek_parent (klass);
-
-	klass->find_next = ygtk_help_dialog_find_next;
-	klass->close = ygtk_help_dialog_close;
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->expose_event = ygtk_help_dialog_expose_event;
-	widget_class->realize = ygtk_help_dialog_realize;
-
-	// key bindings (eg. F3 for next word)
-	g_signal_new ("find_next", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
-	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-	              G_STRUCT_OFFSET (YGtkHelpDialogClass, find_next),
-	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
-	g_signal_new ("close", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
-	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
-	              G_STRUCT_OFFSET (YGtkHelpDialogClass, close),
-	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
-
-	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
-	gtk_binding_entry_add_signal (binding_set, GDK_F3, 0, "find_next", 0);
-	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
+	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
+	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
 }
 
+static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
+{
+	gchar *key = gtk_editable_get_chars (editable, 0, -1);
+	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
+		GdkColor red = { 0, 255 << 8, 0, 0 };
+		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
+		gdk_beep();
+	}
+	else
+		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
+	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
+	g_free (key);
+}
+static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
+{ ygtk_help_dialog_find_next (dialog); }
 static void close_button_clicked_cb (GtkButton *button, YGtkHelpDialog *dialog)
 { gtk_widget_hide (GTK_WIDGET (dialog)); }
 
@@ -130,9 +116,9 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	                  G_CALLBACK (gtk_widget_hide_on_delete), NULL);
 }
 
-void ygtk_help_dialog_realize (GtkWidget *widget)
+static void ygtk_help_dialog_realize (GtkWidget *widget)
 {
-	GTK_WIDGET_CLASS (help_dialog_parent_class)->realize (widget);
+	GTK_WIDGET_CLASS (ygtk_help_dialog_parent_class)->realize (widget);
 	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (widget);
 
 	// set help text background
@@ -145,7 +131,7 @@ void ygtk_help_dialog_realize (GtkWidget *widget)
 	gtk_widget_grab_focus (dialog->close_button);
 }
 
-gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
 	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (widget);
 
@@ -169,6 +155,9 @@ gboolean ygtk_help_dialog_expose_event (GtkWidget *widget, GdkEventExpose *event
 	return FALSE;
 }
 
+static void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
+{ gtk_widget_hide (GTK_WIDGET (dialog)); }
+
 GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 {
 	GtkWidget *dialog = g_object_new (YGTK_TYPE_HELP_DIALOG, NULL);
@@ -183,32 +172,31 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
 }
 
-void ygtk_help_dialog_close (YGtkHelpDialog *dialog)
+static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 {
-	gtk_widget_hide (GTK_WIDGET (dialog));
+	klass->find_next = ygtk_help_dialog_find_next;
+	klass->close = ygtk_help_dialog_close;
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->expose_event = ygtk_help_dialog_expose_event;
+	widget_class->realize = ygtk_help_dialog_realize;
+
+	// key bindings (eg. F3 for next word)
+	g_signal_new ("find_next", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
+	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	              G_STRUCT_OFFSET (YGtkHelpDialogClass, find_next),
+	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+	g_signal_new ("close", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
+	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	              G_STRUCT_OFFSET (YGtkHelpDialogClass, close),
+	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
+	gtk_binding_entry_add_signal (binding_set, GDK_F3, 0, "find_next", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
 }
 
-void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
-{
-	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
-	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
-}
-
-void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
-{
-	gchar *key = gtk_editable_get_chars (editable, 0, -1);
-	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
-		GdkColor red = { 0, 255 << 8, 0, 0 };
-		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
-		gdk_beep();
-	}
-	else
-		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
-	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
-	g_free (key);
-}
-
-/** YGtkWizard **/
+//** YGtkWizard
 
 static gint get_header_padding (GtkWidget *widget)
 {
@@ -233,26 +221,7 @@ static gint get_content_padding (GtkWidget *widget)
 #endif
 }
 
-static void ygtk_wizard_class_init (YGtkWizardClass *klass);
-static void ygtk_wizard_init       (YGtkWizard      *wizard);
-static void ygtk_wizard_destroy    (GtkObject       *object);
-static void ygtk_wizard_realize    (GtkWidget       *widget);
-static void ygtk_wizard_size_request  (GtkWidget      *widget,
-                                       GtkRequisition *requisition);
-static void ygtk_wizard_size_allocate (GtkWidget      *widget,
-                                       GtkAllocation  *allocation);
-static gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event);
-static void ygtk_wizard_forall (GtkContainer *container, gboolean include_internals,
-                                GtkCallback   callback,  gpointer callback_data);
-
 // callbacks
-static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard);
-static void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard);
-static void selected_menu_item_cb (GtkMenuItem *item, const char* id);
-static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard);
-
-static AtkObject *ygtk_wizard_get_accessible (GtkWidget *widget);
-
 static void destroy_tree_path (gpointer data)
 {
 	GtkTreePath *path = data;
@@ -261,7 +230,7 @@ static void destroy_tree_path (gpointer data)
 
 // signals
 static guint action_triggered_signal;
-// marshal
+
 static void ygtk_marshal_VOID__POINTER_INT (GClosure *closure,
 	GValue *return_value, guint n_param_values, const GValue *param_values,
 	gpointer invocation_hint, gpointer marshal_data)
@@ -289,31 +258,10 @@ static void ygtk_marshal_VOID__POINTER_INT (GClosure *closure,
 	                 g_value_get_int (param_values + 2), data2);
 }
 
-G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_BIN)
-
-static void ygtk_wizard_class_init (YGtkWizardClass *klass)
+static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard)
 {
-	ygtk_wizard_parent_class = g_type_class_peek_parent (klass);
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	//** Get expose, so we can draw line border
-	widget_class->expose_event = ygtk_wizard_expose_event;
-	widget_class->realize = ygtk_wizard_realize;
-	widget_class->size_request  = ygtk_wizard_size_request;
-	widget_class->size_allocate = ygtk_wizard_size_allocate;
-	widget_class->get_accessible = ygtk_wizard_get_accessible;
-
-	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
-	container_class->forall = ygtk_wizard_forall;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_wizard_destroy;
-
-	action_triggered_signal = g_signal_new ("action-triggered",
-		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
-		G_STRUCT_OFFSET (YGtkWizardClass, action_triggered),
-		NULL, NULL, ygtk_marshal_VOID__POINTER_INT, G_TYPE_NONE,
-		2, G_TYPE_POINTER, G_TYPE_INT);
+	gpointer id = g_object_get_data (G_OBJECT (button), "id");
+	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
 }
 
 static GtkWidget *button_new (YGtkWizard *wizard)
@@ -324,6 +272,19 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 			  G_CALLBACK (button_clicked_cb), wizard);
 	return button;
 }
+
+static void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
+{
+	if (!wizard->m_help_dialog) {
+		wizard->m_help_dialog = ygtk_help_dialog_new
+			((GtkWindow *) gtk_widget_get_ancestor (button, GTK_TYPE_WINDOW));
+		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
+		                           wizard->m_help);
+	}
+	gtk_widget_show (wizard->m_help_dialog);
+}
+
+G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_BIN)
 
 static void ygtk_wizard_init (YGtkWizard *wizard)
 {
@@ -456,6 +417,19 @@ static void ygtk_wizard_destroy (GtkObject *object)
 GtkWidget *ygtk_wizard_new (void)
 {
 	return g_object_new (YGTK_TYPE_WIZARD, NULL);
+}
+
+static void selected_menu_item_cb (GtkMenuItem *item, const char *id)
+{
+	YGtkWizard *wizard = g_object_get_data (G_OBJECT (item), "wizard");
+	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
+}
+
+static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard)
+{
+	const gchar *id = ygtk_wizard_get_tree_selection (wizard);
+	if (id)
+		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
 void ygtk_wizard_enable_steps (YGtkWizard *wizard)
@@ -835,9 +809,7 @@ void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive)
 		gtk_widget_set_sensitive (wizard->m_next_button, TRUE);
 }
 
-//** internal stuff
-
-void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisition)
+static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 
@@ -908,7 +880,7 @@ static void apply_allocation_padding (GtkAllocation *alloc, gint padding)
 	alloc->height -= padding * 2;
 }
 
-void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
+static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 
@@ -996,7 +968,7 @@ void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->size_allocate (widget, allocation);
 }
 
-gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
 	if (!GTK_WIDGET_DRAWABLE (widget))
 		return FALSE;
@@ -1054,8 +1026,8 @@ gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *event)
 	return TRUE;
 }
 
-void ygtk_wizard_forall (GtkContainer *container, gboolean include_internals,
-                         GtkCallback   callback,  gpointer callback_data)
+static void ygtk_wizard_forall (GtkContainer *container, gboolean include_internals,
+                                GtkCallback   callback,  gpointer callback_data)
 {
 	YGtkWizard *wizard = YGTK_WIZARD (container);
 	if (include_internals) {
@@ -1070,36 +1042,6 @@ void ygtk_wizard_forall (GtkContainer *container, gboolean include_internals,
 	GtkWidget *containee = GTK_BIN (container)->child;
 	if (containee)
 		(*callback) (containee, callback_data);
-}
-
-void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
-{
-	if (!wizard->m_help_dialog) {
-		wizard->m_help_dialog = ygtk_help_dialog_new
-			((GtkWindow *) gtk_widget_get_ancestor (button, GTK_TYPE_WINDOW));
-		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
-		                           wizard->m_help);
-	}
-	gtk_widget_show (wizard->m_help_dialog);
-}
-
-void button_clicked_cb (GtkButton *button, YGtkWizard *wizard)
-{
-	gpointer id = g_object_get_data (G_OBJECT (button), "id");
-	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
-}
-
-void selected_menu_item_cb (GtkMenuItem *item, const char *id)
-{
-	YGtkWizard *wizard = g_object_get_data (G_OBJECT (item), "wizard");
-	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
-}
-
-void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard)
-{
-	const gchar *id = ygtk_wizard_get_tree_selection (wizard);
-	if (id)
-		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
 /* Accessibility support */
@@ -1244,4 +1186,29 @@ static AtkObject *ygtk_wizard_get_accessible (GtkWidget *widget)
 	first_time = FALSE;
 	}
 	return GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->get_accessible (widget);
+}
+
+static void ygtk_wizard_class_init (YGtkWizardClass *klass)
+{
+	ygtk_wizard_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	//** Get expose, so we can draw line border
+	widget_class->expose_event = ygtk_wizard_expose_event;
+	widget_class->realize = ygtk_wizard_realize;
+	widget_class->size_request  = ygtk_wizard_size_request;
+	widget_class->size_allocate = ygtk_wizard_size_allocate;
+	widget_class->get_accessible = ygtk_wizard_get_accessible;
+
+	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
+	container_class->forall = ygtk_wizard_forall;
+
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_wizard_destroy;
+
+	action_triggered_signal = g_signal_new ("action-triggered",
+		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (YGtkWizardClass, action_triggered),
+		NULL, NULL, ygtk_marshal_VOID__POINTER_INT, G_TYPE_NONE,
+		2, G_TYPE_POINTER, G_TYPE_INT);
 }

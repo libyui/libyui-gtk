@@ -33,29 +33,25 @@ G_BEGIN_DECLS
 #define YGTK_STEPS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                     YGTK_TYPE_STEPS, YGtkStepsClass))
 
-typedef struct _YGtkSteps       YGtkSteps;
-typedef struct _YGtkStepsClass  YGtkStepsClass;
-typedef struct _YGtkSingleStep  YGtkSingleStep;
-
-struct _YGtkSteps
+typedef struct _YGtkSteps
 {
-	GtkWidget widget;
+	GtkWidget parent;
 
-	// members
+	// private:
 	GList *steps;  // of YGtkSingleStep
 	guint current_step;
 	PangoLayout *check_mark_layout, *current_mark_layout;
 	// for current_mark little animation
 	guint current_mark_timeout_id, current_mark_frame;
 	
-};
+} YGtkSteps;
 
-struct _YGtkStepsClass
+typedef struct _YGtkStepsClass
 {
 	GtkWidgetClass parent_class;
-};
+} YGtkStepsClass;
 
-struct _YGtkSingleStep
+typedef struct _YGtkSingleStep
 {
 	gboolean is_heading;
 	gchar *text;
@@ -63,7 +59,7 @@ struct _YGtkSingleStep
 
 	// private -- don't access it, call ygtk_step_get_layout() instead
 	PangoLayout *layout;  // cache
-};
+} YGtkSingleStep;
 
 GtkWidget* ygtk_steps_new (void);
 GType ygtk_steps_get_type (void) G_GNUC_CONST;

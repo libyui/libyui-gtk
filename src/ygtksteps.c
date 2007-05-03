@@ -19,40 +19,9 @@
 #define CURRENT_MARK_ANIMATION_OFFSET  3
 #define CURRENT_MARK_FRAMES_NB (CURRENT_MARK_ANIMATION_OFFSET*2)
 
-static void ygtk_steps_class_init (YGtkStepsClass *klass);
-static void ygtk_steps_init       (YGtkSteps      *step);
-static void ygtk_steps_destroy    (GtkObject      *object);
-static void ygtk_steps_size_request (GtkWidget      *widget,
-                                     GtkRequisition *requisition);
-static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event);
-// PangoContext change signals
-static void ygtk_steps_direction_changed (GtkWidget *widget, GtkTextDirection dir);
-static void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style);
-
-static YGtkSingleStep *ygtk_steps_get_step (YGtkSteps *steps, guint step_nb);
-static void ygtk_step_invalidate_layout (YGtkSingleStep *step);
-// should be called rather than accessing step->layout
-static PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb);
-static gboolean current_mark_animation_cb (void *steps);
-
 G_DEFINE_TYPE (YGtkSteps, ygtk_steps, GTK_TYPE_WIDGET)
-static GtkWidgetClass *parent_class = NULL;
 
-void ygtk_steps_class_init (YGtkStepsClass *klass)
-{
-	parent_class = g_type_class_peek_parent (klass);
-
-	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->expose_event = ygtk_steps_expose_event;
-	widget_class->size_request = ygtk_steps_size_request;
-	widget_class->direction_changed = ygtk_steps_direction_changed;
-	widget_class->style_set = ygtk_steps_style_set;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_steps_destroy;
-}
-
-void ygtk_steps_init (YGtkSteps *steps)
+static void ygtk_steps_init (YGtkSteps *steps)
 {
 	GTK_WIDGET_SET_FLAGS (steps, GTK_NO_WINDOW);
 
@@ -64,7 +33,7 @@ void ygtk_steps_init (YGtkSteps *steps)
 	steps->current_mark_timeout_id = steps->current_mark_frame = 0;
 }
 
-void ygtk_steps_destroy (GtkObject *object)
+static void ygtk_steps_destroy (GtkObject *object)
 {
 	YGtkSteps *steps = YGTK_STEPS (object);
 
@@ -81,7 +50,139 @@ void ygtk_steps_destroy (GtkObject *object)
 	
 	ygtk_steps_clear (steps);
 
-	GTK_OBJECT_CLASS (parent_class)->destroy (object);
+	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
+}
+
+
+static inline YGtkSingleStep *ygtk_steps_get_step (YGtkSteps *steps, guint step_nb)
+{
+	return g_list_nth_data (steps->steps, step_nb);
+}
+
+static void ygtk_step_invalidate_layout (YGtkSingleStep *step)
+{
+	if (step->layout) {
+		g_object_unref (G_OBJECT (step->layout));
+		step->layout = NULL;
+	}
+}
+
+// should be called rather than accessing step->layout
+static PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
+{
+	YGtkSingleStep *step = ygtk_steps_get_step (steps, step_nb);
+
+	if (!step->layout) {
+		step->layout = gtk_widget_create_pango_layout (GTK_WIDGET (steps), NULL);
+
+		gchar *text;
+		if (step->is_heading) {
+			text = g_strdup_printf ("<span size=\"x-large\" weight=\"heavy\">%s</span>",
+			                        step->text);
+			pango_layout_set_spacing (step->layout, STEPS_HEADER_SPACING * PANGO_SCALE);
+		}
+		else {
+			if (steps->current_step == step_nb)
+				text = g_strdup_printf ("<b>%s</b>", step->text);
+			else
+				text = g_strdup (step->text);
+			pango_layout_set_indent (step->layout, STEPS_IDENTATION * PANGO_SCALE);
+			pango_layout_set_spacing (step->layout, STEPS_SPACING * PANGO_SCALE);
+		}
+
+		pango_layout_set_markup (step->layout, text, -1);
+		g_free (text);
+	}
+
+	return step->layout;
+}
+
+// If PangoContext got invalidated (eg. system language change), re-compute it!
+static void ygtk_steps_recompute_layout (YGtkSteps *steps)
+{
+	GList *it;
+	for (it = steps->steps; it; it = it->next) {
+		YGtkSingleStep *step = it->data;
+		if (step->layout)
+			pango_layout_context_changed (step->layout);
+	}
+}
+
+static void ygtk_steps_direction_changed (GtkWidget *widget, GtkTextDirection dir)
+{
+	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
+	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->direction_changed (widget, dir);
+}
+
+static void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style)
+{
+	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
+	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->style_set (widget, style);
+}
+
+static void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
+{
+	requisition->width = requisition->height = 0;
+
+	YGtkSteps *steps = YGTK_STEPS (widget);
+	int i;
+	for (i = 0; i < ygtk_steps_total (steps); i++) {
+		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
+
+		int w, h;
+		pango_layout_get_pixel_size (layout, &w, &h);
+		w += PANGO_PIXELS (pango_layout_get_indent (layout));
+		h += PANGO_PIXELS (pango_layout_get_spacing (layout)) * 2;
+
+		requisition->width = MAX (w, requisition->width);
+		requisition->height += h;
+	}
+
+	requisition->width += BORDER * 2;
+	requisition->height += BORDER * 2;
+}
+
+static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+	int x = widget->allocation.x + BORDER, y = widget->allocation.y + BORDER;
+	GtkStyle *style = gtk_widget_get_style (widget);
+
+	YGtkSteps *steps = YGTK_STEPS (widget);
+	int i;
+	for (i = 0; i < ygtk_steps_total (steps); i++) {
+		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
+
+		// as opposite to identation, we need to apply spacing ourselves, since we aren't
+		// really using paragraphs
+		y += PANGO_PIXELS (pango_layout_get_spacing (layout));
+
+		gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
+		                  NULL, /*event->area,*/ widget, NULL, x, y, layout);
+
+		if (i <= steps->current_step && !ygtk_steps_get_step (steps, i)->is_heading) {
+			PangoLayout *mark = (i == steps->current_step) ? steps->current_mark_layout
+			                                               : steps->check_mark_layout;
+			int x_;
+			pango_layout_get_pixel_size (mark, &x_, NULL);
+			x_ = x + STEPS_IDENTATION - x_ - 6;
+			if (i == steps->current_step) {
+				if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
+					x_ -= steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
+				else
+					x_ -= (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
+					      CURRENT_MARK_ANIMATION_OFFSET;
+			}
+
+			gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
+			                  NULL, /*event->area,*/ widget, NULL, x_, y, mark);
+		}
+
+		int h;
+		pango_layout_get_pixel_size (layout, NULL, &h);
+		// we need spacing for both sides
+		y += h + PANGO_PIXELS (pango_layout_get_spacing (layout));
+	}
+	return FALSE;
 }
 
 GtkWidget* ygtk_steps_new (void)
@@ -140,22 +241,7 @@ void ygtk_steps_advance (YGtkSteps *steps)
 		ygtk_steps_set_current (steps, steps->current_step + 1);
 }
 
-void ygtk_steps_set_current (YGtkSteps *steps, guint step)
-{
-	guint old_step = steps->current_step;
-	steps->current_step = step;
-
-	// update step icons
-	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, old_step));
-	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, step));
-
-	steps->current_mark_frame = 0;
-	steps->current_mark_timeout_id = g_timeout_add
-		(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
-		current_mark_animation_cb, steps);
-}
-
-gboolean current_mark_animation_cb (void *steps_ptr)
+static gboolean current_mark_animation_cb (void *steps_ptr)
 {
 	YGtkSteps *steps = steps_ptr;
 
@@ -169,6 +255,21 @@ gboolean current_mark_animation_cb (void *steps_ptr)
 		return FALSE;
 	}
 	return TRUE;
+}
+
+void ygtk_steps_set_current (YGtkSteps *steps, guint step)
+{
+	guint old_step = steps->current_step;
+	steps->current_step = step;
+
+	// update step icons
+	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, old_step));
+	ygtk_step_invalidate_layout (ygtk_steps_get_step (steps, step));
+
+	steps->current_mark_frame = 0;
+	steps->current_mark_timeout_id = g_timeout_add
+		(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
+		current_mark_animation_cb, steps);
 }
 
 guint ygtk_steps_total (YGtkSteps *steps)
@@ -189,137 +290,14 @@ void ygtk_steps_clear (YGtkSteps *steps)
 	steps->steps = NULL;
 }
 
-YGtkSingleStep *ygtk_steps_get_step (YGtkSteps *steps, guint step_nb)
+static void ygtk_steps_class_init (YGtkStepsClass *klass)
 {
-	return g_list_nth_data (steps->steps, step_nb);
-}
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->expose_event = ygtk_steps_expose_event;
+	widget_class->size_request = ygtk_steps_size_request;
+	widget_class->direction_changed = ygtk_steps_direction_changed;
+	widget_class->style_set = ygtk_steps_style_set;
 
-void ygtk_step_invalidate_layout (YGtkSingleStep *step)
-{
-	if (step->layout) {
-		g_object_unref (G_OBJECT (step->layout));
-		step->layout = NULL;
-	}
-}
-
-PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
-{
-	YGtkSingleStep *step = ygtk_steps_get_step (steps, step_nb);
-
-	if (!step->layout) {
-
-
-		step->layout = gtk_widget_create_pango_layout (GTK_WIDGET (steps), NULL);
-/*
-		step->layout = pango_layout_new (gtk_widget_get_pango_context
-		                                     (GTK_WIDGET (steps)));
-*/
-		gchar *text;
-		if (step->is_heading) {
-			text = g_strdup_printf ("<span size=\"x-large\" weight=\"heavy\">%s</span>",
-			                        step->text);
-			pango_layout_set_spacing (step->layout, STEPS_HEADER_SPACING * PANGO_SCALE);
-		}
-		else {
-			if (steps->current_step == step_nb)
-				text = g_strdup_printf ("<b>%s</b>", step->text);
-			else
-				text = g_strdup (step->text);
-			pango_layout_set_indent (step->layout, STEPS_IDENTATION * PANGO_SCALE);
-			pango_layout_set_spacing (step->layout, STEPS_SPACING * PANGO_SCALE);
-		}
-
-		pango_layout_set_markup (step->layout, text, -1);
-		g_free (text);
-	}
-
-	return step->layout;
-}
-
-// If PangoContext got invalidated (eg. system language change), re-compute it!
-static void ygtk_steps_recompute_layout (YGtkSteps *steps)
-{
-	GList *it;
-	for (it = steps->steps; it; it = it->next) {
-		YGtkSingleStep *step = it->data;
-		if (step->layout)
-			pango_layout_context_changed (step->layout);
-	}
-}
-
-void ygtk_steps_direction_changed (GtkWidget *widget, GtkTextDirection dir)
-{
-	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
-	GTK_WIDGET_CLASS (parent_class)->direction_changed (widget, dir);
-}
-
-void ygtk_steps_style_set (GtkWidget *widget, GtkStyle *style)
-{
-	ygtk_steps_recompute_layout (YGTK_STEPS (widget));
-	GTK_WIDGET_CLASS (parent_class)->style_set (widget, style);
-}
-
-void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisition)
-{
-	requisition->width = requisition->height = 0;
-
-	YGtkSteps *steps = YGTK_STEPS (widget);
-	int i;
-	for (i = 0; i < ygtk_steps_total (steps); i++) {
-		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
-
-		int w, h;
-		pango_layout_get_pixel_size (layout, &w, &h);
-		w += PANGO_PIXELS (pango_layout_get_indent (layout));
-		h += PANGO_PIXELS (pango_layout_get_spacing (layout)) * 2;
-
-		requisition->width = MAX (w, requisition->width);
-		requisition->height += h;
-	}
-
-	requisition->width += BORDER * 2;
-	requisition->height += BORDER * 2;
-}
-
-gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
-{
-	int x = widget->allocation.x + BORDER, y = widget->allocation.y + BORDER;
-	GtkStyle *style = gtk_widget_get_style (widget);
-
-	YGtkSteps *steps = YGTK_STEPS (widget);
-	int i;
-	for (i = 0; i < ygtk_steps_total (steps); i++) {
-		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
-
-		// as opposite to identation, we need to apply spacing ourselves, since we aren't
-		// really using paragraphs
-		y += PANGO_PIXELS (pango_layout_get_spacing (layout));
-
-		gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
-		                  NULL, /*event->area,*/ widget, NULL, x, y, layout);
-
-		if (i <= steps->current_step && !ygtk_steps_get_step (steps, i)->is_heading) {
-			PangoLayout *mark = (i == steps->current_step) ? steps->current_mark_layout
-			                                               : steps->check_mark_layout;
-			int x_;
-			pango_layout_get_pixel_size (mark, &x_, NULL);
-			x_ = x + STEPS_IDENTATION - x_ - 6;
-			if (i == steps->current_step) {
-				if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
-					x_ -= steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
-				else
-					x_ -= (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
-					      CURRENT_MARK_ANIMATION_OFFSET;
-			}
-
-			gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
-			                  NULL, /*event->area,*/ widget, NULL, x_, y, mark);
-		}
-
-		int h;
-		pango_layout_get_pixel_size (layout, NULL, &h);
-		// we need spacing for both sides
-		y += h + PANGO_PIXELS (pango_layout_get_spacing (layout));
-	}
-	return FALSE;
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_steps_destroy;
 }

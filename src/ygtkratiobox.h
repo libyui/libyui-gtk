@@ -29,36 +29,32 @@ G_BEGIN_DECLS
 #define YGTK_RATIO_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_BOX, YGtkRatioBoxClass))
 
-typedef struct _YGtkRatioBox       YGtkRatioBox;
-typedef struct _YGtkRatioBoxClass  YGtkRatioBoxClass;
-typedef struct _YGtkRatioBoxChild  YGtkRatioBoxChild;
-
-struct _YGtkRatioBox
+typedef struct _YGtkRatioBox
 {
-	GtkContainer container;
+	GtkContainer parent;
 
-	// members (read-only)
+	// private (read-only):
 	GList *children;
 	gint16 spacing;
 	gboolean homogeneous;
-};
+} YGtkRatioBox;
 
-struct _YGtkRatioBoxClass
+typedef struct _YGtkRatioBoxClass
 {
 	GtkContainerClass parent_class;
-};
+} YGtkRatioBoxClass;
 
-struct _YGtkRatioBoxChild
+typedef struct _YGtkRatioBoxChild
 {
 	GtkWidget *widget;
-	// Proprieties
+	// members
 	guint16 padding;
 	gfloat ratio;
 	guint xfill : 1;
 	guint yfill : 1;
 	guint pack : 1;
 	guint fully_expandable : 1;
-};
+} YGtkRatioBoxChild;
 
 GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
@@ -104,18 +100,15 @@ void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
 #define YGTK_RATIO_HBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_HBOX, YGtkRatioHBoxClass))
 
-typedef struct _YGtkRatioHBox       YGtkRatioHBox;
-typedef struct _YGtkRatioHBoxClass  YGtkRatioHBoxClass;
-
-struct _YGtkRatioHBox
+typedef struct _YGtkRatioHBox
 {
-	YGtkRatioBox ratiobox;
-};
+	YGtkRatioBox parent;
+} YGtkRatioHBox;
 
-struct _YGtkRatioHBoxClass
+typedef struct _YGtkRatioHBoxClass
 {
 	YGtkRatioBoxClass parent_class;
-};
+} YGtkRatioHBoxClass;
 
 GtkWidget* ygtk_ratio_hbox_new (gboolean homogeneous, gint spacing);
 GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
@@ -134,18 +127,15 @@ GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
 #define YGTK_RATIO_VBOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                         YGTK_TYPE_RATIO_VBOX, YGtkRatioVBoxClass))
 
-typedef struct _YGtkRatioVBox       YGtkRatioVBox;
-typedef struct _YGtkRatioVBoxClass  YGtkRatioVBoxClass;
-
-struct _YGtkRatioVBox
+typedef struct _YGtkRatioVBox
 {
 	YGtkRatioBox ratiobox;
-};
+} YGtkRatioVBox;
 
-struct _YGtkRatioVBoxClass
+typedef struct _YGtkRatioVBoxClass
 {
 	YGtkRatioBoxClass parent_class;
-};
+} YGtkRatioVBoxClass;
 
 GtkWidget* ygtk_ratio_vbox_new (gboolean homogeneous, gint spacing);
 GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
@@ -173,21 +163,18 @@ G_BEGIN_DECLS
 #define YGTK_MIN_SIZE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                        YGTK_TYPE_MIN_SIZE, YGtkMinSizeClass))
 
-typedef struct _YGtkMinSize       YGtkMinSize;
-typedef struct _YGtkMinSizeClass  YGtkMinSizeClass;
-
-struct _YGtkMinSize
+typedef struct _YGtkMinSize
 {
 	GtkBin bin;
 	// members
 	guint min_width, min_height;
 	gboolean only_expand;
-};
+} YGtkMinSize;
 
-struct _YGtkMinSizeClass
+typedef struct _YGtkMinSizeClass
 {
 	GtkBinClass parent_class;
-};
+} YGtkMinSizeClass;
 
 GType ygtk_min_size_get_type (void) G_GNUC_CONST;
 GtkWidget* ygtk_min_size_new (guint min_width, guint min_height);
