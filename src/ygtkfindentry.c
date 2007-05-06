@@ -398,8 +398,10 @@ static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
 			gtk_editable_select_region (GTK_EDITABLE (widget), 0, -1);
 		}
 	}
-	else if (event->window == eentry->right_window)
+	else if (event->window == eentry->right_window) {
 		gtk_editable_delete_text (GTK_EDITABLE (widget), 0, -1);
+		gtk_widget_grab_focus (widget);
+	}
 	else
 		return GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->button_press_event
 		                                                            (widget, event);
