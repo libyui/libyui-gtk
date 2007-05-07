@@ -290,6 +290,15 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			g_string_append (outp, product);
 			i += sizeof (PROD_ENTITY) - 2;
 		}
+		// non-break space entity
+		
+		else if (instr[i] == '&' &&
+			 !g_ascii_strncasecmp (instr + i, "&nbsp;",
+					       sizeof ("&nbsp;") - 1)) {
+			// Replace this by a white-space
+			g_string_append (outp, " ");
+			i += sizeof ("&nbsp;") - 2;
+		}
 
 		// removing new-lines chars sure isn't a xhtml conversion
 		// but it's still valid xhtml and GtkTextView appreciates it

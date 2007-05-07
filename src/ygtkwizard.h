@@ -117,11 +117,6 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
 // (commands that may fail return a sucess boolean.)
 void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text);
 
-gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
-                                    const char *text, const char *id);
-void ygtk_wizard_clear_tree (YGtkWizard *wizard);
-gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id);
-
 // you may pass a window widget if you want the title/icon to be set on it as well
 void ygtk_wizard_set_header_text (YGtkWizard *wizard, GtkWindow *window,
                                   const char *text);
@@ -158,12 +153,16 @@ void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 gboolean ygtk_wizard_set_current_step (YGtkWizard *wizard, const char *id);
 void ygtk_wizard_clear_steps (YGtkWizard *wizard);
 
+gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
+                                    const char *text, const char *id);
+void ygtk_wizard_clear_tree (YGtkWizard *wizard);
+gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id);
+const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
+
 void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard,
                                      const gchar *text, gpointer id,
                                      GDestroyNotify destroy_cb);
 void ygtk_wizard_show_release_notes_button (YGtkWizard *wizard, gboolean enable);
-
-const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
 
 // You should call this method rather than GtkWidget's if you want
 // to honor next_button protect flag

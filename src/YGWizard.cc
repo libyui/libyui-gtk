@@ -329,13 +329,22 @@ public:
 		return YCPBoolean (true);
 	}
 
+	virtual YCPString currentTreeSelection()
+	{
+		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
+		const char *selected = ygtk_wizard_get_tree_selection (wizard);
+		if (selected)
+			return YCPString (selected);
+		return YCPString ("");
+	}
+
 	static void action_triggered_cb (YGtkWizard *wizard, gpointer id,
 	                                 gint id_type, YGWizard *pThis)
 	{
 		IMPL
 		if ((GType) id_type == G_TYPE_STRING) {
-			gchar *id_ = (gchar *) id;
-			YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (YCPString (id_))));
+			YCPString _id ((char *) id);
+			YGUI::ui()->sendEvent (new YMenuEvent (YCPValue (_id)));
 		}
 		else
 			YGUI::ui()->sendEvent (new YMenuEvent (*((YCPValue *) id)));

@@ -10,6 +10,13 @@
 	using yui), and -qt just adopted it.
 	sysconfig tool needs fixing.
 
+	* src/YGWizard.cc: sysconfig tool fixed; we weren't implementing
+	YGWizard::currentTreeSelection(); simple function; not so simple
+	to found it missing. :)
+	* tests/WizardList.ycp: respective test case.
+
+	* src/YGUtils.cc: replace "&nbsp;" by " ".
+
 2007-05-03  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtk*: unified the code style of our widgets. Most standing,
