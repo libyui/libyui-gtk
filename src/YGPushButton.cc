@@ -35,7 +35,7 @@ public:
 	virtual void setLabel (const YCPString &label)
 	{
 		IMPL;
-		string str = YGUtils::mapKBAccel(label->value_cstr());
+		string str = YGUtils::mapKBAccel (label->value_cstr());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YPushButton::setLabel (label);
 	}
@@ -58,13 +58,11 @@ public:
 			           "Reason: %s", path.c_str(), error->message);
 	}
 
+	static void set_default_cb (GtkButton *button, YGPushButton *pThis)
+	{ gtk_widget_grab_default (GTK_WIDGET (button)); }
+
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
 	{ pThis->emitEvent (YEvent::Activated, false); }
-
-	static void set_default_cb (GtkButton *button, YGPushButton *pThis)
-	{
-		gtk_widget_grab_default (GTK_WIDGET (button));
-	}
 
 	YGWIDGET_IMPL_COMMON
 };

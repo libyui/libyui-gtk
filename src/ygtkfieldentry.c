@@ -23,18 +23,18 @@ static void ygtk_filter_entry_insert_text (GtkEditable *editable, const gchar *n
                                            gint new_text_length, gint *pos)
 {
 	const gchar *valid_chars = YGTK_FILTER_ENTRY (editable)->valid_chars;
-	if (!valid_chars)
-		return;
-	const gchar *i, *j;
-	for (i = new_text; *i; i++) {
-		for (j = valid_chars; *j; j++) {
-			if (*i == *j)
-				break;
-		}
-		if (!*j) {
-			// not valid text
-			gdk_beep();
-			return;
+	if (valid_chars) {
+		const gchar *i, *j;
+		for (i = new_text; *i; i++) {
+			for (j = valid_chars; *j; j++) {
+				if (*i == *j)
+					break;
+			}
+			if (!*j) {
+				// not valid text
+				gdk_beep();
+				return;
+			}
 		}
 	}
 

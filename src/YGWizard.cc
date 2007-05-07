@@ -8,10 +8,48 @@
 #include "YGUtils.h"
 #include "ygtkwizard.h"
 #include "YWizard.h"
+#include "YPushButton.h"
 
 class YGWizard : public YWizard, public YGWidget
 {
 	bool m_verboseCommands;
+
+	/* YCP requires us to allow people to use YPushButton API on the wizard buttons.
+	   Wizard already has handlers for them; this seems like bad design.
+
+	   We could support wrapping right in our framework. One way, would be to subclass
+	   YWidgetOpt to have a wrapping field where we would set a GtkWidget*. Then,
+	   classes should pass opt to YGWidget and it would create a shallow instance
+	   around it. However, this isn't really doable. The problem is that, like
+	   in this case, the API isn't really exact; events must be sent as YWizard events.
+	*/
+	struct YGWButton : public YPushButton {
+		/* Thin class; just changes the associated button label and keeps track
+		   of id change. */
+		YGWButton (GtkWidget *widget, const YCPString &label, const YCPValue &id)
+		: YPushButton (YWidgetOpt(), label)
+		{ m_widget = widget; setId (id); setLabel (label); }
+
+		void setLabel (const YCPString &label) {
+			string str = YGUtils::mapKBAccel (label->value_cstr());
+			gtk_button_set_label (GTK_BUTTON (m_widget), str.c_str());
+			str.empty() ? gtk_widget_hide (m_widget) : gtk_widget_show (m_widget);
+			YPushButton::setLabel (label);
+		}
+
+		long nicesize (YUIDimension dim) { return 0; }
+		void setEnabling (bool enable) {
+			gtk_widget_set_sensitive (m_widget, enable);
+			YWidget::setEnabling (enable);
+		}
+
+		private:
+			GtkWidget *m_widget;
+	};
+
+	YGWButton *m_back_button, *m_abort_button, *m_next_button;
+	// release notes button would be a little more hassle to support; yast-qt
+	// doesn't support it too anyway.
 
 public:
 	YGWizard (const YWidgetOpt &opt, YGWidget *parent,
@@ -39,7 +77,8 @@ public:
 			stretchOpt.isVStretchable.setValue( true );
 
 			YWidget *align, *rp, *empty;
-			align = YGUI::ui()->createAlignment (this, stretchOpt, YAlignCenter, YAlignCenter);
+			align = YGUI::ui()->createAlignment (this, stretchOpt,
+			                                     YAlignCenter, YAlignCenter);
 			rp = YGUI::ui()->createReplacePoint (align, opt);
 			rp->setId (YCPSymbol (YWizardContentsReplacePointID));
 			empty = YGUI::ui()->createEmpty (rp, opt);
@@ -65,23 +104,33 @@ public:
 			ygtk_wizard_enable_tree (ygtk_wizard);
 
 		//** Setting the bottom buttons
-		string backLabel  = YGUtils::mapKBAccel(backButtonLabel->value_cstr());
-		string abortLabel = YGUtils::mapKBAccel(abortButtonLabel->value_cstr());
-		string nextLabel  = YGUtils::mapKBAccel(nextButtonLabel->value_cstr());
-		ygtk_wizard_set_back_button_label (ygtk_wizard, backLabel.c_str());
-		ygtk_wizard_set_abort_button_label (ygtk_wizard, abortLabel.c_str());
-		ygtk_wizard_set_next_button_label (ygtk_wizard, nextLabel.c_str());
+		m_back_button = new YGWButton (ygtk_wizard->m_back_button, backButtonLabel,
+		                               backButtonId);
+		m_abort_button = new YGWButton (ygtk_wizard->m_abort_button, abortButtonLabel,
+		                                abortButtonId);
+		m_next_button = new YGWButton (ygtk_wizard->m_next_button, nextButtonLabel,
+		                               nextButtonId);
+		YContainerWidget::addChild (m_back_button);
+		YContainerWidget::addChild (m_abort_button);
+		YContainerWidget::addChild (m_next_button);
 
 		ygtk_wizard_set_back_button_id (ygtk_wizard, new YCPValue (backButtonId),
-                                    delete_data_cb);
-		ygtk_wizard_set_next_button_id (ygtk_wizard, new YCPValue (nextButtonId),
-                                    delete_data_cb);
+		                                delete_data_cb);
 		ygtk_wizard_set_abort_button_id (ygtk_wizard, new YCPValue (abortButtonId),
-                                     delete_data_cb);
+		                                 delete_data_cb);
+		ygtk_wizard_set_next_button_id (ygtk_wizard, new YCPValue (nextButtonId),
+		                                delete_data_cb);
 
 		//** All event are sent through this signal together with an id
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (action_triggered_cb), this);
+	}
+
+	~YGWizard()
+	{
+		delete m_back_button;
+		delete m_abort_button;
+		delete m_next_button;
 	}
 
 	/* The purpose of this function is to do some sanity checks, besides
@@ -94,7 +143,7 @@ public:
 		if (cmd->name() == func) {
 			if ((unsigned) cmd->size() != args_nb) {
 				y2error ("YGWizard: expected %d arguments for the '%s' command. %d given.",
-								args_nb, func, cmd->size());
+				         args_nb, func, cmd->size());
 				return false;
 			}
 
@@ -103,15 +152,15 @@ public:
 				switch (t % 0x4) {
 					case 0x1:
 						if (!cmd->value(i)->isString()) {
-							y2error ("YGWizard: expected string as the %d argument for the '%s'"
-							         " command.", i+1, func);
+							y2error ("YGWizard: expected string as the %d argument for "
+							         "the '%s' command.", i+1, func);
 							return false;
 						}
 						break;
 					case 0x2:
 						if (!cmd->value(i)->isBoolean()) {
-							y2error ("YGWizard: expected boolean as the %d argument for the '%s'"
-							         " command.", i+1, func);
+							y2error ("YGWizard: expected boolean as the %d argument for "
+							         "the '%s' command.", i+1, func);
 							return false;
 						}
 						break;
@@ -180,15 +229,21 @@ public:
 			ygtk_wizard_set_next_button_label (wizard, str.c_str());
 		}
 
-		else if (isCommand (cmd, "SetAbortButtonID", 1, 0x0))
-			ygtk_wizard_set_abort_button_id (wizard, new YCPValue (getAnyArg (cmd, 0)),
-                                       delete_data_cb);
-		else if (isCommand (cmd, "SetBackButtonID", 1, 0x0))
-			ygtk_wizard_set_back_button_id (wizard, new YCPValue (getAnyArg (cmd, 0)),
-                                      delete_data_cb);
-		else if (isCommand (cmd, "SetNextButtonID", 1, 0x0))
-			ygtk_wizard_set_next_button_id (wizard, new YCPValue (getAnyArg (cmd, 0)),
-                                      delete_data_cb);
+		else if (isCommand (cmd, "SetAbortButtonID", 1, 0x0)) {
+			YCPValue *id = new YCPValue (getAnyArg (cmd, 0));
+			ygtk_wizard_set_abort_button_id (wizard, id, delete_data_cb);
+			m_abort_button->setId (*id);
+		}
+		else if (isCommand (cmd, "SetBackButtonID", 1, 0x0)) {
+			YCPValue *id = new YCPValue (getAnyArg (cmd, 0));
+			ygtk_wizard_set_back_button_id (wizard, id, delete_data_cb);
+			m_back_button->setId (*id);
+		}
+		else if (isCommand (cmd, "SetNextButtonID", 1, 0x0)) {
+			YCPValue *id = new YCPValue (getAnyArg (cmd, 0));
+			ygtk_wizard_set_next_button_id (wizard, id, delete_data_cb);
+			m_next_button->setId (*id);
+		}
 
 		else if (isCommand (cmd, "EnableAbortButton", 1, 0x2))
 			ygtk_wizard_enable_abort_button (wizard, getBoolArg (cmd, 0));

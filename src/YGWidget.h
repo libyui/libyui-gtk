@@ -76,13 +76,16 @@ protected:
 	virtual void setSize (long width, long height) {}
 
 // for containers
-#define YGWIDGET_IMPL_CHILD_ADDED(container)                  \
-	virtual void childAdded (YWidget *ychild) {                 \
-	    GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
-	    gtk_container_add (GTK_CONTAINER (container), child);   \
-	    sync_stretchable();                                     \
+// We can't use childAdded, since some classes don't want this called
+// for some children.
+#define YGWIDGET_IMPL_CHILD_ADDED(container)                    \
+	virtual void addChild (YWidget *ychild) {                   \
+		YContainerWidget::addChild (ychild);                    \
+		GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
+		gtk_container_add (GTK_CONTAINER (container), child);   \
+		sync_stretchable();                                     \
 	}
-#define YGWIDGET_IMPL_CHILD_REMOVED(container)                 \
+#define YGWIDGET_IMPL_CHILD_REMOVED(container)                   \
 	virtual void childRemoved (YWidget *ychild) {                \
 	    GtkWidget *child = YGWidget::get (ychild)->getLayout();  \
 	    gtk_container_remove (GTK_CONTAINER (container), child); \

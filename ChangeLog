@@ -1,3 +1,15 @@
+2007-05-07  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfieldentry.c: bug fix: due to cleanup entry was not accepting
+	text when valid chars were not set.
+
+	* src/YGWizard.cc: we need to export wizard three buttons as YPushButtons,
+	so that YUI::ChangeWidget() can be used on them. This seems to overlap with
+	Wizard API and I dunno why they didn't just adopt one approach. My guess
+	is that some dude just start using this (ncurses supports this as it's done
+	using yui), and -qt just adopted it.
+	sysconfig tool needs fixing.
+
 2007-05-03  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtk*: unified the code style of our widgets. Most standing,
