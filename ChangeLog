@@ -1,3 +1,27 @@
+2007-05-10  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.c: don't allocate space for invisble windows.
+	Found out why SphereCrystal (and likely other styles that make use
+	of the background drawing) was getting cutted. GtkEntry re-calculates
+	the text area for drawing the background, instead of just getting its
+	geometry (reported bug+patch).
+	Centered find/clear icon vertically. Some styles have higher entries
+	and this was noticeable.
+
+	(Aaron Bockover has re-written Banshee's search entry using its old
+	approach. Dunno what he thought of our code. Ours may be considered
+	a bit more complex -- 454 vs 472 lines btw --, but I'd say its more elegant.
+	Its also more flexible, and a bit more efficient (his approach requires
+	GTK layouting to kick in at times, since it works by compounding widgets;
+	eg. when hovering a icon, it replaces the icon with a container_add() and
+	a _remove().
+	His aproach may also break more easily. For instance, it treats xthickness
+	and ythickness as having the same value (avoiding that would mean cluttering
+	the code with layout handling).
+	So, I think ours is a keeper.
+	Sent him a patch for honoring non-interior_focus styles -- eg. Glider
+	(not completely exact, but its not really noticeable).)
+
 2007-05-07  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfieldentry.c: bug fix: due to cleanup entry was not accepting

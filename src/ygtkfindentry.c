@@ -156,7 +156,7 @@ gint ygtk_ext_entry_get_border_window_size (YGtkExtEntry *entry,
 	g_assert (type == YGTK_EXT_ENTRY_LEFT_WIN || type == YGTK_EXT_ENTRY_RIGHT_WIN);
 	GdkWindow *window = ygtk_ext_entry_get_window (entry, type);
 	gint size = 0;
-	if (window)
+	if (window && gdk_window_is_visible (window))
 		gdk_drawable_get_size (GDK_DRAWABLE (window), &size, NULL);
 	return size;
 }
@@ -175,13 +175,12 @@ static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
                                           GtkAllocation *allocation)
 {
+	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_allocate
+	                                                    (widget, allocation);
 	if (!GTK_WIDGET_REALIZED (widget))
 		return;
 
-	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_allocate
-	                                                    (widget, allocation);
 	YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
-
 	gint left_border, right_border;
 	left_border = ygtk_ext_entry_get_border_window_size (entry,
 	                                                     YGTK_EXT_ENTRY_LEFT_WIN);
@@ -203,7 +202,7 @@ static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
 
 	// left window
 	window = ygtk_ext_entry_get_window (entry, YGTK_EXT_ENTRY_LEFT_WIN);
-	if (window) {
+	if (window && gdk_window_is_visible (window)) {
 		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR)
 			x = _x;
 		else
@@ -214,7 +213,7 @@ static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
 
 	// right window
 	window = ygtk_ext_entry_get_window (entry, YGTK_EXT_ENTRY_RIGHT_WIN);
-	if (window) {
+	if (window && gdk_window_is_visible (window)) {
 		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR)
 			x = _x + _w - right_border;
 		else
@@ -350,19 +349,21 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 	GdkWindow *hover_window = gdk_display_get_window_at_pointer (
 		gtk_widget_get_display (widget), NULL, NULL);
 
-	if (event->window == eentry->left_window) {
-		GdkPixbuf *pixbuf = (hover_window == eentry->left_window) ?
-		                        fentry->find_hover_icon : fentry->find_icon;
-		gdk_draw_pixbuf (GDK_DRAWABLE (eentry->left_window),
-		                 widget->style->fg_gc[0], pixbuf, 0, 0, 1, 0, -1, -1,
-		                 GDK_RGB_DITHER_NONE, 0, 0);
-	}
-	else if (event->window == eentry->right_window) {
-		GdkPixbuf *pixbuf = (hover_window == eentry->right_window) ?
-		                        fentry->clear_hover_icon : fentry->clear_icon;
-		gdk_draw_pixbuf (GDK_DRAWABLE (eentry->right_window),
-		                 widget->style->fg_gc[0], pixbuf, 0, 0, 1, 0, -1, -1,
-		                 GDK_RGB_DITHER_NONE, 0, 0);
+	if (event->window == eentry->left_window ||
+	    event->window == eentry->right_window) {
+		gboolean hover = hover_window == event->window;
+		GdkPixbuf *pixbuf;
+		if (event->window == eentry->left_window)
+			pixbuf = hover ? fentry->find_hover_icon : fentry->find_icon;
+		else
+			pixbuf = hover ? fentry->clear_hover_icon : fentry->clear_icon;
+
+		int pix_height = gdk_pixbuf_get_height (pixbuf), win_height, y;
+		gdk_drawable_get_size (event->window, NULL, &win_height);
+		y = (win_height - pix_height) / 2;
+
+		gdk_draw_pixbuf (event->window, widget->style->fg_gc[0], pixbuf,
+		                 0, 0, 1, y, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
 	}
 	else
 		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->expose_event (widget, event);
