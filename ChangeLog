@@ -1,3 +1,11 @@
+2007-05-11  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkfindentry.c (ygtk_ext_entry_get_border_window_size),
+	(ygtk_ext_entry_set_border_window_size),
+	* src/ygtkwizard.c (ygtk_wizard_add_step_header): convert g_asserts
+	to g_return_if_fails - so we don't abort when the .ycp does something
+	unexpected.
+
 2007-05-10  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.c: don't allocate space for invisble windows.

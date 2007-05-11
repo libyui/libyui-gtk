@@ -89,7 +89,7 @@ void ygtk_ext_entry_set_border_window_size (YGtkExtEntry *entry,
                                             YGtkExtEntryWindowType type, gint size)
 {
 	GtkWidget *widget = GTK_WIDGET (entry);
-	g_assert (type == YGTK_EXT_ENTRY_LEFT_WIN || type == YGTK_EXT_ENTRY_RIGHT_WIN);
+	g_return_if_fail (type == YGTK_EXT_ENTRY_LEFT_WIN || type == YGTK_EXT_ENTRY_RIGHT_WIN);
 
 	GdkWindow **window;
 	if (type == YGTK_EXT_ENTRY_LEFT_WIN)
@@ -153,7 +153,7 @@ void ygtk_ext_entry_set_border_window_size (YGtkExtEntry *entry,
 gint ygtk_ext_entry_get_border_window_size (YGtkExtEntry *entry,
                                             YGtkExtEntryWindowType type)
 {
-	g_assert (type == YGTK_EXT_ENTRY_LEFT_WIN || type == YGTK_EXT_ENTRY_RIGHT_WIN);
+	g_return_val_if_fail (type == YGTK_EXT_ENTRY_LEFT_WIN || type == YGTK_EXT_ENTRY_RIGHT_WIN, 0);
 	GdkWindow *window = ygtk_ext_entry_get_window (entry, type);
 	gint size = 0;
 	if (window && gdk_window_is_visible (window))

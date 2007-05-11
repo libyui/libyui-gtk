@@ -746,13 +746,15 @@ gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 {
-g_assert (wizard->m_navigation_widget != NULL);
+	g_return_if_fail (wizard->m_navigation_widget != NULL);
 	ygtk_steps_append_heading (YGTK_STEPS (wizard->m_navigation_widget), text);
 }
 
 void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 {
-	guint step_nb = ygtk_steps_append (YGTK_STEPS (wizard->m_navigation_widget), text);
+	guint step_nb;
+	g_return_if_fail (wizard->m_navigation_widget != NULL);
+	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->m_navigation_widget), text);
 	g_hash_table_insert (wizard->steps_ids, g_strdup (id), GINT_TO_POINTER (step_nb));
 }
 
