@@ -1,5 +1,10 @@
 /* List of missing features, actual bugs and other issues */
 
+= Regression testing =
+
+* Setup LDTP to run through all the tests/ and provoke as many
+  code-paths as possible
+
 = Look and feel =
 
 * BarGraph / RatioBox
