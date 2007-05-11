@@ -315,8 +315,11 @@ rt_start_element (GMarkupParseContext *context,
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
 		else if (!g_ascii_strcasecmp (element_name, "li")) {
-			HTMLList *front_list = g_list_first (state->html_list)->data;
-			if (front_list->ordered) {
+			HTMLList *front_list;
+
+			if (state->html_list &&
+			    (front_list = g_list_first (state->html_list)->data) &&
+			    (front_list->ordered)) {;
 				gchar *str = g_strdup_printf ("%d. ", front_list->enumeration++);
 				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
 				g_free (str);
@@ -394,6 +397,7 @@ rt_end_element (GMarkupParseContext *context,
 		return;
 	}
 
+	g_return_if_fail (state->htags != NULL);
 	GRTPTag *tag = g_list_last (state->htags)->data;
 	state->htags = g_list_remove (state->htags, tag);
 

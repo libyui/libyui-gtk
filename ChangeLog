@@ -1,5 +1,9 @@
 2007-05-11  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/ygtkrichtext.c (rt_end_element): harden vs. missing close htags.
+	(rt_start_element): fix crasher n#271716 - the first element has no
+	front element.
+
 	* src/ygtkfindentry.c (ygtk_ext_entry_get_border_window_size),
 	(ygtk_ext_entry_set_border_window_size),
 	* src/ygtkwizard.c (ygtk_wizard_add_step_header): convert g_asserts

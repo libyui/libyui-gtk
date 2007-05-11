@@ -8,6 +8,12 @@
 		// the br & hr tags
 		"Drinking <u>ice</u> tea <br> <hr> is <b>good</b> for you.",
 
+		// Broken end element
+		"Broken end element </ul> elided",
+
+		// the li tags
+		"Things to do <li>foo <li>baa <li>baz.",
+
 		// unclosed tags
 		"No outer tag<p>Unclosed paragraphs<p>several of them <b>unclosed bold</b>",
 
