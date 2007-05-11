@@ -1,5 +1,9 @@
 2007-05-11  Michael Meeks  <michael.meeks@novell.com>
 
+	* Version 2.15.3, Revision 446+
+
+2007-05-11  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/ygtkrichtext.c (rt_end_element): harden vs. missing close htags.
 	(rt_start_element): fix crasher n#271716 - the first element has no
 	front element.
