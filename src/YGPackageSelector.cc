@@ -810,7 +810,8 @@ public:
 		   installed on the tree view. The common model follows the following spec:
 		   0 - selectable object (pointer), 1 - installed name (string), 2 - available
 		   name (string), 3 - is installed (boolean), 4 - is available (boolean),
-		   5 - can be upgraded (boolean), 6 - can be downgraded (boolean) = 7
+		   5 - can be upgraded (boolean), 6 - can be downgraded (boolean),
+		   7 - is entry a package (eg: can be a group entry) = 8
 
 		   Models are created at each view mode change (and the other freed). This
 		   allows for more than one model type be used and is also better for speed,
@@ -960,7 +961,7 @@ public:
 		if (has_version_col) {
 			GtkCellRenderer *arrow_renderer = ygtk_cell_renderer_arrow_new();
 			column = gtk_tree_view_column_new_with_attributes (NULL,
-				arrow_renderer, "can-go-up", 5, "can-go-down", 6, NULL);
+				arrow_renderer, "can-go-up", 5, "can-go-down", 6, "visible", 7, NULL);
 //			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_expand (column, FALSE);
 			gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
@@ -973,12 +974,7 @@ public:
 			wrap_width -= w;
 		}
 		g_object_set (G_OBJECT (text_renderer), "wrap-width", wrap_width,
-			"wrap-mode", PANGO_WRAP_WORD_CHAR, NULL);
-		GObject *vadjustment = G_OBJECT (gtk_scrolled_window_get_vadjustment (
-		                           GTK_SCROLLED_WINDOW (scrolled_window)));
-		g_object_set_data (vadjustment, "view", list);
-		g_signal_connect (vadjustment, "value-changed",
-		                  G_CALLBACK (view_scrolled_cb), this);
+		              "wrap-mode", PANGO_WRAP_WORD_CHAR, NULL);
 		return vbox;
 	}
 
@@ -998,10 +994,35 @@ public:
 		return button;
 	}
 
+	// Dynamic views support
+	void load_packages_view (GtkTreeModel *(* build_model) (void))
+	{
+		GtkTreeModel *model = (m_packages_model = build_model());
+
+		GtkTreeModel *installed_model, *available_model;
+		installed_model = gtk_tree_model_filter_new (model, NULL);
+		available_model = gtk_tree_model_filter_new (model, NULL);
+		g_object_unref (G_OBJECT (model));
+
+		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (
+			installed_model), is_package_installed, this, NULL);
+		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (
+			available_model), is_package_available, this, NULL);
+
+		gtk_tree_view_set_model (GTK_TREE_VIEW (m_installed_view), installed_model);
+		gtk_tree_view_set_model (GTK_TREE_VIEW (m_available_view), available_model);
+		g_object_unref (G_OBJECT (installed_model));
+		g_object_unref (G_OBJECT (available_model));
+
+		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 1);
+		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 2);
+	}
+
 	static GtkTreeModel *loadPackagesListAsPlain()
 	{
-		GtkListStore *store = gtk_list_store_new (7, G_TYPE_POINTER, G_TYPE_STRING,
-			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+		GtkListStore *store = gtk_list_store_new (8, G_TYPE_POINTER, G_TYPE_STRING,
+			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 
 		GtkTreeIter iter;
@@ -1017,8 +1038,9 @@ public:
 
 	static GtkTreeModel *loadPackagesListByCategory()
 	{
-		GtkTreeStore *store = gtk_tree_store_new (7, G_TYPE_POINTER, G_TYPE_STRING,
-			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_POINTER, G_TYPE_STRING,
+			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 
 		// we need to create the categories tree as we iterate packages
@@ -1058,7 +1080,7 @@ public:
 						string name = "<b>" + node + "</b>";
 						gtk_tree_store_set (store, &iter,
 							0, NULL, 1, name.c_str(), 2, name.c_str(), 3, TRUE,
-							4, TRUE, 5, FALSE, 6, FALSE, -1);
+							4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, -1);
 
 						path = gtk_tree_model_get_path (model, &iter);
 						tree [node] = path;
@@ -1115,7 +1137,8 @@ public:
 		induceObjects (selectable, install_obj, available_obj);
 
 		string availableName, installedName;
-		availableName = (installedName = YGUtils::escape_markup (selectable->name()));
+		availableName = (installedName = "<b>" + YGUtils::escape_markup (
+			selectable->name()) + "</b>");
 		if (available_obj)
 			availableName += " (" + available_obj->edition().version() + ")\n" +
 			                 "<small>" + YGUtils::escape_markup (available_obj->summary()) +
@@ -1129,7 +1152,8 @@ public:
 		if (available_obj) {
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
 			     it != selectable->availableEnd(); it++) {
-				int res = zypp::Edition::compare ((*it)->edition(), available_obj->edition());
+				int res = zypp::Edition::compare ((*it)->edition(),
+				                                  available_obj->edition());
 				if (res < 0)
 					has_downgrade = true;
 				else if (res > 0)
@@ -1142,12 +1166,12 @@ public:
 			gtk_list_store_set (GTK_LIST_STORE (model), iter,
 				0, get_pointer (selectable), 1, installedName.c_str(),
 				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, -1);
+				5, has_upgrade, 6, has_downgrade, 7, TRUE, -1);
 		else /*if (GTK_IS_TREE_STORE (model))*/
 			gtk_tree_store_set (GTK_TREE_STORE (model), iter,
 				0, get_pointer (selectable), 1, installedName.c_str(),
 				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, -1);
+				5, has_upgrade, 6, has_downgrade, 7, TRUE, -1);
 	}
 
 	virtual ~PackageSelector()
@@ -1163,29 +1187,6 @@ public:
 
 	GtkWidget *getWidget()
 	{ return m_widget; }
-
-	void load_packages_view (GtkTreeModel *(* build_model) (void))
-	{
-		GtkTreeModel *model = (m_packages_model = build_model());
-
-		GtkTreeModel *installed_model, *available_model;
-		installed_model = gtk_tree_model_filter_new (model, NULL);
-		available_model = gtk_tree_model_filter_new (model, NULL);
-		g_object_unref (G_OBJECT (model));
-
-		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (
-			installed_model), is_package_installed, this, NULL);
-		gtk_tree_model_filter_set_visible_func (GTK_TREE_MODEL_FILTER (
-			available_model), is_package_available, this, NULL);
-
-		gtk_tree_view_set_model (GTK_TREE_VIEW (m_installed_view), installed_model);
-		gtk_tree_view_set_model (GTK_TREE_VIEW (m_available_view), available_model);
-		g_object_unref (G_OBJECT (installed_model));
-		g_object_unref (G_OBJECT (available_model));
-
-		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 1);
-		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 2);
-	}
 
 	static void view_plain_mode_cb  (GtkToggleButton *button,
 	                                 PackageSelector *pThis)
@@ -1405,19 +1406,37 @@ public:
 	static bool sync_tree_views_scroll (GtkTreeView *current_view, GtkTreeView *other_view,
 	                                    GtkTreePath *current_path, bool select_it)
 	{
-		// TODO: should we check for installable/available objects here?
+		/* What we do here is to scroll the other view to the correspondent
+		   package position. If the package isn't present in that view, we
+		   iterate it so we get the closest package (with respect to alphabetic
+		   sorting). */
 
 		// converts the path from one model to the other
 		GtkTreePath *_path, *other_path;
 		_path = gtk_tree_model_filter_convert_path_to_child_path (
-			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (current_view)), current_path);
+			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (current_view)),
+			current_path);
 		if (!_path)
 			return false;
-		other_path = gtk_tree_model_filter_convert_child_path_to_path (
-			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (other_view)), _path);
+
+		GtkTreeModel *base_model = gtk_tree_model_filter_get_model (
+			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (current_view)));
+
+		GtkTreeIter iter, other_iter;
+		gtk_tree_model_get_iter (base_model, &iter, _path);
 		gtk_tree_path_free (_path);
-		if (!other_path)
-			return false;
+
+		while (!gtk_tree_model_filter_convert_child_iter_to_iter (
+			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (other_view)),
+			&other_iter, &iter))
+		{
+			if (!gtk_tree_model_iter_next (base_model, &iter))
+				return false;
+			select_it = false;  // not the same package -- dont select it then
+		}
+
+		other_path = gtk_tree_model_get_path (gtk_tree_view_get_model (other_view),
+		                                      &other_iter);
 
 		GdkRectangle cell_rect, visible_rect;
 		gtk_tree_view_get_cell_area (other_view, other_path, NULL, &cell_rect);
@@ -1454,9 +1473,7 @@ public:
 		GtkTreePath *path = 0;
 		gtk_tree_view_get_cursor (tree_view, &path, NULL);
  
-		if (path && (
-		    (install_obj && available_obj) || (!install_obj && !available_obj)
-		    /* TODO: group flag would obsolete this last check */))
+		if (path)
 			sync_tree_views_scroll (tree_view, other_view, path, true);
 		else  // set the other view as un-selected
 			gtk_tree_selection_unselect_all (gtk_tree_view_get_selection (other_view));
@@ -1525,27 +1542,6 @@ public:
 		if (!selectable->setCandidate (candidate))
 			y2warning ("Error: Could not %sgrade\n", arrow_type == GTK_ARROW_UP ? "up" : "down");
 		pThis->loadPackageRow (model, &iter, selectable);
-	}
-
-	static gboolean view_scrolled_cb (GtkAdjustment *adj, PackageSelector *pThis)
-	{
-		// TODO: do some syncing scrolling
-#if 0
-		GtkTreeView *current_view = GTK_TREE_VIEW (
-			g_object_get_data (G_OBJECT (adj), "view"));
-		GtkTreeView *other_view = GTK_TREE_VIEW (
-			GTK_WIDGET (current_view) == pThis->m_available_view ?
-			pThis->m_installed_view : pThis->m_available_view);
-
-		GtkTreePath *first_path;
-		if (gtk_tree_view_get_visible_range (current_view, &first_path, NULL)) {
-			return FALSE;
-
-			sync_tree_views_scroll (current_view, other_view, first_path, false);
-			gtk_tree_path_free (first_path);
-		}
-#endif
-		return FALSE;
 	}
 };
 
