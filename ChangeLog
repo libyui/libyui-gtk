@@ -1,3 +1,14 @@
+2007-05-22  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: expand all nodes on the conflicts
+	dialog tree.
+
+	* src/ygtkfindentry.c: when it has a context menu, draw a arrow
+	on the icon to indicate it (see the package selector).
+
+	* src/ygtkwizard.c: when help dialog's search text is not found,
+	use the same red of Firefox on the search. Also set text white.
+
 2007-05-12  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: when clicking in a package, even if

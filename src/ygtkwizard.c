@@ -36,12 +36,16 @@ static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dia
 {
 	gchar *key = gtk_editable_get_chars (editable, 0, -1);
 	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
-		GdkColor red = { 0, 255 << 8, 0, 0 };
+		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
+		         white = { 0, 255 << 8, 255 << 8, 255 << 8 };
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
+		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, &white);
 		gdk_beep();
 	}
-	else
+	else {
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
+		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, NULL);
+	}
 	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }

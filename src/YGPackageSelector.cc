@@ -209,9 +209,6 @@ static bool solveProblems()
 	gtk_tree_view_set_model (GTK_TREE_VIEW (problems_view),
 	                         GTK_TREE_MODEL (problems_store));
 	g_object_unref (G_OBJECT (problems_store));
-	// disable selections
-	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
-		GTK_TREE_VIEW (problems_view)), GTK_SELECTION_NONE);;
 
 	// construct model
 	GtkTreeIter piter, siter;
@@ -233,6 +230,11 @@ static bool solveProblems()
 				problems_store), &siter)] = get_pointer (*jt);
 		}
 	}
+
+	// set tree properties
+	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+		GTK_TREE_VIEW (problems_view)), GTK_SELECTION_NONE);
+	gtk_tree_view_expand_all (GTK_TREE_VIEW (problems_view));
 
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 	gtk_widget_show_all (dialog);

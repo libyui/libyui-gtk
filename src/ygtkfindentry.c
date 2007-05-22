@@ -243,6 +243,7 @@ static void ygtk_ext_entry_class_init (YGtkExtEntryClass *klass)
 // check the header file for information about this widget
 
 #include <string.h>
+#define ARROW_SIZE 7
 
 static void ygtk_find_entry_editable_init (GtkEditableClass *iface);
 
@@ -303,6 +304,25 @@ static GdkPixbuf *pixbuf_color_shift (const GdkPixbuf *src, int shift)
 	return dest;
 }
 
+static void ygtk_find_entry_set_borders (YGtkFindEntry *entry)
+{
+	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (entry);
+	int left_border = 0, right_border = 0;
+	if (entry->find_icon) {
+		left_border = gdk_pixbuf_get_width (entry->find_icon) + 2;
+		if (entry->context_menu)
+			left_border += ARROW_SIZE - 1;
+	}
+	if (entry->clear_icon)
+	    right_border = gdk_pixbuf_get_width (entry->clear_icon) + 2;
+
+	ygtk_ext_entry_set_border_window_size (eentry,
+		YGTK_EXT_ENTRY_LEFT_WIN, left_border);
+	ygtk_ext_entry_set_border_window_size (eentry,
+		YGTK_EXT_ENTRY_RIGHT_WIN, right_border);
+	gtk_widget_queue_resize (GTK_WIDGET (entry));
+}
+
 static void ygtk_find_entry_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->realize (widget);
@@ -317,10 +337,7 @@ static void ygtk_find_entry_realize (GtkWidget *widget)
 	fentry->find_hover_icon = pixbuf_color_shift (fentry->find_icon, 30);
 	fentry->clear_hover_icon = pixbuf_color_shift (fentry->clear_icon, 30);
 
-	ygtk_ext_entry_set_border_window_size (eentry,
-		YGTK_EXT_ENTRY_LEFT_WIN, gdk_pixbuf_get_width (fentry->find_icon) + 2);
-	ygtk_ext_entry_set_border_window_size (eentry,
-		YGTK_EXT_ENTRY_RIGHT_WIN, gdk_pixbuf_get_width (fentry->clear_icon) + 2);
+	ygtk_find_entry_set_borders (fentry);
 
 	GdkDisplay *display = gtk_widget_get_display (widget);
 	GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_HAND1);
@@ -358,12 +375,19 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 		else
 			pixbuf = hover ? fentry->clear_hover_icon : fentry->clear_icon;
 
-		int pix_height = gdk_pixbuf_get_height (pixbuf), win_height, y;
-		gdk_drawable_get_size (event->window, NULL, &win_height);
+		int pix_height = gdk_pixbuf_get_height (pixbuf), win_width, win_height, y;
+		gdk_drawable_get_size (event->window, &win_width, &win_height);
 		y = (win_height - pix_height) / 2;
 
 		gdk_draw_pixbuf (event->window, widget->style->fg_gc[0], pixbuf,
 		                 0, 0, 1, y, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
+
+		if (fentry->context_menu && event->window == eentry->left_window)
+			gtk_paint_arrow (widget->style, event->window, GTK_STATE_NORMAL,
+			                 GTK_SHADOW_NONE, &event->area, widget, NULL,
+			                 GTK_ARROW_DOWN, FALSE,
+			                 win_width - ARROW_SIZE - 1, win_height - ARROW_SIZE,
+			                 ARROW_SIZE, ARROW_SIZE);
 	}
 	else
 		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->expose_event (widget, event);
@@ -445,6 +469,7 @@ void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
 	entry->context_menu = menu;
 	if (menu)
 		gtk_menu_attach_to_widget (menu, GTK_WIDGET (entry), NULL);
+	ygtk_find_entry_set_borders (entry);
 }
 
 GtkWidget *ygtk_find_entry_new (gboolean will_use_find_icon)
