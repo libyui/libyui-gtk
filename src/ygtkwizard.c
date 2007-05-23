@@ -878,7 +878,7 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 }
 
 // helper -- applies padding to a GtkAllocation
-static void apply_allocation_padding (GtkAllocation *alloc, gint padding)
+static inline void apply_allocation_padding (GtkAllocation *alloc, gint padding)
 {
 	alloc->x += padding;
 	alloc->y += padding;
@@ -940,8 +940,6 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 
 		child_area.x += nav_area.width;
 		child_area.width -= nav_area.width;
-		title_area.x += nav_area.width;
-		title_area.width -= nav_area.width;
 	}
 	else
 		nav_area.width = 0;

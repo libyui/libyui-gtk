@@ -1,3 +1,7 @@
+2007-05-23  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: changed title alignment.
+
 2007-05-22  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: expand all nodes on the conflicts
