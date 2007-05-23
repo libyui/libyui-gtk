@@ -5,6 +5,9 @@
 	* src/ygtkfindentry.c: overload entry's context menu key binding
 	by our own, if set (see package selector).
 
+	* src/YGUI.cc: ignore widgets without YGWidget representation
+	(ie. YWizard buttons wrappers).
+
 2007-05-22  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: expand all nodes on the conflicts

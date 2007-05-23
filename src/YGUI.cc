@@ -190,27 +190,25 @@ YGUI::userInput( unsigned long timeout_millisec )
 static void dumpYastTree (YWidget *widget, GtkTreeStore *store,
                           GtkTreeIter *parent_node)
 {
+	YGWidget *ygwidget;
+	if (!widget || !(ygwidget = YGWidget::get (widget)))
+		return;
+
 	GtkTreeIter iter;
 	gtk_tree_store_append (store, &iter, parent_node);
 
-	if (!widget)
-		gtk_tree_store_set (store, &iter, 0, "(no children)", -1);
-	else {
-		YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
+	YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
+	gchar *props = g_strdup_printf ("stretch: %d x %d - weight: %ld x %ld",
+	               ygwidget->isStretchable (YD_HORIZ),
+	               ygwidget->isStretchable (YD_VERT), widget->weight (YD_HORIZ),
+	               widget->weight (YD_VERT));
+	gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
+		1, container ? "" : widget->debugLabel().c_str(), 2, props, -1);
+	g_free (props);
 
-		YGWidget *ygwidget = YGWidget::get (widget);
-		gchar *props = g_strdup_printf ("stretch: %d x %d - weight: %ld x %ld",
-		               ygwidget->isStretchable (YD_HORIZ),
-		               ygwidget->isStretchable (YD_VERT), widget->weight (YD_HORIZ),
-		               widget->weight (YD_VERT));
-		gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
-			1, container ? "" : widget->debugLabel().c_str(), 2, props, -1);
-		g_free (props);
-
-		if (container)
-			for (int i = 0; i < container->numChildren(); i++)
-				dumpYastTree (container->child (i), store, &iter);
-	}
+	if (container)
+		for (int i = 0; i < container->numChildren(); i++)
+			dumpYastTree (container->child (i), store, &iter);
 }
 
 static void destroy_dialog (GtkDialog *dialog, gint arg)

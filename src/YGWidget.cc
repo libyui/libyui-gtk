@@ -68,8 +68,11 @@ YGWidget *YGWidget::get (YWidget *y_widget)
 {
 	if (!y_widget || !y_widget->widgetRep()) {
 #ifdef IMPL_DEBUG
-		fprintf (stderr, "Y_Widget %p : rep %p\n",
-			 y_widget, y_widget ? y_widget->widgetRep() : NULL);
+		if (y_widget)
+			fprintf (stderr, "Widget '%s' (label: '%s') not supported\n",
+			         y_widget->widgetClass(), y_widget->debugLabel().c_str());
+		else
+			fprintf (stderr, "YGWidget::get() on null\n");
 #endif
 		return NULL;
 	}
