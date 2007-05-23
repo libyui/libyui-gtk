@@ -940,6 +940,9 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 
 		child_area.x += nav_area.width;
 		child_area.width -= nav_area.width;
+		/*  // align to child
+		title_area.x += nav_area.width;
+		title_area.width -= nav_area.width;*/
 	}
 	else
 		nav_area.width = 0;
