@@ -407,6 +407,22 @@ static gboolean ygtk_find_entry_enter_leave_notify_event (GtkWidget *widget,
 	return FALSE;
 }
 
+static gboolean ygtk_find_entry_actual_popup_menu (GtkWidget *widget, guint button,
+                                                   guint32 time)
+{
+	GtkMenu *menu = YGTK_FIND_ENTRY (widget)->context_menu;
+	gtk_menu_popup (menu, NULL, NULL, NULL, NULL, button, time);
+}
+
+static gboolean ygtk_find_entry_popup_menu (GtkWidget *widget)
+{
+	if (YGTK_FIND_ENTRY (widget)->context_menu) {
+		ygtk_find_entry_actual_popup_menu (widget, 0, gtk_get_current_event_time());
+		return TRUE;
+	}
+	return 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->popup_menu (widget);
+}
+
 static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
                                                     GdkEventButton *event)
 {
@@ -416,8 +432,7 @@ static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
 		// If the entry has an associated context menu, use it.
 		// Otherwise, find icon selects entry's text.
 		if (fentry->context_menu)
-			gtk_menu_popup (fentry->context_menu, NULL, NULL, NULL,
-			                NULL, event->button, event->time);
+			ygtk_find_entry_actual_popup_menu (widget, event->button, event->time);
 		else {
 			gtk_widget_grab_focus (widget);
 			gtk_editable_select_region (GTK_EDITABLE (widget), 0, -1);
@@ -484,6 +499,7 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 	gtkwidget_class->enter_notify_event = ygtk_find_entry_enter_leave_notify_event;
 	gtkwidget_class->leave_notify_event = ygtk_find_entry_enter_leave_notify_event;
 	gtkwidget_class->button_press_event = ygtk_find_entry_button_press_event;
+	gtkwidget_class->popup_menu = ygtk_find_entry_popup_menu;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_find_entry_destroy;
