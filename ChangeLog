@@ -1,3 +1,119 @@
+2007-06-20  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc:
+	+ fix bad behavior when undoing a package set to update.
+	+ fixed libzypp hang when queried for sources that were disabled.
+	+ use libzypp Unit utility to convert partition disk size integer
+	  to a nice size string (for the disk usage graph).
+	+ set font package description italic when user modifies its 
+	+ putted sources and disk usage table into notebook pages.
+	+ fixed code for multi-selections.
+	+ fixed pattern / language management.
+	+ don't allow selections on groups.
+
+	* src/YGTable.cc: fixed last work; when a table is sorted the rows
+	paths change... This has broken our yast row to gtk row id proxy...
+	Re-worked using another approach.
+
+	* src/YGWidget.cc: fixed: labels that were putted in top of some
+	widgets (like the progress bar) were being wrapped for no reason.
+
+2007-06-16  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGFrame.cc: re-factored some code into a common YGBaseFrame and
+	created GtkAlignment once while getting rid of the custom addChild.
+
+	Michael: sorry if YGCheckBoxFrame doesn't compile, and give it a try. :/
+	Btw, YGCheckBoxFrame::setEnabling() looks weird. Shouldn't the argument
+	have a purpose?
+
+	* src/YGTable.cc: sorting was broken. Made it sorting by the first
+	column by default, as yast-qt.
+
+	* src/YGTable.cc: for the MultiSelectionBox, where the user pressed the
+	toggle button, allow also him to press enter/space or double-click the row.
+
+	* src/YGTable.cc: because of yast-ncurses/qt, Yast tools expect it to
+	be impossible for the user to un-select a row (which GTK+ allows by pressing
+	Control while clicking on the row). Disabled that.
+
+	* src/ygtkwizard.c: F1 opens help dialog.
+
+	* src/ygtkratiobox.h/c: got rid of the packing property. Not used and is
+	broken anyway. Touched a few more files.
+
+	* src/YGUtils.h/cc: some cleanup.
+
+	* src/YGDialog.cc: some initial easter egg. :) Press Ctrl+Alt+Shit+E, wait
+	10 secs. :)
+
+2007-06-12  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc: oops, looks like GtkTreeView built-in search wasn't
+	working for our YMultiSelection, since the first column are booleans.
+
+2007-06-11  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc (does_package_match): use some
+	more google-like 'AND' vs. 'OR' syntax, default to AND.
+	
+	* src/YGPackageSelector.cc (acceptLicense): pack the
+	license_view into the right widget, and set expand/fill.
+	(does_package_match_one): split from
+	(does_package_match): allow "and"ing our keywords
+	together to narrow search, rather than or'ing, and default
+	to 'and'.
+	(acceptLicense): make the license_view a rich text view.
+
+	* src/YGProgressBar.cc: use BOTTOM_TO_TOP instead of top_to_bottom,
+	makes the package install bar look more 'normal' (?) usual for
+	thermometers, equalizers, volume controls etc.
+
+2007-06-10  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc:
+	  + some improvements for package description text.
+	  + added sources widgets which not only lists package sources, but
+	  lets you enable/disable them (might be cool to actually allow it to
+	  manage them; add and remove them, but that should be quite some work
+	  -- can of course be considered -- we can't unfortunately just use
+	  the sources yast module, at least as it is, since zypp is locked by
+	  us...
+	  + added disk widget, which lists partitions and their usage. Also fires
+	  up a warning dialog when disk left space gets below 80Mb (only once...).
+	  + start of multi-selections support (BROKEN though).
+
+	NOT to be sent upper stream.
+
+2007-06-02  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc: don't blindly accept the row passed by a YCP app, might
+	be out of range. It didn't crash or anything, since the map find should
+	return the last one, but handle it sensibly now.
+
+	* src/YGPackageSelector.cc: added patterns and languages view. (Installing
+	or removing a pattern/language doesn't yet work, only packages under them.)
+	Removed the PatternSelector class. All bundled now.
+
+	* src/YGPackageSelector.cc: show a progress window when changing views.
+	Was gonna use threads at first, but decided to just flush gtk events at
+	some points. No disadvantages, I would call this userspace threading :P,
+	and its much simpler.
+
+	* src/YGPackageSelector.cc: Done a lot of string treatment for the Package
+	Details expander tabs. In particular, if nautilus is present, the file list
+	dirs will be clicked and nautilus fired on them. (gnome_view_url() would
+	been better, especially since it seems gnome stuff will be moved to /usr;
+	but it's a too small feature to justify linkage).
+
+	* src/ygtkrichtext.c: function API changed. Also touched files
+	that use this widget.
+
+	* src/YGUtils.cc: when handling xml, cut comments (<!-- -->). Added
+	function to replace by \n for <br>, or <p>. If text has <!-- DT:Rich -->
+	don't escape it.
+	* src/test.cc: updated.
+
 2007-05-23  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: changed title alignment.

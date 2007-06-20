@@ -7,59 +7,41 @@
 
 = Look and feel =
 
-* BarGraph / RatioBox
-  Let tiny widgets still have some pixels visible for popup menu.
+* (YGBarGraph / RatioBox): let tiny widgets still have some pixels visible
+  for popup menu.
 
-* YGRichText should use GtkHtml when available, so that we get support for
+* (YGRichText) should use GtkHtml when available, so that we get support for
   tables.
 
-* Accessibility and internationalization (from the package selector) needs to be
-  implemented.
+* (RatioBox) Our buttons are too big in some dialogs (eg. run disk.ycp as user).
+  Check where our algorithm differs from yast-core's.
+
+* (YGTextEntry / YGMultiLineEdit) Add undo/redo support. The backend code should
+  be shared. We probably want to make an interface for it that is then implemented
+  by those two GTK widgets. Work out a patch for GTK+.
 
 = Package Selector =
 (this little monster diserves a section of its own. =))
-
-* Packages list
-	+ different versions of a package should probably be available through
-	  a node rather than the popup menu.
-
-* Categories view
-	+ hide nodes that have no children on categories view
-
-	+ some simple simple syncing. Like when the user presses the Amusement
-	  row or a package from it, the same row should be expanded and set in
-	  the visible area as well.
-
-	+ allow multi-selections on a given view, so that the user could keep
-	  pressing control or use shift. (GtkTreeSelection allows for this.)
-
-	+ when the user presses Alt+I (for the button mnemonic), we probably want the
-	  focus to stay on the view, so that the user can choose more... A shortcut for
-	  just the I and R keys would also be good.
-
-* Patterns
-	+ we probably should re-design this interface a bit to make it more intuitive.
-	  Like using two install / remove buttons rather than the check boxes. Per item
-	  or global? We probably should also provide a re-install / auto-update button.
 
 * Patch selector (YOU)
 	+ we should also list installed patches and maybe a way to remove them
 	  (downgrade of version should work for most cases -- check how qt does it).
 	  Probably a tab for this?
 
-* Others
-	* we should let user see disk usage. Unlike yast-qt, which displays it on
-	  its entirely, maybe we could have use a combo box and only display the
-	  size used for that partition. Or maybe use an expander.
+* Internationalization needs to be supported.
+
+* Search syntax: add proper Google syntax support. Consider also adding regex
+  support when Glib ships with it (add radio boxes to entry's context menu).
+
+* Re-work Yast face to Jakub's suggestion; make it configurable.
+
+* We need an easter-egg! :)
 
 = Internal affairs =
 
 * IntField / Slider
 	o to consider: only report value change when the widget is stalled.
 		To use g_idle functionality.
-
-* Timezone
-	Accept - & timezone selection foo ...
 
 = Yast-Core =
 

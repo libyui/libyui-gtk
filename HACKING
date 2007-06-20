@@ -3,9 +3,9 @@
 YaST basis
 
   Yast-core is a simple byte-code interpreted programming
-  language. It is splitted into two threads: one with the
-  interpreter that runs the YCP application, the other
-  with the interface. This is so because a user may want
+  language. On execution, two threads will be fired: one
+  for the interpreter that runs the YCP application, the other
+  for the interface. This is so because a user may want
   to setup another machine while sitting confortably
   with its GTK+ interface.
 
