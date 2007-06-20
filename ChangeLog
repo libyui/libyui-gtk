@@ -1,5 +1,9 @@
 2007-06-20  Michael Meeks  <michael.meeks@novell.com>
 
+	* Version 2.15.4 - Rev 38929
+
+2007-06-20  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/YGFrame.cc (YGCheckBoxFrame::setEnabling): fix up.
 	(YGCheckBoxFrame::setLabel): handle mnemonic properly.
 
