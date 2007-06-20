@@ -47,7 +47,7 @@ typedef struct _YGtkExtEntryClass
 	GtkEntryClass parent_class;
 } YGtkExtEntryClass;
 
-GtkWidget* ygtk_ext_entry_new();
+GtkWidget* ygtk_ext_entry_new (void);
 GType ygtk_ext_entry_get_type (void) G_GNUC_CONST;
 
 // API based on that of GtkTextView -- limited to our needs
@@ -90,7 +90,7 @@ typedef struct _YGtkFindEntryClass
 	YGtkExtEntryClass parent_class;
 } YGtkFindEntryClass;
 
-GtkWidget* ygtk_find_entry_new();
+GtkWidget* ygtk_find_entry_new (void);
 GType ygtk_find_entry_get_type (void) G_GNUC_CONST;
 
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *popup_menu);

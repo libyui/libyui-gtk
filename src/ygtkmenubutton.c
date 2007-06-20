@@ -5,6 +5,7 @@
 /* YGtkMenuButton widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkmenubutton.h"
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
@@ -234,7 +235,7 @@ static gint ygtk_menu_button_button_press (GtkWidget *widget, GdkEventButton *ev
 	return FALSE;
 }
 
-GtkWidget *ygtk_menu_button_new()
+GtkWidget *ygtk_menu_button_new (void)
 {
 	return g_object_new (YGTK_TYPE_MENU_BUTTON, NULL);
 }

@@ -5,6 +5,7 @@
 /* YGtkFieldEntry widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkfieldentry.h"
 #include <gtk/gtk.h>
 #include <string.h>
@@ -54,8 +55,10 @@ static void ygtk_filter_entry_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_filter_entry_parent_class)->destroy (object);
 }
 
-GtkWidget *ygtk_filter_entry_new()
-{ return g_object_new (YGTK_TYPE_FILTER_ENTRY, NULL); }
+GtkWidget *ygtk_filter_entry_new (void)
+{
+    return g_object_new (YGTK_TYPE_FILTER_ENTRY, NULL);
+}
 
 void ygtk_filter_entry_set_valid_chars (YGtkFilterEntry *entry, const gchar *valid_chars)
 {
@@ -141,8 +144,10 @@ static void ygtk_field_entry_entry_changed (GtkEditable *editable, YGtkFieldEntr
 	g_signal_emit (fields, filter_entry_signal, 0, nb);
 }
 
-GtkWidget *ygtk_field_entry_new()
-{ return g_object_new (YGTK_TYPE_FIELD_ENTRY, NULL); }
+GtkWidget *ygtk_field_entry_new (void)
+{
+    return g_object_new (YGTK_TYPE_FIELD_ENTRY, NULL);
+}
 
 void ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator,
                                  guint max_length, const gchar *valid_chars)

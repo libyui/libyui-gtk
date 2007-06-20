@@ -2,6 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
+#include <config.h>
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -98,7 +99,7 @@ public:
 		YGUtils::setWidgetFont (GTK_WIDGET (button), PANGO_WEIGHT_BOLD,
 		                        PANGO_SCALE_MEDIUM);
 		gtk_widget_show_all (button);
-		gtk_frame_set_label_widget (GTK_FRAME (getWidget), button);
+		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
 
 		setLabel (label);
         setValue (checked);
@@ -114,7 +115,7 @@ public:
         GtkLabel *label = GTK_LABEL (GTK_BIN (button)->child);
 
 		string str (YGUtils::mapKBAccel (_str->value_cstr()));
-		gtk_label_set_text (label, str.c_str());
+		gtk_label_set_text_with_mnemonic (label, str.c_str());
 		YCheckBoxFrame::setLabel (_str);
 	}
 
@@ -130,12 +131,19 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), newValue);
     }
 
-// FIXME: is this correct? does enabled serve no purpose?
 	virtual void setEnabling (bool enabled)
     {
         GtkWidget *frame = getWidget();
-        gtk_widget_set_sensitive (frame, TRUE);
-        handleChildrenEnablement (getValue());
+        if (enabled)
+        {
+            gtk_widget_set_sensitive (frame, TRUE);
+            handleChildrenEnablement (getValue());
+        }
+        else
+        {
+            setChildrenEnabling( false );
+            gtk_widget_set_sensitive (frame, FALSE);
+        }
     }
 
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
@@ -158,4 +166,6 @@ YGUI::createCheckBoxFrame (YWidget *parent, YWidgetOpt &opt,
 	return new YGCheckBoxFrame (opt, YGWidget::get (parent), label, checked);
 }
 
+#else
+#  warning "Not compiling CheckBoxFrame..."
 #endif /*YAST2_YGUI_CHECKBOX_FRAME*/

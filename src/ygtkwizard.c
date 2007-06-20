@@ -5,6 +5,7 @@
 /* YGtkWizard widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkwizard.h"
 #include <atk/atk.h>
 #include <gtk/gtk.h>

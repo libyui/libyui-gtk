@@ -2,6 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
+#include <config.h>
 #include <stdio.h>
 #include <YUI.h>
 #include <gtk/gtk.h>

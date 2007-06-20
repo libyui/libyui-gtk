@@ -5,6 +5,7 @@
 /* YGtkExtEntry widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkfindentry.h"
 #include <gtk/gtk.h>
 
@@ -224,8 +225,10 @@ static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
 	}
 }
 
-GtkWidget *ygtk_ext_entry_new()
-{ return g_object_new (YGTK_TYPE_EXT_ENTRY, NULL); }
+GtkWidget *ygtk_ext_entry_new (void)
+{
+    return g_object_new (YGTK_TYPE_EXT_ENTRY, NULL);
+}
 
 static void ygtk_ext_entry_class_init (YGtkExtEntryClass *klass)
 {
@@ -408,8 +411,8 @@ static gboolean ygtk_find_entry_enter_leave_notify_event (GtkWidget *widget,
 	return FALSE;
 }
 
-static gboolean ygtk_find_entry_actual_popup_menu (GtkWidget *widget, guint button,
-                                                   guint32 time)
+static void ygtk_find_entry_actual_popup_menu (GtkWidget *widget, guint button,
+                                               guint32 time)
 {
 	GtkMenu *menu = YGTK_FIND_ENTRY (widget)->context_menu;
 	gtk_menu_popup (menu, NULL, NULL, NULL, NULL, button, time);
@@ -487,8 +490,10 @@ void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
 	ygtk_find_entry_set_borders (entry);
 }
 
-GtkWidget *ygtk_find_entry_new (gboolean will_use_find_icon)
-{ return g_object_new (YGTK_TYPE_FIND_ENTRY, NULL); }
+GtkWidget *ygtk_find_entry_new (void /*gboolean will_use_find_icon */)
+{
+    return g_object_new (YGTK_TYPE_FIND_ENTRY, NULL);
+}
 
 static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 {

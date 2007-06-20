@@ -5,6 +5,7 @@
 /* YGtkCellRendererArrow widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkcellrendererarrow.h"
 
 #define ARROW_WIDTH  18
@@ -225,8 +226,10 @@ static gboolean ygtk_cell_renderer_arrow_activate (GtkCellRenderer *cell,
 	return FALSE;
 }
 
-GtkCellRenderer *ygtk_cell_renderer_arrow_new()
-{ return g_object_new (YGTK_TYPE_CELL_RENDERER_ARROW, NULL); }
+GtkCellRenderer *ygtk_cell_renderer_arrow_new (void)
+{
+    return g_object_new (YGTK_TYPE_CELL_RENDERER_ARROW, NULL);
+}
 
 static void ygtk_cell_renderer_arrow_class_init (YGtkCellRendererArrowClass *class)
 {

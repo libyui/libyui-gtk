@@ -5,6 +5,7 @@
 /* YGtkRatioBox widget */
 // check the header file for information about this widget
 
+#include <config.h>
 #include "ygtkratiobox.h"
 
 G_DEFINE_ABSTRACT_TYPE (YGtkRatioBox, ygtk_ratio_box, GTK_TYPE_CONTAINER)
@@ -79,8 +80,8 @@ static void ygtk_ratio_box_remove (GtkContainer *container, GtkWidget *widget)
 	}
 }
 
-void ygtk_ratio_box_forall (GtkContainer *container, gboolean include_internals,
-                            GtkCallback callback, gpointer callback_data)
+static void ygtk_ratio_box_forall (GtkContainer *container, gboolean include_internals,
+                                   GtkCallback callback, gpointer callback_data)
 {
 	g_return_if_fail (callback != NULL);
 

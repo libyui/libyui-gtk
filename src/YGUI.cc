@@ -310,8 +310,9 @@ float YGUI::layoutUnits (YUIDimension dim, long device_units)
 
 static void errorMsg (const char *msg)
 {
-	GtkWidget* dialog = gtk_message_dialog_new (NULL,
-		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
+	GtkWidget* dialog = gtk_message_dialog_new
+        (NULL, GtkDialogFlags (0), GTK_MESSAGE_ERROR,
+         GTK_BUTTONS_OK, "%s", msg);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 }
@@ -562,9 +563,9 @@ void YGUI::makeScreenShot (string filename)
 			nb = 0;
 
 		{
-			char *filename_t = g_strdup_printf (screenShotNameTemplate.c_str(), baseName, nb);
-			filename = filename_t;
-			g_free (filename_t);
+			char *tmp_name = g_strdup_printf (screenShotNameTemplate.c_str(), baseName, nb);
+			filename = tmp_name;
+			g_free (tmp_name);
 		}
 		y2debug ("screenshot: %s", filename.c_str());
 

@@ -43,7 +43,7 @@ typedef struct _YGtkCellRendererArrowClass
 	void (* pressed) (guint arrow_type, const gchar *path);
 } YGtkCellRendererArrowClass;
 
-GtkCellRenderer *ygtk_cell_renderer_arrow_new();
+GtkCellRenderer *ygtk_cell_renderer_arrow_new (void);
 GType ygtk_cell_renderer_arrow_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS

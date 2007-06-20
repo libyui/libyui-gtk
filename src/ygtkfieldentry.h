@@ -43,7 +43,7 @@ typedef struct _YGtkFilterEntryClass
 	GtkEntryClass parent_class;
 } YGtkFilterEntryClass;
 
-GtkWidget* ygtk_filter_entry_new();
+GtkWidget* ygtk_filter_entry_new (void);
 GType ygtk_filter_entry_get_type (void) G_GNUC_CONST;
 
 void ygtk_filter_entry_set_valid_chars (YGtkFilterEntry *entry,
@@ -86,7 +86,7 @@ typedef struct _YGtkFieldEntryClass
 	void (* filter_entry_changed) (YGtkFieldEntry *entry, gint field_nb);
 } YGtkFieldEntryClass;
 
-GtkWidget* ygtk_field_entry_new();
+GtkWidget* ygtk_field_entry_new (void);
 GType ygtk_field_entry_get_type (void) G_GNUC_CONST;
 
 // if this is the first field, separator will be ignored. max_length can be 0 to
