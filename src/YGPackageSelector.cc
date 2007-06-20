@@ -1194,29 +1194,23 @@ public:
 		// The treeview model will be built according to the view... Columns
 		// and renderers are common anyway...
 		GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
+		g_object_set (G_OBJECT (text_renderer),
+		              "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 		GtkTreeViewColumn *column;
-		int wrap_width = 250;
 		column = gtk_tree_view_column_new_with_attributes ("Packages",
 			text_renderer, "markup", package_name_col, "style", 9, NULL);
+		gtk_tree_view_column_set_expand (column, TRUE);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
 		// versions combo column
 		if (has_version_col) {
 			GtkCellRenderer *arrow_renderer = ygtk_cell_renderer_arrow_new();
 			column = gtk_tree_view_column_new_with_attributes (NULL,
 				arrow_renderer, "can-go-up", 5, "can-go-down", 6, "visible", 7, NULL);
-//			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_expand (column, FALSE);
 			gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
 			g_signal_connect (G_OBJECT (arrow_renderer), "pressed",
 			                  G_CALLBACK (change_available_version_cb), this);
-
-			int w;
-			gtk_cell_renderer_get_size (GTK_CELL_RENDERER (arrow_renderer), list,
-			                            NULL, NULL, NULL, &w, NULL);
-			wrap_width -= w;
 		}
-		g_object_set (G_OBJECT (text_renderer), "wrap-width", wrap_width,
-		              "wrap-mode", PANGO_WRAP_WORD_CHAR, NULL);
 		return vbox;
 	}
 

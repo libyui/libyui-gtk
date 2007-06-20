@@ -312,6 +312,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	wizard->m_title_image = gtk_image_new();
 	wizard->m_title_label = gtk_label_new("");
+	gtk_label_set_ellipsize (GTK_LABEL (wizard->m_title_label), PANGO_ELLIPSIZE_END);
+	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0);
 
 	// setup label look
 	gtk_widget_modify_fg (wizard->m_title_label, GTK_STATE_NORMAL,
@@ -321,7 +323,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                       PANGO_SCALE_XX_LARGE);
 
 	gtk_box_pack_start (GTK_BOX (wizard->m_title), wizard->m_title_label,
-	                    FALSE, FALSE, 0);
+	                    TRUE, TRUE, 0);
 	gtk_box_pack_end (GTK_BOX (wizard->m_title), wizard->m_title_image,
 	                  FALSE, FALSE, 0);
 
@@ -845,7 +847,7 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 	req.width += header_padding * 2 + border*2;
 	req.height += header_padding * 2;
 
-	requisition->width = MAX (req.width, requisition->width);
+	requisition->width = MAX (MIN (req.width, 40), requisition->width);
 	requisition->height += req.height;
 
 	// body

@@ -1,3 +1,23 @@
+2007-06-20  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	Banshee's labels and table text is truncated with the "..." string
+	added when they don't have enough space. Checked their source code
+	to see the text cell renderer they have done for the purpose. No
+	custom text cell renderer... Then, I noticed that git-view also does
+	it. Checking GTK+ docs, Pango offers that wrapping mode (ellipsize,
+	they call it). Really nice, so made use of it:
+
+	* src/YGPackageSelector.cc: wrap using ellipsize. This doesn't
+	force us to set a wrapping width, so setted the column expandable.
+	Makes the selector looking better when expanded.
+
+	* src/YGTable.cc: used ellipsize for the last column, generally used
+	for descriptions (see runlevel, printer, etc).
+
+	* src/ygtkwizard.cc: sometimes the header text is so big, that the
+	window must be enlarged. Made it using ellipsize, and set a minimum
+	width of 40 pixels.
+
 2007-06-20  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.4 - Rev 38929
@@ -23,7 +43,27 @@
 
 	* src/YGUI.cc (errorMsg): use a '%s' format for msg.
 
-2007-06-20  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+2007-06-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	Banshee's labels and table text is truncated with the "..." string
+	added when they don't have enough space. Checked their source code
+	to see the text cell renderer they have done for the purpose. No
+	custom text cell renderer... Then, I noticed that git-view also does
+	it. Checking GTK+ docs, Pango offers that wrapping mode (ellipsize,
+	they call it). Really nice, so made use of it:
+
+	* src/YGPackageSelector.cc: wrap using ellipsize. This doesn't
+	force us to set a wrapping width, so setted the column expandable.
+	Makes the selector looking better when expanded.
+
+	* src/YGTable.cc: used ellipsize for the last column, generally used
+	for descriptions (see runlevel, printer, etc).
+
+	* src/ygtkwizard.cc: sometimes the header text is so big, that the
+	window must be enlarged. Made it using ellipsize, and set a minimum
+	width of 40 pixels.
+
+2007-06-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: fix: let the selection event be fired, when yast
 	programatically selects a tree view item. Also center it, disallow

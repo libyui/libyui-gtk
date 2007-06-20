@@ -74,6 +74,9 @@ public:
 		if (type == G_TYPE_STRING) {
 			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
 			g_object_set (renderer, "xalign", xalign, NULL);
+			// set the last column, the expandable one, as wrapable
+			if (col_nb == m_colsNb-1)
+				g_object_set (renderer, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 			             renderer, "text", col_nb, NULL);
 		}
