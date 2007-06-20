@@ -468,6 +468,9 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (wizard->m_navigation_widget),
 		0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
 	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (wizard->m_navigation_widget), FALSE);
+	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+		GTK_TREE_VIEW (wizard->m_navigation_widget)), GTK_SELECTION_BROWSE);
+
 	g_signal_connect (G_OBJECT (wizard->m_navigation_widget), "cursor-changed",
 	                  G_CALLBACK (tree_item_selected_cb), wizard);
 
@@ -558,15 +561,12 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	if (path == NULL)
 		return FALSE;
 
-	g_signal_handlers_block_by_func (wizard->m_navigation_widget,
-	                                 (gpointer) tree_item_selected_cb, wizard);
-
-	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (wizard->m_navigation_widget), path);
-	gtk_tree_view_set_cursor (GTK_TREE_VIEW (wizard->m_navigation_widget), path,
+	GtkWidget *widget = wizard->m_navigation_widget;
+	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (widget), path);
+	gtk_tree_view_set_cursor (GTK_TREE_VIEW (widget), path,
 	                          NULL, FALSE);
-
-	g_signal_handlers_unblock_by_func (wizard->m_navigation_widget,
-	                                   (gpointer) tree_item_selected_cb, wizard);
+	gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (widget), path, NULL,
+	                              TRUE, 0.5, 0.5);
 	return TRUE;
 }
 
@@ -784,7 +784,7 @@ void ygtk_wizard_clear_steps (YGtkWizard *wizard)
 }
 
 static const gchar *found_key;
-static void hask_lookup_tree_path_value (gpointer _key, gpointer _value,
+static void hash_lookup_tree_path_value (gpointer _key, gpointer _value,
                                          gpointer user_data)
 {
 	gchar *key = _key;
@@ -798,16 +798,17 @@ static void hask_lookup_tree_path_value (gpointer _key, gpointer _value,
 const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard)
 {
 	GtkTreePath *path;
-	GtkTreeViewColumn *column;
 	gtk_tree_view_get_cursor (GTK_TREE_VIEW (wizard->m_navigation_widget),
-	                          &path, &column);
-	if (path == NULL || column == NULL)
+	                          &path, NULL);
+	if (path == NULL)
 		return NULL;
 
 	/* A more elegant solution would be using a crossed hash table, but there
 	   is none out of box, so we'll just iterate the hash table. */
 	found_key = 0;
-	g_hash_table_foreach (wizard->tree_ids, hask_lookup_tree_path_value, path);
+	g_hash_table_foreach (wizard->tree_ids, hash_lookup_tree_path_value, path);
+
+	gtk_tree_path_free (path);
 	return found_key;
 }
 

@@ -1,5 +1,9 @@
 2007-06-20  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkwizard.c: fix: let the selection event be fired, when yast
+	programatically selects a tree view item. Also center it, disallow
+	unselection and fixed memory leak.
+
 	* src/YGPackageSelector.cc:
 	+ fix bad behavior when undoing a package set to update.
 	+ fixed libzypp hang when queried for sources that were disabled.
