@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkCellRendererArrow can be used as a light replacement for the
    GtkCellRenderCombo or GtkCellRendererSpin. It renders two arrows

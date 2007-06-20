@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <stdio.h>
 #include <YUI.h>
@@ -97,10 +98,16 @@ bool testXHtmlConvert()
 		  "<body><ul><li>foo</li><li>baa</li></ul></body>" },
 		{ "no outer<p>unclosed<p>several<b>unclosed bold",
 		  "<body>no outer<p>unclosed</p><p>several<b>unclosed bold</b></p></body>" },
+		// multiple white spacing -- proper HTML would had collapsed those multiple
+		// spaces -- not important anyway
+		{ "one   day  I  will do", "<body>one   day  I  will do</body>" },
+		// comment
+		{ "we need <b>to <!-- really need to? --> do something</b> about it.",
+		  "<body>we need <b>to  do something</b> about it.</body>" },
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in, "foo", FALSE);
+		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in, "foo");
 		if (strcmp (out, aTests[i].out)) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);
@@ -139,6 +146,31 @@ bool testStrCmp()
 	return true;
 }
 
+bool testMarkupEscape()
+{
+	fprintf (stderr, "Test markup escape\t");
+	struct {
+		const char *in;
+		const char *out;
+		bool escape_br;
+	} aTests[] = {
+		{ "< text />", "&lt; text /&gt;" },
+		{ "um\ndois\ntres", "um\ndois\ntres" },
+		{ NULL, NULL }
+	};
+	for (int i = 0; aTests[i].in; i++) {
+		string out = YGUtils::escape_markup (aTests[i].in);
+		if (out != aTests[i].out) {
+			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
+				 i, out.c_str(), aTests[i].out);
+			return false;
+		}
+		fprintf (stderr, "%d ", i);
+	}
+	fprintf (stderr, "\n");
+	return true;
+}
+
 int main (int argc, char **argv)
 {
 	bool bSuccess = true;
@@ -147,6 +179,7 @@ int main (int argc, char **argv)
 	bSuccess &= testFilterText();
 	bSuccess &= testXHtmlConvert();
 	bSuccess &= testStrCmp();
+	bSuccess &= testMarkupEscape();
 
 	return !bSuccess;
 }

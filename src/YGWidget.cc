@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <stdarg.h>
 #include "YGWidget.h"
@@ -184,7 +185,8 @@ YGLabeledWidget::YGLabeledWidget (YWidget *y_widget, YGWidget *parent,
 	// Create the label
 	m_label = gtk_label_new ("");
 	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
-	gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);
+	if (label_ori == YD_HORIZ)
+		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);
 	if(show) {
 		gtk_widget_show (m_label);
 		gtk_widget_show (m_field);

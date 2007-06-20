@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkRatioBox is an improvement over the GtkBox container that
    allows the programmer to set stretch weights to containees.
@@ -52,7 +53,6 @@ typedef struct _YGtkRatioBoxChild
 	gfloat ratio;
 	guint xfill : 1;
 	guint yfill : 1;
-	guint pack : 1;
 	guint fully_expandable : 1;
 } YGtkRatioBoxChild;
 
@@ -61,10 +61,8 @@ GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 void ygtk_ratio_box_set_homogeneous (YGtkRatioBox *box, gboolean homogeneous);
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
 
-void ygtk_ratio_box_pack_start (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
-                                gboolean xfill, gboolean yfill, guint padding);
-void ygtk_ratio_box_pack_end (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
-                              gboolean xfill, gboolean yfill, guint padding);
+void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
+                          gboolean xfill, gboolean yfill, guint padding);
 
 // Since ratio may be of any value, this function is provided to let programmers
 // specify this child to be fully expandable (avoid its use; stick to some fixed range)
@@ -77,14 +75,12 @@ void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
 
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gfloat ratio, gboolean xfill,
-                                       gboolean yfill, guint padding,
-                                       GtkPackType pack_type);
+                                       gboolean yfill, guint padding);
 
 void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gfloat *ratio, gboolean *xfill,
                                        gboolean *yfill, guint *padding,
-                                       gboolean *fully_expandable,
-                                       GtkPackType *pack_type);
+                                       gboolean *fully_expandable);
 
 /* RatioHBox */
 

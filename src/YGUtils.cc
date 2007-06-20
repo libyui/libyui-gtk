@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <YGUI.h>
@@ -27,10 +28,11 @@ string YGUtils::filterText (const char* text, int length, const char *valid_char
 {
 	if (length == -1)
 		length = strlen (text);
-	if (strlen (valid_chars) == 0)
+	if (valid_chars[0] == '\0')
 		return string(text);
 
 	string str;
+	str.reserve (length);
 	for (int i = 0; text[i] && i < length; i++) {
 		for (int j = 0; valid_chars[j]; j++)
 			if(text[i] == valid_chars[j]) {
@@ -75,23 +77,81 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 	gtk_text_buffer_delete_mark (buffer, end_mark);
 }
 
-#define PROD_ENTITY "&product;"
+
+/* Strings can ask for not being escape with the comment
+   <!-- DT:Rich --> */
+static bool dont_escape (const string &str)
+{
+	char *comment = "<!-- DT:Rich -->";
+	if (str.length() < sizeof (comment))
+		return false;
+	for (unsigned int i = 0; i < sizeof (comment); i++)
+		if (str[i] != comment[i])
+			return false;
+	return true;
+}
 
 string YGUtils::escape_markup (const string &str)
 {
-	string res;
-	for (unsigned int i = 0; i != str.length(); i++) {
-		if (str[i] == '<')
-			res += "&lt;";
-		else if (str[i] == '>')
-			res += "&gt;";
-		else if (str[i] == '&')
-			res += "&amp;";
-		else
-			res += str[i];
+	if (dont_escape (str))
+		return string (str);
+
+	string ret;
+	ret.reserve (str.length());
+	for (unsigned int i = 0; i < str.length(); i++) {
+		char ch = str[i];
+		switch (ch) {
+			case '<':
+				ret += "&lt;";
+				break;
+			case '>':
+				ret += "&gt;";
+				break;
+			case '&':
+				ret += "&amp;";
+				break;
+			default:
+				ret += ch;
+				break;
+		}
 	}
+
+	return ret;
+}
+
+string YGUtils::escape_break_lines (const string &str, bool paragraph_mode)
+{
+	if (dont_escape (str))
+		return str;
+	string res;
+	res.reserve (str.length() + 6);
+	if (paragraph_mode)
+		res = "<p>";
+	/* on paragraph mode, dont break when there is no text on the paragraph.
+	   otherwise, just dont break at the start of the text. */
+	bool dont_break = true;
+	for (unsigned int i = 0; i != str.length(); i++) {
+		char ch = str[i];
+		if (paragraph_mode && ch == '\n' && str[i-1] == '\n') {
+			if (!dont_break)
+				res += "</p><p>";
+			dont_break = true;
+		}
+		else if (!paragraph_mode && ch == '\n') {
+			if (!dont_break)
+				res += "<br>";
+		}
+		else {
+			res += ch;
+			dont_break = false;
+		}
+	}
+	if (paragraph_mode)
+		res += "</p>";
 	return res;
 }
+
+#define PROD_ENTITY "&product;"
 
 inline void skipSpace(const char *instr, int &i)
 {
@@ -185,8 +245,7 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 //   + manually substitute the product entity.
 //   + rewrite <br> and <hr> tags
 //   + deal with <a attrib=noquotes>
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
-                                           gboolean cut_breaklines)
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product)
 {
 	GString *outp = g_string_new ("");
 	GQueue *tag_queue = g_queue_new();
@@ -210,6 +269,34 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			int tag_len;
 			GString *tag = g_string_sized_new (20);
 
+			// ignore comments
+			if (strncmp (&instr[i], "<!--", 4) == 0) {
+				for (i += 3; instr[i] != '\0'; i++)
+					if (strncmp (&instr[i], "-->", 3) == 0) {
+						i += 2;
+						break;
+					}
+				continue;
+			}
+#if 0
+			// ignore comments
+			char *comment = "<!--";
+			for (j = 0; j < instr[i+j] != '\0' && j < (signed) sizeof (comment); j++)
+				if (instr[i+j] != comment[j])
+					break;
+			if (j == sizeof (comment)) {
+				comment = "-->";
+				for (i = 0; instr[i] != '\0'; i++) {
+					for (j = 0; j < (signed) sizeof (comment); j++) {
+						if (instr[i+j] != comment[j])
+							break;
+					}
+					if (j == sizeof (comment))
+						break;
+				}
+				continue;
+			}
+#endif
 			i++;
 			skipSpace (instr, i);
 
@@ -302,7 +389,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 
 		// removing new-lines chars sure isn't a xhtml conversion
 		// but it's still valid xhtml and GtkTextView appreciates it
-		else if (cut_breaklines && instr[i] == '\n') {
+		else if (/*cut_breaklines &&*/ instr[i] == '\n') {
 			// In HTML a breakline should be treated as a white space when
 			// not in the start of a paragraph.
 			if (i > 0 && instr[i-1] != '>' && !g_ascii_isspace (instr[i-1]))
@@ -513,31 +600,26 @@ static void header_clicked_cb (GtkTreeViewColumn *column, GtkTreeSortable *sorta
 	int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "id"));
 
 	GtkSortType sort = GTK_SORT_ASCENDING;
-	if (last_sorted == column) {
+	if (last_sorted != column) {
+		if (last_sorted)
+			gtk_tree_view_column_set_sort_indicator (last_sorted, FALSE);
+		gtk_tree_view_column_set_sort_indicator (column, TRUE);
+		g_object_set_data (G_OBJECT (sortable), "last-sorted", column);
+	}
+	else {
 		sort = gtk_tree_view_column_get_sort_order (column);
-		sort = (sort == GTK_SORT_ASCENDING) ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
+		sort = sort == GTK_SORT_ASCENDING ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
 	}
 
-	gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
 	gtk_tree_view_column_set_sort_order (column, sort);
-
-	if (last_sorted)
-		gtk_tree_view_column_set_sort_indicator (last_sorted, FALSE);
-
-	gtk_tree_view_column_set_sort_indicator (column, TRUE);
-	g_object_set_data (G_OBJECT (sortable), "last-sorted", column);
+	gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
 }
 
-void YGUtils::tree_model_set_col_sortable (GtkTreeSortable *sortable, int col_nb)
-{
-	gtk_tree_sortable_set_sort_func (sortable, col_nb, sort_compare_cb,
-	                                 GINT_TO_POINTER (col_nb), NULL);
-	gtk_tree_sortable_set_sort_column_id (sortable, col_nb, GTK_SORT_ASCENDING);
-}
-
-void YGUtils::tree_view_set_sortable (GtkTreeView *view)
+void YGUtils::tree_view_set_sortable (GtkTreeView *view, int default_sort_col)
 {
 	IMPL
+	g_assert (gtk_tree_view_get_headers_visible (view));
+
 	/* Set all string columns clickable. */
 	GtkTreeSortable *sortable = GTK_TREE_SORTABLE (gtk_tree_view_get_model (view));
 	// we need a pointer, this function is used by different stuff, so to we'll
@@ -562,15 +644,14 @@ void YGUtils::tree_view_set_sortable (GtkTreeView *view)
 			continue;
 
 		// set sortable and clickable
-		tree_model_set_col_sortable (sortable, col_nb);
-		gtk_tree_view_column_set_sort_order (column, GTK_SORT_DESCENDING);
-
-		if (gtk_tree_view_get_headers_visible (view)) {
-			g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (col_nb));
-			gtk_tree_view_column_set_clickable (column, TRUE);
-			g_signal_connect (G_OBJECT (column), "clicked",
-			                  G_CALLBACK (header_clicked_cb), sortable);
-		}
+		gtk_tree_sortable_set_sort_func (sortable, col_nb, sort_compare_cb,
+		                                 GINT_TO_POINTER (col_nb), NULL);
+		g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (col_nb));
+		gtk_tree_view_column_set_clickable (column, TRUE);
+		g_signal_connect (G_OBJECT (column), "clicked",
+		                  G_CALLBACK (header_clicked_cb), sortable);
+		if (col_nb == default_sort_col)
+			header_clicked_cb (column, sortable);
 	}
 	g_list_free (columns);
 }
@@ -583,18 +664,7 @@ GValue YGUtils::floatToGValue (float num)
 	return value;
 }
 
-void YGUtils::setLabel (GtkLabel *widget, const YCPString &label, bool bold)
-{
-    string str;
-    if (bold)
-        str = "<b>" + label->value() + "</b>";
-    else
-        str = label->value();
-    str = YGUtils::mapKBAccel(str.c_str());
-    gtk_label_set_markup_with_mnemonic (widget, str.c_str());
-}
-
-#define SCROLLING_TIME 1000
+#define SCROLLING_TIME 700
 #define SCROLLING_STEP 100
 struct ScrollData {
 	int orix, oriy, diffx, diffy, time;
@@ -609,7 +679,7 @@ static gboolean scroll_timeout (gpointer _data) {
 	int y = ((data->diffy * data->time) / SCROLLING_TIME) + data->oriy;
 
 	gtk_tree_view_scroll_to_point (data->view, x, y);
-	return data->time != SCROLLING_TIME;
+	return data->time < SCROLLING_TIME;
 }
 
 void YGUtils::tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y) {

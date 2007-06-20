@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkBarGraph is just a simple graph of bars that may be
    changed during run-time (see ygtk_bar_graph_setup_entry()).

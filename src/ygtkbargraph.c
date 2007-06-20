@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkBarGraph widget */
 // check the header file for information about this widget
@@ -93,7 +94,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 
 	// Set proportion
 	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1),
-	                                  TRUE, TRUE, 0, GTK_PACK_START);
+	                                  TRUE, TRUE, 0);
 
 	// Set background color
 	// The Tango palette

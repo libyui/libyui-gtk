@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkWizard is a widget based on GtkAssistant, which we couldn't
    use (for starters, GtkAssistant comes from GtkWindow and we need
@@ -99,6 +100,7 @@ typedef struct _YGtkWizardClass
 
 	// signals:
 	void (*action_triggered) (YGtkWizard *wizard, gpointer id, gint id_type);
+	void (*popup_help) (YGtkWizard *dialog);
 } YGtkWizardClass;
 
 GtkWidget *ygtk_wizard_new (void);

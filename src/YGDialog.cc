@@ -1,11 +1,13 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
 #include <gdk/gdkkeysyms.h>
+#include <math.h>  // easter
 
 /* In the main dialog case (when opt.hasDefaultSize is set), it doesn't
    necessarly have a window of its own. If there is already a main window, it
@@ -154,6 +156,16 @@ public:
 				case GDK_T:
 					dumpYastTree (pThis->m_child, GTK_WINDOW (pThis->getWidget()));
 					return TRUE;
+				case GDK_E:  // easter egg
+					static guint explode_timeout = 0;
+					if (explode_timeout == 0)
+						explode_timeout = g_timeout_add (10000,
+							expode_window_timeout_cb, NULL);
+					else {
+						g_source_remove (explode_timeout);
+						explode_timeout = 0;
+					}
+					return TRUE;
 				default:
 					return FALSE;
 			}
@@ -175,6 +187,37 @@ public:
 		gtk_draw_shadow (gtk_widget_get_style (widget), widget->window,
 		                 GTK_STATE_NORMAL, GTK_SHADOW_ETCHED_OUT,
 		                 alloc->x, alloc->y, alloc->width, alloc->height);
+		return TRUE;
+	}
+
+	static gboolean expode_window_timeout_cb (gpointer data)
+	{
+		GtkWindow *window = YGUI::ui()->currentWindow();
+		if (!window)
+			return FALSE;
+		srand (time (NULL));
+		gint x, y;
+		gtk_window_get_position (window, &x, &y);
+#if 0
+		// OVAL MOVE
+		for (int i = 180; i < 360+180; i++) {
+			gtk_window_move (window, x+(int)(sin((i*G_PI)/180)*50),
+			                         y+(int)(cos((i*G_PI)/180)*50)+50);
+			while (gtk_events_pending())
+				gtk_main_iteration();
+			usleep (25);
+		}
+#else
+		// EXPLOSION
+		for (int i = 0; i < 40; i++) {
+			gtk_window_move (window, x+(int)((((float)(rand())/RAND_MAX)*40)-20),
+			                         y+(int)((((float)(rand())/RAND_MAX)*40)-20));
+			while (gtk_events_pending())
+				gtk_main_iteration();
+			usleep (200);
+		}
+#endif
+		gtk_window_move (window, x, y);
 		return TRUE;
 	}
 };

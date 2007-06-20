@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -24,6 +25,17 @@
 #include <zypp/Selection.h>
 #include <zypp/Pattern.h>
 #include <zypp/Language.h>
+#include <zypp/Product.h>
+#include <zypp/Source.h>
+#include <zypp/SourceManager.h>
+
+/* We should consider linking to libgnome and use gnome_url_show(url) here,
+   or at least do some path finding. */
+#define FILEMANAGER_EXEC "/opt/gnome/bin/nautilus"
+inline bool FILEMANAGER_PRESENT()
+{ return g_file_test (FILEMANAGER_EXEC, G_FILE_TEST_IS_EXECUTABLE); }
+inline void FILEMANAGER_LAUNCH (const char *path)
+{ system ((string (FILEMANAGER_EXEC) + " " + path + " &").c_str()); }
 
 // some typedefs and functions to short Zypp names
 typedef zypp::ResPoolProxy ZyppPool;
@@ -33,15 +45,12 @@ typedef zypp::ui::Selectable*     ZyppSelectablePtr;
 typedef zypp::ResObject::constPtr ZyppObject;
 typedef zypp::Package::constPtr   ZyppPackage;
 typedef zypp::Patch::constPtr     ZyppPatch;
-typedef zypp::Selection::constPtr ZyppSelection;
 typedef zypp::Pattern::constPtr   ZyppPattern;
 typedef zypp::Language::constPtr  ZyppLanguage;
 inline ZyppPackage tryCastToZyppPkg (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Package> (obj); }
 inline ZyppPatch tryCastToZyppPatch (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Patch> (obj); }
-inline ZyppSelection tryCastToZyppSelection (ZyppObject obj)
-	{ return zypp::dynamic_pointer_cast <const zypp::Selection> (obj); }
 inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
 inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
@@ -66,14 +75,20 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 		return true;
 	}
 
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Accept License?",
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("License Agreement",
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 		"_Reject", GTK_RESPONSE_REJECT, "_Accept", GTK_RESPONSE_ACCEPT, NULL);
 
 	GtkWidget *license_view, *license_window;
+#ifdef PLAIN_TEXT
 	GtkTextBuffer *buffer = gtk_text_buffer_new (NULL);
 	gtk_text_buffer_set_text (buffer, license.c_str(), -1);
 	license_view = gtk_text_view_new_with_buffer (buffer);
+#else
+    /* FIXME: can we detect rich text vs. non - does it matter ? */
+    license_view = ygtk_richtext_new();
+    ygtk_richtext_set_text (YGTK_RICHTEXT (license_view), license.c_str(), true);
+#endif
 
 	license_window = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (license_window),
@@ -83,7 +98,7 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 	gtk_container_add (GTK_CONTAINER (license_window), license_view);
 
 	GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
-	gtk_box_pack_start (vbox, license_view,  FALSE, FALSE, 6);
+	gtk_box_pack_start (vbox, license_window, TRUE, TRUE, 6);
 
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 	gtk_widget_show_all (dialog);
@@ -98,19 +113,18 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 // install / remove convinience wrapper. You only need to specify an object
 // if you want that particular version to be installed.
 // returns true on sucess
-static bool mark_selectable (ZyppSelectablePtr sel, bool install /*or remove*/)
+static bool mark_selectable (ZyppSelectablePtr selectable, bool install /*or remove*/)
 {
-	zypp::ui::Status status = sel->status();
+	zypp::ui::Status status = selectable->status();
 
 	if (install) {
-		if (!sel->hasCandidateObj()) {
+		if (!selectable->hasCandidateObj()) {
 			y2warning ("YGPackageSelector: no package on repository to install");
 			return false;
 		}
-		if (!acceptLicense (sel))
+		if (!acceptLicense (selectable))
 			return false;
-		if (status == zypp::ui::S_Del && sel->hasInstalledObj() &&
-		    sel->candidateObj()->edition() == sel->installedObj()->edition())
+		if (status == zypp::ui::S_Del)
 			status = zypp::ui::S_KeepInstalled;
 		else {
 			if (status == zypp::ui::S_KeepInstalled)
@@ -124,34 +138,36 @@ static bool mark_selectable (ZyppSelectablePtr sel, bool install /*or remove*/)
 			;  // do nothing
 		else if (status == zypp::ui::S_Install)
 			status = zypp::ui::S_NoInst;
+		else if (status == zypp::ui::S_Update)
+			status = zypp::ui::S_KeepInstalled;
 		else
 			status = zypp::ui::S_Del;
 	}
 
-// if debug
-	const char *name = sel->name().c_str();
+	// debug
+	const char *name = selectable->name().c_str();
 	switch (status) {
 		case zypp::ui::S_KeepInstalled:
-			fprintf (stderr, "keep %s installed\n", name);
+			y2milestone ("keep %s installed\n", name);
 			break;
 		case zypp::ui::S_Update:
-			fprintf (stderr, "update %s\n", name);
+			y2milestone ("update %s\n", name);
 			break;
 		case zypp::ui::S_Install:
-			fprintf (stderr, "install %s\n", name);
+			y2milestone ("install %s\n", name);
 			break;
 		case zypp::ui::S_Del:
-			fprintf (stderr, "remove %s\n", name);
+			y2milestone ("remove %s\n", name);
 			break;
 		case zypp::ui::S_NoInst:
-			fprintf (stderr, "don't install %s\n", name);
+			y2milestone ("don't install %s\n", name);
 			break;
 		default:
-			fprintf (stderr, "error: unknown action: should not happen\n");
+			y2milestone ("error: unknown action: should not happen\n");
 			break;
 	}
 
-	return sel->set_status (status);
+	return selectable->set_status (status);
 }
 
 // tries to solve possible dependencies problems and asks the user for
@@ -268,16 +284,45 @@ static bool solveProblems()
 	return false;
 }
 
-#define INFORMATION_HEIGHT 140
+static string getSourceName (zypp::Source_Ref source)
+{  // based on yast-qt's singleProduct()
+	if (!source.enabled())
+		// can't get name if disabled; strangely, source.resolvables().begin()
+		// hangs
+		return "";
+	string ret;
+	bool found = false;
+	for (zypp::ResStore::iterator it = source.resolvables().begin();
+	     it != source.resolvables().end(); it++) {
+		zypp::Product::Ptr product;
+		product = zypp::dynamic_pointer_cast <zypp::Product> (*it);
+		if (product) {
+			if (found) {
+				y2milestone ("Multiple products on installation source %s",
+				             source.alias().c_str());
+				return "";
+			}
+			found = true;
+			ret = product->summary();
+		}
+	}
 
-// FIXME: do we really need both YGtkRichText and GtkTextView here
+	if (!found)
+		y2milestone ("No product on installation source %s",
+		             source.alias().c_str());
+	return ret;
+}
+
+#define PACKAGE_INFO_HEIGHT  140
+#define ADVANCED_INFO_HEIGHT  80
 
 // Expander widget with the package information
 class PackageInformation
 {
-	GtkWidget *m_widget;
+	GtkWidget *m_widget, *m_notebook;
 	// Information text
 	GtkWidget *m_about_text, *m_authors_text, *m_filelist_text, *m_history_text;
+	bool m_use_filemanager;
 
 public:
 	PackageInformation (const char *expander_text, bool only_description)
@@ -293,19 +338,23 @@ public:
 			gtk_container_add (GTK_CONTAINER (about_win), m_about_text);
 			gtk_container_add (GTK_CONTAINER (m_widget), about_win);
 			m_authors_text = m_filelist_text = m_history_text = NULL;
+			m_notebook = NULL;
 		}
 		else {
-			GtkWidget *notebook = gtk_notebook_new();
-			gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook), GTK_POS_BOTTOM);
-			gtk_container_add (GTK_CONTAINER (m_widget), notebook);
+			m_notebook = gtk_notebook_new();
+			gtk_notebook_set_tab_pos (GTK_NOTEBOOK (m_notebook), GTK_POS_BOTTOM);
+			gtk_container_add (GTK_CONTAINER (m_widget), m_notebook);
 
-			m_about_text = add_text_tab (notebook, "Description");
-			m_filelist_text = add_text_tab (notebook, "File List");
-			m_history_text = add_text_tab (notebook, "History");
-			m_authors_text = add_text_tab (notebook, "Authors");
+			m_about_text = add_text_tab (m_notebook, "Description");
+			m_filelist_text = add_text_tab (m_notebook, "File List");
+			if ((m_use_filemanager = FILEMANAGER_PRESENT()))
+				g_signal_connect (G_OBJECT (m_filelist_text), "link-pressed",
+				                  G_CALLBACK (dir_pressed_cb), NULL);
+			m_history_text = add_text_tab (m_notebook, "History");
+			m_authors_text = add_text_tab (m_notebook, "Authors");
 		}
 		gtk_widget_set_size_request (gtk_bin_get_child (GTK_BIN (m_widget)),
-		                             -1, INFORMATION_HEIGHT);
+		                             -1, PACKAGE_INFO_HEIGHT);
 	}
 
 	GtkWidget *getWidget()
@@ -322,38 +371,130 @@ public:
 				set_text (m_history_text, "");
 			if (m_authors_text)
 				set_text (m_authors_text, "");
+			gtk_expander_set_expanded (GTK_EXPANDER (m_widget), FALSE);
 			gtk_widget_set_sensitive (m_widget, FALSE);
 			return;
 		}
 
+		/* Keep notebook on first page; but only when not visible to not
+		   annoy the user. */
+		if (m_notebook && !gtk_expander_get_expanded (GTK_EXPANDER (m_widget)))
+			gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 0);
 		gtk_widget_set_sensitive (m_widget, TRUE);
 
-		if (m_about_text) {
-			string description = object->description();//YGUtils::escape_markup (object->description());
-			set_text (m_about_text, description);
-			// TODO: cut "Authors:" and following "-----" line to some authors string
-		}
 		ZyppPackage package = tryCastToZyppPkg (object);
-		if (m_filelist_text) {
-			string filelist;
-			const std::list <string> &filenames = package->filenames();
-			for (std::list <string>::const_iterator it = filenames.begin();
-			     it != filenames.end(); it++)
-				filelist += (*it) + "\n";
-			set_text (m_filelist_text, filelist);
+		if (m_about_text) {
+			string description = YGUtils::escape_markup (object->description());
+
+			// cut authors, since they have their own section
+			string::size_type pos = description.find ("Authors:");
+			if (pos != string::npos)
+				description.erase (pos, string::npos);
+
+			description = YGUtils::escape_break_lines (description, true);
+
+			string str;
+			if (package) {
+				description += "<br>";
+				str = package->url();
+				if (!str.empty())
+					description += "Website: " + str + "<br>";
+				str = package->license();
+				if (!str.empty())
+					description += "License: " + str + "<br>";
+				description += "Size: " + object->size().asString() + "b<br>";
+			}
+
+			zypp::Source_Ref source = object->source();
+			str = getSourceName (source);
+			if (str.empty())
+				str = source.url().asString();
+			else
+				str = str + " (" + source.url().asString() + ")";
+			if (!str.empty())
+				description += "Source: " + str;
+
+			set_text (m_about_text, description);
 		}
-		if (m_history_text) {
-			string history;
-			const std::list <zypp::ChangelogEntry> &changelog = package->changelog();
-			for (std::list <zypp::ChangelogEntry>::const_iterator it = changelog.begin();
-			     it != changelog.end(); it++)
-				history += "<p><i>" + it->date().asString() + "</i> "
-				           "<b>" + it->author() + "</b><br>" +
-				           it->text() + "</p>";
-			set_text (m_history_text, history);
+		if (package) {
+			if (m_filelist_text) {
+				string filelist;
+				const std::list <string> &filenames = package->filenames();
+				for (std::list <string>::const_iterator it = filenames.begin();
+				     it != filenames.end(); it++) {
+					string file (*it);
+					// set the path as a link
+					if (m_use_filemanager) {
+						string::size_type pos = file.find_last_of ('/');
+						if (pos != string::npos) {  // should be always true
+							string dirname (file, 0, pos+1);
+							string basename (file, pos+1, string::npos);
+							file = "<a href=" + dirname + ">" + dirname + "</a>" + basename;
+						}
+					}
+					filelist += file + "<br>";
+				}
+				set_text (m_filelist_text, filelist);
+			}
+			if (m_history_text) {
+				string history;
+				const std::list <zypp::ChangelogEntry> &changelog = package->changelog();
+				for (std::list <zypp::ChangelogEntry>::const_iterator it = changelog.begin();
+				     it != changelog.end(); it++) {
+					string text = "<blockquote>" + YGUtils::escape_markup (it->text()) +
+					              "</blockquote>";
+					text = YGUtils::escape_break_lines (text, false);
+					history += "<p>" + YGUtils::escape_markup (it->date().asString()) +
+					           " " + YGUtils::escape_markup (it->author()) + ":<br>" +
+					           text + "</p>";
+				}
+				set_text (m_history_text, history);
+			}
+			if (m_authors_text) {
+				string packager (package->packager()), authors;
+
+				const std::list <string> &authors_list = package->authors();
+				if (!authors_list.empty()) {
+					for (std::list <string>::const_iterator it = authors_list.begin();
+					     it != authors_list.end(); it++)
+						authors += *it;
+				}
+				else {
+					/* authors() should be the proper way to get authors, but it seems to
+					   be rarely used, instead packagers list them on the description. */
+					string description = YGUtils::escape_markup (object->description());
+					string::size_type pos = description.find ("Authors:");
+					if (pos != string::npos) {
+						pos = description.find_first_not_of (
+							'-', pos + sizeof ("Authors:") + 1);
+						authors = string (description, pos, string::npos);
+						authors = YGUtils::escape_break_lines (authors, false);
+					}
+				}
+
+				string text;
+				if (!packager.empty())
+					text = "Packaged by:<br><blockquote>" + packager + "</blockquote>";
+				if (!authors.empty()) {
+					if (!packager.empty())
+						text += "<br><br>";
+					text += "Developed by:<br><blockquote>" + authors +
+					        "</blockquote>";
+				}
+				set_text (m_authors_text, text);
+			}
+		}
+		else {
+			if (m_filelist_text)
+				set_text (m_filelist_text, "");
+			if (m_history_text)
+				set_text (m_history_text, "");
+			if (m_authors_text)
+				set_text (m_authors_text, "");
 		}
 	}
 
+private:
 	// auxiliaries to cut down on code
 	static GtkWidget *add_text_tab (GtkWidget *notebook, const char *label)
 	{
@@ -371,7 +512,261 @@ public:
 
 	static void set_text (GtkWidget *widget, const string &text)
 	{
-		ygtk_richtext_set_text (YGTK_RICHTEXT (widget), text.c_str(), FALSE, TRUE);
+		const char *str = "<i>(not available)</i>";
+		if (!text.empty())
+			str = text.c_str();
+		ygtk_richtext_set_text (YGTK_RICHTEXT (widget), str, TRUE);
+
+		// scroll to the start
+		GtkTextIter iter;
+		gtk_text_buffer_get_start_iter (gtk_text_view_get_buffer (
+			GTK_TEXT_VIEW (widget)), &iter);
+		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (widget), &iter, 0, TRUE, 0, 0);
+	}
+
+	/* When a directory is pressed on the file list. */
+	static void dir_pressed_cb (YGtkRichText *rich_text, const gchar *link)
+	{ FILEMANAGER_LAUNCH (link); }
+};
+
+// Table widget with package sources
+	/* I don't like this, since it differs from the rest of the code, but to
+	   avoid declarations... */
+	struct SourcesTableListener
+	{
+		virtual ~SourcesTableListener() {}
+		virtual void sources_changed_cb() = 0;
+	};
+class SourcesTable
+{
+	GtkWidget *m_widget;
+	GtkTreeModel *m_model;
+	SourcesTableListener *m_listener;
+
+public:
+	SourcesTable (SourcesTableListener *listener)
+		: m_listener (listener)
+	{
+		/* 0 - source enabled?, 1  - source name (estimation), 2 - source URL,
+		   3 - source id; what they call of alias. */
+		GtkListStore *store = gtk_list_store_new (4, G_TYPE_BOOLEAN, G_TYPE_STRING,
+		                                             G_TYPE_STRING, G_TYPE_STRING);
+		m_model = GTK_TREE_MODEL (store);
+
+		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
+		for (zypp::SourceManager::Source_const_iterator it = manager->Source_begin();
+		     it != manager->Source_end(); it++) {
+			zypp::Source_Ref src = *it;
+			if (src && src.enabled()) {
+				GtkTreeIter iter;
+				gtk_list_store_append (store, &iter);
+				gtk_list_store_set (store, &iter, 0, src.enabled(),
+					1, getSourceName (src).c_str(), 2, src.url().asString().c_str(),
+					3, src.alias().c_str(), -1);
+			}
+		}
+
+		GtkWidget *view = gtk_tree_view_new_with_model (m_model);
+		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
+		                             GTK_SELECTION_NONE);
+		g_object_unref (G_OBJECT (m_model));  // tree view will take care of it
+
+		// prepare the view
+		GtkTreeViewColumn *column;
+		GtkCellRenderer *renderer;
+
+		renderer = gtk_cell_renderer_toggle_new();
+		column = gtk_tree_view_column_new_with_attributes ("",
+		             renderer, "active", 0, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+		                  G_CALLBACK (source_toggled_cb), this);
+
+		renderer = gtk_cell_renderer_text_new();
+		column = gtk_tree_view_column_new_with_attributes ("Name",
+		             renderer, "text", 1, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		renderer = gtk_cell_renderer_text_new();
+		column = gtk_tree_view_column_new_with_attributes ("URL",
+		             renderer, "text", 2, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		m_widget = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_widget),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_widget_set_size_request (m_widget, -1, ADVANCED_INFO_HEIGHT);
+		gtk_container_add (GTK_CONTAINER (m_widget), view);
+	}
+
+	GtkWidget *getWidget()
+	{ return m_widget; }
+
+private:
+	static void source_toggled_cb (GtkCellRendererToggle *renderer,
+	                               gchar *path_str, SourcesTable *pThis)
+	{
+		IMPL
+		GtkTreeModel *model = pThis->m_model;
+		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
+		GtkTreeIter iter;
+		gtk_tree_model_get_iter (model, &iter, path);
+		gtk_tree_path_free (path);
+
+		gchar *alias;
+		gtk_tree_model_get (model, &iter, 3, &alias, -1);
+
+		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
+		zypp::Source_Ref source = manager->findSource (alias);
+		g_free (alias);
+
+		if (gtk_cell_renderer_toggle_get_active (renderer))
+			source.disable();
+		else
+			source.enable();
+		gtk_list_store_set (GTK_LIST_STORE (model), &iter,
+		                    0, source.enabled(), -1);
+
+		pThis->m_listener->sources_changed_cb();
+	}
+};
+
+// Table widget to monitor disk partitions space-usage
+#define MIN_FREE_MB_WARN (80*1024)
+
+class DiskTable
+{
+	GtkWidget *m_widget;
+	GtkTreeModel *m_model;
+	bool m_has_warned;  // only warn once
+
+	// evil long names
+	typedef zypp::DiskUsageCounter::MountPoint    ZyppDu;
+	typedef zypp::DiskUsageCounter::MountPointSet ZyppDuSet;
+	typedef zypp::DiskUsageCounter::MountPointSet::iterator ZyppDuSetIterator;
+
+public:
+	DiskTable()
+	{
+		m_has_warned = false;
+		if (zypp::getZYpp()->diskUsage().empty())
+			zypp::getZYpp()->setPartitions (
+			    zypp::DiskUsageCounter::detectMountPoints());
+
+		/* 0 - mount point (also used as id), 1 - percentage of disk usage
+		  ([0, 100]), 2 - disk usage detail (i.e. "200Mb of 1Gb") */
+		GtkListStore *store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_INT,
+		                                             G_TYPE_STRING);
+		m_model = GTK_TREE_MODEL (store);
+		update();
+
+		GtkWidget *view = gtk_tree_view_new_with_model (m_model);
+		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
+		                             GTK_SELECTION_NONE);
+		g_object_unref (G_OBJECT (m_model));  // tree view will take care of it
+
+		// prepare the view
+		GtkTreeViewColumn *column;
+		GtkCellRenderer *renderer;
+
+		renderer = gtk_cell_renderer_text_new();
+		column = gtk_tree_view_column_new_with_attributes ("Mount Point",
+		             renderer, "text", 0, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		renderer = gtk_cell_renderer_progress_new();
+		column = gtk_tree_view_column_new_with_attributes ("Usage",
+		             renderer, "value", 1, "text", 2, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		m_widget = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_widget),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_widget_set_size_request (m_widget, -1, ADVANCED_INFO_HEIGHT);
+		gtk_container_add (GTK_CONTAINER (m_widget), view);
+	}
+
+	GtkWidget *getWidget()
+	{ return m_widget; }
+
+	static string sizeToString (long long size)
+	{
+		zypp::ByteCount count (size, zypp::ByteCount::K);
+		return count.asString();
+	}
+
+	void update()
+	{
+		GtkListStore *store = GTK_LIST_STORE (m_model);
+		gtk_list_store_clear (store);
+
+		bool warning = false;
+		ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
+		for (ZyppDuSetIterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
+			const ZyppDu &partition = *it;
+			if (!partition.readonly) {
+				// partition fields: dir, used_size, total_size (size on Kb)
+				GtkTreeIter iter;
+				gtk_list_store_append (store, &iter);
+
+				int usage = (partition.pkg_size * 100) / partition.total_size;
+				string usage_str = sizeToString (partition.pkg_size) + " (of " +
+				                   sizeToString (partition.total_size) + ")";
+				gtk_list_store_set (store, &iter, 0, partition.dir.c_str(),
+					1, usage, 2, usage_str.c_str(), -1);
+
+				warning = warning ||
+					(partition.total_size - partition.pkg_size < MIN_FREE_MB_WARN);
+			}
+		}
+		if (warning)
+			warn();
+	}
+
+	void warn()
+	{
+		if (m_has_warned)
+			return;
+		m_has_warned = true;
+
+		GtkWidget *dialog, *view, *scroll_view;
+		dialog = gtk_message_dialog_new_with_markup (YGUI::ui()->currentWindow(),
+			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+			GTK_BUTTONS_OK, "<b>Disk Almost Full !</b>\n\n"
+			"One of the partitions is reaching its limit of capacity. You may "
+			"have to remove packages if you wish to install some.");
+
+		view = gtk_tree_view_new_with_model (m_model);
+		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
+		                             GTK_SELECTION_NONE);
+
+		GtkTreeViewColumn *column;
+		column = gtk_tree_view_column_new_with_attributes ("Mount Point",
+		             gtk_cell_renderer_text_new(), "text", 0, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		column = gtk_tree_view_column_new_with_attributes ("Usage",
+		             gtk_cell_renderer_progress_new(),
+		             "value", 1, "text", 2, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		scroll_view = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll_view),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_widget_set_size_request (scroll_view, -1, 80);
+		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_view),
+		                                     GTK_SHADOW_OUT);
+		gtk_container_add (GTK_CONTAINER (scroll_view), view);
+		gtk_widget_show_all (scroll_view);
+		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll_view);
+
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
 	}
 };
 
@@ -469,14 +864,9 @@ public:
 
 		gtk_tree_view_set_model (GTK_TREE_VIEW (m_patches_view), m_patches_model);
 
-		// TODO: maybe we should sort using severity, not using string.
-		YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (m_patches_view));
-		// sort severity by default
-		gtk_tree_sortable_set_sort_column_id (GTK_TREE_SORTABLE (m_patches_model), 1,
-		                                      GTK_SORT_ASCENDING);
-		column = gtk_tree_view_get_column (GTK_TREE_VIEW (m_patches_view), 1);
-		gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
-		gtk_tree_view_column_set_sort_indicator (column, TRUE);
+		// TODO: severity should be sort by severity, not alphabetically
+		YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (m_patches_view), 1);
+
 		gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_patches_view), 2);
 
 		g_signal_connect (G_OBJECT (m_patches_view), "cursor-changed",
@@ -551,8 +941,6 @@ public:
 		gtk_tree_model_get (model, &iter, 0, &state, 3, &selectable, -1);
 
 		state = !state;
-//printf ("setting patch %s for %d\n", selectable->name().c_str(), state);
-
 		if (mark_selectable (selectable, state))
 			gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, state, -1);
 	}
@@ -560,221 +948,8 @@ public:
 	YGWIDGET_IMPL_COMMON
 };
 
-// Pattern selector
-class PatternSelector
-{
-	GtkWidget *m_widget, *m_buttons;
-
-public:
-	PatternSelector()
-	{
-		IMPL
-		m_widget = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (getWidget()),
-		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
-		GtkWidget *view_port = gtk_viewport_new (NULL, NULL);
-		gtk_viewport_set_shadow_type (GTK_VIEWPORT (view_port), GTK_SHADOW_NONE);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_widget),
-		                                       view_port);
-
-		m_buttons = gtk_vbox_new (FALSE, 0);
-		gtk_container_add (GTK_CONTAINER (view_port), m_buttons);
-
-		// before starting to actually create the interface widgets, we need
-		// to store everything to get everything in the right order
-		map <string, vector <ZyppSelectablePtr> > categories;
-		// split into categories
-		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Selection>();
-		     it != zyppPool().byKindEnd <zypp::Selection>(); it++) {
-			ZyppSelectable selectable = *it;
-			ZyppObject object = selectable->theObj();
-			ZyppSelection selection = tryCastToZyppSelection (object);
-			if (selection && selection->visible())
-				categories [selection->category()].push_back (get_pointer (selectable));
-		}
-		// order them
-		for (map <string, vector <ZyppSelectablePtr> >::iterator it = categories.begin();
-		     it != categories.end(); it++) {
-			vector <ZyppSelectablePtr> &patterns = it->second;
-			for (unsigned int i = 0; i < patterns.size(); i++) {
-				ZyppSelection sel_i = tryCastToZyppSelection (patterns[i]->theObj());
-				for (unsigned int j = 0; j < patterns.size(); j++) {
-					ZyppSelection sel_j = tryCastToZyppSelection (patterns[j]->theObj());
-					if (strcmp (sel_i->order().c_str(), sel_j->order().c_str()) == 1) {
-						ZyppSelectablePtr t =  patterns[j];
-						patterns[j] = patterns[i];
-						patterns[i] = t;
-					}
-				}
-			}
-		}
-		// create interface
-		// adding patterns
-		for (map <string, vector <ZyppSelectablePtr> >::iterator it = categories.begin();
-		     it != categories.end(); it++) {
-			const vector <ZyppSelectablePtr> &patterns = it->second;
-
-			GtkWidget *label = gtk_label_new (
-				("<big><b>" + it->first + "</b></big>").c_str());
-			gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-			gtk_box_pack_start (GTK_BOX (m_buttons), label, FALSE, FALSE, 6);
-
-			for (unsigned int i = 0; i < patterns.size(); i++) {
-				ZyppSelectablePtr selectable = patterns[i];
-				ZyppObject object = selectable->theObj();
-				ZyppSelection selection = tryCastToZyppSelection (object);
-				ZyppPattern pattern = tryCastToZyppPattern (object);
-
-				if (selection && selection->visible()) {
-					GtkWidget *hbox, *button, *image = 0;
-					button = gtk_check_button_new();
-					g_object_set_data (G_OBJECT (button), "selectable", selectable);
-
-					hbox = gtk_hbox_new (FALSE, 0);
-					label = gtk_label_new (
-						("<b>" + object->summary() + "</b>\n" + object->description()).c_str());
-					gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-					gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-
-					string icon = pattern ? pattern->icon().asString() : "";
-					if (icon.empty()) {
-						// it looks like there is rarely an icon present, so we'll hard-
-						// code a couple of cases
-						string name = selectable->name();
-						if (selection->isBase())
-							icon = "system";
-						else if (YGUtils::contains (name, "gnome"))
-							icon = "gnome";
-						else if (YGUtils::contains (name, "kde"))
-							icon = "kde";
-						else if (YGUtils::contains (name, "games"))
-							icon = "yast-joystick";
-						else if (YGUtils::contains (name, "x11"))
-							icon = "yast-x11";
-
-						if (!icon.empty())
-							icon = THEMEDIR "/icons/32x32/apps/" + icon + ".png";
-					}
-
-					if (g_file_test (icon.c_str(), G_FILE_TEST_EXISTS))
-						image = gtk_image_new_from_file (icon.c_str());
-
-					if (image)
-						gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
-					gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 6);
-					gtk_container_add (GTK_CONTAINER (button), hbox);
-
-					bool is_installed = selectable->status() == zypp::ui::S_KeepInstalled;
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), is_installed);
-					if (selection->isBase() && is_installed)
-						gtk_widget_set_sensitive (button, FALSE);
-
-					gtk_box_pack_start (GTK_BOX (m_buttons), button, FALSE, FALSE, 6);
-				}
-			}
-		}
-		// adding languages
-		{
-			GtkWidget *hbox, *image, *button, *label;
-
-			hbox = gtk_hbox_new (FALSE, 0);
-			label = gtk_label_new ("<big><b>Languages</b></big>");
-			gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-			if (g_file_test (THEMEDIR "/icons/32x32/apps/yast-yast-language.png",
-			                 G_FILE_TEST_EXISTS)) {
-				image = gtk_image_new_from_file (THEMEDIR
-				            "/icons/32x32/apps/yast-yast-language.png");
-				gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 6);
-			}
-			gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_buttons), hbox, FALSE, FALSE, 6);
-
-			for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Language>();
-			     it != zyppPool().byKindEnd <zypp::Language>(); it++) {
-				ZyppSelectable selectable = *it;
-				ZyppObject object = selectable->theObj();
-				ZyppLanguage language = tryCastToZyppLanguage (object);
-
-				if (language) {
-					button = gtk_check_button_new();
-					g_object_set_data (G_OBJECT (button), "selectable",
-					                   get_pointer (selectable));
-
-					label = gtk_label_new (object->description().c_str());
-					gtk_container_add (GTK_CONTAINER (button), label);
-
-					bool is_installed = selectable->status() == zypp::ui::S_KeepInstalled;
-					gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), is_installed);
-
-					gtk_box_pack_start (GTK_BOX (m_buttons), button, FALSE, FALSE, 6);
-				}
-			}
-		}
-		gtk_widget_show_all (m_widget);
-	}
-
-	GtkWidget *getWidget()
-	{ return m_widget; }
-
-	// Applies the pattern and returns the packages to install and remove
-	// via arguments references
-	void apply (set <string> &to_install, set <string> &to_remove)
-	{
-		IMPL
-		GList *buttons = gtk_container_get_children (GTK_CONTAINER (m_buttons));
-		GList *i;
-		for (i = g_list_first (buttons); i; i = i->next) {
-			if (!GTK_IS_TOGGLE_BUTTON (i->data))
-				continue;
-			GtkToggleButton *button = GTK_TOGGLE_BUTTON (i->data);
-			ZyppSelectablePtr selectable = (ZyppSelectablePtr)
-				g_object_get_data (G_OBJECT (button), "selectable");
-			if (!selectable)
-				continue;
-
-			ZyppSelection pattern = tryCastToZyppSelection (selectable->theObj());
-			ZyppLanguage lang = tryCastToZyppLanguage (selectable->theObj());
-
-			set <string> *packages;
-			if (gtk_toggle_button_get_active (button)) {
-				if (!selectable->set_status (zypp::ui::S_Install))
-					continue;
-				packages = &to_install;
-			}
-			else {
-				if (!selectable->set_status (zypp::ui::S_Del))
-					continue;
-				packages = &to_remove;
-			}
-
-			if (pattern) {
-				const set <string> &_packages = pattern->install_packages();
-				packages->insert (_packages.begin(), _packages.end());
-			}
-			else {
-				for (ZyppPool::const_iterator it =
-				          zyppPool().byKindBegin <zypp::Package>();
-				      it != zyppPool().byKindEnd <zypp::Package>(); it++) {
-					ZyppSelectable selectable = *it;
-					ZyppObject object = selectable->theObj();
-
-					const zypp::CapSet &capSet = object->dep (zypp::Dep::FRESHENS);
-					for (zypp::CapSet::const_iterator it = capSet.begin();
-					     it != capSet.end(); it++) {
-						if (it->asString() == lang->name()) {
-							packages->insert (selectable->name());
-						}
-					}
-				}
-			}
-		}
-		g_list_free (buttons);
-	}
-};
-
 // Package selector's widget
-class PackageSelector
+class PackageSelector : public SourcesTableListener
 {
 friend class YGPackageSelector;
 
@@ -787,6 +962,8 @@ friend class YGPackageSelector;
 
 	// Package information widget
 	PackageInformation *m_information_widget;
+	SourcesTable *m_sources_table;
+	DiskTable *m_disk_table;
 
 	// Search gizmos
 	GtkWidget *m_search_entry, *m_plain_view;
@@ -799,7 +976,7 @@ friend class YGPackageSelector;
 	GtkWidget *m_install_label, *m_remove_label;
 
 public:
-	PackageSelector (bool enablePatterns = true)
+	PackageSelector (bool patterns_mode)
 	{
 		IMPL
 		m_widget = gtk_vbox_new (FALSE, 0);
@@ -813,7 +990,8 @@ public:
 		   0 - selectable object (pointer), 1 - installed name (string), 2 - available
 		   name (string), 3 - is installed (boolean), 4 - is available (boolean),
 		   5 - can be upgraded (boolean), 6 - can be downgraded (boolean),
-		   7 - is entry a package (eg: can be a group entry) = 8
+		   7 - show up/downgrade control (boolean), 8 - has children,
+		   9 - font style; italic for modified (integer) = 10
 
 		   Models are created at each view mode change (and the other freed). This
 		   allows for more than one model type be used and is also better for speed,
@@ -826,9 +1004,21 @@ public:
 		                                  "gtk-cdrom", NULL, m_available_view,
 		                                  2, true);
 
+		/* FIXME: it seems (due to markup or something) search, this won't work.
+		   Not really a issue as we provide searching, but...
+		gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_installed_view), 0);
+		gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_available_view), 0); */
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_installed_view), FALSE);
+		gtk_tree_view_set_enable_search (GTK_TREE_VIEW (m_available_view), FALSE);
+
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+			GTK_TREE_VIEW (m_installed_view)), GTK_SELECTION_MULTIPLE);
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+			GTK_TREE_VIEW (m_available_view)), GTK_SELECTION_MULTIPLE);
+
 		GtkWidget *buttons_minsize, *selection_buttons_vbox, *install_button,
 		          *remove_button;
-		selection_buttons_vbox = gtk_vbox_new (FALSE, 0);
+		selection_buttons_vbox = gtk_vbox_new (TRUE, 80);
 		// to avoid re-labeling glitches, let it only grow
 		buttons_minsize = ygtk_min_size_new (0, 0);
 		gtk_container_add (GTK_CONTAINER (buttons_minsize), selection_buttons_vbox);
@@ -837,35 +1027,48 @@ public:
 		install_button = createArrowButton ("_install", GTK_ARROW_RIGHT, &m_install_label);
 		remove_button = createArrowButton ("_remove", GTK_ARROW_LEFT, &m_remove_label);
 
-		gtk_box_pack_start (GTK_BOX (selection_buttons_vbox), install_button,
-		                                                      TRUE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (selection_buttons_vbox), remove_button,
-		                                                      TRUE, FALSE, 0);
+		GtkWidget *install_align = gtk_alignment_new (0, 1, 1, 0);
+		gtk_container_add (GTK_CONTAINER (install_align), install_button);
+		GtkWidget *remove_align = gtk_alignment_new (0, 0, 1, 0);
+		gtk_container_add (GTK_CONTAINER (remove_align), remove_button);
+
+		gtk_box_pack_start (GTK_BOX (selection_buttons_vbox), install_align,
+		                    TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (selection_buttons_vbox), remove_align,
+		                    TRUE, TRUE, 0);
 		gtk_container_set_border_width (GTK_CONTAINER (selection_buttons_vbox), 6);
 
 		gtk_box_pack_start (GTK_BOX (packages_hbox), available_box, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (packages_hbox), buttons_minsize,
-		                                             FALSE, FALSE, 0);
+		                                             FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (packages_hbox), installed_box, TRUE, TRUE, 0);
 
-		GtkWidget *view_box, *view_label, *view_categories, *view_patterns;
-		view_label = gtk_label_new ("View packages:");
+		GtkWidget *view_box, *view_label, *view_categories, *view_patterns,
+		          *view_languages;
+		view_label = gtk_label_new ("View Packages:");
+		gtk_label_set_use_markup (GTK_LABEL (view_label), TRUE);
+		gtk_misc_set_alignment (GTK_MISC (view_label), 0, 0.5);
 		m_plain_view = gtk_radio_button_new_with_mnemonic (NULL, "as _plain list");
 		view_categories = gtk_radio_button_new_with_mnemonic_from_widget
 		                      (GTK_RADIO_BUTTON (m_plain_view), "in _categories");
 		view_patterns = gtk_radio_button_new_with_mnemonic_from_widget
 		                      (GTK_RADIO_BUTTON (m_plain_view), "in _patterns");
+		view_languages = gtk_radio_button_new_with_mnemonic_from_widget
+		                      (GTK_RADIO_BUTTON (m_plain_view), "in _languages");
 		view_box = gtk_hbox_new (FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (view_box), view_label, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (view_box), m_plain_view, FALSE, FALSE, 4);
-		gtk_box_pack_start (GTK_BOX (view_box), view_categories, FALSE, FALSE, 4);
-		gtk_box_pack_start (GTK_BOX (view_box), view_patterns, FALSE, FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_label, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (view_box), m_plain_view, FALSE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_categories, FALSE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_patterns, FALSE, TRUE, 4);
+		gtk_box_pack_start (GTK_BOX (view_box), view_languages, FALSE, TRUE, 4);
 		g_signal_connect (G_OBJECT (m_plain_view), "toggled",
 		                  G_CALLBACK (view_plain_mode_cb), this);
 		g_signal_connect (G_OBJECT (view_categories), "toggled",
 		                  G_CALLBACK (view_categories_mode_cb), this);
 		g_signal_connect (G_OBJECT (view_patterns), "toggled",
 		                  G_CALLBACK (view_patterns_mode_cb), this);
+		g_signal_connect (G_OBJECT (view_languages), "toggled",
+		                  G_CALLBACK (view_languages_mode_cb), this);
 
 		// default search fields
 		name_opt = summary_opt = descr_opt = provides_opt = true;
@@ -874,25 +1077,55 @@ public:
 		GtkWidget *search_hbox, *search_label;
 		search_hbox = gtk_hbox_new (FALSE, 0);
 		search_label = gtk_label_new_with_mnemonic ("_Search:");
+		gtk_label_set_use_markup (GTK_LABEL (search_label), TRUE);
+		gtk_misc_set_alignment (GTK_MISC (search_label), 0, 0.5);
 		m_search_entry = ygtk_find_entry_new();
 		gtk_label_set_mnemonic_widget (GTK_LABEL (search_label), m_search_entry);
-		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (search_hbox), search_label, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
 		search_timeout_id = 0;
 		g_signal_connect (G_OBJECT (m_search_entry), "activate",  // when Enter
 		                  G_CALLBACK (search_request_cb), this);  // is pressed
-		g_signal_connect (G_OBJECT (m_search_entry), "changed",
-		                  G_CALLBACK (search_request_cb), this);
+		g_signal_connect_after (G_OBJECT (m_search_entry), "changed",
+		                        G_CALLBACK (search_request_cb), this);
 		ygtk_find_entry_attach_menu (YGTK_FIND_ENTRY (m_search_entry),
 		                             create_search_menu());
 
+		/* we want "View Packages" to be aligned to "Search"; we could use a
+		   GtkTable for that, but a GtkSizeGroup does the job with less hassle. */
+		GtkSizeGroup *align_labels = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+		gtk_size_group_add_widget (align_labels, view_label);
+		gtk_size_group_add_widget (align_labels, search_label);
+		g_object_unref (G_OBJECT (align_labels));
+
 		m_information_widget = new PackageInformation ("Package Information", false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
+
+		m_sources_table = new SourcesTable (this);
+		m_disk_table = new DiskTable();
+
+		GtkWidget *advanced_expander = gtk_expander_new ("Advanced");
+		GtkWidget *advanced_notebook = gtk_notebook_new();
+		GtkWidget *sources_vbox = gtk_vbox_new (FALSE, 4);
+		GtkWidget *sources_label = gtk_label_new (
+			"<i>Use the Installation Source tool to manage the sources.</i>");
+		gtk_misc_set_alignment (GTK_MISC (sources_label), 1, 0);
+		gtk_label_set_use_markup (GTK_LABEL (sources_label), TRUE);
+		gtk_box_pack_start (GTK_BOX (sources_vbox), m_sources_table->getWidget(),
+		                    TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (sources_vbox), sources_label, TRUE, TRUE, 0);
+		gtk_notebook_set_tab_pos (GTK_NOTEBOOK (advanced_notebook), GTK_POS_BOTTOM);
+		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
+			sources_vbox, gtk_label_new ("Packages Sources"));
+		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
+			m_disk_table->getWidget(), gtk_label_new ("Disk Usage"));
+		gtk_container_add (GTK_CONTAINER (advanced_expander), advanced_notebook);
 
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), view_box, FALSE, FALSE, 12);
 		gtk_box_pack_start (GTK_BOX (m_widget), search_hbox, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), pkg_info_widget, FALSE, FALSE, 12);
+		gtk_box_pack_start (GTK_BOX (m_widget), advanced_expander, FALSE, FALSE, 0);
 		gtk_widget_show_all (m_widget);
 
 		g_object_ref (G_OBJECT (m_widget));
@@ -904,13 +1137,18 @@ public:
 		g_signal_connect (G_OBJECT (remove_button), "clicked",
 		                  G_CALLBACK (remove_button_clicked_cb), this);
 
-		g_signal_connect (G_OBJECT (m_installed_view), "cursor-changed",
+		g_signal_connect (G_OBJECT (gtk_tree_view_get_selection (GTK_TREE_VIEW (
+		                            m_installed_view))), "changed",
 		                  G_CALLBACK (package_clicked_cb), this);
-		g_signal_connect (G_OBJECT (m_available_view), "cursor-changed",
+		g_signal_connect (G_OBJECT (gtk_tree_view_get_selection (GTK_TREE_VIEW (
+		                            m_available_view))), "changed",
 		                  G_CALLBACK (package_clicked_cb), this);
 
-		// signal plain view
-		g_signal_emit_by_name (G_OBJECT (m_plain_view), "toggled", this);
+		// signal for default view
+		if (patterns_mode)
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (view_patterns), TRUE);
+		else
+			g_signal_emit_by_name (G_OBJECT (m_plain_view), "toggled", this);
 	}
 
 	// create widgets functions to cut down on code
@@ -925,10 +1163,12 @@ public:
 		gtk_scrolled_window_set_shadow_type
 			(GTK_SCROLLED_WINDOW (scrolled_window), GTK_SHADOW_IN);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scrolled_window),
-		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		                                GTK_POLICY_NEVER, GTK_POLICY_ALWAYS);
 		list = gtk_tree_view_new();
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (list), FALSE);
 		gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (list), TRUE);
+		gtk_tree_selection_set_select_function (gtk_tree_view_get_selection (
+			GTK_TREE_VIEW (list)), dont_select_groups_cb, this, NULL);
 		gtk_container_add (GTK_CONTAINER (scrolled_window), list);
 
 		header_hbox = gtk_hbox_new (FALSE, 0);
@@ -956,8 +1196,8 @@ public:
 		GtkCellRenderer *text_renderer = gtk_cell_renderer_text_new();
 		GtkTreeViewColumn *column;
 		int wrap_width = 250;
-		column = gtk_tree_view_column_new_with_attributes (NULL,
-			text_renderer, "markup", package_name_col, NULL);
+		column = gtk_tree_view_column_new_with_attributes ("Packages",
+			text_renderer, "markup", package_name_col, "style", 9, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
 		// versions combo column
 		if (has_version_col) {
@@ -997,9 +1237,33 @@ public:
 	}
 
 	// Dynamic views support
-	void load_packages_view (GtkTreeModel *(* build_model) (void))
+	void load_packages_view (GtkTreeModel *(* build_model) (GtkProgressBar *))
 	{
-		GtkTreeModel *model = (m_packages_model = build_model());
+		GtkWidget *dialog, *label, *vbox, *progress = 0;
+		dialog = gtk_dialog_new();
+		gtk_window_set_title (GTK_WINDOW (dialog), "");
+		gtk_window_set_transient_for (GTK_WINDOW (dialog),
+		                              YGUI::ui()->currentWindow());
+		gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 100, -1);
+		gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+		gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
+		vbox = GTK_DIALOG (dialog)->vbox;
+//		gtk_container_set_border_width (GTK_CONTAINER (vbox), 8);
+		label = gtk_label_new ("Loading packages list...");
+		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), label, TRUE, TRUE, 4);
+		progress = gtk_progress_bar_new();
+		gtk_box_pack_start (GTK_BOX (vbox), progress, TRUE, FALSE, 4);
+		gtk_widget_show_all (dialog);
+
+		gtk_tree_view_set_model (GTK_TREE_VIEW (m_installed_view), NULL);
+		gtk_tree_view_set_model (GTK_TREE_VIEW (m_available_view), NULL);
+		m_information_widget->setPackage (NULL, NULL);
+
+		GtkProgressBar *progress_bar = GTK_PROGRESS_BAR (progress);
+		// build it
+		GtkTreeModel *model = (m_packages_model = build_model (progress_bar));
 
 		GtkTreeModel *installed_model, *available_model;
 		installed_model = gtk_tree_model_filter_new (model, NULL);
@@ -1016,17 +1280,31 @@ public:
 		g_object_unref (G_OBJECT (installed_model));
 		g_object_unref (G_OBJECT (available_model));
 
-		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 1);
-		YGUtils::tree_model_set_col_sortable (GTK_TREE_SORTABLE (model), 2);
+		GtkTreeSortable *sortable = GTK_TREE_SORTABLE (model);
+		gtk_tree_sortable_set_sort_func (sortable, 1, YGUtils::sort_compare_cb,
+		                                 GINT_TO_POINTER (1), NULL);
+		gtk_tree_sortable_set_sort_column_id (sortable, 1, GTK_SORT_ASCENDING);
+
+		gtk_widget_destroy (dialog);
 	}
 
-	static GtkTreeModel *loadPackagesListAsPlain()
-	{
-		GtkListStore *store = gtk_list_store_new (8, G_TYPE_POINTER, G_TYPE_STRING,
-			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
-		GtkTreeModel *model = GTK_TREE_MODEL (store);
+	// macros to handle progress bar
+	#define SET_PROGRESS(_steps, _jump) int steps = _steps, step = 0, jump = _jump;
+	#define PROGRESS()                                          \
+		if (progress && ((step++) % jump == 0)) {               \
+			gdouble fraction = ((gdouble) step) / steps;        \
+			gtk_progress_bar_set_fraction (progress, fraction); \
+			while (gtk_events_pending()) gtk_main_iteration(); }
 
+	static GtkTreeModel *loadPackagesListAsPlain (GtkProgressBar *progress)
+	{
+		GtkListStore *store = gtk_list_store_new (10, G_TYPE_POINTER, G_TYPE_STRING,
+			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_INT);
+		GtkTreeModel *model = GTK_TREE_MODEL (store);
+		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (1));
+
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 10)
 		GtkTreeIter iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1034,20 +1312,23 @@ public:
 			ZyppSelectable selectable = *it;
 			gtk_list_store_append (store, &iter);
 			loadPackageRow (model, &iter, selectable);
+			PROGRESS()
 		}
 		return model;
 	}
 
-	static GtkTreeModel *loadPackagesListByCategory()
+	static GtkTreeModel *loadPackagesListByCategory (GtkProgressBar *progress)
 	{
-		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_POINTER, G_TYPE_STRING,
+		GtkTreeStore *store = gtk_tree_store_new (10, G_TYPE_POINTER, G_TYPE_STRING,
 			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN);
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_INT);
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
+		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (1));
 
 		// we need to create the categories tree as we iterate packages
-		map <string, GtkTreePath*> tree;
+		map <string, GtkTreePath *> tree;
 
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 5)
 		GtkTreeIter iter, parent_iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1079,10 +1360,10 @@ public:
 						else  // create at root
 							gtk_tree_store_append (store, &iter, NULL);
 
-						string name = "<b>" + node + "</b>";
+						string name = "<big><b>" + node + "</b></big>";
 						gtk_tree_store_set (store, &iter,
 							0, NULL, 1, name.c_str(), 2, name.c_str(), 3, TRUE,
-							4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, -1);
+							4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, 8, TRUE, -1);
 
 						path = gtk_tree_model_get_path (model, &iter);
 						tree [node] = path;
@@ -1098,6 +1379,7 @@ public:
 			gtk_tree_model_get_iter (model, &parent_iter, path);
 			gtk_tree_store_append (store, &iter, &parent_iter);
 			loadPackageRow (model, &iter, selectable);
+			PROGRESS()
 		}
 
 		// free GtkTreePaths
@@ -1107,8 +1389,123 @@ public:
 		return model;
 	}
 
+	/* NOTE: Getting the packages under a pattern, language, etc is done
+	   differently, so code re-use would be limited. Probably doesn't worth
+	   the trouble and complexity of doing so. */
+
+	static GtkTreeModel *loadPackagesListByPattern (GtkProgressBar *progress)
+	{
+		GtkTreeStore *store = gtk_tree_store_new (10, G_TYPE_POINTER, G_TYPE_STRING,
+			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_INT);
+		GtkTreeModel *model = GTK_TREE_MODEL (store);
+		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (0));
+
+		// we need to create a categories tree for the patterns
+		map <string, GtkTreeIter> tree;
+
+		SET_PROGRESS (zyppPool().size <zypp::Pattern>(), 1)
+		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Pattern>();
+		     it != zyppPool().byKindEnd <zypp::Pattern>(); it++) {
+			ZyppSelectable selectable = *it;
+			ZyppObject object = selectable->theObj();
+			ZyppPattern pattern = tryCastToZyppPattern (object);
+			if (pattern && pattern->userVisible()) {
+				GtkTreeIter category_iter, pattern_iter, package_iter;
+				string category = pattern->category();
+				map <string, GtkTreeIter>::iterator cat_it = tree.find (category);
+				if (cat_it == tree.end()) {
+					string name = "<big><b>" + category + "</b></big>";
+					gtk_tree_store_append (store, &category_iter, NULL);
+					gtk_tree_store_set (store, &category_iter,
+						0, NULL, 1, name.c_str(), 2, name.c_str(), 3, TRUE,
+						4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, 8, TRUE, -1);
+					tree [category] = category_iter;
+				}
+				else
+					category_iter = cat_it->second;
+
+				string name = "<b>" + object->summary() + "</b>";
+				gtk_tree_store_append (store, &pattern_iter, &category_iter);
+				loadPackageRow (model, &pattern_iter, selectable);
+
+/*				gtk_tree_store_set (store, &pattern_iter,
+					0, get_pointer (selectable), 1, name.c_str(), 2, name.c_str(),
+					3, TRUE, 4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, 8, TRUE, -1);*/
+
+				// adding children packages
+				const set <string> &packages = pattern->install_packages();
+				for (set <string>::iterator pt1 = packages.begin();
+				     pt1 != packages.end(); pt1++) {
+					for (ZyppPool::const_iterator pt2 =
+					         zyppPool().byKindBegin <zypp::Package>();
+					     pt2 != zyppPool().byKindEnd <zypp::Package>(); pt2++) {
+						ZyppSelectable sel = *pt2;
+						if (YGUtils::contains (sel->name(), *pt1)) {
+							gtk_tree_store_append (store, &package_iter, &pattern_iter);
+							loadPackageRow (model, &package_iter, sel);
+						}
+					}
+				}
+			}
+			PROGRESS()
+		}
+		return model;
+	}
+
+	static GtkTreeModel *loadPackagesListByLanguage (GtkProgressBar *progress)
+	{
+		GtkTreeStore *store = gtk_tree_store_new (10, G_TYPE_POINTER, G_TYPE_STRING,
+			G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_INT);
+		GtkTreeModel *model = GTK_TREE_MODEL (store);
+		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (0));
+
+		SET_PROGRESS (zyppPool().size <zypp::Language>(), 2)
+		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Language>();
+		     it != zyppPool().byKindEnd <zypp::Language>(); it++) {
+			ZyppSelectable langsel = *it;
+			ZyppObject langobj = langsel->theObj();
+			ZyppLanguage lang = tryCastToZyppLanguage (langobj);
+			if (lang) {
+				string langname = langsel->name();
+				if (langname.empty() || langname == "C")
+					continue;
+
+				string descrpt = "<b>" + langobj->description() + "</b>";
+				GtkTreeIter parent_iter, iter;
+				gtk_tree_store_append (store, &parent_iter, NULL);
+				loadPackageRow (model, &parent_iter, langsel);
+/*				gtk_tree_store_set (store, &parent_iter,
+					0, get_pointer (langsel), 1, descrpt.c_str(), 2, descrpt.c_str(),
+					3, TRUE, 4, TRUE, 5, FALSE, 6, FALSE, 7, FALSE, 8, TRUE, -1);*/
+
+				for (ZyppPool::const_iterator it =
+				          zyppPool().byKindBegin <zypp::Package>();
+				      it != zyppPool().byKindEnd <zypp::Package>(); it++) {
+					ZyppSelectable pkgsel = *it;
+					ZyppObject pkgobj = pkgsel->theObj();
+
+					const zypp::CapSet &capSet = pkgobj->dep (zypp::Dep::FRESHENS);
+					for (zypp::CapSet::const_iterator it = capSet.begin();
+					     it != capSet.end(); it++) {
+						if (it->index() == lang->name()) {
+							gtk_tree_store_append (store, &iter, &parent_iter);
+							loadPackageRow (model, &iter, pkgsel);
+						}
+					}
+				}
+			}
+			PROGRESS()
+		}
+		return model;
+	}
+	#undef SET_PROGRESS
+	#undef PROGRESS
+
 	static void induceObjects (ZyppSelectable selectable, ZyppObject &install_obj,
-	                           ZyppObject &available_obj)
+	                           ZyppObject &available_obj, bool *has_upgrade,
+	                           bool *has_downgrade)
 	{
 		available_obj = (install_obj = NULL);
 		if (!selectable)
@@ -1124,11 +1521,44 @@ public:
 			default:
 				available_obj = selectable->candidateObj();
 				install_obj = selectable->installedObj();
-				if (available_obj && install_obj && selectable->availableObjs() == 1 &&
-				    available_obj->edition() == install_obj->edition())
-					available_obj = NULL;
 				break;
 		}
+
+		// zypp keeps on the pool objects whose sources we disabled, so we may
+		// need to calculate the candidate object here.
+		if (available_obj != NULL && !available_obj->source().enabled()) {
+			available_obj = NULL;
+			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
+			     it != selectable->availableEnd(); it++) {
+				if (!(*it)->source().enabled())
+					;
+				else if (!available_obj)
+					available_obj = *it;
+				else if (zypp::Edition::compare ((*it)->edition(),
+				                                 available_obj->edition()) > 0)
+					available_obj = *it;
+			}
+		}
+
+		bool has_up = false, has_down = false;
+		if (available_obj != NULL) {
+			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
+			     it != selectable->availableEnd(); it++) {
+				if (!(*it)->source().enabled())
+					continue;
+				int res = zypp::Edition::compare ((*it)->edition(),
+				                                  available_obj->edition());
+				if (res < 0)
+					has_down = true;
+				else if (res > 0)
+					has_up = true;
+			}
+		}
+
+		if (has_upgrade)
+			*has_upgrade = has_up;
+		if (has_downgrade)
+			*has_downgrade = has_down;
 	}
 
 	/* Must be called for the main model. */
@@ -1136,44 +1566,63 @@ public:
 	                            ZyppSelectable selectable)
 	{
 		ZyppObject install_obj, available_obj;
-		induceObjects (selectable, install_obj, available_obj);
+		bool has_upgrade, has_downgrade;
+		induceObjects (selectable, install_obj, available_obj,
+		               &has_upgrade, &has_downgrade);
 
-		string availableName, installedName;
-		availableName = (installedName = "<b>" + YGUtils::escape_markup (
-			selectable->name()) + "</b>");
-		if (available_obj)
-			availableName += " (" + available_obj->edition().version() + ")\n" +
-			                 "<small>" + YGUtils::escape_markup (available_obj->summary()) +
-			                 "</small>";
-		if (install_obj)
-			installedName += " (" + install_obj->edition().version() + ")\n" +
-			                 "<small>" + YGUtils::escape_markup (install_obj->summary()) +
-			                 "</small>";
-
-		bool has_downgrade = false, has_upgrade = false;
+		bool detailed = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (model),
+		                                                    "detail-package"));
+		string availableName, installedName, name (YGUtils::escape_markup (selectable->name()));
 		if (available_obj) {
-			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
-			     it != selectable->availableEnd(); it++) {
-				int res = zypp::Edition::compare ((*it)->edition(),
-				                                  available_obj->edition());
-				if (res < 0)
-					has_downgrade = true;
-				else if (res > 0)
-					has_upgrade = true;
+			if (detailed)
+				availableName = "<b>" + name + "</b> (" + available_obj->edition().version() +
+				                ")\n<small>" + YGUtils::escape_markup (available_obj->summary()) +
+				                "</small>";
+			else {
+				ZyppPattern pattern = tryCastToZyppPattern (available_obj);
+				ZyppLanguage lang = tryCastToZyppLanguage (available_obj);
+				if (pattern)
+					availableName = "<b>" + available_obj->summary() + "</b>";
+				else if (lang)
+					availableName = "<b>" + available_obj->description() + "</b>";
+				else
+					availableName = name + " (" + available_obj->edition().version() + ")";
 			}
 		}
+		if (install_obj) {
+			if (detailed)
+				installedName = "<b>" + name + "</b> (" + install_obj->edition().version() +
+				                ")\n<small>" + YGUtils::escape_markup (install_obj->summary()) +
+				                "</small>";
+			else {
+				ZyppPattern pattern = tryCastToZyppPattern (install_obj);
+				ZyppLanguage lang = tryCastToZyppLanguage (install_obj);
+				if (pattern)
+					installedName = "<b>" + install_obj->summary() + "</b>";
+				else if (lang)
+					installedName = "<b>" + install_obj->description() + "</b>";
+				else
+					installedName = name + " (" + install_obj->edition().version() + ")";
+			}
+		}
+
+		PangoStyle style = PANGO_STYLE_NORMAL;
+		if (selectable->toModify())
+			style = PANGO_STYLE_ITALIC;
 
 		// oh, would be nice to have a common set for tree models...
 		if (GTK_IS_LIST_STORE (model))
 			gtk_list_store_set (GTK_LIST_STORE (model), iter,
 				0, get_pointer (selectable), 1, installedName.c_str(),
 				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, 7, TRUE, -1);
+				5, has_upgrade, 6, has_downgrade, 7, detailed, 8, FALSE, 9, style, -1);
 		else /*if (GTK_IS_TREE_STORE (model))*/
 			gtk_tree_store_set (GTK_TREE_STORE (model), iter,
 				0, get_pointer (selectable), 1, installedName.c_str(),
 				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, 7, TRUE, -1);
+				5, has_upgrade, 6, has_downgrade, 7, detailed, 8, FALSE, 9, style, -1);
+/*		y2milestone ("set %s: %d - %d\n", selectable->name().c_str(),
+		             available_obj != 0, install_obj != 0);*/
 	}
 
 	virtual ~PackageSelector()
@@ -1183,6 +1632,8 @@ public:
 			g_source_remove (search_timeout_id);
 
 		delete m_information_widget;
+		delete m_sources_table;
+		delete m_disk_table;
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
 	}
@@ -1210,7 +1661,25 @@ public:
 	{
 		if (!gtk_toggle_button_get_active (button)) return;
 		pThis->clear_search_entry (true);
-//		pThis->load_packages_view (&loadPackagesListByPattern);  // TODO
+		pThis->load_packages_view (&loadPackagesListByPattern);
+	}
+
+	static void view_languages_mode_cb  (GtkToggleButton *button,
+	                                     PackageSelector *pThis)
+	{
+		if (!gtk_toggle_button_get_active (button)) return;
+		pThis->clear_search_entry (true);
+		pThis->load_packages_view (&loadPackagesListByLanguage);
+	}
+
+	void sources_changed_cb()
+	{
+		// reload view; FIXME: re-load the current view, not necessarly
+		// the plain list; hacky anyway
+		if (!gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_plain_view)))
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (m_plain_view), TRUE);
+		else
+			g_signal_emit_by_name (G_OBJECT (m_plain_view), "toggled", this);
 	}
 
 	void clear_search_entry (bool dont_load)
@@ -1256,15 +1725,13 @@ public:
 		pThis->m_searching = strlen (query) > 0;
 		pThis->m_search_queries = YGUtils::splitString (query, ' ');
 
-		// force a re-filter
-		if (plain_view) {
-			GtkTreeModel *available_model =
-				gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_available_view));
-			GtkTreeModel *installed_model =
-				gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_installed_view));
-			gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (available_model));
-			gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (installed_model));
-		}
+		// just re-filter
+		GtkTreeModel *available_model =
+			gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_available_view));
+		GtkTreeModel *installed_model =
+			gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_installed_view));
+		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (available_model));
+		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (installed_model));
 		return FALSE;
 	}
 
@@ -1292,65 +1759,80 @@ public:
 	static void search_option_change_cb (GtkCheckMenuItem *item, bool *option)
 	{ *option = item->active; }
 
-	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
-	                                      gpointer data)
+	inline static gboolean is_package_visible (GtkTreeModel *model, GtkTreeIter *iter,
+	                                           PackageSelector *pThis, int visible_col)
 	{
-		PackageSelector *pThis = (PackageSelector *) data;
-		gboolean visible;
-		gtk_tree_model_get (model, iter, 3, &visible, -1);
-		if (visible && pThis->m_searching) {
+		gboolean visible, has_children;
+		gtk_tree_model_get (model, iter, visible_col, &visible, 8, &has_children, -1);
+		if (has_children)
+			visible = TRUE;
+		else if (visible && pThis->m_searching) {
 			ZyppSelectablePtr selectable;
 			gtk_tree_model_get (model, iter, 0, &selectable, -1);
 			visible = pThis->does_package_match (selectable);
 		}
 		return visible;
 	}
+
+	static gboolean is_package_installed (GtkTreeModel *model, GtkTreeIter *iter,
+	                                      gpointer data)
+	{ return is_package_visible (model, iter, (PackageSelector *) data, 3); }
 
 	static gboolean is_package_available (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
-	{
-		PackageSelector *pThis = (PackageSelector *) data;
-		gboolean visible;
-		gtk_tree_model_get (model, iter, 4, &visible, -1);
-		if (visible && pThis->m_searching) {
-			ZyppSelectablePtr selectable;
-			gtk_tree_model_get (model, iter, 0, &selectable, -1);
-			visible = pThis->does_package_match (selectable);
-		}
-		return visible;
-	}
+	{ return is_package_visible (model, iter, (PackageSelector *) data, 4); }
+
+    bool does_package_match_one (ZyppSelectablePtr sel, string key)
+    {
+		ZyppObject obj = sel->theObj();
+
+        if (name_opt && YGUtils::contains (sel->name(), key))
+            return TRUE;
+        if (summary_opt && YGUtils::contains (obj->summary(), key))
+            return TRUE;
+        if (descr_opt && YGUtils::contains (obj->description(), key))
+            return TRUE;
+        if (provides_opt) {
+            const zypp::CapSet &capSet = obj->dep (zypp::Dep::PROVIDES);
+            for (zypp::CapSet::const_iterator it = capSet.begin();
+                 it != capSet.end(); it++)
+					if (YGUtils::contains (it->asString(), key))
+						return TRUE;
+        }
+        if (requires_opt) {
+            const zypp::CapSet &capSet = obj->dep (zypp::Dep::REQUIRES);
+            for (zypp::CapSet::const_iterator it = capSet.begin();
+                 it != capSet.end(); it++)
+                if (YGUtils::contains (it->asString(), key))
+                    return TRUE;
+        }
+        return FALSE;
+    }
 
 	gboolean does_package_match (ZyppSelectablePtr sel)
 	{
-		// TODO: add google syntax
 		if (m_search_queries.empty())
 			return true;
-		ZyppObject obj = sel->theObj();
+
+        bool and_results = true; // vs. or them ...
+
+        bool result = and_results;
 		for (list <string>::iterator it = m_search_queries.begin();
 		     it != m_search_queries.end(); it++) {
-			const string &str = *it;
-			if (name_opt && YGUtils::contains (sel->name(), str))
-				return TRUE;
-			if (summary_opt && YGUtils::contains (obj->summary(), str))
-				return TRUE;
-			if (descr_opt && YGUtils::contains (obj->description(), str))
-				return TRUE;
-			if (provides_opt) {
-				const zypp::CapSet &capSet = obj->dep (zypp::Dep::PROVIDES);
-				for (zypp::CapSet::const_iterator it = capSet.begin();
-				     it != capSet.end(); it++)
-					if (YGUtils::contains (it->asString(), str))
-						return TRUE;
-			}
-			if (requires_opt) {
-				const zypp::CapSet &capSet = obj->dep (zypp::Dep::REQUIRES);
-				for (zypp::CapSet::const_iterator it = capSet.begin();
-				     it != capSet.end(); it++)
-					if (YGUtils::contains (it->asString(), str))
-						return TRUE;
-			}
+
+            // TODO: googlify more ...
+            if (*it == "OR") {
+                and_results = false;
+                continue;
+            }
+            if (*it == "AND") {
+                and_results = true;
+                continue;
+            }
+            bool match = does_package_match_one (sel, *it);
+            result = and_results ? result && match : result || match;
 		}
-		return FALSE;
+		return result;
 	}
 
 	// callbacks
@@ -1372,37 +1854,6 @@ public:
 			return true;
 		}
 		return false;
-	}
-
-	void markSelectedPackage (GtkTreeView *view, bool available, bool installed)
-	{
-		IMPL
-		ZyppSelectablePtr sel;
-		GtkTreePath *path = NULL;
-		if (getSelectedPackage (view, &sel, &path)) { // if some package selected
-			if (sel && mark_selectable (sel, installed)) {
-				// update model
-				GtkTreeIter iter;
-				gtk_tree_model_get_iter (m_packages_model, &iter, path);
-				loadPackageRow (m_packages_model, &iter, sel);
-			}
-		}
-		if (path)
-			gtk_tree_path_free (path);
-	}
-
-	static void install_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
-	{
-		IMPL
-		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_available_view), false, true);
-		gtk_widget_grab_focus (pThis->m_available_view);
-	}
-
-	static void remove_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
-	{
-		IMPL
-		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_installed_view), true, false);
-		gtk_widget_grab_focus (pThis->m_installed_view);
 	}
 
 	static bool sync_tree_views_scroll (GtkTreeView *current_view, GtkTreeView *other_view,
@@ -1451,63 +1902,156 @@ public:
 		gtk_tree_view_expand_to_path (other_view, other_path);
 		YGUtils::tree_view_smooth_scroll_to_point (other_view, 0, y);
 		if (select_it)
-			gtk_tree_selection_select_path (gtk_tree_view_get_selection (other_view), other_path);
-
+			gtk_tree_selection_select_path (gtk_tree_view_get_selection (other_view),
+			                                other_path);
 		gtk_tree_path_free (other_path);
 		return true;
 	}
 
-	static void package_clicked_cb (GtkTreeView *tree_view, PackageSelector *pThis)
+	static void package_clicked_cb (GtkTreeSelection *selection, PackageSelector *pThis)
 	{
 		IMPL
-		ZyppSelectablePtr sel = 0;
-		getSelectedPackage (tree_view, &sel);
+		int selected_rows = gtk_tree_selection_count_selected_rows (selection);
+		if (selected_rows == 0)
+			return;
 
-		ZyppObject install_obj, available_obj;
-		induceObjects (sel, install_obj, available_obj);
+		static bool safeguard = false;
+		if (safeguard)
+			return;
+		safeguard = true;
 
+		GtkTreeView *tree_view = gtk_tree_selection_get_tree_view (selection);
 		bool install_view = tree_view == GTK_TREE_VIEW (pThis->m_installed_view);
 		GtkTreeView *other_view = GTK_TREE_VIEW (install_view ?
 			pThis->m_available_view : pThis->m_installed_view);
 
-		// select and scroll to the package in the other view
-		// (if it is listed there.)
+		// unselect the other view
+		gtk_tree_selection_unselect_all (gtk_tree_view_get_selection (other_view));
+
+		// select and scroll to the package in the other view (if it's listed there)
 		GtkTreePath *path = 0;
 		gtk_tree_view_get_cursor (tree_view, &path, NULL);
- 
-		if (path)
-			sync_tree_views_scroll (tree_view, other_view, path, true);
-		else  // set the other view as un-selected
-			gtk_tree_selection_unselect_all (gtk_tree_view_get_selection (other_view));
+		if (path) {
+			// function can be called to set some package visible
+			gtk_tree_view_scroll_to_cell (tree_view, path, NULL, FALSE, 0, 0);
 
-		if (path)
+			sync_tree_views_scroll (tree_view, other_view, path, selected_rows == 1);
 			gtk_tree_path_free (path);
+		}
 
 		// show package information
+		ZyppSelectablePtr sel = 0;
+		getSelectedPackage (tree_view, &sel);
+
+		ZyppObject install_obj, available_obj;
+		induceObjects (sel, install_obj, available_obj, NULL, NULL);
+
 		ZyppObject &obj = install_view ? install_obj : available_obj;
 		pThis->m_information_widget->setPackage (sel, obj);
 
 		// change the install/remove button label to upgrade, or etc
 		GtkLabel *install_label = GTK_LABEL (pThis->m_install_label),
 		         *remove_label = GTK_LABEL (pThis->m_remove_label);
-		// remove label
-		if (sel && sel->toInstall())
-			gtk_label_set_text (remove_label, "_undo");
-		else
-			gtk_label_set_text (remove_label, "_remove");
-		// install label
-		if (sel && sel->toDelete())
-			gtk_label_set_text (install_label, "_undo");
-		else if (!install_obj)
+		if (selected_rows > 1) {
 			gtk_label_set_text (install_label, "_install");
-		else if (available_obj) {
-			if (install_obj->edition() < available_obj->edition())
-				gtk_label_set_text (install_label, "_upgrade");
+			gtk_label_set_text (remove_label, "_remove");
+		}
+		else {  // personalize
+			// remove label
+			if (sel && sel->toInstall())
+				gtk_label_set_text (remove_label, "_undo");
 			else
-				gtk_label_set_text (install_label, "_downgrade");
+				gtk_label_set_text (remove_label, "_remove");
+			// install label
+			if (sel && sel->toDelete())
+				gtk_label_set_text (install_label, "_undo");
+			else if (!install_obj)
+				gtk_label_set_text (install_label, "_install");
+			else if (available_obj) {
+				int res = zypp::Edition::compare (install_obj->edition(),
+				                                  available_obj->edition());
+				if (res < 0)
+					gtk_label_set_text (install_label, "_upgrade");
+				else if (res > 0)
+					gtk_label_set_text (install_label, "_downgrade");
+				else
+					gtk_label_set_text (install_label, "re-_install");
+			}
 		}
 		gtk_label_set_use_underline (install_label, TRUE);
 		gtk_label_set_use_underline (remove_label, TRUE);
+		safeguard = false;
+	}
+
+	// install/remove/update/... selected packages
+	void markSelectedPackage (GtkTreeView *view, bool available, bool installed)
+	{
+		IMPL
+		/* Since the filter model gets changed, get paths for the base model and
+		   then do our stuff. */
+		GList *selected = gtk_tree_selection_get_selected_rows (
+		                      gtk_tree_view_get_selection (view), NULL);
+
+		int selected_len = g_list_length (selected);
+		GtkTreeIter iters [selected_len];
+
+		GtkTreeModel *filter_model = gtk_tree_view_get_model (view);
+		GtkTreeModelFilter *filter = GTK_TREE_MODEL_FILTER (filter_model);
+		GtkTreeModel *model = gtk_tree_model_filter_get_model (filter);
+
+		int i = 0;
+		for (GList *it = selected; it; it = it->next, i++) {
+			GtkTreePath *path = (GtkTreePath *) it->data;
+
+			GtkTreeIter filter_iter, iter;
+			gtk_tree_model_get_iter (filter_model, &filter_iter, path);
+			gtk_tree_path_free (path);
+
+			gtk_tree_model_filter_convert_iter_to_child_iter (filter, &iter, &filter_iter);
+			iters[i] = iter;
+		}
+		g_list_free (selected);
+
+		for (i = 0; i < selected_len; i++) {
+			GtkTreeIter *iter = &iters[i];
+			ZyppSelectablePtr sel = 0;
+			gtk_tree_model_get (model, iter, 0, &sel, -1);
+			if (sel && mark_selectable (sel, installed) /* install/remove */) {
+				loadPackageRow (model, iter, sel);  // update model
+
+				// mark also children (eg. for patterns and languages)
+				GtkTreeIter child;
+				if (gtk_tree_model_iter_children (model, &child, iter)) {
+					do {
+						gtk_tree_model_get (model, &child, 0, &sel, -1);
+						if (sel && mark_selectable (sel, installed))
+							loadPackageRow (model, &child, sel);
+					} while (gtk_tree_model_iter_next (model, &child));
+
+				}
+			}
+		}
+
+		m_disk_table->update();
+
+		// select path, so the buttons get updated and all (hacky)
+		GtkTreeView *other_view = GTK_TREE_VIEW (
+			GTK_WIDGET (view) == m_installed_view ? m_available_view : m_installed_view);
+		package_clicked_cb (gtk_tree_view_get_selection (other_view), this);
+	}
+
+	static void install_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
+	{
+		IMPL
+		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_available_view), false, true);
+		gtk_widget_grab_focus (pThis->m_available_view);
+	}
+
+	static void remove_button_clicked_cb (GtkButton *button, PackageSelector *pThis)
+	{
+		IMPL
+		pThis->markSelectedPackage (GTK_TREE_VIEW (pThis->m_installed_view), true, false);
+		gtk_widget_grab_focus (pThis->m_installed_view);
 	}
 
 	static void change_available_version_cb (YGtkCellRendererArrow *renderer,
@@ -1545,15 +2089,24 @@ public:
 			y2warning ("Error: Could not %sgrade\n", arrow_type == GTK_ARROW_UP ? "up" : "down");
 		pThis->loadPackageRow (model, &iter, selectable);
 	}
+
+	static gboolean dont_select_groups_cb (GtkTreeSelection *selection, GtkTreeModel *model,
+	                                       GtkTreePath *path, gboolean selected, gpointer data)
+	{
+		GtkTreeIter iter;
+		if (gtk_tree_model_get_iter (model, &iter, path)) {
+			ZyppSelectablePtr selectable;
+			gtk_tree_model_get (model, &iter, 0, &selectable, -1);
+			return selectable != NULL;
+		}
+		return FALSE;
+	}
 };
 
 // The ordinary package selector that displays all packages
 class YGPackageSelector : public YPackageSelector, public YGWidget
 {
 	PackageSelector *m_package_selector;
-
-	PatternSelector *m_pattern_selector;
-	GtkWidget *m_patterns_widget;
 
 public:
 	YGPackageSelector (const YWidgetOpt &opt, YGWidget *parent)
@@ -1562,57 +2115,13 @@ public:
 	{
 		setBorder (0);
 
+		GtkWindow *window = YGUI::ui()->currentWindow();
+		gtk_window_resize (window, 680, 580);
+
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-		ygtk_wizard_set_header_icon (wizard, YGUI::ui()->currentWindow(),
+
+		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
-		ygtk_wizard_set_next_button_label (wizard, "_Accept");
-		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
-		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
-		                  G_CALLBACK (wizard_action_cb), this);
-
-		m_package_selector = new PackageSelector (opt.searchMode.value());
-		m_pattern_selector = 0;
-
-		if (opt.searchMode.value()) {
-			m_package_selector->loadPackagesListAsPlain();
-			setPackagesMode (false);
-		}
-		else {
-			// display a pattern selector that will then toggle to
-			// the package selector if the user wants to (on Customize...)
-			m_pattern_selector = new PatternSelector();
-
-			GtkWidget *buttons_box;
-			m_patterns_widget = gtk_vbox_new (FALSE, 0);
-			buttons_box = gtk_hbutton_box_new();
-			gtk_box_pack_start (GTK_BOX (m_patterns_widget), m_pattern_selector->getWidget(),
-			                    TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_patterns_widget), buttons_box,
-			                    FALSE, FALSE, 8);
-			gtk_widget_show_all (m_patterns_widget);
-
-			g_object_ref (G_OBJECT (m_patterns_widget));
-			gtk_object_sink (GTK_OBJECT (m_patterns_widget));
-
-			setPatternsMode();
-		}
-	}
-
-	virtual ~YGPackageSelector()
-	{
-		if (m_pattern_selector) {
-			gtk_widget_destroy (m_patterns_widget);
-			g_object_unref (G_OBJECT (m_patterns_widget));
-			delete m_pattern_selector;
-		}
-		delete m_package_selector;
-	}
-
-protected:
-	void setPackagesMode (bool use_back_button)
-	{
-		IMPL
-		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
 		                             "Package Selector");
 		ygtk_wizard_set_help_text (wizard,
@@ -1626,57 +2135,31 @@ protected:
 			"for a given package."
 		);
 
-		if (use_back_button) {
-			ygtk_wizard_set_back_button_label (wizard, "_Back");
-			ygtk_wizard_set_back_button_id (wizard, g_strdup ("back"), g_free);
-			ygtk_wizard_set_abort_button_label (wizard, "");
-		}
-		else {
-			ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
-			ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
-			ygtk_wizard_set_back_button_label (wizard, "");
-		}
-
-		ygtk_wizard_set_child (wizard, m_package_selector->getWidget());
-	}
-
-	void setPatternsMode()
-	{
-		IMPL
-		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
-		                             "Patterns Selector");
-		ygtk_wizard_set_help_text (wizard,
-			"Patterns are bundles of software that you may install by pressing them "
-			"and then clicking Accept.<br>"
-			"If you are an experienced user, you may press Customize to choose "
-			"from individual packages."
-		);
-
-		ygtk_wizard_set_back_button_label (wizard, "_Customize...");
-		ygtk_wizard_set_back_button_id (wizard, g_strdup ("customize"), g_free);
 		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
 		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
+		ygtk_wizard_set_back_button_label (wizard, "");
+		ygtk_wizard_set_next_button_label (wizard, "_Accept");
+		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
+		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
+		                  G_CALLBACK (wizard_action_cb), this);
 
-		ygtk_wizard_set_child (wizard, m_patterns_widget);
+		m_package_selector = new PackageSelector (!opt.searchMode.value());
+		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 	}
 
+	virtual ~YGPackageSelector()
+	{
+		delete m_package_selector;
+	}
+
+protected:
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 	                              gint id_type, YGPackageSelector *pThis)
 	{
 		IMPL
 		const gchar *action = (gchar *) id;
 
-		// patterns main window specific
-		if (!strcmp (action, "customize")) {
-			// apply patterns
-			pThis->m_package_selector->loadPackagesListAsPlain();
-			pThis->setPackagesMode (true);
-		}
-		else if (!strcmp (action, "back"))
-			pThis->setPatternsMode();
-		// generic
-		else if (!strcmp (action, "accept")) {
+		if (!strcmp (action, "accept")) {
 			if (zyppPool().diffState <zypp::Package> ()) {
 				// in case of changes, check problems, ask for confirmation and JFDI.
 				if (pThis->confirmChanges() && solveProblems()) {
@@ -1866,7 +2349,8 @@ YGUI::createPackageSelector (YWidget *parent, YWidgetOpt &opt,
 #ifndef DISABLE_PACKAGE_SELECTOR
 	if (opt.youMode.value())
 		return new YGPatchSelector (opt, YGWidget::get (parent));
-	return new YGPackageSelector (opt, YGWidget::get (parent));
+	else
+		return new YGPackageSelector (opt, YGWidget::get (parent));
 #else
 	return NULL;
 #endif

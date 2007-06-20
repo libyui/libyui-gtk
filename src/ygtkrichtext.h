@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkRichText is a very simple widget that displays HTML code.
    It was done, since GTK+ doesn't offer one out of box, and to
@@ -36,17 +37,16 @@ typedef struct _YGtkRichTextClass
 	GtkTextViewClass parent_class;
 
 	// signals:
-	void (*link_pressed) (YGtkRichText *rich_text, const gchar* link);
+	void (*link_pressed) (YGtkRichText *rich_text, const gchar *link);
 } YGtkRichTextClass;
 
 GtkWidget* ygtk_richtext_new();
 GType ygtk_richtext_get_type (void) G_GNUC_CONST;
 
-/* Sets some text to YGtkRichText that may be HTML or just plain, according
-   to "plain_text". In HTML case, "honor_br_char" means if the renderer
-   should break lines on the string '\n' characters. */
+/* Sets some text to YGtkRichText, may be HTML or plain text, as indicated by
+   rich_text. */
 void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
-                             gboolean plain_text, gboolean honor_br_char);
+                             gboolean rich_text);
 
 void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname);
 

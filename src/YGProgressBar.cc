@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -116,7 +117,7 @@ public:
 		for (int i = 0; i < segments(); i++) {
 			GtkWidget* bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
-				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_TOP_TO_BOTTOM );
+				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP );
 
 			// Progress bars just ask for too much size -- let's cut it
 			const int min_size = 5;
@@ -125,8 +126,8 @@ public:
 			else
 				gtk_widget_set_size_request (bar, -1, min_size);
 
-			ygtk_ratio_box_pack_start (YGTK_RATIO_BOX (getWidget()), bar,
-			                           maxValue (i), TRUE, TRUE, 0);
+			ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), bar,
+			                     maxValue (i), TRUE, TRUE, 0);
 		}
 
 		gtk_widget_show_all (getWidget());

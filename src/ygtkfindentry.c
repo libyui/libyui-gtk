@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkExtEntry widget */
 // check the header file for information about this widget
@@ -431,12 +432,11 @@ static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
 	if (event->window == eentry->left_window) {
 		// If the entry has an associated context menu, use it.
 		// Otherwise, find icon selects entry's text.
+		gtk_widget_grab_focus (widget);
 		if (fentry->context_menu)
 			ygtk_find_entry_actual_popup_menu (widget, event->button, event->time);
-		else {
-			gtk_widget_grab_focus (widget);
+		else
 			gtk_editable_select_region (GTK_EDITABLE (widget), 0, -1);
-		}
 	}
 	else if (event->window == eentry->right_window) {
 		gtk_editable_delete_text (GTK_EDITABLE (widget), 0, -1);

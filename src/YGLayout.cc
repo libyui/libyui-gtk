@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -82,13 +83,13 @@ public:
 		YGWidget *child = YGWidget::get (ychild);
 
 		YUIDimension dim = dimension();
-		bool horiz_fill = child->isStretchable (YD_HORIZ) ||
-		                  ychild->hasWeight (YD_HORIZ);
-		bool vert_fill  = child->isStretchable (YD_VERT) ||
-		                  ychild->hasWeight (YD_VERT);
+		bool horiz_fill = child->isStretchable (YD_HORIZ)
+		                  || ychild->hasWeight (YD_HORIZ);
+		bool vert_fill  = child->isStretchable (YD_VERT)
+		                  || ychild->hasWeight (YD_VERT);
 
 		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
-		                                  horiz_fill, vert_fill, 0, GTK_PACK_START);
+		                                  horiz_fill, vert_fill, 0);
 		ygtk_ratio_box_set_child_expand (box, child->getLayout(),
 		                                 child->isStretchable (dim));
 		YGWidget::sync_stretchable();

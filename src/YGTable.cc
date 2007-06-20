@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -21,7 +22,13 @@ public:
 	{
 		IMPL
 		m_colsNb = 0;
-		// Events
+
+		/* Yast tools expect the user to be unable to un-select the row. They
+		   generally don't check to see if the returned value is -1. So, just
+		   disallow un-selection. */
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+			GTK_TREE_VIEW (getWidget())), GTK_SELECTION_BROWSE);
+
 		if (opt.notifyMode.value()) {
 			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 			                  G_CALLBACK (activated_cb), y_widget);
@@ -31,22 +38,21 @@ public:
 		}
 	}
 
-	void initModel (const vector <GType> &types,
-	                bool show_headers, bool clickable_headers)
+	void initModel (const vector <GType> &types, bool show_headers)
 	{
 		IMPL
-		// turn vector into an array
-		GType types_array [types.size()];
+		// turn vector into an array; last column dedicated to the row id
+		m_colsNb = types.size();
+		GType types_array [m_colsNb+1];
 		for (unsigned int i = 0; i < types.size(); i++)
 			types_array [i] = types[i];
+		types_array[m_colsNb] = G_TYPE_INT;
 
-		GtkListStore *list = gtk_list_store_newv (types.size(), types_array);
+		GtkListStore *list = gtk_list_store_newv (m_colsNb+1, types_array);
 		gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), GTK_TREE_MODEL (list));
 		g_object_unref (G_OBJECT (list));
 
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), show_headers);
-		if (clickable_headers && show_headers)
-			YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (getWidget()));
 	}
 
 	void insertColumn (int col_nb, string header, GType type)
@@ -91,7 +97,11 @@ public:
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, col_nb);
-		m_colsNb++;
+	}
+
+	void setSearchCol (int col)
+	{
+		gtk_tree_view_set_search_column (GTK_TREE_VIEW (getWidget()), col);
 	}
 
 protected:
@@ -100,82 +110,82 @@ protected:
 	inline GtkTreeModel *getModel()
 	{ return gtk_tree_view_get_model (GTK_TREE_VIEW (getWidget())); }
 
+protected:
 	/* NOTE: gtk_list_store_insert() doesn't necessarly put the row in the
 	   requested position. For instance, if the number of rows is smaller than
 	   the one requested, it just appends it. So, we must translate YCP rows
-	   numbering to the ones we set. We'll call YCP rows as ids. */
-	map <int, int> id2row, row2id;  // double hash
-	// no need to add access methods for this...
+	   numbering to the ones we set. We'll call YCP rows as ids.
+	   Besides, if we do sorting, paths will get changed. */
+
+	bool getRowOf (GtkTreeIter *iter, int id) {
+		if (!gtk_tree_model_get_iter_first (getModel(), iter))
+			return false;
+
+		int _id = -1;
+		do {
+			gtk_tree_model_get (getModel(), iter, m_colsNb, &_id, -1);
+			if (_id == id)
+				return true;
+		} while (gtk_tree_model_iter_next (getModel(), iter));
+		return false;
+	}
+
+	int getIdOf (int row) {
+		GtkTreeIter iter;
+		if (!gtk_tree_model_iter_nth_child (getModel(), &iter, NULL, row))
+			return -1;
+
+		int id;
+		gtk_tree_model_get (getModel(), &iter, m_colsNb, &id, -1);
+		return id;
+	}
 
 	void addRow (int id)
 	{
 		IMPL
 		GtkTreeIter iter;
 		gtk_list_store_append (getStore(), &iter);
-
-		// Get the position of the row
-		int row;
-		GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
-		row = gtk_tree_path_get_indices (path) [0];
-		gtk_tree_path_free (path);
-
-		id2row [id]  = row;
-		row2id [row] = id;
+		gtk_list_store_set (getStore(), &iter, m_colsNb, id, -1);
 	}
 
 	void setItemText (string text, int id, int col)
 	{
 		IMPL
-		int row = id2row [id];
-
 		GtkTreeIter iter;
-		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		gtk_tree_model_get_iter (getModel(), &iter, path);
-		gtk_tree_path_free (path);
-
-		gtk_list_store_set (getStore(), &iter, col, text.c_str(), -1);
+		if (getRowOf (&iter, id))
+			gtk_list_store_set (getStore(), &iter, col, text.c_str(), -1);
 	}
 
 	void setItemBool (gboolean state, int id, int col)
 	{
 		IMPL
-		int row = id2row [id];
-
 		GtkTreeIter iter;
-		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		gtk_tree_model_get_iter (getModel(), &iter, path);
-		gtk_tree_path_free (path);
-
-		gtk_list_store_set (getStore(), &iter, col, state, -1);
+		if (getRowOf (&iter, id))
+			gtk_list_store_set (getStore(), &iter, col, state, -1);
 	}
 
 	void setItemIcon (string icon, int id, int col)
 	{
 		IMPL
-		int row = id2row [id];
-
-		GdkPixbuf *pixbuf;
-		if (icon[0] != '/')
-			icon = ICON_DIR + icon;
-
-		GError *error = 0;
-		pixbuf = gdk_pixbuf_new_from_file (icon.c_str(), &error);
-		if (!pixbuf)
-			y2warning ("YGTable: Could not load icon: %s.\n"
-			           "Because %s", icon.c_str(), error->message);
-
 		GtkTreeIter iter;
-		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		gtk_tree_model_get_iter (getModel(), &iter, path);
-		gtk_tree_path_free (path);
-		gtk_list_store_set (getStore(), &iter, col, pixbuf, -1);
+		if (getRowOf (&iter, id)) {
+			GdkPixbuf *pixbuf;
+			if (icon[0] != '/')
+				icon = ICON_DIR + icon;
+
+			GError *error = 0;
+			pixbuf = gdk_pixbuf_new_from_file (icon.c_str(), &error);
+			if (!pixbuf)
+				y2warning ("YGTable: Could not load icon: %s.\n"
+				           "Because %s", icon.c_str(), error->message);
+
+			gtk_list_store_set (getStore(), &iter, col, pixbuf, -1);
+		}
 	}
 
 	void deleteRows()
 	{
 		IMPL
-		id2row.clear();
-		row2id.clear();
 		gtk_list_store_clear (getStore());
 	}
 
@@ -187,26 +197,30 @@ protected:
 		if (path == NULL)
 			return -1;
 
-		int row = gtk_tree_path_get_indices (path) [0];
+		GtkTreeIter iter;
+		gtk_tree_model_get_iter (getModel(), &iter, path);
 		gtk_tree_path_free (path);
 
-		return row2id [row];
+		int id;
+		gtk_tree_model_get (getModel(), &iter, m_colsNb, &id, -1);
+		return id;
 	}
 
 	void setCurrentRow (int id)
 	{
 		IMPL
-		int row = id2row [id];
+		GtkTreeIter iter;
+		if (getRowOf (&iter, id)) {
+			GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
 
-		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
-		gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
-		gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
-		                              TRUE, 0.5, 0.5);
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
-
-		gtk_tree_path_free (path);
+			g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
+			gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
+			gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
+			                              TRUE, 0.5, 0.5);
+			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
+	
+			gtk_tree_path_free (path);
+		}
 	}
 
 	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
@@ -257,11 +271,16 @@ public:
 		IMPL
 		vector <GType> types;
 		types.assign (numCols(), G_TYPE_STRING);
-		initModel (types, true, !opt.keepSorting.value());
+		initModel (types, true);
 		for (int i = 0; i < numCols(); i++)
 			insertColumn (i, headers[i], types[i]);
 
 		setLabelVisible (false);
+
+		if (!opt.keepSorting.value())
+			YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (getWidget()), 0);
+		if (numCols() >= 3)
+			gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (getWidget()), TRUE);
 	}
 
 	virtual void itemAdded (vector<string> elements, int index)
@@ -308,9 +327,10 @@ public:
 		vector <GType> types;
 		types.push_back (GDK_TYPE_PIXBUF);
 		types.push_back (G_TYPE_STRING);
-		initModel (types, false, false);
+		initModel (types, false);
 
 		insertColumn (1, "", G_TYPE_STRING);
+		setSearchCol (1);
 		// pixbuf column will be added later, if needed
 	}
 
@@ -366,14 +386,21 @@ public:
 		types.push_back (G_TYPE_BOOLEAN);
 		types.push_back (GDK_TYPE_PIXBUF);
 		types.push_back (G_TYPE_STRING);
-		initModel (types, false, false);
+		initModel (types, false);
 
 		insertColumn (0, "", G_TYPE_BOOLEAN);
 		insertColumn (2, "", G_TYPE_STRING);
+		setSearchCol (2);
 		// pixbuf column will be added later, if needed
+
+		// Besides the Toggle buttons, allow the user to also use space/enter
+		// and double click.
+		if (!getNotify())
+			g_signal_connect_after (G_OBJECT (getWidget()), "row-activated",
+			                        G_CALLBACK (multi_activated_cb), this);
 	}
 
-	// YSelectionBox
+	// YMultiSelectionBox
 	virtual int getCurrentItem()
 	{ IMPL; return getCurrentRow(); }
 
@@ -404,19 +431,12 @@ public:
 	bool itemSelected (int id, int state)
 	{
 		IMPL
-		int row = id2row [id];
-
 		GtkTreeIter iter;
-		GtkTreePath *path = gtk_tree_path_new_from_indices (row, -1);
-		if (!gtk_tree_model_get_iter (getModel(), &iter, path)) {
-			gtk_tree_path_free (path);
+		if (!getRowOf (&iter, id))
 			throw "Row doesn't exist";
-		}
-		gtk_tree_path_free (path);
 
 		if (state != -1)
 			gtk_list_store_set (getStore(), &iter, 0, state, -1);
-
 		gtk_tree_model_get (getModel(), &iter, 0, &state, -1);
 		return state;
 	}
@@ -444,6 +464,19 @@ public:
 		for (int i = 0; ; i++)
 			try { itemSelected (i, false); }
 				catch (...) { break; }
+	}
+
+	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
+	                    GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
+	{
+		IMPL
+		GtkTreeIter iter;
+		if (!gtk_tree_model_get_iter (pThis->getModel(), &iter, path))
+			return;
+
+		gboolean state;
+		gtk_tree_model_get (pThis->getModel(), &iter, 0, &state, -1);
+		gtk_list_store_set (pThis->getStore(), &iter, 0, !state, -1);
 	}
 
 	YGWIDGET_IMPL_COMMON

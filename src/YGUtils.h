@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #ifndef YGUTILS_H
 #define YGUTILS_H
@@ -14,13 +15,8 @@
 
 namespace YGUtils
 {
-	/* Convinience function, from the above. Replaces '&' accelerator like Yast
-	   likes by the '_' that Gnome prefers. */
+	/* Replaces Yast's '&' accelerator by Gnome's '_' (and proper escaping). */
 	string mapKBAccel (const char *src);
-
-    /* Set a label to the contents of this string, with suitable
-       accelerator / mnemonic translation etc. */
-    void setLabel (GtkLabel *widget, const YCPString &label, bool bold = true);
 
 	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
@@ -34,8 +30,11 @@ namespace YGUtils
 	void filterText (GtkEditable *editable, int pos, int length,
 	                 const char *valid_chars);
 
-	/* Escapes markup text (eg. changes '<' by '\<') */
+	/* Escapes markup text (eg. changes '<' by '\<'). */
 	string escape_markup (const string &str);
+	/* Turns \n into <br>. If paragraph mode, will set <p> around paragraphs
+	   (that is, stuff separated by two \n). */
+	string escape_break_lines (const string &str, bool paragraph_mode);
 
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
@@ -47,7 +46,8 @@ namespace YGUtils
 	/* Sets some widget font proprities. */
 	void setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
-	/* A more sane strcmp() from the user point of view that honors numbers. */
+	/* A more sane strcmp() from the user point of view that honors numbers.
+	   i.e. "20" < "100" */
 	int strcmp (const char *str1, const char *str2);
 
 	/* Checks if a std::string contains some other string (case insensitive). */
@@ -62,15 +62,15 @@ namespace YGUtils
 
 	/* To be used as a callback to sort tree views. */
 	gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
-                        GtkTreeIter *b, gpointer data);
+	                      GtkTreeIter *b, gpointer data);
 
 	/* To be used as a callback for a GtkTreeView with toggle cells. */
 	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
 	                                gchar *path_str, GtkTreeModel *model);
 
-	/* Sets a tree view of sortable. */
-	void tree_model_set_col_sortable (GtkTreeSortable *sortable, int col);
-	void tree_view_set_sortable (GtkTreeView *view);
+	/* Goes through all GtkTreeView columns and checks for TextCellRenderers,
+	   setting those columns as sortable. */
+	void tree_view_set_sortable (GtkTreeView *view, int default_sort_col);
 
 	/* Like gtk_tree_view_scroll_to_point(), but does smooth scroll. */
 	void tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y);
@@ -85,8 +85,7 @@ extern "C" {
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
 	/* Convert html to xhtml (or at least try) */
-	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
-	                                           gboolean cut_breaklines);
+	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
 };
 
 #endif // YGUTILS_H

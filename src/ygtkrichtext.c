@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkRichText widget */
 // check the header file for information about this widget
@@ -14,8 +15,7 @@
 
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product,
-                                           gboolean cut_breaklines);
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
 
 G_DEFINE_TYPE (YGtkRichText, ygtk_richtext, GTK_TYPE_TEXT_VIEW)
 
@@ -86,7 +86,7 @@ void ygtk_richtext_init (YGtkRichText *rtext)
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_editable (tview, FALSE);
 	gtk_text_view_set_cursor_visible (tview, FALSE);
-	gtk_text_view_set_pixels_below_lines (tview, 6);
+	gtk_text_view_set_pixels_below_lines (tview, 4);
 
 	// Init link support
 	if (!ref_cursor) {
@@ -556,12 +556,12 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 }
 
 void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
-                             gboolean plain_text, gboolean honor_br_char)
+                             gboolean rich_text)
 {
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
-	if (plain_text) {
+	if (!rich_text) {
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
@@ -575,8 +575,7 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
 	GMarkupParseContext *ctx;
 	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
 
-	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname,
-	                                                !honor_br_char);
+	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname);
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
 		g_warning ("Markup parse error '%s'", error ? error->message : "Unknown");

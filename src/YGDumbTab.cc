@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -106,13 +107,7 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-
-//	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
-	virtual void childRemoved (YWidget *ychild)
-	{
-		GtkWidget *child = YGWidget::get (ychild)->getLayout();
-		gtk_container_remove (GTK_CONTAINER (m_containee), child);
-	}
+	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 
 YWidget *

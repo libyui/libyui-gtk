@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <ycp/y2log.h>
@@ -41,7 +42,7 @@ public:
 	{
 		IMPL
 		ygtk_richtext_set_text (YGTK_RICHTEXT (getWidget()), text->value_cstr(),
-		                        m_plainText, FALSE);
+		                        !m_plainText);
 
 		if (autoScrollDown)
 			YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));

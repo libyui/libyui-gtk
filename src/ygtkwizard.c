@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 /* YGtkWizard widget */
 // check the header file for information about this widget
@@ -173,7 +174,7 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
-	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, FALSE, FALSE);
+	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, TRUE);
 }
 
 static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
@@ -277,16 +278,20 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 	return button;
 }
 
-static void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
+static void ygtk_wizard_popup_help (YGtkWizard *wizard)
 {
 	if (!wizard->m_help_dialog) {
-		wizard->m_help_dialog = ygtk_help_dialog_new
-			((GtkWindow *) gtk_widget_get_ancestor (button, GTK_TYPE_WINDOW));
+		GtkWindow *window = (GtkWindow *) gtk_widget_get_ancestor (
+		                        GTK_WIDGET (wizard), GTK_TYPE_WINDOW);
+		wizard->m_help_dialog = ygtk_help_dialog_new (window);
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
 		                           wizard->m_help);
 	}
 	gtk_widget_show (wizard->m_help_dialog);
 }
+
+static void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
+{ ygtk_wizard_popup_help (wizard); }
 
 G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_BIN)
 
@@ -1218,4 +1223,14 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 		G_STRUCT_OFFSET (YGtkWizardClass, action_triggered),
 		NULL, NULL, ygtk_marshal_VOID__POINTER_INT, G_TYPE_NONE,
 		2, G_TYPE_POINTER, G_TYPE_INT);
+
+	// on F1, popup the help box
+	klass->popup_help = ygtk_wizard_popup_help;
+	g_signal_new ("popup_help", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
+	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+	              G_STRUCT_OFFSET (YGtkWizardClass, popup_help),
+	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
+	gtk_binding_entry_add_signal (binding_set, GDK_F1, 0, "popup_help", 0);
 }

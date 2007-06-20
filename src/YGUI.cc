@@ -1,5 +1,6 @@
-//                       YaST2-GTK                                //
-// YaST webpage - http://developer.novell.com/wiki/index.php/YaST //
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 
 #include <config.h>
 #include <stdio.h>
@@ -111,8 +112,9 @@ ycp_wakeup_fn (GIOChannel   *source,
 
 void YGUI::checkInit()
 {
-	if (!m_done_init)
+	if (!m_done_init) {
 		gtk_init (&m_argc, &m_argv);
+	}
 	m_done_init = TRUE;
 }
 
