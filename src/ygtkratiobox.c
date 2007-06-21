@@ -502,3 +502,66 @@ static void ygtk_min_size_class_init (YGtkMinSizeClass *klass)
 	widget_class->size_request  = ygtk_min_size_size_request;
 	widget_class->size_allocate  = ygtk_min_size_size_allocate;
 }
+
+//** YGtkScrolledWindow
+
+G_DEFINE_TYPE (YGtkScrolledWindow, ygtk_scrolled_window, GTK_TYPE_SCROLLED_WINDOW)
+
+static void ygtk_scrolled_window_init (YGtkScrolledWindow *scroll)
+{
+}
+
+static void ygtk_scrolled_window_size_request (GtkWidget *widget,
+                                               GtkRequisition *requisition)
+{
+	YGtkScrolledWindow *scroll = YGTK_SCROLLED_WINDOW (widget);
+
+	GtkRequisition child_req;
+	GtkWidget *child = GTK_BIN (widget)->child;
+	gtk_widget_size_request (child, &child_req);
+
+	GtkScrolledWindow *gscroll = GTK_SCROLLED_WINDOW (widget);
+	GtkPolicyType hpolicy, vpolicy;
+	gtk_scrolled_window_get_policy (gscroll, &hpolicy, &vpolicy);
+
+	if (scroll->max_width) {
+		if (child_req.width < scroll->max_width)
+			gscroll->hscrollbar_policy = GTK_POLICY_NEVER;
+		else
+			gscroll->hscrollbar_policy = GTK_POLICY_AUTOMATIC;
+	}
+	if (scroll->max_height) {
+		if (child_req.height < scroll->max_height)
+			gscroll->vscrollbar_policy = GTK_POLICY_NEVER;
+		else
+			gscroll->vscrollbar_policy = GTK_POLICY_AUTOMATIC;
+	}
+
+	GTK_WIDGET_CLASS (ygtk_scrolled_window_parent_class)->size_request (widget, requisition);
+	// to avoid disruptions:
+	requisition->width = MIN (requisition->width, scroll->max_width);
+	requisition->height = MIN (requisition->height, scroll->max_height);
+}
+
+GtkWidget* ygtk_scrolled_window_new (GtkWidget *child)
+{
+	YGtkScrolledWindow *scroll = g_object_new (YGTK_TYPE_SCROLLED_WINDOW, NULL);
+	if (child)
+		gtk_container_add (GTK_CONTAINER (scroll), child);
+	return GTK_WIDGET (scroll);
+}
+
+void ygtk_scrolled_window_set_auto_policy (YGtkScrolledWindow *scroll,
+                                           guint max_width, guint max_height)
+{
+	scroll->max_width = max_width;
+	scroll->max_height = max_height;
+}
+
+static void ygtk_scrolled_window_class_init (YGtkScrolledWindowClass *klass)
+{
+	ygtk_scrolled_window_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->size_request  = ygtk_scrolled_window_size_request;
+}

@@ -1,3 +1,17 @@
+2007-06-21  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.h/cc (YGScrolledWidget): Because SelectionBox and others don't
+	request for a size, they allocate their size by using weights. It will
+	look good on yast-qt default window size (at least with default fonts...),
+	but will suck for us since we use a window size that we adjust as necessary.
+	Made it so that child enforces its size up to 120 pixels.
+	This doesn't fix the fact that there should be a maximum size on auxiliary
+	widgets, like a list, for aesthetics.
+
+	* src/ygtkratiobox.h/c (YGtkScrolledWindow): extended GtkScrolledWindow
+	so that automatic policy is more grained; you can set scroll bars to only
+	be used above a certain size of the child.
+
 2007-06-20  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	Banshee's labels and table text is truncated with the "..." string

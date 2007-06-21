@@ -125,7 +125,7 @@ GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
 
 typedef struct _YGtkRatioVBox
 {
-	YGtkRatioBox ratiobox;
+	YGtkRatioBox parent;
 } YGtkRatioVBox;
 
 typedef struct _YGtkRatioVBoxClass
@@ -161,7 +161,7 @@ G_BEGIN_DECLS
 
 typedef struct _YGtkMinSize
 {
-	GtkBin bin;
+	GtkBin parent;
 	// members
 	guint min_width, min_height;
 	gboolean only_expand;
@@ -183,3 +183,44 @@ void ygtk_min_size_set_only_expand (YGtkMinSize *min_size, gboolean only_expand)
 
 G_END_DECLS
 #endif /*YGTK_MIN_SIZE_H*/
+
+/* YGtkScrolledWindow gives some a more fine-grained automatic scroll policy.
+   It allows the user to specify from which size scrolling should be applied. */
+#ifndef YGTK_SCROLLED_WIDOW_H
+#define YGTK_SCROLLED_WIDOW_H
+
+#include <gtk/gtkscrolledwindow.h>
+G_BEGIN_DECLS
+
+#define YGTK_TYPE_SCROLLED_WINDOW            (ygtk_scrolled_window_get_type ())
+#define YGTK_SCROLLED_WINDOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindow))
+#define YGTK_SCROLLED_WINDOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindowClass))
+#define YGTK_IS_SCROLLED_WINDOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                              YGTK_TYPE_SCROLLED_WINDOW))
+#define YGTK_IS_SCROLLED_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                              YGTK_TYPE_SCROLLED_WINDOW))
+#define YGTK_SCROLLED_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindowClass))
+
+typedef struct _YGtkScrolledWindow
+{
+	GtkScrolledWindow parent;
+	// members
+	guint max_width, max_height;
+} YGtkScrolledWindow;
+
+typedef struct _YGtkScrolledWindowClass
+{
+	GtkScrolledWindowClass parent_class;
+} YGtkScrolledWindowClass;
+
+GType ygtk_scrolled_window_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_scrolled_window_new (GtkWidget *child /*or NULL*/);
+
+void ygtk_scrolled_window_set_auto_policy (YGtkScrolledWindow *scroll,
+                                           guint max_width, guint max_height);
+
+G_END_DECLS
+#endif /*YGTK_SCROLLED_WIDOW_H*/

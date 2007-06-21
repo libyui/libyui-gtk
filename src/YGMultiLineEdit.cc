@@ -22,10 +22,7 @@ public:
 		IMPL
 		if (!opt.isShrinkable.value())
 			setMinSizeInChars (20, 10);
-
-		gtk_scrolled_window_set_policy
-				(GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
-				 GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
 		maxChars = -1;
 		setText (text);

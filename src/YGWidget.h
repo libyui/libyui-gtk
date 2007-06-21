@@ -94,8 +94,7 @@ protected:
 
 /* This is a convenience class that allows for a label next to the
    intended widget. It should be used, in case you have the need for
-   such, as it gives an uniform API.                               */
-
+   such, as it gives an uniform API. */
 class YGLabeledWidget : public YGWidget
 {
 	public:
@@ -118,15 +117,14 @@ class YGLabeledWidget : public YGWidget
 		YUIDimension m_orientation;
 };
 
-#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)                    \
-	virtual void setLabel (const YCPString &label) {                          \
-		IMPL                                                                    \
-		doSetLabel (label);                                                     \
-		ParentClass::setLabel (label);                                          \
+#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)   \
+	virtual void setLabel (const YCPString &label) {       \
+		IMPL                                               \
+		doSetLabel (label);                                \
+		ParentClass::setLabel (label);                     \
 	}
 
 /* This is a convenience class for widgets that need scrollbars. */
-
 class YGScrolledWidget : public YGLabeledWidget
 {
 	public:
@@ -140,9 +138,12 @@ class YGScrolledWidget : public YGLabeledWidget
 
 		virtual GtkWidget *getWidget() { return m_widget; }
 
+		// you should use this method, not gtk_scrolled_window_set...
+		void setPolicy (GtkPolicyType hpolicy, GtkPolicyType vpolicy);
+
 	protected:
 		void construct(GType type, const char *property_name, va_list args);
 		GtkWidget *m_widget;
 };
 
-#endif // YGWIDGET_H
+#endif /*YGWIDGET_H*/
