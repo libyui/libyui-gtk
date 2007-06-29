@@ -349,8 +349,10 @@ rt_start_element (GMarkupParseContext *context,
 		else if (!g_ascii_strcasecmp (element_name, "img")) {
 			if (!g_ascii_strcasecmp (attribute_names[0], "src")) {
 				GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (attribute_values[0], NULL);
-				gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
-				g_object_unref (G_OBJECT (pixbuf));
+				if (pixbuf) {
+					gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
+					g_object_unref (G_OBJECT (pixbuf));
+				}
 			}
 			else
 				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
