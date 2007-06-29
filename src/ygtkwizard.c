@@ -564,12 +564,18 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	if (path == NULL)
 		return FALSE;
 
+	g_signal_handlers_block_by_func (wizard->m_navigation_widget,
+	                                 (gpointer) tree_item_selected_cb, wizard);
+
 	GtkWidget *widget = wizard->m_navigation_widget;
 	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (widget), path);
 	gtk_tree_view_set_cursor (GTK_TREE_VIEW (widget), path,
 	                          NULL, FALSE);
 	gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (widget), path, NULL,
 	                              TRUE, 0.5, 0.5);
+
+	g_signal_handlers_unblock_by_func (wizard->m_navigation_widget,
+	                                   (gpointer) tree_item_selected_cb, wizard);
 	return TRUE;
 }
 

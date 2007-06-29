@@ -51,7 +51,6 @@ static void ygtk_steps_destroy (GtkObject *object)
 	steps->current_mark_layout = NULL;
 	
 	ygtk_steps_clear (steps);
-
 	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
 }
 

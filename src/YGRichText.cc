@@ -12,7 +12,6 @@
 
 class YGRichText : public YRichText, public YGScrolledWidget
 {
-	bool m_shrinkable;
 	bool m_plainText;
 
 public:

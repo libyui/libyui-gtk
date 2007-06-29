@@ -255,15 +255,6 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-/*
-	virtual bool stretchable (YUIDimension dim) const
-	{
-		IMPL
-		if (m_isScaled)
-			return true;
-		return (dim == YD_HORIZ) ? m_hasZeroWidth : m_hasZeroHeight;
-	}
-*/
 };
 
 YWidget *

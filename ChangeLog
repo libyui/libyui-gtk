@@ -1,3 +1,9 @@
+2007-06-29  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: bug fix: rolled out «let the selection event be
+	fired, when yast programatically selects a tree view item» (was
+	breaking sudo and firewall tools).
+
 2007-06-21  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.h/cc (YGScrolledWidget): Because SelectionBox and others don't

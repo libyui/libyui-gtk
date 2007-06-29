@@ -278,25 +278,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 					}
 				continue;
 			}
-#if 0
-			// ignore comments
-			char *comment = "<!--";
-			for (j = 0; j < instr[i+j] != '\0' && j < (signed) sizeof (comment); j++)
-				if (instr[i+j] != comment[j])
-					break;
-			if (j == sizeof (comment)) {
-				comment = "-->";
-				for (i = 0; instr[i] != '\0'; i++) {
-					for (j = 0; j < (signed) sizeof (comment); j++) {
-						if (instr[i+j] != comment[j])
-							break;
-					}
-					if (j == sizeof (comment))
-						break;
-				}
-				continue;
-			}
-#endif
+
 			i++;
 			skipSpace (instr, i);
 
