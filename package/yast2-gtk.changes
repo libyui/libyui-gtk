@@ -1,3 +1,8 @@
+2007-71-16  Jiri Srain     <jsrain@suse.cz>
+
+	* moved changelog to package subdir, added .spec.in and -yast2-gtk-rpmlint
+	files
+
 2007-07-16  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: ported to zypp3 from alpha6:
