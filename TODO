@@ -7,16 +7,20 @@
 
 = Look and feel =
 
-* (YGBarGraph / RatioBox): let tiny widgets still have some pixels visible
+* YGtkWizard: navigation bar (see sysconfig module) should be GtkPaned.
+
+* YGtkWizard: support for skin -- some mockups under mockups/.
+
+* YGBarGraph / RatioBox: let tiny widgets still have some pixels visible
   for popup menu.
 
-* (YGRichText) should use GtkHtml when available, so that we get support for
+* YGRichText: should use GtkHtml when available, so that we get support for
   tables.
 
-* (RatioBox) Our buttons are too big in some dialogs (eg. run disk.ycp as user).
+* RatioBox: Our buttons are too big in some dialogs (eg. run disk.ycp as user).
   Check where our algorithm differs from yast-core's.
 
-* (YGTextEntry / YGMultiLineEdit) Add undo/redo support. The backend code should
+* YGTextEntry / YGMultiLineEdit: Add undo/redo support. The backend code should
   be shared. We probably want to make an interface for it that is then implemented
   by those two GTK widgets. Work out a patch for GTK+.
 
@@ -28,7 +32,7 @@
 	  (downgrade of version should work for most cases -- check how qt does it).
 	  Probably a tab for this?
 
-* Internationalization needs to be supported.
+* Translation support (i18n -- pot files -- gettext!).
 
 * Search syntax: add proper Google syntax support. Consider also adding regex
   support when Glib ships with it (add radio boxes to entry's context menu).
