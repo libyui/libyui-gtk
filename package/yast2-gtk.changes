@@ -3,6 +3,7 @@ Mon Jul 16 17:07:01 CEST 2007 - jsrain@suse.cz
 
 - adapted to new libzypp
 - added support for translations
+- 2.15.5
 
 -------------------------------------------------------------------
 Thu Jun 21 10:24:55 CEST 2007 - mmichael@suse.de
