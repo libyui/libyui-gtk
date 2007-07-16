@@ -23,11 +23,12 @@
 #include <zypp/ui/Selectable.h>
 #include <zypp/Patch.h>
 #include <zypp/Selection.h>
+#include <zypp/Package.h>
 #include <zypp/Pattern.h>
 #include <zypp/Language.h>
 #include <zypp/Product.h>
-#include <zypp/Source.h>
-#include <zypp/SourceManager.h>
+#include <zypp/Repository.h>
+#include <zypp/RepoManager.h>
 
 /* We should consider linking to libgnome and use gnome_url_show(url) here,
    or at least do some path finding. */
@@ -283,7 +284,7 @@ static bool solveProblems()
 		return solveProblems();
 	return false;
 }
-
+#if 0
 static string getSourceName (zypp::Source_Ref source)
 {  // based on yast-qt's singleProduct()
 	if (!source.enabled())
@@ -312,6 +313,7 @@ static string getSourceName (zypp::Source_Ref source)
 		             source.alias().c_str());
 	return ret;
 }
+#endif
 
 #define PACKAGE_INFO_HEIGHT  140
 #define ADVANCED_INFO_HEIGHT  80
@@ -405,12 +407,13 @@ public:
 				description += "Size: " + object->size().asString() + "b<br>";
 			}
 
-			zypp::Source_Ref source = object->source();
-			str = getSourceName (source);
-			if (str.empty())
-				str = source.url().asString();
-			else
-				str = str + " (" + source.url().asString() + ")";
+			zypp::Repository repo = object->repository();
+//			str = getSourceName (source);
+//			if (str.empty())
+//				str = source.url().asString();
+/*			else
+				str = str + " (" + source.url().asString() + ")";*/
+			str = repo.info().name();
 			if (!str.empty())
 				description += "Source: " + str;
 
@@ -553,7 +556,7 @@ public:
 		                                             G_TYPE_STRING, G_TYPE_STRING);
 		m_model = GTK_TREE_MODEL (store);
 
-		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
+/*		zypp::SourceManager_Ptr manager = zypp::RepoManager::sourceManager();
 		for (zypp::SourceManager::Source_const_iterator it = manager->Source_begin();
 		     it != manager->Source_end(); it++) {
 			zypp::Source_Ref src = *it;
@@ -563,6 +566,19 @@ public:
 				gtk_list_store_set (store, &iter, 0, src.enabled(),
 					1, getSourceName (src).c_str(), 2, src.url().asString().c_str(),
 					3, src.alias().c_str(), -1);
+			}
+		}
+*/
+
+		zypp::RepoManager manager;
+		std::list <zypp::RepoInfo> repos = manager.knownRepositories();
+		for (std::list <zypp::RepoInfo>::iterator it = repos.begin();
+		     it != repos.end(); it++) {
+			if (it->enabled()) {
+				GtkTreeIter iter;
+				gtk_list_store_append (store, &iter);
+				gtk_list_store_set (store, &iter, 0, bool(it->enabled()),
+					1, it->name().c_str(), 2, it->alias().c_str(), -1);
 			}
 		}
 
@@ -589,11 +605,6 @@ public:
 		             renderer, "text", 1, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 
-		renderer = gtk_cell_renderer_text_new();
-		column = gtk_tree_view_column_new_with_attributes ("URL",
-		             renderer, "text", 2, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
-
 		m_widget = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_widget),
 		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
@@ -616,18 +627,23 @@ private:
 		gtk_tree_path_free (path);
 
 		gchar *alias;
-		gtk_tree_model_get (model, &iter, 3, &alias, -1);
+		gtk_tree_model_get (model, &iter, 2, &alias, -1);
 
+		zypp::RepoManager manager;
+		zypp::RepoInfo repo = manager.getRepositoryInfo (alias);
+		g_free (alias);
+
+/*
 		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
 		zypp::Source_Ref source = manager->findSource (alias);
 		g_free (alias);
+*/
 
-		if (gtk_cell_renderer_toggle_get_active (renderer))
-			source.disable();
-		else
-			source.enable();
+		bool enable = !gtk_cell_renderer_toggle_get_active (renderer);
+		repo.setEnabled (enable);
+
 		gtk_list_store_set (GTK_LIST_STORE (model), &iter,
-		                    0, source.enabled(), -1);
+		                    0, bool (repo.enabled()), -1);
 
 		pThis->m_listener->sources_changed_cb();
 	}
@@ -1116,7 +1132,7 @@ public:
 		gtk_box_pack_start (GTK_BOX (sources_vbox), sources_label, TRUE, TRUE, 0);
 		gtk_notebook_set_tab_pos (GTK_NOTEBOOK (advanced_notebook), GTK_POS_BOTTOM);
 		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
-			sources_vbox, gtk_label_new ("Packages Sources"));
+			sources_vbox, gtk_label_new ("Repositories"));
 		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
 			m_disk_table->getWidget(), gtk_label_new ("Disk Usage"));
 		gtk_container_add (GTK_CONTAINER (advanced_expander), advanced_notebook);
@@ -1520,11 +1536,11 @@ public:
 
 		// zypp keeps on the pool objects whose sources we disabled, so we may
 		// need to calculate the candidate object here.
-		if (available_obj != NULL && !available_obj->source().enabled()) {
+		if (available_obj != NULL && !available_obj->repository().info().enabled()) {
 			available_obj = NULL;
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
 			     it != selectable->availableEnd(); it++) {
-				if (!(*it)->source().enabled())
+				if (!(*it)->repository().info().enabled())
 					;
 				else if (!available_obj)
 					available_obj = *it;
@@ -1538,7 +1554,7 @@ public:
 		if (available_obj != NULL) {
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
 			     it != selectable->availableEnd(); it++) {
-				if (!(*it)->source().enabled())
+				if (!(*it)->repository().info().enabled())
 					continue;
 				int res = zypp::Edition::compare ((*it)->edition(),
 				                                  available_obj->edition());

@@ -1,3 +1,10 @@
+2007-07-16  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: ported to zypp3 from alpha6:
+	+ the SourceManager/Source API has been renamed to RepoManager/Repository
+	/RepoInfo and suffered some changes.
+	+ missing include: zypp/Package.h
+
 2007-06-29  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: bug fix: rolled out «let the selection event be
