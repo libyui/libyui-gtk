@@ -2,10 +2,15 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
+/*
+  Textdomain	"yast2-gtk"
+*/
+
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGUtils.h"
+#include "YGi18n.h"
 #include "YGWidget.h"
 #include "YPackageSelector.h"
 #include "ygtkrichtext.h"
@@ -76,7 +81,8 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 		return true;
 	}
 
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("License Agreement",
+	// dialog caption
+	GtkWidget *dialog = gtk_dialog_new_with_buttons (_("License Agreement"),
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 		"_Reject", GTK_RESPONSE_REJECT, "_Accept", GTK_RESPONSE_ACCEPT, NULL);
 
@@ -184,7 +190,8 @@ static bool solveProblems()
 	if (problems.empty())
 		return true;
 
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Resolve Problems",
+	// dialog caption
+	GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Resolve Problems"),
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, "C_onfirm", GTK_RESPONSE_ACCEPT, NULL);
 

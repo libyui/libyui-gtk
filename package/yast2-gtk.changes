@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jul 16 17:07:01 CEST 2007 - jsrain@suse.cz
+
+- adapted to new libzypp
+- added support for translations
+
+-------------------------------------------------------------------
 Thu Jun 21 10:24:55 CEST 2007 - mmichael@suse.de
 
 - upgrade to yast2-gtk-2.15.4, fixes many bugs, pwrt.
