@@ -20,6 +20,8 @@
 #include "ygtkfindentry.h"
 
 //#define DISABLE_PACKAGE_SELECTOR
+// TODO: check zypp version
+//#define PRE_ZYPP_3
 
 #ifndef DISABLE_PACKAGE_SELECTOR
 #include <zypp/ZYppFactory.h>
@@ -32,8 +34,13 @@
 #include <zypp/Pattern.h>
 #include <zypp/Language.h>
 #include <zypp/Product.h>
+#ifdef PRE_ZYPP_3
+#include <zypp/Source.h>
+#include <zypp/SourceManager.h>
+#else
 #include <zypp/Repository.h>
 #include <zypp/RepoManager.h>
+#endif
 
 /* We should consider linking to libgnome and use gnome_url_show(url) here,
    or at least do some path finding. */
@@ -81,10 +88,9 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 		return true;
 	}
 
-	// dialog caption
 	GtkWidget *dialog = gtk_dialog_new_with_buttons (_("License Agreement"),
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
-		"_Reject", GTK_RESPONSE_REJECT, "_Accept", GTK_RESPONSE_ACCEPT, NULL);
+		_("_Reject"), GTK_RESPONSE_REJECT, _("_Accept"), GTK_RESPONSE_ACCEPT, NULL);
 
 	GtkWidget *license_view, *license_window;
 #ifdef PLAIN_TEXT
@@ -151,7 +157,7 @@ static bool mark_selectable (ZyppSelectablePtr selectable, bool install /*or rem
 			status = zypp::ui::S_Del;
 	}
 
-	// debug
+#if 0	// debug
 	const char *name = selectable->name().c_str();
 	switch (status) {
 		case zypp::ui::S_KeepInstalled:
@@ -173,6 +179,7 @@ static bool mark_selectable (ZyppSelectablePtr selectable, bool install /*or rem
 			y2milestone ("error: unknown action: should not happen\n");
 			break;
 	}
+#endif
 
 	return selectable->set_status (status);
 }
@@ -190,10 +197,9 @@ static bool solveProblems()
 	if (problems.empty())
 		return true;
 
-	// dialog caption
 	GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Resolve Problems"),
 		YGUI::ui()->currentWindow(), GTK_DIALOG_MODAL,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, "C_onfirm", GTK_RESPONSE_ACCEPT, NULL);
+		GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, _("C_onfirm"), GTK_RESPONSE_ACCEPT, NULL);
 
 	GtkWidget *problems_view;
 	problems_view = gtk_tree_view_new();
@@ -225,7 +231,7 @@ static bool solveProblems()
 	                  G_CALLBACK (YGUtils::tree_view_radio_toggle_cb),
 	                  GTK_TREE_MODEL (problems_store));
 
-	column = gtk_tree_view_column_new_with_attributes ("Problems",
+	column = gtk_tree_view_column_new_with_attributes (_("Problems"),
 		gtk_cell_renderer_text_new(), "text", 1, NULL);
 	gtk_tree_view_append_column (GTK_TREE_VIEW (problems_view), column);
 
@@ -291,7 +297,8 @@ static bool solveProblems()
 		return solveProblems();
 	return false;
 }
-#if 0
+
+#ifdef PRE_ZYPP_3
 static string getSourceName (zypp::Source_Ref source)
 {  // based on yast-qt's singleProduct()
 	if (!source.enabled())
@@ -354,13 +361,13 @@ public:
 			gtk_notebook_set_tab_pos (GTK_NOTEBOOK (m_notebook), GTK_POS_BOTTOM);
 			gtk_container_add (GTK_CONTAINER (m_widget), m_notebook);
 
-			m_about_text = add_text_tab (m_notebook, "Description");
-			m_filelist_text = add_text_tab (m_notebook, "File List");
+			m_about_text = add_text_tab (m_notebook, _("Description"));
+			m_filelist_text = add_text_tab (m_notebook, _("File List"));
 			if ((m_use_filemanager = FILEMANAGER_PRESENT()))
 				g_signal_connect (G_OBJECT (m_filelist_text), "link-pressed",
 				                  G_CALLBACK (dir_pressed_cb), NULL);
-			m_history_text = add_text_tab (m_notebook, "History");
-			m_authors_text = add_text_tab (m_notebook, "Authors");
+			m_history_text = add_text_tab (m_notebook, _("History"));
+			m_authors_text = add_text_tab (m_notebook, _("Authors"));
 		}
 		gtk_widget_set_size_request (gtk_bin_get_child (GTK_BIN (m_widget)),
 		                             -1, PACKAGE_INFO_HEIGHT);
@@ -407,22 +414,26 @@ public:
 				description += "<br>";
 				str = package->url();
 				if (!str.empty())
-					description += "Website: " + str + "<br>";
+					description += _("Website: ") + str + "<br>";
 				str = package->license();
 				if (!str.empty())
-					description += "License: " + str + "<br>";
-				description += "Size: " + object->size().asString() + "b<br>";
+					description += _("License: ") + str + "<br>";
+				description += _("Size: ") + object->size().asString() + "b<br>";
 			}
 
+#ifdef PRE_ZYPP_3
+			zypp::Source_Ref source = object->source();
+			str = getSourceName (source);
+			if (str.empty())
+				str = source.url().asString();
+			else
+				str = str + " (" + source.url().asString() + ")";
+#else
 			zypp::Repository repo = object->repository();
-//			str = getSourceName (source);
-//			if (str.empty())
-//				str = source.url().asString();
-/*			else
-				str = str + " (" + source.url().asString() + ")";*/
 			str = repo.info().name();
+#endif
 			if (!str.empty())
-				description += "Source: " + str;
+				description += _("Repository: ") + str;
 
 			set_text (m_about_text, description);
 		}
@@ -484,11 +495,12 @@ public:
 
 				string text;
 				if (!packager.empty())
-					text = "Packaged by:<br><blockquote>" + packager + "</blockquote>";
+					text = _("Packaged by:") + ("<br><blockquote>" + packager) +
+					       "</blockquote>";
 				if (!authors.empty()) {
 					if (!packager.empty())
 						text += "<br><br>";
-					text += "Developed by:<br><blockquote>" + authors +
+					text += _("Developed by:") + ("<br><blockquote>" + authors) +
 					        "</blockquote>";
 				}
 				set_text (m_authors_text, text);
@@ -522,7 +534,7 @@ private:
 
 	static void set_text (GtkWidget *widget, const string &text)
 	{
-		const char *str = "<i>(not available)</i>";
+		const char *str = _("<i>(not available)</i>");
 		if (!text.empty())
 			str = text.c_str();
 		ygtk_richtext_set_text (YGTK_RICHTEXT (widget), str, TRUE);
@@ -563,7 +575,8 @@ public:
 		                                             G_TYPE_STRING, G_TYPE_STRING);
 		m_model = GTK_TREE_MODEL (store);
 
-/*		zypp::SourceManager_Ptr manager = zypp::RepoManager::sourceManager();
+#ifdef PRE_ZYPP_3
+		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
 		for (zypp::SourceManager::Source_const_iterator it = manager->Source_begin();
 		     it != manager->Source_end(); it++) {
 			zypp::Source_Ref src = *it;
@@ -575,8 +588,7 @@ public:
 					3, src.alias().c_str(), -1);
 			}
 		}
-*/
-
+#else
 		zypp::RepoManager manager;
 		std::list <zypp::RepoInfo> repos = manager.knownRepositories();
 		for (std::list <zypp::RepoInfo>::iterator it = repos.begin();
@@ -588,6 +600,7 @@ public:
 					1, it->name().c_str(), 2, it->alias().c_str(), -1);
 			}
 		}
+#endif
 
 		GtkWidget *view = gtk_tree_view_new_with_model (m_model);
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
@@ -608,9 +621,16 @@ public:
 		                  G_CALLBACK (source_toggled_cb), this);
 
 		renderer = gtk_cell_renderer_text_new();
-		column = gtk_tree_view_column_new_with_attributes ("Name",
+		column = gtk_tree_view_column_new_with_attributes ("",
 		             renderer, "text", 1, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+#ifdef PRE_ZYPP_3
+		renderer = gtk_cell_renderer_text_new();
+		column = gtk_tree_view_column_new_with_attributes ("",
+		             renderer, "text", 2, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+#endif
 
 		m_widget = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_widget),
@@ -633,6 +653,21 @@ private:
 		gtk_tree_model_get_iter (model, &iter, path);
 		gtk_tree_path_free (path);
 
+#ifdef PRE_ZYPP_3
+		gchar *alias;
+		gtk_tree_model_get (model, &iter, 3, &alias, -1);
+
+		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
+		zypp::Source_Ref source = manager->findSource (alias);
+		g_free (alias);
+
+		if (gtk_cell_renderer_toggle_get_active (renderer))
+			source.disable();
+		else
+			source.enable();
+		gtk_list_store_set (GTK_LIST_STORE (model), &iter,
+		                    0, source.enabled(), -1);
+#else
 		gchar *alias;
 		gtk_tree_model_get (model, &iter, 2, &alias, -1);
 
@@ -640,17 +675,12 @@ private:
 		zypp::RepoInfo repo = manager.getRepositoryInfo (alias);
 		g_free (alias);
 
-/*
-		zypp::SourceManager_Ptr manager = zypp::SourceManager::sourceManager();
-		zypp::Source_Ref source = manager->findSource (alias);
-		g_free (alias);
-*/
-
 		bool enable = !gtk_cell_renderer_toggle_get_active (renderer);
 		repo.setEnabled (enable);
 
 		gtk_list_store_set (GTK_LIST_STORE (model), &iter,
 		                    0, bool (repo.enabled()), -1);
+#endif
 
 		pThis->m_listener->sources_changed_cb();
 	}
@@ -697,12 +727,12 @@ public:
 		GtkCellRenderer *renderer;
 
 		renderer = gtk_cell_renderer_text_new();
-		column = gtk_tree_view_column_new_with_attributes ("Mount Point",
+		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),
 		             renderer, "text", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 
 		renderer = gtk_cell_renderer_progress_new();
-		column = gtk_tree_view_column_new_with_attributes ("Usage",
+		column = gtk_tree_view_column_new_with_attributes (_("Usage"),
 		             renderer, "value", 1, "text", 2, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 
@@ -759,9 +789,9 @@ public:
 		GtkWidget *dialog, *view, *scroll_view;
 		dialog = gtk_message_dialog_new_with_markup (YGUI::ui()->currentWindow(),
 			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-			GTK_BUTTONS_OK, "<b>Disk Almost Full !</b>\n\n"
+			GTK_BUTTONS_OK, _("<b>Disk Almost Full !</b>\n\n"
 			"One of the partitions is reaching its limit of capacity. You may "
-			"have to remove packages if you wish to install some.");
+			"have to remove packages if you wish to install some."));
 
 		view = gtk_tree_view_new_with_model (m_model);
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
@@ -770,10 +800,10 @@ public:
 		                             GTK_SELECTION_NONE);
 
 		GtkTreeViewColumn *column;
-		column = gtk_tree_view_column_new_with_attributes ("Mount Point",
+		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),
 		             gtk_cell_renderer_text_new(), "text", 0, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
-		column = gtk_tree_view_column_new_with_attributes ("Usage",
+		column = gtk_tree_view_column_new_with_attributes (_("Usage"),
 		             gtk_cell_renderer_progress_new(),
 		             "value", 1, "text", 2, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
@@ -813,18 +843,18 @@ public:
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_child (YGTK_WIZARD (getWidget()), main_vbox);
 		GtkWindow *window = YGUI::ui()->currentWindow();
-		ygtk_wizard_set_header_text (wizard, window, "Patch Selector");
+		ygtk_wizard_set_header_text (wizard, window, _("Patch Selector"));
 		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
 		ygtk_wizard_set_help_text (wizard,
-			"For information on a given patch, just press it and as well as the "
+			_("For information on a given patch, just press it and as well as the "
 			"Package Information expander to make those informations visible.<br>"
 			"To install a patch you just need to press the check button next to it "
-			"and then the button Install when you are done."
+			"and then the button Install when you are done.")
 		);
-		ygtk_wizard_set_next_button_label (wizard, "_Install");
+		ygtk_wizard_set_next_button_label (wizard, _("_Install"));
 		ygtk_wizard_set_next_button_id (wizard, g_strdup ("install"), g_free);
-		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
+		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
@@ -837,7 +867,7 @@ public:
                                     GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_container_add (GTK_CONTAINER (patches_window), m_patches_view);
 
-		m_information_widget = new PackageInformation ("Patch Information", true);
+		m_information_widget = new PackageInformation (_("Patch Information"), true);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		gtk_box_pack_start (GTK_BOX (main_vbox), patches_window, TRUE, TRUE, 6);
@@ -858,11 +888,11 @@ public:
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 		                  G_CALLBACK (patch_toggled_cb), this);
 
-		column = gtk_tree_view_column_new_with_attributes ("Priority",
+		column = gtk_tree_view_column_new_with_attributes (_("Priority"),
 			gtk_cell_renderer_text_new(), "text", 1, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_patches_view), column);
 
-		column = gtk_tree_view_column_new_with_attributes ("Name",
+		column = gtk_tree_view_column_new_with_attributes (_("Name"),
 			gtk_cell_renderer_text_new(), "text", 2, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_patches_view), column);
 
@@ -1020,10 +1050,10 @@ public:
 		   allows for more than one model type be used and is also better for speed,
 		   since the filter and tree view then installed upon don't have to keep
 		   syncing at every item change. */
-		installed_box = createListWidget ("<b>Installed Software:</b>",
+		installed_box = createListWidget (_("<b>Installed Software:</b>"),
 		                                  "computer", computer_xpm, m_installed_view,
 		                                  1, false);
-		available_box = createListWidget ("<b>Available Software:</b>",
+		available_box = createListWidget (_("<b>Available Software:</b>"),
 		                                  "gtk-cdrom", NULL, m_available_view,
 		                                  2, true);
 
@@ -1047,8 +1077,8 @@ public:
 		gtk_container_add (GTK_CONTAINER (buttons_minsize), selection_buttons_vbox);
 		ygtk_min_size_set_only_expand (YGTK_MIN_SIZE (buttons_minsize), TRUE);
 
-		install_button = createArrowButton ("_install", GTK_ARROW_RIGHT, &m_install_label);
-		remove_button = createArrowButton ("_remove", GTK_ARROW_LEFT, &m_remove_label);
+		install_button = createArrowButton (_("_install"), GTK_ARROW_RIGHT, &m_install_label);
+		remove_button = createArrowButton (_("_remove"), GTK_ARROW_LEFT, &m_remove_label);
 
 		GtkWidget *install_align = gtk_alignment_new (0, 1, 1, 0);
 		gtk_container_add (GTK_CONTAINER (install_align), install_button);
@@ -1068,16 +1098,16 @@ public:
 
 		GtkWidget *view_box, *view_label, *view_categories, *view_patterns,
 		          *view_languages;
-		view_label = gtk_label_new ("View Packages:");
+		view_label = gtk_label_new (_("View Packages:"));
 		gtk_label_set_use_markup (GTK_LABEL (view_label), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (view_label), 0, 0.5);
-		m_plain_view = gtk_radio_button_new_with_mnemonic (NULL, "as _plain list");
+		m_plain_view = gtk_radio_button_new_with_mnemonic (NULL, _("as _plain list"));
 		view_categories = gtk_radio_button_new_with_mnemonic_from_widget
-		                      (GTK_RADIO_BUTTON (m_plain_view), "in _categories");
+		                      (GTK_RADIO_BUTTON (m_plain_view), _("in _categories"));
 		view_patterns = gtk_radio_button_new_with_mnemonic_from_widget
-		                      (GTK_RADIO_BUTTON (m_plain_view), "in _patterns");
+		                      (GTK_RADIO_BUTTON (m_plain_view), _("in _patterns"));
 		view_languages = gtk_radio_button_new_with_mnemonic_from_widget
-		                      (GTK_RADIO_BUTTON (m_plain_view), "in _languages");
+		                      (GTK_RADIO_BUTTON (m_plain_view), _("in _languages"));
 		view_box = gtk_hbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (view_box), view_label, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (view_box), m_plain_view, FALSE, TRUE, 4);
@@ -1099,7 +1129,7 @@ public:
 
 		GtkWidget *search_hbox, *search_label;
 		search_hbox = gtk_hbox_new (FALSE, 0);
-		search_label = gtk_label_new_with_mnemonic ("_Search:");
+		search_label = gtk_label_new_with_mnemonic (_("_Search:"));
 		gtk_label_set_use_markup (GTK_LABEL (search_label), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (search_label), 0, 0.5);
 		m_search_entry = ygtk_find_entry_new();
@@ -1121,17 +1151,17 @@ public:
 		gtk_size_group_add_widget (align_labels, search_label);
 		g_object_unref (G_OBJECT (align_labels));
 
-		m_information_widget = new PackageInformation ("Package Information", false);
+		m_information_widget = new PackageInformation (_("Package Information"), false);
 		GtkWidget *pkg_info_widget = m_information_widget->getWidget();
 
 		m_sources_table = new SourcesTable (this);
 		m_disk_table = new DiskTable();
 
-		GtkWidget *advanced_expander = gtk_expander_new ("Advanced");
+		GtkWidget *advanced_expander = gtk_expander_new (_("Advanced"));
 		GtkWidget *advanced_notebook = gtk_notebook_new();
 		GtkWidget *sources_vbox = gtk_vbox_new (FALSE, 4);
 		GtkWidget *sources_label = gtk_label_new (
-			"<i>Use the Installation Source tool to manage the sources.</i>");
+			_("<i>Use the Installation Source tool to manage the sources.</i>"));
 		gtk_misc_set_alignment (GTK_MISC (sources_label), 1, 0);
 		gtk_label_set_use_markup (GTK_LABEL (sources_label), TRUE);
 		gtk_box_pack_start (GTK_BOX (sources_vbox), m_sources_table->getWidget(),
@@ -1139,9 +1169,9 @@ public:
 		gtk_box_pack_start (GTK_BOX (sources_vbox), sources_label, TRUE, TRUE, 0);
 		gtk_notebook_set_tab_pos (GTK_NOTEBOOK (advanced_notebook), GTK_POS_BOTTOM);
 		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
-			sources_vbox, gtk_label_new ("Repositories"));
+			sources_vbox, gtk_label_new (_("Repositories")));
 		gtk_notebook_append_page (GTK_NOTEBOOK (advanced_notebook),
-			m_disk_table->getWidget(), gtk_label_new ("Disk Usage"));
+			m_disk_table->getWidget(), gtk_label_new (_("Disk Usage")));
 		gtk_container_add (GTK_CONTAINER (advanced_expander), advanced_notebook);
 
 		gtk_box_pack_start (GTK_BOX (m_widget), packages_hbox, TRUE, TRUE, 0);
@@ -1220,7 +1250,7 @@ public:
 		g_object_set (G_OBJECT (text_renderer),
 		              "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 		GtkTreeViewColumn *column;
-		column = gtk_tree_view_column_new_with_attributes ("Packages",
+		column = gtk_tree_view_column_new_with_attributes (_("Packages"),
 			text_renderer, "markup", package_name_col, "style", 9, NULL);
 		gtk_tree_view_column_set_expand (column, TRUE);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (list), column);
@@ -1267,7 +1297,7 @@ public:
 		gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
 		vbox = GTK_DIALOG (dialog)->vbox;
 //		gtk_container_set_border_width (GTK_CONTAINER (vbox), 8);
-		label = gtk_label_new ("Loading packages list...");
+		label = gtk_label_new (_("Loading packages list..."));
 		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), label, TRUE, TRUE, 4);
 		progress = gtk_progress_bar_new();
@@ -1543,11 +1573,19 @@ public:
 
 		// zypp keeps on the pool objects whose sources we disabled, so we may
 		// need to calculate the candidate object here.
+#ifdef PRE_ZYPP_3
+		if (available_obj != NULL && !available_obj->source().enabled()) {
+#else
 		if (available_obj != NULL && !available_obj->repository().info().enabled()) {
+#endif
 			available_obj = NULL;
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
 			     it != selectable->availableEnd(); it++) {
+#ifdef PRE_ZYPP_3
+				if (!(*it)->source().enabled())
+#else
 				if (!(*it)->repository().info().enabled())
+#endif
 					;
 				else if (!available_obj)
 					available_obj = *it;
@@ -1561,7 +1599,11 @@ public:
 		if (available_obj != NULL) {
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
 			     it != selectable->availableEnd(); it++) {
+#ifdef PRE_ZYPP_3
+				if (!(*it)->source().enabled())
+#else
 				if (!(*it)->repository().info().enabled())
+#endif
 					continue;
 				int res = zypp::Edition::compare ((*it)->edition(),
 				                                  available_obj->edition());
@@ -1755,11 +1797,11 @@ public:
 	GtkMenu *create_search_menu()
 	{
 		GtkWidget *menu = gtk_menu_new();
-		append_option_item (menu, "Name", &name_opt);
-		append_option_item (menu, "Summary", &summary_opt);
-		append_option_item (menu, "Description", &descr_opt);
-		append_option_item (menu, "RPM Provides", &provides_opt);
-		append_option_item (menu, "RPM Requires", &requires_opt);
+		append_option_item (menu, _("Name"), &name_opt);
+		append_option_item (menu, _("Summary"), &summary_opt);
+		append_option_item (menu, _("Description"), &descr_opt);
+		append_option_item (menu, _("RPM Provides"), &provides_opt);
+		append_option_item (menu, _("RPM Requires"), &requires_opt);
 		gtk_widget_show_all (menu);
 		return GTK_MENU (menu);
 	}
@@ -1970,29 +2012,29 @@ public:
 		GtkLabel *install_label = GTK_LABEL (pThis->m_install_label),
 		         *remove_label = GTK_LABEL (pThis->m_remove_label);
 		if (selected_rows > 1) {
-			gtk_label_set_text (install_label, "_install");
-			gtk_label_set_text (remove_label, "_remove");
+			gtk_label_set_text (install_label, _("_install"));
+			gtk_label_set_text (remove_label, _("_remove"));
 		}
 		else {  // personalize
 			// remove label
 			if (sel && sel->toInstall())
-				gtk_label_set_text (remove_label, "_undo");
+				gtk_label_set_text (remove_label, _("_undo"));
 			else
-				gtk_label_set_text (remove_label, "_remove");
+				gtk_label_set_text (remove_label, _("_remove"));
 			// install label
 			if (sel && sel->toDelete())
-				gtk_label_set_text (install_label, "_undo");
+				gtk_label_set_text (install_label, _("_undo"));
 			else if (!install_obj)
-				gtk_label_set_text (install_label, "_install");
+				gtk_label_set_text (install_label, _("_install"));
 			else if (available_obj) {
 				int res = zypp::Edition::compare (install_obj->edition(),
 				                                  available_obj->edition());
 				if (res < 0)
-					gtk_label_set_text (install_label, "_upgrade");
+					gtk_label_set_text (install_label, _("_upgrade"));
 				else if (res > 0)
-					gtk_label_set_text (install_label, "_downgrade");
+					gtk_label_set_text (install_label, _("_downgrade"));
 				else
-					gtk_label_set_text (install_label, "re-_install");
+					gtk_label_set_text (install_label, _("re-_install"));
 			}
 		}
 		gtk_label_set_use_underline (install_label, TRUE);
@@ -2142,20 +2184,20 @@ public:
 		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
 		                             "Package Selector");
 		ygtk_wizard_set_help_text (wizard,
-			"Two pools are presented; one with the available software, the other "
+			_("Two pools are presented; one with the available software, the other "
 			"with the installed one. To install software you choose a package "
 			"from the install pool and press Install. Similar method for removal "
 			"of software. When you are done press the Accept button.<br>"
 			"Information on a given package is displayed on the Package Information "
 			"expander at the bottom which may be enlarged.<br>"
 			"A categories view of the software is possible, as well as searching "
-			"for a given package."
+			"for a given package.")
 		);
 
-		ygtk_wizard_set_abort_button_label (wizard, "_Cancel");
+		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
 		ygtk_wizard_set_back_button_label (wizard, "");
-		ygtk_wizard_set_next_button_label (wizard, "_Accept");
+		ygtk_wizard_set_next_button_label (wizard, _("_Accept"));
 		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
@@ -2218,14 +2260,14 @@ protected:
 		if (zyppPool().empty <zypp::Package> ())
 			return false;
 
-		GtkWidget *dialog = gtk_dialog_new_with_buttons ("Changes Summary",
+		GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Changes Summary"),
 			YGUI::ui()->currentWindow(),
 			GtkDialogFlags (GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR),
-			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, "C_onfirm", GTK_RESPONSE_ACCEPT, NULL);
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, _("C_onfirm"), GTK_RESPONSE_ACCEPT, NULL);
 
 		GtkWidget *install_label, *remove_label, *install_view, *remove_view;
-		install_label = gtk_label_new ("To install:");
-		remove_label  = gtk_label_new ("To remove:");
+		install_label = gtk_label_new (_("To install:"));
+		remove_label  = gtk_label_new (_("To remove:"));
 		install_view  = gtk_tree_view_new();
 		remove_view   = gtk_tree_view_new();
 
@@ -2256,7 +2298,7 @@ protected:
 
 			// install view
 			GtkTreeViewColumn *column;
-			column = gtk_tree_view_column_new_with_attributes ("Install packages",
+			column = gtk_tree_view_column_new_with_attributes (_("Install packages"),
 				gtk_cell_renderer_text_new(), "text", 0, NULL);
 			gtk_tree_view_append_column (GTK_TREE_VIEW (install_view), column);
 
@@ -2268,7 +2310,7 @@ protected:
 				GTK_TREE_VIEW (install_view)), GTK_SELECTION_NONE);;
 
 			// remove view
-			column = gtk_tree_view_column_new_with_attributes ("Remove packages",
+			column = gtk_tree_view_column_new_with_attributes (_("Remove packages"),
 				gtk_cell_renderer_text_new(), "text", 0, NULL);
 			gtk_tree_view_append_column (GTK_TREE_VIEW (remove_view), column);
 

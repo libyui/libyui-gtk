@@ -1,3 +1,15 @@
+2007-07-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: Jiri has added gettext support (not sure
+	if it is completed as I don't see the place for PO files and the rules
+	to compile them), so set package selector strings as translatable _( ... ).
+
+	* po/pt.po: created this translation; dunno how to make the thing
+	being used now...
+
+	* src/YGPackageSelector.cc: added pre-3 zypp version compatibility; just
+	uncomment #define PRE_ZYPP_3
+
 2007-71-16  Jiri Srain     <jsrain@suse.cz>
 
 	* moved changelog to package subdir, added .spec.in and -yast2-gtk-rpmlint
