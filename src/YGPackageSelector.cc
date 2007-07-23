@@ -1021,7 +1021,6 @@ friend class YGPackageSelector;
 	GtkWidget *m_search_entry, *m_plain_view;
 	guint search_timeout_id;
 	bool name_opt, summary_opt, descr_opt, provides_opt, requires_opt;
-	bool m_searching;
 	list <string> m_search_queries;
 
 	// Interface tweak
@@ -1781,7 +1780,6 @@ public:
 		                      GTK_TOGGLE_BUTTON (pThis->m_plain_view));
 		if (!plain_view)
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (pThis->m_plain_view), TRUE);
-		pThis->m_searching = strlen (query) > 0;
 		pThis->m_search_queries = YGUtils::splitString (query, ' ');
 
 		// just re-filter
@@ -1825,7 +1823,7 @@ public:
 		gtk_tree_model_get (model, iter, visible_col, &visible, 8, &has_children, -1);
 		if (has_children)
 			visible = TRUE;
-		else if (visible && pThis->m_searching) {
+		else if (visible && !pThis->m_search_queries.empty()) {
 			ZyppSelectablePtr selectable;
 			gtk_tree_model_get (model, iter, 0, &selectable, -1);
 			visible = pThis->does_package_match (selectable);
@@ -1921,7 +1919,7 @@ public:
                                                                          GtkTreeIter        *child_iter)
     {
 #if GTK_CHECK_VERSION(2,10,0)
-         return gtk_tree_model_filter_convert_child_iter_to_iter (filter, filter_iter, child_iter);
+        return gtk_tree_model_filter_convert_child_iter_to_iter (filter, filter_iter, child_iter);
 #else // cut/paste from gtk+ HEAD...
         gboolean ret;
         GtkTreePath *child_path, *path;
@@ -1970,12 +1968,17 @@ public:
 		gtk_tree_model_get_iter (base_model, &iter, _path);
 		gtk_tree_path_free (_path);
 
+        int timeout = 0;
+        // Try to find a a similar item in the other view to synchronise with
 		while (!compat_gtk_tree_model_filter_convert_child_iter_to_iter (
 			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (other_view)),
 			&other_iter, &iter))
 		{
 			if (!gtk_tree_model_iter_next (base_model, &iter))
 				return false;
+            // This turns into N^3 very quickly if we search too hard
+            if (timeout++ > 10)
+                return false;
 			select_it = false;  // not the same package -- dont select it then
 		}
 
@@ -2071,6 +2074,7 @@ public:
 		}
 		gtk_label_set_use_underline (install_label, TRUE);
 		gtk_label_set_use_underline (remove_label, TRUE);
+
 		safeguard = false;
 	}
 
@@ -2102,7 +2106,6 @@ public:
 			iters[i] = iter;
 		}
 		g_list_free (selected);
-
 		for (i = 0; i < selected_len; i++) {
 			GtkTreeIter *iter = &iters[i];
 			ZyppSelectablePtr sel = 0;

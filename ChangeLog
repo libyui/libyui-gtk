@@ -1,5 +1,10 @@
 2007-07-23  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGPackageSelector.cc (sync_tree_views_scroll): this
+	needs re-writing to be more efficient in corner cases: eg.
+	no zypp sources. For now use an iteration timeout of 10
+	loops before bailing out for a big speed win.
+
 	* src/YGPackageSelector.cc (compat_gtk_tree_model_filter_convert_child_iter_to_iter):
 	back-compat method for older gtk+s (SLED10).
 
@@ -7,7 +12,9 @@
 	accordingly.
 
 	* src/YGPackageSelector.cc (induceObjects): fix tribool related
-	crasher.
+	crasher n#293065.
+	(PackageSelector): remove m_searching, in favour of the more robust
+	!m_search_queries.empty()
 
 	* src/YGImage.cc (YGImage::initOptions): set m_isScaled, m_isTiled
 	before we use them; kill valgrind uninitialized value error churn.
