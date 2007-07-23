@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Mon Jul 23 15:32:01 BST 2007 - mmichael@suse.de
+
+- fix crash-on-start n#293065
+- fix uninitialized warnings
+- fix empty-partition divide by 0 case
+- 2.15.6
+
+-------------------------------------------------------------------
 Mon Jul 16 17:07:01 CEST 2007 - jsrain@suse.cz
 
 - adapted to new libzypp

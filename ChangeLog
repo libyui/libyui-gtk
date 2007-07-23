@@ -1,5 +1,9 @@
 2007-07-23  Michael Meeks  <michael.meeks@novell.com>
 
+	* Version 2.15.6, Revison 39597
+
+2007-07-23  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/YGPackageSelector.cc (sync_tree_views_scroll): this
 	needs re-writing to be more efficient in corner cases: eg.
 	no zypp sources. For now use an iteration timeout of 10
