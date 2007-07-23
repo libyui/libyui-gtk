@@ -20,8 +20,6 @@
 #include "ygtkfindentry.h"
 
 //#define DISABLE_PACKAGE_SELECTOR
-// TODO: check zypp version
-//#define PRE_ZYPP_3
 
 #ifndef DISABLE_PACKAGE_SELECTOR
 #include <zypp/ZYppFactory.h>
@@ -1917,6 +1915,38 @@ public:
 		return false;
 	}
 
+    // For SLED10 / older gtk+'s ...
+    static bool compat_gtk_tree_model_filter_convert_child_iter_to_iter (GtkTreeModelFilter *filter,
+                                                                         GtkTreeIter        *filter_iter,
+                                                                         GtkTreeIter        *child_iter)
+    {
+#if GTK_CHECK_VERSION(2,10,0)
+         return gtk_tree_model_filter_convert_child_iter_to_iter (filter, filter_iter, child_iter);
+#else // cut/paste from gtk+ HEAD...
+        gboolean ret;
+        GtkTreePath *child_path, *path;
+
+        memset (filter_iter, 0, sizeof (GtkTreeIter));
+
+        GtkTreeModel *child_model;
+        g_object_get (G_OBJECT (filter), "child-model", &child_model, NULL);
+        child_path = gtk_tree_model_get_path (child_model, child_iter);
+        g_return_val_if_fail (child_path != NULL, FALSE);
+        
+        path = gtk_tree_model_filter_convert_child_path_to_path (filter,
+                                                                 child_path);
+        gtk_tree_path_free (child_path);
+        
+        if (!path)
+            return FALSE;
+
+        ret = gtk_tree_model_get_iter (GTK_TREE_MODEL (filter), filter_iter, path);
+        gtk_tree_path_free (path);
+
+        return ret;
+#endif
+    }
+
 	static bool sync_tree_views_scroll (GtkTreeView *current_view, GtkTreeView *other_view,
 	                                    GtkTreePath *current_path, bool select_it)
 	{
@@ -1940,7 +1970,7 @@ public:
 		gtk_tree_model_get_iter (base_model, &iter, _path);
 		gtk_tree_path_free (_path);
 
-		while (!gtk_tree_model_filter_convert_child_iter_to_iter (
+		while (!compat_gtk_tree_model_filter_convert_child_iter_to_iter (
 			GTK_TREE_MODEL_FILTER (gtk_tree_view_get_model (other_view)),
 			&other_iter, &iter))
 		{

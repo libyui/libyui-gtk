@@ -1,5 +1,11 @@
 2007-07-23  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGPackageSelector.cc (compat_gtk_tree_model_filter_convert_child_iter_to_iter):
+	back-compat method for older gtk+s (SLED10).
+
+	* configure.in: autodetect pre ZYPP 3 version, and adapt
+	accordingly.
+
 	* src/YGPackageSelector.cc (induceObjects): fix tribool related
 	crasher.
 
