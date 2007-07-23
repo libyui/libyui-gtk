@@ -31,15 +31,15 @@ class YGImage : public YImage, public YGWidget
 		m_imageLoaded   = false;
 		m_hasZeroWidth  = opt.zeroWidth.value();
 		m_hasZeroHeight = opt.zeroHeight.value();
+		m_isAnimation   = opt.animated.value();
+		m_isScaled      = opt.scaleToFit.value();
+		m_isTiled       = opt.tiled.value();
 
 		if (m_hasZeroWidth || m_isScaled || m_isTiled)
 			setStretchable (YD_HORIZ, true);
 		if (m_hasZeroHeight || m_isScaled || m_isTiled)
 			setStretchable (YD_VERT, true);
 
-		m_isAnimation   = opt.animated.value();
-		m_isScaled      = opt.scaleToFit.value();
-		m_isTiled       = opt.tiled.value();
 		if (m_isScaled && m_isTiled) {
 			y2warning ("YImage can't be scaled and tiled at the same time");
 			m_isTiled = false;

@@ -1,5 +1,11 @@
 2007-07-23  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGPackageSelector.cc (induceObjects): fix tribool related
+	crasher.
+
+	* src/YGImage.cc (YGImage::initOptions): set m_isScaled, m_isTiled
+	before we use them; kill valgrind uninitialized value error churn.
+
 	* src/YGPackageSelector.cc: handle 0 size partitions,
 	also don't warn for "out of space" errors on < 1Mb partitions:
 	discarding the annoying warning dialog.

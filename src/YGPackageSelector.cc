@@ -1577,7 +1577,8 @@ public:
 #ifdef PRE_ZYPP_3
 		if (available_obj != NULL && !available_obj->source().enabled()) {
 #else
-		if (available_obj != NULL && !available_obj->repository().info().enabled()) {
+        // beware lurking tribool requires bool cast here.
+		if (available_obj != NULL && !(bool)(available_obj->repository().info().enabled())) {
 #endif
 			available_obj = NULL;
 			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
