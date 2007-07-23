@@ -1,3 +1,10 @@
+2007-07-23  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc: handle 0 size partitions,
+	also don't warn for "out of space" errors on < 1Mb partitions:
+	discarding the annoying warning dialog.
+	(PROGRESS): guard against divide-by-zero too.
+
 2007-07-19  Ricardo Cruz   <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: Jiri has added gettext support (not sure

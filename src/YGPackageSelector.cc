@@ -766,14 +766,15 @@ public:
 				GtkTreeIter iter;
 				gtk_list_store_append (store, &iter);
 
-				int usage = (partition.pkg_size * 100) / partition.total_size;
+				long usage = (partition.pkg_size * 100) / (partition.total_size + 1);
 				string usage_str = sizeToString (partition.pkg_size) + " (of " +
 				                   sizeToString (partition.total_size) + ")";
 				gtk_list_store_set (store, &iter, 0, partition.dir.c_str(),
 					1, usage, 2, usage_str.c_str(), -1);
 
 				warning = warning ||
-					(partition.total_size - partition.pkg_size < MIN_FREE_MB_WARN);
+					(partition.total_size > 1024 &&
+                     partition.total_size - partition.pkg_size < MIN_FREE_MB_WARN);
 			}
 		}
 		if (warning)
@@ -1339,7 +1340,7 @@ public:
 	#define SET_PROGRESS(_steps, _jump) int steps = _steps, step = 0, jump = _jump;
 	#define PROGRESS()                                          \
 		if (progress && ((step++) % jump == 0)) {               \
-			gdouble fraction = ((gdouble) step) / steps;        \
+			gdouble fraction = steps > 0 ? ((gdouble) step) / steps : 0; \
 			gtk_progress_bar_set_fraction (progress, fraction); \
 			while (gtk_events_pending()) gtk_main_iteration(); }
 
