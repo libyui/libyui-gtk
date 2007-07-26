@@ -2,7 +2,7 @@
 
 @HEADER@
 Source2:        yast2-gtk-rpmlintrc
-BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-core-devel yast2-devtools
+BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-core-devel yast2-devtools yast2-devel-doc gtk2-devel
 Summary:        YaST2 - Gtk Graphical User Interface
 Provides:       yast2_ui
 
