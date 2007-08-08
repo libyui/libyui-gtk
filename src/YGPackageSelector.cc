@@ -111,6 +111,10 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 	GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
 	gtk_box_pack_start (vbox, license_window, TRUE, TRUE, 6);
 
+    const char *print_text = _("If you would like to print this license, check the EULA.txt file on the first media");
+    GtkLabel *print_label = GTK_LABEL (gtk_label_new (print_text));
+    gtk_box_pack_start (vbox, GTK_WIDGET (print_label), FALSE, TRUE, 2);
+
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 300, 400);
 	gtk_widget_show_all (dialog);
 

@@ -1,3 +1,10 @@
+2007-08-08  Michael Meeks  <michael.meeks@novell.com>
+
+	* VERSION: 2.15.8
+
+	* src/YGPackageSelector.cc (acceptLicense): 
+	details on how to print the license: FaTE #302018
+
 2007-07-23  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.15.6, Revison 39606
