@@ -1,3 +1,7 @@
+2007-08-10  Michael Meeks  <michael.meeks@novell.com>
+
+	* po/pt.po: remove - causing grief with 'make package'
+
 2007-08-08  Michael Meeks  <michael.meeks@novell.com>
 
 	* VERSION: 2.15.8, Revision 40088
