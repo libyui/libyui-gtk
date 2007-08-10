@@ -1,8 +1,28 @@
 -------------------------------------------------------------------
+Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
+
+- Finished integrating Feature #120292, UI as a namespace callable
+  from yast2-*-bindings.
+- 2.5.9
+
+-------------------------------------------------------------------
 Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
 
 - FaTE #302018: details on how to print the license
 - 2.15.8
+
+-------------------------------------------------------------------
+Wed Aug  8 09:22:32 CEST 2007 - mvidner@suse.cz
+
+- Don't build-require yast2-devel-doc.
+- 2.15.7.2
+
+-------------------------------------------------------------------
+Mon Aug  6 14:00:37 CEST 2007 - mvidner@suse.cz
+
+- Adapted to changes in yast2-core needed for making UI callable from
+  yast2-*-bindings.
+- 2.15.7.1
 
 -------------------------------------------------------------------
 Thu Jul 26 07:28:31 CEST 2007 - jsrain@suse.cz

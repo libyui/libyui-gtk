@@ -13,7 +13,7 @@ noinst_PROGRAMS = dummy
 plugin_LTLIBRARIES = libpy2gtk.la
 
 libpy2gtk_la_LDFLAGS = -version-info 2:0
-libpy2gtk_la_LIBADD = -L$(libdir) -lyui -lycp -ly2 $(GTK_LIBS) $(ZYPP_LIBS)
+libpy2gtk_la_LIBADD = -L$(plugindir) -lpy2UI -L$(libdir) -lycp -ly2 $(GTK_LIBS) $(ZYPP_LIBS)
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
 	YGUtils.cc \
@@ -59,6 +59,6 @@ TESTS = $(check_PROGRAMS)
 test_SOURCES = test.cc
 test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
-INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui
+INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS)
 
 EXTRA_DIST = computer.xpm

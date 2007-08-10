@@ -32,10 +32,6 @@ AC_FUNC_ALLOCA
 AC_HEADER_STDC
 
 dnl Try to find the Zypp includes
-if ! test -d /usr/include/zypp; then
-	AC_MSG_ERROR(libzypp-devel not installed.)
-fi
-
 AC_MSG_CHECKING([for zypp 3])
 if test -f /usr/include/zypp/SourceManager.h; then
     AC_DEFINE(PRE_ZYPP_3, 1, [defined if using an older SL10.1 era zypp])
