@@ -1,5 +1,10 @@
 2007-08-22  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGProgressBar.cc (YGProgressBar): implement pulse
+	mode when maxprogress == 0
+
+	* tests/ProgressPulse.ycp: add test.
+
 	* configure.in.in, src/Makefile: create and use PYUI_LIBS,
 	to adapt likewise.
 

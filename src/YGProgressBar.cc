@@ -11,6 +11,7 @@
 
 class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {
+    bool m_pulse;
 public:
 	YGProgressBar (const YWidgetOpt &opt, YGWidget *parent,
 	               const YCPString& label,
@@ -18,7 +19,9 @@ public:
 	: YProgressBar (opt, label, maxprogress, progress)
 	, YGLabeledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
-	{ }
+	{
+        m_pulse = maxprogress->value() <= 0;
+    }
 	// NOTE: its label widget is positionated at the vertical, because its label
 	// may change often and so will its size, which will look odd (we may want
 	// to make the label widget to only grow).
@@ -29,9 +32,13 @@ public:
 	virtual void setProgress (const YCPInteger& newProgress)
 	{
 		IMPL
-		float fraction = (float) newProgress->value() / maxProgress->value();
-		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
-		YProgressBar::setProgress (newProgress);
+        if (m_pulse)
+            gtk_progress_bar_pulse (GTK_PROGRESS_BAR (getWidget()));
+        else {
+            float fraction = (float) newProgress->value() / maxProgress->value();
+            gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
+        }
+        YProgressBar::setProgress (newProgress);
 	}
 
 	YGWIDGET_IMPL_COMMON
