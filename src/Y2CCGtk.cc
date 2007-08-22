@@ -5,8 +5,17 @@
 #include <config.h>
 #include <YGUI.h>
 #include <YUIComponent.h>
-#include <Y2CCUI.h>
 #include <ycp/y2log.h>
+
+#if YAST2_VERSION >= 2015006
+// New UI plugin work
+#  include <Y2CCUI.h>
+#  define NEW_UI_PLUGIN
+#  define Y2CCUI_INIT
+#else
+#  define Y2CCUI      Y2ComponentCreator
+#  define Y2CCUI_INIT Y2ComponentBroker::BUILTIN
+#endif
 
 class YGUIComponent : public YUIComponent
 {
@@ -29,7 +38,7 @@ public:
 class Y2CCGtk : public Y2CCUI
 {
 public:
-	Y2CCGtk () : Y2CCUI() { };
+	Y2CCGtk () : Y2CCUI (Y2CCUI_INIT) { };
 
 	bool isServerCreator () const { return true; };
 	
@@ -37,12 +46,16 @@ public:
 	{
 		y2milestone( "Creating %s component", name );
 		if (!strcmp (name, "gtk") ) {
+#ifdef NEW_UI_PLUGIN
 			Y2Component* ret = YUIComponent::uiComponent ();
 			if (!ret || ret->name () != name) {
 				y2debug ("UI component is %s, creating %s", ret? ret->name().c_str() : "NULL", name);
 				ret = new YGUIComponent();
 			}
 			return ret;
+#else
+            return new YGUIComponent();
+#endif
 		}
 		else
 			return 0;

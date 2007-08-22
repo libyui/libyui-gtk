@@ -48,8 +48,19 @@ AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
 verstxt=`pkg-config --modversion yast2-core`
-vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
-AC_DEFINE_UNQUOTED(YAST2_VERSION, $vers, [yast version for compile conditionals])
+yast_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+AC_DEFINE_UNQUOTED(YAST2_VERSION, $yast_vers, [yast version for compile conditionals])
+
+dnl new UI library
+AC_MSG_CHECKING([for old libyui])
+PYUI_LIBS='-lpy2UI'
+if test $yast_vers -le 2015006; then
+	PYUI_LIBS='-lyui'
+	AC_MSG_RESULT([found])
+else
+	AC_MSG_RESULT([use new lib])
+fi
+AC_SUBST(PYUI_LIBS)
 
 AC_OUTPUT([Makefile src/Makefile])
 

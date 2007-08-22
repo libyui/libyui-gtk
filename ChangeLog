@@ -1,3 +1,11 @@
+2007-08-22  Michael Meeks  <michael.meeks@novell.com>
+
+	* configure.in.in, src/Makefile: create and use PYUI_LIBS,
+	to adapt likewise.
+
+	* src/Y2CCGtk.cc (class Y2CCGtk): conditionalize new
+	YUI pieces so we build with older yast2's.
+
 2007-08-10  Michael Meeks  <michael.meeks@novell.com>
 
 	* po/pt.po: remove - causing grief with 'make package'
