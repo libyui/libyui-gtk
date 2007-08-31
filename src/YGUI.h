@@ -39,6 +39,8 @@ using std::vector;
 #  define YAST2_YGUI_CHECKBOX_FRAME 0
 #endif
 
+class YGDialog;
+
 class YGUI: public YUI
 {
 public:
@@ -139,6 +141,19 @@ public:
                                        const YCPString &subwidget);
     virtual YCPValue runPkgSelection (YWidget *packageSelector);
 
+/*
+    // FIXME: do we need to implement these new bits ?
+
+    // New package selector bits ...
+    bool 	hasPatternSelector();
+    YWidget *	createPatternSelector	( YWidget *		parent,
+					  YWidgetOpt &		opt );
+
+    bool 	hasSimplePatchSelector();
+    YWidget *	createSimplePatchSelector( YWidget *		parent,
+					  YWidgetOpt &		opt );
+*/
+
     // Optional widgets
     virtual YWidget *createDummySpecialWidget (YWidget *parent, YWidgetOpt &opt)
         IMPL_NULL;
@@ -235,6 +250,7 @@ public:
     // convience function to be used rather than currentDialog()
     // NULL if there is no dialog at the moment.
     GtkWindow *currentWindow();
+    YGDialog *currentYGDialog();
 
     virtual void busyCursor();
     virtual void normalCursor();

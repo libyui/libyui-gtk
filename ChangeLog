@@ -1,3 +1,25 @@
+2007-08-26  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc (does_package_match_one):
+	don't fetch the obj unless we need to - hugely accelerates
+	search.
+
+	* src/YGPackageSelector.cc (PackageSelector): use
+	search_activate_cb for 'activate' on the entry, so we
+	don't wait 1 second when the user hits 'enter' ;-)
+
+2007-08-25  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc: merge two gtk_tree_model_gets.
+	(checkDelete): use this to get user confirmation on exit if
+	there are unsaved changes etc. n#300390
+
+	* src/YGDialog.cc (close_window_cb, setDeleteCallback): add
+	ability to set a custom dlete callback.
+	(currentYGDialog): expose as YGDialog.
+
+	* src/YGDialog.h: add: needed in YGPackageSelector.
+
 2007-08-22  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGProgressBar.cc (YGProgressBar): implement pulse

@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Wed Aug 26 15:32:01 BST 2007 - mmichael@suse.de
+
+- n#300390: warn if cancelling a non-submitted transaction.
+
+-------------------------------------------------------------------
+Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
+
+- #296945: pulse progress bar impl.
+
+-------------------------------------------------------------------
 Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
 
 - Finished integrating Feature #120292, UI as a namespace callable

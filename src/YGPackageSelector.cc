@@ -11,7 +11,7 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YGi18n.h"
-#include "YGWidget.h"
+#include "YGDialog.h"
 #include "YPackageSelector.h"
 #include "ygtkrichtext.h"
 #include "ygtkwizard.h"
@@ -1140,7 +1140,7 @@ public:
 		gtk_box_pack_start (GTK_BOX (search_hbox), m_search_entry, TRUE, TRUE, 4);
 		search_timeout_id = 0;
 		g_signal_connect (G_OBJECT (m_search_entry), "activate",  // when Enter
-		                  G_CALLBACK (search_request_cb), this);  // is pressed
+		                  G_CALLBACK (search_activate_cb), this);  // is pressed
 		g_signal_connect_after (G_OBJECT (m_search_entry), "changed",
 		                        G_CALLBACK (search_request_cb), this);
 		ygtk_find_entry_attach_menu (YGTK_FIND_ENTRY (m_search_entry),
@@ -1773,9 +1773,59 @@ public:
 		pThis->search_timeout_id = g_timeout_add (1000, search_cb, pThis);
 	}
 
+    struct FindClosure {
+        bool found;
+        GtkTreeView *view;
+        PackageSelector *pThis;
+    };
+    static gboolean find_exact_match (GtkTreeModel *model, GtkTreePath *path,
+                                      GtkTreeIter *iter, gpointer data)
+    {
+        FindClosure *cl = (FindClosure *) data;
+        
+        ZyppSelectablePtr sel = NULL;
+
+		gtk_tree_model_get (model, iter, 0, &sel, -1);
+
+        if (!sel)
+            return FALSE;
+
+        if (sel->name() == *cl->pThis->m_search_queries.begin()) {
+            fprintf (stderr, "bingo !\n");
+
+            cl->found = true;
+            gtk_tree_selection_select_iter
+                (gtk_tree_view_get_selection (cl->view), iter);
+            package_clicked_cb (gtk_tree_view_get_selection (cl->view), cl->pThis);
+            return TRUE;
+        }
+        return FALSE;
+    }
+
+    void highlight_exact_matches ()
+    {
+		if (m_search_queries.empty() || !name_opt)
+			return;
+
+        FindClosure cl;
+        cl.found = false;
+        cl.pThis = this;
+        cl.view = GTK_TREE_VIEW (m_installed_view);
+
+        gtk_tree_model_foreach (gtk_tree_view_get_model (cl.view),
+                                find_exact_match, &cl);
+
+        if (!cl.found) {
+            cl.view = GTK_TREE_VIEW (m_available_view);
+            gtk_tree_model_foreach (gtk_tree_view_get_model (cl.view),
+                                    find_exact_match, &cl);
+        }
+    }
+
 	static gboolean search_cb (gpointer data)
 	{
 		IMPL
+        fprintf (stderr, "search start...\n");
 		PackageSelector *pThis = (PackageSelector *) data;
 		pThis->search_timeout_id = 0;
 
@@ -1793,6 +1843,10 @@ public:
 			gtk_tree_view_get_model (GTK_TREE_VIEW (pThis->m_installed_view));
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (available_model));
 		gtk_tree_model_filter_refilter (GTK_TREE_MODEL_FILTER (installed_model));
+
+        pThis->highlight_exact_matches ();
+
+        fprintf (stderr, "search done...\n");
 		return FALSE;
 	}
 
@@ -1824,14 +1878,17 @@ public:
 	                                           PackageSelector *pThis, int visible_col)
 	{
 		gboolean visible, has_children;
-		gtk_tree_model_get (model, iter, visible_col, &visible, 8, &has_children, -1);
+        ZyppSelectablePtr selectable;
+
+		gtk_tree_model_get (model, iter, visible_col, &visible, 8, &has_children,
+                            0, &selectable, -1);
+
+//        fprintf (stderr, "is visible '%s'\n", selectable ? selectable->name().c_str() : "<noname>");
 		if (has_children)
 			visible = TRUE;
-		else if (visible && !pThis->m_search_queries.empty()) {
-			ZyppSelectablePtr selectable;
-			gtk_tree_model_get (model, iter, 0, &selectable, -1);
+		else if (visible && !pThis->m_search_queries.empty())
 			visible = pThis->does_package_match (selectable);
-		}
+
 		return visible;
 	}
 
@@ -1845,10 +1902,14 @@ public:
 
     bool does_package_match_one (ZyppSelectablePtr sel, string key)
     {
-		ZyppObject obj = sel->theObj();
+		ZyppObject obj = NULL;
 
         if (name_opt && YGUtils::contains (sel->name(), key))
             return TRUE;
+        
+        if (summary_opt || descr_opt || provides_opt || requires_opt)
+            obj = sel->theObj();
+
         if (summary_opt && YGUtils::contains (obj->summary(), key))
             return TRUE;
         if (descr_opt && YGUtils::contains (obj->description(), key))
@@ -2206,6 +2267,38 @@ class YGPackageSelector : public YPackageSelector, public YGWidget
 {
 	PackageSelector *m_package_selector;
 
+    static bool confirm_cb (void *pThis)
+    {
+        return ((YGPackageSelector *)pThis)->checkDelete();
+    }
+
+    bool checkDelete()
+    {
+        GtkWidget *dialog;
+
+        bool changed =
+            zyppPool().diffState<zypp::Package  >()	||
+            zyppPool().diffState<zypp::Pattern  >()	||
+            zyppPool().diffState<zypp::Selection>() ||
+            zyppPool().diffState<zypp::Language >() ||
+            zyppPool().diffState<zypp::Patch    >();
+
+        if (!changed)
+            return true;
+
+		dialog = gtk_message_dialog_new_with_markup
+            (YGUI::ui()->currentWindow(),
+			 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+             GTK_BUTTONS_OK_CANCEL,
+             _("<b>Abandon all changes ?</b>"));
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog),
+                                         GTK_RESPONSE_CANCEL);
+        bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) ==
+                                   GTK_RESPONSE_OK;
+		gtk_widget_destroy (dialog);
+        return ok;
+    }
+
 public:
 	YGPackageSelector (const YWidgetOpt &opt, YGWidget *parent)
 		: YPackageSelector (opt),
@@ -2213,8 +2306,12 @@ public:
 	{
 		setBorder (0);
 
-		GtkWindow *window = YGUI::ui()->currentWindow();
+        YGDialog *dialog = YGUI::ui()->currentYGDialog();
+
+		GtkWindow *window = GTK_WINDOW (dialog->getWindow());
 		gtk_window_resize (window, 680, 580);
+
+        dialog->setDeleteCallback (confirm_cb, this);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 
@@ -2270,7 +2367,8 @@ protected:
 		}
 		else if (!strcmp (action, "cancel")) {
 			y2milestone ("Closing PackageSelector with 'cancel'");
-			YGUI::ui()->sendEvent (new YCancelEvent());
+            if (pThis->checkDelete())
+                YGUI::ui()->sendEvent (new YCancelEvent());
 		}
 	}
 
@@ -2459,7 +2557,6 @@ YGUI::createPkgSpecial (YWidget *parent, YWidgetOpt &opt,
                         const YCPString &subwidget)
 {
 	// same as Qt's
-	// TODO: check what this is supposed to do (something for ncurses maybe?)
 	y2error ("The GTK+ UI does not support PkgSpecial subwidgets!");
 	return 0;
 }
