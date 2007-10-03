@@ -19,6 +19,8 @@
 #include "ygtkratiobox.h"
 #include "ygtkfindentry.h"
 
+#include <map>
+
 //#define DISABLE_PACKAGE_SELECTOR
 
 #ifndef DISABLE_PACKAGE_SELECTOR
@@ -66,6 +68,16 @@ inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
 inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
 	{ return zypp::dynamic_pointer_cast <const zypp::Language> (obj); }
+
+static zypp::Text
+fastGetSummary (ZyppObject obj)
+{
+    static std::map<std::string, zypp::Text> name_to_summary;
+    std::string &summary = name_to_summary[ obj->name() ];
+    if (summary.length() <= 0)
+        summary = obj->summary();
+    return summary;
+}
 
 // Computer icon comes from Tango, but may not be installed, or not initialized.
 #include "computer.xpm"
@@ -320,7 +332,7 @@ static string getSourceName (zypp::Source_Ref source)
 				return "";
 			}
 			found = true;
-			ret = product->summary();
+			ret = fastGetSummary (product);
 		}
 	}
 
@@ -1126,8 +1138,8 @@ public:
 		                  G_CALLBACK (view_languages_mode_cb), this);
 
 		// default search fields
-		name_opt = summary_opt = descr_opt = provides_opt = true;
-		requires_opt = false;
+		name_opt = summary_opt = provides_opt = true;
+		requires_opt = descr_opt = false;
 
 		GtkWidget *search_hbox, *search_label;
 		search_hbox = gtk_hbox_new (FALSE, 0);
@@ -1474,7 +1486,7 @@ public:
 				else
 					category_iter = cat_it->second;
 
-				string name = "<b>" + object->summary() + "</b>";
+				string name = "<b>" + fastGetSummary (object) + "</b>";
 				gtk_tree_store_append (store, &pattern_iter, &category_iter);
 				loadPackageRow (model, &pattern_iter, selectable);
 
@@ -1638,13 +1650,13 @@ public:
 		if (available_obj) {
 			if (detailed)
 				availableName = "<b>" + name + "</b> (" + available_obj->edition().version() +
-				                ")\n<small>" + YGUtils::escape_markup (available_obj->summary()) +
+				                ")\n<small>" + YGUtils::escape_markup (fastGetSummary (available_obj)) +
 				                "</small>";
 			else {
 				ZyppPattern pattern = tryCastToZyppPattern (available_obj);
 				ZyppLanguage lang = tryCastToZyppLanguage (available_obj);
 				if (pattern)
-					availableName = "<b>" + available_obj->summary() + "</b>";
+					availableName = "<b>" + fastGetSummary (available_obj) + "</b>";
 				else if (lang)
 					availableName = "<b>" + available_obj->description() + "</b>";
 				else
@@ -1654,13 +1666,13 @@ public:
 		if (install_obj) {
 			if (detailed)
 				installedName = "<b>" + name + "</b> (" + install_obj->edition().version() +
-				                ")\n<small>" + YGUtils::escape_markup (install_obj->summary()) +
+				                ")\n<small>" + YGUtils::escape_markup (fastGetSummary (install_obj)) +
 				                "</small>";
 			else {
 				ZyppPattern pattern = tryCastToZyppPattern (install_obj);
 				ZyppLanguage lang = tryCastToZyppLanguage (install_obj);
 				if (pattern)
-					installedName = "<b>" + install_obj->summary() + "</b>";
+					installedName = "<b>" + fastGetSummary (install_obj) + "</b>";
 				else if (lang)
 					installedName = "<b>" + install_obj->description() + "</b>";
 				else
@@ -1791,8 +1803,6 @@ public:
             return FALSE;
 
         if (sel->name() == *cl->pThis->m_search_queries.begin()) {
-            fprintf (stderr, "bingo !\n");
-
             cl->found = true;
             gtk_tree_selection_select_iter
                 (gtk_tree_view_get_selection (cl->view), iter);
@@ -1825,7 +1835,11 @@ public:
 	static gboolean search_cb (gpointer data)
 	{
 		IMPL
+
+        // This is potentially very slow ...
+#ifdef IMPL_DEBUG
         fprintf (stderr, "search start...\n");
+#endif
 		PackageSelector *pThis = (PackageSelector *) data;
 		pThis->search_timeout_id = 0;
 
@@ -1846,7 +1860,9 @@ public:
 
         pThis->highlight_exact_matches ();
 
+#ifdef IMPL_DEBUG
         fprintf (stderr, "search done...\n");
+#endif
 		return FALSE;
 	}
 
@@ -1910,7 +1926,7 @@ public:
         if (summary_opt || descr_opt || provides_opt || requires_opt)
             obj = sel->theObj();
 
-        if (summary_opt && YGUtils::contains (obj->summary(), key))
+        if (summary_opt && YGUtils::contains (fastGetSummary (obj), key))
             return TRUE;
         if (descr_opt && YGUtils::contains (obj->description(), key))
             return TRUE;

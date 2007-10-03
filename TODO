@@ -57,3 +57,10 @@
 	Should be possible to specify button order. eg: [Ok] [Cancel] vs [Cancel] [Ok]
 	We could hack this through if we had stock images support (may depend
 	on the way they are implemented).
+
+
+** Performance of yast2 package selector:
+    + 95% of the time is spent in zypper,
+    + the filter models (etc.) are doing a fairly good job
+    + unfortunately fetching 'summary' and 'description' is painfully slow
+	+ accelerated summary with a hash/cache.

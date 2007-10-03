@@ -1,3 +1,10 @@
+2007-10-03  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc (PackageSelector): turn off searching
+	description, too slow.	
+	(fastGetSummary): implement cache for summaries - hugely
+	accelerates searching etc. at cost of some memory.
+
 2007-08-26  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGPackageSelector.cc (does_package_match_one):
