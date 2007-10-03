@@ -1,5 +1,8 @@
 2007-10-03  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGPackageSelector.cc: don't re-render the progress bar
+	so much when building the package tree: ~20% speedup.
+
 	* src/YGPackageSelector.cc (PackageSelector): turn off searching
 	description, too slow.	
 	(fastGetSummary): implement cache for summaries - hugely

@@ -1365,7 +1365,7 @@ public:
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (1));
 
-		SET_PROGRESS (zyppPool().size <zypp::Package>(), 10)
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 50)
 		GtkTreeIter iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1389,7 +1389,7 @@ public:
 		// we need to create the categories tree as we iterate packages
 		map <string, GtkTreePath *> tree;
 
-		SET_PROGRESS (zyppPool().size <zypp::Package>(), 5)
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 50)
 		GtkTreeIter iter, parent_iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1465,7 +1465,7 @@ public:
 		// we need to create a categories tree for the patterns
 		map <string, GtkTreeIter> tree;
 
-		SET_PROGRESS (zyppPool().size <zypp::Pattern>(), 1)
+		SET_PROGRESS (zyppPool().size <zypp::Pattern>(), 5)
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Pattern>();
 		     it != zyppPool().byKindEnd <zypp::Pattern>(); it++) {
 			ZyppSelectable selectable = *it;
@@ -1522,7 +1522,7 @@ public:
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (0));
 
-		SET_PROGRESS (zyppPool().size <zypp::Language>(), 2)
+		SET_PROGRESS (zyppPool().size <zypp::Language>(), 20)
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Language>();
 		     it != zyppPool().byKindEnd <zypp::Language>(); it++) {
 			ZyppSelectable langsel = *it;
