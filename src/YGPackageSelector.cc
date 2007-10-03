@@ -1341,10 +1341,11 @@ public:
 		g_object_unref (G_OBJECT (installed_model));
 		g_object_unref (G_OBJECT (available_model));
 
+		// use the "available" name to do the sorting
 		GtkTreeSortable *sortable = GTK_TREE_SORTABLE (model);
-		gtk_tree_sortable_set_sort_func (sortable, 1, YGUtils::sort_compare_cb,
-		                                 GINT_TO_POINTER (1), NULL);
-		gtk_tree_sortable_set_sort_column_id (sortable, 1, GTK_SORT_ASCENDING);
+		gtk_tree_sortable_set_sort_func (sortable, 2, YGUtils::sort_compare_cb,
+		                                 GINT_TO_POINTER (2), NULL);
+		gtk_tree_sortable_set_sort_column_id (sortable, 2, GTK_SORT_ASCENDING);
 
 		gtk_widget_destroy (dialog);
 	}

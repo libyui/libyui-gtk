@@ -1,3 +1,9 @@
+2007-10-03  Boyd Timothy  <btimothy@novell.com>
+
+	* src/YGPackageSelector.cc: Use the "available" name to sort
+	the tree views.  This makes the Available Software list be
+	sorted properly.
+
 2007-10-03  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGPackageSelector.cc: don't re-render the progress bar
