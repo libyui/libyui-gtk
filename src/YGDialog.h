@@ -4,7 +4,7 @@
 #include "YGWidget.h"
 #include "YDialog.h"
 
-typedef bool (*YGWindowDeleteFn) (void *closure);
+typedef bool (*YGWindowCloseFn) (void *closure);
 
 class YGWindow
 {
@@ -13,8 +13,8 @@ class YGWindow
 	// we keep a pointer of the child just for debugging
 	// (ie. dump yast tree)
 	YWidget *m_child;
-    YGWindowDeleteFn m_canDelete;
-    void *m_closure;
+    YGWindowCloseFn m_canClose;
+    void *m_canCloseData;
 
 private:
     static gboolean close_window_cb (GtkWidget *widget, GdkEvent  *event,
@@ -25,8 +25,8 @@ public:
 	void setChild (YWidget *new_child);
 	static void ref (YGWindow *window);
 	static void unref (YGWindow *window);
-    void setDeleteCallback (YGWindowDeleteFn canDelete, void *closure);
-    bool checkDelete();
+    void setCloseCallback (YGWindowCloseFn canClose, void *canCloseData);
+    void closeWindow();
 
 	// Y(G)Widget-like methods
 	GtkWidget *getWidget() { return m_widget; }
@@ -47,8 +47,8 @@ public:
 	void hideWindow();
 	GtkWindow *getWindow() { return GTK_WINDOW (m_window->getWidget()); }
 
-    void setDeleteCallback (bool (*canDelete) (void *closure), void *closure)
-        { m_window->setDeleteCallback (canDelete, closure); }
+    void setCloseCallback (YGWindowCloseFn closeCallback, void *closeData)
+        { m_window->setCloseCallback (closeCallback, closeData); }
 
 	YGWIDGET_IMPL_COMMON
 
@@ -57,3 +57,4 @@ public:
 };
 
 #endif // YGDIALOG_H
+

@@ -5,6 +5,13 @@
 
 	* fixed a couple of warnings.
 
+	* src/YGDialog.cc: fixed bug #330777. The value we need to return from the
+	delete-event callback (close window) is always True, because we don't want
+	GTK destroying the window for us. We just want to let YCP know about it,
+	and then YCP does it explicitely if and when it wants to.
+	For the record, the abandon dialog from the package selector is working. Neat
+	dialog btw.
+
 2007-10-03  Boyd Timothy  <btimothy@novell.com>
 
 	* src/YGPackageSelector.cc: Use the "available" name to sort

@@ -1244,3 +1244,4 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
 	gtk_binding_entry_add_signal (binding_set, GDK_F1, 0, "popup_help", 0);
 }
+

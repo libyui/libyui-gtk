@@ -33,8 +33,7 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 		m_min_size = m_widget;
 	else {
 		m_min_size = ygtk_min_size_new (0, 0);
-		g_object_ref (G_OBJECT (m_min_size));
-		gtk_object_sink (GTK_OBJECT (m_min_size));
+		g_object_ref_sink (G_OBJECT (m_min_size));
 		gtk_widget_show (m_min_size);
 		gtk_container_add (GTK_CONTAINER (m_min_size), m_widget);
 	}
@@ -286,3 +285,4 @@ void YGScrolledWidget::setPolicy (GtkPolicyType hpolicy, GtkPolicyType vpolicy)
 		hpolicy == GTK_POLICY_AUTOMATIC ? MAX_SCROLL_SIZE : 0,
 		vpolicy == GTK_POLICY_AUTOMATIC ? MAX_SCROLL_SIZE : 0);
 }
+

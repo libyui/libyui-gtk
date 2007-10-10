@@ -24,7 +24,7 @@ static YGWindow *main_window = NULL;
 YGWindow::~YGWindow()
 {
     IMPL
-		setChild (NULL);
+	setChild (NULL);
     gtk_widget_destroy (m_widget);
     g_object_unref (G_OBJECT (m_widget));
 }
@@ -108,17 +108,16 @@ gboolean YGWindow::close_window_cb (GtkWidget *widget, GdkEvent  *event,
                                     YGWindow  *pThis)
 {
     IMPL
-    return !pThis->checkDelete();
+    // never let GTK+ destroy the window! just inform YCP, and let it
+    // do its thing.
+    pThis->closeWindow();
+    return TRUE;
 }
 
-bool YGWindow::checkDelete()
+void YGWindow::closeWindow()
 {
-    fprintf (stderr, "YGDialog close event ...\n");
-    if (!m_canDelete) {
+	if (!m_canClose || m_canClose (m_canCloseData))
         YGUI::ui()->sendEvent (new YCancelEvent());
-        return TRUE;
-    }
-    return m_canDelete (m_closure);
 }
 
 static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
@@ -128,7 +127,11 @@ static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
     // if not main dialog, close it on escape
     if (event->keyval == GDK_Escape &&
         /* not main window */ main_window != pThis)
-        return pThis->checkDelete();
+	{
+        pThis->closeWindow();
+        return TRUE;
+        
+	}
 
     if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
         && (event->state & GDK_MOD1_MASK)) {
@@ -180,7 +183,7 @@ YGWindow::YGWindow (bool main_window)
     if (main_window)
         ::main_window = this;
     m_child = NULL;
-    m_canDelete = NULL;
+    m_canClose = NULL;
 
     {
         GtkWindow *parent = YGUI::ui()->currentWindow();
@@ -218,10 +221,10 @@ YGWindow::YGWindow (bool main_window)
                             G_CALLBACK (key_pressed_cb), this);
 }
 
-void YGWindow::setDeleteCallback (YGWindowDeleteFn canDelete, void *closure)
+void YGWindow::setCloseCallback (YGWindowCloseFn canClose, void *canCloseData)
 {
-    m_canDelete = canDelete;
-    m_closure = closure;
+    m_canClose = canClose;
+    m_canCloseData = canCloseData;
 }
 
 YGDialog::YGDialog (YWidgetOpt &opt)
@@ -338,3 +341,4 @@ YGUI::currentYGDialog()
 	else
 		return NULL;
 }
+

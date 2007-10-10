@@ -2328,7 +2328,7 @@ public:
 		GtkWindow *window = GTK_WINDOW (dialog->getWindow());
 		gtk_window_resize (window, 680, 580);
 
-        dialog->setDeleteCallback (confirm_cb, this);
+        dialog->setCloseCallback (confirm_cb, this);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 
