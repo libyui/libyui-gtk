@@ -519,7 +519,7 @@ static GMarkupParser rt_parser = {
 	rt_error
 };
 
-GtkWidget *ygtk_richtext_new()
+GtkWidget *ygtk_richtext_new (void)
 {
 	return g_object_new (YGTK_TYPE_RICHTEXT, NULL);
 }

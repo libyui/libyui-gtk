@@ -1,3 +1,10 @@
+2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to
+	map patterns wanted packages for the packages in the pool.
+
+	* fixed a couple of warnings.
+
 2007-10-03  Boyd Timothy  <btimothy@novell.com>
 
 	* src/YGPackageSelector.cc: Use the "available" name to sort

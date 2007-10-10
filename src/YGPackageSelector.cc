@@ -1503,7 +1503,7 @@ public:
 					         zyppPool().byKindBegin <zypp::Package>();
 					     pt2 != zyppPool().byKindEnd <zypp::Package>(); pt2++) {
 						ZyppSelectable sel = *pt2;
-						if (YGUtils::contains (sel->name(), *pt1)) {
+						if (sel->name() == *pt1) {
 							gtk_tree_store_append (store, &package_iter, &pattern_iter);
 							loadPackageRow (model, &package_iter, sel);
 						}
@@ -1783,7 +1783,7 @@ public:
 		// to finish writting
 		if (pThis->search_timeout_id)
 			g_source_remove (pThis->search_timeout_id);
-		pThis->search_timeout_id = g_timeout_add (1000, search_cb, pThis);
+		pThis->search_timeout_id = g_timeout_add (500, search_cb, pThis);
 	}
 
     struct FindClosure {

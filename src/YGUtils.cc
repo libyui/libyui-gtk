@@ -82,7 +82,7 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
    <!-- DT:Rich --> */
 static bool dont_escape (const string &str)
 {
-	char *comment = "<!-- DT:Rich -->";
+	const char *comment = "<!-- DT:Rich -->";
 	if (str.length() < sizeof (comment))
 		return false;
 	for (unsigned int i = 0; i < sizeof (comment); i++)
