@@ -30,6 +30,10 @@
 	* src/ygtkratiobox.c: seems like we aren't being completely faithful to
 	yast-core. Made widget base-size with the boss algo from yast-core.
 
+	* src/YGTable.cc: bug fix #327492: always make one row selected. This isn't
+	documented behavior, and the YCP code is at fault here, but we probably
+	should emulate the other interfaces.
+
 2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to

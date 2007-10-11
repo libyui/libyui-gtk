@@ -305,6 +305,10 @@ public:
 		addRow (index);
 		for (unsigned int c = 0; c < elements.size(); c++)
 			setItemText (elements[c], index, c);
+
+		// always have one row selected
+		if (getCurrentRow() == -1)
+			setCurrentRow (index);
 	}
 
 	virtual void itemsCleared()
