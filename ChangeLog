@@ -27,6 +27,9 @@
 	* src/YGTable.cc: forgot to block new hook: select_delayed_cb when
 	changing selection.
 
+	* src/ygtkratiobox.c: seems like we aren't being completely faithful to
+	yast-core. Made widget base-size with the boss algo from yast-core.
+
 2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to

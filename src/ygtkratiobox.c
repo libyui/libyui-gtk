@@ -104,8 +104,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
                                          GtkOrientation  orientation)
 {
 	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);
-	guint ratios_num = 0;
-	gfloat max_ratio = 0;
+	gfloat ratios_sum = 0;
 	box->has_must_expand = FALSE;
 	GList* child;
 	for (child = box->children; child; child = child->next) {
@@ -113,10 +112,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 		if (!GTK_WIDGET_VISIBLE (box_child->widget))
 			continue;
 		if (box_child->ratio)
-		{
-			max_ratio = MAX (max_ratio, box_child->ratio);
-			ratios_num++;
-		}
+			ratios_sum += box_child->ratio;
 		if (box_child->must_expand)
 			box->has_must_expand = TRUE;
 	}
@@ -124,7 +120,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 	// If we want to calculate horizontal size, primary_req would be horizontal
 	// length, while secondary the height. Idem for the inverse.
 	guint primary_req = 0, secondary_req = 0;
-	box->ratio_width = 0;
+	box->weight_length = 0;  // biggest ratio of widget-size / widget-ratio
 
 	for (child = box->children; child; child = child->next) {
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
@@ -145,14 +141,17 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 		}
 
 		if (box_child->ratio)
-			box->ratio_width = MAX (box->ratio_width, (prim_length * max_ratio) / box_child->ratio);
+		{
+			int length = (prim_length * ratios_sum) / box_child->ratio;
+			box->weight_length = MAX (box->weight_length, length);
+		}
 		else
 			primary_req += prim_length;
 		primary_req += box_child->padding + box->spacing;
 		secondary_req = MAX (secondary_req, sec_length);
 	}
 
-	primary_req += box->ratio_width * ratios_num;
+	primary_req += box->weight_length;
 
 	guint border = GTK_CONTAINER (widget)->border_width * 2;
 	primary_req += border*2; secondary_req += border*2;
@@ -171,6 +170,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
                                           GtkAllocation *allocation,
                                           GtkOrientation orientation)
 {
+	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);
 	guint border = GTK_CONTAINER (widget)->border_width;
 
 	// a first loop to get some data for expansibles (ie. childs with weight)
@@ -183,7 +183,6 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		expansable_length = allocation->height - border*2;
 
 	GList* child;
-	YGtkRatioBox* box = YGTK_RATIO_BOX (widget);
 	for (child = box->children; child; child = child->next) {
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
 		if (!GTK_WIDGET_VISIBLE (box_child->widget))
@@ -197,12 +196,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			max_ratio = MAX (max_ratio, box_child->ratio);
 		}
 
-		if (box_child->ratio)
-		{
-			if (box->has_must_expand)
-				expansable_length -= (box->ratio_width * box_child->ratio) / max_ratio;
-		}
-		else
+		if (!box_child->ratio)
 		{
 			GtkRequisition child_req;
 			gtk_widget_get_child_requisition (box_child->widget, &child_req);
@@ -213,6 +207,8 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		}
 		expansable_length -= box->spacing - box_child->padding;
 	}
+	expansable_length -= box->weight_length;
+
 
 	gint child_pos = 0;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
@@ -232,9 +228,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		GtkRequisition child_req;
 		gtk_widget_get_child_requisition (box_child->widget, &child_req);
 
-		if (box_child->ratio)
-			length = box->ratio_width;
-		else
+		if (!box_child->ratio)
 		{
 			if (orientation == GTK_ORIENTATION_HORIZONTAL)
 				length = child_req.width;
@@ -245,10 +239,10 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		// give extra size (honor stretch order)
 		if (box_child->ratio)
 		{
-			if (box->has_must_expand)
-				length = (box->ratio_width * box_child->ratio) / max_ratio;
-			else
-				length = (box_child->ratio * expansable_length) / ratios_sum;
+			int available_length = box->weight_length;
+			if (!box->has_must_expand)
+				available_length += expansable_length;
+			length = (box_child->ratio * available_length) / ratios_sum;
 		}
 		else if (box_child->expand && (ratios_sum == 0 || box_child->must_expand))
 			length += expansable_length / expand_num;

@@ -51,7 +51,7 @@ typedef struct _YGtkRatioBox
 	// private (read-only):
 	GList *children;
 	gint16 spacing;
-	guint ratio_width;  // the width of ratio widgets
+	guint weight_length;  // min-length for weight widgets
 	gboolean has_must_expand;  // cache
 } YGtkRatioBox;
 
