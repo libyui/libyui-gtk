@@ -15,7 +15,7 @@ G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, YGTK_TYPE_RATIO_HBOX)
 
 static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
-	ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (bar), TRUE);
+//	ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (bar), TRUE);
 
 	bar->m_tooltips = gtk_tooltips_new();
 	gtk_container_set_border_width (GTK_CONTAINER (bar), 12);
@@ -94,6 +94,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 	}
 
 	// Set proportion
+	gtk_widget_set_size_request (box, 10, -1);  // for homogeneous...
 	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1),
 	                                  TRUE, TRUE, 0);
 

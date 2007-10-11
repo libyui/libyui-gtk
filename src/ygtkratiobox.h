@@ -10,6 +10,20 @@
    behave just the same as a GtkBox if you give 0 for not expand
    and 1 to.
 */
+/*
+   Quirks (cause of yast-core):
+     if one of the children has certain special properties, then only widgets with
+     the same properties will be expanded. These are, by order:
+       both stretch and rubber-band
+       both stretch and weight
+       weight
+       stretch
+
+    We use different naming:
+      stretch = expand
+      rubber-band or layout-stretch = must expand
+      weight = ratio
+*/
 
 #ifndef YGTK_RATIO_BOX_H
 #define YGTK_RATIO_BOX_H
@@ -37,7 +51,8 @@ typedef struct _YGtkRatioBox
 	// private (read-only):
 	GList *children;
 	gint16 spacing;
-	gboolean homogeneous;
+	guint ratio_width;  // the width of ratio widgets
+	gboolean has_must_expand;  // cache
 } YGtkRatioBox;
 
 typedef struct _YGtkRatioBoxClass
@@ -53,23 +68,22 @@ typedef struct _YGtkRatioBoxChild
 	gfloat ratio;
 	guint xfill : 1;
 	guint yfill : 1;
-	guint fully_expandable : 1;
+	guint expand : 1;  // twilight zone flag; use ratio
+	guint must_expand : 1;  // higher order expand
 } YGtkRatioBoxChild;
 
 GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
-void ygtk_ratio_box_set_homogeneous (YGtkRatioBox *box, gboolean homogeneous);
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
 
 void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
                           gboolean xfill, gboolean yfill, guint padding);
 
-// Since ratio may be of any value, this function is provided to let programmers
-// specify this child to be fully expandable (avoid its use; stick to some fixed range)
-// NOTE: when disabling expand, you should call child_packing to define a ratio
-// since it is lost.
+// If you don't want to use ratios, you can use the ordinary expand flag. NOTE:
+// If some other child has ratio > 0, this one won't expand.
+// All this mess is so we can conform with yast-core.
 void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
-                                      gboolean expand);
+                                      gboolean expand, gboolean must_expand);
 void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
                                      gfloat ratio);
 
@@ -80,7 +94,7 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gfloat *ratio, gboolean *xfill,
                                        gboolean *yfill, guint *padding,
-                                       gboolean *fully_expandable);
+                                       gboolean *expandable);
 
 /* RatioHBox */
 
@@ -106,7 +120,7 @@ typedef struct _YGtkRatioHBoxClass
 	YGtkRatioBoxClass parent_class;
 } YGtkRatioHBoxClass;
 
-GtkWidget* ygtk_ratio_hbox_new (gboolean homogeneous, gint spacing);
+GtkWidget* ygtk_ratio_hbox_new (gint spacing);
 GType ygtk_ratio_hbox_get_type (void) G_GNUC_CONST;
 
 /* RatioVBox */
@@ -133,7 +147,7 @@ typedef struct _YGtkRatioVBoxClass
 	YGtkRatioBoxClass parent_class;
 } YGtkRatioVBoxClass;
 
-GtkWidget* ygtk_ratio_vbox_new (gboolean homogeneous, gint spacing);
+GtkWidget* ygtk_ratio_vbox_new (gint spacing);
 GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
 
 G_END_DECLS

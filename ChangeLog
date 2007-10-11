@@ -1,3 +1,29 @@
+2007-10-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: speed up Patterns view. 
+
+	* src/ygtkratioboxh.h/c: bug fix #326144: the layout algorithm
+	should be the same as yast-core. It was ignoring the insane yast
+	some policies, including the layout-stretch (also called rubber-band)
+	variable.
+
+	* src/YGTable.cc: bug fix: Comunity Repos tool was showing descriptions
+	on single click. Moved the event hooks to the different Table-like
+	implementations, as they differ in subtlety.
+
+	* src/YGWidget.h: added getDebugLabel() which is our replacement for
+	YWidget::debugLabel() which is of little use for most widgets.
+	* src/YGLayout.cc (YGAlignment): added align info to YGAlignment's
+	getDebugLabel().
+	* src/YGUI.cc: improved YWidget Tree dialog (ctrl+alt+shift+T).
+
+	* src/YGWidget.cc: added delay flag to emitEvent() (waits 250 ms
+	then tries to send it if nothing is pending).
+
+	* testcases:
+	* tests/Layout-AlignStretch.ycp: the #326144 bug.
+	* tests/MultiSelectionBox.ycp: the other bug mentioned.
+
 2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to

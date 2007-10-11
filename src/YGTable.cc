@@ -29,13 +29,7 @@ public:
 		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
 			GTK_TREE_VIEW (getWidget())), GTK_SELECTION_BROWSE);
 
-		if (opt.notifyMode.value()) {
-			g_signal_connect (G_OBJECT (getWidget()), "row-activated",
-			                  G_CALLBACK (activated_cb), y_widget);
-			if (opt.immediateMode.value())
-				g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-				                  G_CALLBACK (selected_cb), y_widget);
-		}
+		// let the derivates do the event hooks. They have subtile differences.
 	}
 
 	void initModel (const vector <GType> &types, bool show_headers)
@@ -82,12 +76,13 @@ public:
 		}
 		else if (type == G_TYPE_BOOLEAN) {  // toggle button
 			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
 			g_object_set (renderer, "xalign", xalign, NULL);
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 				renderer, "active", col_nb, NULL);
 
 			g_signal_connect (G_OBJECT (renderer), "toggled",
-				G_CALLBACK (toggled_cb), YGWidget::get (m_y_widget));
+			                  G_CALLBACK (toggled_cb), this);
 		}
 		else if (type == GDK_TYPE_PIXBUF) {
 			GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
@@ -226,38 +221,48 @@ protected:
 		}
 	}
 
-	static void selected_cb (GtkTreeView *tree_view, YWidget* pThis)
+	// toggled by user (through clicking on the renderer or some other action)
+	void toggle (GtkTreePath *path, gint column)
 	{
 		IMPL
-		if (pThis->getNotify() &&  !YGUI::ui()->eventPendingFor(pThis))
-			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::SelectionChanged));
+		GtkTreeIter iter;
+		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
+			return;
+		gboolean state;
+
+		gtk_tree_model_get (getModel(), &iter, column, &state, -1);
+		gtk_list_store_set (getStore(), &iter, column, !state, -1);
+
+		emitEvent (YEvent::ValueChanged);
+	}
+
+	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
+	{
+		IMPL
+		pThis->emitEvent (YEvent::SelectionChanged);//, true, true, true);
+	}
+
+	static void selected_delayed_cb (GtkTreeView *tree_view, YGTableView* pThis)
+	{
+		IMPL
+		pThis->emitEvent (YEvent::SelectionChanged, true, true, false);
 	}
 
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
-	                          GtkTreeViewColumn *column, YWidget* pThis)
+	                          GtkTreeViewColumn *column, YGTableView* pThis)
 	{
 		IMPL
-		if (pThis->getNotify())
-			YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::Activated));
+		pThis->emitEvent (YEvent::Activated);
 	}
 
 	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
-	                        YGWidget *pThis)
+	                        YGTableView *pThis)
 	{
 		IMPL
-		// Toggle the box
-		GtkTreeModel* model = ((YGTableView*) pThis)->getModel();
 		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
-		gint *column = (gint*) g_object_get_data (G_OBJECT (renderer), "column");
-		GtkTreeIter iter;
-		gtk_tree_model_get_iter (model, &iter, path);
+		gint column = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "column"));
+		pThis->toggle (path, column);
 		gtk_tree_path_free (path);
-
-		gboolean state;
-		gtk_tree_model_get (model, &iter, column, &state, -1);
-		gtk_list_store_set (GTK_LIST_STORE (model), &iter, column, !state, -1);
-
-		pThis->emitEvent (YEvent::ValueChanged);
 	}
 };
 
@@ -284,6 +289,12 @@ public:
 			YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (getWidget()), 0);
 		if (numCols() >= 3)
 			gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (getWidget()), TRUE);
+
+		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
+		                  G_CALLBACK (activated_cb), (YGTableView*) this);
+		if (opt.immediateMode.value())
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_cb), (YGTableView*) this);
 	}
 
 	virtual void itemAdded (vector<string> elements, int index)
@@ -335,6 +346,15 @@ public:
 		insertColumn (1, "", G_TYPE_STRING);
 		setSearchCol (1);
 		// pixbuf column will be added later, if needed
+
+		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
+		                  G_CALLBACK (activated_cb), (YGTableView*) this);
+		if (opt.immediateMode.value())
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		else
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);				
 	}
 
 	// YSelectionBox
@@ -381,7 +401,7 @@ class YGMultiSelectionBox : public YMultiSelectionBox, public YGTableView
 {
 public:
 	YGMultiSelectionBox (const YWidgetOpt &opt, YGWidget *parent,
-	                const YCPString &label)
+	                     const YCPString &label)
 	: YMultiSelectionBox (opt, label),
 	  YGTableView (this, parent, opt, label)
 	{
@@ -396,11 +416,11 @@ public:
 		setSearchCol (2);
 		// pixbuf column will be added later, if needed
 
-		// Besides the Toggle buttons, allow the user to also use space/enter
-		// and double click.
-		if (!getNotify())
-			g_signal_connect_after (G_OBJECT (getWidget()), "row-activated",
-			                        G_CALLBACK (multi_activated_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		// Let the user toggle, using space/enter or double click (not an event).
+		g_signal_connect_after (G_OBJECT (getWidget()), "row-activated",
+		                        G_CALLBACK (multi_activated_cb), this);
 	}
 
 	// YMultiSelectionBox
@@ -470,16 +490,10 @@ public:
 	}
 
 	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
-	                    GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
+	                                GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
 	{
 		IMPL
-		GtkTreeIter iter;
-		if (!gtk_tree_model_get_iter (pThis->getModel(), &iter, path))
-			return;
-
-		gboolean state;
-		gtk_tree_model_get (pThis->getModel(), &iter, 0, &state, -1);
-		gtk_list_store_set (pThis->getStore(), &iter, 0, !state, -1);
+		pThis->toggle (path, 0);
 	}
 
 	YGWIDGET_IMPL_COMMON

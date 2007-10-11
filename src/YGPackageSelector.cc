@@ -1366,7 +1366,7 @@ public:
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 		g_object_set_data (G_OBJECT (model), "detail-package", GINT_TO_POINTER (1));
 
-		SET_PROGRESS (zyppPool().size <zypp::Package>(), 50)
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 200)
 		GtkTreeIter iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1390,7 +1390,7 @@ public:
 		// we need to create the categories tree as we iterate packages
 		map <string, GtkTreePath *> tree;
 
-		SET_PROGRESS (zyppPool().size <zypp::Package>(), 50)
+		SET_PROGRESS (zyppPool().size <zypp::Package>(), 80)
 		GtkTreeIter iter, parent_iter;
 		for (ZyppPool::const_iterator it = zyppPool().byKindBegin <zypp::Package>();
 		     it != zyppPool().byKindEnd <zypp::Package>(); it++)
@@ -1497,16 +1497,16 @@ public:
 
 				// adding children packages
 				const set <string> &packages = pattern->install_packages();
-				for (set <string>::iterator pt1 = packages.begin();
-				     pt1 != packages.end(); pt1++) {
-					for (ZyppPool::const_iterator pt2 =
-					         zyppPool().byKindBegin <zypp::Package>();
-					     pt2 != zyppPool().byKindEnd <zypp::Package>(); pt2++) {
-						ZyppSelectable sel = *pt2;
-						if (sel->name() == *pt1) {
-							gtk_tree_store_append (store, &package_iter, &pattern_iter);
-							loadPackageRow (model, &package_iter, sel);
-						}
+				for (ZyppPool::const_iterator pt2 =
+				         zyppPool().byKindBegin <zypp::Package>();
+				     pt2 != zyppPool().byKindEnd <zypp::Package>(); pt2++) {
+					ZyppSelectable sel = *pt2;
+					for (set <string>::iterator pt1 = packages.begin();
+					     pt1 != packages.end(); pt1++) {
+							if (sel->name() == *pt1) {
+								gtk_tree_store_append (store, &package_iter, &pattern_iter);
+								loadPackageRow (model, &package_iter, sel);
+							}
 					}
 				}
 			}

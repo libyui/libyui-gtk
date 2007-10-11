@@ -92,12 +92,30 @@ void YGWidget::doSetEnabling (bool enabled)
 	gtk_widget_set_sensitive (getWidget(), enabled);
 }
 
-void YGWidget::emitEvent (YEvent::EventReason reason, bool if_notify,
-                          bool if_not_pending)
+void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
+                         bool if_not_pending, bool immediate)
 {
-	if ((!if_notify      || m_y_widget->getNotify()) &&
-	    (!if_not_pending || !YGUI::ui()->eventPendingFor(m_y_widget)))
-		YGUI::ui()->sendEvent (new YWidgetEvent (m_y_widget, reason));
+	struct inner
+	{
+		static gboolean dispatchEvent (gpointer data)
+		{
+			YWidgetEvent *event = (YWidgetEvent *) data;
+			if (!YGUI::ui()->eventPendingFor (event->widget()))
+				YGUI::ui()->sendEvent (event);
+			return FALSE;
+		}
+	};
+
+	if (!if_notify || m_y_widget->getNotify())
+	{
+		if (!immediate)
+			g_timeout_add (250, inner::dispatchEvent, new YWidgetEvent (m_y_widget, reason));
+		else if (!if_not_pending || !YGUI::ui()->eventPendingFor (m_y_widget))
+		{
+			if (immediate)
+				YGUI::ui()->sendEvent (new YWidgetEvent (m_y_widget, reason));
+		}
+	}
 }
 
 void YGWidget::setBorder (unsigned int border)
@@ -134,6 +152,8 @@ void YGWidget::sync_stretchable (YWidget *child)
 		YGWidget::get (parent)->sync_stretchable (m_y_widget);
 }
 
+// JEEZ. WHEN the hell will yast-ui code fix their damn code.
+#if 1
 /* Checks everywhere in a container to see if there are children (so
    he is completely initialized) so that we may ask him for stretchable()
    because some YContainerWidgets crash when they don't have children. */
@@ -158,6 +178,12 @@ static bool safe_stretchable (YWidget *widget)
 	}
 	return true;
 }
+#else
+static bool safe_stretchable (YWidget *widget)
+{
+	return true;
+}
+#endif
 
 bool YGWidget::isStretchable (YUIDimension dim)
 {

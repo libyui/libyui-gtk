@@ -20,6 +20,11 @@ public:
 	virtual GtkWidget *getWidget() { return m_widget; }
 	const char *getWidgetName() const
 	{ return const_cast <YWidget *> (m_y_widget)->widgetClass(); }
+	// YWidget::debugLabel() sucks for most widgets -- let's allow it to be overload
+	virtual string getDebugLabel() const
+	{	// container debug labels are worse than useless
+		if (dynamic_cast <YContainerWidget *> (m_y_widget) == NULL)
+		return const_cast <YWidget *> (m_y_widget)->debugLabel(); return string(); }
 	void show();
 
 	// containers should use this call rather than getWidget()
@@ -34,7 +39,7 @@ public:
 
 	// Event handling
 	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
-	               bool if_not_pending = false);
+	               bool if_not_pending = false, bool immediate = true);
 
 	// Aesthicts
 	void setBorder (unsigned int border);  // in pixels

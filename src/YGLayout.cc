@@ -91,7 +91,8 @@ public:
 		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
 		                                  horiz_fill, vert_fill, 0);
 		ygtk_ratio_box_set_child_expand (box, child->getLayout(),
-		                                 child->isStretchable (dim));
+		                                 child->isStretchable (dim),
+		                                 ychild->isLayoutStretch (dim));
 		YGWidget::sync_stretchable();
 	}
 
@@ -226,6 +227,33 @@ public:
 
 	virtual void moveChild (YWidget *, long, long) {};  // ignore
 
+	virtual string getDebugLabel() const
+	{
+		struct inner {
+			static const char *alignLabel (YAlignmentType align)
+			{
+				switch (align) {
+					case YAlignUnchanged:
+						return "unchanged";
+					case YAlignBegin:
+						return "begin";
+					case YAlignEnd:
+						return "end";
+					case YAlignCenter:
+						return "center";
+				}
+				return ""; /*not run*/
+			}
+		};
+
+		string str;
+		str += inner::alignLabel (align [YD_HORIZ]);
+		str += " x ";
+		str += inner::alignLabel (align [YD_VERT]);
+		return str;
+	}
+
+private:
 	// helper -- converts YWidget YAlignmentType to Gtk's align float
 	static float yToGtkAlign (YAlignmentType align)
 	{
