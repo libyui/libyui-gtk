@@ -212,10 +212,12 @@ protected:
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
 
 			g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
+			g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 			gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
 			gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
 			                              TRUE, 0.5, 0.5);
 			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
+			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 	
 			gtk_tree_path_free (path);
 		}
