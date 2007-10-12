@@ -34,6 +34,10 @@
 	documented behavior, and the YCP code is at fault here, but we probably
 	should emulate the other interfaces.
 
+	* src/ygtksteps.c: bug fix #328500: steps may be truncated when they get
+	highlighted. Calculate size_request as if they are all highlighted.
+	TODO: we may want to get rid of PangoLayout in favor of the simpler Cairo.
+
 2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to

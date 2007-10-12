@@ -66,6 +66,10 @@ static void ygtk_step_invalidate_layout (YGtkSingleStep *step)
 		g_object_unref (G_OBJECT (step->layout));
 		step->layout = NULL;
 	}
+	if (step->layout_bold) {
+		g_object_unref (G_OBJECT (step->layout_bold));
+		step->layout_bold = NULL;
+	}
 }
 
 // should be called rather than accessing step->layout
@@ -76,25 +80,35 @@ static PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
 	if (!step->layout) {
 		step->layout = gtk_widget_create_pango_layout (GTK_WIDGET (steps), NULL);
 
-		gchar *text;
+		gchar *text, *text_bold = 0;
 		if (step->is_heading) {
 			text = g_strdup_printf ("<span size=\"x-large\" weight=\"heavy\">%s</span>",
 			                        step->text);
 			pango_layout_set_spacing (step->layout, STEPS_HEADER_SPACING * PANGO_SCALE);
 		}
 		else {
-			if (steps->current_step == step_nb)
-				text = g_strdup_printf ("<b>%s</b>", step->text);
-			else
-				text = g_strdup (step->text);
+			if (!step->layout_bold)
+				step->layout_bold = gtk_widget_create_pango_layout (GTK_WIDGET (steps), NULL);
+			g_assert (step->layout_bold);
+			text = g_strdup (step->text);
+			text_bold = g_strdup_printf ("<b>%s</b>", step->text);
 			pango_layout_set_indent (step->layout, STEPS_IDENTATION * PANGO_SCALE);
+			pango_layout_set_indent (step->layout_bold, STEPS_IDENTATION * PANGO_SCALE);
 			pango_layout_set_spacing (step->layout, STEPS_SPACING * PANGO_SCALE);
+			pango_layout_set_spacing (step->layout_bold, STEPS_SPACING * PANGO_SCALE);
 		}
 
 		pango_layout_set_markup (step->layout, text, -1);
 		g_free (text);
+		if (step->layout_bold)
+		{
+			pango_layout_set_markup (step->layout_bold, text_bold, -1);
+			g_free (text_bold);
+		}
 	}
 
+	if (steps->current_step == step_nb)
+		return step->layout_bold;
 	return step->layout;
 }
 
@@ -106,6 +120,8 @@ static void ygtk_steps_recompute_layout (YGtkSteps *steps)
 		YGtkSingleStep *step = it->data;
 		if (step->layout)
 			pango_layout_context_changed (step->layout);
+		if (step->layout_bold)
+			pango_layout_context_changed (step->layout_bold);
 	}
 }
 
@@ -129,6 +145,9 @@ static void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisit
 	int i;
 	for (i = 0; i < ygtk_steps_total (steps); i++) {
 		PangoLayout *layout = ygtk_steps_get_step_layout (steps, i);
+		YGtkSingleStep *step = ygtk_steps_get_step (steps, i);
+		if (!step->is_heading)
+			layout = step->layout_bold;
 
 		int w, h;
 		pango_layout_get_pixel_size (layout, &w, &h);
@@ -213,7 +232,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *step_text)
 	step->is_heading = FALSE;
 	step->text = g_strdup (step_text);
 	step->strength = 1;
-	step->layout = NULL;
+	step->layout = step->layout_bold = NULL;
 
 	steps->steps = g_list_append (steps->steps, step);
 	gtk_widget_queue_resize (GTK_WIDGET (steps));
@@ -230,7 +249,7 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	step->is_heading = TRUE;
 	step->text = g_strdup (heading);
 	step->strength = 1;  // not important anyway
-	step->layout = NULL;
+	step->layout = step->layout_bold = NULL;
 
 	steps->steps = g_list_append (steps->steps, step);
 	gtk_widget_queue_resize (GTK_WIDGET (steps));
@@ -302,3 +321,4 @@ static void ygtk_steps_class_init (YGtkStepsClass *klass)
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_steps_destroy;
 }
+

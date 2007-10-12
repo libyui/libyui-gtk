@@ -12,6 +12,9 @@
     once to actually advance for a given step), you may append a
    step with the same name of the previous, that they'll be collapsed.
    (Internally, we call that the 'strength' of the step.)
+
+	TODO: the PangoLayout usage is getting a bit hacky. We may want to
+	replace it with Cairo methods.
 */
 
 #ifndef YGTK_STEPS_H
@@ -59,7 +62,7 @@ typedef struct _YGtkSingleStep
 	guint strength;  // check the text at top
 
 	// private -- don't access it, call ygtk_step_get_layout() instead
-	PangoLayout *layout;  // cache
+	PangoLayout *layout, *layout_bold;  // cache
 } YGtkSingleStep;
 
 GtkWidget* ygtk_steps_new (void);
