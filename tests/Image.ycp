@@ -1,7 +1,5 @@
 // Image test
 {
-	string filename = "image.gif";
-
 	UI::OpenDialog (
 		`VBox (
 			`ReplacePoint (`id (`replace_image),
@@ -13,7 +11,8 @@
 				`RadioButtonGroup (`id(`rb),
 					`VBox(
 						`Left (`RadioButton(`id (`static),`opt(`notify), "&Static")),
-						`Left (`RadioButton(`id (`animation), `opt(`notify), "&Animation"))
+						`Left (`RadioButton(`id (`animation), `opt(`notify), "&Animation")),
+						`Left (`RadioButton(`id (`mng), `opt(`notify), "Animation (&MNG)"))
 						)
 					)
 				),
@@ -57,6 +56,9 @@
 			zeroheight = `zeroHeight;
 		}
 
+		string filename = "image.gif";
+		if ((boolean) UI::QueryWidget(`id(`mng), `Value))
+			filename = "image.mng";
 		UI::ReplaceWidget (`replace_image,
 		                   `Image (`opt (type_opt, effect_opt, zerowidth, zeroheight),
 		                           filename, filename + " not found"));
@@ -65,3 +67,4 @@
 
 	UI::CloseDialog();
 }
+

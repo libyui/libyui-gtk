@@ -38,6 +38,12 @@
 	highlighted. Calculate size_request as if they are all highlighted.
 	TODO: we may want to get rid of PangoLayout in favor of the simpler Cairo.
 
+	* src/ygdkmngloader.h/c: bug fix #328500: added loader for MNG image.
+	(just a very small subset of it). There is a bug on movies limited to
+	a fixed iteration number -- it seems that ticks per second is calculated
+	different for them; have to see...
+	* tests/YGImage.ycp: added a MNG image and updated test.
+
 2007-10-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug #330467. Do a full match to

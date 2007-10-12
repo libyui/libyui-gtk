@@ -2,12 +2,13 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
+#include "ygdkmngloader.h"
 #include <config.h>
 #include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YEvent.h"
-#include "YImage.h"
 #include "YGWidget.h"
+#include "YImage.h"
 
 class YGImage : public YImage, public YGWidget
 {
@@ -91,7 +92,7 @@ class YGImage : public YImage, public YGWidget
 
 public:
 	YGImage (const YWidgetOpt &opt, YGWidget *parent,
-	         const YCPString &filename, const YCPString &text)
+	         const YCPString &filename_str, const YCPString &text)
 	: YImage (opt),
 	  YGWidget (this, parent, true, GTK_TYPE_DRAWING_AREA, NULL)
 	{
@@ -99,15 +100,18 @@ public:
 		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
+		const char *filename = filename_str->value_cstr();
 		GError *error = 0;
 		if (m_isAnimation) {
-			GdkPixbufAnimation *pixbuf =
-				gdk_pixbuf_animation_new_from_file (filename->value_cstr(), &error);
+			GdkPixbufAnimation *pixbuf;
+			if (ygdk_mng_pixbuf_is_file_mng (filename))
+				pixbuf = ygdk_mng_pixbuf_new_from_file (filename, &error);
+			else
+				pixbuf = gdk_pixbuf_animation_new_from_file (filename, &error);
 			loadAnimation (pixbuf, error ? error->message : "(undefined)");
 		}
 		else {
-			GdkPixbuf *pixbuf =
-				gdk_pixbuf_new_from_file (filename->value_cstr(), &error);
+			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (filename, &error);
 			loadImage (pixbuf, error ? error->message : "(undefined)");
 		}
 	}
