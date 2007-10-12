@@ -44,8 +44,10 @@ typedef struct YGdkMngPixbufClass
 	GdkPixbufAnimationClass parent_class;
 } YGdkMngPixbufClass;
 
-GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename, GError **error_msg);
+GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename, GError **error);
+GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *data, long size, GError **error);
 gboolean ygdk_mng_pixbuf_is_file_mng (const gchar *filename);
+gboolean ygdk_mng_pixbuf_is_data_mng (const guint8 *data, long size);
 
 GType ygdk_mng_pixbuf_get_type (void) G_GNUC_CONST;
 

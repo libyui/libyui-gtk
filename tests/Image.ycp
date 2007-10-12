@@ -1,5 +1,5 @@
 // Image test
-string filename = "image.gif";
+string filename = "tests/image.gif";
 
 {
 	UI::OpenDialog (

@@ -30,47 +30,58 @@
 
 //** Utilities to read the MNG file
 
-typedef gboolean (*ChunkParser)(YGdkMngPixbuf*, guint8*, GError**);
-
-struct ChunkLoad {
-	guint8 Id;
-	ChunkParser Function;
-	
-};
-
-static gboolean read_signature (FILE *file)
+typedef struct DataStream {
+	const guint8 *data;
+	const long size;
+	long offset;
+} DataStream;
+static DataStream data_stream_constructor (const guint8 *raw_data, long size)
 {
-	guchar buf[8];
-	fread (buf, 1, 8, file);
-	return memcmp (buf, "\212MNG\r\n\032\n", 8) == 0;
+	DataStream data = { raw_data, size, 0 };
+	return data;
 }
 
-static gboolean read_uint8 (FILE *file, guint8 *value)
+static gboolean read_signature (DataStream *data)
 {
-	return fread (value, 1, 1, file) >= 1;
-}
-
-static gboolean read_uint32 (FILE *file, guint32 *value)
-{
-	guint8 buffer[4];
-	if (fread (buffer, 1, 4, file) < 4)
+	if (data->offset+8 > data->size)
 		return FALSE;
-	*value  = buffer[0] << 24; *value |= buffer[1] << 16;
-	*value |= buffer[2] << 8;  *value |= buffer[3];
+	data->offset += 8;
+	return memcmp (data->data + data->offset-8, "\212MNG\r\n\032\n", 8) == 0;
+}
+
+static gboolean read_uint8 (DataStream *data, guint8 *value)
+{
+	if (data->offset+1 > data->size)
+		return FALSE;
+	*value = data->data [data->offset++];
 	return TRUE;
 }
 
-static gboolean read_data (FILE *file, guint32 size, GdkPixbufLoader *loader,
+static gboolean read_uint32 (DataStream *data, guint32 *value)
+{
+	if (data->offset+4 > data->size)
+		return FALSE;
+	*value  = data->data[data->offset+0] << 24;
+	*value |= data->data[data->offset+1] << 16;
+	*value |= data->data[data->offset+2] << 8;
+	*value |= data->data[data->offset+3];
+	data->offset += 4;
+	return TRUE;
+}
+
+static gboolean read_data (DataStream *data, guint32 size, GdkPixbufLoader *loader,
                            GError **error)
 {
-	guchar data [size];
-	if (fread (data, 1, size, file) < size)
+	if (data->offset+size > data->size)
 	{
 		g_set_error (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
 		             "Unexpected end of file when reading PNG chunk");
 		return FALSE;
 	}
-	return gdk_pixbuf_loader_write (loader, data, size, error);
+	gboolean ret;
+	ret = gdk_pixbuf_loader_write (loader, data->data + data->offset, size, error);
+	data->offset += size;
+	return ret;
 }
 
 static void image_prepared_cb (GdkPixbufLoader *loader, YGdkMngPixbuf *mng_pixbuf)
@@ -91,17 +102,34 @@ gboolean ygdk_mng_pixbuf_is_file_mng (const gchar *filename)
 {
 	FILE *file = fopen (filename, "rb");
 	if (!file)
-		return FALSE;
-	return read_signature (file);
+		goto is_file_mng_failed;
+
+	guchar raw_data [8];
+	if (fread (raw_data, 1, 8, file) < 8)
+		goto is_file_mng_failed;
+
+	gboolean ret = ygdk_mng_pixbuf_is_data_mng (raw_data, 8);
+	fclose (file);
+	return ret;
+
+is_file_mng_failed:
+	fclose (file);
+	return FALSE;
 }
+
+gboolean ygdk_mng_pixbuf_is_data_mng (const guint8 *raw_data, long size)
+{
+	DataStream data = data_stream_constructor (raw_data, size);
+	return read_signature (&data);
+}
+
+#define SET_ERROR(msg) { error = TRUE; \
+	g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
 
 GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
                                                    GError **error_msg)
 {
 	gboolean error = FALSE;
-	#define SET_ERROR(msg) { error = TRUE; \
-		g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
-
 	FILE *file = fopen (filename, "rb");
 	if (!file)
 	{
@@ -109,7 +137,31 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 		return NULL;
 	}
 
-	if (!read_signature (file))
+	fseek (file, 0, SEEK_END);
+	long file_size = ftell (file);
+	fseek (file, 0, SEEK_SET);
+
+	GdkPixbufAnimation *mng_pixbuf = 0;
+	guchar *data = mmap (NULL, file_size, PROT_READ, MAP_PRIVATE,
+	                     fileno (file), 0);
+	if (data == MAP_FAILED)
+		SET_ERROR ("Could not map file")
+	else
+	{
+		mng_pixbuf = ygdk_mng_pixbuf_new_from_data (data, file_size, error_msg);
+		munmap (data, file_size);
+	}
+	fclose (file);
+	return mng_pixbuf;
+}
+
+GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long size,
+                                                   GError **error_msg)
+{
+	DataStream data = data_stream_constructor (raw_data, size);
+
+	gboolean error = FALSE;
+	if (!read_signature (&data))
 	{
 		SET_ERROR ("Not a MNG file")
 		return NULL;
@@ -119,19 +171,19 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 	mng_pixbuf->iteration_max = 0x7fffffff;
 
 	guint32 chunk_size, chunk_id;
-	long offset;
+	long chunk_offset;
 	GdkPixbufLoader *loader = NULL;  /* currently loading... */
 	gboolean first_read = TRUE;
 
     do {
-		error = !read_uint32 (file, &chunk_size);
-		error = error || !read_uint32 (file, &chunk_id);
+		error = !read_uint32 (&data, &chunk_size);
+		error = error || !read_uint32 (&data, &chunk_id);
 		if (error)
 		{
 			SET_ERROR ("Unexpected end of file on new chunk")
 			break;
 		}
-		offset = ftell (file) + chunk_size + 4/*CRC*/;
+		chunk_offset = data.offset + chunk_size + 4/*CRC*/;
 
 		if (first_read && chunk_id != MNG_UINT_MHDR)
 		{
@@ -154,9 +206,9 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 					if (chunk_size == 7*4)
 					{
 						// Read MHDR chunk data
-						error = !read_uint32 (file, &mng_pixbuf->frame_width);
-						error = error || !read_uint32 (file, &mng_pixbuf->frame_height);
-						error = error || !read_uint32 (file, &mng_pixbuf->ticks_per_second);
+						error = !read_uint32 (&data, &mng_pixbuf->frame_width);
+						error = error || !read_uint32 (&data, &mng_pixbuf->frame_height);
+						error = error || !read_uint32 (&data, &mng_pixbuf->ticks_per_second);
 						if (error)
 							SET_ERROR ("Unexpected end of file on MHDR chunk")
 						/* Next atttributes: Nominal_layer_count, Nominal_frame_count,
@@ -165,7 +217,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 							     mng_pixbuf->frame_height <= 0 ||
 							     mng_pixbuf->ticks_per_second < 0)
 							SET_ERROR ("Invalid MHDR parameter")
-fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
+//fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 					}
 					else
 						SET_ERROR ("MHDR chunk must be 28 bytes long")
@@ -191,12 +243,12 @@ fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 					{
 						// Read TERM chunk data
 						guint8 t;
-						error = !read_uint8 (file, &t);  // term action
+						error = !read_uint8 (&data, &t);  // term action
 						if (t == 3 && chunk_size == 2+8)
 						{
-							error = error || !read_uint8 (file, &t);  // after term action
-							error = error || !read_uint32 (file, &mng_pixbuf->last_frame_delay);
-							error = error || !read_uint32 (file, &mng_pixbuf->iteration_max);
+							error = error || !read_uint8 (&data, &t);  // after term action
+							error = error || !read_uint32 (&data, &mng_pixbuf->last_frame_delay);
+							error = error || !read_uint32 (&data, &mng_pixbuf->iteration_max);
 							if (error)
 								SET_ERROR ("Unexpected end of file on TERM chunk")
 						}
@@ -226,8 +278,8 @@ fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 		// loading a PNG stream
 		if (loader)
 		{
-			fseek (file, -8, SEEK_CUR);
-			if (!read_data (file, chunk_size+8+4, loader, error_msg))
+			data.offset -= 8;
+			if (!read_data (&data, chunk_size+8+4, loader, error_msg))
 				error = TRUE;
 			else if (chunk_id == MNG_UINT_IEND)
 			{
@@ -240,7 +292,7 @@ fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 			}
 		}
 
-		fseek (file, offset, SEEK_SET);
+		data.offset = chunk_offset;
 		first_read = FALSE;
     } while (chunk_id != MNG_UINT_MEND && !error);
 
@@ -249,10 +301,10 @@ fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 		g_object_unref (G_OBJECT (mng_pixbuf));
 		return NULL;
 	}
-	#undef SET_ERROR
-
     return GDK_PIXBUF_ANIMATION (mng_pixbuf);
 }
+
+#undef SET_ERROR
 
 static gboolean ygdk_mng_pixbuf_is_static_image (GdkPixbufAnimation *anim)
 {
@@ -314,7 +366,7 @@ static gboolean ygdk_mng_pixbuf_iter_on_currently_loading_frame (GdkPixbufAnimat
 static int ygdk_mng_pixbuf_iter_get_delay_time (GdkPixbufAnimationIter *iter)
 {
 	YGdkMngPixbufIter *mng_iter = YGDK_MNG_PIXBUF_ITER (iter);
-	int delay = mng_iter->mng_pixbuf->ticks_per_second;
+	int delay = 1000.0 / mng_iter->mng_pixbuf->ticks_per_second;
 	if (mng_iter->cur_frame == g_list_length (mng_iter->mng_pixbuf->frames)-1)
 		delay += mng_iter->mng_pixbuf->last_frame_delay;
 	return delay;

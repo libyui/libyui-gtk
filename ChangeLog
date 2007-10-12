@@ -1,3 +1,9 @@
+2007-10-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygdkmngloader.h/c / src/YGImage.cc: added support for inline MNG
+	images.
+	* tests/YGImage.ycp: added a bunch of MNGs I found...
+
 2007-10-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: speed up Patterns view. 

@@ -1,4 +1,6 @@
 // Image test
+// TODO: make it getting the filename as an argument
+
 {
 	UI::OpenDialog (
 		`VBox (
@@ -10,8 +12,14 @@
 			`Frame ("Which MNG file:",
 				`RadioButtonGroup (`id(`rb),
 					`VBox(
-						`Left (`RadioButton(`id (`endless), `opt(`notify), "&Endless")),
-						`Left (`RadioButton(`id (`loop3), `opt(`notify), "&Loop 3"))
+						`Left (`RadioButton(`id (`movie1), `opt(`notify), "&Movie1")),
+						`Left (`RadioButton(`id (`movie2), `opt(`notify), "&Movie2")),
+						`Left (`RadioButton(`id (`movie3), `opt(`notify), "&Movie3")),
+						`Left (`RadioButton(`id (`movie4), `opt(`notify), "&Movie4")),
+						`Left (`RadioButton(`id (`movie5), `opt(`notify), "&Movie5")),
+						`Left (`RadioButton(`id (`movie6), `opt(`notify), "&Movie6")),
+						`Left (`RadioButton(`id (`movie7), `opt(`notify), "&Movie7")),
+						`Left (`RadioButton(`id (`movie8), `opt(`notify), "&Movie8"))
 						)
 					)
 				),
@@ -52,10 +60,26 @@
 		}
 
 		string filename = "";
-		if ((boolean) UI::QueryWidget(`id(`loop3), `Value))
-			filename = "movie-loop3.mng";
+		if ((boolean) UI::QueryWidget(`id(`movie1), `Value))
+			filename = "tests/movie1.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie2), `Value))
+			filename = "tests/movie2.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie3), `Value))
+			filename = "tests/movie3.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie4), `Value))
+			filename = "tests/movie4.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie5), `Value))
+			filename = "tests/movie5.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie6), `Value))
+			filename = "tests/movie6.mng";
+		else if ((boolean) UI::QueryWidget(`id(`movie7), `Value))
+			filename = "tests/movie7.mng";
 		else
-			filename = "movie-endless.mng";
+			filename = "tests/movie8.mng";
+
+		// to test inline images, uncomment next line and pass it to `Image
+		//byteblock data = (byteblock) SCR::Read (.target.byte, filename);
+
 		UI::ReplaceWidget (`replace_image,
 		                   `Image (`opt (`animated, effect_opt, zerowidth, zeroheight),
 		                           filename, filename + " not found"));

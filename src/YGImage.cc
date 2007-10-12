@@ -125,15 +125,24 @@ public:
 		alt_text = g_strdup (text->value_cstr());
 		initOptions (opt);
 
-		GdkPixbufLoader *loader = gdk_pixbuf_loader_new();
-		g_signal_connect (G_OBJECT (loader), "area-prepared",
-		                  G_CALLBACK (image_loaded_cb), this);
-
 		GError *error = 0;
-		if (!gdk_pixbuf_loader_write (loader,
-		    byteblock->value(), byteblock->size(), &error))
-			g_warning ("Could not load image from data blocks: %s", error->message);
-		gdk_pixbuf_loader_close (loader, &error);
+		if (m_isAnimation && ygdk_mng_pixbuf_is_data_mng (byteblock->value(), byteblock->size()))
+		{
+			GdkPixbufAnimation *pixbuf;
+			pixbuf = ygdk_mng_pixbuf_new_from_data (byteblock->value(), byteblock->size(), &error);	
+			loadAnimation (pixbuf, error ? error->message : "(undefined)");		
+		}
+		else
+		{
+			GdkPixbufLoader *loader = gdk_pixbuf_loader_new();
+			g_signal_connect (G_OBJECT (loader), "area-prepared",
+			                  G_CALLBACK (image_loaded_cb), this);
+
+			if (!gdk_pixbuf_loader_write (loader,
+			    byteblock->value(), byteblock->size(), &error))
+				g_warning ("Could not load image from data blocks: %s", error->message);
+			gdk_pixbuf_loader_close (loader, &error);
+		}
 	}
 
 	virtual ~YGImage()
