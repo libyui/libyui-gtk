@@ -1,19 +1,17 @@
 // Image test
-string filename = "image.gif";
-
 {
 	UI::OpenDialog (
 		`VBox (
 			`ReplacePoint (`id (`replace_image),
-				`ColoredLabel ("Choose an image type option!", `rgb (0, 0, 0),
+				`ColoredLabel ("Choose an image first!", `rgb (0, 0, 0),
 				               `rgb (255, 0, 0), 5)
 				),
 
-			`Frame ("Image type:",
+			`Frame ("Which MNG file:",
 				`RadioButtonGroup (`id(`rb),
 					`VBox(
-						`Left (`RadioButton(`id (`static),`opt(`notify), "&Static")),
-						`Left (`RadioButton(`id (`animation), `opt(`notify), "&Animation"))
+						`Left (`RadioButton(`id (`endless), `opt(`notify), "&Endless")),
+						`Left (`RadioButton(`id (`loop3), `opt(`notify), "&Loop 3"))
 						)
 					)
 				),
@@ -39,10 +37,6 @@ string filename = "image.gif";
 		if (ret == `close || ret == `cancel)
 			break;
 
-		any type_opt = nil;
-		if (!(boolean) UI::QueryWidget(`id(`static), `Value))
-			type_opt = `animated;
-
 		any effect_opt = nil;
 		if ((boolean) UI::QueryWidget(`id(`tiled_effect), `Value))
 			effect_opt = `tiled;
@@ -57,8 +51,13 @@ string filename = "image.gif";
 			zeroheight = `zeroHeight;
 		}
 
+		string filename = "";
+		if ((boolean) UI::QueryWidget(`id(`loop3), `Value))
+			filename = "movie-loop3.mng";
+		else
+			filename = "movie-endless.mng";
 		UI::ReplaceWidget (`replace_image,
-		                   `Image (`opt (type_opt, effect_opt, zerowidth, zeroheight),
+		                   `Image (`opt (`animated, effect_opt, zerowidth, zeroheight),
 		                           filename, filename + " not found"));
 
 	}

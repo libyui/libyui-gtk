@@ -5,7 +5,7 @@
 /* YGdkMngLoader image loader */
 // check the header file for information about this loader
 
-#include "mng-loader.h"
+#include "ygdkmngloader.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
-/* Some select chunk IDs, from libmng.h */
+/* A few chunks ids */
 #define MNG_UINT_MHDR 0x4d484452L
 #define MNG_UINT_BACK 0x4241434bL
 #define MNG_UINT_PLTE 0x504c5445L
@@ -159,13 +159,13 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 						error = error || !read_uint32 (file, &mng_pixbuf->ticks_per_second);
 						if (error)
 							SET_ERROR ("Unexpected end of file on MHDR chunk")
-
 						/* Next atttributes: Nominal_layer_count, Nominal_frame_count,
 							                 Nominal_play_time, Simplicity_profile */
 						else if (mng_pixbuf->frame_width <= 0 ||
 							     mng_pixbuf->frame_height <= 0 ||
 							     mng_pixbuf->ticks_per_second < 0)
 							SET_ERROR ("Invalid MHDR parameter")
+fprintf(stderr, "ticks per second: %d\n", mng_pixbuf->ticks_per_second);
 					}
 					else
 						SET_ERROR ("MHDR chunk must be 28 bytes long")
@@ -254,26 +254,26 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
     return GDK_PIXBUF_ANIMATION (mng_pixbuf);
 }
 
-gboolean ygdk_mng_pixbuf_is_static_image (GdkPixbufAnimation *anim)
+static gboolean ygdk_mng_pixbuf_is_static_image (GdkPixbufAnimation *anim)
 {
 	return FALSE;
 }
 
-GdkPixbuf *ygdk_mng_pixbuf_get_static_image (GdkPixbufAnimation *anim)
+static GdkPixbuf *ygdk_mng_pixbuf_get_static_image (GdkPixbufAnimation *anim)
 {
 	YGdkMngPixbuf *mng_anim = YGDK_MNG_PIXBUF (anim);
 	return g_list_nth_data (mng_anim->frames, 0);
 }
 
-void ygdk_mng_pixbuf_get_size (GdkPixbufAnimation *anim, int *width, int *height)
+static void ygdk_mng_pixbuf_get_size (GdkPixbufAnimation *anim, int *width, int *height)
 {
 	YGdkMngPixbuf *mng_anim = YGDK_MNG_PIXBUF (anim);
 	if (width) *width = mng_anim->frame_width;
 	if (height) *height = mng_anim->frame_height;
 }
 
-GdkPixbufAnimationIter *ygdk_mng_pixbuf_get_iter (GdkPixbufAnimation *anim,
-                                                  const GTimeVal     *start_time)
+static GdkPixbufAnimationIter *ygdk_mng_pixbuf_get_iter (GdkPixbufAnimation *anim,
+                                                         const GTimeVal     *start_time)
 {
 	YGdkMngPixbufIter *iter = g_object_new (YGDK_TYPE_MNG_PIXBUF_ITER, NULL);
 	iter->mng_pixbuf = YGDK_MNG_PIXBUF( anim );
@@ -300,18 +300,18 @@ static void ygdk_mng_pixbuf_iter_init (YGdkMngPixbufIter *iter)
 {
 }
 
-GdkPixbuf *ygdk_mng_pixbuf_iter_get_pixbuf (GdkPixbufAnimationIter *iter)
+static GdkPixbuf *ygdk_mng_pixbuf_iter_get_pixbuf (GdkPixbufAnimationIter *iter)
 {
 	YGdkMngPixbufIter *mng_iter = YGDK_MNG_PIXBUF_ITER (iter);
 	return g_list_nth_data (mng_iter->mng_pixbuf->frames, mng_iter->cur_frame);	
 }
 
-gboolean ygdk_mng_pixbuf_iter_on_currently_loading_frame (GdkPixbufAnimationIter *iter)
+static gboolean ygdk_mng_pixbuf_iter_on_currently_loading_frame (GdkPixbufAnimationIter *iter)
 {
 	return FALSE;
 }
 
-int ygdk_mng_pixbuf_iter_get_delay_time (GdkPixbufAnimationIter *iter)
+static int ygdk_mng_pixbuf_iter_get_delay_time (GdkPixbufAnimationIter *iter)
 {
 	YGdkMngPixbufIter *mng_iter = YGDK_MNG_PIXBUF_ITER (iter);
 	int delay = mng_iter->mng_pixbuf->ticks_per_second;
@@ -320,8 +320,8 @@ int ygdk_mng_pixbuf_iter_get_delay_time (GdkPixbufAnimationIter *iter)
 	return delay;
 }
 
-gboolean ygdk_mng_pixbuf_iter_advance (GdkPixbufAnimationIter *iter,
-                                       const GTimeVal         *current_time)
+static gboolean ygdk_mng_pixbuf_iter_advance (GdkPixbufAnimationIter *iter,
+                                              const GTimeVal         *current_time)
 {
 	YGdkMngPixbufIter *mng_iter = YGDK_MNG_PIXBUF_ITER (iter);
 	YGdkMngPixbuf *mng_pixbuf = mng_iter->mng_pixbuf;
