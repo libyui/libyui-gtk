@@ -22,7 +22,7 @@
 		+ "to the rescue</h1></center><a "
 		+ "href=http://en.wikipedia.org/wiki/Superman>Super Man</a> is a very "
 		+ "estimated super hero in Metropolis, but he is looked down by others "
-		+ "like mad scientists and politiceans. <img src=image.gif>",
+		+ "like mad scientists and politiceans. <img src=\"tests/image.gif\">",
 
 		// table (from SlideShow)
 		"<table cellspacing=\"10\" cellpadding=\"5\">"

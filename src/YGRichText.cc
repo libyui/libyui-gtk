@@ -8,27 +8,24 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include "YRichText.h"
-#include "ygtkrichtext.h"
+#include "ygtkhtmlwrap.h"
 
 class YGRichText : public YRichText, public YGScrolledWidget
 {
-	bool m_plainText;
+bool m_autoScrollDown;
 
 public:
 	YGRichText(const YWidgetOpt &opt, YGWidget *parent, const YCPString &text)
 	: YRichText (opt, text),
-	  YGScrolledWidget (this, parent, true, YGTK_TYPE_RICHTEXT, NULL)
+	  YGScrolledWidget (this, parent, true, ygtk_htmlwrap_get_type (opt.plainTextMode.value()), NULL)
 	{
 		IMPL
 		if (!opt.isShrinkable.value())
 			setMinSizeInChars (20, 8);
+		m_autoScrollDown = opt.autoScrollDown.value();
 
-		m_plainText = opt.plainTextMode.value();
-		ygtk_richttext_set_prodname (YGTK_RICHTEXT (getWidget()),
-		                             YUI::ui()->productName().c_str());
-
-		g_signal_connect (G_OBJECT (getWidget()), "link-pressed",
-		                  G_CALLBACK (link_pressed_cb), this);
+		ygtk_htmlwrap_init (getWidget());
+		ygtk_htmlwrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
 
 		setText (text);
 	}
@@ -37,18 +34,19 @@ public:
 	{ }
 
 	// YRichText
-	virtual void setText (const YCPString &text)
+	virtual void setText (const YCPString &_text)
 	{
 		IMPL
-		ygtk_richtext_set_text (YGTK_RICHTEXT (getWidget()), text->value_cstr(),
-		                        !m_plainText);
+		string text (_text->value());
+		YGUtils::replace (text, "&product;", 9, YUI::ui()->productName().c_str());
 
-		if (autoScrollDown)
-			YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));
-		YRichText::setText (text);
+		ygtk_htmlwrap_set (getWidget(), text.c_str());
+		if (m_autoScrollDown)
+			ygtk_htmlwrap_scroll (getWidget(), FALSE);
+		YRichText::setText (_text);
 	}
 
-	static void link_pressed_cb (YGtkRichText *rtext, const char *url, YGRichText *pThis)
+	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
 	{
 		YGUI::ui()->sendEvent (new YMenuEvent (YCPString (url)));
 	}
@@ -62,3 +60,4 @@ YGUI::createRichText (YWidget *parent, YWidgetOpt &opt, const YCPString &text)
 {
 	return new YGRichText (opt, YGWidget::get (parent), text);
 }
+

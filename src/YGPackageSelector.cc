@@ -13,7 +13,7 @@
 #include "YGi18n.h"
 #include "YGDialog.h"
 #include "YPackageSelector.h"
-#include "ygtkrichtext.h"
+#include "ygtkhtmlwrap.h"
 #include "ygtkwizard.h"
 #include "ygtkcellrendererarrow.h"
 #include "ygtkratiobox.h"
@@ -44,7 +44,7 @@
 
 /* We should consider linking to libgnome and use gnome_url_show(url) here,
    or at least do some path finding. */
-#define FILEMANAGER_EXEC "/opt/gnome/bin/nautilus"
+#define FILEMANAGER_EXEC "/usr/bin/nautilus"
 inline bool FILEMANAGER_PRESENT()
 { return g_file_test (FILEMANAGER_EXEC, G_FILE_TEST_IS_EXECUTABLE); }
 inline void FILEMANAGER_LAUNCH (const char *path)
@@ -103,15 +103,9 @@ static bool acceptLicense (ZyppSelectablePtr sel)
 		_("_Reject"), GTK_RESPONSE_REJECT, _("_Accept"), GTK_RESPONSE_ACCEPT, NULL);
 
 	GtkWidget *license_view, *license_window;
-#ifdef PLAIN_TEXT
-	GtkTextBuffer *buffer = gtk_text_buffer_new (NULL);
-	gtk_text_buffer_set_text (buffer, license.c_str(), -1);
-	license_view = gtk_text_view_new_with_buffer (buffer);
-#else
-    /* FIXME: can we detect rich text vs. non - does it matter ? */
-    license_view = ygtk_richtext_new();
-    ygtk_richtext_set_text (YGTK_RICHTEXT (license_view), license.c_str(), true);
-#endif
+
+    license_view = ygtk_html_wrap_new();
+    ygtk_html_wrap_set_text (license_view, license.c_str());
 
 	license_window = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (license_window),
@@ -351,7 +345,7 @@ class PackageInformation
 {
 	GtkWidget *m_widget, *m_notebook;
 	// Information text
-	GtkWidget *m_about_text, *m_authors_text, *m_filelist_text, *m_history_text;
+	GtkWidget *m_about_text, *m_authors_text, *m_filelist_text, *m_changelog_text;
 	bool m_use_filemanager;
 
 public:
@@ -364,10 +358,10 @@ public:
 			GtkWidget *about_win = gtk_scrolled_window_new (NULL, NULL);
 			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (about_win),
 			                                GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
-			m_about_text = gtk_text_view_new();
+			m_about_text = ygtk_html_wrap_new();
 			gtk_container_add (GTK_CONTAINER (about_win), m_about_text);
 			gtk_container_add (GTK_CONTAINER (m_widget), about_win);
-			m_authors_text = m_filelist_text = m_history_text = NULL;
+			m_authors_text = m_filelist_text = m_changelog_text = NULL;
 			m_notebook = NULL;
 		}
 		else {
@@ -378,9 +372,9 @@ public:
 			m_about_text = add_text_tab (m_notebook, _("Description"));
 			m_filelist_text = add_text_tab (m_notebook, _("File List"));
 			if ((m_use_filemanager = FILEMANAGER_PRESENT()))
-				g_signal_connect (G_OBJECT (m_filelist_text), "link-pressed",
-				                  G_CALLBACK (dir_pressed_cb), NULL);
-			m_history_text = add_text_tab (m_notebook, _("History"));
+				ygtk_html_wrap_connect_link_clicked (m_filelist_text,
+					G_CALLBACK (dir_pressed_cb), NULL);
+			m_changelog_text = add_text_tab (m_notebook, _("Change Log"));
 			m_authors_text = add_text_tab (m_notebook, _("Authors"));
 		}
 		gtk_widget_set_size_request (gtk_bin_get_child (GTK_BIN (m_widget)),
@@ -397,8 +391,8 @@ public:
 				set_text (m_about_text, "");
 			if (m_filelist_text)
 				set_text (m_filelist_text, "");
-			if (m_history_text)
-				set_text (m_history_text, "");
+			if (m_changelog_text)
+				set_text (m_changelog_text, "");
 			if (m_authors_text)
 				set_text (m_authors_text, "");
 			gtk_expander_set_expanded (GTK_EXPANDER (m_widget), FALSE);
@@ -414,14 +408,12 @@ public:
 
 		ZyppPackage package = tryCastToZyppPkg (object);
 		if (m_about_text) {
-			string description = YGUtils::escape_markup (object->description());
+			string description = YGUtils::escape_markup (object->description(), true);
 
 			// cut authors, since they have their own section
 			string::size_type pos = description.find ("Authors:");
 			if (pos != string::npos)
 				description.erase (pos, string::npos);
-
-			description = YGUtils::escape_break_lines (description, true);
 
 			string str;
 			if (package) {
@@ -458,6 +450,9 @@ public:
 				for (std::list <string>::const_iterator it = filenames.begin();
 				     it != filenames.end(); it++) {
 					string file (*it);
+					// don't show created dirs
+					if (g_file_test (file.c_str(), G_FILE_TEST_IS_DIR))
+						continue;
 					// set the path as a link
 					if (m_use_filemanager) {
 						string::size_type pos = file.find_last_of ('/');
@@ -471,22 +466,21 @@ public:
 				}
 				set_text (m_filelist_text, filelist);
 			}
-			if (m_history_text) {
-				string history;
+			if (m_changelog_text) {
+				string text;
 				const std::list <zypp::ChangelogEntry> &changelog = package->changelog();
 				for (std::list <zypp::ChangelogEntry>::const_iterator it = changelog.begin();
 				     it != changelog.end(); it++) {
-					string text = "<blockquote>" + YGUtils::escape_markup (it->text()) +
+					string t = "<blockquote>" + YGUtils::escape_markup (it->text(), true) +
 					              "</blockquote>";
-					text = YGUtils::escape_break_lines (text, false);
-					history += "<p>" + YGUtils::escape_markup (it->date().asString()) +
-					           " " + YGUtils::escape_markup (it->author()) + ":<br>" +
-					           text + "</p>";
+					text += "<p>" + it->date().asString() + ""
+					        + YGUtils::escape_markup (it->author()) + ":<br>"
+					        + t + "</p>";
 				}
-				set_text (m_history_text, history);
+				set_text (m_changelog_text, text);
 			}
 			if (m_authors_text) {
-				string packager (package->packager()), authors;
+				string packager (YGUtils::escape_markup (package->packager())), authors;
 
 				const std::list <string> &authors_list = package->authors();
 				if (!authors_list.empty()) {
@@ -497,13 +491,13 @@ public:
 				else {
 					/* authors() should be the proper way to get authors, but it seems to
 					   be rarely used, instead packagers list them on the description. */
-					string description = YGUtils::escape_markup (object->description());
+					string description (object->description());
 					string::size_type pos = description.find ("Authors:");
 					if (pos != string::npos) {
 						pos = description.find_first_not_of (
 							'-', pos + sizeof ("Authors:") + 1);
 						authors = string (description, pos, string::npos);
-						authors = YGUtils::escape_break_lines (authors, false);
+						authors = YGUtils::escape_markup (authors, true);
 					}
 				}
 
@@ -523,8 +517,8 @@ public:
 		else {
 			if (m_filelist_text)
 				set_text (m_filelist_text, "");
-			if (m_history_text)
-				set_text (m_history_text, "");
+			if (m_changelog_text)
+				set_text (m_changelog_text, "");
 			if (m_authors_text)
 				set_text (m_authors_text, "");
 		}
@@ -538,7 +532,7 @@ private:
 		scroll_win = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll_win),
 		                                GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
-		widget = ygtk_richtext_new();
+		widget = ygtk_html_wrap_new();
 		gtk_container_add (GTK_CONTAINER (scroll_win), widget);
 
 		gtk_notebook_append_page (GTK_NOTEBOOK (notebook), scroll_win,
@@ -551,17 +545,12 @@ private:
 		const char *str = _("<i>(not available)</i>");
 		if (!text.empty())
 			str = text.c_str();
-		ygtk_richtext_set_text (YGTK_RICHTEXT (widget), str, TRUE);
-
-		// scroll to the start
-		GtkTextIter iter;
-		gtk_text_buffer_get_start_iter (gtk_text_view_get_buffer (
-			GTK_TEXT_VIEW (widget)), &iter);
-		gtk_text_view_scroll_to_iter (GTK_TEXT_VIEW (widget), &iter, 0, TRUE, 0, 0);
+		ygtk_html_wrap_set_text (widget, str);
+		ygtk_html_wrap_scroll (widget, TRUE);  // scroll to the start
 	}
 
 	/* When a directory is pressed on the file list. */
-	static void dir_pressed_cb (YGtkRichText *rich_text, const gchar *link)
+	static void dir_pressed_cb (GtkWidget *text, const gchar *link)
 	{ FILEMANAGER_LAUNCH (link); }
 };
 

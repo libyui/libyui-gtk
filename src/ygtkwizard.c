@@ -11,7 +11,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 #include <string.h>
-#include "ygtkrichtext.h"
+#include "ygtkhtmlwrap.h"
 #include "ygtksteps.h"
 #include "ygtkfindentry.h"
 
@@ -31,13 +31,13 @@ G_DEFINE_TYPE (YGtkHelpDialog, ygtk_help_dialog, GTK_TYPE_WINDOW)
 static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 {
 	const gchar *text = gtk_entry_get_text (GTK_ENTRY (dialog->search_entry));
-	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), text);
+	ygtk_html_wrap_search_next (dialog->help_text, text);
 }
 
 static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
 	gchar *key = gtk_editable_get_chars (editable, 0, -1);
-	if (!ygtk_richtext_mark_text (YGTK_RICHTEXT (dialog->help_text), key)) {
+	if (!ygtk_html_wrap_search (dialog->help_text, key)) {
 		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
 		         white = { 0, 255 << 8, 255 << 8, 255 << 8 };
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
@@ -48,7 +48,6 @@ static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dia
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
 		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, NULL);
 	}
-	ygtk_richtext_forward_mark (YGTK_RICHTEXT (dialog->help_text), key);
 	g_free (key);
 }
 static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
@@ -89,7 +88,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	                                 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (dialog->help_box),
 	                                     GTK_SHADOW_IN);
-	dialog->help_text = ygtk_richtext_new();
+	dialog->help_text = ygtk_html_wrap_new();
 	gtk_container_add (GTK_CONTAINER (dialog->help_box), dialog->help_text);
 
 	// bottom part (search entry + close button)
@@ -129,8 +128,7 @@ static void ygtk_help_dialog_realize (GtkWidget *widget)
 
 	// set help text background
 	gtk_widget_realize (dialog->help_text);
-	ygtk_richtext_set_background (YGTK_RICHTEXT (dialog->help_text),
-	                              THEMEDIR "/wizard/help-background.png");
+	ygtk_html_wrap_set_background (dialog->help_text, THEMEDIR "/wizard/help-background.png");
 
 	// set close as default widget
 	gtk_widget_grab_default (dialog->close_button);
@@ -175,7 +173,7 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
-	ygtk_richtext_set_text (YGTK_RICHTEXT (dialog->help_text), text, TRUE);
+	ygtk_html_wrap_set_text (dialog->help_text, text);
 }
 
 static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
@@ -187,7 +185,7 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 	widget_class->expose_event = ygtk_help_dialog_expose_event;
 	widget_class->realize = ygtk_help_dialog_realize;
 
-	// key bindings (eg. F3 for next word)
+	// key bindings (F3 for next word, Esc to close the window)
 	g_signal_new ("find_next", G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)),
 	              G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
 	              G_STRUCT_OFFSET (YGtkHelpDialogClass, find_next),

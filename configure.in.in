@@ -47,6 +47,17 @@ PKG_CHECK_MODULES( GTK, gtk+-2.0 glib-2.0 gthread-2.0 gobject-2.0 )
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
+# TODO: we may want to check if GtkHtml is installed and set its flag
+#dnl Check if GtkHtml is installed
+#AC_MSG_CHECKING([for gtkhtml])
+#PKG_CHECK_MODULES( GTKHTML, libgtkhtml-3.14 )
+#AC_SUBST(GTKHTML_CFLAGS)
+#AC_SUBST(GTKHTML_LIBS)
+#AC_DEFINE(USE_GTKHTML, 1, [will use GtkHtml as the HTML renderer])
+
+PKG_CHECK_MODULES( ZYPP, libzypp )
+AC_SUBST(ZYPP_LIBS)
+
 verstxt=`pkg-config --modversion yast2-core`
 yast_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 AC_DEFINE_UNQUOTED(YAST2_VERSION, $yast_vers, [yast version for compile conditionals])

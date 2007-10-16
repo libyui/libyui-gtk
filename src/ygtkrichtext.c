@@ -10,19 +10,20 @@
 #include <gtk/gtkversion.h>
 #include <string.h>
 
-#define LISTS_MARGIN      10
-#define BLOCKQUOTE_MARGIN 20
+#define IDENT_MARGIN      20
 #define PARAGRAPH_SPACING 12
+
+//#define PRINT_WARNINGS
 
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
 gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
 
-G_DEFINE_TYPE (YGtkRichText, ygtk_richtext, GTK_TYPE_TEXT_VIEW)
+G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
 
 static GdkCursor *hand_cursor, *regular_cursor;
 static guint ref_cursor = 0;
-static guint link_pressed_signal;
+static guint link_clicked_signal;
 static GdkColor link_color = { 0, 0, 0, 0xeeee };
 
 // utilities
@@ -75,11 +76,32 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 
 	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
 	if (link)  // report link
-		g_signal_emit (YGTK_RICHTEXT (text_view), link_pressed_signal, 0, link);
+		g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
 	return FALSE;
 }
 
-void ygtk_richtext_init (YGtkRichText *rtext)
+#include <stdlib.h>
+static int mystrcmp(void *a, void *b)
+{ return strcmp (*(char **)a, *(char **)b); }
+
+static gboolean isBlockTag (const char *tag)
+{
+	static const char *Tags[] =
+	{ "blockquote", "h1", "h2", "h3", "h4", "h5", "li", "p", "pre" };
+	void *ret;
+	ret = bsearch (&tag, Tags, sizeof (Tags)/sizeof(char*), sizeof(char *), (void*)mystrcmp);
+	return ret != 0;
+}
+static gboolean isIdentTag (const char *tag)
+{
+	static const char *Tags[] =
+	{ "blockquote", "ol", "ul" };
+	void *ret;
+	ret = bsearch (&tag, Tags, sizeof (Tags)/sizeof(char*), sizeof(char *), (void*)mystrcmp);
+	return ret != 0;
+}
+
+void ygtk_rich_text_init (YGtkRichText *rtext)
 {
 	rtext->prodname = NULL;
 
@@ -104,60 +126,54 @@ void ygtk_richtext_init (YGtkRichText *rtext)
 	g_signal_connect (tview, "event-after",
 	                  G_CALLBACK (event_after), NULL);
 
-	// Init tags
+	// Create a few tags like 'h3', 'b', 'i'. others need to be created as we parse
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
-	// Create a few tags like 'h3', 'b', 'i'
 	PangoFontDescription *font_desc = GTK_WIDGET (rtext)->style->font_desc;
 	int size = pango_font_description_get_size (font_desc);
 	if (pango_font_description_get_size_is_absolute (font_desc))
 		size /= PANGO_SCALE;
 
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-	                            "size", (int)(size * PANGO_SCALE_XX_LARGE),
-	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
+	                            "size", (int)(size * PANGO_SCALE_XX_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-	                            "size", (int)(size * PANGO_SCALE_X_LARGE),
-	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
+	                            "size", (int)(size * PANGO_SCALE_X_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE),
-	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE),
-	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "h5",
-	                            "size", (int)(size * PANGO_SCALE_LARGE),
-	                            "pixels-below-lines", PARAGRAPH_SPACING, NULL);
+	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "big",
 	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "small",
 	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
-	gtk_text_buffer_create_tag (buffer, "tt",
-	                            "family", "monospace", NULL);
+	gtk_text_buffer_create_tag (buffer, "tt", "family", "monospace", NULL);
+	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
-	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
-	gtk_text_buffer_create_tag (buffer, "p", "pixels-below-lines", PARAGRAPH_SPACING,
-	                            NULL);
 	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER,
 	                            NULL);
+	// helpers
 	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow", NULL);
 }
 
-static void ygtk_richtext_destroy (GtkObject *object)
+static void ygtk_rich_text_destroy (GtkObject *object)
 {
-	// FIXME: if we have multiple richtexts, one will unref too many
-	if (ref_cursor > 0 && (--ref_cursor == 0)) {
-		gdk_cursor_unref (hand_cursor);
-		gdk_cursor_unref (regular_cursor);
-	}
+	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
 
-	YGtkRichText *rtext = YGTK_RICHTEXT (object);
+	if (rtext->prodname)
+		// destroy can be called multiple times, and we must ref only once
+		if (ref_cursor > 0 && (--ref_cursor == 0)) {
+			gdk_cursor_unref (hand_cursor);
+			gdk_cursor_unref (regular_cursor);
+		}
+
 	if (rtext->prodname)
 		g_free (rtext->prodname);
 	rtext->prodname = NULL;
 
-	GTK_OBJECT_CLASS (ygtk_richtext_parent_class)->destroy (object);
+	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
 
 // Change the cursor to the "hands" cursor typically used by web browsers,
@@ -180,8 +196,8 @@ static void set_cursor_if_appropriate (GtkTextView *text_view, gint x, gint y)
 }
 
 // Update the cursor image if the pointer moved.
-static gboolean ygtk_richtext_motion_notify_event (GtkWidget *text_view,
-                                                   GdkEventMotion *event)
+static gboolean ygtk_rich_text_motion_notify_event (GtkWidget *text_view,
+                                                    GdkEventMotion *event)
 {
 	gint x, y;
 	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
@@ -196,8 +212,8 @@ static gboolean ygtk_richtext_motion_notify_event (GtkWidget *text_view,
 
 // Also update the cursor image if the window becomes visible
 // (e.g. when a window covering it got iconified).
-static gboolean ygtk_richtext_visibility_notify_event (GtkWidget *text_view,
-                                                       GdkEventVisibility *event)
+static gboolean ygtk_rich_text_visibility_notify_event (GtkWidget *text_view,
+                                                        GdkEventVisibility *event)
 {
 	gint wx, wy, bx, by;
 
@@ -289,22 +305,37 @@ rt_start_element (GMarkupParseContext *context,
 	if (!g_ascii_strcasecmp (element_name, "pre"))
 		state->pre_mode = TRUE;
 
+	// Check if this is a block tag
+	if (isBlockTag (element_name)) {
+		// make sure this opens a new paragraph
+		if (!gtk_text_iter_starts_line (&iter))
+		{
+			gtk_text_buffer_insert (state->buffer, &iter, "\n\n", -1);
+			gtk_text_buffer_get_end_iter (state->buffer, &iter);
+		}
+	}
+
 	char *lower = g_ascii_strdown (element_name, -1);
 	tag->tag = gtk_text_tag_table_lookup (state->tags, lower);
+
 	// Special tags that must be inserted manually
 	if (!tag->tag) {
 		if (!g_ascii_strcasecmp (element_name, "font")) {
-			if (!g_ascii_strcasecmp (attribute_names[0], "color")) {
+			if (attribute_names[0] &&
+			    !g_ascii_strcasecmp (attribute_names[0], "color")) {
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
 				                                       "foreground", attribute_values[0],
 				                                       NULL);
 				state->default_color = FALSE;
 			}
+#ifdef PRINT_WARNINGS
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
+#endif
 		}
 		else if (!g_ascii_strcasecmp (element_name, "a")) {
-			if (!g_ascii_strcasecmp (attribute_names[0], "href")) {
+			if (attribute_names[0] &&
+			    !g_ascii_strcasecmp (attribute_names[0], "href")) {
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
 				                                       "underline", PANGO_UNDERLINE_SINGLE,
 				                                       NULL);
@@ -312,8 +343,10 @@ rt_start_element (GMarkupParseContext *context,
 					g_object_set (tag->tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag->tag), "link", g_strdup (attribute_values[0]));
 			}
+#ifdef PRINT_WARNINGS
 			else
-				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
+				g_warning ("Unknown a attribute: '%s'", attribute_names[0]);
+#endif
 		}
 		else if (!g_ascii_strcasecmp (element_name, "li")) {
 			HTMLList *front_list;
@@ -332,30 +365,24 @@ rt_start_element (GMarkupParseContext *context,
 		// Tags that affect the margin
 		else if (!g_ascii_strcasecmp (element_name, "ul") ||
 		         !g_ascii_strcasecmp (element_name, "ol")) {
-
 			HTMLList *list = g_malloc (sizeof (HTMLList));
 			HTMLList_init (list, !g_ascii_strcasecmp (element_name, "ol"));
 			state->html_list = g_list_append (state->html_list, list);
-			state->left_margin += LISTS_MARGIN;
-			tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-			                   "left-margin", state->left_margin, NULL);
-		}
-		else if (!g_ascii_strcasecmp (element_name, "blockquote")) {
-			state->left_margin += BLOCKQUOTE_MARGIN;
-			tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-			                   "left-margin", state->left_margin, NULL);
 		}
 
 		else if (!g_ascii_strcasecmp (element_name, "img")) {
-			if (!g_ascii_strcasecmp (attribute_names[0], "src")) {
+			if (attribute_names[0] &&
+			    !g_ascii_strcasecmp (attribute_names[0], "src")) {
 				GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (attribute_values[0], NULL);
 				if (pixbuf) {
 					gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
 					g_object_unref (G_OBJECT (pixbuf));
 				}
 			}
+#ifdef PRINT_WARNINGS
 			else
 				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
+#endif
 		}
 
 		// for tags like <br/>, GMarkup will pass them through the end
@@ -364,18 +391,20 @@ rt_start_element (GMarkupParseContext *context,
 			;
 
 		else
-			g_warning ("Unknown tag '%s'", element_name);
+		{
+#ifdef PRINT_WARNINGS
+			if (isBlockTag (element_name))
+				;
+			else
+				g_warning ("Unknown tag '%s'", element_name);
+#endif
+		}
 	}
 
-	// Check if this tag is of paragraph type
-	if (tag->tag) {
-		gint spacing;
-		g_object_get (G_OBJECT (tag->tag), "pixels-below-lines", &spacing, NULL);
-		if (spacing > 0) {  // is paragraph
-			// make sure this opens a new paragraph
-			if (!gtk_text_iter_starts_line (&iter))
-				gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
-		}
+	if (!tag->tag && isIdentTag (element_name)) {
+		state->left_margin += IDENT_MARGIN;
+		tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+		                   "left-margin", state->left_margin, NULL);
 	}
 
 	g_free (lower);
@@ -392,8 +421,6 @@ rt_end_element (GMarkupParseContext *context,
 		return;
 
 	GRTParseState *state = (GRTParseState*) user_data;
-	GtkTextIter start, end;
-	gtk_text_buffer_get_end_iter (state->buffer, &end);
 
 	if (g_list_length (state->htags) == 0) {
 		g_warning ("Urgh - empty tag queue closing '%s'", element_name);
@@ -404,42 +431,17 @@ rt_end_element (GMarkupParseContext *context,
 	GRTPTag *tag = g_list_last (state->htags)->data;
 	state->htags = g_list_remove (state->htags, tag);
 
+	GtkTextIter start, end;
 	gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag->mark);
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
 
-	gboolean appendNewline = FALSE;
+	gint appendLines = 0;
 
-	// Check if this tag is of paragraph type
-	if (tag->tag) {
-		gint spacing;
-		g_object_get (G_OBJECT (tag->tag), "pixels-below-lines", &spacing, NULL);
-		if (spacing > 0) {  // is paragraph
-			appendNewline = TRUE;
-			// if last paragraph didn't set "pixe-below-lines", set "pixels-above-lines"
-			GtkTextIter last_p = start;
-			gint offset = gtk_text_iter_get_offset (&last_p) - 1;
-			if (offset >= 0) {
-				gtk_text_buffer_get_iter_at_offset (state->buffer, &last_p, offset);
-				if (!gtk_text_iter_has_tag (&last_p,
-				         gtk_text_tag_table_lookup (state->tags, "p"))) {
-					GtkTextTag *tag;
-					tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-					          "pixels-above-lines", PARAGRAPH_SPACING, NULL);
-					gtk_text_buffer_apply_tag (state->buffer, tag, &start, &end);
-				}
-			}
-		}
-	}
+	if (isIdentTag (element_name))
+		state->left_margin -= IDENT_MARGIN;
 
-	if (!g_ascii_strcasecmp (element_name, "li"))
-		appendNewline = TRUE;
-
-	else if (!g_ascii_strcasecmp (element_name, "blockquote"))
-		state->left_margin -= BLOCKQUOTE_MARGIN;
-	else if (!g_ascii_strcasecmp (element_name, "ul") ||
-	         !g_ascii_strcasecmp (element_name, "ol")) {
-		state->left_margin -= LISTS_MARGIN;
-
+	if (!g_ascii_strcasecmp (element_name, "ul") ||
+	   !g_ascii_strcasecmp (element_name, "ol")) {
 		HTMLList *last_list = g_list_last (state->html_list)->data;
 		state->html_list = g_list_remove (state->html_list, last_list);
 		g_free (last_list);
@@ -449,18 +451,28 @@ rt_end_element (GMarkupParseContext *context,
 
 	else if (!g_ascii_strcasecmp (element_name, "pre")) {
 		state->pre_mode = FALSE;
+/*
+		// \n must be inserted as <br>
 		char *txt = gtk_text_buffer_get_text (state->buffer,
 		                                      &start, &end, TRUE);
 		char endc = txt ? txt[strlen(txt) - 1] : '\0';
-		appendNewline = endc != '\r' && endc != '\n';
-		g_free (txt);
+		appendLines = (endc != '\r' && endc != '\n') ? 1 : 0;
+		g_free (txt);*/
 	}
 
 	else if (!g_ascii_strcasecmp (element_name, "br"))
-		appendNewline = TRUE;
+		appendLines = 1;
 
-	if (appendNewline) {
-		gtk_text_buffer_insert (state->buffer, &end, "\n", -1);
+	if (isBlockTag (element_name))
+	{
+		appendLines = 2;
+		if (!g_ascii_strcasecmp (element_name, "li"))
+			appendLines = 1;
+	}
+
+	if (appendLines) {
+		gtk_text_buffer_insert (state->buffer, &end,
+		                        appendLines == 1 ? "\n" : "\n\n", -1);
 		gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag->mark);
 		gtk_text_buffer_get_end_iter (state->buffer, &end);
 	}
@@ -519,9 +531,9 @@ static GMarkupParser rt_parser = {
 	rt_error
 };
 
-GtkWidget *ygtk_richtext_new (void)
+GtkWidget *ygtk_rich_text_new (void)
 {
-	return g_object_new (YGTK_TYPE_RICHTEXT, NULL);
+	return g_object_new (YGTK_TYPE_RICH_TEXT, NULL);
 }
 
 /* String preparation methods. */
@@ -558,8 +570,8 @@ void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
 	rtext->prodname = g_strdup (prodname);
 }
 
-void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
-                             gboolean rich_text)
+void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text,
+                              gboolean rich_text)
 {
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
@@ -580,46 +592,29 @@ void ygtk_richtext_set_text (YGtkRichText* rtext, const gchar* text,
 
 	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname);
 	GError *error = NULL;
-	if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
+	if (!g_markup_parse_context_parse (ctx, xml, -1, &error)) {
+#ifdef PRINT_WARNINGS
 		g_warning ("Markup parse error '%s'", error ? error->message : "Unknown");
+#endif
+	}
 	g_free (xml);
 
 	g_markup_parse_context_free (ctx);
 	GRTParseState_free (&state);
-}
 
-void ygtk_richtext_set_background (YGtkRichText *rtext, const char *image)
-{
-	g_return_if_fail (GTK_WIDGET_REALIZED (GTK_WIDGET (rtext)));
-
-	GdkWindow *window = gtk_text_view_get_window
-		(GTK_TEXT_VIEW (rtext), GTK_TEXT_WINDOW_TEXT);
-
-	if (!image) {
-		gdk_window_clear (window);
-		return;
-	}
-
-	GError *error = 0;
-	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (image, &error);
-	if (!pixbuf) {
-		g_warning ("ygtkrichtext: could not open background image: '%s'"
-		           " - %s", image, error->message);
-		return;
-	}
-
-	GdkPixmap *pixmap;
-	gdk_pixbuf_render_pixmap_and_mask_for_colormap (pixbuf,
-		gdk_drawable_get_colormap (GDK_DRAWABLE (window)), &pixmap, NULL, 0);
-	g_object_unref (G_OBJECT (pixbuf));
-
-	gdk_window_set_back_pixmap (window, pixmap, FALSE);
+	// remove last empty line, if any
+	GtkTextIter end_it, before_end_it;
+	gtk_text_buffer_get_end_iter (buffer, &end_it);
+	before_end_it = end_it;
+	if (gtk_text_iter_backward_char (&before_end_it) &&
+	    gtk_text_iter_get_char (&before_end_it) == '\n')
+		gtk_text_buffer_delete (buffer, &before_end_it, &end_it);
 }
 
 /* gtk_text_iter_forward_search() is case-sensitive so we roll our own.
    The idea is to keep use get_text and strstr there, but to be more
    efficient we check per line. */
-static gboolean ygtk_richtext_forward_search (const GtkTextIter *begin,
+static gboolean ygtk_rich_text_forward_search (const GtkTextIter *begin,
 	const GtkTextIter *end, const gchar *_key, GtkTextIter *match_start,
 	GtkTextIter *match_end)
 {
@@ -653,7 +648,7 @@ static gboolean ygtk_richtext_forward_search (const GtkTextIter *begin,
 	return FALSE;
 }
 
-gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
+gboolean ygtk_rich_text_mark_text (YGtkRichText *rtext, const gchar *text)
 {
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 	GtkTextIter iter, end, match_start, match_end;
@@ -666,7 +661,7 @@ gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
 		return TRUE;
 
 	gboolean found = FALSE;
-	while (ygtk_richtext_forward_search (&iter, &end, text,
+	while (ygtk_rich_text_forward_search (&iter, &end, text,
 	                                     &match_start, &match_end)) {
 		found = TRUE;
 		gtk_text_buffer_apply_tag_by_name (buffer, "keyword", &match_start, &match_end);
@@ -676,7 +671,7 @@ gboolean ygtk_richtext_mark_text (YGtkRichText *rtext, const gchar *text)
 	return found;
 }
 
-gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
+gboolean ygtk_rich_text_forward_mark (YGtkRichText *rtext, const gchar *text)
 {
 	GtkTextIter start_iter, end_iter;
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
@@ -685,11 +680,11 @@ gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
 	gtk_text_buffer_get_end_iter (buffer, &end_iter);
 
 	gboolean found;
-	found = ygtk_richtext_forward_search (&start_iter, &end_iter, text,
+	found = ygtk_rich_text_forward_search (&start_iter, &end_iter, text,
 	                                      &start_iter, &end_iter);
 	if (!found) {
 		gtk_text_buffer_get_start_iter (buffer, &start_iter);
-		found = ygtk_richtext_forward_search (&start_iter, &end_iter, text,
+		found = ygtk_rich_text_forward_search (&start_iter, &end_iter, text,
 		                                      &start_iter, &end_iter);
 	}
 
@@ -702,17 +697,18 @@ gboolean ygtk_richtext_forward_mark (YGtkRichText *rtext, const gchar *text)
 	return FALSE;
 }
 
-void ygtk_richtext_class_init (YGtkRichTextClass *klass)
+void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
-	gtkwidget_class->motion_notify_event = ygtk_richtext_motion_notify_event;
-	gtkwidget_class->visibility_notify_event = ygtk_richtext_visibility_notify_event;
+	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
+	gtkwidget_class->visibility_notify_event = ygtk_rich_text_visibility_notify_event;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_richtext_destroy;
+	gtkobject_class->destroy = ygtk_rich_text_destroy;
 
-	link_pressed_signal = g_signal_new ("link-pressed",
+	link_clicked_signal = g_signal_new ("link-clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
-		G_STRUCT_OFFSET (YGtkRichTextClass, link_pressed), NULL, NULL,
+		G_STRUCT_OFFSET (YGtkRichTextClass, link_clicked), NULL, NULL,
 		g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);
 }
+

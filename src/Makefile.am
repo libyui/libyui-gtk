@@ -13,7 +13,8 @@ noinst_PROGRAMS = dummy
 plugin_LTLIBRARIES = libpy2gtk.la
 
 libpy2gtk_la_LDFLAGS = -version-info 2:0
-libpy2gtk_la_LIBADD = -L$(plugindir) $(PYUI_LIBS) -L$(libdir) -lycp -ly2 $(GTK_LIBS) $(ZYPP_LIBS)
+libpy2gtk_la_LIBADD = -L$(plugindir) $(PYUI_LIBS) -L$(libdir) -lycp -ly2 \
+                      $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS)
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
 	YGUtils.cc \
@@ -26,7 +27,6 @@ libpy2gtk_la_SOURCES = \
 	YGProgressBar.cc \
 	YGTextEntry.cc \
 	YGMultiLineEdit.cc \
-	YGRichText.cc \
 	YGIntField.cc \
 	YGRadioButton.cc \
 	YGImage.cc \
@@ -42,14 +42,16 @@ libpy2gtk_la_SOURCES = \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
-	ygtkrichtext.c \
 	ygtksteps.c \
 	ygtkfieldentry.c \
 	ygtkmenubutton.c \
 	ygtkwizard.c \
 	ygtkcellrendererarrow.c \
 	ygtkfindentry.c \
-	ygdkmngloader.c
+	ygdkmngloader.c \
+	ygtkhtmlwrap.c \
+	ygtkrichtext.c
+# should only append ygtkrichtext.c if USE_GTKHTML is set
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
@@ -62,4 +64,5 @@ test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS)
 
-EXTRA_DIST = computer.xpm
+EXTRA_DIST =
+

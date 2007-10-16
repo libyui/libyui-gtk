@@ -1,8 +1,40 @@
+2007-10-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkhtmlwrapper.h/c (added): to be used instead of YGtkRichText directly.
+	At the moment, it wraps YGtkRichText and GtkHTML, YGtkRichText being the
+	one used (for now, at least).
+
+	* src/YGUtils.cc: fixed a small memory leak when a html comment, and
+	disabled the removal of whitespaces (as needed by <pre>).
+	* src/ygtkrichtext.c: moved block and block&ident tags to common code.
+	For block tags, I am simply using two break lines, instead of spacing.
+	This could still use more polishing...
+
+	* src/YGRichText.cc: removed, moved to YGMultiLineEdit.cc, made the factory
+	constructing another object for plainText.
+
+	* configure.in.in: added GtkHtml check (uncommented as I dunno how to
+	make it optional; and either way, needs to be discussed what we want here).
+
 2007-10-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygdkmngloader.h/c / src/YGImage.cc: added support for inline MNG
 	images. Fixed ticks per second. 
 	* tests/YGImage.ycp: added a bunch of MNGs I found...
+
+	* src/ygtkhtmltext.h/c: added wrapper around our YGtkRichText and GtkHtml.
+	-> Automake stuff needs works (it will just error if GtkHtml is not found...)
+	* src/YGRichText.cc & src/YGPackageSelector.cc: bug fix #326207: use
+	ygtkhtmltext code.
+
+	Doing our own renderer was fun, but it won't ever support tables, and still
+	has some corner cases where GMarkup complains, and inline/blocks tags are
+	problematic at times. And I already saw comments of people doing tables and
+	using HTML extensively on yast (like for a startup screen).
+	With a wrapper we can easily port the code to another HTML widget out there,
+	until gtk+ adopts one into the API. GtkHTML API is a bit sucky, but its
+	used by Evolution (including on the composer), so its robust, and it seems
+	fairly slim (certainely when compared to mozdev :P).
 
 2007-10-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
