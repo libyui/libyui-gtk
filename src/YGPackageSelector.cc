@@ -1008,6 +1008,21 @@ public:
 // Package selector's widget
 class PackageSelector : public SourcesTableListener
 {
+
+enum package_columns
+{
+	COL_SELECTABLE = 0,				// selectable object (pointer)
+	COL_INSTALLED_NAME,				// installed name (string)
+	COL_AVAILABLE_NAME,				// available_name (string)
+	COL_IS_INSTALLED,				// is installed (boolean)
+	COL_IS_AVAILABLE,				// is available (boolean)
+	COL_CAN_BE_UPGRADED,			// can be upgraded (boolean)
+	COL_CAN_BE_DOWNGRADED,			// can be downgraded (boolean)
+	COL_SHOW_UPGRADABLE_CONTROL,	// show up/downgrade control (boolean)
+	COL_HAS_CHILDREN,				// has children
+	COL_FONT_STYLE					// font style; italic for modified (integer) = 10
+};
+
 friend class YGPackageSelector;
 
 	GtkWidget *m_widget;
@@ -1332,9 +1347,12 @@ public:
 
 		// use the "available" name to do the sorting
 		GtkTreeSortable *sortable = GTK_TREE_SORTABLE (model);
-		gtk_tree_sortable_set_sort_func (sortable, 2, YGUtils::sort_compare_cb,
-		                                 GINT_TO_POINTER (2), NULL);
-		gtk_tree_sortable_set_sort_column_id (sortable, 2, GTK_SORT_ASCENDING);
+		gtk_tree_sortable_set_sort_func (sortable, COL_AVAILABLE_NAME,
+										 YGUtils::sort_compare_cb,
+		                                 GINT_TO_POINTER (COL_AVAILABLE_NAME),
+		                                 NULL);
+		gtk_tree_sortable_set_sort_column_id (sortable, COL_AVAILABLE_NAME,
+											  GTK_SORT_ASCENDING);
 
 		gtk_widget_destroy (dialog);
 	}
@@ -1601,22 +1619,13 @@ public:
 		}
 
 		bool has_up = false, has_down = false;
-		if (available_obj != NULL) {
-			for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
-			     it != selectable->availableEnd(); it++) {
-#ifdef PRE_ZYPP_3
-				if (!(*it)->source().enabled())
-#else
-				if (!(*it)->repository().info().enabled())
-#endif
-					continue;
-				int res = zypp::Edition::compare ((*it)->edition(),
-				                                  available_obj->edition());
-				if (res < 0)
-					has_down = true;
-				else if (res > 0)
-					has_up = true;
-			}
+		if (available_obj != NULL && install_obj != NULL) {
+			int res = zypp::Edition::compare (install_obj->edition(),
+			                                  available_obj->edition());
+			if (res < 0)
+				has_up = true;
+			else if (res > 0)
+				has_down = true;
 		}
 
 		if (has_upgrade)
@@ -1630,7 +1639,7 @@ public:
 	                            ZyppSelectable selectable)
 	{
 		ZyppObject install_obj, available_obj;
-		bool has_upgrade, has_downgrade;
+		bool has_upgrade, has_downgrade, has_children = FALSE;
 		induceObjects (selectable, install_obj, available_obj,
 		               &has_upgrade, &has_downgrade);
 
@@ -1645,11 +1654,13 @@ public:
 			else {
 				ZyppPattern pattern = tryCastToZyppPattern (available_obj);
 				ZyppLanguage lang = tryCastToZyppLanguage (available_obj);
-				if (pattern)
+				if (pattern) {
 					availableName = "<b>" + fastGetSummary (available_obj) + "</b>";
-				else if (lang)
+					has_children = TRUE;
+				} else if (lang) {
 					availableName = "<b>" + available_obj->description() + "</b>";
-				else
+					has_children = TRUE;
+				} else
 					availableName = name + " (" + available_obj->edition().version() + ")";
 			}
 		}
@@ -1661,14 +1672,24 @@ public:
 			else {
 				ZyppPattern pattern = tryCastToZyppPattern (install_obj);
 				ZyppLanguage lang = tryCastToZyppLanguage (install_obj);
-				if (pattern)
+				if (pattern) {
 					installedName = "<b>" + fastGetSummary (install_obj) + "</b>";
-				else if (lang)
+					has_children = TRUE;
+				} else if (lang) {
 					installedName = "<b>" + install_obj->description() + "</b>";
-				else
+					has_children = TRUE;
+				} else
 					installedName = name + " (" + install_obj->edition().version() + ")";
 			}
 		}
+		
+		// Make sure that both the availableName and installedName
+		// are filled.  Occasionally, the names are empty, so the
+		// following checks make sure these variable are filled.
+		if (availableName.empty())
+			availableName = installedName;
+		else if (installedName.empty())
+			installedName = availableName;
 
 		PangoStyle style = PANGO_STYLE_NORMAL;
 		if (selectable->toModify())
@@ -1677,14 +1698,28 @@ public:
 		// oh, would be nice to have a common set for tree models...
 		if (GTK_IS_LIST_STORE (model))
 			gtk_list_store_set (GTK_LIST_STORE (model), iter,
-				0, get_pointer (selectable), 1, installedName.c_str(),
-				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, 7, detailed, 8, FALSE, 9, style, -1);
+				COL_SELECTABLE, get_pointer (selectable),
+				COL_INSTALLED_NAME, installedName.c_str(),
+				COL_AVAILABLE_NAME, availableName.c_str(),
+				COL_IS_INSTALLED, install_obj != 0,
+				COL_IS_AVAILABLE, available_obj != 0,
+				COL_CAN_BE_UPGRADED, has_upgrade,
+				COL_CAN_BE_DOWNGRADED, has_downgrade,
+				COL_SHOW_UPGRADABLE_CONTROL, detailed,
+				COL_HAS_CHILDREN, has_children,
+				COL_FONT_STYLE, style, -1);
 		else /*if (GTK_IS_TREE_STORE (model))*/
 			gtk_tree_store_set (GTK_TREE_STORE (model), iter,
-				0, get_pointer (selectable), 1, installedName.c_str(),
-				2, availableName.c_str(), 3, install_obj != 0, 4, available_obj != 0,
-				5, has_upgrade, 6, has_downgrade, 7, detailed, 8, FALSE, 9, style, -1);
+				COL_SELECTABLE, get_pointer (selectable),
+				COL_INSTALLED_NAME, installedName.c_str(),
+				COL_AVAILABLE_NAME, availableName.c_str(),
+				COL_IS_INSTALLED, install_obj != 0,
+				COL_IS_AVAILABLE, available_obj != 0,
+				COL_CAN_BE_UPGRADED, has_upgrade,
+				COL_CAN_BE_DOWNGRADED, has_downgrade,
+				COL_SHOW_UPGRADABLE_CONTROL, detailed,
+				COL_HAS_CHILDREN, has_children,
+				COL_FONT_STYLE, style, -1);
 /*		y2milestone ("set %s: %d - %d\n", selectable->name().c_str(),
 		             available_obj != 0, install_obj != 0);*/
 	}
@@ -1787,7 +1822,7 @@ public:
         
         ZyppSelectablePtr sel = NULL;
 
-		gtk_tree_model_get (model, iter, 0, &sel, -1);
+		gtk_tree_model_get (model, iter, COL_SELECTABLE, &sel, -1);
 
         if (!sel)
             return FALSE;
@@ -1886,8 +1921,9 @@ public:
 		gboolean visible, has_children;
         ZyppSelectablePtr selectable;
 
-		gtk_tree_model_get (model, iter, visible_col, &visible, 8, &has_children,
-                            0, &selectable, -1);
+		gtk_tree_model_get (model, iter, visible_col, &visible,
+							COL_HAS_CHILDREN, &has_children,
+                            COL_SELECTABLE, &selectable, -1);
 
 //        fprintf (stderr, "is visible '%s'\n", selectable ? selectable->name().c_str() : "<noname>");
 		if (has_children)
@@ -1904,7 +1940,29 @@ public:
 
 	static gboolean is_package_available (GtkTreeModel *model, GtkTreeIter *iter,
 	                                      gpointer data)
-	{ return is_package_visible (model, iter, (PackageSelector *) data, 4); }
+	{
+		gboolean is_installed, is_available, has_upgrade, has_children;
+		gboolean visible = TRUE;
+        ZyppSelectablePtr selectable;
+		PackageSelector *pThis = (PackageSelector *) data;
+        
+		// only show the packages that aren't installed
+		// unless there's an upgrade available
+		gtk_tree_model_get (model, iter, COL_SELECTABLE, &selectable,
+							COL_IS_INSTALLED, &is_installed,
+							COL_IS_AVAILABLE, &is_available,
+							COL_CAN_BE_UPGRADED, &has_upgrade,
+							COL_HAS_CHILDREN, &has_children, -1);
+		if (!has_children) {
+			if (is_available && (!is_installed || has_upgrade)) {
+				if (!pThis->m_search_queries.empty())
+					visible = pThis->does_package_match (selectable);
+			} else
+				visible = FALSE;
+		}
+		
+		return visible;
+	}
 
     bool does_package_match_one (ZyppSelectablePtr sel, string key)
     {
@@ -1974,7 +2032,7 @@ public:
 			GtkTreeModel *model = gtk_tree_view_get_model (tree_view);
 			GtkTreeIter iter;
 			gtk_tree_model_get_iter (model, &iter, path);
-			gtk_tree_model_get (model, &iter, 0, package_sel, -1);
+			gtk_tree_model_get (model, &iter, COL_SELECTABLE, package_sel, -1);
 			if (_path)
 				*_path = gtk_tree_model_filter_convert_path_to_child_path
 				             (GTK_TREE_MODEL_FILTER (model), path);
@@ -2180,7 +2238,7 @@ public:
 		for (i = 0; i < selected_len; i++) {
 			GtkTreeIter *iter = &iters[i];
 			ZyppSelectablePtr sel = 0;
-			gtk_tree_model_get (model, iter, 0, &sel, -1);
+			gtk_tree_model_get (model, iter, COL_SELECTABLE, &sel, -1);
 			if (sel && mark_selectable (sel, installed) /* install/remove */) {
 				loadPackageRow (model, iter, sel);  // update model
 
@@ -2188,7 +2246,7 @@ public:
 				GtkTreeIter child;
 				if (gtk_tree_model_iter_children (model, &child, iter)) {
 					do {
-						gtk_tree_model_get (model, &child, 0, &sel, -1);
+						gtk_tree_model_get (model, &child, COL_SELECTABLE, &sel, -1);
 						if (sel && mark_selectable (sel, installed))
 							loadPackageRow (model, &child, sel);
 					} while (gtk_tree_model_iter_next (model, &child));
@@ -2235,7 +2293,7 @@ public:
 		model = pThis->m_packages_model;
 
 		ZyppSelectablePtr selectable;
-		gtk_tree_model_get (model, &iter, 0, &selectable, -1);
+		gtk_tree_model_get (model, &iter, COL_SELECTABLE, &selectable, -1);
 
 		ZyppObject candidate = selectable->candidateObj();
 		for (zypp::ui::Selectable::available_iterator it = selectable->availableBegin();
@@ -2261,7 +2319,7 @@ public:
 		GtkTreeIter iter;
 		if (gtk_tree_model_get_iter (model, &iter, path)) {
 			ZyppSelectablePtr selectable;
-			gtk_tree_model_get (model, &iter, 0, &selectable, -1);
+			gtk_tree_model_get (model, &iter, COL_SELECTABLE, &selectable, -1);
 			return selectable != NULL;
 		}
 		return FALSE;

@@ -1,3 +1,10 @@
+2007-10-17  Boyd Timothy  <btimothy@novell.com>
+
+	* src/YGPackageSelector.cc: Fixed the code so it only shows
+	packages that are not installed or have an update.  Fixes
+	bug #300737.  Also added an enum for the GtkTreeStore
+	columns so the code is easier to read.
+
 2007-10-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkhtmlwrapper.h/c (added): to be used instead of YGtkRichText directly.
