@@ -1,3 +1,9 @@
+2007-10-22  Boyd Timothy  <btimothy@novell.com>
+
+	* src/YGPackageSelector.cc: Removed the space before the question mark
+	in the "Abandon all changes?" dialog.  Also changed from Ok/Cancel to
+	Yes/No buttons to follow HIG more closely.
+
 2007-10-17  Boyd Timothy  <btimothy@novell.com>
 
 	* src/YGPackageSelector.cc: Fixed the code so it only shows

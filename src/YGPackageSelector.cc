@@ -2353,12 +2353,12 @@ class YGPackageSelector : public YPackageSelector, public YGWidget
 		dialog = gtk_message_dialog_new_with_markup
             (YGUI::ui()->currentWindow(),
 			 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-             GTK_BUTTONS_OK_CANCEL,
-             _("<b>Abandon all changes ?</b>"));
+             GTK_BUTTONS_YES_NO,
+             _("<b>Abandon all changes?</b>"));
         gtk_dialog_set_default_response (GTK_DIALOG (dialog),
-                                         GTK_RESPONSE_CANCEL);
+                                         GTK_RESPONSE_NO);
         bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) ==
-                                   GTK_RESPONSE_OK;
+                                   GTK_RESPONSE_YES;
 		gtk_widget_destroy (dialog);
         return ok;
     }
