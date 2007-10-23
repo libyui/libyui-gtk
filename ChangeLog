@@ -1,3 +1,9 @@
+2007-10-23  JP Rosevear  <jpr@novell.com>
+
+	* src/YGPackageSelector.cc (class YGPatchSelector): Use the more
+	sophisticated logic taken from YQPkgPatchList::fillList to
+	determine what patches are available (#336124)
+
 2007-10-22  Boyd Timothy  <btimothy@novell.com>
 
 	* src/YGPackageSelector.cc: Removed the space before the question mark

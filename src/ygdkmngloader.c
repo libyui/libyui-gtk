@@ -308,7 +308,8 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long 
 
 static gboolean ygdk_mng_pixbuf_is_static_image (GdkPixbufAnimation *anim)
 {
-	return FALSE;
+	YGdkMngPixbuf *mng_anim = YGDK_MNG_PIXBUF (anim);
+	return g_list_length (mng_anim->frames) == 1;
 }
 
 static GdkPixbuf *ygdk_mng_pixbuf_get_static_image (GdkPixbufAnimation *anim)

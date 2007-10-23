@@ -492,23 +492,26 @@ public:
 					/* authors() should be the proper way to get authors, but it seems to
 					   be rarely used, instead packagers list them on the description. */
 					string description (object->description());
+std::cerr << "description: " << description << std::endl;
 					string::size_type pos = description.find ("Authors:");
 					if (pos != string::npos) {
 						pos = description.find_first_not_of (
 							'-', pos + sizeof ("Authors:") + 1);
+std::cerr << "copy string from " << pos << std::endl;
 						authors = string (description, pos, string::npos);
 						authors = YGUtils::escape_markup (authors, true);
+std::cerr << "authors: " << authors << std::endl;
 					}
 				}
 
 				string text;
 				if (!packager.empty())
-					text = _("Packaged by:") + ("<br><blockquote>" + packager) +
+					text = _("Packaged by:") + ("<blockquote>" + packager) +
 					       "</blockquote>";
 				if (!authors.empty()) {
 					if (!packager.empty())
 						text += "<br><br>";
-					text += _("Developed by:") + ("<br><blockquote>" + authors) +
+					text += _("Developed by:") + ("<blockquote>" + authors) +
 					        "</blockquote>";
 				}
 				set_text (m_authors_text, text);
@@ -904,9 +907,59 @@ public:
 		     it != zyppPool().byKindEnd <zypp::Patch>(); it++) {
 			ZyppSelectable selectable = *it;
 			ZyppPatch patch = tryCastToZyppPatch (selectable->theObj());
+			if (!patch)
+				continue;
+			bool displayPatch = false;
 
-			if (patch && !selectable->hasInstalledObj() &&
-			    selectable->hasCandidateObj() /*don't show installed ones*/) {
+			// These rules are taken from YQPkgPatchList::fillList() in the RelevantPatches case
+			if (selectable->hasInstalledObj()) { // installed?
+				if (selectable->installedPoolItem().status().isIncomplete()) { // patch broken?
+					// The patch is broken: It had been installed, but the user somehow
+					// downgraded individual packages belonging to the patch to older versions.
+					displayPatch = true;
+
+					y2warning( "Installed patch is broken: %s - %s",
+						   patch->name().c_str(),
+						   patch->summary().c_str() );
+				}
+			} else { // not installed
+				if (selectable->hasCandidateObj() && selectable->candidatePoolItem().status().isSatisfied()) {
+					// This is a pretty exotic case, but still it might happen:
+					//
+					// The patch itelf is not installed, but it is satisfied because the
+					// user updated all the packages belonging to the patch to the versions
+					// the patch requires. All that is missing now is to get the patch meta
+					// data onto the system. So let's display the patch to give the user
+					// a chance to install it (if he so chooses).
+
+					displayPatch = true;
+					
+					y2milestone( "Patch satisfied, but not installed yet: %s - %s",
+						     patch->name().c_str(),
+						     patch->summary().c_str() );
+				}
+			}
+
+			if (selectable->hasCandidateObj()) {	// candidate available?
+				// The most common case: There is a candidate patch, i.e. one that could be
+				// installed, but either no version of that patch is installed or there is a
+				// newer one to which the patch could be updated.
+				
+				if (selectable->candidatePoolItem().status().isNeeded()) { // patch really needed?
+					// Patches are needed if any of the packages that belong to the patch
+					// are installed on the system.
+					
+					displayPatch = true;
+				} else {
+					// None of the packages that belong to the patch is installed on the system.
+					
+					y2debug( "Patch not needed: %s - %s",
+						 patch->name().c_str(),
+						 patch->summary().c_str() );
+				}
+			}
+
+			if (displayPatch) {
 				// select them all
 				selectable->set_status (zypp::ui::S_Install);
 
