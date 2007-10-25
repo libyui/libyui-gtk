@@ -28,7 +28,7 @@ public:
 	void show();
 
 	// containers should use this call rather than getWidget()
-	GtkWidget *getLayout() { return m_min_size; }
+	GtkWidget *getLayout() { return m_adj_size; }
 
 	// Get the YGWidget associated with a YWidget
 	static YGWidget *get (YWidget *y_widget);
@@ -41,7 +41,7 @@ public:
 	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
 	               bool if_not_pending = false, bool immediate = true);
 
-	// Aesthicts
+	// Aesthetics
 	void setBorder (unsigned int border);  // in pixels
 	void setMinSize (unsigned int min_width, unsigned int min_height);
 	void setMinSizeInChars (unsigned int min_width, unsigned int min_height);
@@ -57,14 +57,11 @@ public:
 protected:
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
 	YWidget *m_y_widget;  // associated YWidget
-	GtkWidget *m_min_size;  // installed on m_widget, allows setting a min size
+	GtkWidget *m_adj_size;  // installed on m_widget, allows better size constrains
 
 	void construct (YWidget *y_widget, YGWidget *parent,
 	                bool show, GType type,
 	                const char *property_name, va_list args);
-
-	// parameters to set the layout prettier
-	int m_min_width, m_min_height;
 };
 
 /*

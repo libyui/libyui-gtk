@@ -1,3 +1,12 @@
+2007-10-25  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkratiobox.h/c, YGProgressBar.cc, YGWidget.cc: bug
+	fix 309049. A ratio box can request for a very big size when using weights
+	so that its	children are all visible. Added a max_width/height property
+	to YGtkMinSize and renamed it to YGtkAdjSize. Set it for MultiProgressMeter.
+
+	* tests/MultiProgressMeterHuge.ycp: test case.
+
 2007-10-23  JP Rosevear  <jpr@novell.com>
 
 	* src/YGPackageSelector.cc (class YGPatchSelector): Use the more

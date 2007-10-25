@@ -433,17 +433,17 @@ static void ygtk_ratio_vbox_class_init (YGtkRatioVBoxClass *klass)
 	widget_class->size_allocate = ygtk_ratio_vbox_size_allocate;
 }
 
-//** YGtkMinSize
+//** YGtkAdjSize
 
-G_DEFINE_TYPE (YGtkMinSize, ygtk_min_size, GTK_TYPE_BIN)
+G_DEFINE_TYPE (YGtkAdjSize, ygtk_adj_size, GTK_TYPE_BIN)
 
-static void ygtk_min_size_init (YGtkMinSize *min_size)
+static void ygtk_adj_size_init (YGtkAdjSize *adj_size)
 {
-	GTK_WIDGET_SET_FLAGS (min_size, GTK_NO_WINDOW);
-	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (min_size), FALSE);
+	GTK_WIDGET_SET_FLAGS (adj_size, GTK_NO_WINDOW);
+	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (adj_size), FALSE);
 }
 
-static void ygtk_min_size_size_request (GtkWidget *widget,
+static void ygtk_adj_size_size_request (GtkWidget *widget,
                                         GtkRequisition *requisition)
 {
 	GtkWidget *child = GTK_BIN (widget)->child;
@@ -454,18 +454,23 @@ static void ygtk_min_size_size_request (GtkWidget *widget,
 		requisition->width += border * 2;
 		requisition->height += border * 2;
 
-		YGtkMinSize *min_size = YGTK_MIN_SIZE (widget);
-		requisition->width = MAX (requisition->width, min_size->min_width);
-		requisition->height = MAX (requisition->height, min_size->min_height);
+		YGtkAdjSize *adj_size = YGTK_ADJ_SIZE (widget);
+		requisition->width = MAX (requisition->width, adj_size->min_width);
+		requisition->height = MAX (requisition->height, adj_size->min_height);
 
-		if (min_size->only_expand) {
-			min_size->min_width = requisition->width;
-			min_size->min_height = requisition->height;
+		if (adj_size->max_width)
+			requisition->width = MIN (requisition->width, adj_size->max_width);
+		if (adj_size->max_height)
+			requisition->height = MIN (requisition->height, adj_size->max_height);
+
+		if (adj_size->only_expand) {
+			adj_size->min_width = requisition->width;
+			adj_size->min_height = requisition->height;
 		}
 	}
 }
 
-static void ygtk_min_size_size_allocate (GtkWidget *widget,
+static void ygtk_adj_size_size_allocate (GtkWidget *widget,
                                          GtkAllocation *allocation)
 {
 	GtkWidget *child = GTK_BIN (widget)->child;
@@ -478,39 +483,38 @@ static void ygtk_min_size_size_allocate (GtkWidget *widget,
 		child_alloc.height -= border * 2;
 		gtk_widget_size_allocate (child, &child_alloc);
 	}
-	GTK_WIDGET_CLASS (ygtk_min_size_parent_class)->size_allocate (widget, allocation);
+	GTK_WIDGET_CLASS (ygtk_adj_size_parent_class)->size_allocate (widget, allocation);
 }
 
-GtkWidget* ygtk_min_size_new(guint min_width, guint min_height)
+GtkWidget* ygtk_adj_size_new (void)
 {
-	YGtkMinSize *min_size = g_object_new (YGTK_TYPE_MIN_SIZE, NULL);
-	ygtk_min_size_set_width (min_size, min_width);
-	ygtk_min_size_set_height (min_size, min_height);
-	return GTK_WIDGET (min_size);
+	return GTK_WIDGET (g_object_new (YGTK_TYPE_ADJ_SIZE, NULL));
 }
 
-void ygtk_min_size_set_width (YGtkMinSize *min_size, guint min_width)
+void ygtk_adj_size_set_min (YGtkAdjSize *adj_size, guint min_width, guint min_height)
 {
-	min_size->min_width = min_width;
+	adj_size->min_width = min_width;
+	adj_size->min_height = min_height;
 }
 
-void ygtk_min_size_set_height (YGtkMinSize *min_size, guint min_height)
+void ygtk_adj_size_set_max (YGtkAdjSize *adj_size, guint max_width, guint max_height)
 {
-	min_size->min_height = min_height;
+	adj_size->max_width = max_width;
+	adj_size->max_height = max_height;
 }
 
-void ygtk_min_size_set_only_expand (YGtkMinSize *min_size, gboolean only_expand)
+void ygtk_adj_size_set_only_expand (YGtkAdjSize *adj_size, gboolean only_expand)
 {
-	min_size->only_expand = only_expand;
+	adj_size->only_expand = only_expand;
 }
 
-static void ygtk_min_size_class_init (YGtkMinSizeClass *klass)
+static void ygtk_adj_size_class_init (YGtkAdjSizeClass *klass)
 {
-	ygtk_min_size_parent_class = g_type_class_peek_parent (klass);
+	ygtk_adj_size_parent_class = g_type_class_peek_parent (klass);
 
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->size_request  = ygtk_min_size_size_request;
-	widget_class->size_allocate  = ygtk_min_size_size_allocate;
+	widget_class->size_request  = ygtk_adj_size_size_request;
+	widget_class->size_allocate  = ygtk_adj_size_size_allocate;
 }
 
 //** YGtkScrolledWindow

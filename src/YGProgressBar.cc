@@ -137,6 +137,8 @@ public:
 			                     maxValue (i), TRUE, TRUE, 0);
 		}
 
+		ygtk_adj_size_set_max (YGTK_ADJ_SIZE (m_adj_size), horizontal ? 200 : 0,
+		                                                   horizontal ? 0 : 200);
 		gtk_widget_show_all (getWidget());
 	}
 

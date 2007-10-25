@@ -30,12 +30,12 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 
 	if (type == GTK_TYPE_WINDOW)
-		m_min_size = m_widget;
+		m_adj_size = m_widget;
 	else {
-		m_min_size = ygtk_min_size_new (0, 0);
-		g_object_ref_sink (G_OBJECT (m_min_size));
-		gtk_widget_show (m_min_size);
-		gtk_container_add (GTK_CONTAINER (m_min_size), m_widget);
+		m_adj_size = ygtk_adj_size_new();
+		g_object_ref_sink (G_OBJECT (m_adj_size));
+		gtk_widget_show (m_adj_size);
+		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
 	}
 
 	y_widget->setWidgetRep ((void *) this);
@@ -56,8 +56,8 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 YGWidget::~YGWidget()
 {
 	IMPL
-	gtk_widget_destroy (m_min_size);
-	g_object_unref (G_OBJECT (m_min_size));
+	gtk_widget_destroy (m_adj_size);
+	g_object_unref (G_OBJECT (m_adj_size));
 }
 
 void YGWidget::show()
@@ -121,16 +121,13 @@ void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
 void YGWidget::setBorder (unsigned int border)
 {
 	IMPL
-	gtk_container_set_border_width (GTK_CONTAINER (m_min_size), border);
+	gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border);
 }
 
 void YGWidget::setMinSize (unsigned int width, unsigned int height)
 {
 	IMPL
-	if (width)
-		ygtk_min_size_set_width (YGTK_MIN_SIZE (m_min_size), width);
-	if (height)
-		ygtk_min_size_set_height (YGTK_MIN_SIZE (m_min_size), height);
+	ygtk_adj_size_set_min (YGTK_ADJ_SIZE (m_adj_size), width, height);
 }
 
 void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)

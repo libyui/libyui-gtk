@@ -32,7 +32,7 @@ public:
 		// GTK+ keeps the notebook size set to the biggset page. We can't
 		// do this since this is dynamic, but at least don't let the notebook
 		// reduce its size.
-		ygtk_min_size_set_only_expand (YGTK_MIN_SIZE (m_min_size), TRUE);
+		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
 		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
 		                  G_CALLBACK (changed_tab_cb), this);

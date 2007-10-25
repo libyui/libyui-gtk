@@ -1144,9 +1144,9 @@ public:
 		          *remove_button;
 		selection_buttons_vbox = gtk_vbox_new (TRUE, 80);
 		// to avoid re-labeling glitches, let it only grow
-		buttons_minsize = ygtk_min_size_new (0, 0);
+		buttons_minsize = ygtk_adj_size_new();
 		gtk_container_add (GTK_CONTAINER (buttons_minsize), selection_buttons_vbox);
-		ygtk_min_size_set_only_expand (YGTK_MIN_SIZE (buttons_minsize), TRUE);
+		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (buttons_minsize), TRUE);
 
 		install_button = createArrowButton (_("_install"), GTK_ARROW_RIGHT, &m_install_label);
 		remove_button = createArrowButton (_("_remove"), GTK_ARROW_LEFT, &m_remove_label);

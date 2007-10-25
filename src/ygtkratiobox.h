@@ -153,50 +153,49 @@ GType ygtk_ratio_vbox_get_type (void) G_GNUC_CONST;
 G_END_DECLS
 #endif /* YGTK_RATIO_BOX_H */
 
-/* YGtkMinSize is container where a widget may be installed so that one can
-   set a minimum size to it. */
-#ifndef YGTK_MIN_SIZE_H
-#define YGTK_MIN_SIZE_H
+/* YGtkAdjSize container allows for better fine grained size constrains. */
+#ifndef YGTK_ADJ_SIZE_H
+#define YGTK_ADJ_SIZE_H
 
 #include <gtk/gtkbin.h>
 G_BEGIN_DECLS
 
-#define YGTK_TYPE_MIN_SIZE            (ygtk_min_size_get_type ())
-#define YGTK_MIN_SIZE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-                                       YGTK_TYPE_MIN_SIZE, YGtkMinSize))
-#define YGTK_MIN_SIZE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
-                                       YGTK_TYPE_MIN_SIZE, YGtkMinSizeClass))
-#define YGTK_IS_MIN_SIZE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-                                       YGTK_TYPE_MIN_SIZE))
-#define YGTK_IS_MIN_SIZE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
-                                       YGTK_TYPE_MIN_SIZE))
-#define YGTK_MIN_SIZE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-                                       YGTK_TYPE_MIN_SIZE, YGtkMinSizeClass))
+#define YGTK_TYPE_ADJ_SIZE            (ygtk_adj_size_get_type ())
+#define YGTK_ADJ_SIZE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                       YGTK_TYPE_ADJ_SIZE, YGtkAdjSize))
+#define YGTK_ADJ_SIZE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                       YGTK_TYPE_ADJ_SIZE, YGtkAdjSizeClass))
+#define YGTK_IS_ADJ_SIZE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                       YGTK_TYPE_ADJ_SIZE))
+#define YGTK_IS_ADJ_SIZE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                       YGTK_TYPE_ADJ_SIZE))
+#define YGTK_ADJ_SIZE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                       YGTK_TYPE_ADJ_SIZE, YGtkAdjSizeClass))
 
-typedef struct _YGtkMinSize
+typedef struct _YGtkAdjSize
 {
 	GtkBin parent;
 	// members
-	guint min_width, min_height;
+	guint min_width, min_height, max_width, max_height;
 	gboolean only_expand;
-} YGtkMinSize;
+} YGtkAdjSize;
 
-typedef struct _YGtkMinSizeClass
+typedef struct _YGtkAdjSizeClass
 {
 	GtkBinClass parent_class;
-} YGtkMinSizeClass;
+} YGtkAdjSizeClass;
 
-GType ygtk_min_size_get_type (void) G_GNUC_CONST;
-GtkWidget* ygtk_min_size_new (guint min_width, guint min_height);
+GType ygtk_adj_size_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_adj_size_new (void);
 
-void ygtk_min_size_set_width (YGtkMinSize *min_size, guint min_width);
-void ygtk_min_size_set_height (YGtkMinSize *min_size, guint min_height);
+void ygtk_adj_size_set_min (YGtkAdjSize *adj_size, guint min_width, guint min_height);
+void ygtk_adj_size_set_max (YGtkAdjSize *adj_size, guint max_width, guint max_height);
 
 /* Only allow the child to grow (ie. to ask for bigger sizes). */
-void ygtk_min_size_set_only_expand (YGtkMinSize *min_size, gboolean only_expand);
+void ygtk_adj_size_set_only_expand (YGtkAdjSize *adj_size, gboolean only_expand);
 
 G_END_DECLS
-#endif /*YGTK_MIN_SIZE_H*/
+#endif /*YGTK_ADJ_SIZE_H*/
 
 /* YGtkScrolledWindow gives some a more fine-grained automatic scroll policy.
    It allows the user to specify from which size scrolling should be applied. */
