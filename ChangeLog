@@ -1,3 +1,10 @@
+2007-10-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGProgressBar.cc: improved look of the multi-progress-bar. Made
+	it growing completely from bottom to top.
+
+	* tests/MultiProgressMeterVer.ycp: test case.
+
 2007-10-25  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkratiobox.h/c, YGProgressBar.cc, YGWidget.cc: bug

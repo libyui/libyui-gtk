@@ -121,10 +121,10 @@ public:
 //		ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (getWidget()), TRUE);
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 
-		for (int i = 0; i < segments(); i++) {
+		for (int i = segments()-1; i >= 0; i--) {
 			GtkWidget* bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
-				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP );
+				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
 
 			// Progress bars just ask for too much size -- let's cut it
 			const int min_size = 5;
@@ -145,11 +145,12 @@ public:
 	virtual void doUpdate()
 	{
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
-		for (int i = 0; i < segments() && i < (signed)g_list_length (children); i++) {
-			GtkProgressBar *bar = GTK_PROGRESS_BAR (g_list_nth_data (children, i));
+		int n = segments()-1;
+		for (GList *i = children; i && n >= 0; i = i->next, n--) {
+			GtkProgressBar *bar = GTK_PROGRESS_BAR (i->data);
 			gfloat fraction = 0;
-			if (currentValue (i) != -1)
-				fraction = 1.0 - ((gfloat) currentValue(i) / maxValue(i));
+			if (currentValue (n) != -1)
+				fraction = 1.0 - ((gfloat) currentValue(n) / maxValue(n));
 			gtk_progress_bar_set_fraction (bar, fraction);
 		}
 		g_list_free (children);
