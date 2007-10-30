@@ -191,11 +191,11 @@ YGWindow::YGWindow (bool main_window)
 
         if (parent) {
             // if there is a parent, this would be a dialog
-            gtk_window_set_transient_for (window, parent);
             gtk_window_set_title (window, "");
-
             gtk_window_set_modal (window, TRUE);
+            gtk_window_set_transient_for (window, parent);
             gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
+            //gtk_window_set_focus_on_map (window, FALSE);
         }
         else {
             gtk_window_set_title (window, "YaST");

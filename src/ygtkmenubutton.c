@@ -141,46 +141,11 @@ static void ygtk_menu_button_finalize (GObject *object)
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
                                            gboolean *push_in, gpointer pointer)
 {
-	// Based on code from GtkComboBox
 	GtkWidget *widget = (GtkWidget*) pointer;
-	gint sx, sy;
-	GtkRequisition req;
-
-	gdk_window_get_origin (widget->window, &sx, &sy);
-
-	if (GTK_WIDGET_NO_WINDOW (widget)) {
-		sx += widget->allocation.x;
-		sy += widget->allocation.y;
-	}
-
-	gtk_widget_size_request (GTK_WIDGET (menu), &req);
-
-	if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR)
-		*x = sx;
-	else
-		*x = sx + widget->allocation.width - req.width;
-	*y = sy;
-
-	GdkRectangle monitor;
-	GdkScreen *screen = gtk_widget_get_screen (widget);
-	int monitor_num = gdk_screen_get_monitor_at_window (screen, widget->window);
-	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
-
-	if (*x < monitor.x)
-		*x = monitor.x;
-	else if (*x + req.width > monitor.x + monitor.width)
-		*x = monitor.x + monitor.width - req.width;
-
-	if (monitor.y + monitor.height - *y - widget->allocation.height >= req.height)
-		*y += widget->allocation.height;
-	else if (*y - monitor.y >= req.height)
-		*y -= req.height;
-	else if (monitor.y + monitor.height - *y - widget->allocation.height > *y - monitor.y)
-		*y += widget->allocation.height;
-	else
-		*y -= req.height;
-
-	*push_in = FALSE;
+	gdk_window_get_origin (widget->window, x, y);
+	*x += widget->allocation.x;
+	*y += widget->allocation.y + widget->allocation.height;
+	*push_in = TRUE;
 }
 
 static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
