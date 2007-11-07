@@ -1,3 +1,14 @@
+2007-11-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkratiobox.c: bug fix, dialog on disk.ycp tool was gutted.
+	Unsigned types involved on arithmetic operation resulting in some overflows. 
+	As an extra issue size_request is not returning the exact size needed
+	(maybe a round problem?)
+
+	You should sent this upstream ASAP since it renders the disk tool useless 
+	(in case you have sent a package upstream after Oct 11, which I guess was
+	when the bug was introduced: r41393.)
+
 2007-10-31  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkmenubutton.c: simplified menu pos code.

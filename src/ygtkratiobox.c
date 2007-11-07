@@ -175,7 +175,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 	// a first loop to get some data for expansibles (ie. childs with weight)
 	gfloat ratios_sum = 0;
-	guint expand_num = 0, max_ratio = 0;
+	gint expand_num = 0, max_ratio = 0;
 	gint expansable_length;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
 		expansable_length = allocation->width - border*2;
@@ -208,7 +208,6 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		expansable_length -= box->spacing - box_child->padding;
 	}
 	expansable_length -= box->weight_length;
-
 
 	gint child_pos = 0;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
@@ -245,7 +244,9 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			length = (box_child->ratio * available_length) / ratios_sum;
 		}
 		else if (box_child->expand && (ratios_sum == 0 || box_child->must_expand))
+		{
 			length += expansable_length / expand_num;
+		}
 
 		if (orientation == GTK_ORIENTATION_HORIZONTAL) {
 			child_alloc.x = child_pos;

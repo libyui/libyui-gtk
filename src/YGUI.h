@@ -305,6 +305,7 @@ public:
 };
 
 // debug helpers.
-void dumpYastTree (YWidget *widget, GtkWindow *parent_window = 0);
+void dumpYastTree (YWidget *widget);
 
 #endif // YGUI_H
+

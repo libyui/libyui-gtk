@@ -217,17 +217,15 @@ static void dumpYastTree (YWidget *widget, GtkTreeStore *store,
 static void destroy_dialog (GtkDialog *dialog, gint arg)
 { IMPL; gtk_widget_destroy (GTK_WIDGET (dialog)); }
 
-void dumpYastTree (YWidget *widget, GtkWindow *parent_window)
+void dumpYastTree (YWidget *widget)
 {
 	IMPL
 	GtkTreeStore *store = gtk_tree_store_new (4, G_TYPE_STRING, G_TYPE_STRING,
 	                                          G_TYPE_STRING, G_TYPE_STRING);
 	dumpYastTree (widget, store, NULL);
 
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets Tree",
-		parent_window,
-		GtkDialogFlags (GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_NO_SEPARATOR),
-		GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets Tree", NULL,
+		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 400);
 
 	GtkWidget *view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));

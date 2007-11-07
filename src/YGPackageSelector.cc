@@ -2677,3 +2677,4 @@ YGUI::createPkgSpecial (YWidget *parent, YWidgetOpt &opt,
 	y2error ("The GTK+ UI does not support PkgSpecial subwidgets!");
 	return 0;
 }
+

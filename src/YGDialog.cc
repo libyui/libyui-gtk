@@ -154,7 +154,7 @@ static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
             system ("/usr/bin/xterm &");
             return TRUE;
         case GDK_T:
-            dumpYastTree (pThis->getChild(), GTK_WINDOW (pThis->getWidget()));
+            dumpYastTree (pThis->getChild());
             return TRUE;
         case GDK_E:  // easter egg
             static guint explode_timeout = 0;
