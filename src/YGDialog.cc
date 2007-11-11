@@ -215,7 +215,7 @@ YGWindow::YGWindow (bool main_window)
                               G_CALLBACK (draw_border_cb), this);
     }
 
-    g_signal_connect (G_OBJECT (m_widget), "delete_event",
+    g_signal_connect (G_OBJECT (m_widget), "delete-event",
                       G_CALLBACK (close_window_cb), this);
     g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
                             G_CALLBACK (key_pressed_cb), this);

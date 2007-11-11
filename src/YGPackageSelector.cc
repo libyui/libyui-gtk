@@ -489,18 +489,19 @@ public:
 						authors += *it;
 				}
 				else {
+// TODO: stuff changed on YGUtils, descript. and this needs to be reviewd
 					/* authors() should be the proper way to get authors, but it seems to
 					   be rarely used, instead packagers list them on the description. */
 					string description (object->description());
-std::cerr << "description: " << description << std::endl;
+//std::cerr << "description: " << description << std::endl;
 					string::size_type pos = description.find ("Authors:");
 					if (pos != string::npos) {
 						pos = description.find_first_not_of (
 							'-', pos + sizeof ("Authors:") + 1);
-std::cerr << "copy string from " << pos << std::endl;
+//std::cerr << "copy string from " << pos << std::endl;
 						authors = string (description, pos, string::npos);
 						authors = YGUtils::escape_markup (authors, true);
-std::cerr << "authors: " << authors << std::endl;
+//std::cerr << "authors: " << authors << std::endl;
 					}
 				}
 
