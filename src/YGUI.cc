@@ -114,8 +114,8 @@ void YGUI::checkInit()
 {
 	if (!m_done_init) {
 		gtk_init (&m_argc, &m_argv);
+		m_done_init = TRUE;
 	}
-	m_done_init = TRUE;
 }
 
 void
@@ -128,7 +128,6 @@ YGUI::idleLoop (int fd_ycp)
 	checkInit();
 
 	GIOChannel *wakeup;
-
 	wakeup = g_io_channel_unix_new (fd_ycp);
 	g_io_channel_set_encoding (wakeup, NULL, NULL);
 	g_io_channel_set_buffered (wakeup, FALSE);
@@ -143,8 +142,7 @@ YGUI::idleLoop (int fd_ycp)
 	g_io_channel_unref (wakeup);
 }
 
-static gboolean
-set_timeout (YGUI *pThis)
+static gboolean user_input_timeout_cb (YGUI *pThis)
 {
 	IMPL;
 	if (!pThis->pendingEvent())
@@ -159,32 +157,54 @@ YGUI::sendEvent (YEvent *event)
 	g_main_context_wakeup (NULL);
 }
 
+// utility that implements both userInput() and pollInput()
 YEvent *
-YGUI::userInput( unsigned long timeout_millisec )
+YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-	normalCursor();  // waiting for input, so no more busy
+	if (block)
+		normalCursor();  // waiting for input, so no more busy
+	else
+		busyCursor();
 
 	guint timeout = 0;
 	YEvent *event = NULL;
 
-	if (timeout_millisec > 0)
-		timeout = g_timeout_add (timeout_millisec,
-		                         (GSourceFunc) set_timeout, this);
+	if (timeout_ms > 0)
+		timeout = g_timeout_add (timeout_ms,
+			(GSourceFunc) user_input_timeout_cb, this);
 
 	// FIXME: do it only if currentDialog (?) ...
-	while (!pendingEvent())
-		g_main_iteration (TRUE);
+	if (block)
+	{
+		while (!pendingEvent())
+			g_main_context_iteration (NULL, TRUE);
+	}
+	else
+		g_main_context_iteration (NULL, FALSE);
 
-	event = m_event_handler.consumePendingEvent();
+	if (pendingEvent())
+		event = m_event_handler.consumePendingEvent();
 
 	if (timeout)
 		g_source_remove (timeout);
 
 	// if YCP keeps working for more than X time, set busy cursor
-	busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
+	if (block)
+		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
 	return event;
+}
+
+YEvent *
+YGUI::userInput (unsigned long timeout_ms)
+{
+	return waitInput (timeout_ms, true);
+}
+
+YEvent *YGUI::pollInput()
+{
+	return waitInput (0, false);
 }
 
 // dialog bits
@@ -678,3 +698,4 @@ void YGUI::askPlayMacro()
 		sendEvent (new YEvent());  // flush
 	}
 }
+

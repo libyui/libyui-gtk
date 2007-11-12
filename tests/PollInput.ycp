@@ -1,0 +1,22 @@
+// Event pooling -- test bug that causes package manager post-script
+// `cancel events to be ignored.
+{
+	UI::OpenDialog (
+		`Label ("Blocked - UserInput()"),
+		`PushButton (`id (`button), "Ok")
+	);
+	UI::UserInput();
+	UI::CloseDialog();
+
+	UI::OpenDialog (
+		`Label ("Un-blocked - PollInput()"),
+		`PushButton (`id (`button), "Ok")
+	);
+	any event = nil;
+	repeat {
+		sleep (1000);
+		event = UI::PollInput();
+	} until (event != nil);
+	UI::CloseDialog();
+}
+

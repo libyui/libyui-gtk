@@ -26,6 +26,7 @@ public:
 	static void ref (YGWindow *window);
 	static void unref (YGWindow *window);
     void setCloseCallback (YGWindowCloseFn canClose, void *canCloseData);
+    void unsetCloseCallback();
     void closeWindow();
 
 	// Y(G)Widget-like methods
@@ -49,6 +50,8 @@ public:
 
     void setCloseCallback (YGWindowCloseFn closeCallback, void *closeData)
         { m_window->setCloseCallback (closeCallback, closeData); }
+    void unsetCloseCallback()
+        { m_window->unsetCloseCallback(); }
 
 	YGWIDGET_IMPL_COMMON
 

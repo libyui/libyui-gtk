@@ -55,8 +55,9 @@ public:
     virtual bool eventsBlocked() const IMPL_RET (false)
     virtual void internalError (const char *msg);
     virtual void idleLoop (int fd_ycp);
+    virtual YEvent * waitInput (unsigned long timeout_ms, bool block);
     virtual YEvent * userInput (unsigned long timeout_millisec);
-    virtual YEvent * pollInput() IMPL_NULL
+    virtual YEvent * pollInput();
 
     virtual void showDialog (YDialog *dialog);
     virtual void closeDialog (YDialog *dialog);

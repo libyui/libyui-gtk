@@ -227,6 +227,11 @@ void YGWindow::setCloseCallback (YGWindowCloseFn canClose, void *canCloseData)
     m_canCloseData = canCloseData;
 }
 
+void YGWindow::unsetCloseCallback()
+{
+	m_canClose = NULL;
+}
+
 YGDialog::YGDialog (YWidgetOpt &opt)
     : YDialog (opt),
       YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)

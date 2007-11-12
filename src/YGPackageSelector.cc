@@ -2392,23 +2392,22 @@ class YGPackageSelector : public YPackageSelector, public YGWidget
 
     bool checkDelete()
     {
-        GtkWidget *dialog;
-
         bool changed =
             zyppPool().diffState<zypp::Package  >()	||
             zyppPool().diffState<zypp::Pattern  >()	||
             zyppPool().diffState<zypp::Selection>() ||
             zyppPool().diffState<zypp::Language >() ||
             zyppPool().diffState<zypp::Patch    >();
-
         if (!changed)
             return true;
 
+        GtkWidget *dialog;
 		dialog = gtk_message_dialog_new_with_markup
             (YGUI::ui()->currentWindow(),
 			 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-             GTK_BUTTONS_YES_NO,
-             _("<b>Abandon all changes?</b>"));
+             GTK_BUTTONS_NONE, _("<b>Abandon all changes?</b>"));
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
+		                        GTK_STOCK_QUIT, GTK_RESPONSE_YES, NULL);
         gtk_dialog_set_default_response (GTK_DIALOG (dialog),
                                          GTK_RESPONSE_NO);
         bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) ==
@@ -2425,18 +2424,16 @@ public:
 		setBorder (0);
 
         YGDialog *dialog = YGUI::ui()->currentYGDialog();
-
-		GtkWindow *window = GTK_WINDOW (dialog->getWindow());
-		gtk_window_resize (window, 680, 580);
-
         dialog->setCloseCallback (confirm_cb, this);
+		GtkWindow *window = dialog->getWindow();
+		gtk_window_resize (window, MAX (680, GTK_WIDGET (window)->allocation.width),
+		                   MAX (580, GTK_WIDGET (window)->allocation.height));
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 
 		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
-		ygtk_wizard_set_header_text (wizard, YGUI::ui()->currentWindow(),
-		                             "Package Selector");
+		ygtk_wizard_set_header_text (wizard, window, "Package Selector");
 		ygtk_wizard_set_help_text (wizard,
 			_("Two pools are presented; one with the available software, the other "
 			"with the installed one. To install software you choose a package "
@@ -2462,6 +2459,8 @@ public:
 
 	virtual ~YGPackageSelector()
 	{
+        YGDialog *dialog = YGUI::ui()->currentYGDialog();
+        dialog->unsetCloseCallback();
 		delete m_package_selector;
 	}
 

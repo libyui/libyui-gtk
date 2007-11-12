@@ -1,3 +1,15 @@
+2007-11-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.h/cc & YGPackageSelector.cc: bug fix #340555: package
+	manager post-selection process hangs when trying to exit (by the window
+	manager: e.g. Alt+F4). You need to unset the callback thing that was
+	installed on YGDialog for the "Abandon Changes" dialog.
+
+	* src/YGUI.cc: bug fix: cannot abort package manager post-selection
+	process (related to previous). We were not implementing UI::PollInput(),
+	which is a non-blocker UI::UserInput() used by this kind of processes.
+	* example/PollInput.ycp: a test case for User & PollInput().
+
 2007-11-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkratiobox.c: bug fix, dialog on disk.ycp tool was gutted.

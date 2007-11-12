@@ -150,3 +150,4 @@ YGUI::createTree (YWidget *parent, YWidgetOpt & opt, const YCPString & label)
 {
 	return new YGTree (opt, YGWidget::get (parent), label);
 }
+
