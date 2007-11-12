@@ -3,6 +3,15 @@
 	* src/YGUI.cc: on PollInput, run g_main_iteration() while there are
 	events to process.
 
+	* src/YGDialog.cc & YGUI.cc: improved busy cursor activation.
+	* src/YGUI.cc: return NULL on events wait when there is no dialog,
+	like yast-qt (some weirdo YCP prog could do it...)
+
+	* src/YGUI.cc: uncommented YGUI::beep() implementation. Looks like
+	my patch was accepted on yast-core (I wish I was notified for those
+	API changes though).
+	* tests/Beep.ycp: removed, now shipped as a yast-ui example.
+
 2007-11-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.h/cc & YGPackageSelector.cc: bug fix #340555: package

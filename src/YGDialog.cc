@@ -281,6 +281,7 @@ void YGDialog::showWindow()
     IMPL
     m_window->setChild (this);
     gtk_widget_show (m_window->getWidget());
+    YGUI::ui()->busyCursor();
 }
 
 void YGDialog::hideWindow()
@@ -345,5 +346,22 @@ YGUI::currentYGDialog()
 		return static_cast<YGDialog *>(ydialog);
 	else
 		return NULL;
+}
+
+void YGDialog::busyCursor()
+{
+	// NOTE: GdkDisplay won't change for new dialogs, so we don't
+	// have to synchronize between them or something.
+	static GdkCursor *cursor = NULL;
+	if (!cursor) {
+		GdkDisplay *display = gtk_widget_get_display (m_window->getWidget());
+		cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+	}
+	gdk_window_set_cursor (m_window->getWidget()->window, cursor);
+}
+
+void YGDialog::normalCursor()
+{
+	gdk_window_set_cursor (m_window->getWidget()->window, NULL);
 }
 

@@ -26,8 +26,6 @@ using std::vector;
 
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
 
-//#define ENABLE_BEEP
-
 /* Compatibility */
 #if YAST2_VERSION > 2014004
 #  define YAST2_YGUI_CHECKBOX_FRAME 1
@@ -255,12 +253,11 @@ public:
 
     virtual void busyCursor();
     virtual void normalCursor();
+
     guint busy_timeout;  // for busy cursor
     static gboolean busy_timeout_cb (gpointer data);
 
-#ifdef ENABLE_BEEP
     virtual void beep();
-#endif
     virtual void makeScreenShot (string filename);
 
     /* File/directory dialogs. */

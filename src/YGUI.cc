@@ -11,6 +11,7 @@
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
+#include "YGDialog.h"
 #include <glib/gthread.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -144,7 +145,7 @@ YGUI::idleLoop (int fd_ycp)
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
 {
-	IMPL;
+	IMPL
 	if (!pThis->pendingEvent())
 		pThis->sendEvent (new YTimeoutEvent());
 	return FALSE;
@@ -162,10 +163,11 @@ YEvent *
 YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
+	if (!currentYGDialog())
+		return NULL;
+
 	if (block)
 		normalCursor();  // waiting for input, so no more busy
-	else
-		busyCursor();
 
 	guint timeout = 0;
 	YEvent *event = NULL;
@@ -174,7 +176,6 @@ YGUI::waitInput (unsigned long timeout_ms, bool block)
 		timeout = g_timeout_add (timeout_ms,
 			(GSourceFunc) user_input_timeout_cb, this);
 
-	// FIXME: do it only if currentDialog (?) ...
 	if (block)
 	{
 		while (!pendingEvent())
@@ -189,8 +190,7 @@ YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (timeout)
 		g_source_remove (timeout);
 
-	// if YCP keeps working for more than X time, set busy cursor
-	if (block)
+	if (block)  // if YCP keeps working for more than X time, set busy cursor
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
 	return event;
@@ -471,17 +471,9 @@ gboolean YGUI::busy_timeout_cb (gpointer data)
 
 void YGUI::busyCursor()
 {
-	GtkWidget *window = GTK_WIDGET (currentWindow());
-	if (!window) return;
-
-	// NOTE: GdkDisplay won't change for new dialogs, so we don't
-	// have to synchronize between them or something.
-	static GdkCursor *cursor = NULL;
-	if (!cursor) {
-		GdkDisplay *display = gtk_widget_get_display (window);
-		cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
-	}
-	gdk_window_set_cursor (window->window, cursor);
+	YGDialog *dialog = currentYGDialog();
+	if (dialog)
+		dialog->busyCursor();
 }
 
 void YGUI::normalCursor()
@@ -491,9 +483,9 @@ void YGUI::normalCursor()
 		busy_timeout = 0;
 	}
 
-	GtkWidget *window = GTK_WIDGET (currentWindow());
-	if (window)
-		gdk_window_set_cursor (window->window, NULL);
+	YGDialog *dialog = currentYGDialog();
+	if (dialog)
+		dialog->normalCursor();
 }
 
 void YGUI::redrawScreen()
@@ -629,7 +621,6 @@ void YGUI::makeScreenShot (string filename)
 		g_object_unref (G_OBJECT (shot));
 }
 
-#ifdef ENABLE_BEEP
 void YGUI::beep()
 {
 	gdk_beep();
@@ -637,7 +628,6 @@ void YGUI::beep()
 	if (window)
 		gtk_window_present (window);
 }
-#endif
 
 YCPString YGUI::glyph (const YCPSymbol &symbol)
 {

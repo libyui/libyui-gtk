@@ -25,6 +25,10 @@ public:
 	void setChild (YWidget *new_child);
 	static void ref (YGWindow *window);
 	static void unref (YGWindow *window);
+
+	void normalCursor();
+	void busyCursor();
+
     void setCloseCallback (YGWindowCloseFn canClose, void *canCloseData);
     void unsetCloseCallback();
     void closeWindow();
@@ -52,6 +56,9 @@ public:
         { m_window->setCloseCallback (closeCallback, closeData); }
     void unsetCloseCallback()
         { m_window->unsetCloseCallback(); }
+
+	void normalCursor();
+	void busyCursor();
 
 	YGWIDGET_IMPL_COMMON
 
