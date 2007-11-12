@@ -1,12 +1,5 @@
 2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* src/YGUtils.cc: added stock icon mapping for English locale.
-	Soon yast-qt will get bug reports to implement the same thing, and
-	they will push for the yast-ui guy a more universal way to allow for
-	that.
-
-2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
-
 	* src/YGUI.cc: on PollInput, run g_main_iteration() while there are
 	events to process.
 
@@ -18,6 +11,11 @@
 	my patch was accepted on yast-core (I wish I was notified for those
 	API changes though).
 	* tests/Beep.ycp: removed, now shipped as a yast-ui example.
+
+	* src/YGUtils.cc: added stock icon mapping for English locale.
+	Soon yast-qt will get bug reports to implement the same thing, and
+	they will push for the yast-ui guy a more universal way to allow for
+	that.
 
 2007-11-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
