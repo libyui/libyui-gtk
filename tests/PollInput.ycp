@@ -2,15 +2,19 @@
 // `cancel events to be ignored.
 {
 	UI::OpenDialog (
-		`Label ("Blocked - UserInput()"),
-		`PushButton (`id (`button), "Ok")
+		`VBox(
+			`Label ("Blocked - UserInput()"),
+			`PushButton (`id (`button), "Ok")
+		)
 	);
 	UI::UserInput();
 	UI::CloseDialog();
 
 	UI::OpenDialog (
-		`Label ("Un-blocked - PollInput()"),
-		`PushButton (`id (`button), "Ok")
+		`VBox(
+			`Label ("Un-blocked - PollInput()"),
+			`PushButton (`id (`button), "Ok")
+		)
 	);
 	any event = nil;
 	repeat {

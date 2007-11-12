@@ -136,7 +136,7 @@ YGUI::idleLoop (int fd_ycp)
 	guint watch_tag = g_io_add_watch (wakeup, (GIOCondition)(G_IO_IN | G_IO_PRI),
 	                                  ycp_wakeup_fn, &woken);
 	while (!woken)
-		g_main_iteration (TRUE);
+		g_main_context_iteration (NULL, TRUE);
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
@@ -181,7 +181,7 @@ YGUI::waitInput (unsigned long timeout_ms, bool block)
 			g_main_context_iteration (NULL, TRUE);
 	}
 	else
-		g_main_context_iteration (NULL, FALSE);
+		while (g_main_context_iteration (NULL, FALSE)) ;
 
 	if (pendingEvent())
 		event = m_event_handler.consumePendingEvent();

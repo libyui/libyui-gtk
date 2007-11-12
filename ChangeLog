@@ -1,3 +1,8 @@
+2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.cc: on PollInput, run g_main_iteration() while there are
+	events to process.
+
 2007-11-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.h/cc & YGPackageSelector.cc: bug fix #340555: package
