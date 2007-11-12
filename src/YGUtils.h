@@ -21,7 +21,7 @@ namespace YGUtils
 	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
 	   terminated (you may pass -1, if it is).
-	   Use the compare string member if you won't to see if there was any change.  */
+	   Use the compare string member if you want to see if there was any change.  */
 	string filterText (const char* text, int length, const char* valid_chars);
 
 	/* Convenience call for widgets that implement GtkEditable interface.
@@ -78,6 +78,8 @@ namespace YGUtils
 
 	/* Converts stuff to GValues */
 	GValue floatToGValue (float num);
+
+	void setStockIcon (GtkWidget *button, std::string ycp_str);
 };
 
 extern "C" {
@@ -87,6 +89,7 @@ extern "C" {
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+	void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 };
 
 #endif // YGUTILS_H

@@ -703,3 +703,68 @@ void YGUtils::tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint 
 	id = g_timeout_add_full (G_PRIORITY_DEFAULT, SCROLLING_STEP, scroll_timeout, data, g_free);
 }
 
+struct StockMap { const char *ycp_label, *gtk_stock; };
+static const StockMap stockMap[] = {
+	// keep them sorted!
+	{"Abort",     GTK_STOCK_CANCEL      },
+	{"Accept",    GTK_STOCK_APPLY       },
+	{"Add",       GTK_STOCK_ADD         },
+	{"Back",      GTK_STOCK_GO_BACK     },
+	{"Cancel",    GTK_STOCK_CANCEL      },
+	{"Configure", GTK_STOCK_PREFERENCES },
+	{"Continue",  GTK_STOCK_OK          },
+	{"Delete",    GTK_STOCK_DELETE      },
+	{"Down",      GTK_STOCK_GO_DOWN     },
+	{"Edit",      GTK_STOCK_EDIT        },
+	{"Launch",    GTK_STOCK_EXECUTE     },
+	{"Next",      GTK_STOCK_GO_FORWARD  },
+	{"No",        GTK_STOCK_NO          },
+	{"OK",        GTK_STOCK_OK          },
+	{"Search",    GTK_STOCK_FIND        },
+	{"Up",        GTK_STOCK_GO_UP       },
+	{"Yes",       GTK_STOCK_YES         },
+};
+#define STOCKMAP_SIZE (sizeof (stockMap)/sizeof(StockMap))
+static int strcmp_cb (const void *a, const void *b)
+{ return strcmp ((char *) a, ((StockMap *) b)->ycp_label); }
+
+void YGUtils::setStockIcon (GtkWidget *button, std::string ycp_str)
+{
+	// is English the current locale?
+	static bool firstTime = true, isEnglish;
+	if (firstTime) {
+		char *lang = getenv ("LANG");
+		isEnglish = !lang || (!*lang) || !strcmp (lang, "C") ||
+		            (lang[0] == 'e' && lang[1] == 'n') ||
+		            !strcmp (lang, "POSIX");
+		firstTime = false;
+	}
+	if (!isEnglish)
+		return;
+
+	unsigned int i = 0;
+	while ((i = ycp_str.find ('_', i)) != string::npos)
+		ycp_str.erase (i, 1);
+
+	bool failed = true;
+	void *ptr;
+	ptr = bsearch (ycp_str.c_str(), stockMap, STOCKMAP_SIZE,
+	               sizeof(stockMap[0]), strcmp_cb);
+	if (ptr) {
+		const char *stock = ((StockMap *) ptr)->gtk_stock;
+		GdkPixbuf *pixbuf;
+		pixbuf = gtk_widget_render_icon (button, stock,
+		                                 GTK_ICON_SIZE_BUTTON, NULL);
+		if (pixbuf) {
+			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
+			gtk_button_set_image (GTK_BUTTON (button), image);
+			g_object_unref (G_OBJECT (pixbuf));
+			failed = false;
+		}
+	}
+	if (failed)
+		gtk_button_set_image (GTK_BUTTON (button), NULL);
+}
+void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str)
+{ YGUtils::setStockIcon (button, ycp_str); }
+

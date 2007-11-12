@@ -35,9 +35,10 @@ public:
 	// YPushButton
 	virtual void setLabel (const YCPString &label)
 	{
-		IMPL;
+		IMPL
 		string str = YGUtils::mapKBAccel (label->value_cstr());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
+		YGUtils::setStockIcon (getWidget(), str);
 		YPushButton::setLabel (label);
 	}
 
@@ -53,6 +54,7 @@ public:
 		if (pixbuf) {
 			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
 			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
+			g_object_unref (G_OBJECT (pixbuf));
 		}
 		else
 			y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
@@ -68,10 +70,10 @@ public:
 	YGWIDGET_IMPL_COMMON
 };
 
-
 YWidget *
 YGUI::createPushButton (YWidget *parent, YWidgetOpt &opt,
                         const YCPString &label)
 {
 	return new YGPushButton (opt, YGWidget::get (parent), label);
 }
+

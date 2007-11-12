@@ -22,6 +22,7 @@
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
+extern void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 
 //** YGtkHelpDialog
 
@@ -607,18 +608,21 @@ void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_abort_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_abort_button);
+	ygutils_setStockIcon (wizard->m_abort_button, text);
 }
 
 void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_back_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_back_button);
+	ygutils_setStockIcon (wizard->m_back_button, text);
 }
 
 void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_next_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_next_button);
+	ygutils_setStockIcon (wizard->m_next_button, text);
 }
 
 void ygtk_wizard_set_back_button_id (YGtkWizard *wizard, gpointer id,
