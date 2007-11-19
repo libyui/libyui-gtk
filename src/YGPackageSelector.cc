@@ -1233,7 +1233,7 @@ public:
 		GtkWidget *advanced_notebook = gtk_notebook_new();
 		GtkWidget *sources_vbox = gtk_vbox_new (FALSE, 4);
 		GtkWidget *sources_label = gtk_label_new (
-			_("<i>Use the Installation Source tool to manage the sources.</i>"));
+			_("<i>Use the Software Repositories tool to manage the sources.</i>"));
 		gtk_misc_set_alignment (GTK_MISC (sources_label), 1, 0);
 		gtk_label_set_use_markup (GTK_LABEL (sources_label), TRUE);
 		gtk_box_pack_start (GTK_BOX (sources_vbox), m_sources_table->getWidget(),
