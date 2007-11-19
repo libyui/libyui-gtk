@@ -279,6 +279,9 @@ public:
     // activated by Ctrl-Shift-Alt-P
     void askPlayMacro();
 
+	// On Shift-F8, run save_logs
+	void askSaveLogs();
+
  private:
     // window-related arguments
     bool m_have_wm, m_no_border, m_fullscreen;

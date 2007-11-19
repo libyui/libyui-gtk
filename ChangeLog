@@ -1,5 +1,10 @@
 2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/YGUI.cc & src/YGDialog.cc: added save_y2logs command on Shift+F8
+	like yast-qt.
+
+2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGUI.cc: on PollInput, run g_main_iteration() while there are
 	events to process.
 

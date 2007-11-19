@@ -133,41 +133,50 @@ static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
         
 	}
 
+    if (event->state & GDK_SHIFT_MASK) {
+        switch (event->keyval) {
+		    case GDK_F8:
+		        YGUI::ui()->askSaveLogs();
+		        return TRUE;
+			default:
+				break;
+		}
+	}
     if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
         && (event->state & GDK_MOD1_MASK)) {
         y2milestone ("Caught YaST2 magic key combination");
         switch (event->keyval) {
-        case GDK_S:
-            YGUI::ui()->makeScreenShot("");
-            return TRUE;
-        case GDK_M:
-            YGUI::ui()->toggleRecordMacro();
-            return TRUE;
-        case GDK_P:
-            YGUI::ui()->askPlayMacro();
-            return TRUE;
-        case GDK_D:
-            YGUI::ui()->sendEvent (new YDebugEvent());
-            return TRUE;
-        case GDK_X:
-            y2milestone ("Starting xterm");
-            system ("/usr/bin/xterm &");
-            return TRUE;
-        case GDK_T:
-            dumpYastTree (pThis->getChild());
-            return TRUE;
-        case GDK_E:  // easter egg
-            static guint explode_timeout = 0;
-            if (explode_timeout == 0)
-                explode_timeout = g_timeout_add (10000,
-                                                 expode_window_timeout_cb, NULL);
-            else {
-                g_source_remove (explode_timeout);
-                explode_timeout = 0;
-            }
-            return TRUE;
-        default:
-            return FALSE;
+		    case GDK_S:
+		        YGUI::ui()->makeScreenShot("");
+		        return TRUE;
+		    case GDK_M:
+		        YGUI::ui()->toggleRecordMacro();
+		        return TRUE;
+		    case GDK_P:
+		        YGUI::ui()->askPlayMacro();
+		        return TRUE;
+		    case GDK_D:
+		        YGUI::ui()->sendEvent (new YDebugEvent());
+		        return TRUE;
+		    case GDK_X:
+		        y2milestone ("Starting xterm");
+		        system ("/usr/bin/xterm &");
+		        return TRUE;
+		    case GDK_T:
+		        dumpYastTree (pThis->getChild());
+		        return TRUE;
+		    case GDK_E:  // easter egg
+		        static guint explode_timeout = 0;
+		        if (explode_timeout == 0)
+		            explode_timeout = g_timeout_add (10000,
+		                                             expode_window_timeout_cb, NULL);
+		        else {
+		            g_source_remove (explode_timeout);
+		            explode_timeout = 0;
+		        }
+		        return TRUE;
+		    default:
+		    	break;
         }
     }
     return FALSE;

@@ -677,8 +677,7 @@ void YGUI::toggleRecordMacro()
 void YGUI::askPlayMacro()
 {
 	YCPValue ret = askForExistingFile (YCPString (DEFAULT_MACRO_FILE_NAME),
-	                                   YCPString ("*.ycp"),
-	                                   YCPString ("Select Macro File to Play"));
+		YCPString ("*.ycp"), YCPString ("Select Macro File to Play"));
 
 	if (ret->isString()) {
 		busyCursor();
@@ -686,6 +685,29 @@ void YGUI::askPlayMacro()
 
 		playMacro (filename->value_cstr());
 		sendEvent (new YEvent());  // flush
+	}
+}
+
+void YGUI::askSaveLogs()
+{
+	YCPValue file = askForSaveFileName (YCPString ("/tmp/y2logs.tgz"),
+		YCPString ("*.tgz *.tar.gz"), YCPString ("Save y2logs to..."));
+
+	if (file->isString()) {
+		std::string command = "/sbin/save_y2logs";
+		command += " '" + file->asString()->value() + "'";
+	    y2milestone ("Saving y2logs: %s", command.c_str());
+	    int ret = system (command.c_str());
+		if (ret == 0)
+			y2milestone ("y2logs saved to %s", file->asString()->value_cstr());
+		else {
+			char *error = g_strdup_printf (
+				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
+				command.c_str(), ret);
+			y2error (error);
+			errorMsg (error);
+			g_free (error);
+		}
 	}
 }
 
