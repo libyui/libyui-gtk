@@ -703,6 +703,9 @@ void YGUtils::tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint 
 	id = g_timeout_add_full (G_PRIORITY_DEFAULT, SCROLLING_STEP, scroll_timeout, data, g_free);
 }
 
+#define ENGLISH_STOCK_ITEMS
+
+#ifdef ENGLISH_STOCK_ITEMS
 struct StockMap { const char *ycp_label, *gtk_stock; };
 static const StockMap stockMap[] = {
 	// keep them sorted!
@@ -765,6 +768,11 @@ void YGUtils::setStockIcon (GtkWidget *button, std::string ycp_str)
 	if (failed)
 		gtk_button_set_image (GTK_BUTTON (button), NULL);
 }
+
 void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str)
 { YGUtils::setStockIcon (button, ycp_str); }
+
+#else
+void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str) {}
+#endif
 
