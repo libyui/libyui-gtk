@@ -52,7 +52,8 @@ typedef struct _YGtkRatioBox
 	GList *children;
 	gint16 spacing;
 	guint weight_length;  // min-length for weight widgets
-	gboolean has_must_expand;  // cache
+	guint has_must_expand : 1;  // cache
+	guint force_min_weight : 1;
 } YGtkRatioBox;
 
 typedef struct _YGtkRatioBoxClass
@@ -95,6 +96,8 @@ void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gfloat *ratio, gboolean *xfill,
                                        gboolean *yfill, guint *padding,
                                        gboolean *expandable);
+
+void ygtk_ratio_box_set_force_min_weight (YGtkRatioBox *box, gboolean force);
 
 /* RatioHBox */
 

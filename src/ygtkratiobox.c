@@ -145,13 +145,15 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 			int length = (prim_length * ratios_sum) / box_child->ratio;
 			box->weight_length = MAX (box->weight_length, length);
 		}
-		else
+
+		if (box_child->ratio || !box->force_min_weight)
 			primary_req += prim_length;
 		primary_req += box_child->padding + box->spacing;
 		secondary_req = MAX (secondary_req, sec_length);
 	}
 
-	primary_req += box->weight_length;
+	if (box->force_min_weight)
+		primary_req += box->weight_length;
 
 	guint border = GTK_CONTAINER (widget)->border_width * 2;
 	primary_req += border*2; secondary_req += border*2;
@@ -349,6 +351,11 @@ void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing)
 {
 	box->spacing = spacing;
+}
+
+void ygtk_ratio_box_set_force_min_weight (YGtkRatioBox *box, gboolean force)
+{
+	box->force_min_weight = force;
 }
 
 static void ygtk_ratio_box_class_init (YGtkRatioBoxClass *klass)

@@ -1,3 +1,12 @@
+2007-11-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkratiobox.c: be more modest when requesting for size --
+	ie. don't try to request enough size for all the children weight,
+	just so they fit. Unless asked otherwise. Updated YGtkBarGraph
+	and YGMultiProgressBar for this...
+	TODO: we should allocate weights from the point where every
+	children has been served.
+
 2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc & src/YGDialog.cc: added save_y2logs command on Shift+F8
