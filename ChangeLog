@@ -1,3 +1,10 @@
+2007-11-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGComboBox.cc: shouldn't signal an event when an item is selected
+	by code. (not the actual problem, but related to #343183).
+
+	* src/ygtkratiobox.c: fixed code typo.
+
 2007-11-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkratiobox.c: be more modest when requesting for size --

@@ -95,7 +95,7 @@ bool m_showingIcons;
 
 	virtual void setValue (const YCPString &value)
 	{
-		IMPL;
+		IMPL
 		gtk_entry_set_text (getEntry(), value->value_cstr());
 	}
 
@@ -111,7 +111,9 @@ bool m_showingIcons;
 
 	virtual void setCurrentItem (int index)
 	{
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this);
 		gtk_combo_box_set_active (GTK_COMBO_BOX(getWidget()), index);
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this);
 	}
 
 	virtual void setInputMaxLength (const YCPInteger &numberOfChars)

@@ -22,8 +22,8 @@ public:
 		gtk_tree_view_set_model(GTK_TREE_VIEW(getWidget()), GTK_TREE_MODEL(tree));
 		g_object_unref (G_OBJECT (tree));
 
-		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW(getWidget()),
-			0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
+		gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (getWidget()),
+			0, "", gtk_cell_renderer_text_new(), "text", 0, NULL);
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), FALSE);
 
 		// Events
@@ -33,14 +33,17 @@ public:
 			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 			                  G_CALLBACK (selected_cb), this);
 		}
+		else
+			gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
+				GTK_TREE_VIEW (getWidget())), GTK_SELECTION_NONE);
 	}
 
 	virtual ~YGTree() { }
 
-	GtkTreeStore *getStore()
-	{ return GTK_TREE_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
-	GtkTreeModel *getModel()
-	{ return GTK_TREE_MODEL(gtk_tree_view_get_model(GTK_TREE_VIEW(getWidget()))); }
+	inline GtkTreeModel *getModel()
+	{ return gtk_tree_view_get_model (GTK_TREE_VIEW (getWidget())); }
+	inline GtkTreeStore *getStore()
+	{ return GTK_TREE_STORE (getModel()); }
 
 	// YTree
 	void addItems (const YTreeItemList &items, GtkTreeIter *parent)
@@ -65,7 +68,7 @@ public:
 				GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
 				gtk_tree_view_expand_to_path (GTK_TREE_VIEW (getWidget()), path);
 				gtk_tree_path_free(path);
-				}
+			}
 
 			addItems (items[i]->itemList(), &iter);
 		}

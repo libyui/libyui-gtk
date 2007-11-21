@@ -146,7 +146,7 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 			box->weight_length = MAX (box->weight_length, length);
 		}
 
-		if (box_child->ratio || !box->force_min_weight)
+		if (!box_child->ratio || !box->force_min_weight)
 			primary_req += prim_length;
 		primary_req += box_child->padding + box->spacing;
 		secondary_req = MAX (secondary_req, sec_length);
@@ -265,8 +265,6 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_alloc.width = allocation->width - border*2;
 			child_alloc.height = length;
 		}
-
-//fprintf (stderr, "child height: %d\n", child_alloc.height);
 
 		if (!box_child->xfill) {
 			// we also need to center the widget
