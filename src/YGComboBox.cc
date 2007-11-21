@@ -90,7 +90,7 @@ bool m_showingIcons;
 		}
 
 		if (selected || index == 0)
-			gtk_combo_box_set_active (getComboBox(), index);
+			setCurrentItem (index);
 	}
 
 	virtual void setValue (const YCPString &value)
