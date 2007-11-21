@@ -7,6 +7,8 @@
 	TODO: we should allocate weights from the point where every
 	children has been served.
 
+	* src/ygtkratiobox.c: fixed warning.
+
 2007-11-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc & src/YGDialog.cc: added save_y2logs command on Shift+F8

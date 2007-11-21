@@ -723,6 +723,7 @@ static const StockMap stockMap[] = {
 	{"Next",      GTK_STOCK_GO_FORWARD  },
 	{"No",        GTK_STOCK_NO          },
 	{"OK",        GTK_STOCK_OK          },
+	{"Quit",      GTK_STOCK_QUIT        },
 	{"Search",    GTK_STOCK_FIND        },
 	{"Up",        GTK_STOCK_GO_UP       },
 	{"Yes",       GTK_STOCK_YES         },

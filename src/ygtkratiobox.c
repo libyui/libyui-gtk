@@ -247,7 +247,10 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		}
 		else if (box_child->expand && (ratios_sum == 0 || box_child->must_expand))
 		{
-			length += expansable_length / expand_num;
+			// FIXME: something is wrong for expansable_length being < 0 at times
+			// we aren't asking for enough size!
+			if (expansable_length > 0)
+				length += expansable_length / expand_num;
 		}
 
 		if (orientation == GTK_ORIENTATION_HORIZONTAL) {
@@ -262,6 +265,8 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_alloc.width = allocation->width - border*2;
 			child_alloc.height = length;
 		}
+
+//fprintf (stderr, "child height: %d\n", child_alloc.height);
 
 		if (!box_child->xfill) {
 			// we also need to center the widget
