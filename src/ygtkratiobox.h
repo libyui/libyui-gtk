@@ -53,7 +53,6 @@ typedef struct _YGtkRatioBox
 	gint16 spacing;
 	guint weight_length;  // min-length for weight widgets
 	guint has_must_expand : 1;  // cache
-	guint force_min_weight : 1;
 } YGtkRatioBox;
 
 typedef struct _YGtkRatioBoxClass

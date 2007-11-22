@@ -125,6 +125,12 @@ public:
 			GtkWidget* bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
 				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
+			// Progress bars would ask for too much size with weight...
+			const int min_size = 5;
+			if (horizontal)
+				gtk_widget_set_size_request (bar, min_size, -1);
+			else
+				gtk_widget_set_size_request (bar, -1, min_size);
 			ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), bar,
 			                     maxValue (i), TRUE, TRUE, 0);
 		}

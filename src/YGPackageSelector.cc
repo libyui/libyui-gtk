@@ -821,7 +821,7 @@ public:
 		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 		gtk_widget_set_size_request (scroll_view, -1, 80);
 		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_view),
-		                                     GTK_SHADOW_OUT);
+		                                     GTK_SHADOW_IN);
 		gtk_container_add (GTK_CONTAINER (scroll_view), view);
 		gtk_widget_show_all (scroll_view);
 		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll_view);
