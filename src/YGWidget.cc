@@ -244,6 +244,8 @@ void YGLabeledWidget::doSetLabel (const YCPString &label)
 		gtk_widget_hide (m_label);
 	}
 	else {
+		gtk_widget_show (m_label);
+
 		// add a ':' at the end
 		int last = str.length()-1;
 		if (str [last] != ':' && str [last] != '.' && str [last] != ' ')

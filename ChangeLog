@@ -15,6 +15,10 @@
 	printing their source contents to a dialog.
 	* src/YGDialog.cc: DumpHtml gets run on Ctrl+Alt+Shift+H
 
+	* src/YGWidget.cc (YGLabeledWidget): bug fix (see hwinfo tool): was hiding
+	label on empty string, but forgetting to show it, on a new string that isn't
+	empty.
+
 2007-11-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGComboBox.cc: shouldn't signal an event when an item is selected
