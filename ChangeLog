@@ -5,6 +5,16 @@
 	take weights in consideration like yast-ui. Only on allocation, when there
 	is surplus of allocated area, we should use them...
 
+	* src/ygtkrichtext.c: made use of "pixels-below-lines" for padding. Fixed
+	block tags comparison (was not ignoring cases). Fixed logic to check if
+	character is new line '\n' or '\r' (some code typo).
+	* src/YGUtils.cc: fixed comparison for leaf nodes "br" and "hr" (was not
+	ignoring cases).
+
+	* src/YGUI.cc: added DumpHtml debug dialog that goes through all RichTexts
+	printing their source contents to a dialog.
+	* src/YGDialog.cc: DumpHtml gets run on Ctrl+Alt+Shift+H
+
 2007-11-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGComboBox.cc: shouldn't signal an event when an item is selected

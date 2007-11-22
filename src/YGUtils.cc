@@ -318,8 +318,8 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 
 			// Unmatched tags
 			if ( !is_close && tag_len == 2 &&
-			     (!strncmp (tag->str, "hr", 2) ||
-			      !strncmp (tag->str, "br", 2)) &&
+			     (!g_ascii_strncasecmp (tag->str, "hr", 2) ||
+			      !g_ascii_strncasecmp (tag->str, "br", 2)) &&
 			     tag->str[tag->len - 1] != '/')
 				g_string_append_c (tag, '/');
 

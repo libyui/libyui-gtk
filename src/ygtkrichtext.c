@@ -82,7 +82,7 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 
 #include <stdlib.h>
 static int mystrcmp(void *a, void *b)
-{ return strcmp (*(char **)a, *(char **)b); }
+{ return g_ascii_strcasecmp (*(char **)a, *(char **)b); }
 
 static gboolean isBlockTag (const char *tag)
 {
@@ -134,15 +134,16 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 		size /= PANGO_SCALE;
 
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-	                            "size", (int)(size * PANGO_SCALE_XX_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16, NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-	                            "size", (int)(size * PANGO_SCALE_X_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_X_LARGE), "pixels-below-lines", 15, NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 14, NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 13, NULL);
 	gtk_text_buffer_create_tag (buffer, "h5",
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), NULL);
+	gtk_text_buffer_create_tag (buffer, "p", "pixels-below-lines", 12, NULL);
 	gtk_text_buffer_create_tag (buffer, "big",
 	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
 	gtk_text_buffer_create_tag (buffer, "small",
@@ -310,7 +311,7 @@ rt_start_element (GMarkupParseContext *context,
 		// make sure this opens a new paragraph
 		if (!gtk_text_iter_starts_line (&iter))
 		{
-			gtk_text_buffer_insert (state->buffer, &iter, "\n\n", -1);
+			gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
 			gtk_text_buffer_get_end_iter (state->buffer, &iter);
 		}
 	}
@@ -465,10 +466,11 @@ rt_end_element (GMarkupParseContext *context,
 
 	if (isBlockTag (element_name))
 	{
-		appendLines = 2;
-		if (!g_ascii_strcasecmp (element_name, "li"))
+//		appendLines = 2;
+//		if (!g_ascii_strcasecmp (element_name, "li"))
 			appendLines = 1;
 	}
+
 
 	if (appendLines) {
 		gtk_text_buffer_insert (state->buffer, &end,
@@ -549,16 +551,16 @@ static char *elide_whitespace (const char *instr, int len)
 	int i;
 // FIXME: whitespace elision needs to happen across tags [urk]
 // FIXME: perhaps post-process non-pre sections when they are complete ?
-	for (i = 0; i < len ; i++)
+	for (i = 0; i < len; i++)
 	{
-		if (instr[i] == '\r' && instr[i] == '\n')
+		char ch = instr[i];
+		if (ch == '\r' || ch == '\n')
 			continue;
-		char c = instr[i];
-		if (c == '\t')
-			c = ' ';
-		gboolean cur_white = IS_WHITE(c);
-		if (!(cur_white && last_white))
-			g_string_append_c (dest, c);
+		if (ch == '\t')
+			ch = ' ';
+		gboolean cur_white = IS_WHITE (ch);
+		if (!cur_white || !last_white)
+			g_string_append_c (dest, ch);
 		last_white = cur_white;
 	}
 

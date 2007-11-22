@@ -307,6 +307,7 @@ public:
 
 // debug helpers.
 void dumpYastTree (YWidget *widget);
+void dumpYastHtml (YWidget *widget);
 
 #endif // YGUI_H
 

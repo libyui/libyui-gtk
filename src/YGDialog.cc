@@ -165,6 +165,9 @@ static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
 		    case GDK_T:
 		        dumpYastTree (pThis->getChild());
 		        return TRUE;
+		    case GDK_H:
+		        dumpYastHtml (pThis->getChild());
+		        return TRUE;
 		    case GDK_E:  // easter egg
 		        static guint explode_timeout = 0;
 		        if (explode_timeout == 0)
