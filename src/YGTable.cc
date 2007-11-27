@@ -184,7 +184,9 @@ protected:
 	void deleteRows()
 	{
 		IMPL
+		blockEvents();
 		gtk_list_store_clear (getStore());
+		unblockEvents();
 	}
 
 	int getCurrentRow()
@@ -207,20 +209,27 @@ protected:
 	void setCurrentRow (int id)
 	{
 		IMPL
+		blockEvents();
 		GtkTreeIter iter;
 		if (getRowOf (&iter, id)) {
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
-
-			g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
-			g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 			gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
 			gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
 			                              TRUE, 0.5, 0.5);
-			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
-			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
-	
 			gtk_tree_path_free (path);
 		}
+		unblockEvents();
+	}
+
+	void blockEvents()
+	{
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
+	}
+	void unblockEvents()
+	{
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 	}
 
 	// toggled by user (through clicking on the renderer or some other action)
@@ -241,7 +250,7 @@ protected:
 	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
 	{
 		IMPL
-		pThis->emitEvent (YEvent::SelectionChanged);//, true, true, true);
+		pThis->emitEvent (YEvent::SelectionChanged);
 	}
 
 	static void selected_delayed_cb (GtkTreeView *tree_view, YGTableView* pThis)
