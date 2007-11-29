@@ -29,6 +29,15 @@ static GtkWidget *createImageFromXPM (const char **xpm)
 inline void FILEMANAGER_LAUNCH (const char *path)
 { system ((std::string (FILEMANAGER_EXEC) + " -n --no-desktop " + path + " &").c_str()); }
 
+static void busyCursor()
+{
+	YGUI::ui()->busyCursor();
+	// so that the cursor is actually set...
+	while (g_main_context_iteration (NULL, FALSE)) ;
+}
+static void normalCursor()
+{ YGUI::ui()->normalCursor(); }
+
 #include "icons/pkg-list-mode.xpm"
 #include "icons/pkg-tiles-mode.xpm"
 
@@ -206,7 +215,8 @@ public:
 	};
 	void setMode (ViewMode mode)
 	{
-		busyCursor();
+		if (GTK_WIDGET_REALIZED (m_bin))
+			busyCursor();
 		g_signal_handlers_block_by_func (m_list_button, (gpointer) mode_toggled_cb, this);
 		g_signal_handlers_block_by_func (m_icon_button, (gpointer) mode_toggled_cb, this);
 
@@ -233,7 +243,8 @@ fprintf (stderr, "adding new view to container\n");
 
 	void query (Ypp::Query *query)
 	{
-		busyCursor();
+		if (GTK_WIDGET_REALIZED (m_bin))
+			busyCursor();
 
 		if (m_model)
 			g_object_unref (G_OBJECT (m_model));
@@ -260,20 +271,6 @@ private:
 		}
 		ViewMode mode = GTK_WIDGET (toggle) == pThis->m_list_button ? LIST_MODE : ICON_MODE;
 		pThis->setMode (mode);
-	}
-
-	void busyCursor()
-	{
-		if (GTK_WIDGET_REALIZED (m_bin)) {
-			YGUI::ui()->busyCursor();
-			// so that the cursor is actually set...
-			while (g_main_context_iteration (NULL, FALSE)) ;
-		}
-	}
-	void normalCursor()
-	{
-		if (GTK_WIDGET_REALIZED (m_bin))
-			YGUI::ui()->normalCursor();
 	}
 };
 
@@ -1009,6 +1006,7 @@ fprintf (stderr, "adding version: %s\n", version);
 private:
 	static void install_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
+		busyCursor();
 		Ypp::get()->startTransactions();
 		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
 		     it != pThis->m_packages.end(); it++) {
@@ -1021,33 +1019,40 @@ private:
 			(*it)->install (version);
 		}
 		Ypp::get()->finishTransactions();
+		normalCursor();
 	}
 
 	static void remove_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
+		busyCursor();
 		Ypp::get()->startTransactions();
 		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
 		     it != pThis->m_packages.end(); it++)
 			(*it)->remove();
 		Ypp::get()->finishTransactions();
+		normalCursor();
 	}
 
 	static void undo_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
+		busyCursor();
 		Ypp::get()->startTransactions();
 		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
 		     it != pThis->m_packages.end(); it++)
 			(*it)->undo();
 		Ypp::get()->finishTransactions();
+		normalCursor();
 	}
 
 	static void locked_toggled_cb (GtkToggleButton *button, PackageControl *pThis)
 	{
+		busyCursor();
 		Ypp::get()->startTransactions();
 		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
 		     it != pThis->m_packages.end(); it++)
 			(*it)->lock (gtk_toggle_button_get_active (button));
 		Ypp::get()->finishTransactions();
+		normalCursor();
 	}
 
 	static void version_changed_cb (GtkComboBox *combo, PackageControl *pThis)

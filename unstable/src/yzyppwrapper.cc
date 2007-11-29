@@ -1404,10 +1404,20 @@ fprintf (stderr, "delta time: %ld\n", time(NULL)-time1);
 #endif
 
 Ypp::Ypp()
-{ impl = new Impl(); }
+{
+	impl = new Impl();
+
+    zyppPool().saveState<zypp::Package  >();
+    zyppPool().saveState<zypp::Pattern  >();
+    zyppPool().saveState<zypp::Selection>();
+    zyppPool().saveState<zypp::Language >();
+    zyppPool().saveState<zypp::Patch    >();
+}
 
 Ypp::~Ypp()
-{ delete impl; }
+{
+	delete impl;
+}
 
 const Ypp::Repository *Ypp::getRepository (int nb)
 { return impl->getRepository (nb); }
