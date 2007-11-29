@@ -1,0 +1,48 @@
+/* Light information on YaST-GTK */
+
+License
+
+  This code is licensed under the GNU Lesser General Public License (LGPL)
+  version 2, or, at your option, any higher.
+
+A native GTK+ YaST2 UI !
+
+  This code creates a GTK+ plugin for YaST2. This plugin parallel
+  installs with everything else, and will never be used unless
+  explicitely invoked on the yast2 command line - ie. it won't break
+  your system; go-on you know you want to install it.
+
+Build pre-requisites
+
+  To make this compile you'll need the following packages installed
+  (at a minimum):
+
+  yast2-devel yast2-devtools yast2-core-devel libzypp libzypp-devel
+  gettext-devel
+
+  They all are distributed with Suse's CDs.
+
+Building / Installing
+
+  make -f Makefile.cvs
+  make && sudo make install [1]
+
+  [1] - if you want sudo not to ask you a password, add yourself to the
+        wheel group, and uncomment the related lines in /etc/sudoers
+
+Running
+
+  /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
+
+  From OpenSuse 10.3 on, it should be picked up automatically if you use Gnome. 
+  For other desktops, you can set yast-gtk to be used by editing /etc/sysconfig/yast2 .
+
+  In case of oddness append --nothreads to the cmdline,
+  Also check the log file: ~/.y2log
+
+Documentation
+
+  A code overview is given on the HACKING file.
+  For documentation of YaST in general:
+    http://developer.novell.com/wiki/index.php/Special:Downloads/yast/doc
+
