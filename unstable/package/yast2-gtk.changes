@@ -1,0 +1,107 @@
+-------------------------------------------------------------------
+Wed Oct 6 15:32:01 BST 2007 - mmichael@suse.de
+
+- n#300750: big speedup wrt. search / sort
+
+-------------------------------------------------------------------
+Wed Aug 26 15:32:01 BST 2007 - mmichael@suse.de
+
+- n#300390: warn if cancelling a non-submitted transaction.
+
+-------------------------------------------------------------------
+Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
+
+- #296945: pulse progress bar impl.
+
+-------------------------------------------------------------------
+Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
+
+- Finished integrating Feature #120292, UI as a namespace callable
+  from yast2-*-bindings.
+- 2.5.9
+
+-------------------------------------------------------------------
+Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
+
+- FaTE #302018: details on how to print the license
+- 2.15.8
+
+-------------------------------------------------------------------
+Wed Aug  8 09:22:32 CEST 2007 - mvidner@suse.cz
+
+- Don't build-require yast2-devel-doc.
+- 2.15.7.2
+
+-------------------------------------------------------------------
+Mon Aug  6 14:00:37 CEST 2007 - mvidner@suse.cz
+
+- Adapted to changes in yast2-core needed for making UI callable from
+  yast2-*-bindings.
+- 2.15.7.1
+
+-------------------------------------------------------------------
+Thu Jul 26 07:28:31 CEST 2007 - jsrain@suse.cz
+
+- removed yast2-devel from BuildRequires
+- 2.15.7
+
+-------------------------------------------------------------------
+Mon Jul 23 15:32:01 BST 2007 - mmichael@suse.de
+
+- fix crash-on-start n#293065
+- fix uninitialized warnings
+- fix empty-partition divide by 0 case
+- 2.15.6
+
+-------------------------------------------------------------------
+Mon Jul 16 17:07:01 CEST 2007 - jsrain@suse.cz
+
+- adapted to new libzypp
+- added support for translations
+- 2.15.5
+
+-------------------------------------------------------------------
+Thu Jun 21 10:24:55 CEST 2007 - mmichael@suse.de
+
+- upgrade to yast2-gtk-2.15.4, fixes many bugs, pwrt.
+  package selector, improved search, multi-select for
+  installations &, large scale robustness & functionality
+  table-sorting fix, progress bar fix, initial easter-egg,
+  add rpmlintrc to avoid complaints about plugin .so name
+
+-------------------------------------------------------------------
+Fri May 11 18:19:10 CEST 2007 - mmichael@suse.de
+
+- upgrade to yast2-gtk-2.15.3, fixes #268146, #271716
+  and improves package selector search / sort.
+
+-------------------------------------------------------------------
+Tue Apr 17 15:58:40 CEST 2007 - mmichael@suse.de
+
+- upgrade to yast2-gtk-2.15.2, fixes upgrade.ycp 
+
+-------------------------------------------------------------------
+Fri Mar 16 13:36:04 CET 2007 - mmichael@suse.de
+
+- upgrade to yast2-gtk-2.15.1, several fixes, including #247682, #247683
+
+-------------------------------------------------------------------
+Wed Feb  7 11:26:07 CET 2007 - mmichael@suse.de
+
+- update to yast2-gtk-2.15.0, fixes build and adds new Frame type 
+
+-------------------------------------------------------------------
+Wed Aug 30 10:56:28 CEST 2006 - cthiel@suse.de
+
+- added yast2-gtk-autogen.patch to fix build with latests yast2-devtools
+
+-------------------------------------------------------------------
+Mon Aug 28 11:34:13 CEST 2006 - cthiel@suse.de
+
+- fix build
+
+-------------------------------------------------------------------
+Wed Aug 23 18:20:30 CEST 2006 - mmichael@suse.de
+
+- import yast2-gtk into autobuild.
+

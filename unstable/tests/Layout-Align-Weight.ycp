@@ -1,0 +1,11 @@
+// alignment - weight test
+{
+UI::OpenDialog(
+	`HBox(
+		`Right (`HWeight (1, `PushButton ("Left"))),
+		`Left (`HWeight (1, `PushButton ("Right")))
+	)
+);
+UI::UserInput();
+UI::CloseDialog();
+}

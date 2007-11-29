@@ -1,0 +1,16 @@
+// MultiSelectionBox -- test notify flag
+{
+list items =
+	[ "Spaghetti", "Steak Sandwich", "Chili", "Salami Baguette" ];
+
+UI::OpenDialog (
+	`MinSize (30, 10,
+		`MultiSelectionBox (`id(`list), `opt (`notify),
+		                    "Plates", items)
+		)
+	);
+
+UI::UserInput();
+UI::CloseDialog();
+}
+
