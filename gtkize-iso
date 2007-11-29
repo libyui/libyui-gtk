@@ -1,0 +1,145 @@
+#!/bin/sh
+
+SUDO=sudo
+MOUNTBASE=/data/tmp
+rootimage=/boot/i386/root
+srcfiles=/opt/yast/public/gtk
+
+copy_file()
+{
+    $SUDO mkdir -p "$1/$2"
+    $SUDO cp -a "$2/$3" "$1/$2"
+}
+
+rewrite()
+{
+    dir=$1
+    yastlib="$dir/usr/lib/YaST2"
+    yastshare="$dir/usr/share/YaST2"
+    echo "Re-writing $1"
+    echo -n "  pruning qt..."
+    $SUDO cp -f "$srcfiles/integrate/YaST2.call" \
+		"$yastlib/startup"
+#debugging
+    $SUDO cp -f "$srcfiles/integrate/YaST2.Second-Stage" \
+		"$yastlib/startup"
+    $SUDO cp -f "$srcfiles/integrate/logging.sh" \
+		"$yastlib/startup/common"
+#/debugging
+    $SUDO rm -f "$yastshare/locale/*/LC_MESSAGES/packages-qt.mo"
+    $SUDO rm -f "$yastdir/plugin/libpy2qt*"
+    $SUDO rm -Rf "$dir/usr/lib/qt3"
+    $SUDO rm -f "$dir/usr/lib/libqt-mt*"
+    echo " done"
+
+    echo -n "  installing gtk..."
+    $SUDO cp -a /usr/lib/YaST2/plugin/libpy2gtk* "$yastlib/plugin"
+    echo " done"
+
+    # gnome libs
+    for lib in libgtk-x11-2.0.so.0 libgdk-x11-2.0.so.0 libatk-1.0.so.0 libgdk_pixbuf-2.0.so.0 libpangocairo-1.0.so.0 libpango-1.0.so.0 libgmodule-2.0.so.0 libgthread-2.0.so.0 libpangoft2-1.0.so.0; do
+	$SUDO cp -a /opt/gnome/lib/$lib* "$dir/opt/gnome/lib"
+	$SUDO strip $dir/opt/gnome/lib/$lib*
+    done
+
+    # system libs
+    # FIXME - if for same system, use same libzypp ...
+    for lib in libcairo.so.2 libglitz.so.1 libdbus-1.so.2 libzypp.so.1; do
+	$SUDO cp -a /usr/lib/$lib* "$dir/usr/lib"
+	$SUDO strip $dir/usr/lib/$lib*
+    done
+
+    # pango modules
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-basic-fc.so"
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-indic-fc.so"
+    copy_file $dir "/opt/gnome/lib/pango/1.4.0/modules" "pango-arabic-fc.so"
+    # generate config ...
+    PANGORC=`mktemp $MOUNTBASE/ygtk-pangorc.XXXXXX`
+    PANGO_MODULES=`mktemp $MOUNTBASE/ygtk-modules.XXXXXX`
+echo "[Pango]
+ModulesPath=$dir/opt/gnome/lib/pango/1.4.0/modules
+" > $PANGORC
+    PANGO_RC_FILE=$PANGORC pango-querymodules | sed "s|$dir||g" > $PANGO_MODULES
+    $SUDO mkdir -p "$dir/etc/opt/gnome/pango"
+    $SUDO mv $PANGO_MODULES "$dir/etc/opt/gnome/pango/pango.modules"
+    rm -f $PANGORC
+
+    echo "  testing..."
+    if LD_LIBRARY_PATH="$dir/lib:$dir/usr/lib:$dir/opt/gnome/lib" ldd $yastlib/plugin/libpy2gtk.so > /dev/null; then
+	echo "warning: failed to link";
+    fi
+}
+
+printhelp()
+{
+    echo "Usage: $0 [OPTIONS] <source-ISO> <dest-ISO>"
+    echo
+    echo "OPTIONS:"
+    echo "    -h, --help: help";
+    echo
+}
+
+if (test "z$1" = 'z-h') || (test "z$1" = 'z--help'); then
+    printhelp; exit 0;
+fi
+
+source=$1
+dest=$2
+
+if (test "z$source" = "z") || (test "z$dest" = "z"); then
+    printhelp; exit 1;
+fi
+
+mkcramfs=`which mkcramfs 2>/dev/null`
+if (test "z$mkcramfs" = "z") || (! test -x $mkcramfs); then
+	echo "Must have cramfs installed."
+	exit 1;
+fi
+
+echo "copy from $source $dest";
+
+ISODIR=`mktemp -d $MOUNTBASE/ygtk-iso.XXXXXX`
+$SUDO mount -o loop $source $ISODIR
+echo "Mounted $source"
+
+ROOTDIR=`mktemp -d $MOUNTBASE/ygtk-oldroot.XXXXXX`
+$SUDO mount -o loop "$ISODIR$rootimage" $ROOTDIR
+echo "Mounted old root"
+
+NEWROOT=`mktemp -d $MOUNTBASE/ygtk-newroot.XXXXXX`
+echo "Creating new root at $NEWROOT"
+echo -n "  copying..."
+# do this to preserve hard links
+$SUDO tar -C $ROOTDIR -O -c . | $SUDO tar -x -C $NEWROOT >& /dev/null
+echo " done"
+$SUDO umount $ROOTDIR
+rmdir $ROOTDIR
+
+# Do the interesting work ...
+rewrite $NEWROOT
+# End of interesting work ...
+
+echo -n "Compressing image..."
+NEWROOTFS=`mktemp $MOUNTBASE/ygtk-cramfs.XXXXXX`
+$SUDO $mkcramfs $NEWROOT $NEWROOTFS
+echo " done"
+
+echo -n "Creating new CD image..."
+NEWIMAGE=`mktemp -d $MOUNTBASE/ygtk-newimage.XXXXXX`
+$SUDO cp -a $ISODIR/* $NEWIMAGE
+$SUDO cp -a $NEWROOTFS "$NEWIMAGE$rootimage"
+$SUDO umount $ISODIR
+rmdir $ISODIR
+echo " done"
+
+cd $NEWIMAGE ; $SUDO mkisofs -p "Yast-GTK installer" -publisher "Fools, Inc." \
+     -r -J -f -pad -no-emul-boot -boot-load-size 4 -boot-info-table \
+    -b boot/i386/loader/isolinux.bin -c boot/i386/boot.catalog -hide \
+    boot/i386/boot.catalog -hide-joliet boot/i386/boot.catalog -A \
+    "SUSE-Yast-GTK#0" -V SU1010.001 -o $dest .
+
+echo "Done new iso in $dest."
+echo -n "Cleaning up..."
+$SUDO rm -Rf $NEWROOTFS
+$SUDO rm -Rf $NEWIMAGE
+echo " done."
