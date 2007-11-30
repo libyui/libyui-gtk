@@ -563,12 +563,36 @@ void Ypp::Package::remove()
 
 void Ypp::Package::undo()
 {
-	if (isModified()) {
-		if (toInstall())
-			remove();
-		else
-			install (0);
+	zypp::ui::Status status = impl->zyppSel->status();
+	switch (status) {
+		// not applicable
+		case zypp::ui::S_Protected:
+		case zypp::ui::S_Taboo:
+		case zypp::ui::S_NoInst:
+		case zypp::ui::S_KeepInstalled:
+			break;
+
+		// undo
+		case zypp::ui::S_Install:
+			status = zypp::ui::S_NoInst;
+			break;
+		case zypp::ui::S_Update:
+		case zypp::ui::S_Del:
+			status = zypp::ui::S_KeepInstalled;
+			break;
+
+		// for auto status, undo them by locking them
+		case zypp::ui::S_AutoInstall:
+			status = zypp::ui::S_Taboo;
+			break;
+		case zypp::ui::S_AutoUpdate:
+		case zypp::ui::S_AutoDel:
+			status = zypp::ui::S_Protected;
+			break;
 	}
+
+	impl->zyppSel->set_status (status);
+	ypp->impl->packageModified (this);
 }
 
 void Ypp::Package::lock (bool lock)
@@ -776,10 +800,12 @@ fprintf (stderr, "destroyed pool, removing from Ypp\n");
 		}
 		if (cmp == 0) {
 			if (match) {  // modified
+fprintf (stderr, "pool (%d) - touched: %s\n", g_slist_length (packages), package->name().c_str());
 				if (listener)
 					listener->entryChanged ((Iter) i, package);
 			}
 			else {  // removed
+fprintf (stderr, "pool (%d) - remove: %s\n", g_slist_length (packages), package->name().c_str());
 				if (listener)
 					listener->entryDeleted ((Iter) i, package);
 				packages = g_slist_delete_link (packages, i);
@@ -787,14 +813,11 @@ fprintf (stderr, "destroyed pool, removing from Ypp\n");
 		}
 		else {
 			if (match) {  // inserted
+fprintf (stderr, "pool (%d) - insert: %s\n", g_slist_length (packages), package->name().c_str());
 				if (i == NULL) {
-fprintf (stderr, "i null -- append it\n");
-fprintf (stderr, "before packages: %p\n", packages);
 					packages = g_slist_append (packages, (gpointer) package);
 					i = g_slist_last (packages);
-//fprintf (stderr, "index: \n", getIndexOf (package));
-fprintf (stderr, "after packages: %p\n", packages);
-}
+				}
 				else {
 					packages = g_slist_insert_before (packages, i, (gpointer) package);
 					int index = g_slist_position (packages, i) - 1;
@@ -1250,6 +1273,8 @@ void Ypp::Impl::finishTransactions()
 		// resolver won't tell us what changed -- tell pools about Auto packages
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
+/*			const zypp::ResStatus &status = pkg->impl->zyppSel->modifiedBy();
+			if (!status.isBySolver()) {*/
 			if (pkg->isAuto()) {
 				for (GSList *i = pools; i; i = i->next)
 					((Pool::Impl *) i->data)->packageModified (pkg);

@@ -1,3 +1,13 @@
+2007-11-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: de-coupled navigation widgets: tree and steps. Tree
+	will be placed in a GtkPaned next to the content.
+
+	* src/yzyppwrapper.h/cc: Zypp bridge (aka Ypp).
+	* src/ygtkzyppwrapper.h/cc: hooks a Ypp pool as a GtkTreeModel.
+	* src/YGPackageSelector.cc: initial frontend that used the new bridge.
+	Will ask for the opinion of some nice people over its design.
+
 2007-11-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: GTK+ doesn't fire a selected signal as a result of
