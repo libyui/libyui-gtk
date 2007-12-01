@@ -11,6 +11,13 @@
 
 	* src/yzyppwrapper.cc: fixed search name query. Was not being inclusive.
 
+	* src/yzyppwrapper.cc: fixed pools notifications on package modifications.
+	The resolver only tell us of *modified* packages, not *touched*. So, if
+	I set a package to install, then reverse the operation, the package is
+	not considered modified. Now, this direct user modifications are no problem;
+	we know about them. The problem are dependencies. Did a work around for that;
+	kept the old status and do a comparasion on all packages.
+
 2007-11-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: de-coupled navigation widgets: tree and steps. Tree
@@ -26,10 +33,6 @@
 	* src/YGTable.cc: GTK+ doesn't fire a selected signal as a result of
 	the current row being unselected because it was removed. But to play safe,
 	blocked them then.
-
-2007-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
-
-	* Merged PackageSelector with SVN.
 
 2007-11-22  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

@@ -699,9 +699,9 @@ void dumpYastTree (YWidget *widget)
 #endif
 	GtkTreeStore *store = gtk_tree_store_new (cols,
 		G_TYPE_STRING, G_TYPE_STRING,
-		G_TYPE_STRING, G_TYPE_STRING,
+		G_TYPE_STRING, G_TYPE_STRING
 #ifdef IS_VALID_COL
-		G_TYPE_BOOLEAN
+		, G_TYPE_BOOLEAN
 #endif
 		);
 

@@ -187,6 +187,7 @@ struct Ypp::Package::Impl
 		ZyppObject installed = zyppSel->installedObj();
 		if (!!candidate && !!installed)
 			hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
+		setUnmodified();
 	}
 
 	~Impl()
@@ -197,6 +198,11 @@ struct Ypp::Package::Impl
 		g_slist_free (availableVersions);
 	}
 
+	inline bool isModified()
+	{ return curStatus != zyppSel->status(); }
+	inline void setUnmodified()
+	{ curStatus = zyppSel->status(); }
+
 	std::string name, summary;
 	ZyppSelectable zyppSel;
 	int index;  // used for Pools syncing
@@ -206,6 +212,7 @@ struct Ypp::Package::Impl
 	Version *installedVersion;
 	bool hasUpgrade;
 	bool is3D;
+	zypp::ui::Status curStatus;  // so we know if resolver touched it
 };
 
 Ypp::Package::Package (Ypp::Package::Impl *impl)
@@ -1275,11 +1282,10 @@ void Ypp::Impl::finishTransactions()
 		// resolver won't tell us what changed -- tell pools about Auto packages
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
-/*			const zypp::ResStatus &status = pkg->impl->zyppSel->modifiedBy();
-			if (!status.isBySolver()) {*/
-			if (pkg->isAuto()) {
+			if (pkg->impl->isModified()) {
 				for (GSList *i = pools; i; i = i->next)
 					((Pool::Impl *) i->data)->packageModified (pkg);
+				pkg->impl->setUnmodified();
 			}
 		}
 	}
