@@ -128,7 +128,10 @@ public:
 		                  G_CALLBACK (action_triggered_cb), this);
 	}
 
-	virtual ~YGWizard() {}
+	virtual ~YGWizard()
+	{
+		// m_back/abort/next_button were added as children and will be freed by ~YContainerWidget
+	}
 
 	/* The purpose of this function is to do some sanity checks, besides
 	   the simple test "cmd->name() == func".
