@@ -128,12 +128,7 @@ public:
 		                  G_CALLBACK (action_triggered_cb), this);
 	}
 
-	~YGWizard()
-	{
-		delete m_back_button;
-		delete m_abort_button;
-		delete m_next_button;
-	}
+	virtual ~YGWizard() {}
 
 	/* The purpose of this function is to do some sanity checks, besides
 	   the simple test "cmd->name() == func".

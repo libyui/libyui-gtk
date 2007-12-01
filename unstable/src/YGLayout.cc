@@ -96,7 +96,7 @@ public:
 		YGWidget::sync_stretchable();
 	}
 
-	virtual void moveChild (YWidget *, long, long) {};  // ignore
+	virtual void moveChild (YWidget *, long, long) {}  // ignore
 };
 
 YContainerWidget *

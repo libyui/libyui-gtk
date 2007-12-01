@@ -1,3 +1,16 @@
+2007-11-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.cc: added Refresh button for the YWidget tree dialog.
+	Also added an optional (at compile time) column for the valid test. Not
+	much use for it though...
+
+	* src/YGWizard.cc: bug fix (found during bug #342348). We were freeing
+	YWizard button wrapper widgets which we weren't supposed to. It was just
+	printing errors, instead of crashing, as libyui does a corruption testing
+	before freeing a widget to avoid double freeing.
+
+	* src/yzyppwrapper.cc: fixed search name query. Was not being inclusive.
+
 2007-11-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: de-coupled navigation widgets: tree and steps. Tree

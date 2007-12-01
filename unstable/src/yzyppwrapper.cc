@@ -715,12 +715,14 @@ struct Ypp::Query::Impl
 		if (match && name.defined) {
 			const std::list <std::string> &names = name.value;
 			std::list <std::string>::const_iterator it;
-			for (it = names.begin(); it != names.end(); it++)
-				if (YGUtils::contains (package->name(), *it) ||
-				    YGUtils::contains (package->summary(), *it) ||
-				    YGUtils::contains (package->provides(), *it))
+			for (it = names.begin(); it != names.end(); it++) {
+				if (!YGUtils::contains (package->name(), *it) &&
+				    !YGUtils::contains (package->summary(), *it) &&
+				    !YGUtils::contains (package->provides(), *it)) {
+					match = false;
 					break;
-			match = it != names.end();
+				}
+			}
 		}
 		if (match && category.defined) {
 			Ypp::Node *query_category = category.value;
