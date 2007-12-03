@@ -1,3 +1,13 @@
+2007-12-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: set label title centered (visible on our Package Selector
+	as the icon is bigger than the text).
+
+	* src/YGProgressBar.cc (YGMultiProgressBar): made it flow from left to right
+	on horizontal multi progress bars.
+	* tests/MultiProgressBar.ycp: replaced MultiProgressBarVer.ycp by this with
+	both orientations.
+
 2007-11-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc: added Refresh button for the YWidget tree dialog.

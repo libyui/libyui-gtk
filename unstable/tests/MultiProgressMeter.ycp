@@ -8,12 +8,6 @@
 			 )
 		   );
     
-    UI::ChangeWidget(`vprog, `Values, [ 1000, 200, 500, 20, 100 ] );
-    UI::ChangeWidget(`hprog, `Values, [ 1000, 200, 500, 20, 100 ] );	UI::UserInput();
-    UI::ChangeWidget(`vprog, `Values, [  800, 200, 500, 20, 100 ] );
-    UI::ChangeWidget(`hprog, `Values, [  800, 200, 500, 20, 100 ] );	UI::UserInput();
-    UI::ChangeWidget(`vprog, `Values, [  500, 200, 500, 20, 100 ] );
-    UI::ChangeWidget(`hprog, `Values, [  500, 200, 500, 20, 100 ] );	UI::UserInput();
     UI::ChangeWidget(`vprog, `Values, [  200, 200, 500, 20, 100 ] );
     UI::ChangeWidget(`hprog, `Values, [  200, 200, 500, 20, 100 ] );	UI::UserInput();
     UI::ChangeWidget(`vprog, `Values, [    0, 200, 500, 20, 100 ] );

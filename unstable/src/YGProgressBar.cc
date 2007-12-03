@@ -120,8 +120,7 @@ public:
 	{
 //		ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (getWidget()), TRUE);
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
-
-		for (int i = segments()-1; i >= 0; i--) {
+		for (int s = 0; s < segments(); s++) {
 			GtkWidget* bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
 				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
@@ -132,7 +131,7 @@ public:
 			else
 				gtk_widget_set_size_request (bar, -1, min_size);
 			ygtk_ratio_box_pack (YGTK_RATIO_BOX (getWidget()), bar,
-			                     maxValue (i), TRUE, TRUE, 0);
+			                     getSegmentWeight (s), TRUE, TRUE, 0);
 		}
 
 		ygtk_adj_size_set_max (YGTK_ADJ_SIZE (m_adj_size), horizontal ? 200 : 0,
@@ -143,15 +142,27 @@ public:
 	virtual void doUpdate()
 	{
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
-		int n = segments()-1;
-		for (GList *i = children; i && n >= 0; i = i->next, n--) {
+		int s = 0;
+		for (GList *i = children; i && s < segments(); i = i->next, s++) {
 			GtkProgressBar *bar = GTK_PROGRESS_BAR (i->data);
-			gfloat fraction = 0;
-			if (currentValue (n) != -1)
-				fraction = 1.0 - ((gfloat) currentValue(n) / maxValue(n));
-			gtk_progress_bar_set_fraction (bar, fraction);
+			gtk_progress_bar_set_fraction (bar, getSegmentValue (s));
 		}
 		g_list_free (children);
+	}
+
+	int getSegmentWeight (int n)
+	{
+		if (vertical())
+			n = (segments() - n) - 1;
+		return maxValue (n);
+	}
+	float getSegmentValue (int n)
+	{
+		if (vertical())
+			n = (segments() - n) - 1;
+		if (currentValue (n) == -1)
+			return 0;
+		return 1.0 - (((float) currentValue (n)) / maxValue (n));
 	}
 
 	YGWIDGET_IMPL_COMMON

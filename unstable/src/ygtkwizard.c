@@ -312,7 +312,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_title_image = gtk_image_new();
 	wizard->m_title_label = gtk_label_new("");
 	gtk_label_set_ellipsize (GTK_LABEL (wizard->m_title_label), PANGO_ELLIPSIZE_END);
-	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0);
+	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0.5);
 
 	// setup label look
 	gtk_widget_modify_fg (wizard->m_title_label, GTK_STATE_NORMAL,
