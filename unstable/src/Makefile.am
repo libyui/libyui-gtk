@@ -48,6 +48,7 @@ libpy2gtk_la_SOURCES = \
 	ygtkwizard.c \
 	ygtkfindentry.c \
 	ygdkmngloader.c \
+	ygtkimage.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \

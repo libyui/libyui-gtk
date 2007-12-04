@@ -1,3 +1,15 @@
+2007-12-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkimage.h/c: moved YGImage stuff to an actual widget impl. Added
+	dim/gray when disabled as asked by bug #345506. Used the same code as gtk
+	-- done at expose-time, using style engine.
+	* src/YGImage.cc: according changes. Much smaller, of course.
+
+	* tests/ImageMng.ycp: added Enable option, to test this. Very cool.
+
+	* src/ygdkmngloader.c: bug fix: when fopen() fails, it returns null, so don't
+	call fclose() on null, on error case.
+
 2007-12-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: set label title centered (visible on our Package Selector

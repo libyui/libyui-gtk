@@ -4,35 +4,42 @@
 {
 	UI::OpenDialog (
 		`VBox (
+			`Heading ("Movie"),
 			`ReplacePoint (`id (`replace_image),
-				`ColoredLabel ("Choose an image first!", `rgb (0, 0, 0),
-				               `rgb (255, 0, 0), 5)
+				`ColoredLabel (`opt(`hstretch, `vstretch), "Pick an image!",
+				               `rgb (0, 0, 0), `rgb (255, 0, 0), 5)
 				),
 
-			`Frame ("Which MNG file:",
-				`RadioButtonGroup (`id(`rb),
-					`VBox(
-						`Left (`RadioButton(`id (`movie1), `opt(`notify), "&Movie1")),
-						`Left (`RadioButton(`id (`movie2), `opt(`notify), "&Movie2")),
-						`Left (`RadioButton(`id (`movie3), `opt(`notify), "&Movie3")),
-						`Left (`RadioButton(`id (`movie4), `opt(`notify), "&Movie4")),
-						`Left (`RadioButton(`id (`movie5), `opt(`notify), "&Movie5")),
-						`Left (`RadioButton(`id (`movie6), `opt(`notify), "&Movie6")),
-						`Left (`RadioButton(`id (`movie7), `opt(`notify), "&Movie7")),
-						`Left (`RadioButton(`id (`movie8), `opt(`notify), "&Movie8"))
+			`VSquash (`HBox (
+				`Top (`Frame ("Which MNG file:",
+					`RadioButtonGroup (`id(`rb),
+						`VBox(
+							`Left (`RadioButton(`id (`movie1), `opt(`notify), "&Movie1")),
+							`Left (`RadioButton(`id (`movie2), `opt(`notify), "&Movie2")),
+							`Left (`RadioButton(`id (`movie3), `opt(`notify), "&Movie3")),
+							`Left (`RadioButton(`id (`movie4), `opt(`notify), "&Movie4")),
+							`Left (`RadioButton(`id (`movie5), `opt(`notify), "&Movie5")),
+							`Left (`RadioButton(`id (`movie6), `opt(`notify), "&Movie6")),
+							`Left (`RadioButton(`id (`movie7), `opt(`notify), "&Movie7")),
+							`Left (`RadioButton(`id (`movie8), `opt(`notify), "&Movie8"))
+							)
 						)
-					)
-				),
+					)),
 
-			`Frame ("Image effect:",
-				`RadioButtonGroup (`id(`rb),
-					`VBox(
-						`Left (`RadioButton(`id (`no_effect), `opt(`notify), "&None", true)),
-						`Left (`RadioButton(`id (`tiled_effect),`opt(`notify), "&Tiled")),
-						`Left (`RadioButton(`id (`scaled_effect), `opt(`notify), "&Scaled"))
-						)
-					)
-				),
+				`Top (`VBox (
+					`Frame ("Image effect:",
+						`RadioButtonGroup (`id(`rb),
+							`VBox(
+								`Left (`RadioButton(`id (`no_effect), `opt(`notify), "&None", true)),
+								`Left (`RadioButton(`id (`tiled_effect),`opt(`notify), "&Tiled")),
+								`Left (`RadioButton(`id (`scaled_effect), `opt(`notify), "&Scaled"))
+								)
+							)
+						),
+					`Left (`CheckBox(`id (`enabled), `opt(`notify), "&Enabled", true))
+				))
+			)),
+
 			`Right (`Label ("Resize the window!")),
 			`PushButton(`id (`close), "&Close")
 		)
@@ -77,13 +84,18 @@
 		else
 			filename = "tests/movie8.mng";
 
+		any enabled_opt = nil;
+		boolean check = (boolean) UI::QueryWidget(`enabled, `Value);
+		if (!check)
+			enabled_opt = `disabled;
+
 		// to test inline images, uncomment next line and pass it to `Image
 		//byteblock data = (byteblock) SCR::Read (.target.byte, filename);
+		term image = `Image (`id (`image),
+			`opt (`animated, effect_opt, enabled_opt, `hstretch, `vstretch),
+			filename, filename + " not found");
 
-		UI::ReplaceWidget (`replace_image,
-		                   `Image (`opt (`animated, effect_opt, zerowidth, zeroheight),
-		                           filename, filename + " not found"));
-
+		UI::ReplaceWidget (`replace_image, image);
 	}
 
 	UI::CloseDialog();
