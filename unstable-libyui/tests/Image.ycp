@@ -1,0 +1,68 @@
+// Image test
+string filename = "tests/image.gif";
+
+{
+	UI::OpenDialog (
+		`VBox (
+			`ReplacePoint (`id (`replace_image),
+				`ColoredLabel ("Choose an image type option!", `rgb (0, 0, 0),
+				               `rgb (255, 0, 0), 5)
+				),
+
+			`Frame ("Image type:",
+				`RadioButtonGroup (`id(`rb),
+					`VBox(
+						`Left (`RadioButton(`id (`static),`opt(`notify), "&Static")),
+						`Left (`RadioButton(`id (`animation), `opt(`notify), "&Animation"))
+						)
+					)
+				),
+
+			`Frame ("Image effect:",
+				`RadioButtonGroup (`id(`rb),
+					`VBox(
+						`Left (`RadioButton(`id (`no_effect), `opt(`notify), "&None", true)),
+						`Left (`RadioButton(`id (`tiled_effect),`opt(`notify), "&Tiled")),
+						`Left (`RadioButton(`id (`scaled_effect), `opt(`notify), "&Scaled"))
+						)
+					)
+				),
+			`Right (`Label ("Resize the window!")),
+			`PushButton(`id (`close), "&Close")
+		)
+	);
+
+	any ret = nil;
+	while (true)
+	{
+		ret = UI::UserInput();
+		if (ret == `close || ret == `cancel)
+			break;
+
+		any type_opt = nil;
+		if (!(boolean) UI::QueryWidget(`id(`static), `Value))
+			type_opt = `animated;
+
+		any effect_opt = nil;
+		if ((boolean) UI::QueryWidget(`id(`tiled_effect), `Value))
+			effect_opt = `tiled;
+		else if ((boolean) UI::QueryWidget(`id(`scaled_effect), `Value))
+			effect_opt = `scaleToFit;
+
+		// needed for tiling (scaling sets this automatically, anyway...)
+		any zerowidth  = nil;
+		any zeroheight = nil;
+		if (effect_opt != nil) {
+			zerowidth = `zeroWidth;
+			zeroheight = `zeroHeight;
+		}
+
+		UI::ReplaceWidget (`replace_image,
+		                   `Image (`opt (type_opt, effect_opt, zerowidth, zeroheight),
+		                           filename, filename + " not found"));
+
+	}
+
+	UI::CloseDialog();
+}
+

@@ -1,0 +1,45 @@
+// SelectionBox change and lookup test
+{
+list itemlist1 =
+	[ "Spaghetti", "Steak Sandwich", "Chili", "Salami Baguette" ];
+
+list itemlist2 =
+	[ "Mercedes", "AUDI", "VW", "BMW", "Porsche" ];
+
+list itemslists = [ itemlist1, itemlist2 ];
+
+integer listnum = 0;
+
+UI::OpenDialog (
+	`VBox (
+		`MinSize (30, 10,
+			`SelectionBox (`id(`list), `opt (`immediate),
+			               "Prices", itemlist1)
+			),
+		`TextEntry (`id(`text), "Current item:", ""),
+		`Right (
+			`HBox (
+				`PushButton (`id (`next),   "Change &List Contents"),
+				`PushButton (`id (`cancel), "&Close")
+				)
+			)
+		)
+	);
+
+any ret = nil;
+while (ret != `cancel) {
+	ret = UI::UserInput();
+
+	if (ret == `next) {
+		listnum = 1 - listnum;
+		UI::ChangeWidget (`id(`list), `Items, select (itemslists, listnum, nil));
+	}
+
+	if (ret == `list) {
+		string item = (string) UI::QueryWidget(`id(`list), `CurrentItem);
+		UI::ChangeWidget (`id (`text), `Value, item);
+	}
+}
+
+UI::CloseDialog();
+}

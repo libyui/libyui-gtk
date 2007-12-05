@@ -1,0 +1,30 @@
+// The widget should get center aligned on wizard, but not ordinary dialogs
+{
+// stand-alone
+UI::OpenDialog(
+	`VBox(
+		`Heading ("Header"),
+		`VSpacing (0.5),
+		`Label ("This text should get on top")
+		)
+	);
+UI::UserInput();
+
+// on wizard
+UI::OpenDialog(
+	`Wizard (`back, "&Back", `abort, "Ab&ort", `next, "&Next")
+	);
+
+
+UI::ReplaceWidget (`id (`contents),
+	`VBox(
+		`Heading ("Header"),
+		`VSpacing (0.5),
+		`Label ("This text should get centered")
+		)
+	);
+
+
+UI::UserInput();
+UI::CloseDialog();
+}

@@ -1,0 +1,12 @@
+# -*- makefile -*- Automake include file
+# $Id: autodocs-cc.ami 23704 2005-06-10 17:36:13Z mvidner $
+
+# Builds source documentation for C++ sources.
+# Builds only on demand, intended for leaf packages where the
+# docs is useful for their own maintainer.
+
+# PARAMETERS: see autodocs-cc-base
+
+include $(top_srcdir)/autodocs-cc-base.ami
+
+html: index.html

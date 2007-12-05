@@ -1,0 +1,13 @@
+// replacement stretchable test
+{
+UI::OpenDialog(
+	`ReplacePoint (`id (`rp), `PushButton ("Push Me!"))
+);
+
+UI::UserInput();
+
+UI::ReplaceWidget (`rp, `MultiLineEdit ("", "I should be all stretched!"));
+
+UI::UserInput();
+UI::CloseDialog();
+}

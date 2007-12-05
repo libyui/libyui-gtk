@@ -1,0 +1,55 @@
+// Stock Icons test
+
+{
+	list stock_icons = [
+		"ok",
+		"cancel",
+		"abort",
+		"apply",
+		"about",
+		"connect",
+		"disconnect",
+		"edit",
+		"open",
+		"close",
+		"new",
+		"quit",
+		"print",
+		"save",
+		"save-as",
+		"yes",
+		"no",
+		
+	];
+	integer i = 0;
+
+	UI::OpenDialog (
+		`ReplacePoint (`id (`rp),
+			`PushButton (`opt (`icon (stock_icons[i]:nil)), stock_icons[i]:"")
+			)
+		);
+
+	any ret = nil;
+	while (true)
+		{
+		ret = UI::TimeoutUserInput (1000);
+
+		if (ret == `timeout)
+			{
+			i = i + 1;
+			if (i == size (stock_icons))
+				break;
+			else
+				UI::ReplaceWidget (`rp,
+					`PushButton (`opt (`icon (stock_icons[i]:nil)), stock_icons[i]:"")
+					);
+			UI::RecalcLayout();
+			}
+
+		else
+			break;
+
+		};
+
+	UI::CloseDialog();
+}

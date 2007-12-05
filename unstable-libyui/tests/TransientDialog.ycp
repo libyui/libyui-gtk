@@ -1,0 +1,24 @@
+{
+
+
+UI::OpenDialog (`opt (`defaultsize), `PushButton ("Button1"));
+UI::TimeoutUserInput (4 * 1000);
+
+UI::OpenDialog (`opt (`defaultsize), `PushButton ("Button2"));
+UI::TimeoutUserInput (4 * 1000);
+
+UI::OpenDialog (`PushButton ("Button"));
+UI::TimeoutUserInput (4 * 1000);
+}
+
+// simple
+/*
+{
+UI::OpenDialog (`opt (`defaultsize), `PushButton ("Button"));
+UI::TimeoutUserInput (4 * 1000);
+
+UI::OpenDialog (`PushButton ("Button"));
+UI::TimeoutUserInput (8 * 1000);
+}
+*/
+

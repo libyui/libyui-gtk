@@ -1,0 +1,15 @@
+// alignment (test case for inst_productsources bug)
+{
+UI::OpenDialog(
+	`VBox(
+		`HBox(
+			`PushButton ("Fixed"),
+			`Bottom (`PushButton ("Test"))
+		),
+		`VWeight( 1, `MultiLineEdit("Description", "bla bla") )
+	)
+);
+UI::UserInput();
+UI::CloseDialog();
+}
+

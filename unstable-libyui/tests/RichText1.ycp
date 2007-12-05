@@ -1,0 +1,26 @@
+// RichText test
+
+{
+	UI::OpenDialog (
+		`VBox (
+			`RichText (`id (`rtext), ""),
+			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", ""),
+			`PushButton (`id (`close), `opt(`default), "&Close")
+		)
+	);
+
+	any ret = nil;
+	repeat
+	{
+		ret = UI::UserInput();
+
+		if (ret == `source)
+		{
+			UI::ChangeWidget (`id (`rtext), `Value,
+			                  (string) UI::QueryWidget(`id(`source), `Value));
+		}
+
+	} until (ret == `close || ret == `cancel);
+
+	UI::CloseDialog();
+}
