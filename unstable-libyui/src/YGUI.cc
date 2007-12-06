@@ -109,10 +109,14 @@ void YGUI::checkInit()
 	}
 }
 
+#define PRINT_EVENTS
+
 void YGUI::idleLoop (int fd_ycp)
 {
 	IMPL
-//fprintf (stderr, "idleLoop()\n");
+#ifdef PRINT_EVENTS
+fprintf (stderr, "idleLoop()\n");
+#endif
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -131,7 +135,9 @@ void YGUI::idleLoop (int fd_ycp)
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
-//fprintf (stderr, "no more idle\n");
+#ifdef PRINT_EVENTS
+fprintf (stderr, "no more idle\n");
+#endif
 }
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
@@ -152,7 +158,9 @@ void YGUI::sendEvent (YEvent *event)
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-//fprintf (stderr, "waitInput()\n");
+#ifdef PRINT_EVENTS
+fprintf (stderr, "waitInput()\n");
+#endif
 	if (!YDialog::currentDialog (false))
 		return NULL;
 
@@ -183,7 +191,9 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (block)  // if YCP keeps working for more than X time, set busy cursor
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
-//fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (event->eventType()));
+#ifdef PRINT_EVENTS
+fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (event->eventType()));
+#endif
 	return event;
 }
 

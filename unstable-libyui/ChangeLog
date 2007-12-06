@@ -2,7 +2,6 @@
 
 	* Fixed previous crash, some other problems and some improvements.
 	* Weird problems left:
-	+ it hangs when suposedly the code is already terminated.
 	+ crashes on sw_single (says we are calling a pure virtual func)
 	   sometimes, it just exists normally right after the selector widget
 	   appears
