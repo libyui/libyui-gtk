@@ -38,15 +38,16 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
 	}
 
-fprintf (stderr, "set widget rep\n");
-	ywidget->setWidgetRep ((void *) this);
-	if (yparent)
-		ywidget->setParent (yparent);
-
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
 	if (_show)
 		show();
+
+	ywidget->setWidgetRep ((void *) this);
+	if (yparent) {
+		ywidget->setParent (yparent);
+		yparent->addChild (ywidget);
+	}
 }
 
 YGWidget::~YGWidget()
@@ -63,7 +64,6 @@ void YGWidget::show()
 
 YGWidget *YGWidget::get (YWidget *ywidget)
 {
-	g_assert (ywidget != NULL);
 	g_assert (ywidget->widgetRep() != NULL);
 	return (YGWidget *) ywidget->widgetRep();
 }
@@ -77,6 +77,26 @@ bool YGWidget::doSetKeyboardFocus()
 void YGWidget::doSetEnabling (bool enabled)
 {
 	gtk_widget_set_sensitive (getWidget(), enabled);
+}
+
+void YGWidget::doAddChild (YWidget *ychild, GtkWidget *container)
+{
+	GtkWidget *child = YGWidget::get (ychild)->getLayout();
+	gtk_container_add (GTK_CONTAINER (container), child);
+}
+
+void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
+{
+	/* Note: removeChild() is generally a result of a widget being removed as it
+	   will remove itself from the parent. But YGWidget deconstructor would run
+	   before the YWidget one, as that's the order we have been using, so we
+	   can't use it, we can't retrieve the GTK widget then. However, this is a
+	   non-issue, as ~YGWidget will destroy the widget, and GTK will remove it
+	   from the parent. */
+	if (!ychild->beingDestroyed()) {
+		GtkWidget *child = YGWidget::get (ychild)->getLayout();
+		gtk_container_remove (GTK_CONTAINER (container), child);
+	}
 }
 
 void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
@@ -132,7 +152,6 @@ void YGWidget::sync_stretchable (YWidget *child)
 	IMPL
 	YWidget *parent = m_ywidget->parent();
 	if (parent)
-		// tell parent to sync too!
 		YGWidget::get (parent)->sync_stretchable (m_ywidget);
 }
 

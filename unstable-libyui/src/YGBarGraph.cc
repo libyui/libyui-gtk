@@ -14,7 +14,7 @@ class YGBarGraph : public YBarGraph, public YGWidget
 {
 public:
 	YGBarGraph (YWidget *parent)
-	: YBarGraph (parent)
+	: YBarGraph (NULL)
 	, YGWidget (this, parent, true, YGTK_TYPE_BAR_GRAPH, NULL)
 	{}
 
@@ -27,7 +27,7 @@ public:
 			ygtk_bar_graph_setup_entry (YGTK_BAR_GRAPH (getWidget()), i,
 				s.label().c_str(), s.value());
 		}
-		// FIXME: new libyui colors segments ... We probably should honor it
+		// FIXME: new libyui colors segments ... We probably should honor that
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -49,7 +49,7 @@ public:
 	YGPartitionSplitter (YWidget *parent, int usedSize, int totalFreeSize, int newPartSize,
 		int minNewPartSize, int minFreeSize, const string &usedLabel, const string &freeLabel,
 		const string &newPartLabel, const string &freeFieldLabel, const string &newPartFieldLabel)
-	: YPartitionSplitter (parent, usedSize, totalFreeSize, newPartSize, minNewPartSize,
+	: YPartitionSplitter (NULL, usedSize, totalFreeSize, newPartSize, minNewPartSize,
 		minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel, newPartFieldLabel)
 	, YGWidget (this, parent, true, GTK_TYPE_VBOX, NULL)
 	{

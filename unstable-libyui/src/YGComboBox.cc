@@ -14,7 +14,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 {
 	public:
 		YGComboBox (YWidget *parent, const string &label, bool editable)
-		: YComboBox (parent, label, editable)
+		: YComboBox (NULL, label, editable)
 		, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 		    editable ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 		, YGSelectionModel (true, false)
@@ -33,6 +33,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, FALSE);
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
 			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
+		gtk_combo_box_set_model (getComboBox(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 		                  G_CALLBACK (selected_changed_cb), this);
@@ -40,11 +41,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 	inline GtkComboBox *getComboBox()
 	{ return GTK_COMBO_BOX (getWidget()); }
-
-	virtual void setModel (GtkTreeModel *model)
-	{
-		gtk_combo_box_set_model (getComboBox(), model);
-	}
 
 	GtkEntry *getEntry()
 	{

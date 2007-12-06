@@ -34,6 +34,8 @@ public:
 	// for YWidget
 	virtual bool doSetKeyboardFocus();
 	virtual void doSetEnabling (bool enabled);
+	virtual void doAddChild (YWidget *child, GtkWidget *container);
+	virtual void doRemoveChild (YWidget *child, GtkWidget *container);
 
 	// Event handling
 	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
@@ -78,7 +80,7 @@ protected:
 #define YGWIDGET_IMPL_USE_BOLD(ParentClass)                     \
     virtual void setUseBoldFont (bool useBold) {                \
     	PangoWeight weight = useBold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL; \
-		YGUtils::setWidgetFont (getWidget(), weight, PANGO_SCALE_MEDIUM); \
+		YGUtils::setWidgetFont (getWidget(), weight, PANGO_SCALE_MEDIUM);       \
     	ParentClass::setUseBoldFont (useBold);                  \
     }
 
@@ -86,15 +88,13 @@ protected:
 #define YGWIDGET_IMPL_CHILD_ADDED(container)                    \
 	virtual void addChild (YWidget *ychild) {                   \
 		YWidget::addChild (ychild);                             \
-		GtkWidget *child = YGWidget::get (ychild)->getLayout(); \
-		gtk_container_add (GTK_CONTAINER (container), child);   \
-		sync_stretchable();                                     \
+		doAddChild (ychild, container);                         \
+		sync_stretchable (ychild);                              \
 	}
-#define YGWIDGET_IMPL_CHILD_REMOVED(container)                   \
-	virtual void removeChild (YWidget *ychild) {                 \
-		YWidget::removeChild (ychild);                           \
-		GtkWidget *child = YGWidget::get (ychild)->getLayout();  \
-		gtk_container_remove (GTK_CONTAINER (container), child); \
+#define YGWIDGET_IMPL_CHILD_REMOVED(container)                  \
+	virtual void removeChild (YWidget *ychild) {                \
+		YWidget::removeChild (ychild);                          \
+		doRemoveChild (ychild, container);                      \
 	}
 
 /* This is a convenience class that allows for a label next to the

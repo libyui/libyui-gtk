@@ -265,8 +265,13 @@ static void ygtk_marshal_VOID__POINTER_INT (GClosure *closure,
 
 static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard)
 {
-	gpointer id = g_object_get_data (G_OBJECT (button), "id");
-	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
+	gpointer id;
+	id = g_object_get_data (G_OBJECT (button), "ptr-id");
+	if (id)
+		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
+	id = g_object_get_data (G_OBJECT (button), "str-id");
+	if (id)
+		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
 static GtkWidget *button_new (YGtkWizard *wizard)
@@ -645,31 +650,53 @@ void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text)
 	ygutils_setStockIcon (wizard->m_next_button, text);
 }
 
-void ygtk_wizard_set_back_button_id (YGtkWizard *wizard, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_back_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_back_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_back_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_next_button_id (YGtkWizard *wizard, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_next_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_next_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_next_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_abort_button_id (YGtkWizard *wizard, gpointer id,
-                                      GDestroyNotify destroy_cb)
+void ygtk_wizard_set_abort_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_abort_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_abort_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard,
-                                     const gchar *text, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_release_notes_button_ptr_id (YGtkWizard *wizard, gpointer id)
+{
+	g_object_set_data (G_OBJECT (wizard->m_release_notes_button), "ptr-id", id);
+}
+
+void ygtk_wizard_set_back_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_back_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_next_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_next_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_abort_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_abort_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_release_notes_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_release_notes_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard, const gchar *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_release_notes_button), text);
-	g_object_set_data_full (G_OBJECT (wizard->m_release_notes_button), "id",
-	                        id, destroy_cb);
 	gtk_widget_show (wizard->m_release_notes_button);
 }
 

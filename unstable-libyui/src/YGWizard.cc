@@ -14,6 +14,13 @@
 #include "YReplacePoint.h"
 #include "YGDialog.h"
 
+
+// FIXME: wizard events need to be ported
+// We'll probably want to also make YGtkWizard buttons actual YGPushButtons...
+// (let's just create them and pass button->getWidget() to the wizard...)
+// (or let's just improve on the wrapper and id.)
+
+
 class YGWizard : public YWizard, public YGWidget
 {
 	bool m_verboseCommands;
@@ -33,7 +40,7 @@ class YGWizard : public YWizard, public YGWidget
 		   of id change. */
 		YGWButton (YWidget *parent, GtkWidget *widget, const std::string &label)
 		: YPushButton (parent, label)
-		{ m_widget = widget; setLabel (label); }
+		{ setWidgetRep (NULL); m_widget = widget; setLabel (label); }
 
 		void setLabel (const string &label) {
 			string str = YGUtils::mapKBAccel (label.c_str());
@@ -56,7 +63,7 @@ class YGWizard : public YWizard, public YGWidget
 			GtkWidget *m_widget;
 	};
 
-	YGWButton *m_back_button, *m_abort_button, *m_next_button;
+	YGWButton *m_back_button, *m_abort_button, *m_next_button, *m_notes_button;
 	// release notes button would be a little more hassle to support; yast-qt
 	// doesn't support it too anyway.
 
@@ -64,7 +71,7 @@ public:
 	YGWizard (YWidget *parent, const string &backButtonLabel,
 		const string &abortButtonLabel, const string &nextButtonLabel,
 		YWizardMode wizardMode)
-	: YWizard (parent, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
+	: YWizard (NULL, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
 	, YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
 		IMPL
@@ -97,9 +104,15 @@ public:
 			ygtk_wizard_enable_tree (getWizard());
 
 		//** Setting the bottom buttons
-		m_back_button = new YGWButton (this, getWizard()->m_back_button, backButtonLabel);
+		m_back_button  = new YGWButton (this, getWizard()->m_back_button, backButtonLabel);
 		m_abort_button = new YGWButton (this, getWizard()->m_abort_button, abortButtonLabel);
-		m_next_button = new YGWButton (this, getWizard()->m_next_button, nextButtonLabel);
+		m_next_button  = new YGWButton (this, getWizard()->m_next_button, nextButtonLabel);
+		m_notes_button = new YGWButton (this, getWizard()->m_release_notes_button, string());
+
+		ygtk_wizard_set_back_button_ptr_id (getWizard(), (gpointer) m_back_button);
+		ygtk_wizard_set_next_button_ptr_id (getWizard(), (gpointer) m_next_button);
+		ygtk_wizard_set_abort_button_ptr_id (getWizard(), (gpointer) m_abort_button);
+		ygtk_wizard_set_release_notes_button_ptr_id (getWizard(), (gpointer) m_notes_button);
 
 		//** All event are sent through this signal together with an id
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
@@ -240,8 +253,8 @@ public:
 	virtual void showReleaseNotesButton (const string &label, const string &id)
 	{
 		string str = YGUtils::mapKBAccel (label.c_str());
-		ygtk_wizard_set_release_notes_button_label (getWizard(), label.c_str(),
-			g_strdup (id.c_str()), free_string_cb);
+		ygtk_wizard_set_release_notes_button_label (getWizard(), str.c_str());
+		ygtk_wizard_set_release_notes_button_str_id (getWizard(), id.c_str());
 	}
 
 	virtual void hideReleaseNotesButton()
@@ -259,12 +272,15 @@ public:
 		if ((GType) id_type == G_TYPE_STRING)
 			YGUI::ui()->sendEvent (new YMenuEvent ((char *) id));
 		else
-			YGUI::ui()->sendEvent (new YMenuEvent (*((YCPValue *) id)));
+			YGUI::ui()->sendEvent (new YWidgetEvent ((YWidget *) id, YEvent::Activated));
 	}
 
-	static void free_string_cb (gpointer data)
-	{ g_free (data); }
-
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
+	{
+		if (ychild->widgetRep())
+			// don't actually add the button wrappers
+			YGWidget::doAddChild (ychild, container);
+	}
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())

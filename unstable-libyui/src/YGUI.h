@@ -44,12 +44,12 @@ public:
           bool with_threads, const char *macro_file);
     virtual ~YGUI();
 
-    static YGUI *ui() { return (YGUI *)YUI::ui(); }
+    static YGUI *ui() { return (YGUI *) YUI::ui(); }
 
 protected:
-	virtual YWidgetFactory * createWidgetFactory();
-	virtual YOptionalWidgetFactory * createOptionalWidgetFactory();
-	virtual YApplication * createApplication();
+	virtual YWidgetFactory *createWidgetFactory();
+	virtual YOptionalWidgetFactory *createOptionalWidgetFactory();
+	virtual YApplication *createApplication();
 
 public:
     YEvent *waitInput (unsigned long timeout_ms, bool block);
@@ -129,7 +129,7 @@ private:
 public:
     // Helpers for internal use [ visibility hidden ]
     int getDefaultSize (YUIDimension dim);
-    bool setFullscreen() const { return m_fullscreen || !m_have_wm; }
+    bool setFullscreen() const { return m_fullscreen; }
     bool hasWM() const         { return m_have_wm; }
     bool unsetBorder() const   { return m_no_border; }
 };
@@ -225,7 +225,6 @@ public:
 	virtual bool hasSimplePatchSelector() IMPL_RET (false)
 	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags)
 		IMPL_RET (NULL)
-
 	virtual bool hasPatternSelector() IMPL_RET (false)
 	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags)
 		IMPL_RET (NULL)

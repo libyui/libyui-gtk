@@ -102,7 +102,7 @@ class YGMultiLineEdit : public YMultiLineEdit, public YGTextView
 {
 public:
 	YGMultiLineEdit (YWidget *parent, const string &label)
-	: YMultiLineEdit (parent, label)
+	: YMultiLineEdit (NULL, label)
 	, YGTextView (this, parent, label, true)
 	{}
 
@@ -134,7 +134,7 @@ class YGLogView : public YLogView, public YGTextView
 {
 public:
 	YGLogView (YWidget *parent, const string &label, int visibleLines, int maxLines)
-	: YLogView (parent, label, visibleLines, maxLines)
+	: YLogView (NULL, label, visibleLines, maxLines)
 	, YGTextView (this, parent, label, false)
 	{}
 
@@ -163,7 +163,7 @@ bool m_autoScrollDown;
 
 public:
 	YGPlainText(YWidget *parent, const string &text)
-	: YRichText (parent, text)
+	: YRichText (NULL, text)
 	, YGTextView (this, parent, string(), false)
 	{
 		if (shrinkable())
@@ -189,7 +189,7 @@ class YGRichText : public YRichText, public YGScrolledWidget
 {
 public:
 	YGRichText (YWidget *parent, const string &text)
-	: YRichText (parent, text)
+	: YRichText (NULL, text)
 	, YGScrolledWidget (this, parent, true, ygtk_html_wrap_get_type(), NULL)
 	{
 		IMPL

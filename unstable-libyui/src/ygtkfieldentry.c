@@ -81,19 +81,38 @@ static void ygtk_field_entry_entry_changed (GtkEditable *editable, YGtkFieldEntr
 	g_signal_emit (fields, filter_entry_signal, 0, nb);
 }
 
-void ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator,
-                                 guint max_length, const gchar *valid_chars)
+static guint ygtk_field_entry_length (YGtkFieldEntry *fields)
 {
+	guint length;
+	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
+	length = g_list_length (children);
+	g_list_free (children);
+	return length;
+}
+
+static inline guint child_to_index (YGtkFieldEntry *fields, guint child_i)
+{ return child_i / 2; }
+static inline guint index_to_child (YGtkFieldEntry *fields, guint index)
+{ return index * 2; }
+
+GtkEntry *ygtk_field_entry_get_field_widget (YGtkFieldEntry *fields, guint index)
+{
+	GtkEntry *entry;
+	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
+	entry = g_list_nth_data (children, index_to_child (fields, index));
+	g_list_free (children);
+	return entry;
+}
+guint ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator)
+{
+	guint new_index = child_to_index (fields, ygtk_field_entry_length (fields));
+
 	GtkWidget *label = 0, *entry;
-	if (fields->use_separator) {
+	if (new_index > 0) {
 		const gchar str[2] = { separator, '\0' };
 		label = gtk_label_new (str);
 	}
 	entry = gtk_entry_new();
-	gtk_entry_set_max_length (GTK_ENTRY (entry), max_length);
-	gtk_entry_set_width_chars (GTK_ENTRY (entry), (max_length == 0) ? -1 : max_length);
-	ygutils_setFilter (GTK_ENTRY (entry), valid_chars);
-
 	g_signal_connect (G_OBJECT (entry), "insert-text",
 	                  G_CALLBACK (ygtk_field_entry_insert_text), fields);
 	g_signal_connect (G_OBJECT (entry), "move-cursor",
@@ -103,25 +122,29 @@ void ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator,
 	                  G_CALLBACK (ygtk_field_entry_entry_changed), fields);
 
 	GtkBox *box = GTK_BOX (fields);
-	if (label)
+	if (label) {
 		gtk_box_pack_start (box, label, FALSE, FALSE, 0);
+		gtk_widget_show (label);
+	}
 	gtk_box_pack_start (box, entry, TRUE, TRUE, 0);
+	gtk_widget_show (entry);
 
-	fields->use_separator = TRUE;
+	return new_index;
 }
 
-static GtkEntry *ygtk_field_entry_get_field (YGtkFieldEntry *fields, guint nb)
+void ygtk_field_entry_setup_field (YGtkFieldEntry *fields, guint index,
+                                   gint max_length, const gchar *valid_chars)
 {
-	GtkEntry *entry;
-	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
-	entry = g_list_nth_data (children, nb * 2);
-	g_list_free (children);
-	return entry;
+	GtkEntry *entry = ygtk_field_entry_get_field_widget (fields, index);
+	gtk_entry_set_max_length (entry, max_length == -1 ? 0 : max_length);
+	gtk_entry_set_width_chars (entry, max_length);
+	ygutils_setFilter (entry, valid_chars);
 }
 
-void ygtk_field_entry_set_field_text (YGtkFieldEntry *fields, guint nb, const gchar *text)
+void ygtk_field_entry_set_field_text (YGtkFieldEntry *fields, guint index, const gchar *text)
 {
-	GtkEntry *entry = ygtk_field_entry_get_field (fields, nb);
+	GtkEntry *entry = ygtk_field_entry_get_field_widget (fields, index);
+
 	g_signal_handlers_block_by_func (entry,
 		(gpointer) ygtk_field_entry_entry_changed, fields);
 	g_signal_handlers_block_by_func (entry,
@@ -135,9 +158,9 @@ void ygtk_field_entry_set_field_text (YGtkFieldEntry *fields, guint nb, const gc
 		(gpointer) ygtk_field_entry_insert_text, fields);
 }
 
-const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *fields, guint nb)
+const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *fields, guint index)
 {
-	GtkEntry *entry = ygtk_field_entry_get_field (fields, nb);
+	GtkEntry *entry = ygtk_field_entry_get_field_widget (fields, index);
 	return gtk_entry_get_text (entry);
 }
 

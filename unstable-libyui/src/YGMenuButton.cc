@@ -14,7 +14,7 @@ class YGMenuButton : public YMenuButton, public YGWidget
 {
 public:
 	YGMenuButton (YWidget *parent, const string &label)
-	:  YMenuButton (parent, label),
+	:  YMenuButton (NULL, label),
 	   YGWidget (this, parent, true, YGTK_TYPE_MENU_BUTTON, NULL)
 	{
 		IMPL

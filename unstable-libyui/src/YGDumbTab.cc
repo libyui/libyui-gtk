@@ -18,14 +18,13 @@ class YGDumbTab : public YDumbTab, public YGWidget
 
 public:
 	YGDumbTab (YWidget *parent)
-		: YDumbTab (parent),
+		: YDumbTab (NULL),
 		  YGWidget (this, parent, true, GTK_TYPE_NOTEBOOK, NULL)
 	{
 		IMPL
 		m_containee = gtk_event_box_new();
 		gtk_widget_show (m_containee);
-		g_object_ref (G_OBJECT (m_containee));
-		gtk_object_sink (GTK_OBJECT (m_containee));
+		g_object_ref_sink (G_OBJECT (m_containee));
 
 		m_last_tab = 0;
 		// GTK+ keeps the notebook size set to the biggset page. We can't
@@ -33,8 +32,8 @@ public:
 		// reduce its size.
 		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
-		g_signal_connect (G_OBJECT (getWidget()), "switch-page",
-		                  G_CALLBACK (changed_tab_cb), this);
+		g_signal_connect_after (G_OBJECT (getWidget()), "switch-page",
+		                        G_CALLBACK (changed_tab_cb), this);
 	}
 
 	~YGDumbTab()
@@ -49,7 +48,7 @@ public:
 		GtkWidget *tab_label, *image = 0, *label;
 
 		string str = YGUtils::mapKBAccel (item->label());
-		label = gtk_label_new (str.c_str());
+		label = gtk_label_new_with_mnemonic (str.c_str());
 		gtk_widget_show (label);
 
 		if (item->hasIconName()) {
@@ -70,15 +69,15 @@ public:
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		g_signal_handlers_block_by_func (notebook, (gpointer) changed_tab_cb, this);
 
-		GtkWidget *empty = gtk_event_box_new();
+		GtkWidget *page = gtk_event_box_new();
+		gtk_widget_show (page);
+		item->setData ((void *) page);
+		g_object_set_data (G_OBJECT (page), "yitem", item);
 
-		g_object_set_data (G_OBJECT (empty), "yitem", item);
-		gtk_widget_show (empty);
+		gtk_notebook_append_page (notebook, page, tab_label);
 
-		gtk_notebook_append_page (notebook, empty, tab_label);
-
-		if (!m_last_tab)
-			change_tab (0);
+		if (!m_last_tab)  /*first tab*/
+			syncTabPage();
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 	}
@@ -86,16 +85,14 @@ public:
 	virtual void deleteAllItems()
 	{
 		GList *children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
-		for (GList *i = children; i; i = i->next) {
-			GtkWidget *child = (GtkWidget *) i->data;
-			gtk_container_remove (GTK_CONTAINER (getWidget()), child);
-		}
+		for (GList *i = children; i; i = i->next)
+			gtk_container_remove (GTK_CONTAINER (getWidget()), (GtkWidget *) i->data);
 		g_list_free (children);
 	}
 
 	// to re-use the same widget in all tabs (m_fixed), we will remove and
 	// add to the tabs' child as tabs are changed
-	void change_tab (int tab_nb)
+	void syncTabPage()
 	{
 		if (m_last_tab)
 			gtk_container_remove (GTK_CONTAINER (m_last_tab), m_containee);
@@ -121,22 +118,15 @@ public:
 	{
 		IMPL
 		if (selected) {
-			GList *children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
-			int nb = 0;
-			for (GList *i = children; i; i = i->next) {
-				GtkWidget *child = (GtkWidget *) i->data;
-				if (g_object_get_data (G_OBJECT (child), "yitem") == item) {
-					change_tab (nb);
-					g_signal_handlers_block_by_func (getWidget(),
-						(gpointer) changed_tab_cb, this);
-					gtk_notebook_set_current_page (GTK_NOTEBOOK (getWidget()), nb);
-					g_signal_handlers_unblock_by_func (getWidget(),
-						(gpointer) changed_tab_cb, this);
-					break;
-				}
-				nb++;
-			}
-			g_list_free (children);
+			GtkWidget *child = (GtkWidget *) item->data();
+			int page = gtk_notebook_page_num (GTK_NOTEBOOK (getWidget()), child);
+
+			g_signal_handlers_block_by_func (getWidget(),
+				(gpointer) changed_tab_cb, this);
+			gtk_notebook_set_current_page (GTK_NOTEBOOK (getWidget()), page);
+			g_signal_handlers_unblock_by_func (getWidget(),
+				(gpointer) changed_tab_cb, this);
+			syncTabPage();
 		}
 	}
 
@@ -147,7 +137,7 @@ public:
 		YItem *item = (YItem *) g_object_get_data (G_OBJECT (child), "yitem");
 
 		YGUI::ui()->sendEvent (new YMenuEvent (item));
-		pThis->change_tab (tab_nb);
+		pThis->syncTabPage();
 	}
 
 	YGWIDGET_IMPL_COMMON

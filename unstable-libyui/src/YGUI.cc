@@ -112,6 +112,7 @@ void YGUI::checkInit()
 void YGUI::idleLoop (int fd_ycp)
 {
 	IMPL
+//fprintf (stderr, "idleLoop()\n");
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -130,6 +131,7 @@ void YGUI::idleLoop (int fd_ycp)
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
+//fprintf (stderr, "no more idle\n");
 }
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
@@ -150,7 +152,8 @@ void YGUI::sendEvent (YEvent *event)
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-	if (!YDialog::currentDialog())
+//fprintf (stderr, "waitInput()\n");
+	if (!YDialog::currentDialog (false))
 		return NULL;
 
 	if (block)
@@ -180,6 +183,7 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (block)  // if YCP keeps working for more than X time, set busy cursor
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
+//fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (event->eventType()));
 	return event;
 }
 
@@ -207,9 +211,9 @@ long YGUI::getDisplayColors()
 int YGUI::getDefaultWidth()
 {
 	if (!m_default_size.width) {
-		if (m_fullscreen)
+/*		if (m_fullscreen)
 			m_default_size.width = getDisplayWidth();
-		else
+		else*/
 			m_default_size.width = MIN (600, getDisplayWidth());
 	}
 	return m_default_size.width;
@@ -218,9 +222,9 @@ int YGUI::getDefaultWidth()
 int YGUI::getDefaultHeight()
 {
 	if (!m_default_size.height) {
-		if (m_fullscreen)
+/*		if (m_fullscreen)
 			m_default_size.height = getDisplayHeight();
-		else
+		else*/
 			m_default_size.height = MIN (450, getDisplayHeight());
 	}
 	return m_default_size.height;

@@ -27,14 +27,15 @@ public:
 		if (ordinaryModel) {
 			addColumn (G_TYPE_STRING, "", YAlignUnchanged, YGSelectionModel::LABEL_COLUMN);
 			addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, YGSelectionModel::ICON_COLUMN);
+			gtk_tree_view_set_model (getView(), getModel());
 		}
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), FALSE);
 
 		/* Yast tools expect the user to be unable to un-select the row. They
 		   generally don't check to see if the returned value is -1. So, just
 		   disallow un-selection. */
-		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
-			GTK_TREE_VIEW (getWidget())), GTK_SELECTION_BROWSE);
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
+		gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
 
 		// let the derivates do the event hooks. They have subtile differences.
 	}
@@ -49,10 +50,10 @@ public:
 		GtkTreeViewColumn *column = 0;
 
 		// The allignment of the column items
-		gfloat xalign = 0.0;
+		gfloat xalign = -1;
 		switch (header_align) {
-			case YAlignUnchanged:
 			case YAlignBegin:
+				xalign = 0.0;
 				break;
 			case YAlignCenter:
 				xalign = 0.5;
@@ -60,11 +61,13 @@ public:
 			case YAlignEnd:
 				xalign = 1.0;
 				break;
+			case YAlignUnchanged:
+				break;
 		}
 
+		GtkCellRenderer *renderer = 0;
 		if (type == G_TYPE_STRING) {
-			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-			g_object_set (renderer, "xalign", xalign, NULL);
+			renderer = gtk_cell_renderer_text_new();
 			// set the last column, the expandable one, as wrapable
 			if (isEllipsize)
 				g_object_set (renderer, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
@@ -72,15 +75,13 @@ public:
 			             renderer, "text", col_nb, NULL);
 		}
 		else if (type == GDK_TYPE_PIXBUF) {
-			GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
-			g_object_set (renderer, "xalign", xalign, NULL);
+			renderer = gtk_cell_renderer_pixbuf_new();
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 				renderer, "pixbuf", col_nb, NULL);
 		}
 		else if (type == G_TYPE_BOOLEAN) {  // toggle button
-			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+			renderer = gtk_cell_renderer_toggle_new();
 			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
-			g_object_set (renderer, "xalign", xalign, NULL);
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 				renderer, "active", col_nb, NULL);
 
@@ -89,6 +90,9 @@ public:
 		}
 		else
 			g_error ("YGTable: no support for column of given type");
+
+		if (renderer && xalign != -1)
+			g_object_set (renderer, "xalign", xalign, NULL);
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
@@ -190,14 +194,26 @@ protected:
 class YGTable : public YTable, public YGTableView
 {
 public:
-	YGTable (YWidget *parent, YTableHeader *header)
-	: YTable (parent, header)
+	YGTable (YWidget *parent, YTableHeader *_header)
+	: YTable (NULL, _header)
 	, YGTableView (this, parent, string(), false, false)
 	{
 		IMPL
-		gtk_tree_view_set_headers_visible (getView(), FALSE);
+		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		if (columns() >= 3)
 			gtk_tree_view_set_rules_hint (getView(), TRUE);
+
+		vector <GType> types;
+		types.assign (columns(), G_TYPE_STRING);
+/*		for (int i = 0; i < columns(); i++)
+			if (item->hasIconName (i))
+				types[i] = GDK_TYPE_PIXBUF;*/
+		createModel (types);
+		for (int i = 0; i < columns(); i++) {
+			bool ellipsize = columns() >= 3 && i == columns()-1;
+			addColumn (types[i], header (i), alignment (i), i, ellipsize);
+		}
+		gtk_tree_view_set_model (getView(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
@@ -217,25 +233,12 @@ public:
     {
     	YTableItem *item = dynamic_cast <YTableItem *> (_item);
     	if (item) {
-    		if (!getModel()) {
-    			vector <GType> types;
-    			types.assign (columns(), G_TYPE_STRING);
-    			for (int i = 0; i < columns(); i++)
-    				if (item->hasIconName (i))
-    					types[i] = GDK_TYPE_PIXBUF;
-    			createModel (types);
-    			for (int i = 0; i < columns(); i++) {
-    				bool ellipsize = columns() >= 3 && i == columns()-1;
-					addColumn (types[i], header (i), alignment (i), i, ellipsize);
-				}
-    		}
-
 			GtkTreeIter iter;
 			addRow (&iter, _item);
    			for (int i = 0; i < columns(); i++) {
-   				if (item->hasIconName (i))
+/*   				if (item->hasIconName (i))
 		    		setCellIcon (&iter, i, item->iconName (i));
-		    	else
+		    	else*/
 		    		setCellLabel (&iter, i, item->label (i));
 	    	}
     	}
@@ -272,7 +275,7 @@ class YGSelectionBox : public YSelectionBox, public YGTableView
 {
 public:
 	YGSelectionBox (YWidget *parent, const string &label)
-	: YSelectionBox (parent, label),
+	: YSelectionBox (NULL, label),
 	  YGTableView (this, parent, label, true, false)
 	{
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
@@ -301,7 +304,7 @@ class YGMultiSelectionBox : public YMultiSelectionBox, public YGTableView
 {
 public:
 	YGMultiSelectionBox (YWidget *parent, const string &label)
-	: YMultiSelectionBox (parent, label),
+	: YMultiSelectionBox (NULL, label),
 	  YGTableView (this, parent, label, false, false)
 	{
 		vector <GType> types;
@@ -312,6 +315,7 @@ public:
 		addColumn (G_TYPE_BOOLEAN, "", YAlignUnchanged, 0);
 		addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, 1);
 		addColumn (G_TYPE_STRING, "", YAlignUnchanged, 2);
+		gtk_tree_view_set_model (getView(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
@@ -385,7 +389,7 @@ class YGTree : public YTree, public YGTableView
 {
 public:
 	YGTree (YWidget *parent, const string &label)
-	: YTree (parent, label)
+	: YTree (NULL, label)
 	, YGTableView (this, parent, label, false, true)
 	{
 		// Events

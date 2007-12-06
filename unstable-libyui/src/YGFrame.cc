@@ -37,7 +37,7 @@ class YGFrame : public YFrame, public YGBaseFrame
 {
 public:
 	YGFrame (YWidget *parent, const string &label)
-	: YFrame (parent, label),
+	: YFrame (NULL, label),
 	  YGBaseFrame (this, parent)
 	{
 		GtkWidget *label_widget = gtk_label_new ("");
@@ -86,7 +86,7 @@ class YGCheckBoxFrame : public YCheckBoxFrame, public YGBaseFrame
 {
 public:
 	YGCheckBoxFrame (YWidget *parent, const string &label, bool checked)
-	: YCheckBoxFrame (parent, label, checked),
+	: YCheckBoxFrame (NULL, label, checked),
 	  YGBaseFrame (this, parent)
 	{
 		IMPL

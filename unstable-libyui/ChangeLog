@@ -1,3 +1,20 @@
+2007-12-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Fixed previous crash, some other problems and some improvements.
+	* Weird problems left:
+	+ it hangs when suposedly the code is already terminated.
+	+ crashes on sw_single (says we are calling a pure virtual func)
+	   sometimes, it just exists normally right after the selector widget
+	   appears
+	+ there could be layout probs... test that
+	+ radio buttons are not working
+
+2007-12-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* First version: ported the all thing; getting a crash due to child
+	being added to container at the YWidget() constructor, before we get to
+	setup the reference to then use on the layout widget.
+
 2007-12-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkimage.h/c: moved YGImage stuff to an actual widget impl. Added

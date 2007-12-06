@@ -22,7 +22,7 @@ class YGLayoutBox : public YLayoutBox, public YGWidget
 
 public:
 	YGLayoutBox (YWidget *parent, YUIDimension dim)
-	: YLayoutBox (parent, dim),
+	: YLayoutBox (NULL, dim),
 	  YGWidget (this, parent, true,
 	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
@@ -36,14 +36,13 @@ public:
 			g_object_unref (G_OBJECT (m_labels_group));
 	}
 
-	virtual void addChild (YWidget *ychild)
+	virtual string getDebugLabel() const
+	{ return primary() == YD_HORIZ ? "horizontal" : "vertical"; }
+
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
 		IMPL
-		YLayoutBox::addChild (ychild);
-		YGWidget *ygchild = YGWidget::get (ychild);
-
-		gtk_container_add (GTK_CONTAINER (getWidget()), ygchild->getLayout());
-		sync_stretchable (ychild);
+		YGWidget::doAddChild (ychild, container);
 
 		// set labels of YGLabeledWidgets to the same width
 		// we have to do quite some work due to over-clutter on YCP progs
@@ -60,7 +59,7 @@ public:
 				}
 			}
 			else {
-				ygchild = YGWidget::get (ychild);
+				YGWidget *ygchild = YGWidget::get (ychild);
 				YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
 				if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
 					if (!m_labels_group)
@@ -72,6 +71,8 @@ public:
 			}
 		}
 	}
+
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 
 	virtual void sync_stretchable (YWidget *ychild)
@@ -108,7 +109,7 @@ class YGAlignment : public YAlignment, public YGWidget
 
 public:
 	YGAlignment (YWidget *parent, YAlignmentType halign, YAlignmentType valign)
-	: YAlignment (parent, halign, valign),
+	: YAlignment (NULL, halign, valign),
 	  YGWidget (this, parent, true, GTK_TYPE_ALIGNMENT, NULL)
 	{
 		setBorder (0);
@@ -121,26 +122,24 @@ public:
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 	}
 
-	virtual void childAdded (YWidget *ychild)
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
-		YGWidget *child = YGWidget::get (ychild);
-		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
+		YGWidget::doAddChild (ychild, container);
 
 		/* The padding is used for stuff like making YCP progs nicer for
 		   yast-qt wizard, so it hurts us -- it's disabled. */
 		//child->setPadding (topMargin(), bottomMargin(),
 		//                   leftMargin(), rightMargin());
 		setMinSize (minWidth(), minHeight());
-
-		sync_stretchable (ychild);  // alignment will be set here
 	}
+	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 
 	virtual void sync_stretchable (YWidget *child)
 	{
 		IMPL
 		setAlignment (alignment (YD_HORIZ), alignment (YD_VERT));
-		YGWidget::sync_stretchable (m_ywidget);
+		YGWidget::sync_stretchable();
 	}
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
@@ -273,7 +272,7 @@ class YGEmpty : public YEmpty, public YGWidget
 {
 public:
 	YGEmpty (YWidget *parent)
-	: YEmpty (parent),
+	: YEmpty (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
@@ -295,7 +294,7 @@ class YGSpacing : public YSpacing, public YGWidget
 {
 public:
 	YGSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size)
-	: YSpacing (parent, dim, stretchable, size),
+	: YSpacing (NULL, dim, stretchable, size),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
@@ -314,12 +313,15 @@ YSpacing *YGWidgetFactory::createSpacing (YWidget *parent, YUIDimension dim,
 
 #include "YReplacePoint.h"
 
+//TEMP:
+#include "YPushButton.h"
+
 // an empty space that will get replaced
 class YGReplacePoint : public YReplacePoint, public YGWidget
 {
 public:
 	YGReplacePoint (YWidget *parent)
-	: YReplacePoint (parent),
+	: YReplacePoint (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
@@ -343,7 +345,7 @@ class YGSquash : public YSquash, public YGWidget
 {
 public:
 	YGSquash (YWidget *parent, bool hsquash, bool vsquash)
-	: YSquash (parent, hsquash, vsquash),
+	: YSquash (NULL, hsquash, vsquash),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);

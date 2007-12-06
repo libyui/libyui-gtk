@@ -13,6 +13,7 @@
 #define YGTK_FIELD_ENTRY_H
 
 #include <gtk/gtkhbox.h>
+#include <gtk/gtkentry.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_FIELD_ENTRY            (ygtk_field_entry_get_type ())
@@ -30,10 +31,6 @@ G_BEGIN_DECLS
 typedef struct _YGtkFieldEntry
 {
 	GtkHBox parent;
-
-	// private:
-	// used to disable separator for the first field
-	gboolean use_separator;
 } YGtkFieldEntry;
 
 typedef struct _YGtkFieldEntryClass
@@ -46,14 +43,16 @@ typedef struct _YGtkFieldEntryClass
 GtkWidget* ygtk_field_entry_new (void);
 GType ygtk_field_entry_get_type (void) G_GNUC_CONST;
 
-// if this is the first field, separator will be ignored. max_length can be 0 to
-// disable it. valids_chars can be NULL to disable it.
-void ygtk_field_entry_add_field (YGtkFieldEntry *entry, gchar separator,
-                                 guint max_length, const gchar *valid_chars);
+// if this is the first field, separator will be ignored. 
+guint ygtk_field_entry_add_field (YGtkFieldEntry *entry, gchar separator);
+//max_length can be 0 to disable it. valids_chars can be NULL to disable it.
+void ygtk_field_entry_setup_field (YGtkFieldEntry *entry, guint index,
+                                   gint max_length, const gchar *valid_chars);
 
-// convinience
-void ygtk_field_entry_set_field_text (YGtkFieldEntry *entry, guint nb, const gchar *text);
-const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *entry, guint nb);
+void ygtk_field_entry_set_field_text (YGtkFieldEntry *entry, guint index, const gchar *text);
+const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *entry, guint index);
+
+GtkEntry *ygtk_field_entry_get_field_widget (YGtkFieldEntry *entry, guint index);
 
 G_END_DECLS
 #endif /*YGTK_FIELD_ENTRY_H*/

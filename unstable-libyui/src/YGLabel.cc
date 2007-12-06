@@ -14,7 +14,7 @@ class YGLabel : public YLabel, public YGWidget
 {
 public:
 	YGLabel (YWidget *parent, const string &text, bool heading, bool outputField)
-	: YLabel (parent, text, heading, outputField),
+	: YLabel (NULL, text, heading, outputField),
 	  YGWidget (this, parent, true, GTK_TYPE_LABEL, NULL)
 	{
 		IMPL

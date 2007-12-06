@@ -14,7 +14,7 @@ class YGImage : public YImage, public YGWidget
 {
 public:
 	YGImage (YWidget *parent, const string &filename, bool animated)
-	: YImage (parent, filename, animated),
+	: YImage (NULL, filename, animated),
 	  YGWidget (this, parent, true, YGTK_TYPE_IMAGE, NULL)
 	{
 		IMPL

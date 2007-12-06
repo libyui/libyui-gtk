@@ -13,16 +13,13 @@ class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {
 public:
 	YGProgressBar (YWidget *parent, const string &label, int maxValue)
-	: YProgressBar (parent, label, maxValue)
+	: YProgressBar (NULL, label, maxValue)
 		// NOTE: its label widget is positionated at the vertical, because its label
 		// may change often and so will its size, which will look odd (we may want
 		// to make the label widget to only grow).
 	, YGLabeledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
-	{
-    }
-
-	virtual ~YGProgressBar() {}
+	{}
 
 	// YProgressBar
 	virtual void setValue (int value)
@@ -53,7 +50,7 @@ class YGDownloadProgress : public YDownloadProgress, public YGLabeledWidget
 public:
 	YGDownloadProgress (YWidget *parent, const string &label,
 	                    const string &filename, YFileSize_t expectedFileSize)
-	: YDownloadProgress (parent, label, filename, expectedFileSize)
+	: YDownloadProgress (NULL, label, filename, expectedFileSize)
 	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{
@@ -98,7 +95,7 @@ class YGMultiProgressMeter : public YMultiProgressMeter, public YGWidget
 {
 public:
 	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector<float> &maxValues)
-	: YMultiProgressMeter (parent, dim, maxValues)
+	: YMultiProgressMeter (NULL, dim, maxValues)
 	, YGWidget (this, parent, true,
 	            horizontal() == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{

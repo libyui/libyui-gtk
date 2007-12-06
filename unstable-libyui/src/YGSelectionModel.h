@@ -23,9 +23,7 @@ struct YGSelectionModel
 	YGSelectionModel (bool ordinaryModel, bool isTree);
 	virtual ~YGSelectionModel();
 
-	// the model may not necessarly be created at construction
 	GtkTreeModel *getModel();
-	virtual void setModel (GtkTreeModel *model) = 0;
 	void createModel (const vector <GType> &types);
 
 	void doAddItem (YItem *item);
@@ -47,7 +45,7 @@ struct YGSelectionModel
 protected:
 	void implFocusItem (YItem *item);
 private:
-	GtkTreeModel *model;
+	GtkTreeModel *m_model;
 	bool isTree;
 	GtkListStore *getListStore();
 	GtkTreeStore *getTreeStore();

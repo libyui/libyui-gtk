@@ -20,7 +20,7 @@ YGSelectionModel::YGSelectionModel (bool ordinaryModel, bool isTree)
 }
 
 YGSelectionModel::~YGSelectionModel()
-{ g_object_unref (G_OBJECT (model)); }
+{ g_object_unref (G_OBJECT (m_model)); }
 
 void YGSelectionModel::createModel (const vector <GType> &types)
 {
@@ -32,19 +32,17 @@ void YGSelectionModel::createModel (const vector <GType> &types)
 	types_array[colsNb-1] = G_TYPE_POINTER;
 
 	if (isTree)
-		model = GTK_TREE_MODEL (gtk_tree_store_newv (colsNb, types_array));
+		m_model = GTK_TREE_MODEL (gtk_tree_store_newv (colsNb, types_array));
 	else
-		model = GTK_TREE_MODEL (gtk_list_store_newv (colsNb, types_array));
-	setModel (model);
+		m_model = GTK_TREE_MODEL (gtk_list_store_newv (colsNb, types_array));
 }
 
 GtkTreeModel *YGSelectionModel::getModel()
-{ return model; }
-
+{ return m_model; }
 GtkListStore *YGSelectionModel::getListStore()
-{ return model ? GTK_LIST_STORE (model) : NULL; }
+{ return m_model ? GTK_LIST_STORE (m_model) : NULL; }
 GtkTreeStore *YGSelectionModel::getTreeStore()
-{ return model ? GTK_TREE_STORE (model) : NULL; }
+{ return m_model ? GTK_TREE_STORE (m_model) : NULL; }
 
 bool YGSelectionModel::isEmpty()
 {
@@ -82,13 +80,28 @@ bool YGSelectionModel::getIter (YItem *item, GtkTreeIter *iter)
 	if (!gtk_tree_model_get_iter_first (getModel(), iter))
 		return false;
 
-	do {
-		gpointer ptr;
-		gtk_tree_model_get (getModel(), iter, getPtrCol(), &ptr, -1);
-		if (ptr == item)
-			return true;
-	} while (gtk_tree_model_iter_next (getModel(), iter));
-	return false;
+	struct inner {
+		static bool getIter (GtkTreeModel *model, int col, YItem *item, GtkTreeIter *iter)
+		{
+			gpointer ptr;
+			gtk_tree_model_get (model, iter, col, &ptr, -1);
+			if (((YItem *) ptr)->index() == item->index())
+				return true;
+
+			GtkTreeIter child;
+			if (gtk_tree_model_iter_children (model, &child, iter)) {
+				if (getIter (model, col, item, &child)) {
+					*iter = child;
+					return true;
+				}
+			}
+			if (gtk_tree_model_iter_next (model, iter))
+				return getIter (model, col, item, iter);
+			return false;
+		}
+	};
+
+	return inner::getIter (getModel(), getPtrCol(), item, iter);
 }
 
 void YGSelectionModel::implFocusItem (YItem *item)

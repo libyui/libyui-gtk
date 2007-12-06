@@ -112,7 +112,7 @@ class YGIntField : public YIntField, public YGSpinBox
 public:
 	YGIntField (YWidget *parent, const string &label, int minValue, int maxValue,
 	            int initialValue)
-	: YIntField (parent, label, minValue, maxValue)
+	: YIntField (NULL, label, minValue, maxValue)
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, false)
 	{}
 
@@ -134,7 +134,7 @@ class YGSlider : public YSlider, public YGSpinBox
 public:
 	YGSlider (YWidget *parent, const string &label, int minValue, int maxValue,
 	          int initialValue)
-	: YSlider (parent, label, minValue, maxValue)
+	: YSlider (NULL, label, minValue, maxValue)
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, true)
 	{}
 

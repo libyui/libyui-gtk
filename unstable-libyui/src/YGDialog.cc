@@ -69,6 +69,9 @@ public:
 		        gtk_window_set_default_size (window, w, h);
 		    }
 
+			if (YGUI::ui()->setFullscreen())
+				gtk_window_fullscreen (window);
+
 		    gtk_window_set_role (window, "yast-gtk");
 		    if (!YGUI::ui()->hasWM())
 		        g_signal_connect (G_OBJECT (m_widget), "expose-event",
@@ -258,22 +261,12 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 	: YDialog (dialogType, colorMode),
 	   YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)
 {
-fprintf(stderr, "ygdialog()\n");
     setBorder (0);
-fprintf(stderr, "border\n");
     m_containee = gtk_event_box_new();
-fprintf(stderr, "containee\n");
     if (dialogType == YMainDialog && main_window)
-{
-fprintf(stderr, "use main window\n");
         m_window = main_window;
-}
     else
-{
-fprintf(stderr, "create window\n");
         m_window = new YGWindow (dialogType == YMainDialog);
-}
-fprintf(stderr, "ygdialog start window: %p\n", m_window);
     YGWindow::ref (m_window);
 
     if (colorMode != YDialogNormalColor) {
@@ -351,7 +344,7 @@ void YGUI::closeDialog (YDialog *_dialog)
 
 YGDialog *YGDialog::currentDialog()
 {
-	YDialog *ydialog = YDialog::currentDialog();
+	YDialog *ydialog = YDialog::currentDialog (false);
 	if (ydialog)
 		return static_cast <YGDialog *> (ydialog);
 	return NULL;
@@ -360,10 +353,8 @@ YGDialog *YGDialog::currentDialog()
 GtkWindow *YGDialog::currentWindow()
 {
 	YGDialog *ydialog = YGDialog::currentDialog();
-	if (ydialog) {
-fprintf(stderr, "m_window: %p\n", ydialog->m_window);
+	if (ydialog)
 		return GTK_WINDOW (ydialog->m_window->getWidget());
-	}
 	return NULL;
 }
 
@@ -398,7 +389,6 @@ void YGDialog::busyCursor()
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)
 {
 	IMPL
-fprintf(stderr, "create dialog\n");
 	return new YGDialog (dialogType, colorMode);
 }
 

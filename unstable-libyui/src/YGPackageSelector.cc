@@ -10,6 +10,7 @@
 #include "YGi18n.h"
 #include "YGDialog.h"
 
+#if 1
 #include "ygtkwizard.h"
 #include "ygtkfindentry.h"
 #include "ygtkhtmlwrap.h"
@@ -1381,9 +1382,10 @@ PackageSelector *m_package_selector;
 
 public:
 	YGPackageSelector (YWidget *parent, long mode)
-		: YPackageSelector (parent, mode),
+		: YPackageSelector (NULL, mode),
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
+fprintf (stderr, "YGPackageSelector()\n");
 		setBorder (0);
         YGDialog *dialog = YGDialog::currentDialog();
         dialog->setCloseCallback (confirm_cb, this);
@@ -1392,6 +1394,7 @@ public:
 		gtk_window_resize (window, GTK_WIDGET (window)->allocation.width,
 		                   MAX (580, GTK_WIDGET (window)->allocation.height));
 
+fprintf (stderr, "wizard setup\n");
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/32x32/apps/yast-software.png");
@@ -1400,18 +1403,22 @@ public:
 			_("TO WRITE")
 		);
 
+fprintf (stderr, "buttons strings\n");
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
-		ygtk_wizard_set_abort_button_id (wizard, g_strdup ("cancel"), g_free);
+		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");
 		ygtk_wizard_set_back_button_label (wizard, "");
 		ygtk_wizard_set_next_button_label (wizard, _("_Accept"));
-		ygtk_wizard_set_next_button_id (wizard, g_strdup ("accept"), g_free);
+		ygtk_wizard_set_next_button_str_id (wizard, "accept");
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
 
+fprintf (stderr, "create package selector\n");
 		m_package_selector = new PackageSelector();
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 
+fprintf (stderr, "ypp::set interface()\n");
 		Ypp::get()->setInterface (this);
+fprintf (stderr, "done()\n");
 	}
 
 	virtual ~YGPackageSelector()
@@ -1425,7 +1432,9 @@ protected:
 	                              gint id_type, YGPackageSelector *pThis)
 	{
 		IMPL
+fprintf (stderr, "wizard action\n");
 		const gchar *action = (gchar *) id;
+fprintf (stderr, "action: %s\n", action);
 
 		if (!strcmp (action, "accept")) {
 			y2milestone ("Closing PackageSelector with 'accept'");
@@ -1674,7 +1683,6 @@ fprintf (stderr, "resolving %d problems\n", problems.size());
 		gtk_container_add (GTK_CONTAINER (scroll), view);
 		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll);
 
-
 #if 0
 		// version that uses viewport, labels and radio buttons -- unfortunately,
 		// gtk+ enforces that one radio button per group to be selected -- we don't
@@ -1747,6 +1755,20 @@ fprintf (stderr, "setting tooltip: %s\n", (*it)->details.c_str());
 
 	YGWIDGET_IMPL_COMMON
 };
+
+#else
+#include "YPackageSelector.h"
+class YGPackageSelector : public YPackageSelector, public YGWidget
+{
+public:
+	YGPackageSelector (YWidget *parent, long mode)
+		: YPackageSelector (NULL, mode),
+		  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	{
+	}
+	YGWIDGET_IMPL_COMMON
+};
+#endif
 
 YPackageSelector *YGWidgetFactory::createPackageSelector (YWidget *parent, long mode)
 {

@@ -15,7 +15,7 @@ GtkWidget *m_image;
 
 public:
 	YGPushButton (YWidget *parent, const string &label)
-	:  YPushButton (parent, label),
+	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL

@@ -38,7 +38,6 @@ libpy2gtk_la_SOURCES = \
 	YGBarGraph.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
-	YGTime.cc \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
