@@ -207,7 +207,6 @@ public:
 	, YGTableView (this, parent, string(), false, false)
 	{
 		IMPL
-fprintf (stderr, "YGTable()!\n");
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
 
@@ -233,6 +232,7 @@ fprintf (stderr, "YGTable()!\n");
 
 	virtual void setKeepSorting (bool keepSorting)
 	{
+fprintf (stderr, "setKeepSorting!\n");
 		// FIXME: GTK doesn't let us get back to unsorted mode...
 /*		if (!keepSorting)
 			YGUtils::tree_view_set_sortable (getView(), 0);*/
