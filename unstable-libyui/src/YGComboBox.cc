@@ -17,11 +17,13 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		: YComboBox (NULL, label, editable)
 		, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 		    editable ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
-		, YGSelectionModel (true, false)
+		, YGSelectionModel (this, true, false)
 	{
+		gtk_combo_box_set_model (getComboBox(), getModel());
 		GtkCellRenderer* cell;
 		if (editable) {
-			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()), 0);
+			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()),
+			                                     YGSelectionModel::LABEL_COLUMN);
 		}
 		else {
 			cell = gtk_cell_renderer_text_new ();
@@ -33,7 +35,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, FALSE);
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
 			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
-		gtk_combo_box_set_model (getComboBox(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 		                  G_CALLBACK (selected_changed_cb), this);
@@ -69,17 +70,23 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		gtk_entry_set_text (getEntry(), value.c_str());
 	}
 
-	virtual void focusItem (GtkTreeIter *iter)
+	// YGSelectionModel
+	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
 	{
+		// GtkComboBox wants a string on the model, not NULL, when setting it as
+		// the active row. As, we only set that value after addingRow, we need to
+		// initialize it here...
+		if (addingRow)
+			setCellLabel (iter, YGSelectionModel::LABEL_COLUMN, string());
 		gtk_combo_box_set_active_iter (getComboBox(), iter);
 	}
 
-	virtual void unfocusAllItems()
+	virtual void unsetFocus()
 	{
 		gtk_combo_box_set_active (getComboBox(), -1);
 	}
 
-    virtual YItem *selectedItem()
+    virtual YItem *focusItem()
     {
     	GtkTreeIter iter;
     	if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
@@ -87,6 +94,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
     	return NULL;
     }
 
+	// YComboBox
 	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
 	{
 		gtk_entry_set_width_chars (getEntry(), numberOfChars->asInteger()->value());

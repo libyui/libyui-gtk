@@ -104,22 +104,13 @@ static void ygtk_menu_button_init (YGtkMenuButton *button)
 	button->label = gtk_label_new ("");
 
 	GtkWidget *hbox, *arrow;
-	hbox = gtk_hbox_new (FALSE, 0);
+	hbox = gtk_hbox_new (FALSE, 4);
 	arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_IN);
+	gtk_widget_show (hbox);
+	gtk_widget_show (arrow);
 
-	if (gtk_widget_get_direction (arrow) == GTK_TEXT_DIR_LTR) {
-		gtk_container_add (GTK_CONTAINER (hbox), button->label);
-		gtk_container_add (GTK_CONTAINER (hbox), arrow);
-	}
-	else {
-		gtk_container_add (GTK_CONTAINER (hbox), arrow);
-		gtk_container_add (GTK_CONTAINER (hbox), button->label);
-	}
-
-	gtk_box_set_child_packing (GTK_BOX (hbox), arrow, FALSE, FALSE,
-	                           5, GTK_PACK_START);
-
-	gtk_widget_show_all (hbox);
+	gtk_box_pack_start (GTK_BOX (hbox), button->label, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (hbox), arrow, FALSE, TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (button), hbox);
 }
 

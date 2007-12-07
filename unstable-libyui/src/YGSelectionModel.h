@@ -20,7 +20,7 @@ struct YGSelectionModel
 		LABEL_COLUMN, ICON_COLUMN
 	};
 
-	YGSelectionModel (bool ordinaryModel, bool isTree);
+	YGSelectionModel (YSelectionWidget *ywidget, bool ordinaryModel, bool isTree);
 	virtual ~YGSelectionModel();
 
 	GtkTreeModel *getModel();
@@ -29,8 +29,12 @@ struct YGSelectionModel
 	void doAddItem (YItem *item);
 	void doDeleteAllItems();
 
-	virtual void focusItem (GtkTreeIter *iter) = 0;
-	virtual void unfocusAllItems() = 0;
+	virtual YItem *focusItem() = 0;
+	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow) = 0;
+	virtual void unsetFocus() = 0;
+
+	// to be implemented by trees
+	virtual void expand (GtkTreeIter *iter) {}
 
 	YItem *getItem (GtkTreeIter *iter);
 	bool getIter (YItem *item, GtkTreeIter *iter);
@@ -50,12 +54,13 @@ private:
 	GtkListStore *getListStore();
 	GtkTreeStore *getTreeStore();
 	bool isEmpty();
+	YSelectionWidget *ywidget;  // we use it, to get the path for icons
 };
 
 #define YGSELECTION_WIDGET_IMPL_ADD(ParentClass)      \
 	virtual void addItem(YItem *item) {               \
-		doAddItem (item);                             \
 		ParentClass::addItem (item);                  \
+		doAddItem (item);                             \
 	}
 
 #define YGSELECTION_WIDGET_IMPL_CLEAR(ParentClass)    \
@@ -65,14 +70,18 @@ private:
 	}
 
 #define YGSELECTION_WIDGET_IMPL_SELECT(ParentClass)   \
-	virtual void selectItem (YItem *item) {           \
-		implFocusItem (item);                         \
-		ParentClass::selectItem (item);               \
+	virtual void selectItem (YItem *item, bool select) { \
+		if (select)                                   \
+			implFocusItem (item);                     \
+		ParentClass::selectItem (item, select);       \
 	}                                                 \
 	virtual void deselectAllItems() {                 \
-		unfocusAllItems();                            \
+		unsetFocus();                                 \
 		ParentClass::deselectAllItems();              \
-	}
+	}                                                 \
+	virtual YItem *selectedItem() {                   \
+		return focusItem();                           \
+	}                                                 \
 
 #define YGSELECTION_WIDGET_IMPL_ALL(ParentClass)      \
 	YGSELECTION_WIDGET_IMPL_ADD(ParentClass)          \

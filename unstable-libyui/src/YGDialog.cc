@@ -64,8 +64,8 @@ public:
 		    }
 
 		    if (_main_window) {
-		        int w = YGUI::ui()->getDefaultWidth(),
-		            h = YGUI::ui()->getDefaultHeight();
+		        int w = YGUI::ui()->_getDefaultWidth(),
+		            h = YGUI::ui()->_getDefaultHeight();
 		        gtk_window_set_default_size (window, w, h);
 		    }
 

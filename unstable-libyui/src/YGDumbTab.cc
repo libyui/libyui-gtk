@@ -52,7 +52,8 @@ public:
 		gtk_widget_show (label);
 
 		if (item->hasIconName()) {
-			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (item->iconName());
+			string path = iconFullPath (item->iconName());
+			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
 			if (pixbuf)
 				image = gtk_image_new_from_pixbuf (pixbuf);
 		}

@@ -556,9 +556,10 @@ static void ygtk_scrolled_window_size_request (GtkWidget *widget,
 	}
 
 	GTK_WIDGET_CLASS (ygtk_scrolled_window_parent_class)->size_request (widget, requisition);
-	// to avoid disruptions:
-	requisition->width = MIN (requisition->width, scroll->max_width);
-	requisition->height = MIN (requisition->height, scroll->max_height);
+	if (scroll->max_width)
+		requisition->width = MIN (requisition->width, scroll->max_width);
+	if (scroll->max_height)
+		requisition->height = MIN (requisition->height, scroll->max_height);
 }
 
 GtkWidget* ygtk_scrolled_window_new (GtkWidget *child)
@@ -583,3 +584,4 @@ static void ygtk_scrolled_window_class_init (YGtkScrolledWindowClass *klass)
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->size_request  = ygtk_scrolled_window_size_request;
 }
+

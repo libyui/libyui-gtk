@@ -158,14 +158,13 @@ public:
 		ygtk_field_entry_setup_field (getField(), 1, 2, "0123456789");
 		ygtk_field_entry_setup_field (getField(), 2, 2, "0123456789");
 
-		GtkWidget *menu_button = ygtk_menu_button_new();
 		m_calendar = gtk_calendar_new();
 		gtk_widget_show (m_calendar);
 		GtkWidget *popup = ygtk_popup_window_new (m_calendar);
-		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
-		gtk_widget_show_all (popup);
-		gtk_widget_show_all (menu_button);
 
+		GtkWidget *menu_button = ygtk_menu_button_new();
+		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
+		gtk_widget_show (menu_button);
 		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);
 
 		g_signal_connect (G_OBJECT (getField()), "field-entry-changed",

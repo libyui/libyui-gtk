@@ -101,11 +101,12 @@ GtkEntry *ygtk_field_entry_get_field_widget (YGtkFieldEntry *fields, guint index
 	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
 	entry = g_list_nth_data (children, index_to_child (fields, index));
 	g_list_free (children);
+	g_assert (GTK_IS_ENTRY (entry));
 	return entry;
 }
 guint ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator)
 {
-	guint new_index = child_to_index (fields, ygtk_field_entry_length (fields));
+	guint new_index = child_to_index (fields, ygtk_field_entry_length (fields)+1);
 
 	GtkWidget *label = 0, *entry;
 	if (new_index > 0) {
@@ -123,12 +124,11 @@ guint ygtk_field_entry_add_field (YGtkFieldEntry *fields, gchar separator)
 
 	GtkBox *box = GTK_BOX (fields);
 	if (label) {
-		gtk_box_pack_start (box, label, FALSE, FALSE, 0);
+		gtk_box_pack_start (box, label, FALSE, TRUE, 0);
 		gtk_widget_show (label);
 	}
 	gtk_box_pack_start (box, entry, TRUE, TRUE, 0);
 	gtk_widget_show (entry);
-
 	return new_index;
 }
 
@@ -136,8 +136,11 @@ void ygtk_field_entry_setup_field (YGtkFieldEntry *fields, guint index,
                                    gint max_length, const gchar *valid_chars)
 {
 	GtkEntry *entry = ygtk_field_entry_get_field_widget (fields, index);
-	gtk_entry_set_max_length (entry, max_length == -1 ? 0 : max_length);
-	gtk_entry_set_width_chars (entry, max_length);
+	gboolean disable_len = (max_length <= 0);
+	gtk_entry_set_max_length (entry, disable_len ? 0 : max_length);
+	gtk_entry_set_width_chars (entry, disable_len ? -1 : max_length);
+	gtk_box_set_child_packing (GTK_BOX (fields), GTK_WIDGET (entry),
+	                           disable_len, TRUE, 0, GTK_PACK_START);
 	ygutils_setFilter (entry, valid_chars);
 }
 

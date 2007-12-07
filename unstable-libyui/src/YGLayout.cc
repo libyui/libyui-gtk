@@ -144,26 +144,16 @@ public:
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
 	{
-		// special case (which YAlignment.cc also uses); let stretchable
-		// children stretch if opt.stretch is set (exploitable by the wizard)
-		GValue hstretch, vstretch;
-		hstretch = YGUtils::floatToGValue (0);
-		if (stretchable (YD_HORIZ))
-			hstretch = YGUtils::floatToGValue (1);
-		vstretch = YGUtils::floatToGValue (0);
-		if (stretchable (YD_VERT))
-			vstretch = YGUtils::floatToGValue (1);
+		GValue xalign, yalign, xscale, yscale;
+		xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
+		yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
+		xscale = YGUtils::floatToGValue (halign == YAlignUnchanged ? 1 : 0);
+		yscale = YGUtils::floatToGValue (valign == YAlignUnchanged ? 1 : 0);
 
-		if (halign != YAlignUnchanged) {
-			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
-			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-			g_object_set_property (G_OBJECT (getWidget()), "xscale", &hstretch);
-		}
-		if (valign != YAlignUnchanged) {
-			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
-			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-			g_object_set_property (G_OBJECT (getWidget()), "yscale", &vstretch);
-		}
+		g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
+		g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
+		g_object_set_property (G_OBJECT (getWidget()), "xscale", &xscale);
+		g_object_set_property (G_OBJECT (getWidget()), "yscale", &yscale);
 	}
 
 	void setPadding (int top, int bottom, int left, int right)

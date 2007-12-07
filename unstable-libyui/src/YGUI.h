@@ -128,7 +128,7 @@ private:
 
 public:
     // Helpers for internal use [ visibility hidden ]
-    int getDefaultSize (YUIDimension dim);
+    int _getDefaultWidth(); int _getDefaultHeight();
     bool setFullscreen() const { return m_fullscreen; }
     bool hasWM() const         { return m_have_wm; }
     bool unsetBorder() const   { return m_no_border; }
@@ -234,8 +234,9 @@ public:
 
 class YGApplication : public YApplication
 {
-	/* we may need to expand it on the future */
+public:
+	YGApplication();
 };
 
-#endif // YGUI_H
+#endif /*YGUI_H*/
 

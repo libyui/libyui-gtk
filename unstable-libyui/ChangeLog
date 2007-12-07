@@ -1,3 +1,12 @@
+2007-12-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Some fixes overall. YGTree and YGMultiSelectionBox were not working.
+	Polished YGSelectionModel. Fixed support for icons.
+
+	* ygtkcellrenderertextpixbuf.h/c: a cell renderer that combines both
+	GtkCellRendererText and GtkCellRendererPixbuf. We need this as yast can
+	set either an icon or text on a cell, or both.
+
 2007-12-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Fixed previous crash, some other problems and some improvements.

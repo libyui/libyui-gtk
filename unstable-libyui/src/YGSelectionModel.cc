@@ -5,11 +5,12 @@
 #include <config.h>
 #include <ycp/y2log.h>
 #include <gtk/gtk.h>
+#include <YTreeItem.h>
 #include "YGSelectionModel.h"
 #include "YGUtils.h"
 
-YGSelectionModel::YGSelectionModel (bool ordinaryModel, bool isTree)
-	: isTree (isTree)
+YGSelectionModel::YGSelectionModel (YSelectionWidget *ywidget, bool ordinaryModel, bool isTree)
+	: isTree (isTree), ywidget (ywidget)
 {
 	if (ordinaryModel) {
 		vector <GType> cols;
@@ -47,7 +48,7 @@ GtkTreeStore *YGSelectionModel::getTreeStore()
 bool YGSelectionModel::isEmpty()
 {
 	GtkTreeIter iter;
-	return gtk_tree_model_get_iter_first (getModel(), &iter);
+	return !gtk_tree_model_get_iter_first (getModel(), &iter);
 }
 
 void YGSelectionModel::doAddItem (YItem *item)
@@ -56,6 +57,8 @@ void YGSelectionModel::doAddItem (YItem *item)
 	addRow (&iter, item);
 	setCellLabel (&iter, LABEL_COLUMN, item->label());
 	setCellIcon (&iter, ICON_COLUMN, item->iconName());
+	for (YItemIterator it = item->childrenBegin(); it != item->childrenEnd(); it++)
+		doAddItem (*it);
 }
 
 void YGSelectionModel::doDeleteAllItems()
@@ -77,38 +80,22 @@ bool YGSelectionModel::getIter (YItem *item, GtkTreeIter *iter)
 {
 	if (!item)
 		return false;
-	if (!gtk_tree_model_get_iter_first (getModel(), iter))
-		return false;
+	GtkTreePath *path = gtk_tree_path_new();
+	for (; item; item = item->parent()) {
+		int index = GPOINTER_TO_INT (item->data());
+		gtk_tree_path_prepend_index (path, index);
+	}
 
-	struct inner {
-		static bool getIter (GtkTreeModel *model, int col, YItem *item, GtkTreeIter *iter)
-		{
-			gpointer ptr;
-			gtk_tree_model_get (model, iter, col, &ptr, -1);
-			if (((YItem *) ptr)->index() == item->index())
-				return true;
-
-			GtkTreeIter child;
-			if (gtk_tree_model_iter_children (model, &child, iter)) {
-				if (getIter (model, col, item, &child)) {
-					*iter = child;
-					return true;
-				}
-			}
-			if (gtk_tree_model_iter_next (model, iter))
-				return getIter (model, col, item, iter);
-			return false;
-		}
-	};
-
-	return inner::getIter (getModel(), getPtrCol(), item, iter);
+	bool ret = gtk_tree_model_get_iter (getModel(), iter, path);
+	gtk_tree_path_free (path);
+	return ret;
 }
 
 void YGSelectionModel::implFocusItem (YItem *item)
 {
 	GtkTreeIter iter;
 	if (getIter (item, &iter))
-		focusItem (&iter);
+		setFocusItem (&iter, false);
 }
 
 int YGSelectionModel::getPtrCol()
@@ -118,23 +105,50 @@ int YGSelectionModel::getPtrCol()
 
 void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item)
 {
+	struct inner {
+		static void setItemData (GtkTreeModel *model, GtkTreeIter *iter, YItem *item)
+		{
+			int index;
+			GtkTreePath *path = gtk_tree_model_get_path (model, iter);
+
+			int depth = gtk_tree_path_get_depth (path);
+			int *path_int = gtk_tree_path_get_indices (path);
+			g_assert (path_int != NULL);
+			index = path_int [depth-1];
+
+			gtk_tree_path_free (path);
+			g_assert (index != -1);
+			item->setData (GINT_TO_POINTER (index));
+		}
+	};
+
 	bool empty = isEmpty();
 
 	if (isTree) {
-		GtkTreeIter *parent = NULL;
-		getIter (item->parent(), parent);
 		GtkTreeStore *store = getTreeStore();
-		gtk_tree_store_append (store, iter, parent);
+		if (item->parent()) {
+			GtkTreeIter parent;
+			getIter (item->parent(), &parent);
+			gtk_tree_store_append (store, iter, &parent);
+		}
+		else
+			gtk_tree_store_append (store, iter, NULL);
 		gtk_tree_store_set (store, iter, getPtrCol(), item, -1);
+		inner::setItemData (getModel(), iter, item);
+
+		YTreeItem *tree_item = dynamic_cast <YTreeItem *> (item);
+		if (tree_item && tree_item->isOpen())
+			expand (iter);
 	}
 	else {
 		GtkListStore *store = getListStore();
 		gtk_list_store_append (store, iter);
 		gtk_list_store_set (store, iter, getPtrCol(), item, -1);
+		inner::setItemData (getModel(), iter, item);
 	}
 
 	if (item->selected() || empty)
-		implFocusItem (item);
+		setFocusItem (iter, true);
 }
 
 void YGSelectionModel::setCellLabel (GtkTreeIter *iter, int col, const string &label)
@@ -147,18 +161,19 @@ void YGSelectionModel::setCellLabel (GtkTreeIter *iter, int col, const string &l
 
 void YGSelectionModel::setCellIcon (GtkTreeIter *iter, int col, const string &icon)
 {
-	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (icon);
+	string path = ywidget->iconFullPath (icon);
+	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path.c_str());
 	if (isTree)
 		gtk_tree_store_set (getTreeStore(), iter, col, pixbuf, -1);
 	else
 		gtk_list_store_set (getListStore(), iter, col, pixbuf, -1);
 }
 
-void YGSelectionModel::setCellToggle (GtkTreeIter *iter, int col, bool selected)
+void YGSelectionModel::setCellToggle (GtkTreeIter *iter, int col, bool select)
 {
 	if (isTree)
-		gtk_tree_store_set (getTreeStore(), iter, col, selected, -1);
+		gtk_tree_store_set (getTreeStore(), iter, col, select, -1);
 	else
-		gtk_list_store_set (getListStore(), iter, col, selected, -1);
+		gtk_list_store_set (getListStore(), iter, col, select, -1);
 }
 

@@ -109,7 +109,7 @@ void YGUI::checkInit()
 	}
 }
 
-#define PRINT_EVENTS
+//#define PRINT_EVENTS
 
 void YGUI::idleLoop (int fd_ycp)
 {
@@ -159,7 +159,7 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
 #ifdef PRINT_EVENTS
-fprintf (stderr, "waitInput()\n");
+fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
 #endif
 	if (!YDialog::currentDialog (false))
 		return NULL;
@@ -218,25 +218,23 @@ int YGUI::getDisplayDepth()
 long YGUI::getDisplayColors()
 { return 1L << getDisplayDepth(); /*from yast-qt*/ }
 
-int YGUI::getDefaultWidth()
-{
-	if (!m_default_size.width) {
-/*		if (m_fullscreen)
-			m_default_size.width = getDisplayWidth();
-		else*/
-			m_default_size.width = MIN (600, getDisplayWidth());
-	}
+// YCP writers use getDefaultWidth/Height() to do space saving if needed,
+// so just tell me the displayWidth/Height(). If that size is decent, let's
+// us deal with it.
+int YGUI::getDefaultWidth()   { return getDisplayWidth(); }
+int YGUI::getDefaultHeight()  { return getDisplayHeight(); }
+
+int YGUI::_getDefaultWidth()
+{ 
+	if (!m_default_size.width)
+		m_default_size.width = MIN (600, getDisplayWidth());
 	return m_default_size.width;
 }
 
-int YGUI::getDefaultHeight()
-{
-	if (!m_default_size.height) {
-/*		if (m_fullscreen)
-			m_default_size.height = getDisplayHeight();
-		else*/
-			m_default_size.height = MIN (450, getDisplayHeight());
-	}
+int YGUI::_getDefaultHeight()
+{ 
+	if (!m_default_size.height)
+		m_default_size.height = MIN (450, getDisplayHeight());
 	return m_default_size.height;
 }
 
@@ -589,6 +587,11 @@ void YGUI::askSaveLogs()
 			g_free (error);
 		}
 	}
+}
+
+YGApplication::YGApplication()
+{
+	setIconBasePath (ICON_DIR);
 }
 
 YWidgetFactory *YGUI::createWidgetFactory()
