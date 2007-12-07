@@ -56,30 +56,13 @@ namespace YGUtils
 	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
 	std::list <std::string> splitString (const std::string &str, char separator);
 
-	/* Prints a GtkTreeModel for debugging purposes. */
-	void print_model (GtkTreeModel *model, int string_col);
-
-	/* To be used as a callback to sort tree views. */
-	gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
-	                      GtkTreeIter *b, gpointer data);
-
-	/* To be used as a callback for a GtkTreeView with toggle cells. */
-	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
-	                                gchar *path_str, GtkTreeModel *model);
-
-	/* Goes through all GtkTreeView columns and checks for TextCellRenderers,
-	   setting those columns as sortable. */
-	void tree_view_set_sortable (GtkTreeView *view, int default_sort_col);
-
-	/* Like gtk_tree_view_scroll_to_point(), but does smooth scroll. */
-	void tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y);
-
 	/* Converts stuff to GValues */
 	GValue floatToGValue (float num);
 
-	void setStockIcon (GtkWidget *button, std::string ycp_str);
-
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
+
+	/* Tries to make sense out of the string, applying some stock icon to the button. */
+	void setStockIcon (GtkWidget *button, std::string ycp_str);
 };
 
 extern "C" {

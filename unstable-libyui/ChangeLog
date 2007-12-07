@@ -7,6 +7,10 @@
 	GtkCellRendererText and GtkCellRendererPixbuf. We need this as yast can
 	set either an icon or text on a cell, or both.
 
+	* src/YGUtils.h/cc: cleanup of methods.
+	* src/YGTable.cc (YGTable): fixed sorting. new libyui has this KeepSorted
+	function, but GTK doesn't let us revert back to unsorted once we sort them...
+
 2007-12-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Fixed previous crash, some other problems and some improvements.
