@@ -226,16 +226,12 @@ public:
 		if (immediateMode())
 			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 			                  G_CALLBACK (selected_cb), (YGTableView*) this);
-
-		setSortable (0);
+		setSortable (true);
 	}
 
 	virtual void setKeepSorting (bool keepSorting)
 	{
-fprintf (stderr, "setKeepSorting!\n");
-		// FIXME: GTK doesn't let us get back to unsorted mode...
-/*		if (!keepSorting)
-			YGUtils::tree_view_set_sortable (getView(), 0);*/
+		setSortable (keepSorting);
 		YTable::setKeepSorting (keepSorting);
 	}
 
@@ -267,70 +263,17 @@ fprintf (stderr, "setKeepSorting!\n");
    		setCellLabel (iter, index+1, cell->label());
 	}
 
-	// Goes through all GtkTreeView columns, making them sortable.
-	void setSortable (int default_col)
+	void setSortable (bool sortable)
 	{
 		IMPL
-		struct inner {
-			static gint sort_cb (GtkTreeModel *model, GtkTreeIter *a,
-			                     GtkTreeIter *b, gpointer data)
-			{
-				gchar *s1 = 0, *s2 = 0;
-				gint col = GPOINTER_TO_INT (data);
-				gtk_tree_model_get (model, a, col, &s1, -1);
-				gtk_tree_model_get (model, b, col, &s2, -1);
-
-				gint cmp = 0;
-				if (s1 && s2)
-					cmp = YGUtils::strcmp (s1, s2);
-
-				if (s1) g_free (s1);
-				if (s2) g_free (s2);
-				return cmp;
-			}
-
-			static void header_clicked_cb (GtkTreeViewColumn *column, GtkTreeSortable *sortable)
-			{
-				IMPL
-				GtkTreeViewColumn *last_sorted =
-					(GtkTreeViewColumn *) g_object_get_data (G_OBJECT (sortable), "last-sorted");
-				int id = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "id"));
-
-				GtkSortType sort = GTK_SORT_ASCENDING;
-				if (last_sorted != column) {
-					if (last_sorted)
-						gtk_tree_view_column_set_sort_indicator (last_sorted, FALSE);
-					gtk_tree_view_column_set_sort_indicator (column, TRUE);
-					g_object_set_data (G_OBJECT (sortable), "last-sorted", column);
-				}
-				else {
-					sort = gtk_tree_view_column_get_sort_order (column);
-					sort = sort == GTK_SORT_ASCENDING ? GTK_SORT_DESCENDING : GTK_SORT_ASCENDING;
-				}
-
-				gtk_tree_view_column_set_sort_order (column, sort);
-				gtk_tree_sortable_set_sort_column_id (sortable, id, sort);
-			}
-		};
-
-		GtkTreeView *view = getView();
-		GtkTreeSortable *sortable = GTK_TREE_SORTABLE (gtk_tree_view_get_model (view));
-		// keep a pointer to currently sorted, so next can disable it
-		g_object_set_data (G_OBJECT (sortable), "last-sorted", NULL);
-
 		int n = 0;
-		GList *columns = gtk_tree_view_get_columns (view);
+		GList *columns = gtk_tree_view_get_columns (getView());
 		for (GList *i = columns; i; i = i->next, n++) {
 			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
-			gtk_tree_sortable_set_sort_func (sortable, n, inner::sort_cb,
-				                             GINT_TO_POINTER ((n*2)+1), NULL);
-
-			g_object_set_data (G_OBJECT (column), "id", GINT_TO_POINTER (n));
-			gtk_tree_view_column_set_clickable (column, TRUE);
-			g_signal_connect (G_OBJECT (column), "clicked",
-				              G_CALLBACK (inner::header_clicked_cb), sortable);
-/*			if (col_nb == default_sort_col)
-				header_clicked_cb (column, sortable);*/
+			int index = (n*2)+1;
+			if (!sortable)
+				index = -1;
+			gtk_tree_view_column_set_sort_column_id (column, index);
 		}
 		g_list_free (columns);
 	}

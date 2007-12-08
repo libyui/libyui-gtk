@@ -149,15 +149,23 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 
 	int x = cell_area->x, y = cell_area->y;
 
+	gfloat xalign = cell->xalign, yalign = cell->yalign;
+	if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+		xalign = 1.0 - xalign;
+
 	if (tpcell->pixbuf) {
 		int w, h;
 		w = gdk_pixbuf_get_width (tpcell->pixbuf);
 		h = gdk_pixbuf_get_height (tpcell->pixbuf);
 
-		cairo_t *cr = gdk_cairo_create (window);
-		gdk_cairo_set_source_pixbuf (cr, tpcell->pixbuf, x, y);
+		int xoffset, yoffset;
+		xoffset = xalign * (cell_area->width - (w + (2*cell->xpad)));
+		yoffset = yalign * (cell_area->height - (h + (2*cell->ypad)));
 
-		cairo_rectangle (cr, x, y, w, h);
+		cairo_t *cr = gdk_cairo_create (window);
+		gdk_cairo_set_source_pixbuf (cr, tpcell->pixbuf, x+xoffset, y+yoffset);
+
+		cairo_rectangle (cr, x+xoffset, y+yoffset, w, h);
 		cairo_fill (cr);
 		cairo_destroy (cr);
 
@@ -170,11 +178,7 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 		PangoRectangle rect;
 		pango_layout_get_pixel_extents (layout, NULL, &rect);
 
-		gfloat xalign = cell->xalign, yalign = cell->yalign;
-		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
-			xalign = 1.0 - xalign;
-
-		gint xoffset, yoffset;
+		int xoffset, yoffset;
 		xoffset = xalign * (cell_area->width - (rect.width + (2*cell->xpad)));
 		yoffset = yalign * (cell_area->height - (rect.height + (2*cell->ypad)));
 

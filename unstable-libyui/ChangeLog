@@ -1,5 +1,14 @@
 2007-12-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkcellrenderertextpixbuf.c: fix: honor align for icons too.
+
+	* src/YGTable.cc: simplified table sorting code; GTK+ has convinience
+	functions for these, I was doing all the work myself, connecting header
+	clicks, providing a sort callback, changing sort icons, .. :P Honored
+	YTable::setKeepSorting().
+
+2007-12-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* Some fixes overall. YGTree and YGMultiSelectionBox were not working.
 	Polished YGSelectionModel. Fixed support for icons.
 
