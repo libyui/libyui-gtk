@@ -64,11 +64,12 @@ am_libpy2gtk_la_OBJECTS = Y2CCGtk.lo YGUtils.lo YGUI.lo YGDialog.lo \
 	YGProgressBar.lo YGInputField.lo YGMultiLineEdit.lo \
 	YGIntField.lo YGRadioButton.lo YGImage.lo YGFrame.lo \
 	YGSelectionModel.lo YGComboBox.lo YGTable.lo YGMenuButton.lo \
-	YGBarGraph.lo YGDumbTab.lo YGWizard.lo YGTime.lo \
-	YGPackageSelector.lo ygtkratiobox.lo ygtkbargraph.lo \
-	ygtksteps.lo ygtkfieldentry.lo ygtkmenubutton.lo ygtkwizard.lo \
-	ygtkfindentry.lo ygdkmngloader.lo ygtkimage.lo ygtkhtmlwrap.lo \
-	ygtkrichtext.lo yzyppwrapper.lo ygtkzyppwrapper.lo
+	YGBarGraph.lo YGDumbTab.lo YGWizard.lo YGPackageSelector.lo \
+	ygtkratiobox.lo ygtkbargraph.lo ygtksteps.lo ygtkfieldentry.lo \
+	ygtkmenubutton.lo ygtkwizard.lo ygtkfindentry.lo \
+	ygdkmngloader.lo ygtkimage.lo ygtkcellrenderertextpixbuf.lo \
+	ygtkhtmlwrap.lo ygtkrichtext.lo yzyppwrapper.lo \
+	ygtkzyppwrapper.lo
 libpy2gtk_la_OBJECTS = $(am_libpy2gtk_la_OBJECTS)
 libpy2gtk_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -108,14 +109,14 @@ HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run aclocal-1.10
+ACLOCAL = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run aclocal-1.10
 AGENT_LIBADD = -L$(libdir) -lscr
 ALLOCA = 
-AMTAR = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run tar
+AMTAR = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run automake-1.10
+AUTOCONF = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run automake-1.10
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -152,7 +153,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
 MAINTAINER = Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>   Michael Meeks <michael.meeks@novell.com>
-MAKEINFO = ${SHELL} /home/rick2/Documents/yast/gtk/unstable/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/rick2/Documents/yast/gtk/unstable-libyui/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = yast2-gtk
@@ -182,10 +183,10 @@ Y2DEVTOOLS_PREFIX = /usr
 YDOXYGEN = /usr/lib/YaST2/bin/ydoxygen
 ZYPP_CFLAGS =  
 ZYPP_LIBS = -lzypp  
-abs_builddir = /home/rick2/Documents/yast/gtk/unstable/src
-abs_srcdir = /home/rick2/Documents/yast/gtk/unstable/src
-abs_top_builddir = /home/rick2/Documents/yast/gtk/unstable
-abs_top_srcdir = /home/rick2/Documents/yast/gtk/unstable
+abs_builddir = /home/rick2/Documents/yast/gtk/unstable-libyui/src
+abs_srcdir = /home/rick2/Documents/yast/gtk/unstable-libyui/src
+abs_top_builddir = /home/rick2/Documents/yast/gtk/unstable-libyui
+abs_top_srcdir = /home/rick2/Documents/yast/gtk/unstable-libyui
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = 
@@ -220,7 +221,7 @@ htmldir = ${docdir}
 imagedir = ${prefix}/share/YaST2/images
 includedir = ${prefix}/include/YaST2
 infodir = ${datarootdir}/info
-install_sh = $(SHELL) /home/rick2/Documents/yast/gtk/unstable/install-sh
+install_sh = $(SHELL) /home/rick2/Documents/yast/gtk/unstable-libyui/install-sh
 libdir = /usr/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${prefix}/share/YaST2/locale
@@ -294,7 +295,6 @@ libpy2gtk_la_SOURCES = \
 	YGBarGraph.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
-	YGTime.cc \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
@@ -305,6 +305,7 @@ libpy2gtk_la_SOURCES = \
 	ygtkfindentry.c \
 	ygdkmngloader.c \
 	ygtkimage.c \
+	ygtkcellrenderertextpixbuf.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \
@@ -426,7 +427,6 @@ include ./$(DEPDIR)/YGPushButton.Plo
 include ./$(DEPDIR)/YGRadioButton.Plo
 include ./$(DEPDIR)/YGSelectionModel.Plo
 include ./$(DEPDIR)/YGTable.Plo
-include ./$(DEPDIR)/YGTime.Plo
 include ./$(DEPDIR)/YGUI.Plo
 include ./$(DEPDIR)/YGUtils.Plo
 include ./$(DEPDIR)/YGWidget.Plo
@@ -435,6 +435,7 @@ include ./$(DEPDIR)/dummy.Po
 include ./$(DEPDIR)/test.Po
 include ./$(DEPDIR)/ygdkmngloader.Plo
 include ./$(DEPDIR)/ygtkbargraph.Plo
+include ./$(DEPDIR)/ygtkcellrenderertextpixbuf.Plo
 include ./$(DEPDIR)/ygtkfieldentry.Plo
 include ./$(DEPDIR)/ygtkfindentry.Plo
 include ./$(DEPDIR)/ygtkhtmlwrap.Plo

@@ -64,11 +64,12 @@ am_libpy2gtk_la_OBJECTS = Y2CCGtk.lo YGUtils.lo YGUI.lo YGDialog.lo \
 	YGProgressBar.lo YGInputField.lo YGMultiLineEdit.lo \
 	YGIntField.lo YGRadioButton.lo YGImage.lo YGFrame.lo \
 	YGSelectionModel.lo YGComboBox.lo YGTable.lo YGMenuButton.lo \
-	YGBarGraph.lo YGDumbTab.lo YGWizard.lo YGTime.lo \
-	YGPackageSelector.lo ygtkratiobox.lo ygtkbargraph.lo \
-	ygtksteps.lo ygtkfieldentry.lo ygtkmenubutton.lo ygtkwizard.lo \
-	ygtkfindentry.lo ygdkmngloader.lo ygtkimage.lo ygtkhtmlwrap.lo \
-	ygtkrichtext.lo yzyppwrapper.lo ygtkzyppwrapper.lo
+	YGBarGraph.lo YGDumbTab.lo YGWizard.lo YGPackageSelector.lo \
+	ygtkratiobox.lo ygtkbargraph.lo ygtksteps.lo ygtkfieldentry.lo \
+	ygtkmenubutton.lo ygtkwizard.lo ygtkfindentry.lo \
+	ygdkmngloader.lo ygtkimage.lo ygtkcellrenderertextpixbuf.lo \
+	ygtkhtmlwrap.lo ygtkrichtext.lo yzyppwrapper.lo \
+	ygtkzyppwrapper.lo
 libpy2gtk_la_OBJECTS = $(am_libpy2gtk_la_OBJECTS)
 libpy2gtk_la_LINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
@@ -294,7 +295,6 @@ libpy2gtk_la_SOURCES = \
 	YGBarGraph.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
-	YGTime.cc \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
@@ -305,6 +305,7 @@ libpy2gtk_la_SOURCES = \
 	ygtkfindentry.c \
 	ygdkmngloader.c \
 	ygtkimage.c \
+	ygtkcellrenderertextpixbuf.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \
@@ -426,7 +427,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGRadioButton.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGSelectionModel.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGTable.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGTime.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGUI.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGUtils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/YGWidget.Plo@am__quote@
@@ -435,6 +435,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygdkmngloader.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygtkbargraph.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygtkcellrenderertextpixbuf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygtkfieldentry.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygtkfindentry.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ygtkhtmlwrap.Plo@am__quote@
