@@ -291,7 +291,6 @@ YWizard *YGOptionalWidgetFactory::createWizard (YWidget *parent,
 	const string &backButtonLabel, const string &abortButtonLabel,
 	const string &nextButtonLabel, YWizardMode wizardMode)
 {
-fprintf (stderr, "** createWizard()\n");
 	return new YGWizard (parent, backButtonLabel, abortButtonLabel, nextButtonLabel,
 	                     wizardMode);
 }
