@@ -409,11 +409,10 @@ static void ygtk_wizard_destroy (GtkObject *object)
    to use gtk_container_remove() on it. We ref them since we still
    want to call destroy on them so they children die. */
 #define DESTROY_WIDGET(widget)          \
-	if (widget) {                         \
-		g_object_ref (G_OBJECT (widget));   \
-		gtk_widget_unparent (widget);       \
-		gtk_widget_destroy (widget);        \
-		widget = NULL;                      \
+#define DESTROY_WIDGET(widget)                \
+	if (widget) {                             \
+		gtk_widget_unparent (widget);         \
+		widget = NULL;                        \
 	}
 	DESTROY_WIDGET (wizard->m_title)
 	DESTROY_WIDGET (wizard->m_buttons)

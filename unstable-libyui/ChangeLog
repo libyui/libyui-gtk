@@ -1,4 +1,11 @@
-2007-12-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2007-12-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.h.cc: fixed package selector issue. We weren't implementing
+	UI::RunPkgSelector() (removed it on cleanup...).
+
+	* src/ygtkwizard.c: fix part widgets destroying; possible mem-leak.
+
+2007-12-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkcellrenderertextpixbuf.c: fix: honor align for icons too.
 

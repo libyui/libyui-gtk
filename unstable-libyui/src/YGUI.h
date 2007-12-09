@@ -85,6 +85,7 @@ public:
 
 	virtual void makeScreenShot (string filename);
 	virtual void beep();
+	virtual YCPValue runPkgSelection (YWidget *packageSelector);
 
 	virtual YCPValue askForExistingDirectory (const YCPString &startDir,
 		const YCPString &headline);
