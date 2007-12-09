@@ -408,7 +408,6 @@ static void ygtk_wizard_destroy (GtkObject *object)
 /* We must unparent these widgets from the wizard as they would try
    to use gtk_container_remove() on it. We ref them since we still
    want to call destroy on them so they children die. */
-#define DESTROY_WIDGET(widget)          \
 #define DESTROY_WIDGET(widget)                \
 	if (widget) {                             \
 		gtk_widget_unparent (widget);         \
