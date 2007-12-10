@@ -605,13 +605,15 @@ private:
 		m_categories = gtk_tree_view_new();
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_categories), FALSE);
 		gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_categories), 0);
-		renderer = gtk_cell_renderer_pixbuf_new();
-		column = gtk_tree_view_column_new_with_attributes ("",
-			renderer, "pixbuf", 2, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (m_categories), column);
 		renderer = gtk_cell_renderer_text_new();
 		column = gtk_tree_view_column_new_with_attributes ("",
 			renderer, "text", 0, NULL);
+		gtk_tree_view_column_set_expand (column, TRUE);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (m_categories), column);
+		renderer = gtk_cell_renderer_pixbuf_new();
+		column = gtk_tree_view_column_new_with_attributes ("",
+			renderer, "pixbuf", 2, NULL);
+		gtk_tree_view_column_set_expand (column, FALSE);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (m_categories), column);
 
 		GtkTreeSelection *selection = gtk_tree_view_get_selection (

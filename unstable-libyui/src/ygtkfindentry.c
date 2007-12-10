@@ -128,7 +128,7 @@ void ygtk_ext_entry_set_border_window_size (YGtkExtEntry *entry,
 			gdk_window_set_user_data (*window, widget);
 			// set background style
 			ygtk_ext_entry_sync_color (entry);
-	
+
 			if (GTK_WIDGET_MAPPED (widget))
 				gdk_window_show (*window);
 			gtk_widget_queue_resize (widget);
