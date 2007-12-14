@@ -180,18 +180,8 @@ if test ! -x "$PKG_CONFIG" ; then
 fi
 AC_SUBST(PKG_CONFIG)
 
-
 AC_FUNC_ALLOCA
 AC_HEADER_STDC
-
-dnl Try to find the Zypp includes
-AC_MSG_CHECKING([for zypp 3])
-if test -f /usr/include/zypp/SourceManager.h; then
-    AC_DEFINE(PRE_ZYPP_3, 1, [defined if using an older SL10.1 era zypp])
-    AC_MSG_RESULT([pre 3])
-else
-    AC_MSG_RESULT([found])
-fi
 
 PKG_CHECK_MODULES( ZYPP, libzypp )
 AC_SUBST(ZYPP_LIBS)
@@ -215,19 +205,22 @@ verstxt=`pkg-config --modversion yast2-core`
 yast_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 AC_DEFINE_UNQUOTED(YAST2_VERSION, $yast_vers, [yast version for compile conditionals])
 
-dnl new UI library
-AC_MSG_CHECKING([for old libyui])
 PYUI_LIBS='-lpy2UI'
-if test $yast_vers -le 2015006; then
-	PYUI_LIBS='-lyui'
-	AC_MSG_RESULT([found])
-else
-	AC_MSG_RESULT([use new lib])
-fi
 AC_SUBST(PYUI_LIBS)
+
+dnl Checking for new libyui API...
+if test $yast_vers -lt 2015012; then
+	AC_MSG_ERROR([
+*** Version of libyui >= 2.15.12 needed (your version: $verstxt)
+*** You can find it on: svn checkout http://svn.opensuse.org/svn/yast/trunk/core/
+*** Do "make -f Makefile.cvs" on root
+*** Then you just need to compile stuff under libyui,
+***     "cd libyui && make && sudo make install"
+*** libyui broke compatibility in order to get away from YCP structures,
+*** to make it easier for binding.])
+fi
 
 AC_OUTPUT([Makefile src/Makefile])
 
-echo "
-Hello hacker: please read the README carefully while this builds.
-"
+echo "Hello hacker: checkout README while this builds."
+

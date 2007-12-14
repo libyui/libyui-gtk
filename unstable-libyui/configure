@@ -20474,7 +20474,6 @@ echo "$as_me: error:
 fi
 
 
-
 # The Ultrix 4.2 mips builtin alloca declared by alloca.h only works
 # for constant arguments.  Useless!
 { echo "$as_me:$LINENO: checking for working alloca.h" >&5
@@ -21009,21 +21008,6 @@ _ACEOF
 fi
 
 
-{ echo "$as_me:$LINENO: checking for zypp 3" >&5
-echo $ECHO_N "checking for zypp 3... $ECHO_C" >&6; }
-if test -f /usr/include/zypp/SourceManager.h; then
-
-cat >>confdefs.h <<\_ACEOF
-#define PRE_ZYPP_3 1
-_ACEOF
-
-    { echo "$as_me:$LINENO: result: pre 3" >&5
-echo "${ECHO_T}pre 3" >&6; }
-else
-    { echo "$as_me:$LINENO: result: found" >&5
-echo "${ECHO_T}found" >&6; }
-fi
-
 
 
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
@@ -21500,18 +21484,28 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-{ echo "$as_me:$LINENO: checking for old libyui" >&5
-echo $ECHO_N "checking for old libyui... $ECHO_C" >&6; }
 PYUI_LIBS='-lpy2UI'
-if test $yast_vers -le 2015006; then
-	PYUI_LIBS='-lyui'
-	{ echo "$as_me:$LINENO: result: found" >&5
-echo "${ECHO_T}found" >&6; }
-else
-	{ echo "$as_me:$LINENO: result: use new lib" >&5
-echo "${ECHO_T}use new lib" >&6; }
-fi
 
+
+if test $yast_vers -lt 2015012; then
+	{ { echo "$as_me:$LINENO: error:
+*** Version of libyui >= 2.15.12 needed (your version: $verstxt)
+*** You can find it on: svn checkout http://svn.opensuse.org/svn/yast/trunk/core/
+*** Do \"make -f Makefile.cvs\" on root
+*** Then you just need to compile stuff under libyui,
+***     \"cd libyui && make && sudo make install\"
+*** libyui broke compatibility in order to get away from YCP structures,
+*** to make it easier for binding." >&5
+echo "$as_me: error:
+*** Version of libyui >= 2.15.12 needed (your version: $verstxt)
+*** You can find it on: svn checkout http://svn.opensuse.org/svn/yast/trunk/core/
+*** Do \"make -f Makefile.cvs\" on root
+*** Then you just need to compile stuff under libyui,
+***     \"cd libyui && make && sudo make install\"
+*** libyui broke compatibility in order to get away from YCP structures,
+*** to make it easier for binding." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 ac_config_files="$ac_config_files Makefile src/Makefile"
 
@@ -22971,6 +22965,5 @@ if test "$no_create" != yes; then
 fi
 
 
-echo "
-Hello hacker: please read the README carefully while this builds.
-"
+echo "Hello hacker: checkout README while this builds."
+

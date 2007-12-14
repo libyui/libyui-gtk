@@ -63,9 +63,6 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* defined if using an older SL10.1 era zypp */
-#undef PRE_ZYPP_3
-
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at runtime.
