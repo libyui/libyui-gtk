@@ -950,8 +950,8 @@ Filters *m_filters;  // used to filter repo versions...
 		// lock
 		m_lock_button = gtk_toggle_button_new();
 		gtk_widget_set_tooltip_markup (m_lock_button,
-			"<b>Package lock:</b> prevents the package status from being modified by "
-			"the solver (that is, it won't honour dependencies or collections ties.)");
+			_("<b>Package lock:</b> prevents the package status from being modified by "
+			"the solver (that is, it won't honour dependencies or collections ties.)"));
 		g_signal_connect (G_OBJECT (m_lock_button), "toggled",
 		                  G_CALLBACK (locked_toggled_cb), this);
 		m_locked_image = createImageFromXPM (pkg_locked_xpm);
