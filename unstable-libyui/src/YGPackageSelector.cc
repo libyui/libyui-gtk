@@ -491,16 +491,20 @@ class Filters
 				m_view = gtk_tree_view_new();
 				gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_view), FALSE);
 				gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_view), 0);
-				renderer = gtk_cell_renderer_text_new();
-				column = gtk_tree_view_column_new_with_attributes ("",
-					renderer, "text", 0, NULL);
-				gtk_tree_view_column_set_expand (column, TRUE);
-				gtk_tree_view_append_column (GTK_TREE_VIEW (m_view), column);
 				renderer = gtk_cell_renderer_pixbuf_new();
 				column = gtk_tree_view_column_new_with_attributes ("",
 					renderer, "pixbuf", 2, NULL);
 				gtk_tree_view_column_set_expand (column, FALSE);
 				gtk_tree_view_append_column (GTK_TREE_VIEW (m_view), column);
+				renderer = gtk_cell_renderer_text_new();
+				column = gtk_tree_view_column_new_with_attributes ("",
+					renderer, "text", 0, NULL);
+				gtk_tree_view_column_set_expand (column, TRUE);
+				gtk_tree_view_append_column (GTK_TREE_VIEW (m_view), column);
+				if (type == Ypp::Package::PATCH_TYPE)
+					gtk_tree_view_set_show_expanders (GTK_TREE_VIEW (m_view), FALSE);
+				else
+					gtk_tree_view_set_expander_column (GTK_TREE_VIEW (m_view), column);
 
 				GtkTreeSelection *selection = gtk_tree_view_get_selection (
 					GTK_TREE_VIEW (m_view));
