@@ -14,6 +14,9 @@
 	* src/YGPackageSelector.cc: tweaked expanders on categories tree: put them
 	next to text for packages, hide them for patches.
 
+	* configure.in.in: changed the libyui test to a file test, since I'm not
+	sure the yast2-core version has changed as a result of the new libyui.
+
 2007-12-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h.cc: fixed package selector issue. We weren't implementing

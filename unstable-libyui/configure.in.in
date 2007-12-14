@@ -56,7 +56,7 @@ PYUI_LIBS='-lpy2UI'
 AC_SUBST(PYUI_LIBS)
 
 dnl Checking for new libyui API...
-if test $yast_vers -lt 2015012; then
+if ! test -f /usr/include/YaST2/yui/YApplication.h; then
 	AC_MSG_ERROR([
 *** Version of libyui >= 2.15.12 needed (your version: $verstxt)
 *** You can find it on: svn checkout http://svn.opensuse.org/svn/yast/trunk/core/
