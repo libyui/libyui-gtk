@@ -310,6 +310,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                                           g_free, NULL);
 
 	gtk_container_set_border_width (GTK_CONTAINER (wizard), BORDER);
+	wizard->child_border_width = CHILD_BORDER;
 
 	//** Title
 	wizard->m_title = gtk_hbox_new (FALSE, 0);
@@ -893,6 +894,7 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 
 	gint border = GTK_CONTAINER (wizard)->border_width;
+	gint child_border = wizard->child_border_width;
 	gint header_padding = get_header_padding (GTK_WIDGET (wizard));
 	gint content_padding = get_content_padding (GTK_WIDGET (wizard));
 	GtkRequisition req;  // temp usage
@@ -931,8 +933,8 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 			gtk_widget_size_request (child, &child_req);
 		else
 			child_req.width = child_req.height = 0;
-		child_req.width += content_padding * 2 + CHILD_BORDER*2;
-		child_req.height += content_padding * 2 + CHILD_BORDER*2;
+		child_req.width += content_padding * 2 + child_border*2;
+		child_req.height += content_padding * 2 + child_border*2;
 
 		req.width = nav_req.width + child_req.width + border*2;
 		req.height = MAX (nav_req.height, child_req.height);
@@ -1032,7 +1034,7 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 	// child
 	GtkWidget *child = GTK_BIN (wizard)->child;
 	if (child && GTK_WIDGET_VISIBLE (child)) {
-		apply_allocation_padding (&child_area, content_padding + CHILD_BORDER);
+		apply_allocation_padding (&child_area, content_padding + wizard->child_border_width);
 		gtk_widget_size_allocate (child, &child_area);
 	}
 

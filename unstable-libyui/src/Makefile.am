@@ -49,6 +49,8 @@ libpy2gtk_la_SOURCES = \
 	ygdkmngloader.c \
 	ygtkimage.c \
 	ygtkcellrenderertextpixbuf.c \
+	ygtkscrolledwindow.c \
+	ygtktogglebutton.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \

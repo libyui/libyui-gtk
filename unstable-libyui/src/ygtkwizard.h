@@ -93,6 +93,8 @@ typedef struct _YGtkWizard
 	/* The help text. */
 	gchar     *m_help;
 	GtkWidget *m_help_dialog;
+
+	guint child_border_width;
 } YGtkWizard;
 
 typedef struct _YGtkWizardClass

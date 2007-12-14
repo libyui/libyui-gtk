@@ -54,15 +54,14 @@ public:
 			}
 			return ret;
 #else
+			y2debug ("Component already created");
             return new YGUIComponent();
 #endif
 		}
-		else
-			return 0;
+		return 0;
 	}
 };
 
 // Singleton plugin registration instance.
 Y2CCGtk g_y2ccgtk;
-
 

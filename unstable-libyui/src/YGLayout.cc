@@ -144,11 +144,14 @@ public:
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
 	{
+		bool hstretch = halign == YAlignUnchanged || stretchable (YD_HORIZ);
+		bool vstretch = valign == YAlignUnchanged || stretchable (YD_VERT);
+
 		GValue xalign, yalign, xscale, yscale;
 		xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
 		yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
-		xscale = YGUtils::floatToGValue (halign == YAlignUnchanged ? 1 : 0);
-		yscale = YGUtils::floatToGValue (valign == YAlignUnchanged ? 1 : 0);
+		xscale = YGUtils::floatToGValue (hstretch ? 1 : 0);
+		yscale = YGUtils::floatToGValue (vstretch ? 1 : 0);
 
 		g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
 		g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);

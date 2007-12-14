@@ -1,3 +1,12 @@
+2007-12-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: re-worked the package selector with input
+	from some people. Special thanks to Christian Jäger and Martin Szulecki.
+	I am confident people will like it; some code is pretty hacked through,
+	this baby certainely deserved more time, but its beatiful how everything
+	works together and the interface presents itself gracefully.
+	Also fixed a few issues and added support for patches.
+
 2007-12-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h.cc: fixed package selector issue. We weren't implementing
