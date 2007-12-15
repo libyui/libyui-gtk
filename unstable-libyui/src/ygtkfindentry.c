@@ -349,12 +349,13 @@ static void ygtk_find_entry_realize (GtkWidget *widget)
 	gdk_window_set_cursor (eentry->left_window, cursor);
 	gdk_window_set_cursor (eentry->right_window, cursor);
 	gdk_cursor_unref (cursor);
+	gdk_window_hide (eentry->right_window);  // show when text is inserted
 }
 
 static void ygtk_find_entry_map (GtkWidget *widget)
 {
-	if (GTK_WIDGET_REALIZED (widget) && !GTK_WIDGET_MAPPED (widget)) {
-		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->map (widget);
+	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->map (widget);
+	if (GTK_WIDGET_REALIZED (widget)) {
 		// only show clear icon when the entry has text
 		GdkWindow *clear_win = YGTK_EXT_ENTRY (widget)->right_window;
 		if (clear_win)
@@ -470,14 +471,9 @@ static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
 		(ygtk_find_entry_parent_class, GTK_TYPE_EDITABLE);
 	parent_editable_iface->delete_text (editable, start_pos, end_pos);
 
-	int has_text = strlen (gtk_entry_get_text (GTK_ENTRY (editable)));
-	if (!has_text) {
-		/* Set or delete text may be called while the widget has not yet been
-		   realized. */
-		GdkWindow *clear_win = YGTK_EXT_ENTRY (editable)->right_window;
-		if (clear_win)
-			gdk_window_hide (clear_win);
-	}
+	GdkWindow *clear_win = YGTK_EXT_ENTRY (editable)->right_window;
+	if (clear_win)
+		gdk_window_hide (clear_win);
 }
 
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)

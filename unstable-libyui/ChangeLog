@@ -17,6 +17,10 @@
 	* configure.in.in: changed the libyui test to a file test, since I'm not
 	sure the yast2-core version has changed as a result of the new libyui.
 
+	* src/yzyppwrapper.cc: got rid of package ids. Pointers serve as ids fine.
+
+	* src/YGPackageSelector.cc: small touch up on the Changes pane.
+
 2007-12-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h.cc: fixed package selector issue. We weren't implementing

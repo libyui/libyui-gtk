@@ -352,22 +352,22 @@ public:
 		                  G_CALLBACK (Entry::style_set_cb), NULL);
 		m_entries_box = gtk_vbox_new (FALSE, 4);
 
-		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
-		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
-		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), m_entries_box, FALSE, TRUE, 0);
-
 		GtkWidget *port = gtk_viewport_new (NULL, NULL);
 		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
-		gtk_container_add (GTK_CONTAINER (port), vbox);
+		gtk_container_add (GTK_CONTAINER (port), m_entries_box);
 
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 		gtk_container_add (GTK_CONTAINER (scroll), port);
 
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
+		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), scroll, TRUE, TRUE, 0);
+
 		m_box = gtk_event_box_new();
-		gtk_container_add (GTK_CONTAINER (m_box), scroll);
+		gtk_container_add (GTK_CONTAINER (m_box), vbox);
 		g_signal_connect_after (G_OBJECT (m_box), "style-set",
 		                        G_CALLBACK (style_set_cb), NULL);
 		g_signal_connect_after (G_OBJECT (scroll), "style-set",
@@ -398,7 +398,7 @@ public:
 	virtual void entryInserted (Ypp::Pool::Iter iter, Ypp::Package *package)
 	{
 		Entry *entry = new Entry (package);
-		gtk_container_add (GTK_CONTAINER (m_entries_box), entry->getWidget());
+		gtk_box_pack_start (GTK_BOX (m_entries_box), entry->getWidget(), FALSE, TRUE, 0);
 		int index = m_pool->getIndex (iter);
 		m_entries = g_list_insert (m_entries, entry, index);
 		gtk_widget_show (m_container);
@@ -816,8 +816,8 @@ public:
 		m_statuses = new StatusButtons (this);
 
 		m_name = ygtk_find_entry_new();
-		g_signal_connect_after (G_OBJECT (m_name), "changed",
-		                        G_CALLBACK (entry_changed_cb), this);
+		g_signal_connect (G_OBJECT (m_name), "changed",
+		                  G_CALLBACK (entry_changed_cb), this);
 
 		m_repos = gtk_combo_box_new_text();
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), _("All Repositories"));

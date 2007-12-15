@@ -178,7 +178,7 @@ private:
 struct Ypp::Package::Impl
 {
 	Impl (ZyppSelectable sel)
-	: zyppSel (sel), index (-1), availableVersions (NULL), installedVersion (NULL)
+	: zyppSel (sel), availableVersions (NULL), installedVersion (NULL)
 	{
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
@@ -205,7 +205,6 @@ struct Ypp::Package::Impl
 
 	std::string name, summary;
 	ZyppSelectable zyppSel;
-	int index;  // used for Pools syncing
 	Type type;
 	Ypp::Node *category;
 	GSList *availableVersions;
@@ -834,16 +833,12 @@ Pool::Listener *listener;
 	void packageModified (Package *package)
 	{
 		bool match = query->impl->match (package);
-		int cmp = 1;
 		GSList *i;
 		for (i = packages; i; i = i->next) {
-			Package *pkg = (Package *) i->data;
-			if (pkg->impl->index == package->impl->index)
-				cmp = 0;
-			if (pkg->impl->index >= package->impl->index)
+			if (package == i->data)
 				break;
 		}
-		if (cmp == 0) {
+		if (i) {  // is on pool
 			if (match) {  // modified
 				if (listener)
 					listener->entryChanged ((Iter) i, package);
@@ -854,7 +849,7 @@ Pool::Listener *listener;
 				packages = g_slist_delete_link (packages, i);
 			}
 		}
-		else {
+		else {  // not on pool
 			if (match) {  // inserted
 				if (i == NULL) {
 					packages = g_slist_append (packages, (gpointer) package);
@@ -879,13 +874,10 @@ private:
 			if (!query->impl->type.is ((Ypp::Package::Type) t))
 				continue;
 			GSList *entire_pool = ypp->impl->getPackages ((Ypp::Package::Type) t);
-			int index = 0;
 			for (GSList *i = entire_pool; i; i = i->next) {
 				Package *pkg = (Package *) i->data;
 				if (query->impl->match (pkg))
 					pool = g_slist_append (pool, i->data);
-				if (pkg->impl->index == -1)
-					pkg->impl->index = index++;
 			}
 		}
 		return pool;
