@@ -816,6 +816,11 @@ public:
 		m_statuses = new StatusButtons (this);
 
 		m_name = ygtk_find_entry_new();
+		gtk_widget_set_tooltip_markup (m_name,
+			_("<b>Package search:</b> Use spaces to separate your keywords. They "
+			"will be matched against RPM <i>name</i>, <i>summary</i> and "
+			"<i>provides</i> attributes.\n(e.g.: \"kde gnome\" will search for all "
+			"KDE and Gnome related packages)"));
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (entry_changed_cb), this);
 

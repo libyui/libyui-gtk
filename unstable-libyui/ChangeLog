@@ -1,3 +1,12 @@
+2007-12-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: added tooltip to search entry.
+
+	* src/YGPushButton.cc: fixed default button focus.
+
+	* src/yzyppwrapper.cc: don't show size for patches (zypp always reports
+	zero).
+
 2007-12-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: re-worked the package selector with input

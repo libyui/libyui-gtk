@@ -64,14 +64,27 @@ public:
 	virtual void setDefaultButton (bool isDefault)
 	{
 		if (isDefault) {
-			gtk_widget_grab_focus (getWidget());
-			gtk_widget_grab_default (getWidget());
+			GtkWidget *button = getWidget();
+			GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+			gtk_widget_grab_default (button);
+			if (GTK_WIDGET_REALIZED (button))
+				gtk_widget_grab_focus (button);
+			else
+				g_signal_connect (G_OBJECT (button), "realize",
+				                  G_CALLBACK (realize_cb), this);
 		}
 		YPushButton::setDefaultButton (isDefault);
 	}
 
+	// Events
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
 	{ pThis->emitEvent (YEvent::Activated, false); }
+
+	// give focus to default buttons, once they are realized
+	static void realize_cb (GtkWidget *widget)
+	{
+		gtk_widget_grab_focus (widget);
+	}
 
 	YGWIDGET_IMPL_COMMON
 };

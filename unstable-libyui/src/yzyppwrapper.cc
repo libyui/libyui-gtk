@@ -282,7 +282,8 @@ std::string Ypp::Package::description()
 	else if (impl->type == PATCH_TYPE) {
 		
 	}
-	text += br + _("Size: ") + object->size().asString();
+	if (impl->type != PATCH_TYPE)
+		text += br + _("Size: ") + object->size().asString();
 	return text;
 }
 
