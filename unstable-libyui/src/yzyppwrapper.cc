@@ -983,6 +983,7 @@ const Ypp::Disk::Partition *Ypp::Disk::getPartition (int nb)
 
 Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 {
+	impl->getPackages (type);  // ensure they are initialized
 	return impl->categories[type]->getFirst();
 }
 

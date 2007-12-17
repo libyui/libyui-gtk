@@ -1,3 +1,12 @@
+2007-12-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (Filters): adjust the interface first before
+	processing the query. bug fix: query was being built against old categories
+	value.
+
+	* src/yzyppwrapper.cc: ensure the packages primitive pool is built when we
+	ask for its category.
+
 2007-12-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: added tooltip to search entry.

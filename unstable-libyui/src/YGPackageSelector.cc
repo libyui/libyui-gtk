@@ -467,7 +467,7 @@ class Filters
 		struct View
 		{
 			virtual GtkWidget *getWidget() = 0;
-			virtual void setQuery (Ypp::Query *query) = 0;
+			virtual void writeQuery (Ypp::Query *query) = 0;
 
 			Filters *m_filters;
 			View (Filters *filters)
@@ -602,7 +602,7 @@ class Filters
 				pThis->m_filters->signalChanged();
 			}
 
-			virtual void setQuery (Ypp::Query *query)
+			virtual void writeQuery (Ypp::Query *query)
 			{
 				Ypp::Node *node = getActive();
 				if (node)
@@ -657,7 +657,7 @@ class Filters
 				m_filters->signalChanged();
 			}
 
-			virtual void setQuery (Ypp::Query *query)
+			virtual void writeQuery (Ypp::Query *query)
 			{
 				if (!m_selected.empty())
 					query->setCollection (m_selected.front());
@@ -723,10 +723,10 @@ class Filters
 			}
 		}
 
-		void setQuery (Ypp::Query *query)
+		void writeQuery (Ypp::Query *query)
 		{
 			if (m_view)
-				m_view->setQuery (query);
+				m_view->writeQuery (query);
 		}
 	};
 
@@ -870,6 +870,13 @@ private:
 		Ypp::Package::Type type = (Ypp::Package::Type)
 			gtk_combo_box_get_active (GTK_COMBO_BOX (m_type));
 
+		// adjust interface
+		if (type != m_selectedType) {
+			m_collection->setType (type);
+			m_selectedType = type;
+		}
+
+		// create query
 		Ypp::Query *query = new Ypp::Query();
 		if (type == Ypp::Package::PATCH_TYPE)
 			query->setType (Ypp::Package::PATCH_TYPE);
@@ -888,7 +895,7 @@ private:
 			case 3: default: break;
 		}
 
-		m_collection->setQuery (query);
+		m_collection->writeQuery (query);
 
 		if (selectedRepo() >= 0) {
 			std::list <int> reposQuery;
@@ -897,11 +904,6 @@ private:
 		}
 
 		m_listener->doQuery (query);
-
-		if (type != m_selectedType) {
-			m_collection->setType (type);
-			m_selectedType = type;
-		}
 	}
 
 	void signalChangedDelay()
