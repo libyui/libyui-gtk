@@ -28,9 +28,9 @@ static GtkWidget *createImageFromXPM (const char **xpm)
 	return image;
 }
 
-#define FILEMANAGER_EXEC "/usr/bin/nautilus"
+#define FILEMANAGER_EXEC "/usr/bin/nautilus -n --no-desktop"
 inline void FILEMANAGER_LAUNCH (const char *path)
-{ system ((std::string (FILEMANAGER_EXEC) + " -n --no-desktop " + path + " &").c_str()); }
+{ system ((std::string (FILEMANAGER_EXEC) + " " + path + " &").c_str()); }
 
 static void busyCursor()
 {
