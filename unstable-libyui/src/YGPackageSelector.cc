@@ -284,6 +284,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			gtk_misc_set_alignment (GTK_MISC (m_label), 0, 0.5);
 			gtk_label_set_ellipsize (GTK_LABEL (m_label), PANGO_ELLIPSIZE_END);
 			m_button = gtk_button_new();
+			gtk_widget_set_tooltip_text (m_button, _("Undo"));
 			GtkWidget *undo_image = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_MENU);
 			gtk_button_set_image (GTK_BUTTON (m_button), undo_image);
 			m_box = gtk_hbox_new (FALSE, 6);
