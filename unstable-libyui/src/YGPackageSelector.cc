@@ -820,12 +820,15 @@ public:
 		gtk_widget_set_tooltip_markup (m_name,
 			_("<b>Package search:</b> Use spaces to separate your keywords. They "
 			"will be matched against RPM <i>name</i>, <i>summary</i> and "
-			"<i>provides</i> attributes.\n(e.g.: \"kde gnome\" will search for all "
-			"KDE and Gnome related packages)"));
+			"<i>provides</i> attributes.\n(e.g.: \"yast dhcp\" will return yast's "
+			"dhcpd tool)"));
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (entry_changed_cb), this);
 
 		m_repos = gtk_combo_box_new_text();
+		gtk_widget_set_tooltip_markup (m_repos,
+			_("<b>Package repositories:</b> Limits the query to one repository.\n"
+			"Repositories may be added or managed through YaST control center."));
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), _("All Repositories"));
 		for (int i = 0; Ypp::get()->getRepository (i); i++) {
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
