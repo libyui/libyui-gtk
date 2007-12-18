@@ -3,6 +3,11 @@
 	* src/YGPackageSelector.cc (Filters): added tooltip to repositories combo.
 	Changed example of seach entry.
 
+	* src/yzyppwrapper.cc: bug fix: filter pathes that don't apply. Don't show
+	broken patches as installed.
+
+	* src/yzyppwrapper.cc: bug fix: fixed crash on empty pool primitives.
+
 2007-12-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (Filters): adjust the interface first before

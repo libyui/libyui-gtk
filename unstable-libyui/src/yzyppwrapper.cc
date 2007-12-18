@@ -177,8 +177,9 @@ private:
 
 struct Ypp::Package::Impl
 {
-	Impl (ZyppSelectable sel)
-	: zyppSel (sel), availableVersions (NULL), installedVersion (NULL)
+	Impl (Type type, ZyppSelectable sel, Node *category)
+	: type (type), zyppSel (sel), category (category),
+	  availableVersions (NULL), installedVersion (NULL)
 	{
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
@@ -204,8 +205,8 @@ struct Ypp::Package::Impl
 	{ curStatus = zyppSel->status(); }
 
 	std::string name, summary;
-	ZyppSelectable zyppSel;
 	Type type;
+	ZyppSelectable zyppSel;
 	Ypp::Node *category;
 	GSList *availableVersions;
 	Version *installedVersion;
@@ -470,6 +471,14 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 
 bool Ypp::Package::isInstalled()
 {
+	if (impl->type == Ypp::Package::PATCH_TYPE) {
+		if (impl->zyppSel->hasInstalledObj()) {
+			// broken? show as available
+			if (impl->zyppSel->installedPoolItem().status().isIncomplete())
+				return false;
+		}
+	}
+
 	return impl->zyppSel->hasInstalledObj();
 }
 
@@ -983,7 +992,8 @@ const Ypp::Disk::Partition *Ypp::Disk::getPartition (int nb)
 
 Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 {
-	impl->getPackages (type);  // ensure they are initialized
+	if (!impl->getPackages (type))
+		return NULL;
 	return impl->categories[type]->getFirst();
 }
 
@@ -1277,30 +1287,42 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				break;
 		}
 		for (; it != end; it++) {
-			Package *package = new Package (new Package::Impl (*it));
 			Ypp::Node *category = 0;
 			ZyppObject object = (*it)->theObj();
-			if (type == Package::PACKAGE_TYPE) {
-				ZyppPackage zpackage = tryCastToZyppPkg (object);
-				if (!zpackage)
-					continue;
-				category = addCategory (type, zpackage->group());
-			}
-			else if (type == Package::PATTERN_TYPE) {
-				ZyppPattern pattern = tryCastToZyppPattern (object);
-				if (!pattern || !pattern->userVisible())
-					continue;
-				category = addCategory (type, pattern->category());
-			}
-			else if (type == Package::PATCH_TYPE) {
-				ZyppPatch patch = tryCastToZyppPatch (object);
-				if (!patch)
-					continue;
-				category = addCategory (type, patch->category());
+			// add category and test visibility
+			switch (type) {
+				case Package::PACKAGE_TYPE:
+				{
+					ZyppPackage zpackage = tryCastToZyppPkg (object);
+					if (!zpackage)
+						continue;
+					category = addCategory (type, zpackage->group());
+					break;
+				}
+				case Package::PATTERN_TYPE:
+				{
+					ZyppPattern pattern = tryCastToZyppPattern (object);
+					if (!pattern || !pattern->userVisible())
+						continue;
+					category = addCategory (type, pattern->category());
+					break;
+				}
+				case Package::PATCH_TYPE:
+				{
+					ZyppPatch patch = tryCastToZyppPatch (object);
+					if (!patch)
+						continue;
+					if (!(*it)->hasInstalledObj())
+						if (!(*it)->hasCandidateObj() || !(*it)->candidatePoolItem().status().isNeeded())
+							continue;
+					category = addCategory (type, patch->category());
+					break;
+				}
+				default:
+					break;
 			}
 
-			package->impl->type = type;
-			package->impl->category = category;
+			Package *package = new Package (new Package::Impl (type, *it, category));
 			pool = g_slist_prepend (pool, package);
 		}
 		// its faster to prepend then reverse, as we avoid iterating for each append
