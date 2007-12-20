@@ -34,8 +34,8 @@ Running
 
   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
 
-  In order to fire up YaST modules, run the ycc.sh script.
-  (You'll need the zenity package installed.)
+  From OpenSuse 10.3 on, it should be picked up automatically if you use Gnome. 
+  For other desktops, you can set yast-gtk to be used by editing /etc/sysconfig/yast2 .
 
   In case of oddness append --nothreads to the cmdline,
   Also check the log file: ~/.y2log
@@ -45,3 +45,4 @@ Documentation
   A code overview is given on the HACKING file.
   For documentation of YaST in general:
     http://developer.novell.com/wiki/index.php/Special:Downloads/yast/doc
+
