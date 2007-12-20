@@ -3,6 +3,8 @@
 	* src/YGProgressBar.cc (YGMultiProgressMeter): bug fix: bad testing,
 	was causing bar vertical to be created horizontal.
 
+	* src/yzyppwrapper.cc: set bold those attributes on description.
+
 2007-12-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (Filters): added tooltip to repositories combo.
