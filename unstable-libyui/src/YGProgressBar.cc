@@ -97,7 +97,7 @@ public:
 	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector<float> &maxValues)
 	: YMultiProgressMeter (NULL, dim, maxValues)
 	, YGWidget (this, parent, true,
-	            horizontal() == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
+	            horizontal() ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 //		ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (getWidget()), TRUE);
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
@@ -141,7 +141,7 @@ public:
 	{
 		if (vertical())
 			n = (segments() - n) - 1;
-		if (currentValue (n) == -1)
+		if (currentValue (n) < 0)
 			return 0;
 		return 1.0 - (((float) currentValue (n)) / maxValue (n));
 	}
