@@ -113,7 +113,8 @@ gboolean ygdk_mng_pixbuf_is_file_mng (const gchar *filename)
 	return ret;
 
 is_file_mng_failed:
-	fclose (file);
+	if (file)
+		fclose (file);
 	return FALSE;
 }
 

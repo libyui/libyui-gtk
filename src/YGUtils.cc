@@ -66,6 +66,8 @@ void YGUtils::filterText (GtkEditable *editable, int pos, int length,
 
 void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char *food)
 {
+	if (mouth_len < 0)
+		mouth_len = strlen (mouth);
 	unsigned int i = 0;
 	while ((i = str.find (mouth, i)) != string::npos)
 	{
@@ -87,83 +89,27 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 	gtk_text_buffer_delete_mark (buffer, end_mark);
 }
 
-/* Strings can ask for not being escape with the comment
-   <!-- DT:Rich --> */
-static bool dont_escape (const string &str)
+void YGUtils::escapeMarkup (string &str)
 {
-	const char *comment = "<!-- DT:Rich -->";
-	if (str.length() < sizeof (comment))
-		return false;
-	for (unsigned int i = 0; i < sizeof (comment); i++)
-		if (str[i] != comment[i])
-			return false;
-	return true;
-}
-
-string YGUtils::escape_markup (const string &str, bool break_lines)
-{
-	if (dont_escape (str))
-		return string (str);
-
-	string ret;
-	ret.reserve (str.length());
 	for (unsigned int i = 0; i < str.length(); i++) {
-		char ch = str[i];
-		switch (ch) {
+		switch (str[i]) {
 			case '<':
-				ret += "&lt;";
+				str.erase (i, 1);
+				str.insert (i, "&lt;");
 				break;
 			case '>':
-				ret += "&gt;";
+				str.erase (i, 1);
+				str.insert (i, "&gt;");
 				break;
 			case '&':
-				ret += "&amp;";
-				break;
-			case '\n':
-				ret += "<br/>";
+				str.erase (i, 1);
+				str.insert (i, "&amp;");
 				break;
 			default:
-				ret += ch;
 				break;
 		}
 	}
-
-	return ret;
 }
-
-#if 0
-string YGUtils::escape_break_lines (const string &str, bool paragraph_mode)
-{
-	if (dont_escape (str))
-		return str;
-	string res;
-	res.reserve (str.length() + 6);
-	if (paragraph_mode)
-		res = "<p>";
-	/* on paragraph mode, dont break when there is no text on the paragraph.
-	   otherwise, just dont break at the start of the text. */
-	bool dont_break = true;
-	for (unsigned int i = 0; i != str.length(); i++) {
-		char ch = str[i];
-		if (paragraph_mode && ch == '\n' && str[i-1] == '\n') {
-			if (!dont_break)
-				res += "</p><p>";
-			dont_break = true;
-		}
-		else if (!paragraph_mode && ch == '\n') {
-			if (!dont_break)
-				res += "<br>";
-		}
-		else {
-			res += ch;
-			dont_break = false;
-		}
-	}
-	if (paragraph_mode)
-		res += "</p>";
-	return res;
-}
-#endif
 
 #define PROD_ENTITY "&product;"
 
@@ -503,7 +449,9 @@ std::list <string> YGUtils::splitString (const string &str, char separator)
 {
 	std::list <string> parts;
 	unsigned int i, j;
-	for (j = 0, i = 0; i < str.length(); i++)
+	// ignore first character, if separator
+	i = j = (str[0] == separator) ? 1 : 0;
+	for (; i < str.length(); i++)
 		if (str[i] == separator) {
 			parts.push_back (str.substr (j, i - j));
 			j = ++i;

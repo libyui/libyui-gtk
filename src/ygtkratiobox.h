@@ -96,8 +96,6 @@ void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
                                        gboolean *yfill, guint *padding,
                                        gboolean *expandable);
 
-void ygtk_ratio_box_set_force_min_weight (YGtkRatioBox *box, gboolean force);
-
 /* RatioHBox */
 
 #define YGTK_TYPE_RATIO_HBOX            (ygtk_ratio_hbox_get_type ())

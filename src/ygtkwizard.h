@@ -81,11 +81,12 @@ typedef struct _YGtkWizard
 	GHashTable *steps_ids;  /* gchar* -> guint         */
 
 	/* Widgets for layout. */
-	GtkWidget *m_menu, *m_title, *m_navigation, *m_buttons;
+	GtkWidget *m_menu, *m_title, *m_steps, *m_tree, *m_buttons;
+	GtkWidget *m_child, *m_pane;
 	// containee can be accessed via GTK_BIN (wizard)->child
 
 	/* Widgets we need to have access to. */
-	GtkWidget *m_title_label, *m_title_image, *m_navigation_widget,
+	GtkWidget *m_title_label, *m_title_image, *m_tree_view,
 	          *m_back_button, *m_abort_button, *m_next_button, *m_help_button,
 	          *m_release_notes_button;
 

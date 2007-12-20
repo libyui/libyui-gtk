@@ -312,7 +312,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_title_image = gtk_image_new();
 	wizard->m_title_label = gtk_label_new("");
 	gtk_label_set_ellipsize (GTK_LABEL (wizard->m_title_label), PANGO_ELLIPSIZE_END);
-	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0);
+	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0.5);
 
 	// setup label look
 	gtk_widget_modify_fg (wizard->m_title_label, GTK_STATE_NORMAL,
@@ -366,7 +366,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_size_group_add_widget (buttons_group, wizard->m_abort_button);
 	g_object_unref (G_OBJECT (buttons_group)); 
 
-	//** The menu and the navigation widget will be created when requested.
+	//** The menu and the navigation widgets will be created when requested.
 	//** Help dialog will be build on realize so we can give it a parent window.
 }
 
@@ -413,8 +413,9 @@ static void ygtk_wizard_destroy (GtkObject *object)
 	DESTROY_WIDGET (wizard->m_title)
 	DESTROY_WIDGET (wizard->m_buttons)
 	DESTROY_WIDGET (wizard->m_menu)
-	DESTROY_WIDGET (wizard->m_navigation)
+	DESTROY_WIDGET (wizard->m_steps)
 	DESTROY_WIDGET (wizard->m_title)
+	DESTROY_WIDGET (wizard->m_pane)
 #undef DESTROY_WIDGET
 
 	if (wizard->m_help_dialog) {
@@ -445,56 +446,75 @@ static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard)
 
 void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 {
-	if (wizard->m_navigation) {
-		g_error ("YGtkWizard: a tree or steps widgets have already been enabled.");
-		return;
-	}
-	wizard->m_navigation_widget = ygtk_steps_new();
-	wizard->m_navigation = wizard->m_navigation_widget;
-	gtk_widget_modify_text (wizard->m_navigation_widget, GTK_STATE_NORMAL,
-	                        &wizard->m_navigation_widget->style->fg [GTK_STATE_SELECTED]);
+	g_return_if_fail (wizard->m_steps == NULL);
 
-	gtk_widget_set_parent (wizard->m_navigation, GTK_WIDGET (wizard));
-	gtk_widget_show_all (wizard->m_navigation);
+	wizard->m_steps = ygtk_steps_new();
+	gtk_widget_modify_text (wizard->m_steps, GTK_STATE_NORMAL,
+	                        &wizard->m_steps->style->fg [GTK_STATE_SELECTED]);
+
+	gtk_widget_set_parent (wizard->m_steps, GTK_WIDGET (wizard));
+	gtk_widget_show (wizard->m_steps);
+	gtk_widget_queue_resize (GTK_WIDGET (wizard));
 }
 
 void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 {
-	if (wizard->m_navigation) {
-		g_error ("YGtkWizard: a tree or steps widgets have already been enabled.");
-		return;
-	}
+	g_return_if_fail (wizard->m_tree == NULL);
 
-	wizard->m_navigation_widget = gtk_tree_view_new_with_model
+	wizard->m_tree_view = gtk_tree_view_new_with_model
 		(GTK_TREE_MODEL (gtk_tree_store_new (1, G_TYPE_STRING)));
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (wizard->m_navigation_widget),
-		0, "(no title)", gtk_cell_renderer_text_new(), "text", 0, NULL);
-	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (wizard->m_navigation_widget), FALSE);
+	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (wizard->m_tree_view),
+		0, "", gtk_cell_renderer_text_new(), "text", 0, NULL);
+	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (wizard->m_tree_view), FALSE);
 	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
-		GTK_TREE_VIEW (wizard->m_navigation_widget)), GTK_SELECTION_BROWSE);
+		GTK_TREE_VIEW (wizard->m_tree_view)), GTK_SELECTION_BROWSE);
 
-	g_signal_connect (G_OBJECT (wizard->m_navigation_widget), "cursor-changed",
+	g_signal_connect (G_OBJECT (wizard->m_tree_view), "cursor-changed",
 	                  G_CALLBACK (tree_item_selected_cb), wizard);
 
-	wizard->m_navigation = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (wizard->m_navigation),
+	wizard->m_tree = gtk_scrolled_window_new (NULL, NULL);
+	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (wizard->m_tree),
 	                                GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (wizard->m_navigation),
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (wizard->m_tree),
 	                                     GTK_SHADOW_IN);
 
-	gtk_container_add (GTK_CONTAINER (wizard->m_navigation), wizard->m_navigation_widget);
-	gtk_widget_set_size_request (wizard->m_navigation, 180, -1);
+	gtk_container_add (GTK_CONTAINER (wizard->m_tree), wizard->m_tree_view);
+	gtk_widget_set_size_request (wizard->m_tree, 180, -1);
 
-	gtk_widget_set_parent (wizard->m_navigation, GTK_WIDGET (wizard));
-	gtk_widget_show_all (wizard->m_navigation);
-	gtk_widget_queue_draw (GTK_WIDGET (wizard));
+	GtkWidget *child = wizard->m_child, *pane;
+	pane = gtk_hpaned_new();
+	gtk_paned_pack1 (GTK_PANED (pane), wizard->m_tree, TRUE, TRUE);
+	gtk_widget_show_all (pane);
+	ygtk_wizard_set_child (wizard, pane);
+	wizard->m_pane = pane;
+	if (child)
+		gtk_container_add (GTK_CONTAINER (wizard), child);
+}
+
+static void ygtk_wizard_add_child (GtkContainer *container, GtkWidget *child)
+{
+	YGtkWizard *wizard = YGTK_WIZARD (container);
+	wizard->m_child = child;
+	if (wizard->m_pane)
+		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, FALSE);
+	else
+		GTK_CONTAINER_CLASS (ygtk_wizard_parent_class)->add (container, child);
+}
+
+static void ygtk_wizard_remove_child (GtkContainer *container, GtkWidget *child)
+{
+	YGtkWizard *wizard = YGTK_WIZARD (container);
+	wizard->m_child = NULL;
+	if (wizard->m_pane)
+		gtk_container_remove (GTK_CONTAINER (wizard->m_pane), child);
+	else
+		GTK_CONTAINER_CLASS (ygtk_wizard_parent_class)->remove (container, child);
 }
 
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *new_child)
 {
-	GtkWidget *child = GTK_BIN (wizard)->child;
-	if (child)
-		gtk_container_remove (GTK_CONTAINER (wizard), child);
+	if (wizard->m_child)
+		gtk_container_remove (GTK_CONTAINER (wizard), wizard->m_child);
 	if (new_child)
 		gtk_container_add (GTK_CONTAINER (wizard), new_child);
 }
@@ -520,7 +540,7 @@ gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
                                     const char *text, const char *id)
 {
 	GtkTreeModel *model = gtk_tree_view_get_model
-	                          (GTK_TREE_VIEW (wizard->m_navigation_widget));
+	                          (GTK_TREE_VIEW (wizard->m_tree_view));
 	GtkTreeIter iter;
 
 	if (!parent_id || !*parent_id)
@@ -552,7 +572,7 @@ static void yg_hash_table_remove_all (GHashTable *hash_table)
 
 void ygtk_wizard_clear_tree (YGtkWizard *wizard)
 {
-	GtkTreeView *tree = GTK_TREE_VIEW (wizard->m_navigation_widget);
+	GtkTreeView *tree = GTK_TREE_VIEW (wizard->m_tree_view);
 	gtk_tree_store_clear (GTK_TREE_STORE (gtk_tree_view_get_model (tree)));
 	yg_hash_table_remove_all (wizard->tree_ids);
 }
@@ -563,17 +583,17 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	if (path == NULL)
 		return FALSE;
 
-	g_signal_handlers_block_by_func (wizard->m_navigation_widget,
+	g_signal_handlers_block_by_func (wizard->m_tree_view,
 	                                 (gpointer) tree_item_selected_cb, wizard);
 
-	GtkWidget *widget = wizard->m_navigation_widget;
+	GtkWidget *widget = wizard->m_tree_view;
 	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (widget), path);
 	gtk_tree_view_set_cursor (GTK_TREE_VIEW (widget), path,
 	                          NULL, FALSE);
 	gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (widget), path, NULL,
 	                              TRUE, 0.5, 0.5);
 
-	g_signal_handlers_unblock_by_func (wizard->m_navigation_widget,
+	g_signal_handlers_unblock_by_func (wizard->m_tree_view,
 	                                   (gpointer) tree_item_selected_cb, wizard);
 	return TRUE;
 }
@@ -766,15 +786,15 @@ gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 {
-	g_return_if_fail (wizard->m_navigation_widget != NULL);
-	ygtk_steps_append_heading (YGTK_STEPS (wizard->m_navigation_widget), text);
+	g_return_if_fail (wizard->m_steps != NULL);
+	ygtk_steps_append_heading (YGTK_STEPS (wizard->m_steps), text);
 }
 
 void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 {
 	guint step_nb;
-	g_return_if_fail (wizard->m_navigation_widget != NULL);
-	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->m_navigation_widget), text);
+	g_return_if_fail (wizard->m_steps != NULL);
+	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->m_steps), text);
 	g_hash_table_insert (wizard->steps_ids, g_strdup (id), GINT_TO_POINTER (step_nb));
 }
 
@@ -783,14 +803,13 @@ gboolean ygtk_wizard_set_current_step (YGtkWizard *wizard, const char *id)
 	gpointer step_nb = g_hash_table_lookup (wizard->steps_ids, id);
 	if (!step_nb)
 		return FALSE;
-	ygtk_steps_set_current (YGTK_STEPS (wizard->m_navigation_widget),
-	                        GPOINTER_TO_INT (step_nb));
+	ygtk_steps_set_current (YGTK_STEPS (wizard->m_steps), GPOINTER_TO_INT (step_nb));
 	return TRUE;
 }
 
 void ygtk_wizard_clear_steps (YGtkWizard *wizard)
 {
-	ygtk_steps_clear (YGTK_STEPS (wizard->m_navigation_widget));
+	ygtk_steps_clear (YGTK_STEPS (wizard->m_steps));
 	yg_hash_table_remove_all (wizard->steps_ids);
 }
 
@@ -809,7 +828,7 @@ static void hash_lookup_tree_path_value (gpointer _key, gpointer _value,
 const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard)
 {
 	GtkTreePath *path;
-	gtk_tree_view_get_cursor (GTK_TREE_VIEW (wizard->m_navigation_widget),
+	gtk_tree_view_get_cursor (GTK_TREE_VIEW (wizard->m_tree_view),
 	                          &path, NULL);
 	if (path == NULL)
 		return NULL;
@@ -825,7 +844,7 @@ const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard)
 
 void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive)
 {
-	// FIXME: check if this chains through
+	// TODO: check if this chains through
 	gtk_widget_set_sensitive (GTK_WIDGET (wizard), sensitive);
 
 	if (ygtk_wizard_is_next_button_protected (wizard))
@@ -862,8 +881,8 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 	{
 		GtkRequisition nav_req, child_req;
 
-		if (wizard->m_navigation) {
-			gtk_widget_size_request (wizard->m_navigation, &nav_req);
+		if (wizard->m_steps) {
+			gtk_widget_size_request (wizard->m_steps, &nav_req);
 			nav_req.width += content_padding * 2;
 			nav_req.height += content_padding * 2;
 		}
@@ -951,8 +970,8 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 	nav_area.x = child_area.x;
 	nav_area.y = child_area.y;
 	nav_area.height = child_area.height;
-	if (wizard->m_navigation) {
-		gtk_widget_get_child_requisition (wizard->m_navigation, &req);
+	if (wizard->m_steps) {
+		gtk_widget_get_child_requisition (wizard->m_steps, &req);
 		nav_area.width = req.width + content_padding*2;
 
 		child_area.x += nav_area.width;
@@ -981,9 +1000,9 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 	}
 
 	// navigation pane
-	if (wizard->m_navigation) {
+	if (wizard->m_steps) {
 		apply_allocation_padding (&nav_area, content_padding);
-		gtk_widget_size_allocate (wizard->m_navigation, &nav_area);
+		gtk_widget_size_allocate (wizard->m_steps, &nav_area);
 	}
 
 	// buttons
@@ -1025,10 +1044,10 @@ static gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *eve
 	w -= content_padding*2;
 	y += wizard->m_title->allocation.height + header_padding*2 + content_padding;
 	h -= wizard->m_title->allocation.height + header_padding*2 + content_padding*2;
-	if (wizard->m_navigation) {
-		int navigation_w = wizard->m_navigation->allocation.width;
-		x += navigation_w + content_padding;
-		w -= navigation_w + content_padding;
+	if (wizard->m_steps) {
+		int steps_w = wizard->m_steps->allocation.width;
+		x += steps_w + content_padding;
+		w -= steps_w + content_padding;
 	}
 
 	gdk_cairo_set_source_color (cr, &widget->style->bg [GTK_STATE_NORMAL]);
@@ -1042,8 +1061,8 @@ static gboolean ygtk_wizard_expose_event (GtkWidget *widget, GdkEventExpose *eve
 	if (wizard->m_menu)
 		gtk_container_propagate_expose (container, wizard->m_menu, event);
 	gtk_container_propagate_expose (container, wizard->m_title, event);
-	if (wizard->m_navigation)
-		gtk_container_propagate_expose (container, wizard->m_navigation, event);
+	if (wizard->m_steps)
+		gtk_container_propagate_expose (container, wizard->m_steps, event);
 	gtk_container_propagate_expose (container, wizard->m_buttons, event);
 	if (GTK_BIN (container)->child)
 		gtk_container_propagate_expose (container, GTK_BIN (container)->child, event);
@@ -1059,157 +1078,13 @@ static void ygtk_wizard_forall (GtkContainer *container, gboolean include_intern
 		(*callback) (wizard->m_buttons, callback_data);
 		if (wizard->m_menu)
 			(*callback) (wizard->m_menu, callback_data);
-		if (wizard->m_navigation)
-			(*callback) (wizard->m_navigation, callback_data);
+		if (wizard->m_steps)
+			(*callback) (wizard->m_steps, callback_data);
 	}
 
 	GtkWidget *containee = GTK_BIN (container)->child;
 	if (containee)
 		(*callback) (containee, callback_data);
-}
-
-/* Accessibility support */
-
-static gint ygtk_wizard_accessible_get_n_children (AtkObject *accessible)
-{
-	return 1 /* content*/ + 5 /* buttons*/;
-}
-
-static AtkObject *ygtk_wizard_accessible_ref_child (AtkObject *accessible,
-                                                    gint       index)
-{
-	GtkWidget *widget = GTK_ACCESSIBLE (accessible)->widget;
-	if (!widget)
-		return NULL;
-	YGtkWizard *wizard = YGTK_WIZARD (widget);
-
-	if (index == 0) {
-		GtkWidget *child = GTK_BIN (wizard)->child;
-		if (child)
-			return g_object_ref (G_OBJECT (child));
-		return NULL;
-	}
-
-	if (index >= 1 && index <= 5) {
-		GtkWidget *buttons[5] = { wizard->m_back_button, wizard->m_abort_button,
-		                          wizard->m_next_button, wizard->m_help_button,
-		                          wizard->m_release_notes_button };
-		GtkWidget *button = buttons [index-1];
-
-		if (GTK_WIDGET_VISIBLE (button))
-			return g_object_ref (G_OBJECT (button));
-		return NULL;
-	}
-	// out of range
-	return NULL;
-}
-
-static void ygtk_wizard_accessible_class_init (AtkObjectClass *class)
-{
-	class->get_n_children = ygtk_wizard_accessible_get_n_children;
-	class->ref_child = ygtk_wizard_accessible_ref_child;
-}
-
-static GType ygtk_wizard_accessible_get_type (void)
-{
-	static GType type = 0;
-	if (!type) {
-		AtkObjectFactory *factory;
-		GType derived_type;
-		GTypeQuery query;
-		GType derived_atk_type;
-
-		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
-		factory = atk_registry_get_factory (atk_get_default_registry (), derived_type);
-		derived_atk_type = atk_object_factory_get_accessible_type (factory);
-		g_type_query (derived_atk_type, &query);
-
-		GTypeInfo type_info = { 0 };
-		type_info.class_size = query.class_size;
-		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_class_init;
-		type_info.instance_size = query.instance_size;
-
-		type = g_type_register_static (derived_atk_type, "YGtkWizardAccessible",
-		                               &type_info, 0);
-
-/*
-		type = g_type_register_static_simple (derived_atk_type,
-			"YGtkWizardAccessible", query.class_size,
-			(GClassInitFunc) ygtk_wizard_accessible_class_init,
-			query.instance_size, NULL, 0);
-*/
-	}
-	return type;
-}
-
-static AtkObject *ygtk_wizard_accessible_new (GObject *obj)
-{
-	AtkObject *accessible;
-	g_return_val_if_fail (YGTK_IS_WIZARD (obj), NULL);
-
-	accessible = g_object_new (ygtk_wizard_accessible_get_type (), NULL); 
-	atk_object_initialize (accessible, obj);
-	return accessible;
-}
-
-static GType ygtk_wizard_accessible_factory_get_accessible_type()
-{
-	return ygtk_wizard_accessible_get_type ();
-}
-
-static AtkObject*ygtk_wizard_accessible_factory_create_accessible (GObject *obj)
-{
-	return ygtk_wizard_accessible_new (obj);
-}
-
-static void ygtk_wizard_accessible_factory_class_init (AtkObjectFactoryClass *class)
-{
-	class->create_accessible = ygtk_wizard_accessible_factory_create_accessible;
-	class->get_accessible_type = ygtk_wizard_accessible_factory_get_accessible_type;
-}
-
-static GType ygtk_wizard_accessible_factory_get_type (void)
-{
-	static GType type = 0;
-	if (!type) {
-		GTypeInfo type_info = { 0 };
-		type_info.class_size = sizeof (AtkObjectFactoryClass);
-		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_factory_class_init;
-		type_info.instance_size = sizeof (AtkObjectFactory);
-
-		type = g_type_register_static (ATK_TYPE_OBJECT_FACTORY,
-			"YGtkWizardAccessibleFactory", &type_info, 0);
-
-/*
-		type = g_type_register_static_simple (ATK_TYPE_OBJECT_FACTORY, 
-			"YGtkWizardAccessibleFactory", sizeof (AtkObjectFactoryClass),
-			(GClassInitFunc) ygtk_wizard_accessible_factory_class_init,
-			sizeof (AtkObjectFactory), NULL, 0);
-*/
-	}
-	return type;
-}
-
-static AtkObject *ygtk_wizard_get_accessible (GtkWidget *widget)
-{
-	static gboolean first_time = TRUE;
-	if (first_time) {
-		AtkObjectFactory *factory;
-		AtkRegistry *registry;
-		GType derived_type; 
-		GType derived_atk_type; 
-
-		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
-		registry = atk_get_default_registry ();
-		factory = atk_registry_get_factory (registry, derived_type);
-		derived_atk_type = atk_object_factory_get_accessible_type (factory);
-		if (g_type_is_a (derived_atk_type, GTK_TYPE_ACCESSIBLE)) {
-			atk_registry_set_factory_type (registry, YGTK_TYPE_WIZARD,
-			ygtk_wizard_accessible_factory_get_type ());
-		}
-	first_time = FALSE;
-	}
-	return GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->get_accessible (widget);
 }
 
 static void ygtk_wizard_class_init (YGtkWizardClass *klass)
@@ -1222,10 +1097,11 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	widget_class->realize = ygtk_wizard_realize;
 	widget_class->size_request  = ygtk_wizard_size_request;
 	widget_class->size_allocate = ygtk_wizard_size_allocate;
-	widget_class->get_accessible = ygtk_wizard_get_accessible;
 
 	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
 	container_class->forall = ygtk_wizard_forall;
+	container_class->add    = ygtk_wizard_add_child;
+	container_class->remove = ygtk_wizard_remove_child;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_wizard_destroy;

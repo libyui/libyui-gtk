@@ -26,8 +26,9 @@ bool m_showingIcons;
 		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()), GTK_TREE_MODEL (store));
 		g_object_unref (store);
 
-		if(opt.isEditable.value())
+		if(opt.isEditable.value()) {
 			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()), 0);
+		}
 		else {
 			GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
 			gtk_cell_layout_pack_end (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);

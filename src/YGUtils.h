@@ -9,6 +9,14 @@
 #include <list>
 #include <gtk/gtktextview.h>
 #include <gtk/gtkeditable.h>
+#include <gtk/gtktreeview.h>
+#include <gtk/gtktreemodel.h>
+#include <gtk/gtkcellrenderertoggle.h>
+
+// TODO: do a cleanup here. We should probably split string, gtk and stuff
+// Some GtkTreeView should probably go to their own files
+// Let's avoid GTK+ stuff, better to replicate that, if needed, than leave in
+// this general purpose utils.
 
 /* YGUtils.h/cc have some functionality that is shared between different parts
    of the code. */
@@ -16,13 +24,13 @@
 namespace YGUtils
 {
 	/* Replaces Yast's '&' accelerator by Gnome's '_' (and proper escaping). */
-	string mapKBAccel (const char *src);
+	std::string mapKBAccel (const char *src);
 
 	/* Filters characters that are not on the valids_chars array from the text string
 	   Length is used to tell the length of text, in case it isn't NUL
 	   terminated (you may pass -1, if it is).
 	   Use the compare string member if you want to see if there was any change.  */
-	string filterText (const char* text, int length, const char* valid_chars);
+	std::string filterText (const char* text, int length, const char* valid_chars);
 
 	/* Convenience call for widgets that implement GtkEditable interface.
 	   This function inserts and deletes text, if needed, so you may want
@@ -31,11 +39,10 @@ namespace YGUtils
 	                 const char *valid_chars);
 
 	/* Replaces every 'mouth' by 'food' in 'str'. */
-	void replace (string &str, const char *mouth, int mouth_len, const char *food);
+	void replace (std::string &str, const char *mouth, int mouth_len, const char *food);
 
-	/* Escapes markup text (eg. changes '<' by '\<').
-	   If break_line is true, the break line character will be transformed in <br/> */
-	string escape_markup (const string &str, bool break_line = false);
+	/* Escapes markup text (eg. changes '<' by '\<'). */
+	void escapeMarkup (std::string &str);
 
 	/* Adds functionality to GtkTextView to scroll to bottom. */
 	void scrollTextViewDown(GtkTextView *text_view);
@@ -52,11 +59,11 @@ namespace YGUtils
 	int strcmp (const char *str1, const char *str2);
 
 	/* Checks if a std::string contains some other string (case insensitive). */
-	bool contains (const string &haystack, const string &needle);
+	bool contains (const std::string &haystack, const std::string &needle);
 
 	/* Splits a string into parts as separated by the separator characters.
 	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
-	std::list <string> splitString (const string &str, char separator);
+	std::list <std::string> splitString (const std::string &str, char separator);
 
 	/* Prints a GtkTreeModel for debugging purposes. */
 	void print_model (GtkTreeModel *model, int string_col);

@@ -30,8 +30,6 @@ public:
 			                  G_CALLBACK (set_default_cb), this);
 	}
 
-	virtual ~YGPushButton() {}
-
 	// YPushButton
 	virtual void setLabel (const YCPString &label)
 	{

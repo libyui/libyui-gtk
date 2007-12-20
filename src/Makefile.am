@@ -46,11 +46,13 @@ libpy2gtk_la_SOURCES = \
 	ygtkfieldentry.c \
 	ygtkmenubutton.c \
 	ygtkwizard.c \
-	ygtkcellrendererarrow.c \
 	ygtkfindentry.c \
 	ygdkmngloader.c \
+	ygtkimage.c \
 	ygtkhtmlwrap.c \
-	ygtkrichtext.c
+	ygtkrichtext.c \
+	yzyppwrapper.cc \
+	ygtkzyppwrapper.cc
 # should only append ygtkrichtext.c if USE_GTKHTML is set
 
 dummy_SOURCES = dummy.cc

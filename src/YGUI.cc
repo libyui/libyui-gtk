@@ -644,9 +644,7 @@ void YGUI::askSaveLogs()
 
 // debug dialogs
 
-static void destroy_dialog (GtkDialog *dialog, gint arg)
-{ IMPL; gtk_widget_destroy (GTK_WIDGET (dialog)); }
-
+//#define IS_VALID_COL
 void dumpYastTree (YWidget *widget)
 {
 	IMPL
@@ -667,7 +665,11 @@ void dumpYastTree (YWidget *widget)
 			gchar *weight = g_strdup_printf ("%ld x %ld",
 				widget->weight (YD_HORIZ), widget->weight (YD_VERT));
 			gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
-				1, ygwidget->getDebugLabel().c_str(), 2, stretch, 3, weight, -1);
+				1, ygwidget->getDebugLabel().c_str(), 2, stretch, 3, weight,
+#ifdef IS_VALID_COL
+				4, widget->isValid(),
+#endif
+				-1);
 			g_free (stretch);
 			g_free (weight);
 
@@ -675,14 +677,37 @@ void dumpYastTree (YWidget *widget)
 				for (int i = 0; i < container->numChildren(); i++)
 					dumpYastTree (container->child (i), store, &iter);
 		}
+		static void dialog_response_cb (GtkDialog *dialog, gint response, YWidget *ywidget)
+		{
+			if (response == 1) {
+				GtkTreeStore *store;
+				GtkTreeView *view;
+				store = (GtkTreeStore *) g_object_get_data (G_OBJECT (dialog), "store");
+				view = (GtkTreeView *) g_object_get_data (G_OBJECT (dialog), "view");
+				gtk_tree_store_clear (store);
+				dumpYastTree (ywidget, store, NULL);
+				gtk_tree_view_expand_all (view);
+			}
+			else
+				gtk_widget_destroy (GTK_WIDGET (dialog));
+		}
 	};
 
-	GtkTreeStore *store = gtk_tree_store_new (4, G_TYPE_STRING, G_TYPE_STRING,
-	                                          G_TYPE_STRING, G_TYPE_STRING);
-	inner::dumpYastTree (widget, store, NULL);
+	int cols = 4;
+#ifdef IS_VALID_COL
+	cols++;
+#endif
+	GtkTreeStore *store = gtk_tree_store_new (cols,
+		G_TYPE_STRING, G_TYPE_STRING,
+		G_TYPE_STRING, G_TYPE_STRING
+#ifdef IS_VALID_COL
+		, G_TYPE_BOOLEAN
+#endif
+		);
 
 	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets Tree", NULL,
-		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_REFRESH, 1,
+			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 400);
 
 	GtkWidget *view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
@@ -692,13 +717,19 @@ void dumpYastTree (YWidget *widget)
 	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
 		gtk_tree_view_column_new_with_attributes ("Label",
 		gtk_cell_renderer_text_new(), "text", 1, NULL));
+	gtk_tree_view_column_set_expand (gtk_tree_view_get_column (
+		GTK_TREE_VIEW (view), 1), TRUE);
 	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
 		gtk_tree_view_column_new_with_attributes ("Stretch",
 		gtk_cell_renderer_text_new(), "text", 2, NULL));
 	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
 		gtk_tree_view_column_new_with_attributes ("Weight",
 		gtk_cell_renderer_text_new(), "text", 3, NULL));
-	gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
+#ifdef IS_VALID_COL
+	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
+		gtk_tree_view_column_new_with_attributes ("Valid",
+		gtk_cell_renderer_toggle_new(), "active", 4, NULL));
+#endif
 	gtk_tree_view_set_enable_tree_lines (GTK_TREE_VIEW (view), TRUE);
 
 	GtkWidget *scroll_win = gtk_scrolled_window_new (NULL, NULL);
@@ -709,10 +740,16 @@ void dumpYastTree (YWidget *widget)
 
 	gtk_container_add (GTK_CONTAINER (scroll_win), view);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll_win);
-	gtk_widget_show_all (dialog);
 
+	inner::dumpYastTree (widget, store, NULL);
+	gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
+
+	g_object_set_data (G_OBJECT (dialog), "view", view);
+	g_object_set_data (G_OBJECT (dialog), "store", store);
 	g_signal_connect (G_OBJECT (dialog), "response",
-	                  G_CALLBACK (destroy_dialog), 0);
+	                  G_CALLBACK (inner::dialog_response_cb), widget);
+
+	gtk_widget_show_all (dialog);
 }
 
 #include <YRichText.h>
@@ -754,6 +791,8 @@ void dumpYastHtml (YWidget *widget)
 				for (int i = 0; i < container->numChildren(); i++)
 					dumpYastHtml (container->child (i), box);
 		}
+		static void destroy_dialog (GtkDialog *dialog, gint arg)
+		{ gtk_widget_destroy (GTK_WIDGET (dialog)); }
 	};
 
 	IMPL
@@ -765,6 +804,6 @@ void dumpYastHtml (YWidget *widget)
 
 	gtk_widget_show_all (dialog);
 	g_signal_connect (G_OBJECT (dialog), "response",
-	                  G_CALLBACK (destroy_dialog), 0);
+	                  G_CALLBACK (inner::destroy_dialog), 0);
 }
 

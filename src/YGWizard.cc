@@ -128,11 +128,9 @@ public:
 		                  G_CALLBACK (action_triggered_cb), this);
 	}
 
-	~YGWizard()
+	virtual ~YGWizard()
 	{
-		delete m_back_button;
-		delete m_abort_button;
-		delete m_next_button;
+		// m_back/abort/next_button are added as children and will be freed by ~YContainerWidget
 	}
 
 	/* The purpose of this function is to do some sanity checks, besides
