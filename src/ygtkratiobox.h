@@ -199,41 +199,42 @@ G_END_DECLS
 
 /* YGtkScrolledWindow gives some a more fine-grained automatic scroll policy.
    It allows the user to specify from which size scrolling should be applied. */
-#ifndef YGTK_SCROLLED_WIDOW_H
-#define YGTK_SCROLLED_WIDOW_H
+#ifndef YGTK_TUNED_SCROLLED_WIDOW_H
+#define YGTK_TUNED_SCROLLED_WIDOW_H
 
 #include <gtk/gtkscrolledwindow.h>
 G_BEGIN_DECLS
 
-#define YGTK_TYPE_SCROLLED_WINDOW            (ygtk_scrolled_window_get_type ())
-#define YGTK_SCROLLED_WINDOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindow))
-#define YGTK_SCROLLED_WINDOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
-                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindowClass))
-#define YGTK_IS_SCROLLED_WINDOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
-                                              YGTK_TYPE_SCROLLED_WINDOW))
-#define YGTK_IS_SCROLLED_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
-                                              YGTK_TYPE_SCROLLED_WINDOW))
-#define YGTK_SCROLLED_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-                                              YGTK_TYPE_SCROLLED_WINDOW, YGtkScrolledWindowClass))
+#define YGTK_TYPE_TUNED_SCROLLED_WINDOW            (ygtk_tuned_scrolled_window_get_type ())
+#define YGTK_TUNED_SCROLLED_WINDOW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+	YGTK_TYPE_TUNED_SCROLLED_WINDOW, YGtkTunedScrolledWindow))
+#define YGTK_TUNED_SCROLLED_WINDOW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+	YGTK_TYPE_TUNED_SCROLLED_WINDOW, YGtkTunedScrolledWindowClass))
+#define YGTK_IS_TUNED_SCROLLED_WINDOW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                              YGTK_TYPE_TUNED_SCROLLED_WINDOW))
+#define YGTK_IS_TUNED_SCROLLED_WINDOW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                              YGTK_TYPE_TUNED_SCROLLED_WINDOW))
+#define YGTK_TUNED_SCROLLED_WINDOW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+	YGTK_TYPE_TUNED_SCROLLED_WINDOW, YGtkTunedScrolledWindowClass))
 
-typedef struct _YGtkScrolledWindow
+typedef struct _YGtkTunedScrolledWindow
 {
 	GtkScrolledWindow parent;
 	// members
 	guint max_width, max_height;
-} YGtkScrolledWindow;
+} YGtkTunedScrolledWindow;
 
-typedef struct _YGtkScrolledWindowClass
+typedef struct _YGtkTunedScrolledWindowClass
 {
 	GtkScrolledWindowClass parent_class;
-} YGtkScrolledWindowClass;
+} YGtkTunedScrolledWindowClass;
 
-GType ygtk_scrolled_window_get_type (void) G_GNUC_CONST;
-GtkWidget* ygtk_scrolled_window_new (GtkWidget *child /*or NULL*/);
+GType ygtk_tuned_scrolled_window_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_tuned_scrolled_window_new (GtkWidget *child /*or NULL*/);
 
-void ygtk_scrolled_window_set_auto_policy (YGtkScrolledWindow *scroll,
-                                           guint max_width, guint max_height);
+void ygtk_tuned_scrolled_window_set_auto_policy (YGtkTunedScrolledWindow *scroll,
+                                                 guint max_width, guint max_height);
 
 G_END_DECLS
-#endif /*YGTK_SCROLLED_WIDOW_H*/
+#endif /*YGTK_TUNED_SCROLLED_WIDOW_H*/
+

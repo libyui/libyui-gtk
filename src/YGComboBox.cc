@@ -7,43 +7,41 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YComboBox.h"
+#include "YGSelectionModel.h"
 #include "YGWidget.h"
 
-class YGComboBox : public YComboBox, public YGLabeledWidget
+class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionModel
 {
-bool m_showingIcons;
-
 	public:
-		YGComboBox (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
-		: YComboBox (opt, label)
+		YGComboBox (YWidget *parent, const string &label, bool editable)
+		: YComboBox (NULL, label, editable)
 		, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
-		    opt.isEditable.value() ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
+		    editable ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
+		, YGSelectionModel (this, true, false)
 	{
-		// pixbufs will be enabled if icons are provided
-		m_showingIcons = false;
-
-		GtkListStore *store = gtk_list_store_new (2, G_TYPE_STRING, GDK_TYPE_PIXBUF);
-		gtk_combo_box_set_model (GTK_COMBO_BOX (getWidget()), GTK_TREE_MODEL (store));
-		g_object_unref (store);
-
-		if(opt.isEditable.value()) {
-			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()), 0);
+		gtk_combo_box_set_model (getComboBox(), getModel());
+		GtkCellRenderer* cell;
+		if (editable) {
+			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()),
+			                                     YGSelectionModel::LABEL_COLUMN);
 		}
 		else {
-			GtkCellRenderer* cell = gtk_cell_renderer_text_new ();
+			cell = gtk_cell_renderer_text_new ();
 			gtk_cell_layout_pack_end (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
 			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
-			                                "text", 0, NULL);
+				"text", YGSelectionModel::LABEL_COLUMN, NULL);
 		}
+		cell = gtk_cell_renderer_pixbuf_new ();
+		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, FALSE);
+		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
+			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
 
 		g_signal_connect (G_OBJECT (getWidget()), "changed",
 		                  G_CALLBACK (selected_changed_cb), this);
 	}
 
-	GtkComboBox *getComboBox() const
-	{
-		return GTK_COMBO_BOX ((const_cast<YGComboBox *>(this)->getWidget()));
-	}
+	inline GtkComboBox *getComboBox()
+	{ return GTK_COMBO_BOX (getWidget()); }
 
 	GtkEntry *getEntry()
 	{
@@ -61,65 +59,51 @@ bool m_showingIcons;
 		return GTK_ENTRY (entry);
 	}
 
-	virtual void itemAdded (const YCPString &string, int index, bool selected)
+	virtual string text()
 	{
-		GtkListStore *store = GTK_LIST_STORE (gtk_combo_box_get_model (getComboBox()));
-		GtkTreeIter iter;
-		gtk_list_store_insert (store, &iter, index);
-		gtk_list_store_set (store, &iter, 0, string->value_cstr(), -1);
-
-		if(hasIcons() && !m_showingIcons) {
-			GtkCellRenderer* cell = gtk_cell_renderer_pixbuf_new ();
-			gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (getWidget()), cell, FALSE);
-			gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
-			                                "pixbuf", 1, NULL);
-			m_showingIcons = true;
-		}
-
-		if (hasIcons() && !itemIcon (index)->value().empty()) {
-			std::string path = itemIcon (index)->value();
-			if (path[0] != '/')
-				path = ICON_DIR + path;
-
-			GdkPixbuf *pixbuf;
-			GError *error = 0;
-			pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
-			if (!pixbuf)
-				y2warning ("YGComboBox: Could not load icon: %s.\n"
-				           "Because %s", path.c_str(), error->message);
-			gtk_list_store_set (store, &iter, 1, pixbuf, -1);
-		}
-
-		if (selected || index == 0)
-			setCurrentItem (index);
+		return gtk_combo_box_get_active_text (getComboBox());
 	}
 
-	virtual void setValue (const YCPString &value)
+	virtual void setText (const string &value)
 	{
 		IMPL
-		gtk_entry_set_text (getEntry(), value->value_cstr());
+		gtk_entry_set_text (getEntry(), value.c_str());
 	}
 
-	virtual YCPString getValue() const
+	// YGSelectionModel
+	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
 	{
-		return YCPString (gtk_combo_box_get_active_text (getComboBox()));
+		// GtkComboBox wants a string on the model, not NULL, when setting it as
+		// the active row. As, we only set that value after addingRow, we need to
+		// initialize it here...
+		if (addingRow)
+			setCellLabel (iter, YGSelectionModel::LABEL_COLUMN, string());
+		gtk_combo_box_set_active_iter (getComboBox(), iter);
 	}
 
-	virtual int getCurrentItem() const
+	virtual void unsetFocus()
 	{
-		return gtk_combo_box_get_active (getComboBox());
+		gtk_combo_box_set_active (getComboBox(), -1);
 	}
 
-	virtual void setCurrentItem (int index)
-	{
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this);
-		gtk_combo_box_set_active (GTK_COMBO_BOX(getWidget()), index);
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this);
-	}
+    virtual YItem *focusItem()
+    {
+    	GtkTreeIter iter;
+    	if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
+    		return getItem (&iter);
+    	return NULL;
+    }
 
+	// YComboBox
 	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
 	{
 		gtk_entry_set_width_chars (getEntry(), numberOfChars->asInteger()->value());
+	}
+
+	virtual void setValidChars (const string &validChars)
+	{
+		YGUtils::setFilter (getEntry(), validChars);
+		YComboBox::setValidChars (validChars);
 	}
 
 	// Events notifications
@@ -129,29 +113,20 @@ bool m_showingIcons;
 		   typed some text on a writable ComboBox. text_changed is true for the later and
 		   false for the former. */
 		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget)
-		                    && pThis->getCurrentItem() == -1;
-
-		if (text_changed) {
-			g_signal_handlers_block_by_func (pThis->getWidget(), (gpointer)
-			                                 selected_changed_cb, pThis);
-			YGUtils::filterText (GTK_EDITABLE (pThis->getEntry()), 0, -1,
-			                     pThis->getValidChars()->value_cstr());
-			g_signal_handlers_unblock_by_func (pThis->getWidget(), (gpointer)
-			                                   selected_changed_cb, pThis);
-
+		                    && pThis->selectedItem() == NULL;
+		if (text_changed)
 			pThis->emitEvent (YEvent::ValueChanged, true, true);
-		}
 		else
 			pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YComboBox)
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YComboBox)
+	YGSELECTION_WIDGET_IMPL_ALL (YComboBox)
 };
 
-YWidget *
-YGUI::createComboBox (YWidget *parent, YWidgetOpt & opt,
-                      const YCPString & label)
+YComboBox *YGWidgetFactory::createComboBox (YWidget *parent, const string &label, bool editable)
 {
-	return new YGComboBox (opt, YGWidget::get (parent), label);
+	return new YGComboBox (parent, label, editable);
 }
+

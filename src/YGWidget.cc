@@ -14,17 +14,17 @@
 
 /* YGWidget follows */
 
-YGWidget::YGWidget(YWidget *y_widget, YGWidget *parent, bool show,
+YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent, bool show,
                    GtkType type, const char *property_name, ...)
-	: m_y_widget (y_widget)
+	: m_ywidget (ywidget)
 {
 	va_list args;
 	va_start (args, property_name);
-	construct (y_widget, parent, show, type, property_name, args);
+	construct (ywidget, yparent, show, type, property_name, args);
 	va_end (args);
 }
 
-void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
+void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
                           GType type, const char *property_name, va_list args)
 {
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
@@ -38,19 +38,16 @@ void YGWidget::construct (YWidget *y_widget, YGWidget *parent, bool _show,
 		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
 	}
 
-	y_widget->setWidgetRep ((void *) this);
-	if (parent)
-		y_widget->setParent (parent->m_y_widget);
-
-#ifdef IMPL_DEBUG
-	fprintf (stderr, "Set YWidget %p rep to %p\n", y_widget, this);
-#endif
-
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
-
 	if (_show)
 		show();
+
+	ywidget->setWidgetRep ((void *) this);
+	if (yparent) {
+		ywidget->setParent (yparent);
+		yparent->addChild (ywidget);
+	}
 }
 
 YGWidget::~YGWidget()
@@ -65,24 +62,14 @@ void YGWidget::show()
 	gtk_widget_show (m_widget);
 }
 
-YGWidget *YGWidget::get (YWidget *y_widget)
+YGWidget *YGWidget::get (YWidget *ywidget)
 {
-	if (!y_widget || !y_widget->widgetRep()) {
-#ifdef IMPL_DEBUG
-		if (y_widget)
-			fprintf (stderr, "Widget '%s' (label: '%s') not supported\n",
-			         y_widget->widgetClass(), y_widget->debugLabel().c_str());
-		else
-			fprintf (stderr, "YGWidget::get() on null\n");
-#endif
-		return NULL;
-	}
-	return (YGWidget *) (y_widget->widgetRep());
+	g_assert (ywidget->widgetRep() != NULL);
+	return (YGWidget *) ywidget->widgetRep();
 }
 
 bool YGWidget::doSetKeyboardFocus()
 {
-	IMPL
 	gtk_widget_grab_focus (GTK_WIDGET (getWidget()));
 	return gtk_widget_is_focus (GTK_WIDGET (getWidget()));
 }
@@ -90,6 +77,26 @@ bool YGWidget::doSetKeyboardFocus()
 void YGWidget::doSetEnabling (bool enabled)
 {
 	gtk_widget_set_sensitive (getWidget(), enabled);
+}
+
+void YGWidget::doAddChild (YWidget *ychild, GtkWidget *container)
+{
+	GtkWidget *child = YGWidget::get (ychild)->getLayout();
+	gtk_container_add (GTK_CONTAINER (container), child);
+}
+
+void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
+{
+	/* Note: removeChild() is generally a result of a widget being removed as it
+	   will remove itself from the parent. But YGWidget deconstructor would run
+	   before the YWidget one, as that's the order we have been using, so we
+	   can't use it, we can't retrieve the GTK widget then. However, this is a
+	   non-issue, as ~YGWidget will destroy the widget, and GTK will remove it
+	   from the parent. */
+	if (!ychild->beingDestroyed()) {
+		GtkWidget *child = YGWidget::get (ychild)->getLayout();
+		gtk_container_remove (GTK_CONTAINER (container), child);
+	}
 }
 
 void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
@@ -106,14 +113,14 @@ void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
 		}
 	};
 
-	if (!if_notify || m_y_widget->getNotify())
+	if (!if_notify || m_ywidget->notify())
 	{
 		if (!immediate)
-			g_timeout_add (250, inner::dispatchEvent, new YWidgetEvent (m_y_widget, reason));
-		else if (!if_not_pending || !YGUI::ui()->eventPendingFor (m_y_widget))
+			g_timeout_add (250, inner::dispatchEvent, new YWidgetEvent (m_ywidget, reason));
+		else if (!if_not_pending || !YGUI::ui()->eventPendingFor (m_ywidget))
 		{
 			if (immediate)
-				YGUI::ui()->sendEvent (new YWidgetEvent (m_y_widget, reason));
+				YGUI::ui()->sendEvent (new YWidgetEvent (m_ywidget, reason));
 		}
 	}
 }
@@ -143,59 +150,18 @@ void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
 void YGWidget::sync_stretchable (YWidget *child)
 {
 	IMPL
-	YWidget *parent = m_y_widget->yParent();
+	YWidget *parent = m_ywidget->parent();
 	if (parent)
-		// tell parent to sync too!
-		YGWidget::get (parent)->sync_stretchable (m_y_widget);
-}
-
-// JEEZ. WHEN the hell will yast-ui code fix their damn code.
-#if 1
-/* Checks everywhere in a container to see if there are children (so
-   he is completely initialized) so that we may ask him for stretchable()
-   because some YContainerWidgets crash when they don't have children. */
-#include "YSplit.h"
-static bool safe_stretchable (YWidget *widget)
-{
-	YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
-	if (container) {
-		YSplit *split = dynamic_cast <YSplit *> (widget);
-		// in the case of YSplit its safe to ask for stretchability with no kids
-		if (split) {
-			if (!split->hasChildren())
-				return true;
-		}
-		else
-			if (!container->hasChildren())
-				return false;
-
-		for (int i = 0; i < container->numChildren(); i++)
-			if (!safe_stretchable (container->child (i)))
-				return false;
-	}
-	return true;
-}
-#else
-static bool safe_stretchable (YWidget *widget)
-{
-	return true;
-}
-#endif
-
-bool YGWidget::isStretchable (YUIDimension dim)
-{
-	if (safe_stretchable (m_y_widget))
-		return m_y_widget->stretchable (dim);
-	return false;
+		YGWidget::get (parent)->sync_stretchable (m_ywidget);
 }
 
 /* YGLabeledWidget follows */
 
-YGLabeledWidget::YGLabeledWidget (YWidget *y_widget, YGWidget *parent,
-                                  YCPString label_text, YUIDimension label_ori,
+YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
+                                  const std::string &label_text, YUIDimension label_ori,
                                   bool show, GType type,
                                   const char *property_name, ...)
-	: YGWidget (y_widget, parent, show,
+	: YGWidget (ywidget, parent, show,
 	            label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
 	            "spacing", LABEL_WIDGET_SPACING, NULL)
 {
@@ -237,12 +203,11 @@ void YGLabeledWidget::setBuddy (GtkWidget *widget)
 	gtk_label_set_mnemonic_widget (GTK_LABEL (m_label), widget);
 }
 
-void YGLabeledWidget::doSetLabel (const YCPString &label)
+void YGLabeledWidget::doSetLabel (const std::string &label)
 {
-	string str = YGUtils::mapKBAccel (label->value_cstr());
-	if (str.empty()) {
+	string str = YGUtils::mapKBAccel (label);
+	if (str.empty())
 		gtk_widget_hide (m_label);
-	}
 	else {
 		gtk_widget_show (m_label);
 
@@ -264,11 +229,11 @@ void YGLabeledWidget::doSetLabel (const YCPString &label)
 /* YGScrolledWidget follows */
 #define MAX_SCROLL_WIDTH 120
 
-YGScrolledWidget::YGScrolledWidget (YWidget *y_widget, YGWidget *parent,
+YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
                                     bool show, GType type,
                                     const char *property_name, ...)
-	: YGLabeledWidget (y_widget, parent, YCPString (""), YD_VERT, show,
-	                   YGTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
+	: YGLabeledWidget (ywidget, parent, string(), YD_VERT, show,
+	                   YGTK_TYPE_TUNED_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
@@ -278,12 +243,12 @@ YGScrolledWidget::YGScrolledWidget (YWidget *y_widget, YGWidget *parent,
 	setLabelVisible (false);
 }
 
-YGScrolledWidget::YGScrolledWidget (YWidget *y_widget, YGWidget *parent,
-                                    YCPString label_text, YUIDimension label_ori,
+YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
+                                    const std::string &label_text, YUIDimension label_ori,
                                     bool show, GType type,
                                     const char *property_name, ...)
-	: YGLabeledWidget (y_widget, parent, label_text, label_ori, show,
-	                   YGTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
+	: YGLabeledWidget (ywidget, parent, label_text, label_ori, show,
+	                   YGTK_TYPE_TUNED_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
@@ -306,7 +271,8 @@ void YGScrolledWidget::setPolicy (GtkPolicyType hpolicy, GtkPolicyType vpolicy)
 {
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
 	                                hpolicy, vpolicy);
-	ygtk_scrolled_window_set_auto_policy (YGTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
+	ygtk_tuned_scrolled_window_set_auto_policy (
+		YGTK_TUNED_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
 		hpolicy == GTK_POLICY_AUTOMATIC ? MAX_SCROLL_WIDTH : 0, 0);
 }
 

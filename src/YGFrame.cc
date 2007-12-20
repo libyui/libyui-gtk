@@ -18,8 +18,8 @@ protected:
 GtkWidget *m_containee;
 
 public:
-	YGBaseFrame (YWidget *y_widget, YGWidget *parent)
-	: YGWidget (y_widget, parent, true, GTK_TYPE_FRAME,
+	YGBaseFrame (YWidget *ywidget, YWidget *parent)
+	: YGWidget (ywidget, parent, true, GTK_TYPE_FRAME,
 	            "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
 		IMPL
@@ -36,8 +36,8 @@ public:
 class YGFrame : public YFrame, public YGBaseFrame
 {
 public:
-	YGFrame (const YWidgetOpt &opt, YGWidget *parent, const YCPString &label)
-	: YFrame (opt, label),
+	YGFrame (YWidget *parent, const string &label)
+	: YFrame (NULL, label),
 	  YGBaseFrame (this, parent)
 	{
 		GtkWidget *label_widget = gtk_label_new ("");
@@ -51,18 +51,16 @@ public:
 	virtual ~YGFrame() {}
 
 	// YFrame
-	virtual void setLabel (const YCPString &_str)
+	virtual void setLabel (const string &_str)
 	{
 		IMPL
-		/* Get rid of mnemonics; make no sense here. */
-		const char *_cstr = _str->value_cstr();
-		size_t _clen = strlen (_cstr);
-
+		/* Get rid of mnemonics; makes no sense here. */
+		size_t length = _str.length();
 		string str;
-		str.reserve (_clen);
-		for (size_t i = 0; i < _clen; i++)
-			if (_cstr[i] != '&')
-				str += _cstr[i];
+		str.reserve (length);
+		for (size_t i = 0; i < length; i++)
+			if (_str[i] != '&')
+				str += _str[i];
 
 		GtkWidget *label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
 		gtk_label_set_text (GTK_LABEL (label), str.c_str());
@@ -75,23 +73,20 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
-YContainerWidget *
-YGUI::createFrame (YWidget *parent, YWidgetOpt &opt,
-                   const YCPString &label)
+
+YFrame *YGWidgetFactory::createFrame (YWidget *parent, const string &label)
 {
 	IMPL
-	return new YGFrame (opt, YGWidget::get (parent), label);
+	return new YGFrame (parent, label);
 }
 
-#if YAST2_YGUI_CHECKBOX_FRAME
 #include "YCheckBoxFrame.h"
 
 class YGCheckBoxFrame : public YCheckBoxFrame, public YGBaseFrame
 {
 public:
-	YGCheckBoxFrame (const YWidgetOpt &opt, YGWidget *parent,
-	                 const YCPString &label, bool checked)
-	: YCheckBoxFrame (opt, label),
+	YGCheckBoxFrame (YWidget *parent, const string &label, bool checked)
+	: YCheckBoxFrame (NULL, label, checked),
 	  YGBaseFrame (this, parent)
 	{
 		IMPL
@@ -109,40 +104,38 @@ public:
 	virtual ~YGCheckBoxFrame() {}
 
 	// YCheckBoxFrame
-	virtual void setLabel (const YCPString &_str)
+	virtual void setLabel (const string &_str)
 	{
         GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
         GtkLabel *label = GTK_LABEL (GTK_BIN (button)->child);
 
-		string str (YGUtils::mapKBAccel (_str->value_cstr()));
+		string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (label, str.c_str());
 		YCheckBoxFrame::setLabel (_str);
 	}
 
-    bool getValue()
+    bool value()
     {
         GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
         return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button));
     }
 
-    void setValue (bool newValue)
+    void setValue (bool value)
     {
         GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), newValue);
+        gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
 	virtual void setEnabling (bool enabled)
     {
         GtkWidget *frame = getWidget();
-        if (enabled)
-        {
+        if (enabled) {
             gtk_widget_set_sensitive (frame, TRUE);
-            handleChildrenEnablement (getValue());
+            handleChildrenEnablement (value());
         }
-        else
-        {
-            setChildrenEnabling( false );
+        else {
             gtk_widget_set_sensitive (frame, FALSE);
+			YWidget::setChildrenEnabled (false);
         }
     }
 
@@ -153,19 +146,15 @@ private:
 	static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
     {
         pThis->setEnabling (true);
-        if (pThis->getNotify())
+        if (pThis->notify())
             YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
     }
 };
 
-YContainerWidget *
-YGUI::createCheckBoxFrame (YWidget *parent, YWidgetOpt &opt,
-                           const YCPString &label, bool checked)
+YCheckBoxFrame *YGWidgetFactory::createCheckBoxFrame (YWidget *parent, const string &label,
+                                                      bool checked)
 {
 	IMPL
-	return new YGCheckBoxFrame (opt, YGWidget::get (parent), label, checked);
+	return new YGCheckBoxFrame (parent, label, checked);
 }
 
-#else
-#  warning "Not compiling CheckBoxFrame..."
-#endif /*YAST2_YGUI_CHECKBOX_FRAME*/

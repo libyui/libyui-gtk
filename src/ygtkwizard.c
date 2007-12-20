@@ -265,8 +265,13 @@ static void ygtk_marshal_VOID__POINTER_INT (GClosure *closure,
 
 static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard)
 {
-	gpointer id = g_object_get_data (G_OBJECT (button), "id");
-	g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
+	gpointer id;
+	id = g_object_get_data (G_OBJECT (button), "ptr-id");
+	if (id)
+		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_POINTER);
+	id = g_object_get_data (G_OBJECT (button), "str-id");
+	if (id)
+		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
 static GtkWidget *button_new (YGtkWizard *wizard)
@@ -305,6 +310,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                                           g_free, NULL);
 
 	gtk_container_set_border_width (GTK_CONTAINER (wizard), BORDER);
+	wizard->child_border_width = CHILD_BORDER;
 
 	//** Title
 	wizard->m_title = gtk_hbox_new (FALSE, 0);
@@ -403,12 +409,10 @@ static void ygtk_wizard_destroy (GtkObject *object)
 /* We must unparent these widgets from the wizard as they would try
    to use gtk_container_remove() on it. We ref them since we still
    want to call destroy on them so they children die. */
-#define DESTROY_WIDGET(widget)          \
-	if (widget) {                         \
-		g_object_ref (G_OBJECT (widget));   \
-		gtk_widget_unparent (widget);       \
-		gtk_widget_destroy (widget);        \
-		widget = NULL;                      \
+#define DESTROY_WIDGET(widget)                \
+	if (widget) {                             \
+		gtk_widget_unparent (widget);         \
+		widget = NULL;                        \
 	}
 	DESTROY_WIDGET (wizard->m_title)
 	DESTROY_WIDGET (wizard->m_buttons)
@@ -645,31 +649,53 @@ void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text)
 	ygutils_setStockIcon (wizard->m_next_button, text);
 }
 
-void ygtk_wizard_set_back_button_id (YGtkWizard *wizard, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_back_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_back_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_back_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_next_button_id (YGtkWizard *wizard, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_next_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_next_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_next_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_abort_button_id (YGtkWizard *wizard, gpointer id,
-                                      GDestroyNotify destroy_cb)
+void ygtk_wizard_set_abort_button_ptr_id (YGtkWizard *wizard, gpointer id)
 {
-	g_object_set_data_full (G_OBJECT (wizard->m_abort_button), "id", id, destroy_cb);
+	g_object_set_data (G_OBJECT (wizard->m_abort_button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard,
-                                     const gchar *text, gpointer id,
-                                     GDestroyNotify destroy_cb)
+void ygtk_wizard_set_release_notes_button_ptr_id (YGtkWizard *wizard, gpointer id)
+{
+	g_object_set_data (G_OBJECT (wizard->m_release_notes_button), "ptr-id", id);
+}
+
+void ygtk_wizard_set_back_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_back_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_next_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_next_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_abort_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_abort_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_release_notes_button_str_id (YGtkWizard *wizard, const char *id)
+{
+	g_object_set_data_full (G_OBJECT (wizard->m_release_notes_button), "str-id",
+	                        g_strdup (id), g_free);
+}
+
+void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard, const gchar *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_release_notes_button), text);
-	g_object_set_data_full (G_OBJECT (wizard->m_release_notes_button), "id",
-	                        id, destroy_cb);
 	gtk_widget_show (wizard->m_release_notes_button);
 }
 
@@ -784,6 +810,18 @@ gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_
 	return TRUE;
 }
 
+void ygtk_wizard_clear_menu (YGtkWizard *wizard)
+{
+	if (!wizard->m_menu)
+		return;
+	yg_hash_table_remove_all (wizard->menu_ids);
+	GList *children = gtk_container_get_children (GTK_CONTAINER (wizard->m_menu)), *i;
+	for (i = children; i; i = i->next) {
+		GtkWidget *child = (GtkWidget *) i->data;
+		gtk_container_remove (GTK_CONTAINER (wizard->m_menu), child);
+	}
+}
+
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 {
 	g_return_if_fail (wizard->m_steps != NULL);
@@ -856,6 +894,7 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 
 	gint border = GTK_CONTAINER (wizard)->border_width;
+	gint child_border = wizard->child_border_width;
 	gint header_padding = get_header_padding (GTK_WIDGET (wizard));
 	gint content_padding = get_content_padding (GTK_WIDGET (wizard));
 	GtkRequisition req;  // temp usage
@@ -894,8 +933,8 @@ static void ygtk_wizard_size_request (GtkWidget *widget, GtkRequisition *requisi
 			gtk_widget_size_request (child, &child_req);
 		else
 			child_req.width = child_req.height = 0;
-		child_req.width += content_padding * 2 + CHILD_BORDER*2;
-		child_req.height += content_padding * 2 + CHILD_BORDER*2;
+		child_req.width += content_padding * 2 + child_border*2;
+		child_req.height += content_padding * 2 + child_border*2;
 
 		req.width = nav_req.width + child_req.width + border*2;
 		req.height = MAX (nav_req.height, child_req.height);
@@ -995,7 +1034,7 @@ static void ygtk_wizard_size_allocate (GtkWidget *widget, GtkAllocation *allocat
 	// child
 	GtkWidget *child = GTK_BIN (wizard)->child;
 	if (child && GTK_WIDGET_VISIBLE (child)) {
-		apply_allocation_padding (&child_area, content_padding + CHILD_BORDER);
+		apply_allocation_padding (&child_area, content_padding + wizard->child_border_width);
 		gtk_widget_size_allocate (child, &child_area);
 	}
 
@@ -1087,6 +1126,150 @@ static void ygtk_wizard_forall (GtkContainer *container, gboolean include_intern
 		(*callback) (containee, callback_data);
 }
 
+/* Accessibility support */
+
+static gint ygtk_wizard_accessible_get_n_children (AtkObject *accessible)
+{
+	return 1 /* content*/ + 5 /* buttons*/;
+}
+
+static AtkObject *ygtk_wizard_accessible_ref_child (AtkObject *accessible,
+                                                    gint       index)
+{
+	GtkWidget *widget = GTK_ACCESSIBLE (accessible)->widget;
+	if (!widget)
+		return NULL;
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
+
+	if (index == 0) {
+		GtkWidget *child = GTK_BIN (wizard)->child;
+		if (child)
+			return g_object_ref (G_OBJECT (child));
+		return NULL;
+	}
+
+	if (index >= 1 && index <= 5) {
+		GtkWidget *buttons[5] = { wizard->m_back_button, wizard->m_abort_button,
+		                          wizard->m_next_button, wizard->m_help_button,
+		                          wizard->m_release_notes_button };
+		GtkWidget *button = buttons [index-1];
+
+		if (GTK_WIDGET_VISIBLE (button))
+			return g_object_ref (G_OBJECT (button));
+		return NULL;
+	}
+	// out of range
+	return NULL;
+}
+
+static void ygtk_wizard_accessible_class_init (AtkObjectClass *class)
+{
+	class->get_n_children = ygtk_wizard_accessible_get_n_children;
+	class->ref_child = ygtk_wizard_accessible_ref_child;
+}
+
+static GType ygtk_wizard_accessible_get_type (void)
+{
+	static GType type = 0;
+	if (!type) {
+		AtkObjectFactory *factory;
+		GType derived_type;
+		GTypeQuery query;
+		GType derived_atk_type;
+
+		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
+		factory = atk_registry_get_factory (atk_get_default_registry (), derived_type);
+		derived_atk_type = atk_object_factory_get_accessible_type (factory);
+		g_type_query (derived_atk_type, &query);
+
+		GTypeInfo type_info = { 0 };
+		type_info.class_size = query.class_size;
+		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_class_init;
+		type_info.instance_size = query.instance_size;
+
+		type = g_type_register_static (derived_atk_type, "YGtkWizardAccessible",
+		                               &type_info, 0);
+
+/*
+		type = g_type_register_static_simple (derived_atk_type,
+			"YGtkWizardAccessible", query.class_size,
+			(GClassInitFunc) ygtk_wizard_accessible_class_init,
+			query.instance_size, NULL, 0);
+*/
+	}
+	return type;
+}
+
+static AtkObject *ygtk_wizard_accessible_new (GObject *obj)
+{
+	AtkObject *accessible;
+	g_return_val_if_fail (YGTK_IS_WIZARD (obj), NULL);
+
+	accessible = g_object_new (ygtk_wizard_accessible_get_type (), NULL); 
+	atk_object_initialize (accessible, obj);
+	return accessible;
+}
+
+static GType ygtk_wizard_accessible_factory_get_accessible_type()
+{
+	return ygtk_wizard_accessible_get_type ();
+}
+
+static AtkObject*ygtk_wizard_accessible_factory_create_accessible (GObject *obj)
+{
+	return ygtk_wizard_accessible_new (obj);
+}
+
+static void ygtk_wizard_accessible_factory_class_init (AtkObjectFactoryClass *class)
+{
+	class->create_accessible = ygtk_wizard_accessible_factory_create_accessible;
+	class->get_accessible_type = ygtk_wizard_accessible_factory_get_accessible_type;
+}
+
+static GType ygtk_wizard_accessible_factory_get_type (void)
+{
+	static GType type = 0;
+	if (!type) {
+		GTypeInfo type_info = { 0 };
+		type_info.class_size = sizeof (AtkObjectFactoryClass);
+		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_factory_class_init;
+		type_info.instance_size = sizeof (AtkObjectFactory);
+
+		type = g_type_register_static (ATK_TYPE_OBJECT_FACTORY,
+			"YGtkWizardAccessibleFactory", &type_info, 0);
+
+/*
+		type = g_type_register_static_simple (ATK_TYPE_OBJECT_FACTORY, 
+			"YGtkWizardAccessibleFactory", sizeof (AtkObjectFactoryClass),
+			(GClassInitFunc) ygtk_wizard_accessible_factory_class_init,
+			sizeof (AtkObjectFactory), NULL, 0);
+*/
+	}
+	return type;
+}
+
+static AtkObject *ygtk_wizard_get_accessible (GtkWidget *widget)
+{
+	static gboolean first_time = TRUE;
+	if (first_time) {
+		AtkObjectFactory *factory;
+		AtkRegistry *registry;
+		GType derived_type; 
+		GType derived_atk_type; 
+
+		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
+		registry = atk_get_default_registry ();
+		factory = atk_registry_get_factory (registry, derived_type);
+		derived_atk_type = atk_object_factory_get_accessible_type (factory);
+		if (g_type_is_a (derived_atk_type, GTK_TYPE_ACCESSIBLE)) {
+			atk_registry_set_factory_type (registry, YGTK_TYPE_WIZARD,
+			ygtk_wizard_accessible_factory_get_type ());
+		}
+	first_time = FALSE;
+	}
+	return GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->get_accessible (widget);
+}
+
 static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 {
 	ygtk_wizard_parent_class = g_type_class_peek_parent (klass);
@@ -1097,6 +1280,7 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	widget_class->realize = ygtk_wizard_realize;
 	widget_class->size_request  = ygtk_wizard_size_request;
 	widget_class->size_allocate = ygtk_wizard_size_allocate;
+	widget_class->get_accessible = ygtk_wizard_get_accessible;
 
 	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
 	container_class->forall = ygtk_wizard_forall;

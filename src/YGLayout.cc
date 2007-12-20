@@ -4,16 +4,16 @@
 
 #include <config.h>
 #include <ycp/y2log.h>
-#include <YGUI.h>
+#include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 
-#include "YSplit.h"
+#include "YLayoutBox.h"
 #include "ygtkratiobox.h"
 #include "YSpacing.h"
 
 // GtkBox-like container (actually, more like our YGtkRatioBox)
-class YGSplit : public YSplit, public YGWidget
+class YGLayoutBox : public YLayoutBox, public YGWidget
 {
 	// This group is meant to set all YGLabeledWidget with horizontal label
 	// to share the same width (if they belong to the same YSplit), so they
@@ -21,48 +21,45 @@ class YGSplit : public YSplit, public YGWidget
 	GtkSizeGroup *m_labels_group;
 
 public:
-	YGSplit (const YWidgetOpt &opt, YGWidget *parent, YUIDimension dim)
-	: YSplit (opt, dim),
+	YGLayoutBox (YWidget *parent, YUIDimension dim)
+	: YLayoutBox (NULL, dim),
 	  YGWidget (this, parent, true,
-	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX
-	                            : YGTK_TYPE_RATIO_VBOX, NULL)
+	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		setBorder (0);
 		m_labels_group = NULL;
 	}
 
-	~YGSplit()
+	~YGLayoutBox()
 	{
 		if (m_labels_group)
 			g_object_unref (G_OBJECT (m_labels_group));
 	}
 
-	virtual void childAdded (YWidget *ychild)
+	virtual string getDebugLabel() const
+	{ return primary() == YD_HORIZ ? "horizontal" : "vertical"; }
+
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
 		IMPL
-		YGWidget *ygchild = YGWidget::get (ychild);
-
-		gtk_container_add (GTK_CONTAINER (getWidget()), ygchild->getLayout());
-		sync_stretchable (ychild);
+		YGWidget::doAddChild (ychild, container);
 
 		// set labels of YGLabeledWidgets to the same width
 		// we have to do quite some work due to over-clutter on YCP progs
 		while (ychild) {
-			if (ychild->isContainer()) {
+			if (ychild->hasChildren()) {  // container
 				// try to see if there is a YGLabeledWidget at start
 				// (and ignore YSpacings)
-				YContainerWidget *container = (YContainerWidget *) ychild;
-				if (container->numChildren())
-					for (int i = 0; i < container->numChildren(); i++) {
-						ychild = container->child (i);
-						if (!dynamic_cast <YSpacing *> (ychild))
-							break;
-					}
-				else  // no kids
-					break;
+				YWidget *container = ychild;
+				for (YWidgetListConstIterator it = container->childrenBegin();
+					 it != container->childrenEnd(); it++) {
+					ychild = *it;
+					if (!dynamic_cast <YSpacing *> (ychild))
+						break;
+				}
 			}
 			else {
-				ygchild = YGWidget::get (ychild);
+				YGWidget *ygchild = YGWidget::get (ychild);
 				YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
 				if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
 					if (!m_labels_group)
@@ -74,6 +71,8 @@ public:
 			}
 		}
 	}
+
+	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 
 	virtual void sync_stretchable (YWidget *ychild)
@@ -82,28 +81,24 @@ public:
 		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
 		YGWidget *child = YGWidget::get (ychild);
 
-		YUIDimension dim = dimension();
-		bool horiz_fill = child->isStretchable (YD_HORIZ)
-		                  || ychild->hasWeight (YD_HORIZ);
-		bool vert_fill  = child->isStretchable (YD_VERT)
-		                  || ychild->hasWeight (YD_VERT);
+		YUIDimension dim = primary();
+		bool horiz_fill = ychild->stretchable (YD_HORIZ) || ychild->hasWeight (YD_HORIZ);
+		bool vert_fill  = ychild->stretchable (YD_VERT) || ychild->hasWeight (YD_VERT);
 
 		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
 		                                  horiz_fill, vert_fill, 0);
 		ygtk_ratio_box_set_child_expand (box, child->getLayout(),
-		                                 child->isStretchable (dim),
-		                                 ychild->isLayoutStretch (dim));
+			ychild->stretchable (dim), isLayoutStretch (ychild, dim));
 		YGWidget::sync_stretchable();
 	}
 
-	virtual void moveChild (YWidget *, long, long) {}  // ignore
+	virtual void moveChild (YWidget *, int, int) {}  // ignore
 };
 
-YContainerWidget *
-YGUI::createSplit (YWidget *parent, YWidgetOpt &opt, YUIDimension dimension)
+YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
 {
 	IMPL
-	return new YGSplit (opt, YGWidget::get (parent), dimension);
+	return new YGLayoutBox (parent, dimension);
 }
 
 #include "YAlignment.h"
@@ -113,9 +108,8 @@ class YGAlignment : public YAlignment, public YGWidget
 	GdkPixbuf *m_background_pixbuf;
 
 public:
-	YGAlignment (const YWidgetOpt &opt, YGWidget *parent,
-	             YAlignmentType halign, YAlignmentType valign)
-	: YAlignment (opt, halign, valign),
+	YGAlignment (YWidget *parent, YAlignmentType halign, YAlignmentType valign)
+	: YAlignment (NULL, halign, valign),
 	  YGWidget (this, parent, true, GTK_TYPE_ALIGNMENT, NULL)
 	{
 		setBorder (0);
@@ -128,50 +122,41 @@ public:
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 	}
 
-	virtual void childAdded (YWidget *ychild)
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
-		YGWidget *child = YGWidget::get (ychild);
-		gtk_container_add (GTK_CONTAINER (getWidget()), child->getLayout());
+		YGWidget::doAddChild (ychild, container);
 
 		/* The padding is used for stuff like making YCP progs nicer for
 		   yast-qt wizard, so it hurts us -- it's disabled. */
 		//child->setPadding (topMargin(), bottomMargin(),
 		//                   leftMargin(), rightMargin());
 		setMinSize (minWidth(), minHeight());
-
-		sync_stretchable (ychild);  // alignment will be set here
 	}
+	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 
 	virtual void sync_stretchable (YWidget *child)
 	{
 		IMPL
-		setAlignment (align [YD_HORIZ], align [YD_VERT]);
-		YGWidget::sync_stretchable (m_y_widget);
+		setAlignment (alignment (YD_HORIZ), alignment (YD_VERT));
+		YGWidget::sync_stretchable();
 	}
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
 	{
-		// special case (which YAlignment.cc also uses); let stretchable
-		// children stretch if opt.stretch is set (exploitable by the wizard)
-		GValue hstretch, vstretch;
-		hstretch = YGUtils::floatToGValue (0);
-		if (_stretch [YD_HORIZ] && YGWidget::get (child (0))->isStretchable (YD_HORIZ))
-			hstretch = YGUtils::floatToGValue (1);
-		vstretch = YGUtils::floatToGValue (0);
-		if (_stretch [YD_VERT] && YGWidget::get (child (0))->isStretchable (YD_VERT))
-			vstretch = YGUtils::floatToGValue (1);
+		bool hstretch = halign == YAlignUnchanged || stretchable (YD_HORIZ);
+		bool vstretch = valign == YAlignUnchanged || stretchable (YD_VERT);
 
-		if (halign != YAlignUnchanged) {
-			GValue xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
-			g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-			g_object_set_property (G_OBJECT (getWidget()), "xscale", &hstretch);
-		}
-		if (valign != YAlignUnchanged) {
-			GValue yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
-			g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-			g_object_set_property (G_OBJECT (getWidget()), "yscale", &vstretch);
-		}
+		GValue xalign, yalign, xscale, yscale;
+		xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
+		yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
+		xscale = YGUtils::floatToGValue (hstretch ? 1 : 0);
+		yscale = YGUtils::floatToGValue (vstretch ? 1 : 0);
+
+		g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
+		g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
+		g_object_set_property (G_OBJECT (getWidget()), "xscale", &xscale);
+		g_object_set_property (G_OBJECT (getWidget()), "yscale", &yscale);
 	}
 
 	void setPadding (int top, int bottom, int left, int right)
@@ -225,7 +210,7 @@ public:
 		return TRUE;
 	}
 
-	virtual void moveChild (YWidget *, long, long) {};  // ignore
+	virtual void moveChild (YWidget *, int, int) {};  // ignore
 
 	virtual string getDebugLabel() const
 	{
@@ -247,9 +232,9 @@ public:
 		};
 
 		string str;
-		str += inner::alignLabel (align [YD_HORIZ]);
+		str += inner::alignLabel (alignment (YD_HORIZ));
 		str += " x ";
-		str += inner::alignLabel (align [YD_VERT]);
+		str += inner::alignLabel (alignment (YD_VERT));
 		return str;
 	}
 
@@ -266,12 +251,11 @@ private:
 	}
 };
 
-YContainerWidget *
-YGUI::createAlignment (YWidget *parent, YWidgetOpt &opt,
-                       YAlignmentType halign, YAlignmentType valign)
+YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType halign,
+                                              YAlignmentType valign)
 {
 	IMPL
-	return new YGAlignment (opt, YGWidget::get (parent), halign, valign);
+	return new YGAlignment (parent, halign, valign);
 }
 
 #include "YEmpty.h"
@@ -280,19 +264,20 @@ YGUI::createAlignment (YWidget *parent, YWidgetOpt &opt,
 class YGEmpty : public YEmpty, public YGWidget
 {
 public:
-	YGEmpty (const YWidgetOpt &opt, YGWidget *parent)
-	: YEmpty (opt),
+	YGEmpty (YWidget *parent)
+	: YEmpty (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createEmpty (YWidget *parent, YWidgetOpt &opt)
+YEmpty *YGWidgetFactory::createEmpty (YWidget *parent)
 {
 	IMPL
-	return new YGEmpty (opt, YGWidget::get (parent));
+	return new YGEmpty (parent);
 }
 
 #include "YSpacing.h"
@@ -301,32 +286,35 @@ YGUI::createEmpty (YWidget *parent, YWidgetOpt &opt)
 class YGSpacing : public YSpacing, public YGWidget
 {
 public:
-	YGSpacing (const YWidgetOpt &opt, YGWidget *parent,
-	           float size, bool horizontal, bool vertical)
-	: YSpacing (opt, size, horizontal, vertical),
+	YGSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size)
+	: YSpacing (NULL, dim, stretchable, size),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
-		gtk_widget_set_size_request (getWidget(), width(), height());
+		int width = YSpacing::size (YD_HORIZ), height = YSpacing::size (YD_VERT);
+		gtk_widget_set_size_request (getWidget(), width, height);
 	}
+
+	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createSpacing (YWidget *parent, YWidgetOpt & opt, float size,
-                     bool horiz, bool vert)
+YSpacing *YGWidgetFactory::createSpacing (YWidget *parent, YUIDimension dim,
+                                          bool stretchable, YLayoutSize_t size)
 {
-	IMPL
-	return new YGSpacing (opt, YGWidget::get (parent), size, horiz, vert);
+	return new YGSpacing (parent, dim, stretchable, size);
 }
 
 #include "YReplacePoint.h"
+
+//TEMP:
+#include "YPushButton.h"
 
 // an empty space that will get replaced
 class YGReplacePoint : public YReplacePoint, public YGWidget
 {
 public:
-	YGReplacePoint (const YWidgetOpt &opt, YGWidget *parent)
-	: YReplacePoint (opt),
+	YGReplacePoint (YWidget *parent)
+	: YReplacePoint (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
@@ -336,11 +324,10 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
-YContainerWidget *
-YGUI::createReplacePoint( YWidget *parent, YWidgetOpt & opt )
+YReplacePoint *YGWidgetFactory::createReplacePoint (YWidget *parent)
 {
 	IMPL
-	return new YGReplacePoint (opt, YGWidget::get (parent));
+	return new YGReplacePoint (parent);
 }
 
 #include "YSquash.h"
@@ -350,9 +337,8 @@ YGUI::createReplacePoint( YWidget *parent, YWidgetOpt & opt )
 class YGSquash : public YSquash, public YGWidget
 {
 public:
-	YGSquash (const YWidgetOpt &opt, YGWidget *parent,
-	          bool hsquash, bool vsquash)
-	: YSquash (opt, hsquash, vsquash),
+	YGSquash (YWidget *parent, bool hsquash, bool vsquash)
+	: YSquash (NULL, hsquash, vsquash),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
@@ -362,10 +348,9 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
 
-YContainerWidget *
-YGUI::createSquash (YWidget *parent, YWidgetOpt &opt,
-                    bool hsquash, bool vsquash)
+YSquash *YGWidgetFactory::createSquash (YWidget *parent, bool hsquash, bool vsquash)
 {
 	IMPL
-	return new YGSquash (opt, YGWidget::get (parent), hsquash, vsquash);
+	return new YGSquash (parent, hsquash, vsquash);
 }
+

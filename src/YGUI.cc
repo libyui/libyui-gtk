@@ -6,11 +6,9 @@
 #include <stdio.h>
 #include <ycp/y2log.h>
 #include <YEvent.h>
-#include <YDialog.h>
 #include <YMacroRecorder.h>
 #include "YGUI.h"
 #include "YGUtils.h"
-#include "YGWidget.h"
 #include "YGDialog.h"
 #include <glib/gthread.h>
 #include <sys/stat.h>
@@ -19,14 +17,8 @@
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 
-YGUI::YGUI (int argc, char ** argv,
-	    bool with_threads,
-	    const char *macro_file) :
-	YUI (with_threads),
-	busy_timeout (0),
-	m_done_init (false),
-	m_argc (0),
-	m_argv (NULL)
+YGUI::YGUI (int argc, char **argv, bool with_threads, const char *macro_file)
+	: YUI (with_threads), busy_timeout (0), m_done_init (false), m_argc (0), m_argv (NULL)
 {
 	IMPL
 	m_have_wm = true;
@@ -102,10 +94,8 @@ YGUI::~YGUI()
 	g_free (m_argv);
 }
 
-static gboolean
-ycp_wakeup_fn (GIOChannel   *source,
-               GIOCondition  condition,
-               gpointer      data)
+static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
+                               gpointer data)
 {
 	*(int *)data = TRUE;
 	return TRUE;
@@ -119,10 +109,14 @@ void YGUI::checkInit()
 	}
 }
 
-void
-YGUI::idleLoop (int fd_ycp)
+//#define PRINT_EVENTS
+
+void YGUI::idleLoop (int fd_ycp)
 {
 	IMPL
+#ifdef PRINT_EVENTS
+fprintf (stderr, "idleLoop()\n");
+#endif
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -141,6 +135,9 @@ YGUI::idleLoop (int fd_ycp)
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
+#ifdef PRINT_EVENTS
+fprintf (stderr, "no more idle\n");
+#endif
 }
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
@@ -151,19 +148,20 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 	return FALSE;
 }
 
-void
-YGUI::sendEvent (YEvent *event)
+void YGUI::sendEvent (YEvent *event)
 {
 	m_event_handler.sendEvent (event);
 	g_main_context_wakeup (NULL);
 }
 
 // utility that implements both userInput() and pollInput()
-YEvent *
-YGUI::waitInput (unsigned long timeout_ms, bool block)
+YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-	if (!currentYGDialog())
+#ifdef PRINT_EVENTS
+fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
+#endif
+	if (!YDialog::currentDialog (false))
 		return NULL;
 
 	if (block)
@@ -193,69 +191,61 @@ YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (block)  // if YCP keeps working for more than X time, set busy cursor
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
 
+#ifdef PRINT_EVENTS
+fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (event->eventType()));
+#endif
 	return event;
 }
 
-YEvent *
-YGUI::userInput (unsigned long timeout_ms)
-{
-	return waitInput (timeout_ms, true);
-}
+YEvent *YGUI::userInput (unsigned long timeout_ms)
+{ return waitInput (timeout_ms, true); }
 
 YEvent *YGUI::pollInput()
-{
-	return waitInput (0, false);
-}
+{ return waitInput (0, false); }
 
-// dialog bits
-
-static GdkScreen *getScreen ()
-{
-	return gdk_display_get_default_screen (gdk_display_get_default());
-}
+static inline GdkScreen *getScreen ()
+{ return gdk_display_get_default_screen (gdk_display_get_default()); }
 
 int YGUI::getDisplayWidth()
-{
-	IMPL
-	return gdk_screen_get_width (getScreen());
-}
+{ return gdk_screen_get_width (getScreen()); }
 
 int YGUI::getDisplayHeight()
-{
-	IMPL
-	return gdk_screen_get_height (getScreen());
+{ return gdk_screen_get_height (getScreen()); }
+
+int YGUI::getDisplayDepth()
+{ return gdk_visual_get_best_depth(); }
+
+long YGUI::getDisplayColors()
+{ return 1L << getDisplayDepth(); /*from yast-qt*/ }
+
+// YCP writers use getDefaultWidth/Height() to do space saving if needed,
+// so just tell me the displayWidth/Height(). If that size is decent, let's
+// us deal with it.
+int YGUI::getDefaultWidth()   { return getDisplayWidth(); }
+int YGUI::getDefaultHeight()  { return getDisplayHeight(); }
+
+int YGUI::_getDefaultWidth()
+{ 
+	if (!m_default_size.width)
+		m_default_size.width = MIN (600, getDisplayWidth());
+	return m_default_size.width;
 }
 
-int YGUI::getDefaultSize (YUIDimension dim)
-{
-	if (dim == YD_HORIZ) {
-		if (!m_default_size.width) {
-			if (m_fullscreen)
-				m_default_size.width = getDisplayWidth();
-			else
-				m_default_size.width = MIN (600, getDisplayWidth());
-		}
-		return m_default_size.width;
-	}
-	else {  // YD_VERT
-		if (!m_default_size.height) {
-			if (m_fullscreen)
-				m_default_size.height = getDisplayHeight();
-			else
-				m_default_size.height = MIN (450, getDisplayHeight());
-		}
-		return m_default_size.height;
-	}
+int YGUI::_getDefaultHeight()
+{ 
+	if (!m_default_size.height)
+		m_default_size.height = MIN (450, getDisplayHeight());
+	return m_default_size.height;
 }
 
 // YWidget layout units -> pixels conversion. Same as yast-qt's.
-long YGUI::deviceUnits (YUIDimension dim, float size)
+int YGUI::deviceUnits (YUIDimension dim, float size)
 {
 	if (dim == YD_HORIZ) return (long) ((size * (640.0/80)) + 0.5);
 	else                 return (long) ((size * (480.0/25)) + 0.5);
 }
 
-float YGUI::layoutUnits (YUIDimension dim, long device_units)
+float YGUI::layoutUnits (YUIDimension dim, int device_units)
 {
 	float size = (float) device_units;
 	if (dim == YD_HORIZ) return size * (80/640.0);
@@ -274,7 +264,7 @@ static void errorMsg (const char *msg)
 void YGUI::internalError (const char *msg)
 {
 	errorMsg (msg);
-	abort();		// going down
+	abort();	// going down
 }
 
 /* File/directory dialogs. */
@@ -287,9 +277,9 @@ static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
 	IMPL
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title->value_cstr(),
-		YGUI::ui()->currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-		NULL);
+		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
+		GTK_RESPONSE_ACCEPT, NULL);
 	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
 
 	// Yast likes to pass the path and suggested filename as a whole. We will need to
@@ -383,15 +373,6 @@ YCPValue YGUI::askForSaveFileName (const YCPString &path,
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
-bool YGUI::textMode()              IMPL_RET(false)
-bool YGUI::hasImageSupport()       IMPL_RET(true)
-bool YGUI::hasLocalImageSupport()  IMPL_RET(true)
-bool YGUI::hasAnimationSupport()   IMPL_RET(true)
-bool YGUI::hasIconSupport()        IMPL_RET(true)
-bool YGUI::hasFullUtf8Support()    IMPL_RET(true)
-bool YGUI::richTextSupportsTable() IMPL_RET(false)
-bool YGUI::leftHandedMouse()       IMPL_RET(false)
-
 gboolean YGUI::busy_timeout_cb (gpointer data)
 {
 	YGUI *pThis = (YGUI *) data;
@@ -402,7 +383,7 @@ gboolean YGUI::busy_timeout_cb (gpointer data)
 
 void YGUI::busyCursor()
 {
-	YGDialog *dialog = currentYGDialog();
+	YGDialog *dialog = YGDialog::currentDialog();
 	if (dialog)
 		dialog->busyCursor();
 }
@@ -414,42 +395,27 @@ void YGUI::normalCursor()
 		busy_timeout = 0;
 	}
 
-	YGDialog *dialog = currentYGDialog();
+	YGDialog *dialog = YGDialog::currentDialog();
 	if (dialog)
 		dialog->normalCursor();
 }
 
-void YGUI::redrawScreen()
-{
-	gtk_widget_queue_draw (GTK_WIDGET (currentWindow()));
-}
-
 YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
 {
-	y2milestone ("Running package selection...");
-
-	// TODO: we may have to do some trickery here to disable close button
-	// and auto activate dialogs (whatever that is)
-//	_wm_close_blocked           = true;
-//	_auto_activate_dialogs      = false;
-
+	y2milestone( "Running package selection..." );
 	YCPValue input = YCPVoid();
+
 	try {
 		input = evaluateUserInput();
-	}
-	catch (const std::exception &e) {
-		y2error ("Caught std::exception: %s", e.what());
-		y2error ("This is a libzypp problem. Do not file a bug against the UI!");
-	}
-	catch (...) {
-		y2error ("Caught unspecified exception.");
-		y2error ("This is a libzypp problem. Do not file a bug against the UI!");
+	} catch (const std::exception &e) {
+		y2error ("UI::RunPkgSelection() error: %s", e.what());
+		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
+	} catch (...) {
+		y2error ("UI::RunPkgSelection() error (unspecified)");
+		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
 	}
 
-//	_auto_activate_dialogs      = true;
-//	_wm_close_blocked           = false;
 	y2milestone ("Package selection done - returning %s", input->toString().c_str());
-
 	return input;
 }
 
@@ -458,7 +424,7 @@ void YGUI::makeScreenShot (string filename)
 	IMPL
 	bool interactive = filename.empty();
 
-	GtkWidget *widget = GTK_WIDGET (currentWindow());
+	GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());
 	if (!widget) {
 		if (interactive)
 			errorMsg ("No dialog to take screenshot of.");
@@ -542,7 +508,7 @@ void YGUI::makeScreenShot (string filename)
 	if (recordingMacro()) {
 		// save the taking of the screenshot and its name to the macro
 		macroRecorder->beginBlock();
-		currentDialog()->saveUserInput (macroRecorder);
+		YDialog::currentDialog()->saveUserInput (macroRecorder);
 		macroRecorder->recordMakeScreenShot (true, filename.c_str());
 		macroRecorder->recordUserInput (YCPVoid());
 		macroRecorder->endBlock();
@@ -555,7 +521,7 @@ void YGUI::makeScreenShot (string filename)
 void YGUI::beep()
 {
 	gdk_beep();
-	GtkWindow *window = currentWindow();
+	GtkWindow *window = YGDialog::currentWindow();
 	if (window)
 		gtk_window_present (window);
 }
@@ -642,7 +608,19 @@ void YGUI::askSaveLogs()
 	}
 }
 
-// debug dialogs
+YGApplication::YGApplication()
+{
+	setIconBasePath (ICON_DIR);
+}
+
+YWidgetFactory *YGUI::createWidgetFactory()
+{ return new YGWidgetFactory; }
+YOptionalWidgetFactory *YGUI::createOptionalWidgetFactory()
+{ return new YGOptionalWidgetFactory; }
+YApplication *YGUI::createApplication()
+{ return new YGApplication(); }
+
+//** debug dialogs
 
 //#define IS_VALID_COL
 void dumpYastTree (YWidget *widget)
@@ -659,10 +637,9 @@ void dumpYastTree (YWidget *widget)
 			GtkTreeIter iter;
 			gtk_tree_store_append (store, &iter, parent_node);
 
-			YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
 			gchar *stretch = g_strdup_printf ("%d x %d",
-				ygwidget->isStretchable (YD_HORIZ), ygwidget->isStretchable (YD_VERT));
-			gchar *weight = g_strdup_printf ("%ld x %ld",
+				widget->stretchable (YD_HORIZ), widget->stretchable (YD_VERT));
+			gchar *weight = g_strdup_printf ("%d x %d",
 				widget->weight (YD_HORIZ), widget->weight (YD_VERT));
 			gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
 				1, ygwidget->getDebugLabel().c_str(), 2, stretch, 3, weight,
@@ -673,9 +650,9 @@ void dumpYastTree (YWidget *widget)
 			g_free (stretch);
 			g_free (weight);
 
-			if (container)
-				for (int i = 0; i < container->numChildren(); i++)
-					dumpYastTree (container->child (i), store, &iter);
+			for (YWidgetListConstIterator it = widget->childrenBegin();
+			     it != widget->childrenEnd(); it++)
+				dumpYastTree (*it, store, &iter);
 		}
 		static void dialog_response_cb (GtkDialog *dialog, gint response, YWidget *ywidget)
 		{
@@ -765,7 +742,7 @@ void dumpYastHtml (YWidget *widget)
 
 			YRichText *rtext = dynamic_cast <YRichText *> (widget);
 			if (rtext) {
-				std::string text = rtext->getText()->value();
+				std::string text = rtext->text();
 				char *xml = ygutils_convert_to_xhmlt_and_subst (text.c_str(), NULL);
 
 				GtkWidget *view = gtk_text_view_new();
@@ -786,10 +763,9 @@ void dumpYastHtml (YWidget *widget)
 				g_free (xml);
 			}
 
-			YContainerWidget *container = dynamic_cast <YContainerWidget *> (widget);
-			if (container)
-				for (int i = 0; i < container->numChildren(); i++)
-					dumpYastHtml (container->child (i), box);
+			for (YWidgetListConstIterator it = widget->childrenBegin();
+			     it != widget->childrenEnd(); it++)
+				dumpYastHtml (*it, box);
 		}
 		static void destroy_dialog (GtkDialog *dialog, gint arg)
 		{ gtk_widget_destroy (GTK_WIDGET (dialog)); }

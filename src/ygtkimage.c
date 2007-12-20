@@ -157,7 +157,8 @@ void ygtk_image_set_props (YGtkImage *image, YGtkImageAlign align, const gchar *
 	image->align = align;
 	if (image->alt_text)
 		g_free (image->alt_text);
-	image->alt_text = g_strdup (alt_text);
+	if (alt_text)
+		image->alt_text = g_strdup (alt_text);
 	gtk_widget_queue_draw (GTK_WIDGET (image));
 }
 
@@ -208,21 +209,23 @@ static gboolean ygtk_image_expose_event (GtkWidget *widget, GdkEventExpose *even
 
 	cairo_t *cr = gdk_cairo_create (widget->window);
 
-	if (!image->loaded && image->alt_text) {
-		// show alt text if no image was loaded
-		PangoLayout *layout;
-		layout = gtk_widget_create_pango_layout (widget, image->alt_text);
+	if (!image->loaded) {
+		if (image->alt_text) {
+			// show alt text if no image was loaded
+			PangoLayout *layout;
+			layout = gtk_widget_create_pango_layout (widget, image->alt_text);
 
-		int x, y;
-		x = (width - widget->requisition.width) / 2;
-		y = (height - widget->requisition.height) / 2;
+			int x, y;
+			x = (width - widget->requisition.width) / 2;
+			y = (height - widget->requisition.height) / 2;
 
-		cairo_move_to (cr, x, y);
-		pango_cairo_show_layout (cr, layout);
+			cairo_move_to (cr, x, y);
+			pango_cairo_show_layout (cr, layout);
 
-		g_object_unref (layout);
+			g_object_unref (layout);
+		}
 		cairo_destroy (cr);
-		return TRUE;
+		return FALSE;
 	}
 
 	GdkPixbuf *pixbuf;

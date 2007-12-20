@@ -11,48 +11,34 @@
 
 class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {
-    bool m_pulse;
 public:
-	YGProgressBar (const YWidgetOpt &opt, YGWidget *parent,
-	               const YCPString& label,
-	               const YCPInteger& maxprogress, const YCPInteger& progress)
-	: YProgressBar (opt, label, maxprogress, progress)
+	YGProgressBar (YWidget *parent, const string &label, int maxValue)
+	: YProgressBar (NULL, label, maxValue)
+		// NOTE: its label widget is positionated at the vertical, because its label
+		// may change often and so will its size, which will look odd (we may want
+		// to make the label widget to only grow).
 	, YGLabeledWidget (this, parent, label, YD_VERT, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
-	{
-        m_pulse = maxprogress->value() <= 0;
-    }
-	// NOTE: its label widget is positionated at the vertical, because its label
-	// may change often and so will its size, which will look odd (we may want
-	// to make the label widget to only grow).
-
-	virtual ~YGProgressBar() {}
+	{}
 
 	// YProgressBar
-	virtual void setProgress (const YCPInteger& newProgress)
+	virtual void setValue (int value)
 	{
 		IMPL
-        if (m_pulse)
-            gtk_progress_bar_pulse (GTK_PROGRESS_BAR (getWidget()));
-        else {
-            float fraction = (float) newProgress->value() / maxProgress->value();
-            gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
-        }
-        YProgressBar::setProgress (newProgress);
+		float fraction = ((float) value) / maxValue();
+		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
+        YProgressBar::setValue (value);
 	}
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YProgressBar)
 };
 
-YWidget *
-YGUI::createProgressBar (YWidget* parent, YWidgetOpt& opt,
-                         const YCPString& label, const YCPInteger& maxprogress,
-                         const YCPInteger& progress)
+YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const string &label,
+                                                  int maxValue)
 {
-	IMPL;
-	return new YGProgressBar (opt, YGWidget::get (parent),
-	                          label, maxprogress, progress);
+	IMPL
+	return new YGProgressBar (parent, label, maxValue);
 }
 
 #include "YDownloadProgress.h"
@@ -62,10 +48,9 @@ class YGDownloadProgress : public YDownloadProgress, public YGLabeledWidget
 	guint timeout_id;
 
 public:
-	YGDownloadProgress (const YWidgetOpt &opt, YGWidget *parent,
-	                    const YCPString& label, const YCPString &filename,
-	                    int expectedSize)
-	: YDownloadProgress (opt, label, filename, expectedSize)
+	YGDownloadProgress (YWidget *parent, const string &label,
+	                    const string &filename, YFileSize_t expectedFileSize)
+	: YDownloadProgress (NULL, label, filename, expectedFileSize)
 	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{
@@ -77,16 +62,16 @@ public:
 		g_source_remove (timeout_id);
 	}
 
-	virtual void setExpectedSize (int expectedSize)
+	virtual void setExpectedSize (YFileSize_t size)
 	{
-		YDownloadProgress::setExpectedSize (expectedSize);
-		timeout_cb(this);  // force an update
+		YDownloadProgress::setExpectedSize (size);
+		timeout_cb (this);  // force an update
 	}
 
 	static gboolean timeout_cb (void *pData)
 	{
 		YGDownloadProgress *pThis = (YGDownloadProgress*) pData;
-		float fraction = (float) pThis->currentFileSize() / pThis->expectedSize();
+		float fraction = ((float) pThis->currentFileSize()) / pThis->expectedSize();
 		if (fraction > 1) fraction = 1;
 		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pThis->getWidget()), fraction);
 		return TRUE;
@@ -96,14 +81,11 @@ public:
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YDownloadProgress)
 };
 
-YWidget *
-YGUI::createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
-                              const YCPString &label, const YCPString &filename,
-                              int expectedSize)
+YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *parent,
+		const string &label, const string &filename, YFileSize_t expectedFileSize)
 {
 	IMPL
-	return new YGDownloadProgress (opt, YGWidget::get (parent),
-	                               label, filename, expectedSize);
+	return new YGDownloadProgress (parent, label, filename, expectedFileSize);
 }
 
 #include "ygtkratiobox.h"
@@ -112,21 +94,20 @@ YGUI::createDownloadProgress (YWidget *parent, YWidgetOpt &opt,
 class YGMultiProgressMeter : public YMultiProgressMeter, public YGWidget
 {
 public:
-	YGMultiProgressMeter (const YWidgetOpt &opt, YGWidget *parent,
-	                      bool horizontal, const YCPList &maxValues)
-	: YMultiProgressMeter (opt, horizontal, maxValues)
+	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector<float> &maxValues)
+	: YMultiProgressMeter (NULL, dim, maxValues)
 	, YGWidget (this, parent, true,
-	            horizontal ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
+	            horizontal() ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 //		ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (getWidget()), TRUE);
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 		for (int s = 0; s < segments(); s++) {
 			GtkWidget* bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
-				horizontal ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
+				horizontal() ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
 			// Progress bars would ask for too much size with weight...
 			const int min_size = 5;
-			if (horizontal)
+			if (horizontal())
 				gtk_widget_set_size_request (bar, min_size, -1);
 			else
 				gtk_widget_set_size_request (bar, -1, min_size);
@@ -134,8 +115,8 @@ public:
 			                     getSegmentWeight (s), TRUE, TRUE, 0);
 		}
 
-		ygtk_adj_size_set_max (YGTK_ADJ_SIZE (m_adj_size), horizontal ? 200 : 0,
-		                                                   horizontal ? 0 : 200);
+		ygtk_adj_size_set_max (YGTK_ADJ_SIZE (m_adj_size), horizontal() ? 200 : 0,
+		                                                   horizontal() ? 0 : 200);
 		gtk_widget_show_all (getWidget());
 	}
 
@@ -160,7 +141,7 @@ public:
 	{
 		if (vertical())
 			n = (segments() - n) - 1;
-		if (currentValue (n) == -1)
+		if (currentValue (n) < 0)
 			return 0;
 		return 1.0 - (((float) currentValue (n)) / maxValue (n));
 	}
@@ -168,10 +149,9 @@ public:
 	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createMultiProgressMeter (YWidget *parent, YWidgetOpt &opt,
-                      bool horizontal, const YCPList &maxValues)
+YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget *parent,
+		YUIDimension dim, const vector<float> &maxValues)
 {
-	return new YGMultiProgressMeter (opt, YGWidget::get (parent),
-	                                      horizontal, maxValues);
+	return new YGMultiProgressMeter (parent, dim, maxValues);
 }
+

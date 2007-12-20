@@ -8,7 +8,7 @@
 #include <string>
 #include <list>
 #include <gtk/gtktextview.h>
-#include <gtk/gtkeditable.h>
+#include <gtk/gtkentry.h>
 #include <gtk/gtktreeview.h>
 #include <gtk/gtktreemodel.h>
 #include <gtk/gtkcellrenderertoggle.h>
@@ -24,19 +24,10 @@
 namespace YGUtils
 {
 	/* Replaces Yast's '&' accelerator by Gnome's '_' (and proper escaping). */
-	std::string mapKBAccel (const char *src);
+	std::string mapKBAccel (const std::string &src);
 
-	/* Filters characters that are not on the valids_chars array from the text string
-	   Length is used to tell the length of text, in case it isn't NUL
-	   terminated (you may pass -1, if it is).
-	   Use the compare string member if you want to see if there was any change.  */
-	std::string filterText (const char* text, int length, const char* valid_chars);
-
-	/* Convenience call for widgets that implement GtkEditable interface.
-	   This function inserts and deletes text, if needed, so you may want
-	   to block those signals, if you have them set.  */
-	void filterText (GtkEditable *editable, int pos, int length,
-	                 const char *valid_chars);
+	/* Adds filter support to a GtkEntry. */
+	void setFilter (GtkEntry *entry, const std::string &validChars);
 
 	/* Replaces every 'mouth' by 'food' in 'str'. */
 	void replace (std::string &str, const char *mouth, int mouth_len, const char *food);
@@ -65,27 +56,12 @@ namespace YGUtils
 	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
 	std::list <std::string> splitString (const std::string &str, char separator);
 
-	/* Prints a GtkTreeModel for debugging purposes. */
-	void print_model (GtkTreeModel *model, int string_col);
-
-	/* To be used as a callback to sort tree views. */
-	gint sort_compare_cb (GtkTreeModel *model, GtkTreeIter *a,
-	                      GtkTreeIter *b, gpointer data);
-
-	/* To be used as a callback for a GtkTreeView with toggle cells. */
-	void tree_view_radio_toggle_cb (GtkCellRendererToggle *renderer,
-	                                gchar *path_str, GtkTreeModel *model);
-
-	/* Goes through all GtkTreeView columns and checks for TextCellRenderers,
-	   setting those columns as sortable. */
-	void tree_view_set_sortable (GtkTreeView *view, int default_sort_col);
-
-	/* Like gtk_tree_view_scroll_to_point(), but does smooth scroll. */
-	void tree_view_smooth_scroll_to_point (GtkTreeView *view, gint x, gint y);
-
 	/* Converts stuff to GValues */
 	GValue floatToGValue (float num);
 
+	GdkPixbuf *loadPixbuf (const std::string &fileneme);
+
+	/* Tries to make sense out of the string, applying some stock icon to the button. */
 	void setStockIcon (GtkWidget *button, std::string ycp_str);
 };
 
@@ -93,6 +69,8 @@ extern "C" {
 	int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
 	int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
+
+	void ygutils_setFilter (GtkEntry *entry, const char *validChars);
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);

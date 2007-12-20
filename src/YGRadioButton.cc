@@ -4,8 +4,7 @@
 
 #include <config.h>
 #include <ycp/y2log.h>
-#include <YGUI.h>
-#include "YEvent.h"
+#include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
 
@@ -38,23 +37,15 @@ static GType getCheckRadioButtonType()
 
 class YGRadioButton : public YRadioButton, public YGWidget
 {
-	bool m_isBold;
-
 public:
-
-	YGRadioButton (const YWidgetOpt  &opt,
-	               YGWidget          *parent,
-	               YCPString          label,
-	               YRadioButtonGroup *rbg, 
-	               bool               checked)
-	:  YRadioButton (opt, label, rbg),
+	YGRadioButton (YWidget *parent, const std::string &label, bool isChecked)
+	:  YRadioButton (NULL, label),
 	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
 		setBorder (0);
-		setValue (YCPBoolean (checked));
+		setValue (isChecked);
 
-		m_isBold = opt.boldFont.value();
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 
@@ -63,67 +54,64 @@ public:
 	}
 
 	// YRadioButton
-	virtual void setLabel (const YCPString &text)
+	virtual void setLabel (const string &text)
 	{
 		// NOTE: we can't just set a gtk_widget_modify() at the initialization
 		// because each gtk_button_set_label() creates a new label
 		IMPL
-		string str = YGUtils::mapKBAccel(text->value_cstr());
-		if (m_isBold)
-			str = "<b>" + str + "</b>";
+		string str = YGUtils::mapKBAccel(text.c_str());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YRadioButton::setLabel (text);
-
-		GtkWidget *label = gtk_bin_get_child (GTK_BIN (getWidget()));
-		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
 	}
 
-	virtual void setValue (const YCPBoolean &checked)
+	virtual bool value()
 	{
 		IMPL
+		return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (getWidget()));
+	}
+
+	virtual void setValue (bool checked)
+	{
+		IMPL
+		fprintf (stderr, "setValue: %d to %s\n", checked, getDebugLabel().c_str());
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
 
-		if (checked->value())
-			buttonGroup()->uncheckOtherButtons (this);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()),
-					      checked->value());
+		if (checked)
+			buttonGroup()->uncheckOtherButtons ((YRadioButton *) this);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
 
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}
 
-	virtual YCPBoolean getValue()
-	{
-		IMPL
-		return YCPBoolean (gtk_toggle_button_get_active
-		                       (GTK_TOGGLE_BUTTON (getWidget())));
-	}
-
-	// YWidget
 	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_USE_BOLD (YRadioButton)
 
 	// callbacks
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
 	{
 		IMPL
+fprintf(stderr, "toggled\n");
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
-			pThis->buttonGroup()->uncheckOtherButtons (pThis);
+{
+fprintf(stderr, "uncheck others\n");
+			pThis->buttonGroup()->uncheckOtherButtons ((YRadioButton *) pThis);
+//			pThis->emitEvent (YEvent::ValueChanged);
+}
 		else {
+			// leave it active
 			g_signal_handlers_block_by_func (button, (gpointer) toggled_cb, pThis);
+fprintf(stderr, "set active\n");
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
 			g_signal_handlers_unblock_by_func (button, (gpointer) toggled_cb, pThis);
 		}
-
-		pThis->emitEvent (YEvent::ValueChanged);
 	}
 };
 
-YWidget *
-YGUI::createRadioButton (YWidget *parent, YWidgetOpt &opt,
-			 YRadioButtonGroup *rbg, const YCPString &label,
-			 bool checked)
+YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string &label,
+                                                  bool isChecked)
 {
-	IMPL;
-	return new YGRadioButton (opt, YGWidget::get (parent), label, rbg, checked);
+	IMPL
+	return new YGRadioButton (parent, label, isChecked);
 }
 
 // YRadioButtonGroup
@@ -131,22 +119,19 @@ YGUI::createRadioButton (YWidget *parent, YWidgetOpt &opt,
 class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
 {
 public:
-	YGRadioButtonGroup(const YWidgetOpt &opt,
-	                   YGWidget         *parent)
-	: YRadioButtonGroup (opt),
+	YGRadioButtonGroup(YWidget *parent)
+	: YRadioButtonGroup (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
-	{ }
+	{}
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
 };
 
-YContainerWidget *
-YGUI::createRadioButtonGroup (YWidget *parent, YWidgetOpt &opt)
+YRadioButtonGroup *YGWidgetFactory::createRadioButtonGroup (YWidget *parent)
 {
-	IMPL;
-	return new YGRadioButtonGroup (opt, YGWidget::get (parent));
+	return new YGRadioButtonGroup (parent);
 }
 
 #include "YCheckBox.h"
@@ -156,88 +141,81 @@ class YGCheckBox : public YCheckBox, public YGWidget
 	bool m_isBold;
 
 public:
-	YGCheckBox(const YWidgetOpt &opt,
-	           YGWidget         *parent,
-	           const YCPString  &label_str,
-	           bool              checked)
-	:  YCheckBox (opt, label_str),
+	YGCheckBox(YWidget *parent, const string &label, bool isChecked)
+	:  YCheckBox (NULL, label),
 	   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
 		IMPL
 		setBorder (0);
-		m_isBold = opt.boldFont.value();
 
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
-		setLabel (label_str);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
+		setLabel (label);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), isChecked);
 
 		g_signal_connect (G_OBJECT (getWidget ()), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
 	}
 
 	// YCheckButton
-	virtual void setLabel (const YCPString &text)
+	virtual void setLabel (const string &text)
 	{
 		IMPL
-		string str = YGUtils::mapKBAccel(text->value_cstr());
-		if (m_isBold)
-			str = "<b>" + str + "</b>";
+		string str = YGUtils::mapKBAccel(text);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YCheckBox::setLabel (text);
-
-		GtkWidget *label = gtk_bin_get_child (GTK_BIN (getWidget()));
-		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
 	}
 
-	virtual void setValue (const YCPValue &val)
+	virtual YCheckBoxState value()
 	{
-		IMPL;
+		IMPL
+		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
+
+		if (gtk_toggle_button_get_inconsistent (button))
+			return YCheckBox_dont_care;
+		return gtk_toggle_button_get_active (button) ? YCheckBox_on : YCheckBox_off;
+	}
+
+	virtual void setValue (YCheckBoxState value)
+	{
+		IMPL
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
 
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
 
-		if (val->isBoolean()) {
-			gtk_toggle_button_set_inconsistent (button, FALSE);
-			gtk_toggle_button_set_active (button, val->asBoolean()->value());
+		switch (value) {
+			case YCheckBox_dont_care:
+				gtk_toggle_button_set_inconsistent (button, TRUE);
+				break;
+			case YCheckBox_on:
+				gtk_toggle_button_set_inconsistent (button, FALSE);
+				gtk_toggle_button_set_active (button, TRUE);
+				break;
+			case YCheckBox_off:
+				gtk_toggle_button_set_inconsistent (button, FALSE);
+				gtk_toggle_button_set_active (button, FALSE);
+				break;
 		}
-		else
-			gtk_toggle_button_set_inconsistent (button, TRUE);
 
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
-	}
-
-	virtual YCPValue getValue()
-	{
-		IMPL;
-
-		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
-
-		if (gtk_toggle_button_get_inconsistent (button))
-			return YCPVoid();
-		else
-			return YCPBoolean (gtk_toggle_button_get_active (button));
 	}
 
 	static void toggled_cb (GtkBox *box, YGCheckBox *pThis)
 	{
 		IMPL
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (box);
-		if (gtk_toggle_button_get_inconsistent (button)) {
-			gtk_toggle_button_set_inconsistent (button, false);
-			pThis->setValue (YCPBoolean (true));
-		}
-
+		if (gtk_toggle_button_get_inconsistent (button))
+			pThis->setValue (YCheckBox_on);
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
 	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_USE_BOLD (YCheckBox)
 };
 
-YWidget *
-YGUI::createCheckBox (YWidget *parent, YWidgetOpt &opt,
-		      const YCPString &label,
-		      bool checked)
+YCheckBox *YGWidgetFactory::createCheckBox (YWidget *parent, const string &label,
+                                            bool isChecked)
 {
-	IMPL;
-	return new YGCheckBox (opt, YGWidget::get (parent), label, checked);
+	IMPL
+	return new YGCheckBox (parent, label, isChecked);
 }
+

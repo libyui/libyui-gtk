@@ -539,28 +539,36 @@ GtkWidget *ygtk_rich_text_new (void)
 }
 
 /* String preparation methods. */
-
-#define IS_WHITE(c) (g_ascii_isspace (c) || (c) == '\t')
-
 static char *elide_whitespace (const char *instr, int len)
 {
 	GString *dest = g_string_new ("");
 	if (len < 0)
 		len = strlen (instr);
 	gboolean last_white = FALSE;
+	// transform breaklines in whitespace if in the middle of the text
+	gboolean special_white = FALSE, start_text = TRUE;
 	int i;
-// FIXME: whitespace elision needs to happen across tags [urk]
-// FIXME: perhaps post-process non-pre sections when they are complete ?
 	for (i = 0; i < len; i++)
 	{
 		char ch = instr[i];
-		if (ch == '\r' || ch == '\n')
+		if (ch == '\n') {
+			if (!start_text)
+				special_white = TRUE;
 			continue;
+		}
 		if (ch == '\t')
 			ch = ' ';
-		gboolean cur_white = IS_WHITE (ch);
+		gboolean cur_white = ch == ' ';
+		if (!cur_white) {
+			start_text = FALSE;
+			if (special_white) {
+				g_string_append_c (dest, ' ');
+				special_white = FALSE;
+			}
+		}
 		if (!cur_white || !last_white)
 			g_string_append_c (dest, ch);
+		
 		last_white = cur_white;
 	}
 

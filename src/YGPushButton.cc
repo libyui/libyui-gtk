@@ -11,67 +11,86 @@
 
 class YGPushButton : public YPushButton, public YGWidget
 {
+GtkWidget *m_image;
+
 public:
-	YGPushButton (const YWidgetOpt &opt, YGWidget *parent, YCPString label)
-	:  YPushButton (opt, label),
+	YGPushButton (YWidget *parent, const string &label)
+	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL
-		if (!opt.isShrinkable.value())
-			setMinSizeInChars (10, 0);
-
+		m_image = NULL;
+		setMinSizeInChars (10, 0);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
-
 		g_signal_connect (G_OBJECT (getWidget ()), "clicked",
 		                  G_CALLBACK (clicked_cb), this);
-		if (opt.isDefaultButton.value())
-			g_signal_connect (G_OBJECT (getWidget ()), "realize",
-			                  G_CALLBACK (set_default_cb), this);
 	}
 
 	// YPushButton
-	virtual void setLabel (const YCPString &label)
+	virtual void setLabel (const string &label)
 	{
 		IMPL
-		string str = YGUtils::mapKBAccel (label->value_cstr());
+		string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YGUtils::setStockIcon (getWidget(), str);
 		YPushButton::setLabel (label);
 	}
 
-	virtual void setIcon (const YCPString &icon_name)
+	virtual void setIcon (const string &icon)
 	{
 		IMPL
-		string path = icon_name->value();
-		if (path[0] != '/')
-			path = ICON_DIR + path;
+		if (icon.empty())
+			// no need to worry about freeing m_image, let it live with button
+			gtk_widget_hide (m_image);
+		else {
+			string path (icon);
+			if (path[0] != '/')
+				path = ICON_DIR + path;
 
-		GError *error = 0;
-		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
-		if (pixbuf) {
-			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
-			g_object_unref (G_OBJECT (pixbuf));
+			GError *error = 0;
+			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
+			if (pixbuf) {
+				m_image = gtk_image_new_from_pixbuf (pixbuf);
+				gtk_button_set_image (GTK_BUTTON (getWidget()), m_image);
+				g_object_unref (G_OBJECT (pixbuf));
+			}
+			else
+				y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
+				           "Reason: %s", path.c_str(), error->message);
 		}
-		else
-			y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
-			           "Reason: %s", path.c_str(), error->message);
 	}
 
-	static void set_default_cb (GtkButton *button, YGPushButton *pThis)
-	{ gtk_widget_grab_default (GTK_WIDGET (button)); }
+	virtual void setDefaultButton (bool isDefault)
+	{
+		if (isDefault) {
+			GtkWidget *button = getWidget();
+			GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+			gtk_widget_grab_default (button);
+			if (GTK_WIDGET_REALIZED (button))
+				gtk_widget_grab_focus (button);
+			else
+				g_signal_connect (G_OBJECT (button), "realize",
+				                  G_CALLBACK (realize_cb), this);
+		}
+		YPushButton::setDefaultButton (isDefault);
+	}
 
+	// Events
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
 	{ pThis->emitEvent (YEvent::Activated, false); }
+
+	// give focus to default buttons, once they are realized
+	static void realize_cb (GtkWidget *widget)
+	{
+		gtk_widget_grab_focus (widget);
+	}
 
 	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createPushButton (YWidget *parent, YWidgetOpt &opt,
-                        const YCPString &label)
+YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const string &label)
 {
-	return new YGPushButton (opt, YGWidget::get (parent), label);
+	return new YGPushButton (parent, label);
 }
 

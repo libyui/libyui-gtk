@@ -7,220 +7,138 @@
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
+#include "YSelectionWidget.h"
+#include "YGSelectionModel.h"
+#include "ygtkcellrenderertextpixbuf.h"
 
 /* A generic widget for table related widgets. */
-class YGTableView : public YGScrolledWidget
+class YGTableView : public YGScrolledWidget, public YGSelectionModel
 {
 protected:
 	int m_colsNb;
 
 public:
-	YGTableView (YWidget *y_widget, YGWidget *parent,
-	             const YWidgetOpt &opt, YCPString label)
-	: YGScrolledWidget (y_widget, parent, label, YD_VERT, true,
+	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
+	             bool ordinaryModel, bool isTree)
+	: YGScrolledWidget (ywidget, parent, label, YD_VERT, true,
 	                    GTK_TYPE_TREE_VIEW, NULL)
+	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
-		m_colsNb = 0;
+		if (ordinaryModel) {
+			addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, YGSelectionModel::ICON_COLUMN);
+			addColumn (G_TYPE_STRING, "", YAlignUnchanged, YGSelectionModel::LABEL_COLUMN);
+			gtk_tree_view_set_model (getView(), getModel());
+		}
+		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), FALSE);
 
 		/* Yast tools expect the user to be unable to un-select the row. They
 		   generally don't check to see if the returned value is -1. So, just
 		   disallow un-selection. */
-		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
-			GTK_TREE_VIEW (getWidget())), GTK_SELECTION_BROWSE);
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
+		gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
 
 		// let the derivates do the event hooks. They have subtile differences.
 	}
 
-	void initModel (const vector <GType> &types, bool show_headers)
-	{
-		IMPL
-		// turn vector into an array; last column dedicated to the row id
-		m_colsNb = types.size();
-		GType types_array [m_colsNb+1];
-		for (unsigned int i = 0; i < types.size(); i++)
-			types_array [i] = types[i];
-		types_array[m_colsNb] = G_TYPE_INT;
+	inline GtkTreeView *getView()
+	{ return GTK_TREE_VIEW (getWidget()); }
 
-		GtkListStore *list = gtk_list_store_newv (m_colsNb+1, types_array);
-		gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), GTK_TREE_MODEL (list));
-		g_object_unref (G_OBJECT (list));
-
-		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), show_headers);
-	}
-
-	void insertColumn (int col_nb, string header, GType type)
+	void addColumn (GType type, string header, YAlignmentType header_align, int col_nb)
 	{
 		IMPL
 		GtkTreeViewColumn *column = 0;
 
 		// The allignment of the column items
-		gfloat xalign = 0.0;
-		if (header.length()) {
-			if (header[0] == 'R')
-				xalign = 1.0;
-			else if (header[0] == 'C')
+		gfloat xalign = -1;
+		switch (header_align) {
+			case YAlignBegin:
+				xalign = 0.0;
+				break;
+			case YAlignCenter:
 				xalign = 0.5;
-			// else if (header[0] == 'L')
-			header = header.substr(1);
-			}
+				break;
+			case YAlignEnd:
+				xalign = 1.0;
+				break;
+			case YAlignUnchanged:
+				break;
+		}
 
+		GtkCellRenderer *renderer = 0;
 		if (type == G_TYPE_STRING) {
-			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-			g_object_set (renderer, "xalign", xalign, NULL);
-			// set the last column, the expandable one, as wrapable
-			if (col_nb == m_colsNb-1 && col_nb >= 3)
-				g_object_set (renderer, "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+			renderer = gtk_cell_renderer_text_new();
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 			             renderer, "text", col_nb, NULL);
 		}
+		else if (type == GDK_TYPE_PIXBUF) {
+			renderer = gtk_cell_renderer_pixbuf_new();
+			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
+				renderer, "pixbuf", col_nb, NULL);
+		}
 		else if (type == G_TYPE_BOOLEAN) {  // toggle button
-			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+			renderer = gtk_cell_renderer_toggle_new();
 			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
-			g_object_set (renderer, "xalign", xalign, NULL);
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
 				renderer, "active", col_nb, NULL);
 
 			g_signal_connect (G_OBJECT (renderer), "toggled",
 			                  G_CALLBACK (toggled_cb), this);
 		}
-		else if (type == GDK_TYPE_PIXBUF) {
-			GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
-			g_object_set (renderer, "xalign", xalign, NULL);
+		else if (type == YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF) {  // string, pixbuf combo
+			renderer = ygtk_cell_renderer_text_pixbuf_new();
+			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
 			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-				renderer, "pixbuf", col_nb, NULL);
+				renderer, "pixbuf", col_nb, "text", col_nb+1, NULL);
 		}
 		else
 			g_error ("YGTable: no support for column of given type");
 
+		if (renderer && xalign != -1)
+			g_object_set (renderer, "xalign", xalign, NULL);
+
 		gtk_tree_view_column_set_resizable (column, TRUE);
-		gtk_tree_view_insert_column (GTK_TREE_VIEW (getWidget()), column, col_nb);
+		gtk_tree_view_append_column (getView(), column);
 	}
 
-	void setSearchCol (int col)
+	virtual void setModel (GtkTreeModel *model)
+	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), model); }
+
+	// YGSelectionModel
+	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
 	{
-		gtk_tree_view_set_search_column (GTK_TREE_VIEW (getWidget()), col);
-	}
-
-protected:
-	inline GtkListStore *getStore()
-	{ return GTK_LIST_STORE (getModel()); }
-	inline GtkTreeModel *getModel()
-	{ return gtk_tree_view_get_model (GTK_TREE_VIEW (getWidget())); }
-
-protected:
-	/* NOTE: gtk_list_store_insert() doesn't necessarly put the row in the
-	   requested position. For instance, if the number of rows is smaller than
-	   the one requested, it just appends it. So, we must translate YCP rows
-	   numbering to the ones we set. We'll call YCP rows as ids.
-	   Besides, if we do sorting, paths will get changed. */
-
-	bool getRowOf (GtkTreeIter *iter, int id) {
-		if (!gtk_tree_model_get_iter_first (getModel(), iter))
-			return false;
-
-		int _id = -1;
-		do {
-			gtk_tree_model_get (getModel(), iter, m_colsNb, &_id, -1);
-			if (_id == id)
-				return true;
-		} while (gtk_tree_model_iter_next (getModel(), iter));
-		return false;
-	}
-
-	int getIdOf (int row) {
-		GtkTreeIter iter;
-		if (!gtk_tree_model_iter_nth_child (getModel(), &iter, NULL, row))
-			return -1;
-
-		int id;
-		gtk_tree_model_get (getModel(), &iter, m_colsNb, &id, -1);
-		return id;
-	}
-
-	void addRow (int id)
-	{
-		IMPL
-		GtkTreeIter iter;
-		gtk_list_store_append (getStore(), &iter);
-		gtk_list_store_set (getStore(), &iter, m_colsNb, id, -1);
-	}
-
-	void setItemText (string text, int id, int col)
-	{
-		IMPL
-		GtkTreeIter iter;
-		if (getRowOf (&iter, id))
-			gtk_list_store_set (getStore(), &iter, col, text.c_str(), -1);
-	}
-
-	void setItemBool (gboolean state, int id, int col)
-	{
-		IMPL
-		GtkTreeIter iter;
-		if (getRowOf (&iter, id))
-			gtk_list_store_set (getStore(), &iter, col, state, -1);
-	}
-
-	void setItemIcon (string icon, int id, int col)
-	{
-		IMPL
-		GtkTreeIter iter;
-		if (getRowOf (&iter, id)) {
-			GdkPixbuf *pixbuf;
-			if (icon[0] != '/')
-				icon = ICON_DIR + icon;
-
-			GError *error = 0;
-			pixbuf = gdk_pixbuf_new_from_file (icon.c_str(), &error);
-			if (!pixbuf)
-				y2warning ("YGTable: Could not load icon: %s.\n"
-				           "Because %s", icon.c_str(), error->message);
-
-			gtk_list_store_set (getStore(), &iter, col, pixbuf, -1);
-		}
-	}
-
-	void deleteRows()
-	{
-		IMPL
 		blockEvents();
-		gtk_list_store_clear (getStore());
-		unblockEvents();
-	}
+		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 
-	int getCurrentRow()
-	{
-		IMPL
-		GtkTreePath *path;
-		gtk_tree_view_get_cursor (GTK_TREE_VIEW(getWidget()), &path, NULL);
-		if (path == NULL)
-			return -1;
+		gtk_tree_view_expand_to_path (getView(), path);
 
-		GtkTreeIter iter;
-		gtk_tree_model_get_iter (getModel(), &iter, path);
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
+		gtk_tree_selection_select_path (selection, path);
+		gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
+		gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
 		gtk_tree_path_free (path);
-
-		int id;
-		gtk_tree_model_get (getModel(), &iter, m_colsNb, &id, -1);
-		return id;
-	}
-
-	void setCurrentRow (int id)
-	{
-		IMPL
-		blockEvents();
-		GtkTreeIter iter;
-		if (getRowOf (&iter, id)) {
-			GtkTreePath *path = gtk_tree_model_get_path (getModel(), &iter);
-			gtk_tree_view_set_cursor (GTK_TREE_VIEW (getWidget()), path, NULL, false);
-			gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (getWidget()), path, NULL,
-			                              TRUE, 0.5, 0.5);
-			gtk_tree_path_free (path);
-		}
+		gtk_widget_grab_focus (getWidget());
 		unblockEvents();
 	}
 
+	virtual void unsetFocus()
+	{
+		blockEvents();
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
+		gtk_tree_selection_unselect_all (selection);
+		unblockEvents();
+	}
+
+	virtual YItem *focusItem()
+	{
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
+		GtkTreeIter iter;
+		if (gtk_tree_selection_get_selected (selection, NULL, &iter))
+			return getItem (&iter);
+		return NULL;
+	}
+
+protected:
 	void blockEvents()
 	{
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
@@ -239,18 +157,20 @@ protected:
 		GtkTreeIter iter;
 		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
 			return;
+
 		gboolean state;
-
 		gtk_tree_model_get (getModel(), &iter, column, &state, -1);
-		gtk_list_store_set (getStore(), &iter, column, !state, -1);
+		state = !state;
+		gtk_list_store_set (GTK_LIST_STORE (getModel()), &iter, column, state, -1);
 
+		((YSelectionWidget *) m_ywidget)->selectItem (getItem (&iter), state);
 		emitEvent (YEvent::ValueChanged);
 	}
 
 	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
 	{
 		IMPL
-		pThis->emitEvent (YEvent::SelectionChanged);
+		pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
 
 	static void selected_delayed_cb (GtkTreeView *tree_view, YGTableView* pThis)
@@ -282,64 +202,90 @@ protected:
 class YGTable : public YTable, public YGTableView
 {
 public:
-	YGTable (const YWidgetOpt &opt, YGWidget *parent,
-	         vector <string> headers)
-	: YTable (opt, headers.size()),
-	  YGTableView (this, parent, opt, YCPString(""))
+	YGTable (YWidget *parent, YTableHeader *_header)
+	: YTable (NULL, _header)
+	, YGTableView (this, parent, string(), false, false)
 	{
 		IMPL
+		gtk_tree_view_set_headers_visible (getView(), TRUE);
+		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
+
 		vector <GType> types;
-		types.assign (numCols(), G_TYPE_STRING);
-		initModel (types, true);
-		for (int i = 0; i < numCols(); i++)
-			insertColumn (i, headers[i], types[i]);
-
-		setLabelVisible (false);
-
-		if (!opt.keepSorting.value())
-			YGUtils::tree_view_set_sortable (GTK_TREE_VIEW (getWidget()), 0);
-		if (numCols() >= 3)
-			gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (getWidget()), TRUE);
+		for (int i = 0; i < columns(); i++) {
+			types.push_back (GDK_TYPE_PIXBUF);
+			types.push_back (G_TYPE_STRING);
+		}
+		createModel (types);
+		for (int i = 0; i < columns(); i++)
+			addColumn (YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF,
+			           header (i), alignment (i), i*2);
+		gtk_tree_view_set_model (getView(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		if (opt.immediateMode.value())
+		if (immediateMode())
 			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 			                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		setSortable (true);
 	}
 
-	virtual void itemAdded (vector<string> elements, int index)
+	virtual void setKeepSorting (bool keepSorting)
+	{
+		setSortable (keepSorting);
+		YTable::setKeepSorting (keepSorting);
+	}
+
+	virtual void addItem (YItem *_item)
+	{
+    	YTableItem *item = dynamic_cast <YTableItem *> (_item);
+    	if (item) {
+			GtkTreeIter iter;
+			addRow (&iter, _item);
+   			for (int i = 0; i < columns(); i++)
+   				setCell (&iter, item->cell (i));
+    	}
+    	else
+    		y2error ("Can only add YTableItems to a YTable.");
+    	YTable::addItem (_item);
+    }
+
+	virtual void cellChanged (const YTableCell *cell)
+	{
+		GtkTreeIter iter;
+		if (getIter (cell->parent(), &iter))
+			setCell (&iter, cell);
+	}
+
+	void setCell (GtkTreeIter *iter, const YTableCell *cell)
+	{
+		int index = cell->column() * 2;
+   		setCellIcon (iter, index, cell->iconName());
+   		setCellLabel (iter, index+1, cell->label());
+	}
+
+	void setSortable (bool sortable)
 	{
 		IMPL
-		addRow (index);
-		for (unsigned int c = 0; c < elements.size(); c++)
-			setItemText (elements[c], index, c);
-
-		// always have one row selected
-		if (getCurrentRow() == -1)
-			setCurrentRow (index);
+		int n = 0;
+		GList *columns = gtk_tree_view_get_columns (getView());
+		for (GList *i = columns; i; i = i->next, n++) {
+			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
+			int index = (n*2)+1;
+			if (!sortable)
+				index = -1;
+			gtk_tree_view_column_set_sort_column_id (column, index);
+		}
+		g_list_free (columns);
 	}
 
-	virtual void itemsCleared()
-	{ IMPL; deleteRows(); }
-
-	virtual void cellChanged (int index, int colnum, const YCPString& text)
-	{ IMPL; setItemText (text->value(), index, colnum); }
-
-	virtual int getCurrentItem()
-	{ IMPL; return getCurrentRow(); }
-
-	virtual void setCurrentItem (int index)
-	{ IMPL; setCurrentRow (index); }
-
 	YGWIDGET_IMPL_COMMON
+	YGSELECTION_WIDGET_IMPL_CLEAR (YTable)
+	YGSELECTION_WIDGET_IMPL_SELECT (YTable)
 };
 
-YWidget *
-YGUI::createTable (YWidget *parent, YWidgetOpt & opt,
-	                 vector<string> headers)
+YTable *YGWidgetFactory::createTable (YWidget *parent, YTableHeader *header)
 {
-	return new YGTable (opt, YGWidget::get (parent), headers);
+	return new YGTable (parent, header);	
 }
 
 #include "YSelectionBox.h"
@@ -347,67 +293,28 @@ YGUI::createTable (YWidget *parent, YWidgetOpt & opt,
 class YGSelectionBox : public YSelectionBox, public YGTableView
 {
 public:
-	YGSelectionBox (const YWidgetOpt &opt, YGWidget *parent,
-	                const YCPString &label)
-	: YSelectionBox (opt, label),
-	  YGTableView (this, parent, opt, label)
+	YGSelectionBox (YWidget *parent, const string &label)
+	: YSelectionBox (NULL, label),
+	  YGTableView (this, parent, label, true, false)
 	{
-		/* we'll have to wait for 09 to get nicer to construct vectors :P */
-		vector <GType> types;
-		types.push_back (GDK_TYPE_PIXBUF);
-		types.push_back (G_TYPE_STRING);
-		initModel (types, false);
-
-		insertColumn (1, "", G_TYPE_STRING);
-		setSearchCol (1);
-		// pixbuf column will be added later, if needed
-
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		if (opt.immediateMode.value())
+		if (immediateMode())
 			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 			                  G_CALLBACK (selected_cb), (YGTableView*) this);
 		else
 			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);				
+			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);
 	}
-
-	// YSelectionBox
-	virtual int getCurrentItem()
-	{ IMPL; return getCurrentRow(); }
-
-	virtual void setCurrentItem (int index)
-	{ IMPL; setCurrentRow (index); }
-
-	// YSelectionWidget
-	virtual void itemAdded (const YCPString &str, int index, bool selected)
-	{
-		IMPL
-		addRow (index);
-
-		if (hasIcons()) {
-			if (m_colsNb == 1)  // make space for pixbufs
-				insertColumn (0, "", GDK_TYPE_PIXBUF);
-			setItemIcon (itemIcon (index)->value(), index, 0);
-		}
-		setItemText (str->value(), index, 1);
-
-		if (selected)
-			setCurrentRow (index);
-	}
-
-	virtual void deleteAllItems()
-	{ IMPL; deleteRows(); }
 
 	YGWIDGET_IMPL_COMMON
+	YGSELECTION_WIDGET_IMPL_ALL (YSelectionBox)
 };
 
-YWidget *
-YGUI::createSelectionBox (YWidget *parent, YWidgetOpt &opt,
-                          const YCPString &label)
+YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const string &label)
 {
 	IMPL
-	return new YGSelectionBox (opt, YGWidget::get (parent), label);
+	return new YGSelectionBox (parent, label);
 }
 
 #include "YMultiSelectionBox.h"
@@ -415,21 +322,19 @@ YGUI::createSelectionBox (YWidget *parent, YWidgetOpt &opt,
 class YGMultiSelectionBox : public YMultiSelectionBox, public YGTableView
 {
 public:
-	YGMultiSelectionBox (const YWidgetOpt &opt, YGWidget *parent,
-	                     const YCPString &label)
-	: YMultiSelectionBox (opt, label),
-	  YGTableView (this, parent, opt, label)
+	YGMultiSelectionBox (YWidget *parent, const string &label)
+	: YMultiSelectionBox (NULL, label),
+	  YGTableView (this, parent, label, false, false)
 	{
 		vector <GType> types;
 		types.push_back (G_TYPE_BOOLEAN);
 		types.push_back (GDK_TYPE_PIXBUF);
 		types.push_back (G_TYPE_STRING);
-		initModel (types, false);
-
-		insertColumn (0, "", G_TYPE_BOOLEAN);
-		insertColumn (2, "", G_TYPE_STRING);
-		setSearchCol (2);
-		// pixbuf column will be added later, if needed
+		createModel (types);
+		addColumn (G_TYPE_BOOLEAN, "", YAlignUnchanged, 0);
+		addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, 1);
+		addColumn (G_TYPE_STRING, "", YAlignUnchanged, 2);
+		gtk_tree_view_set_model (getView(), getModel());
 
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
@@ -439,71 +344,49 @@ public:
 	}
 
 	// YMultiSelectionBox
-	virtual int getCurrentItem()
-	{ IMPL; return getCurrentRow(); }
+    virtual void addItem (YItem *item)
+    {
+    	GtkTreeIter iter;
+		addRow (&iter, item);
+   		setCellToggle (&iter, 0, item->selected());
+   		setCellIcon   (&iter, 1, item->iconName());
+   		setCellLabel  (&iter, 2, item->label());
+    	YMultiSelectionBox::addItem (item);
+    }
 
-	virtual void setCurrentItem (int index)
-	{ IMPL; setCurrentRow (index); }
-
-	// YSelectionWidget
-	virtual void itemAdded (const YCPString &str, int index, bool selected)
+	virtual void selectItem (YItem *item, bool select)
 	{
-		IMPL
-		addRow (index);
-
-		if (hasIcons()) {
-			if (m_colsNb == 2)  // make space for pixbufs
-				insertColumn (1, "", GDK_TYPE_PIXBUF);
-			setItemIcon (itemIcon (index)->value(), index, 1);
-		}
-		setItemBool (selected, index, 0);
-		setItemText (str->value(), index, 2);
-	}
-
-	virtual void deleteAllItems()
-	{ IMPL; deleteRows(); }
-
-	// Toggle related methods follow
-	/* Returns the state of the toggle at the row "index".
-	   Pass -1 for query only. 0 and 1 to set it false or true. */
-	bool itemSelected (int id, int state)
-	{
-		IMPL
 		GtkTreeIter iter;
-		if (!getRowOf (&iter, id))
-			throw "Row doesn't exist";
-
-		if (state != -1)
-			gtk_list_store_set (getStore(), &iter, 0, state, -1);
-		gtk_tree_model_get (getModel(), &iter, 0, &state, -1);
-		return state;
-	}
-
-	virtual bool itemIsSelected (int index)
-	{
-		IMPL
-		bool state = 0;
-		try { state = itemSelected (index, -1); }
-			catch (char *str) { y2error ("%s - itemIsSelected(%d): %s - ignoring",
-			                    YMultiSelectionBox::widgetClass(), index, str); }
-		return state;
-	}
-
-	virtual void selectItem (int index)
-	{
-		IMPL
-		try { itemSelected (index, 1); }
-			catch (char *str) { y2error ("%s - selectItem(%d): %s - ignoring",
-			                    YMultiSelectionBox::widgetClass(), index, str); }
+		if (getIter (item, &iter))
+			setCellToggle (&iter, 0, select);
+		YMultiSelectionBox::selectItem (item);
 	}
 
 	virtual void deselectAllItems()
 	{
-		for (int i = 0; ; i++)
-			try { itemSelected (i, false); }
-				catch (...) { break; }
+		GtkTreeIter iter;
+		if (gtk_tree_model_get_iter_first (getModel(), &iter)) {
+			do {
+				setCellToggle (&iter, 0, false);
+			} while (gtk_tree_model_iter_next (getModel(), &iter));
+		}
+		YMultiSelectionBox::deselectAllItems();
 	}
 
+	virtual YItem *currentItem()
+	{ return focusItem(); }
+
+	virtual void setCurrentItem (YItem *item)
+	{ implFocusItem (item); }
+
+	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
+	{
+		// item->selected() doesn't apply to focus, filter them
+		if (!addingRow)
+			YGTableView::setFocusItem (iter, addingRow);
+	}
+
+	// Events
 	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                                GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
 	{
@@ -512,12 +395,64 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
+	YGSELECTION_WIDGET_IMPL_CLEAR (YMultiSelectionBox)
 };
 
-YWidget *
-YGUI::createMultiSelectionBox (YWidget *parent, YWidgetOpt &opt,
-                          const YCPString &label)
+YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent,
+                                                              const string &label)
 {
 	IMPL
-	return new YGMultiSelectionBox (opt, YGWidget::get (parent), label);
+	return new YGMultiSelectionBox (parent, label);
 }
+
+#include "YTree.h"
+
+class YGTree : public YTree, public YGTableView
+{
+public:
+	YGTree (YWidget *parent, const string &label)
+	: YTree (NULL, label)
+	, YGTableView (this, parent, label, true, true)
+	{
+		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
+		                  G_CALLBACK (activated_cb), (YGTableView*) this);
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+	}
+
+	// YTree
+	virtual void rebuildTree()
+	{
+		doDeleteAllItems();
+		for (YItemConstIterator it = itemsBegin(); it != itemsEnd(); it++)
+			doAddItem (*it);
+	}
+
+	virtual const YTreeItem *getCurrentItem() const
+	{
+		YGTree *pThis = const_cast <YGTree *> (this);
+		return (YTreeItem *) pThis->focusItem();
+	}
+
+	virtual void setCurrentItem (YTreeItem *item)
+	{ implFocusItem ((YItem *) item); }
+
+	// YGSelectionModel
+	virtual void expand (GtkTreeIter *iter)
+	{
+		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
+		gtk_tree_view_expand_to_path (getView(), path);
+		gtk_tree_path_free (path);
+	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTree)
+	YGSELECTION_WIDGET_IMPL_CLEAR (YTree)
+	YGSELECTION_WIDGET_IMPL_SELECT (YTree)
+};
+
+YTree *YGWidgetFactory::createTree (YWidget *parent, const string &label)
+{
+	return new YGTree (parent, label);
+}
+

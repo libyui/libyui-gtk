@@ -13,48 +13,48 @@
 class YGMenuButton : public YMenuButton, public YGWidget
 {
 public:
-	YGMenuButton (const YWidgetOpt &opt,
-	              YGWidget         *parent,
-	              YCPString         label)
-	:  YMenuButton (opt, label),
+	YGMenuButton (YWidget *parent, const string &label)
+	:  YMenuButton (NULL, label),
 	   YGWidget (this, parent, true, YGTK_TYPE_MENU_BUTTON, NULL)
 	{
 		IMPL
-		setLabel (label);
-	}
-
-	virtual ~YGMenuButton() {}
-
-	// YMenuButton
-	virtual void setLabel (const YCPString &label)
-	{
-		IMPL
-		string str = YGUtils::mapKBAccel (label->value_cstr());
+		string str = YGUtils::mapKBAccel (label.c_str());
 		ygtk_menu_button_set_label (YGTK_MENU_BUTTON (getWidget()), str.c_str());
-		YMenuButton::setLabel (label);
 	}
 
 	// YMenuButton
-	virtual void createMenu()
+	virtual void rebuildMenuTree()
 	{
-		GtkWidget *menu = doCreateMenu (getToplevelMenu()->itemList());
+		GtkWidget *menu = doCreateMenu (itemsBegin(), itemsEnd());
 		gtk_widget_show_all (menu);
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (getWidget()), menu);
 	}
 
-	static GtkWidget* doCreateMenu (YMenuItemList &items)
+	static GtkWidget* doCreateMenu (YItemIterator begin, YItemIterator end)
 	{
 		GtkWidget *menu = gtk_menu_new();
-		for (YMenuItemListIterator it = items.begin(); it != items.end(); it++) {
-			GtkWidget *entry;
-			string str = YGUtils::mapKBAccel ((*it)->getLabel()->value_cstr());
-			entry = gtk_menu_item_new_with_mnemonic (str.c_str());
+		for (YItemIterator it = begin; it != end; it++) {
+			GtkWidget *entry, *image = 0;
+			string str = YGUtils::mapKBAccel ((*it)->label());
+
+			if ((*it)->hasIconName()) {
+				GdkPixbuf *pixbuf = YGUtils::loadPixbuf ((*it)->iconName());
+				if (pixbuf)
+					image = gtk_image_new_from_pixbuf (pixbuf);
+			}
+
+			if (image) {
+				entry = gtk_image_menu_item_new_with_mnemonic (str.c_str());
+				gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (entry), image);
+			}
+			else
+				entry = gtk_menu_item_new_with_mnemonic (str.c_str());
 
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), entry);
 
 			if ((*it)->hasChildren())
 				gtk_menu_item_set_submenu (GTK_MENU_ITEM (entry),
-				                           doCreateMenu ((*it)->itemList()));
+					doCreateMenu ((*it)->childrenBegin(), (*it)->childrenEnd()));
 			else
 				g_signal_connect (G_OBJECT (entry), "activate",
 				                  G_CALLBACK (selected_item_cb), *it);
@@ -63,17 +63,16 @@ public:
 		return menu;
 	}
 
-	static void selected_item_cb (GtkMenuItem *menuitem, YMenuItem *yitem)
+	static void selected_item_cb (GtkMenuItem *menuitem, YItem *item)
 	{
-		YGUI::ui()->sendEvent (new YMenuEvent (yitem->getId()));
+		YGUI::ui()->sendEvent (new YMenuEvent (item));
 	}
 
 	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createMenuButton (YWidget *parent, YWidgetOpt &opt,
-                        const YCPString &label)
+YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const string &label)
 {
-	return new YGMenuButton (opt, YGWidget::get (parent), label);
+	return new YGMenuButton (parent, label);
 }
+

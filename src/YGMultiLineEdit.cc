@@ -14,19 +14,15 @@ class YGTextView : public YGScrolledWidget
 int maxChars;
 
 public:
-	YGTextView (YWidget *y_widget, YGWidget *parent, const YWidgetOpt &opt,
-	            const YCPString &label, const YCPString &text, bool editable)
-		: YGScrolledWidget (y_widget, parent, label, YD_VERT, true,
+	YGTextView (YWidget *ywidget, YWidget *parent, const string &label, bool editable)
+		: YGScrolledWidget (ywidget, parent, label, YD_VERT, true,
 		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD, NULL)
 	{
 		IMPL
-		if (!opt.isShrinkable.value())
-			setMinSizeInChars (20, 10);
+		setMinSizeInChars (20, 10);
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
 		maxChars = -1;
-		setText (text);
-
 		if (!editable)
 		{
 			gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
@@ -66,20 +62,20 @@ public:
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) text_changed_cb, this);
 	}
 
-	void setText (const YCPString &text)
+	void setText (const string &text)
 	{
 		IMPL
-		gtk_text_buffer_set_text (getBuffer(), text->value_cstr(), -1);
+		gtk_text_buffer_set_text (getBuffer(), text.c_str(), -1);
 	}
 
-	YCPString getText()
+	string getText()
 	{
 		IMPL
 		GtkTextIter start_it, end_it;
 		gtk_text_buffer_get_bounds (getBuffer(), &start_it, &end_it);
 
 		gchar* text = gtk_text_buffer_get_text (getBuffer(), &start_it, &end_it, FALSE);
-		YCPString str (text);
+		string str (text);
 		g_free (text);
 		return str;
 	}
@@ -105,31 +101,31 @@ public:
 class YGMultiLineEdit : public YMultiLineEdit, public YGTextView
 {
 public:
-	YGMultiLineEdit (const YWidgetOpt &opt, YGWidget *parent,
-	                 const YCPString &label, const YCPString &text)
-	: YMultiLineEdit (opt, label)
-	, YGTextView (this, parent, opt, label, text, true)
-	{ }
+	YGMultiLineEdit (YWidget *parent, const string &label)
+	: YMultiLineEdit (NULL, label)
+	, YGTextView (this, parent, label, true)
+	{}
 
 	// YMultiLineEdit
-	virtual void setText (const YCPString &text)
+	virtual void setValue (const string &text)
 	{ YGTextView::setText (text); }
 
-	virtual YCPString text()
+	virtual string value()
 	{ return YGTextView::getText(); }
 
-	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
-	{ YGTextView::setCharsNb (numberOfChars->asInteger()->value()); }
+	virtual void setInputMaxLength (int nb)
+	{
+		YGTextView::setCharsNb (nb);
+		YMultiLineEdit::setInputMaxLength (nb);
+	}
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YMultiLineEdit)
 };
 
-YWidget *
-YGUI::createMultiLineEdit (YWidget *parent, YWidgetOpt & opt,
-                           const YCPString & label, const YCPString & text)
+YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const string &label)
 {
-	return new YGMultiLineEdit (opt, YGWidget::get (parent), label, text);
+	return new YGMultiLineEdit (parent, label);
 }
 
 #include "YLogView.h"
@@ -137,16 +133,13 @@ YGUI::createMultiLineEdit (YWidget *parent, YWidgetOpt & opt,
 class YGLogView : public YLogView, public YGTextView
 {
 public:
-	YGLogView (const YWidgetOpt &opt, YGWidget *parent,
-	           const YCPString &label, int visibleLines, int maxLines)
-	: YLogView (opt, label, visibleLines, maxLines)
-	, YGTextView (this, parent, opt, label, YCPString(""), false)
-	{
-		setMinSizeInChars (0, visibleLines);
-	}
+	YGLogView (YWidget *parent, const string &label, int visibleLines, int maxLines)
+	: YLogView (NULL, label, visibleLines, maxLines)
+	, YGTextView (this, parent, label, false)
+	{}
 
 	// YLogView
-	virtual void setLogText (const YCPString &text)
+	virtual void displayLogText (const string &text)
 	{
 		setText (text);
 		scrollToBottom();
@@ -156,13 +149,10 @@ public:
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YLogView)
 };
 
-YWidget *
-YGUI::createLogView (YWidget *parent, YWidgetOpt &opt,
-                     const YCPString &label, int visibleLines,
-                     int maxLines)
+YLogView *YGWidgetFactory::createLogView (YWidget *parent, const string &label,
+                                          int visibleLines, int maxLines)
 {
-	return new YGLogView (opt, YGWidget::get (parent),
-	                      label, visibleLines, maxLines);
+	return new YGLogView (parent, label, visibleLines, maxLines);
 }
 
 #include "YRichText.h"
@@ -172,22 +162,22 @@ class YGPlainText : public YRichText, public YGTextView
 bool m_autoScrollDown;
 
 public:
-	YGPlainText(const YWidgetOpt &opt, YGWidget *parent, const YCPString &text)
-	: YRichText (opt, text)
-	, YGTextView (this, parent, opt, YCPString(""), text, false)
+	YGPlainText(YWidget *parent, const string &text)
+	: YRichText (NULL, text)
+	, YGTextView (this, parent, string(), false)
 	{
-		IMPL
-		m_autoScrollDown = opt.autoScrollDown.value();
+		if (shrinkable())
+			setMinSizeInChars (0, 0);
 	}
 
 	// YRichText
-	virtual void setText (const YCPString &text)
+	virtual void setValue (const string &text)
 	{
 		IMPL
 		YGTextView::setText (text);
-		if (m_autoScrollDown)
+		if (autoScrollDown())
 			scrollToBottom();
-		YRichText::setText (text);
+		YRichText::setValue (text);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -197,35 +187,31 @@ public:
 
 class YGRichText : public YRichText, public YGScrolledWidget
 {
-bool m_autoScrollDown;
-
 public:
-	YGRichText(const YWidgetOpt &opt, YGWidget *parent, const YCPString &text)
-	: YRichText (opt, text)
+	YGRichText (YWidget *parent, const string &text)
+	: YRichText (NULL, text)
 	, YGScrolledWidget (this, parent, true, ygtk_html_wrap_get_type(), NULL)
 	{
 		IMPL
-		if (!opt.isShrinkable.value())
+		if (!shrinkable())
 			setMinSizeInChars (20, 8);
-		m_autoScrollDown = opt.autoScrollDown.value();
 
 		ygtk_html_wrap_init (getWidget());
 		ygtk_html_wrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
-
-		setText (text);
+		setValue (text);
 	}
 
 	// YRichText
-	virtual void setText (const YCPString &_text)
+	virtual void setValue (const string &_text)
 	{
 		IMPL
-		string text (_text->value());
+		string text (_text);
 		YGUtils::replace (text, "&product;", 9, YUI::ui()->productName().c_str());
 
 		ygtk_html_wrap_set_text (getWidget(), text.c_str());
-		if (m_autoScrollDown)
+		if (autoScrollDown())
 			ygtk_html_wrap_scroll (getWidget(), FALSE);
-		YRichText::setText (_text);
+		YRichText::setValue (_text);
 	}
 
 	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
@@ -236,13 +222,13 @@ public:
 	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createRichText (YWidget *parent, YWidgetOpt &opt, const YCPString &text)
+YRichText *YGWidgetFactory::createRichText (YWidget *parent, const string &text,
+                                            bool plainTextMode)
 {
-	if (opt.plainTextMode.value())
-		return new YGPlainText (opt, YGWidget::get (parent), text);
+	if (plainTextMode)
+		return new YGPlainText (parent, text);
 	else
-		return new YGRichText (opt, YGWidget::get (parent), text);
+		return new YGRichText (parent, text);
 }
 
 #if 0

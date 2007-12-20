@@ -38,14 +38,14 @@ struct Ypp
 	// Entries
 	struct Package {
 		enum Type {
-			PACKAGE_TYPE, PATTERN_TYPE, LANGUAGE_TYPE, TOTAL_TYPES
+			PACKAGE_TYPE, PATTERN_TYPE, LANGUAGE_TYPE, PATCH_TYPE, TOTAL_TYPES
 		};
 
 		Type type();
 		const std::string &name();
 		const std::string &summary();
 		Node *category();
-		bool is3D();
+		bool fromCollection (Ypp::Package *package);
 
 		std::string description();
 		std::string filelist();
@@ -93,13 +93,15 @@ struct Ypp
 
 	// Query
 	struct Query {
-		Query (Package::Type type);
+		Query();
+		void setType (Package::Type type);
 		void setName (std::string name);
 		void setCategory (Ypp::Node *category);
 		void setIsInstalled (bool installed);
 		void setHasUpgrade (bool upgradable);
 		void setIsModified (bool modified);
 		void setRepositories (std::list <int> repositories);
+		void setCollection (Ypp::Package *package);
 
 		~Query();
 		struct Impl;
@@ -118,9 +120,9 @@ struct Ypp
 		Iter getIter (int index);
 
 		struct Listener {
-			virtual void entryChanged  (Iter iter, Package *package) = 0;
 			virtual void entryInserted (Iter iter, Package *package) = 0;
 			virtual void entryDeleted  (Iter iter, Package *package) = 0;
+			virtual void entryChanged  (Iter iter, Package *package) = 0;
 		};
 		void setListener (Listener *listener);
 

@@ -12,67 +12,28 @@
 
 class YGImage : public YImage, public YGWidget
 {
-	void setProps (const YWidgetOpt &opt, const YCPString &alt_text)
+public:
+	YGImage (YWidget *parent, const string &filename, bool animated)
+	: YImage (NULL, filename, animated),
+	  YGWidget (this, parent, true, YGTK_TYPE_IMAGE, NULL)
 	{
-		bool scale = opt.scaleToFit.value(), tile = opt.tiled.value();
+		IMPL
+		ygtk_image_set_from_file (YGTK_IMAGE (getWidget()), filename.c_str(), animated);
+	}
+
+	virtual void setAutoScale (bool scale)
+	{
 		YGtkImageAlign align = CENTER_IMAGE_ALIGN;
-		if (tile)
-			align = TILE_IMAGE_ALIGN;
 		if (scale)
 			align = SCALE_IMAGE_ALIGN;
-		if (scale && tile)
-			y2warning ("YImage can't be scaled and tiled at the same time");
-		ygtk_image_set_props (YGTK_IMAGE (getWidget()), align, alt_text->value_cstr());
-
-		bool zeroWidth = opt.zeroWidth.value(), zeroHeight = opt.zeroHeight.value();
-		if (zeroWidth || scale || tile)
-			setStretchable (YD_HORIZ, true);
-		if (zeroHeight || scale || tile)
-			setStretchable (YD_VERT, true);
-		gtk_widget_set_size_request (getWidget(), zeroWidth ? 1 : -1, zeroHeight ? 1 : -1);
-	}
-
-public:
-	YGImage (const YWidgetOpt &opt, YGWidget *parent,
-	         const YCPString &filename_str, const YCPString &text)
-	: YImage (opt),
-	  YGWidget (this, parent, true, YGTK_TYPE_IMAGE, NULL)
-	{
-		IMPL
-		setProps (opt, text);
-		const char *filename = filename_str->value_cstr();
-		bool animated = opt.animated.value();
-		ygtk_image_set_from_file (YGTK_IMAGE (getWidget()), filename, animated);
-	}
-
-	YGImage (const YWidgetOpt &opt, YGWidget *parent,
-	         const YCPByteblock &byteblock, const YCPString &text)
-	: YImage (opt),
-	  YGWidget (this, parent, true, YGTK_TYPE_IMAGE, NULL)
-	{
-		IMPL
-		setProps (opt, text);
-		const guint8 *data = byteblock->value();
-		long data_size = byteblock->size();
-		bool animated = opt.animated.value();
-		ygtk_image_set_from_data (YGTK_IMAGE (getWidget()), data, data_size, animated);
+		ygtk_image_set_props (YGTK_IMAGE (getWidget()), align, NULL);
 	}
 
 	YGWIDGET_IMPL_COMMON
 };
 
-YWidget *
-YGUI::createImage (YWidget *parent, YWidgetOpt &opt,
-                   YCPByteblock image_data, YCPString default_text)
+YImage *YGWidgetFactory::createImage (YWidget *parent, const string &filename, bool animated)
 {
-	IMPL
-	return new YGImage (opt, YGWidget::get (parent), image_data, default_text);
+	return new YGImage (parent, filename, animated);
 }
 
-YWidget *
-YGUI::createImage (YWidget *parent, YWidgetOpt &opt,
-                   YCPString file_name, YCPString default_text)
-{
-	IMPL
-	return new YGImage (opt, YGWidget::get (parent), file_name, default_text);
-}

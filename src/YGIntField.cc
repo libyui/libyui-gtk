@@ -4,7 +4,7 @@
 
 #include <config.h>
 #include <ycp/y2log.h>
-#include <YGUI.h>
+#include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
 
@@ -12,14 +12,13 @@
 
 class YGSpinBox : public YGLabeledWidget
 {
+	YIntField *m_yfield;
 	GtkWidget *m_spiner, *m_slider;
 
 public:
-	YGSpinBox (YWidget *y_widget, YGWidget *parent,
-	           const YWidgetOpt &opt, const YCPString &label,
-	           int minValue, int maxValue, int initialValue,
-	           bool show_slider)
-	: YGLabeledWidget (y_widget, parent, label, YD_HORIZ, true,
+	YGSpinBox (YWidget *ywidget, YWidget *parent, const string &label,
+	           int minValue, int maxValue, int initialValue, bool show_slider)
+	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ, true,
 	                   GTK_TYPE_HBOX, NULL)
 	{
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);
@@ -62,7 +61,12 @@ public:
 	GtkHScale *getSlider()
 	{ return GTK_HSCALE (m_slider); }
 
-	virtual void reportValue (int newValue) {}
+	virtual void reportValue (int value) = 0;
+
+	int doGetValue()
+	{
+		return gtk_spin_button_get_value_as_int (getSpiner());
+	}
 
 	void doSetValue (int newValue)
 	{
@@ -74,10 +78,10 @@ public:
 	// Events callbacks
 	static void spiner_changed_cb (GtkSpinButton *widget, YGSpinBox *pThis)
 	{
-		int newValue = gtk_spin_button_get_value_as_int (pThis->getSpiner());
-		pThis->reportValue (newValue);
+		int value = gtk_spin_button_get_value_as_int (pThis->getSpiner());
+		pThis->reportValue (value);
 		if (pThis->useSlider())
-			gtk_range_set_value (GTK_RANGE (pThis->getSlider()), newValue);
+			gtk_range_set_value (GTK_RANGE (pThis->getSlider()), value);
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
@@ -91,12 +95,14 @@ public:
 };
 
 #define YGSPIN_BOX_IMPL_SET_VALUE_CHAIN(ParentClass) \
-	virtual void reportValue (int newValue) {          \
-		ParentClass::setValue (newValue);                \
-	}                                                  \
-	virtual void setValue (int newValue) {             \
-		doSetValue (newValue);                           \
-		reportValue (newValue);                          \
+	virtual void reportValue (int value) {           \
+		ParentClass::setValue (value);               \
+	}                                                \
+	virtual int value() {                            \
+		return doGetValue();                         \
+	}                                                \
+	virtual void setValueInternal (int value) {      \
+		doSetValue (value);                          \
 	}
 
 #include "YIntField.h"
@@ -104,25 +110,21 @@ public:
 class YGIntField : public YIntField, public YGSpinBox
 {
 public:
-	YGIntField (const YWidgetOpt &opt, YGWidget *parent, const YCPString &label,
-	            int minValue, int maxValue, int initialValue)
-	: YIntField (opt, label, minValue, maxValue, initialValue)
-	, YGSpinBox (this, parent, opt, label, minValue, maxValue, initialValue, false)
-	{ }
+	YGIntField (YWidget *parent, const string &label, int minValue, int maxValue,
+	            int initialValue)
+	: YIntField (NULL, label, minValue, maxValue)
+	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, false)
+	{}
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YIntField)
 	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
 };
 
-YWidget *
-YGUI::createIntField (YWidget *parent, YWidgetOpt &opt,
-                                const YCPString &label,
-          int minValue, int maxValue, int initialValue)
+YIntField *YGWidgetFactory::createIntField (YWidget *parent, const string &label,
+                                            int minValue, int maxValue, int initialValue)
 {
-	IMPL
-	return new YGIntField (opt, YGWidget::get (parent), label,
-	                       minValue, maxValue, initialValue);
+	return new YGIntField (parent, label, minValue, maxValue, initialValue);
 }
 
 #include "YSlider.h"
@@ -130,23 +132,21 @@ YGUI::createIntField (YWidget *parent, YWidgetOpt &opt,
 class YGSlider : public YSlider, public YGSpinBox
 {
 public:
-	YGSlider (const YWidgetOpt &opt, YGWidget *parent, const YCPString &label,
-	          int minValue, int maxValue, int initialValue)
-	: YSlider (opt, label, minValue, maxValue, initialValue)
-	, YGSpinBox (this, parent, opt, label, minValue, maxValue, initialValue, true)
-	{ }
+	YGSlider (YWidget *parent, const string &label, int minValue, int maxValue,
+	          int initialValue)
+	: YSlider (NULL, label, minValue, maxValue)
+	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, true)
+	{}
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YSlider)
-	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YSlider)
+	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
 };
 
-YWidget *
-YGUI::createSlider (YWidget *parent, YWidgetOpt &opt,
-                                const YCPString &label,
-          int minValue, int maxValue, int initialValue)
+YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const string &label,
+                                                int minValue, int maxValue, int initialValue)
 {
 	IMPL
-	return new YGSlider (opt, YGWidget::get (parent), label,
-	                      minValue, maxValue, initialValue);
+	return new YGSlider (parent, label, minValue, maxValue, initialValue);
 }
+

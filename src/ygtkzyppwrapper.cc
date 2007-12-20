@@ -19,7 +19,6 @@
 #include "icons/pkg-remove.xpm"
 #include "icons/pkg-install-auto.xpm"
 #include "icons/pkg-remove-auto.xpm"
-#include "icons/pkg-3D.xpm"
 
 // bridge as we don't want to mix c++ class polymorphism and gobject
 struct YGtkZyppModel::PoolNotify : public Ypp::Pool::Listener {
@@ -36,8 +35,7 @@ YGtkZyppModel *model;
 struct PackageIcons {
 	GdkPixbuf *installed, *installed_upgradable, *installed_locked,
 	          *installed_upgradable_locked, *available, *available_locked,
-	          *to_install, *to_remove, *to_auto_install, *to_auto_remove,
-	          *is_3D;
+	          *to_install, *to_remove, *to_auto_install, *to_auto_remove;
 	PackageIcons() {
 		installed = gdk_pixbuf_new_from_xpm_data (pkg_installed_xpm);
 		installed_upgradable =
@@ -51,7 +49,6 @@ struct PackageIcons {
 		to_remove = gdk_pixbuf_new_from_xpm_data (pkg_remove_xpm);
 		to_auto_install = gdk_pixbuf_new_from_xpm_data (pkg_install_auto_xpm);
 		to_auto_remove = gdk_pixbuf_new_from_xpm_data (pkg_remove_auto_xpm);
-		is_3D = gdk_pixbuf_new_from_xpm_data (pkg_3D_xpm);
 	}
 	~PackageIcons() {
 		g_object_unref (G_OBJECT (installed));
@@ -64,7 +61,6 @@ struct PackageIcons {
 		g_object_unref (G_OBJECT (to_remove));
 		g_object_unref (G_OBJECT (to_auto_install));
 		g_object_unref (G_OBJECT (to_auto_remove));
-		g_object_unref (G_OBJECT (is_3D));
 	}
 };
 
@@ -115,7 +111,6 @@ static GtkTreePath *ygtk_zypp_model_get_path (GtkTreeModel *model, GtkTreeIter *
 {
 	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
 	int row = zmodel->pool->getIndex (iter->user_data);
-fprintf (stderr, "get index: %d\n", row);
 
 	GtkTreePath *path = gtk_tree_path_new();
 	gtk_tree_path_append_index (path, row);
@@ -140,13 +135,10 @@ void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter it)
 
 void ygtk_zypp_model_entry_inserted (YGtkZyppModel *model, Ypp::Pool::Iter it)
 {
-fprintf (stderr, "inserted row\n");
 	GtkTreeIter iter;
 	iter.user_data = it;
 	GtkTreePath *path = ygtk_zypp_model_get_path (GTK_TREE_MODEL (model), &iter);
-fprintf (stderr, "signal\n");
 	gtk_tree_model_row_inserted (GTK_TREE_MODEL (model), path, &iter);
-fprintf (stderr, "done\n");
 	gtk_tree_path_free (path);
 }
 
@@ -175,8 +167,6 @@ static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint col
 			return G_TYPE_STRING;
 		case YGtkZyppModel::PTR_COLUMN:
 			return G_TYPE_POINTER;
-		case YGtkZyppModel::SPECIAL_ICON_COLUMN:
-			return GDK_TYPE_PIXBUF;
 	}
 	return 0;
 }
@@ -255,14 +245,6 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			void *ptr;
 			ptr = (void *) package;
 			g_value_set_pointer (value, ptr);
-			break;
-		}
-		case YGtkZyppModel::SPECIAL_ICON_COLUMN:
-		{
-			if (package->is3D())
-				g_value_set_object (value, (GObject *) icons->is_3D);
-			else
-				g_value_set_object (value, NULL);
 			break;
 		}
 		default:

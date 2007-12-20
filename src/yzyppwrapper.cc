@@ -156,7 +156,7 @@ public:
 
 private:
 	bool resolveProblems();
-	Node *addCategory (Package::Type type, const std::string &str, Package *package);
+	Node *addCategory (Ypp::Package::Type type, const std::string &str);
 	void polishCategories (Ypp::Package::Type type);
 
 	void startTransactions();
@@ -177,8 +177,9 @@ private:
 
 struct Ypp::Package::Impl
 {
-	Impl (ZyppSelectable sel)
-	: zyppSel (sel), index (-1), availableVersions (NULL), installedVersion (NULL), is3D (false)
+	Impl (Type type, ZyppSelectable sel, Node *category)
+	: type (type), zyppSel (sel), category (category),
+	  availableVersions (NULL), installedVersion (NULL)
 	{
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
@@ -204,14 +205,12 @@ struct Ypp::Package::Impl
 	{ curStatus = zyppSel->status(); }
 
 	std::string name, summary;
-	ZyppSelectable zyppSel;
-	int index;  // used for Pools syncing
 	Type type;
+	ZyppSelectable zyppSel;
 	Ypp::Node *category;
 	GSList *availableVersions;
 	Version *installedVersion;
 	bool hasUpgrade;
-	bool is3D;
 	zypp::ui::Status curStatus;  // so we know if resolver touched it
 };
 
@@ -233,10 +232,13 @@ const std::string &Ypp::Package::name()
 		switch (impl->type) {
 			case PATTERN_TYPE:
 				ret = obj->summary();
+				break;
 			case LANGUAGE_TYPE:
 				ret = obj->description();
+				break;
 			default:
 				ret = sel->name();
+				break;
 		}
 	}
 	return ret;
@@ -274,11 +276,15 @@ std::string Ypp::Package::description()
 		ZyppPackage package = tryCastToZyppPkg (object);
 		std::string url = package->url(), license = package->license();
 		if (!url.empty())
-			text += br + _("Website: ") + url;
+			text += br + "<b>" + _("Website: ") + "</b>" + url;
 		if (!license.empty())
-			text += br + _("License: ") + license;
+			text += br + "<b>" + _("License: ") + "</b>" + license;
 	}
-	text += br + _("Size: ") + object->size().asString();
+	else if (impl->type == PATCH_TYPE) {
+		
+	}
+	if (impl->type != PATCH_TYPE)
+		text += br + "<b>" + _("Size: ") + "</b>" + object->size().asString();
 	return text;
 }
 
@@ -367,7 +373,6 @@ std::string Ypp::Package::changelog()
 
 std::string Ypp::Package::authors()
 {
-fprintf (stderr, "authors %s\n", name().c_str());
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
 	ZyppPackage package = tryCastToZyppPkg (object);
@@ -382,7 +387,6 @@ fprintf (stderr, "authors %s\n", name().c_str());
 			if (!authors.empty())
 				authors += "<br>";
 			authors += author;
-fprintf (stderr, "\t add author %s\n", author.c_str());
 		}
 		// Some packagers put Authors over the Descriptions field. This seems to be rare
 		// on, so I'm not even going to bother.
@@ -428,14 +432,53 @@ Ypp::Node *Ypp::Package::category()
 	return impl->category;
 }
 
-bool Ypp::Package::is3D()
+bool Ypp::Package::fromCollection (Ypp::Package *collection)
 {
-	return impl->is3D;
-}
+	switch (collection->type()) {
+		case Ypp::Package::PATTERN_TYPE:
+		{
+			ZyppSelectable selectable = collection->impl->zyppSel;
+			ZyppObject object = selectable->theObj();
+			ZyppPattern pattern = tryCastToZyppPattern (object);
 
+			const set <string> &packages = pattern->install_packages();
+			for (set <string>::iterator it = packages.begin();
+			     it != packages.end(); it++) {
+				if (this->impl->zyppSel->name() == *it)
+					return true;
+			}
+			break;
+		}
+		case Ypp::Package::LANGUAGE_TYPE:
+		{
+			ZyppSelectable selectable = collection->impl->zyppSel;
+			ZyppObject object = selectable->theObj();
+			ZyppLanguage language = tryCastToZyppLanguage (object);
+
+			ZyppObject pkgobj = this->impl->zyppSel->theObj();
+			const zypp::CapSet &capSet = pkgobj->dep (zypp::Dep::FRESHENS);
+			for (zypp::CapSet::const_iterator it = capSet.begin();
+			     it != capSet.end(); it++) {
+				if (it->index() == language->name())
+					return true;
+			}
+		}
+		default:
+			break;
+	}
+	return false;
+}
 
 bool Ypp::Package::isInstalled()
 {
+	if (impl->type == Ypp::Package::PATCH_TYPE) {
+		if (impl->zyppSel->hasInstalledObj()) {
+			// broken? show as available
+			if (impl->zyppSel->installedPoolItem().status().isIncomplete())
+				return false;
+		}
+	}
+
 	return impl->zyppSel->hasInstalledObj();
 }
 
@@ -703,6 +746,7 @@ struct Ypp::Query::Impl
 	Key <bool> hasUpgrade;
 	Key <bool> isModified;
 	Key <std::list <int> > onRepositories;
+	Key <Ypp::Package *> onCollection;
 
 	Impl()
 	{}
@@ -731,6 +775,8 @@ struct Ypp::Query::Impl
 				}
 			}
 		}
+		if (match && onCollection.defined)
+			match = package->fromCollection (onCollection.value);
 		if (match && category.defined) {
 			Ypp::Node *query_category = category.value;
 			Ypp::Node *pkg_category = package->category();
@@ -750,14 +796,13 @@ struct Ypp::Query::Impl
 	}
 };
 
-Ypp::Query::Query (Ypp::Package::Type type)
-{
-	impl = new Impl();
-	impl->type.define (type);
-}
+Ypp::Query::Query()
+{ impl = new Impl(); }
 Ypp::Query::~Query()
 { delete impl; }
 
+void Ypp::Query::setType (Ypp::Package::Type value)
+{ impl->type.define (value); }
 void Ypp::Query::setName (std::string value)
 { impl->name.define (YGUtils::splitString (value, ' ')); }
 void Ypp::Query::setCategory (Ypp::Node *value)
@@ -770,6 +815,8 @@ void Ypp::Query::setIsModified (bool value)
 { impl->isModified.define (value); }
 void Ypp::Query::setRepositories (std::list <int> value)
 { impl->onRepositories.define (value); }
+void Ypp::Query::setCollection (Ypp::Package *value)
+{ impl->onCollection.define (value); }
 
 //** Pool
 
@@ -783,13 +830,11 @@ Pool::Listener *listener;
 	: query (query), listener (NULL)
 	{
 		packages = buildPool (query);
-fprintf (stderr, "created pool, adding to Ypp\n");
 		ypp->impl->addPool (this);
 	}
 
 	~Impl()
 	{
-fprintf (stderr, "destroyed pool, removing from Ypp\n");
 		ypp->impl->removePool (this);
 		delete query;
 		g_slist_free (packages);
@@ -798,31 +843,24 @@ fprintf (stderr, "destroyed pool, removing from Ypp\n");
 	void packageModified (Package *package)
 	{
 		bool match = query->impl->match (package);
-		int cmp = 1;
 		GSList *i;
 		for (i = packages; i; i = i->next) {
-			Package *pkg = (Package *) i->data;
-			if (pkg->impl->index == package->impl->index)
-				cmp = 0;
-			if (pkg->impl->index >= package->impl->index)
+			if (package == i->data)
 				break;
 		}
-		if (cmp == 0) {
+		if (i) {  // is on pool
 			if (match) {  // modified
-fprintf (stderr, "pool (%d) - touched: %s\n", g_slist_length (packages), package->name().c_str());
 				if (listener)
 					listener->entryChanged ((Iter) i, package);
 			}
 			else {  // removed
-fprintf (stderr, "pool (%d) - remove: %s\n", g_slist_length (packages), package->name().c_str());
 				if (listener)
 					listener->entryDeleted ((Iter) i, package);
 				packages = g_slist_delete_link (packages, i);
 			}
 		}
-		else {
+		else {  // not on pool
 			if (match) {  // inserted
-fprintf (stderr, "pool (%d) - insert: %s\n", g_slist_length (packages), package->name().c_str());
 				if (i == NULL) {
 					packages = g_slist_append (packages, (gpointer) package);
 					i = g_slist_last (packages);
@@ -841,19 +879,17 @@ fprintf (stderr, "pool (%d) - insert: %s\n", g_slist_length (packages), package-
 private:
 	static GSList *buildPool (Query *query)  // at construction
 	{
-long time1 = time(NULL);
-fprintf (stderr, "build pool...\n");
 		GSList *pool = NULL;
-		GSList *entire_pool = ypp->impl->getPackages (query->impl->type.value);
-		int index = 0;
-		for (GSList *i = entire_pool; i; i = i->next) {
-			Package *pkg = (Package *) i->data;
-			if (query->impl->match (pkg))
-				pool = g_slist_append (pool, i->data);
-			if (pkg->impl->index == -1)
-				pkg->impl->index = index++;
+		for (int t = 0; t < Ypp::Package::TOTAL_TYPES; t++) {
+			if (!query->impl->type.is ((Ypp::Package::Type) t))
+				continue;
+			GSList *entire_pool = ypp->impl->getPackages ((Ypp::Package::Type) t);
+			for (GSList *i = entire_pool; i; i = i->next) {
+				Package *pkg = (Package *) i->data;
+				if (query->impl->match (pkg))
+					pool = g_slist_append (pool, i->data);
+			}
 		}
-fprintf (stderr, "delta time: %ld\n", time(NULL)-time1);
 		return pool;
 	}
 };
@@ -956,6 +992,8 @@ const Ypp::Disk::Partition *Ypp::Disk::getPartition (int nb)
 
 Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 {
+	if (!impl->getPackages (type))
+		return NULL;
 	return impl->categories[type]->getFirst();
 }
 
@@ -973,54 +1011,7 @@ Ypp::Node *Ypp::Node::child()
 	return NULL;
 }
 
-struct CatConversor {
-	const char *from, *to;
-};
-static const CatConversor catConversor[] = {
-	{ "Amusements/Games/3D", "Games/Action" },
-	{ "Amusements/Games/Board/Puzzle", "Games/Logic" },
-	{ "Amusements/Games/Board/Card",   "Games/Card" },
-	{ "Amusements/Games",    "Games" },
-	{ "Amusements",          "Games" },
-	{ "Applications/Publishing", "Office" },
-	{ "Applications/Internet", "Network" },
-	{ "Applications", "" },
-	{ "Development/C", "Development/Libraries/C and C++" },
-	{ "Development/Python", "Development/Libraries/Python" },
-	{ "Development/Libraries/C", "Development/Libraries/C and C++" },
-	{ "Libraries", "Development/Libraries" },
-	{ "Productivity/Multimedia/Player", "Multimedia/Sound/Players" },
-	{ "Productivity/Multimedia/Audio", "Multimedia/Sound/Players" },
-	{ "Video", "Multimedia/Video" },
-	{ "Productivity/Multimedia", "Multimedia" },
-	{ "Productivity/Graphics", "Multimedia/Graphics" },
-	{ "Productivity/Networking", "Network" },
-	{ "Productivity/Network", "Network" },
-	{ "Productivity/Office", "Office" },
-	{ "Productivity/Publishing", "Office/Publishing" },
-	{ "Productivity/Telephony", "Network/Telephony" },
-	{ "Productivity", "Utilities" },
-	{ "System/Emulators", "Emulators" },
-	{ "System/GUI", "Utilities/GUI" },
-	{ "System/Video", "Emulators" },
-	{ "System/Libraries", "Development/Libraries/C and C++/System" },
-	{ "X11/Applications/Multimedia", "Multimedia" },
-	{ "X11/GNOME/Multimedia", "Multimedia" },
-	{ "X11/Applications", "Utilities/GUI" },
-};
-#define CAT_CONVERSOR_SIZE (sizeof (catConversor)/sizeof (CatConversor))
-struct TypoConversor {
-	const char *from, *to, len;
-};
-static const TypoConversor catTypos[] = {
-	{ "Others", "Other", 6 }, { "Utilites", "Utilities", 8 },
-	{ "AOLInstantMessenge", "AOLInstantMessenger", 18 },
-	{ "Library", "Libraries", 7 }, { "Libs", "Libraries", 4 }, 
-};
-#define CAT_TYPOS_SIZE (sizeof (catTypos)/sizeof (TypoConversor))
-
-Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type,
-                                   const std::string &category_str, Package *pkg)
+Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &category_str)
 {
 	struct inner {
 		static int cmp (const char *a, const char *b)
@@ -1032,59 +1023,17 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type,
 				return -1;
 			return YGUtils::strcmp (a, b);
 		}
-
-		// Package categories guide-line don't seem to be enforced, some categories
-		// are duplicated, or don't make much sense. Let's try to cut on that.
-
-		static std::string treatCategory (const std::string &category, Package *pkg)
-		{
-			std::string ret (category);
-
-			// typos (end group only)
-			for (unsigned int c = 0; c < CAT_TYPOS_SIZE; c++) {
-				const char *from = catTypos[c].from, from_len = catTypos[c].len;
-				int ret_index = ret.length() - from_len;
-
-				if (ret_index >= 0 && ret.compare (ret_index, from_len, from, from_len) == 0) {
-					const char *to = catTypos[c].to;
-					ret.erase (ret_index);
-					ret.append (to);
-					break;
-				}
-			}
-
-			for (unsigned int c = 0; c < CAT_CONVERSOR_SIZE; c++) {
-				const char *from = catConversor[c].from;
-				unsigned int i;
-				for (i = 0; from[i] && i < ret.length(); i++)
-					if (from[i] != ret[i])
-						break;
-				if (!from[i] && (i == ret.length() || ret[i] == '/')) {
-					const char *to = catConversor[c].to;
-					ret.erase (0, i);
-					ret.insert (0, to);
-					if (c == 0 && pkg)
-						pkg->impl->is3D = true;
-					break;
-				}
-			}
-			return ret;
-		}
 	};
 
 	if (!categories[type])
 		categories[type] = new StringTree (inner::cmp, '/');
-	if (type == Package::PACKAGE_TYPE)
-		return categories[type]->add (inner::treatCategory (category_str, pkg));
-	else
-		return categories[type]->add (category_str);
+	return categories[type]->add (category_str);
 }
 
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 {
 	// some treatment on categories
-	// Put all packages under a node (as opposite to packages on a leaf) to
-	// the Other category.
+	// Packages must be on leaves. If not, create a "Other" leaf, and put it there.
 	if (type == Package::PACKAGE_TYPE) {
 		GSList *pool = ypp->impl->getPackages (type);
 		for (GSList *i = pool; i; i = i->next) {
@@ -1097,7 +1046,6 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 					pkg->impl->category = (Ypp::Node *) last->data;
 				else {
 					// must create a "Other" node
-					fprintf (stderr, "creating Other\n");
 					Ypp::Node *yN = new Ypp::Node();
 					GNode *n = g_node_new ((void *) yN);
 					yN->name = "Other";
@@ -1229,20 +1177,21 @@ bool Ypp::Impl::resolveProblems()
 
 		resolved = interface->resolveProblems (problems);
 
-		zypp::ProblemSolutionList choices;
-		for (std::list <Problem *>::iterator it = problems.begin();
-			 it != problems.end(); it++) {
-			for (int i = 0; (*it)->getSolution (i); i++) {
-				Problem::Solution *solution = (*it)->getSolution (i);
-				if (resolved && solution->apply)
-					choices.push_back ((zypp::ProblemSolution *) solution->impl);
-				delete solution;
+		if (resolved) {
+			zypp::ProblemSolutionList choices;
+			for (std::list <Problem *>::iterator it = problems.begin();
+				 it != problems.end(); it++) {
+				for (int i = 0; (*it)->getSolution (i); i++) {
+					Problem::Solution *solution = (*it)->getSolution (i);
+					if (resolved && solution->apply)
+						choices.push_back ((zypp::ProblemSolution *) solution->impl);
+					delete solution;
+				}
+				delete *it;
 			}
-			delete *it;
-		}
 
-		if (resolved)
 			zResolver->applySolutions (choices);
+		}
 		else
 			break;
 	}
@@ -1255,16 +1204,15 @@ bool Ypp::Impl::resolveProblems()
 void Ypp::Impl::packageModified (Ypp::Package *package)
 {
 	// notify listeners of package change
-	for (GSList *i = pools; i; i = i->next) {
-fprintf (stderr, "ypp: informing pool of package modified\n"); 
+	for (GSList *i = pools; i; i = i->next)
 		((Pool::Impl *) i->data)->packageModified (package);
-	}
 	if (disk)
 		disk->impl->packageModified (package);
 	if (interface)
 		interface->packageModified (package);
 
-	transactions = g_slist_append (transactions, package);
+	if (!g_slist_find (transactions, package)) /* could be a result of undo */
+		transactions = g_slist_append (transactions, package);
 	if (!inTransaction)
 		finishTransactions();
 }
@@ -1300,79 +1248,13 @@ void Ypp::Impl::finishTransactions()
 }
 
 void Ypp::Impl::addPool (Pool::Impl *pool)
-{ fprintf (stderr, "ypp: adding pool\n"); pools = g_slist_append (pools, pool); }
+{ pools = g_slist_append (pools, pool); }
 void Ypp::Impl::removePool (Pool::Impl *pool)
-{ fprintf (stderr, "ypp: removing pool\n"); pools = g_slist_remove (pools, pool); }
+{ pools = g_slist_remove (pools, pool); }
 
-#if 0
-// using auxiliary GSequence tree -- not yet shiped by Glib :X
-// in any case, a sort merge is very fast, as packages are more or less
-// sorted anyway...
 GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 {
 	if (!packages[type]) {
-		// auxiliary for efficient alphabetic sorting
-		GSequence *pool = g_sequence_new (NULL);
-		struct inner {
-			static gint compare (gconstpointer _a, gconstpointer _b, gpointer _data)
-			{
-				Package *a = (Package *) _a;
-				Package *b = (Package *) _b;
-				return YGUtils::strcmp (a->name().c_str(), b->name().c_str());
-			}
-/*				static void pool_foreach (gpointer data, gpointer _list)
-			{
-				GSList **list = (GSList **) _list;
-				*list = g_slist_append (*list, data);
-			}*/
-		};
-
-		ZyppPool::const_iterator it, end;
-		switch (type)
-		{
-			case Package::PACKAGE_TYPE:
-				it = zyppPool().byKindBegin <zypp::Package>();
-				end = zyppPool().byKindEnd <zypp::Package>();
-				break;
-			case Package::PATTERN_TYPE:
-				it = zyppPool().byKindBegin <zypp::Pattern>();
-				end = zyppPool().byKindEnd <zypp::Pattern>();
-				break;
-			case Package::LANGUAGE_TYPE:
-				it = zyppPool().byKindBegin <zypp::Language>();
-				end = zyppPool().byKindEnd <zypp::Language>();
-				break;
-			default:
-				break;
-		}
-		for (; it != end; it++)
-		{
-			Package *package = new Package (new Package::Impl (*it));
-			g_sequence_insert_sorted (pool, package, inner::compare, NULL);
-		}
-
-		// add stuff to the actual pool now
-		int index = 0;
-		for (GSequenceIter *it = g_sequence_get_begin_iter (pool);
-		     !g_sequence_iter_is_end (it); it = g_sequence_iter_next (it)) {
-			gpointer data = g_sequence_get (it);
-			Package *pkg = (Package *) data;
-			pkg->impl->index = index++;
-			pkg->impl->type = type;
-			packages[type] = g_slist_append (packages[type], data);
-		}
-
-//			g_sequence_foreach (pool, inner::pool_foreach, &);
-		g_sequence_free (pool);
-	}
-	return packages[type];
-}
-#else
-GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
-{
-	if (!packages[type]) {
-long time1 = time(NULL);
-fprintf (stderr, "creating pool of %d...\n", type);
 		GSList *pool = NULL;
 		struct inner {
 			static gint compare (gconstpointer _a, gconstpointer _b)
@@ -1397,29 +1279,50 @@ fprintf (stderr, "creating pool of %d...\n", type);
 				it = zyppPool().byKindBegin <zypp::Language>();
 				end = zyppPool().byKindEnd <zypp::Language>();
 				break;
+			case Package::PATCH_TYPE:
+				it = zyppPool().byKindBegin <zypp::Patch>();
+				end = zyppPool().byKindEnd <zypp::Patch>();
+				break;
 			default:
 				break;
 		}
 		for (; it != end; it++) {
-			Package *package = new Package (new Package::Impl (*it));
 			Ypp::Node *category = 0;
-			if (type == Package::PACKAGE_TYPE) {
-				ZyppObject object = (*it)->theObj();
-				ZyppPackage zpackage = tryCastToZyppPkg (object);
-				if (!zpackage)
-					continue;
-				category = addCategory (type, zpackage->group(), package);
-			}
-			else if (type == Package::PATTERN_TYPE) {
-				ZyppObject object = (*it)->theObj();
-				ZyppPattern pattern = tryCastToZyppPattern (object);
-				if (!pattern || !pattern->userVisible())
-					continue;
-				category = addCategory (type, pattern->category(), 0);
+			ZyppObject object = (*it)->theObj();
+			// add category and test visibility
+			switch (type) {
+				case Package::PACKAGE_TYPE:
+				{
+					ZyppPackage zpackage = tryCastToZyppPkg (object);
+					if (!zpackage)
+						continue;
+					category = addCategory (type, zpackage->group());
+					break;
+				}
+				case Package::PATTERN_TYPE:
+				{
+					ZyppPattern pattern = tryCastToZyppPattern (object);
+					if (!pattern || !pattern->userVisible())
+						continue;
+					category = addCategory (type, pattern->category());
+					break;
+				}
+				case Package::PATCH_TYPE:
+				{
+					ZyppPatch patch = tryCastToZyppPatch (object);
+					if (!patch)
+						continue;
+					if (!(*it)->hasInstalledObj())
+						if (!(*it)->hasCandidateObj() || !(*it)->candidatePoolItem().status().isNeeded())
+							continue;
+					category = addCategory (type, patch->category());
+					break;
+				}
+				default:
+					break;
 			}
 
-			package->impl->type = type;
-			package->impl->category = category;
+			Package *package = new Package (new Package::Impl (type, *it, category));
 			pool = g_slist_prepend (pool, package);
 		}
 		// its faster to prepend then reverse, as we avoid iterating for each append
@@ -1430,11 +1333,9 @@ fprintf (stderr, "creating pool of %d...\n", type);
 		packages[type] = pool;
 
 		polishCategories (type);
-fprintf (stderr, "delta time: %ld\n", time(NULL)-time1);
 	}
 	return packages[type];
 }
-#endif
 
 Ypp::Ypp()
 {

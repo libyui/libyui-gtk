@@ -25,20 +25,19 @@ libpy2gtk_la_SOURCES = \
 	YGLabel.cc \
 	YGPushButton.cc \
 	YGProgressBar.cc \
-	YGTextEntry.cc \
+	YGInputField.cc \
 	YGMultiLineEdit.cc \
 	YGIntField.cc \
 	YGRadioButton.cc \
 	YGImage.cc \
 	YGFrame.cc \
+	YGSelectionModel.cc \
 	YGComboBox.cc \
 	YGTable.cc \
-	YGTree.cc \
 	YGMenuButton.cc \
 	YGBarGraph.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
-	YGTime.cc \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkbargraph.c \
@@ -49,6 +48,9 @@ libpy2gtk_la_SOURCES = \
 	ygtkfindentry.c \
 	ygdkmngloader.c \
 	ygtkimage.c \
+	ygtkcellrenderertextpixbuf.c \
+	ygtkscrolledwindow.c \
+	ygtktogglebutton.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \
