@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   id="svg2"
+   sodipodi:version="0.32"
+   inkscape:version="0.45.1"
+   width="550"
+   height="450"
+   sodipodi:docbase="/home/rick2/Documents/yast/gtk/unstable/mockups/package-selector"
+   sodipodi:docname="christian-selector.svg"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape"
+   version="1.0">
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs5" />
+  <sodipodi:namedview
+     inkscape:window-height="729"
+     inkscape:window-width="984"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0"
+     guidetolerance="10.0"
+     gridtolerance="10.0"
+     objecttolerance="10.0"
+     borderopacity="1.0"
+     bordercolor="#666666"
+     pagecolor="#ffffff"
+     id="base"
+     inkscape:zoom="1"
+     inkscape:cx="394.83358"
+     inkscape:cy="282.70709"
+     inkscape:window-x="221"
+     inkscape:window-y="67"
+     inkscape:current-layer="svg2"
+     height="450px"
+     width="550px" />
+  <rect
+     style="fill:#e6e6e6;fill-opacity:1;stroke:none;stroke-width:1.70000005;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3462"
+     width="588"
+     height="482"
+     x="-14"
+     y="-12" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79200006;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect2159"
+     width="372"
+     height="164"
+     x="10"
+     y="276.36218" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.79200006;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3132"
+     width="358"
+     height="52"
+     x="17"
+     y="381.36218" />
+  <flowRoot
+     xml:space="preserve"
+     id="flowRoot3142"
+     transform="translate(-50,-189)"><flowRegion
+       id="flowRegion3144"><rect
+         id="rect3146"
+         width="112"
+         height="18"
+         x="76"
+         y="598.36218" /></flowRegion><flowPara
+       id="flowPara3148">2.2 (Main-OSS)</flowPara></flowRoot>  <flowRoot
+     xml:space="preserve"
+     id="flowRoot3150"
+     transform="translate(-64,-181)"><flowRegion
+       id="flowRegion3152"><rect
+         id="rect3154"
+         width="106"
+         height="20"
+         x="176"
+         y="567.36218" /></flowRegion><flowPara
+       id="flowPara3156">downgrade</flowPara></flowRoot>  <path
+     style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1.41479945;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 136.71151,405.91974 L 137.14101,425.80462 L 137.14101,425.80462 L 144.44244,417.00312 L 144.44244,417.00312 L 137.14101,425.47864 L 131.55756,420.58891 L 135.85252,425.15265"
+     id="path3164" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="313"
+     y="396.36218"
+     id="text3166"><tspan
+       sodipodi:role="line"
+       id="tspan3168"
+       x="313"
+       y="396.36218">Installed:</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="280"
+     y="420.36218"
+     id="text3170"><tspan
+       sodipodi:role="line"
+       id="tspan3172"
+       x="280"
+       y="420.36218">2.4 (Packman)</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="22"
+     y="298.36218"
+     id="text3174"><tspan
+       sodipodi:role="line"
+       id="tspan3176"
+       x="22"
+       y="298.36218">The GIMP is...</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#2bff00;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="321"
+     y="331.36218"
+     id="text3178"><tspan
+       sodipodi:role="line"
+       id="tspan3180"
+       x="321"
+       y="331.36218">uninstall</tspan></text>
+  <path
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#da2020;stroke-width:2.33824253;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 333.85208,280.98146 L 356.4939,316.7429 L 344.54405,297.54465 L 358.38072,282.86364 L 326.61928,315.99002 L 343.91511,298.29753 L 341.71383,301.30902"
+     id="path3182" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.70000005;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3184"
+     width="371.99347"
+     height="162.9935"
+     x="10.00325"
+     y="100.36545" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.65715837;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3186"
+     width="170.04285"
+     height="149.04285"
+     x="16.978577"
+     y="109.34076"
+     ry="0" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.73408329;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3188"
+     width="177.96591"
+     height="149.96591"
+     x="197.01704"
+     y="108.37921" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="25"
+     y="128.36218"
+     id="text3190"><tspan
+       sodipodi:role="line"
+       id="tspan3192"
+       x="25"
+       y="128.36218">Productivity</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#00ff00;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="51"
+     y="150.36218"
+     id="text3194"><tspan
+       sodipodi:role="line"
+       id="tspan3196"
+       x="51"
+       y="150.36218">Graphics</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#00ff00;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="207"
+     y="129.36218"
+     id="text3198"><tspan
+       sodipodi:role="line"
+       id="tspan3200"
+       x="207"
+       y="129.36218">The Gimp</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="209"
+     y="148.36218"
+     id="text3202"><tspan
+       sodipodi:role="line"
+       id="tspan3204"
+       x="209"
+       y="148.36218">GIMP Shop</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="16"
+     y="88.362183"
+     id="text3206"><tspan
+       sodipodi:role="line"
+       id="tspan3208"
+       x="16"
+       y="88.362183">Filters:</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="100"
+     y="87.362183"
+     id="text3210"><tspan
+       sodipodi:role="line"
+       id="tspan3212"
+       x="100"
+       y="87.362183">Upgrades</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="192"
+     y="88.362183"
+     id="text3214"><tspan
+       sodipodi:role="line"
+       id="tspan3216"
+       x="192"
+       y="88.362183">Packman-Repository</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="345"
+     y="87.362183"
+     id="text3218"><tspan
+       sodipodi:role="line"
+       id="tspan3220"
+       x="345"
+       y="87.362183">GIMP</tspan></text>
+  <rect
+     style="fill:#00ff00;fill-opacity:1;stroke:#000000;stroke-width:1.84761775;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3222"
+     width="101.85239"
+     height="55.852383"
+     x="265.07382"
+     y="9.4359894" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.64138579;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3224"
+     width="121.05862"
+     height="54.058613"
+     x="8.9706917"
+     y="10.33287" />
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.78103864;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3226"
+     width="115.91896"
+     height="54.918961"
+     x="141.04053"
+     y="9.40271" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="39"
+     y="42.362183"
+     id="text3228"><tspan
+       sodipodi:role="line"
+       id="tspan3230"
+       x="39"
+       y="42.362183">Packages</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="167"
+     y="41.362183"
+     id="text3232"><tspan
+       sodipodi:role="line"
+       id="tspan3234"
+       x="167"
+       y="41.362183">Patterns</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="286"
+     y="42.362183"
+     id="text3236"><tspan
+       sodipodi:role="line"
+       id="tspan3238"
+       x="286"
+       y="42.362183">Categories</tspan></text>
+  <rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.74622476;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="rect3240"
+     width="151.95378"
+     height="430.9538"
+     x="392.02313"
+     y="10.385284" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="410"
+     y="39.362183"
+     id="text3242"><tspan
+       sodipodi:role="line"
+       id="tspan3244"
+       x="410"
+       y="39.362183">Changes</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="407"
+     y="74.362183"
+     id="text3246"><tspan
+       sodipodi:role="line"
+       id="tspan3248"
+       x="407"
+       y="74.362183">- uninstall The GIMP</tspan></text>
+  <path
+     style="fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:#da2020;stroke-width:1.01152611;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 526.89184,62.8181 L 537.64774,76.90626 L 531.97103,69.34314 L 538.54408,63.55958 L 523.45592,76.60966 L 531.67225,69.63974 L 530.62653,70.82611"
+     id="path3250" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="513"
+     y="49.362183"
+     id="text3252"><tspan
+       sodipodi:role="line"
+       id="tspan3254"
+       x="513"
+       y="49.362183">undo</tspan></text>
+  <path
+     sodipodi:type="arc"
+     style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:1.70000005;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.4;stroke-opacity:1"
+     id="path3436"
+     sodipodi:cx="521.5"
+     sodipodi:cy="596.86218"
+     sodipodi:rx="65.5"
+     sodipodi:ry="21.5"
+     d="M 587 596.86218 A 65.5 21.5 0 1 1  456,596.86218 A 65.5 21.5 0 1 1  587 596.86218 z"
+     transform="matrix(0.9980833,0,0,1.3197421,-53.00044,-384.84199)" />
+  <text
+     xml:space="preserve"
+     style="font-size:12px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+     x="421"
+     y="406.36218"
+     id="text3438"><tspan
+       sodipodi:role="line"
+       id="tspan3440"
+       x="421"
+       y="406.36218">Perform Changes</tspan></text>
+  <flowRoot
+     xml:space="preserve"
+     id="flowRoot3134"
+     transform="translate(-54,-192)"><flowRegion
+       id="flowRegion3136"><rect
+         id="rect3138"
+         width="60"
+         height="18"
+         x="77"
+         y="576.36218" /></flowRegion><flowPara
+       id="flowPara3140">Versions:</flowPara></flowRoot></svg>
