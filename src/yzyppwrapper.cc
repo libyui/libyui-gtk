@@ -732,7 +732,7 @@ struct Ypp::Query::Impl
 		}
 		bool is (const T &v) const
 		{
-//			if (!defined) return true;
+			if (!defined) return true;
 			return value == v;
 		}
 		bool defined;

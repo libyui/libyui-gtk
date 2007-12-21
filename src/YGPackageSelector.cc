@@ -344,7 +344,7 @@ public:
 	{ return m_box; }
 
 	ChangesPane()
-	: m_entries (NULL)
+	: m_container (NULL), m_entries (NULL)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
 		YGUtils::setWidgetFont (heading, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_LARGE);
@@ -379,6 +379,10 @@ public:
 		Ypp::Query *query = new Ypp::Query();
 		query->setIsModified (true);
 		m_pool = new Ypp::Pool (query);
+		// initialize list -- there could already be packages modified
+		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it)) {
+			ChangesPane::entryInserted (it, m_pool->get (it));
+		}
 		m_pool->setListener (this);
 	}
 
@@ -393,7 +397,14 @@ public:
 	void setContainer (GtkWidget *container)
 	{
 		m_container = container;
-		gtk_widget_hide (m_container);
+		if (!m_entries)
+			gtk_widget_hide (m_container);
+		// ugly: signal modified for all entries to allow them to hide undo buttons
+		GList *i;
+		Ypp::Pool::Iter it;
+		for (it = m_pool->getFirst(), i = m_entries; it && i;
+		     it = m_pool->getNext (it), i = i->next)
+			((Entry *) i->data)->modified (m_pool->get (it));
 	}
 
 	virtual void entryInserted (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -402,7 +413,8 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_entries_box), entry->getWidget(), FALSE, TRUE, 0);
 		int index = m_pool->getIndex (iter);
 		m_entries = g_list_insert (m_entries, entry, index);
-		gtk_widget_show (m_container);
+		if (m_container)
+			gtk_widget_show (m_container);
 	}
 
 	virtual void entryDeleted  (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -413,7 +425,7 @@ public:
 		gtk_container_remove (GTK_CONTAINER (m_entries_box), entry->getWidget());
 		delete entry;
 		m_entries = g_list_delete_link (m_entries, i);
-		if (m_entries == NULL)
+		if (!m_entries)
 			gtk_widget_hide (m_container);
 	}
 

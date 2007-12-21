@@ -110,6 +110,8 @@ struct Ypp
 
 	// Pool
 	struct Pool {
+		// TODO: add a flag to check if the pool should be constructed at initilization
+		// e.g. it may make no sense to try to build for the ChangesPane.
 		Pool (Query *query);
 
 		typedef void * Iter;
