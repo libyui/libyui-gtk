@@ -854,7 +854,8 @@ public:
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
+		if (update_mode)
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), update_mode ? 3 : 0);
 		g_signal_connect_after (G_OBJECT (m_type), "changed",
 		                        G_CALLBACK (combo_changed_cb), this);

@@ -1,3 +1,17 @@
+2007-12-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppwrapper.cc: noticed, from another project, that we should handle
+	some special cases there on the model. I guess the views aren't using them,
+	but we better.
+
+	* src/YGPackageSelector.cc: hide Patches entry for ordinary package management
+	(sw_single doesn't init patches, so only installed were shown, which could fool
+	the user into not using the online_update).
+	Of course, we are still pooling patches for the changes pane. We need to improve
+	filtering to avoid this. We could allow for multiple instances of some Filter object
+	for a Pool, acting on them as if they were an union. But I guess I'd just
+	do that in a Field-basis.
+
 2007-12-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc (Pool): build pool even for unintialized types.
