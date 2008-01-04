@@ -1,5 +1,9 @@
 2007-01-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzyppwrapper (Query): bug fix: search broken.
+
+2007-01-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGPackageSelector.cc (ChangesPane): don't try building it at start;
 	there aren't changes for sw_single.
 
