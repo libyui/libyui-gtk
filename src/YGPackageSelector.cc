@@ -343,7 +343,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	ChangesPane()
+	ChangesPane (bool update_mode)
 	: m_container (NULL), m_entries (NULL)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
@@ -378,11 +378,10 @@ public:
 
 		Ypp::Query *query = new Ypp::Query();
 		query->setIsModified (true);
-		m_pool = new Ypp::Pool (query);
+		m_pool = new Ypp::Pool (query, !update_mode);
 		// initialize list -- there could already be packages modified
-		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it)) {
+		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it))
 			ChangesPane::entryInserted (it, m_pool->get (it));
-		}
 		m_pool->setListener (this);
 	}
 
@@ -619,7 +618,7 @@ class Filters
 			{
 				Ypp::Node *node = getActive();
 				if (node)
-					query->setCategory (node);
+					query->addCategory (node);
 			}
 		};
 
@@ -636,7 +635,7 @@ class Filters
 			{
 				m_view = new PackagesView();
 				Ypp::Query *query = new Ypp::Query();
-				query->setType (type); 
+				query->addType (type); 
 				m_view->setQuery (query);
 				m_view->setListener (this);
 
@@ -672,8 +671,9 @@ class Filters
 
 			virtual void writeQuery (Ypp::Query *query)
 			{
-				if (!m_selected.empty())
-					query->setCollection (m_selected.front());
+				for (std::list <Ypp::Package *>::const_iterator it = m_selected.begin();
+				     it != m_selected.end(); it++)
+					query->addCollection (*it);
 			}
 
 			void doAll (bool install /*or remove*/)
@@ -896,13 +896,13 @@ private:
 		// create query
 		Ypp::Query *query = new Ypp::Query();
 		if (type == Ypp::Package::PATCH_TYPE)
-			query->setType (Ypp::Package::PATCH_TYPE);
+			query->addType (Ypp::Package::PATCH_TYPE);
 		else
-			query->setType (Ypp::Package::PACKAGE_TYPE);
+			query->addType (Ypp::Package::PACKAGE_TYPE);
 
 		const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
 		if (*name)
-			query->setName (std::string (name));
+			query->addNames (name, ' ');
 
 		switch (m_statuses->getActive())
 		{
@@ -914,11 +914,8 @@ private:
 
 		m_collection->writeQuery (query);
 
-		if (selectedRepo() >= 0) {
-			std::list <int> reposQuery;
-			reposQuery.push_back (selectedRepo());
-			query->setRepositories (reposQuery);
-		}
+		if (selectedRepo() >= 0)
+			query->addRepository (selectedRepo());
 
 		m_listener->doQuery (query);
 	}
@@ -1485,7 +1482,7 @@ public:
 		m_filters = new Filters (update_mode);
 		m_details = new PackageDetails (m_filters);
 		m_disk = new DiskView();
-		m_changes = new ChangesPane();
+		m_changes = new ChangesPane (update_mode);
 		m_packages->setListener (this);
 		m_filters->setListener (this);
 

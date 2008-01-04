@@ -94,14 +94,14 @@ struct Ypp
 	// Query
 	struct Query {
 		Query();
-		void setType (Package::Type type);
-		void setName (std::string name);
-		void setCategory (Ypp::Node *category);
+		void addType (Package::Type type);
+		void addNames (std::string name, char separator = 0);
+		void addCategory (Ypp::Node *category);
+		void addCollection (Ypp::Package *package);
+		void addRepository (int repositories);
 		void setIsInstalled (bool installed);
 		void setHasUpgrade (bool upgradable);
 		void setIsModified (bool modified);
-		void setRepositories (std::list <int> repositories);
-		void setCollection (Ypp::Package *package);
 
 		~Query();
 		struct Impl;
@@ -110,9 +110,9 @@ struct Ypp
 
 	// Pool
 	struct Pool {
-		// TODO: add a flag to check if the pool should be constructed at initilization
-		// e.g. it may make no sense to try to build for the ChangesPane.
-		Pool (Query *query);
+		Pool (Query *query, bool startEmpty = false);
+		// startEmpty is an optimization when you know the pool won't have
+		// elements at creations.
 
 		typedef void * Iter;
 		Iter getFirst();

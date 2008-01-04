@@ -1,3 +1,10 @@
+2007-01-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (ChangesPane): don't try building it at start;
+	there aren't changes for sw_single.
+
+	* src/yzyppwrapper.h/cc: allow multiple matches for attributes.
+
 2007-12-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkzyppwrapper.cc: noticed, from another project, that we should handle

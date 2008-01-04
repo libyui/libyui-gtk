@@ -429,6 +429,7 @@ std::string Ypp::Package::requires()
 
 Ypp::Node *Ypp::Package::category()
 {
+fprintf (stderr, "package %s category: %s\n", name().c_str(), impl->category->name.c_str());
 	return impl->category;
 }
 
@@ -722,10 +723,8 @@ struct Ypp::Query::Impl
 	template <typename T>
 	struct Key
 	{
-		Key()
-		: defined (false)
-		{}
-		void define (T v)
+		Key() : defined (false) {}
+		void set (T v)
 		{
 			defined = true;
 			value = v;
@@ -739,14 +738,36 @@ struct Ypp::Query::Impl
 		T value;
 	};
 
-	Key <Ypp::Package::Type> type;
-	Key <std::list <std::string> > name;
-	Key <Ypp::Node *> category;
+	template <typename T>
+	struct Keys
+	{
+		Keys() : defined (false) {}
+		void add (T v)
+		{
+			defined = true;
+			values.push_back (v);
+		}
+		bool is (const T &v) const
+		{
+			if (!defined) return true;
+			typename std::list <T>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++)
+				if (*it == v)
+					return true;
+			return false;
+		}
+		bool defined;
+		std::list <T> values;
+	};
+
+	Keys <Ypp::Package::Type> types;
+	Keys <std::string> names;
+	Keys <Ypp::Node *> categories;
+	Keys <Ypp::Package *> collections;
+	Keys <int> repositories;
 	Key <bool> isInstalled;
 	Key <bool> hasUpgrade;
 	Key <bool> isModified;
-	Key <std::list <int> > onRepositories;
-	Key <Ypp::Package *> onCollection;
 
 	Impl()
 	{}
@@ -754,43 +775,50 @@ struct Ypp::Query::Impl
 	bool match (Package *package)
 	{
 		bool match = true;
-// we must avoid passing values by copy, as well as zypp calls
-		if (match && type.defined)
-			match = type.is (package->type());
+		if (match && types.defined)
+			match = types.is (package->type());
 		if (match && isInstalled.defined)
 			match = isInstalled.is (package->isInstalled());
 		if (match && hasUpgrade.defined)
 			match = hasUpgrade.is (package->hasUpgrade());
 		if (match && isModified.defined)
 			match = isModified.is (package->isModified());
-		if (match && name.defined) {
-			const std::list <std::string> &names = name.value;
+		if (match && names.defined) {
+			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
-			for (it = names.begin(); it != names.end(); it++) {
+			for (it = values.begin(); it != values.end(); it++)
 				if (!YGUtils::contains (package->name(), *it) &&
 				    !YGUtils::contains (package->summary(), *it) &&
-				    !YGUtils::contains (package->provides(), *it)) {
-					match = false;
+				    !YGUtils::contains (package->provides(), *it))
 					break;
-				}
-			}
+			match = it != values.end();
 		}
-		if (match && onCollection.defined)
-			match = package->fromCollection (onCollection.value);
-		if (match && category.defined) {
-			Ypp::Node *query_category = category.value;
+		if (match && collections.defined) {
+			const std::list <Ypp::Package *> &values = collections.values;
+			std::list <Ypp::Package *>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++)
+				if (package->fromCollection (*it))
+					break;
+			match = it != values.end();
+		}
+		if (match && categories.defined) {
 			Ypp::Node *pkg_category = package->category();
-			GNode *node = (GNode *) query_category->impl;
-			if (!g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
-				match = false;
+			const std::list <Ypp::Node *> &values = categories.values;
+			std::list <Ypp::Node *>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++) {
+				GNode *node = (GNode *) (*it)->impl;
+				if (g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
+					break;
+			}
+			match = it != values.end();
 		}
-		if (match && onRepositories.defined) {
-			const std::list <int> &repos = onRepositories.value;
+		if (match && repositories.defined) {
+			const std::list <int> &values = repositories.values;
 			std::list <int>::const_iterator it;
-			for (it = repos.begin(); it != repos.end(); it++)
+			for (it = values.begin(); it != values.end(); it++)
 				if (package->isOnRepository (*it))
 					break;
-			match = it != repos.end();
+			match = it != values.end();
 		}
 		return match;
 	}
@@ -801,22 +829,31 @@ Ypp::Query::Query()
 Ypp::Query::~Query()
 { delete impl; }
 
-void Ypp::Query::setType (Ypp::Package::Type value)
-{ impl->type.define (value); }
-void Ypp::Query::setName (std::string value)
-{ impl->name.define (YGUtils::splitString (value, ' ')); }
-void Ypp::Query::setCategory (Ypp::Node *value)
-{ impl->category.define (value); }
+void Ypp::Query::addType (Ypp::Package::Type value)
+{ impl->types.add (value); }
+void Ypp::Query::addNames (std::string value, char separator)
+{
+	if (separator) {
+		std::list <std::string> values = YGUtils::splitString (value, separator);
+		for (std::list <std::string>::const_iterator it = values.begin();
+		     it != values.end(); it++)
+			impl->names.add (*it);
+	}
+	else
+		impl->names.add (value);
+}
+void Ypp::Query::addCategory (Ypp::Node *value)
+{ impl->categories.add (value); }
+void Ypp::Query::addCollection (Ypp::Package *value)
+{ impl->collections.add (value); }
+void Ypp::Query::addRepository (int value)
+{ impl->repositories.add (value); }
 void Ypp::Query::setIsInstalled (bool value)
-{ impl->isInstalled.define (value); }
+{ impl->isInstalled.set (value); }
 void Ypp::Query::setHasUpgrade (bool value)
-{ impl->hasUpgrade.define (value); }
+{ impl->hasUpgrade.set (value); }
 void Ypp::Query::setIsModified (bool value)
-{ impl->isModified.define (value); }
-void Ypp::Query::setRepositories (std::list <int> value)
-{ impl->onRepositories.define (value); }
-void Ypp::Query::setCollection (Ypp::Package *value)
-{ impl->onCollection.define (value); }
+{ impl->isModified.set (value); }
 
 //** Pool
 
@@ -826,10 +863,11 @@ Query *query;
 GSList *packages;
 Pool::Listener *listener;
 
-	Impl (Query *query)
-	: query (query), listener (NULL)
+	Impl (Query *query, bool startEmpty)
+	: query (query), packages (NULL), listener (NULL)
 	{
-		packages = buildPool (query);
+		if (!startEmpty)
+			packages = buildPool (query);
 		ypp->impl->addPool (this);
 	}
 
@@ -881,7 +919,7 @@ private:
 	{
 		GSList *pool = NULL;
 		for (int t = 0; t < Ypp::Package::TOTAL_TYPES; t++) {
-			if (!query->impl->type.is ((Ypp::Package::Type) t))
+			if (!query->impl->types.is ((Ypp::Package::Type) t))
 				continue;
 			GSList *entire_pool = ypp->impl->getPackages ((Ypp::Package::Type) t);
 			for (GSList *i = entire_pool; i; i = i->next) {
@@ -894,8 +932,8 @@ private:
 	}
 };
 
-Ypp::Pool::Pool (Query *query)
-{ impl = new Impl (query); }
+Ypp::Pool::Pool (Query *query, bool startEmpty)
+{ impl = new Impl (query, startEmpty); }
 Ypp::Pool::~Pool()
 { delete impl; }
 
