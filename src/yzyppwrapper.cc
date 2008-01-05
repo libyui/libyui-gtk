@@ -429,7 +429,6 @@ std::string Ypp::Package::requires()
 
 Ypp::Node *Ypp::Package::category()
 {
-fprintf (stderr, "package %s category: %s\n", name().c_str(), impl->category->name.c_str());
 	return impl->category;
 }
 
