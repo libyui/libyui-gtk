@@ -792,14 +792,6 @@ struct Ypp::Query::Impl
 					break;
 			match = it != values.end();
 		}
-		if (match && collections.defined) {
-			const std::list <Ypp::Package *> &values = collections.values;
-			std::list <Ypp::Package *>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++)
-				if (package->fromCollection (*it))
-					break;
-			match = it != values.end();
-		}
 		if (match && categories.defined) {
 			Ypp::Node *pkg_category = package->category();
 			const std::list <Ypp::Node *> &values = categories.values;
@@ -816,6 +808,14 @@ struct Ypp::Query::Impl
 			std::list <int>::const_iterator it;
 			for (it = values.begin(); it != values.end(); it++)
 				if (package->isOnRepository (*it))
+					break;
+			match = it != values.end();
+		}
+		if (match && collections.defined) {
+			const std::list <Ypp::Package *> &values = collections.values;
+			std::list <Ypp::Package *>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++)
+				if (package->fromCollection (*it))
 					break;
 			match = it != values.end();
 		}
