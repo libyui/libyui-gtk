@@ -786,11 +786,12 @@ struct Ypp::Query::Impl
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
 			for (it = values.begin(); it != values.end(); it++)
-				if (YGUtils::contains (package->name(), *it) ||
-				    YGUtils::contains (package->summary(), *it) ||
-				    YGUtils::contains (package->provides(), *it))
+				if (!YGUtils::contains (package->name(), *it) &&
+				    !YGUtils::contains (package->summary(), *it) &&
+				    !YGUtils::contains (package->provides(), *it)) {
+					match = false;
 					break;
-			match = it != values.end();
+				}
 		}
 		if (match && categories.defined) {
 			Ypp::Node *pkg_category = package->category();

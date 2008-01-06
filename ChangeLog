@@ -2,6 +2,9 @@
 
 	* src/yzyppwrapper (Query): reordered query checks for performance.
 
+	* src/yzyppwrapper (Query): search was still broken it seems... This results
+	on a incohrence on the API...
+
 2007-01-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper (Query): bug fix: search broken.
