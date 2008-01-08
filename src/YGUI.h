@@ -87,13 +87,6 @@ public:
 	virtual void beep();
 	virtual YCPValue runPkgSelection (YWidget *packageSelector);
 
-	virtual YCPValue askForExistingDirectory (const YCPString &startDir,
-		const YCPString &headline);
-	virtual YCPValue askForExistingFile (const YCPString &startWith,
-		const YCPString &filter, const YCPString &headline);
-	virtual YCPValue askForSaveFileName (const YCPString &startWith,
-		const YCPString & filter, const YCPString &headline);
-
     void toggleRecordMacro();
 
     // Plays a macro, opening a dialog first to ask for the filename
@@ -237,6 +230,13 @@ class YGApplication : public YApplication
 {
 public:
 	YGApplication();
+
+	virtual std::string askForExistingDirectory (const std::string &startDir,
+		const std::string &headline);
+	virtual std::string askForExistingFile (const std::string &startWith,
+		const std::string &filter, const std::string &headline);
+	virtual std::string askForSaveFileName (const std::string &startWith,
+		const std::string &filter, const std::string &headline);
 };
 
 #endif /*YGUI_H*/

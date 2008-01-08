@@ -378,7 +378,12 @@ public:
 
 		Ypp::Query *query = new Ypp::Query();
 		query->setIsModified (true);
-		m_pool = new Ypp::Pool (query, !update_mode);
+		if (update_mode) {
+			query->addType (Ypp::Package::PATCH_TYPE);
+			m_pool = new Ypp::Pool (query);
+		}
+		else
+			m_pool = new Ypp::Pool (query, true);
 		// initialize list -- there could already be packages modified
 		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it))
 			ChangesPane::entryInserted (it, m_pool->get (it));
@@ -814,6 +819,7 @@ private:
 	Listener *m_listener;
 	guint timeout_id;
 	int m_selectedType;
+	bool m_updateMode;
 
 public:
 	GtkWidget *getCollectionWidget() { return m_collection->getWidget(); }
@@ -823,7 +829,7 @@ public:
 	GtkWidget *getTypeWidget()       { return m_type; }
 
 	Filters (bool update_mode)
-	: m_listener (NULL), timeout_id (0), m_selectedType (-1)
+	: m_listener (NULL), timeout_id (0), m_selectedType (-1), m_updateMode (update_mode)
 	{
 		m_collection = new Collections (this);
 		m_statuses = new StatusButtons (this);
@@ -851,12 +857,14 @@ public:
 		                  G_CALLBACK (combo_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
 		if (update_mode)
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), update_mode ? 3 : 0);
+		else {
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
+		}
+		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), 0);
 		g_signal_connect_after (G_OBJECT (m_type), "changed",
 		                        G_CALLBACK (combo_changed_cb), this);
 	}
@@ -884,8 +892,11 @@ private:
 	{
 		if (!m_listener) return;
 
-		Ypp::Package::Type type = (Ypp::Package::Type)
-			gtk_combo_box_get_active (GTK_COMBO_BOX (m_type));
+		Ypp::Package::Type type;
+		if (m_updateMode)
+			type = Ypp::Package::PATCH_TYPE;
+		else
+			type = (Ypp::Package::Type) gtk_combo_box_get_active (GTK_COMBO_BOX (m_type));
 
 		// adjust interface
 		if (type != m_selectedType) {
@@ -1257,18 +1268,22 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	PackageDetails (Filters *filters)
+	PackageDetails (Filters *filters, bool update_mode)
 	{
 		m_control = new PackageControl (filters);
 		m_widget = gtk_notebook_new();
 		gtk_notebook_set_tab_pos (GTK_NOTEBOOK (m_widget), GTK_POS_BOTTOM);
 		addPage (_("Status"), m_control->getWidget());
 		addPage (_("Description"), createHtmlWidget (&m_description));
-		addPage (_("File List"), createHtmlWidget (&m_filelist));
-		addPage (_("ChangeLog"), createHtmlWidget (&m_changelog));
-		addPage (_("Authors"), createHtmlWidget (&m_authors));
-		ygtk_html_wrap_connect_link_clicked (m_filelist,
-			G_CALLBACK (path_pressed_cb), NULL);
+		if (update_mode)
+			m_filelist = m_changelog = m_authors = NULL;
+		else {
+			addPage (_("File List"), createHtmlWidget (&m_filelist));
+			addPage (_("ChangeLog"), createHtmlWidget (&m_changelog));
+			addPage (_("Authors"), createHtmlWidget (&m_authors));
+			ygtk_html_wrap_connect_link_clicked (m_filelist,
+				G_CALLBACK (path_pressed_cb), NULL);
+		}
 	}
 
 	void setPackages (std::list <Ypp::Package *> packages)
@@ -1281,10 +1296,10 @@ public:
 			m_control->setPackages (packages);
 			Ypp::Package *package = packages.front();
 			if (package) {
-				setText (m_description, package->description());
-				setText (m_filelist, package->filelist());
-				setText (m_changelog, package->changelog());
-				setText (m_authors, package->authors());
+				setText (m_description, package->description(), false);
+				setText (m_filelist, package->filelist(), true);
+				setText (m_changelog, package->changelog(), true);
+				setText (m_authors, package->authors(), false);
 				if (!GTK_WIDGET_VISIBLE (m_widget)) {
 					gtk_notebook_set_current_page (GTK_NOTEBOOK (m_widget), 0);
 					gtk_widget_show (m_widget);
@@ -1325,14 +1340,17 @@ private:
 		gtk_notebook_append_page (GTK_NOTEBOOK (m_widget), content, gtk_label_new (title));
 	}
 
-	void setText (GtkWidget *rtext, const std::string &text)
+	void setText (GtkWidget *rtext, const std::string &text, bool only_availables)
 	{
+		if (!rtext) return;
+		const char *str = text.c_str();
 		if (text.empty()) {
-			const char *empty = _("<i>(only available for installed packages)</i>");
-			ygtk_html_wrap_set_text (rtext, empty);
+			if (only_availables)
+				str = _("<i>(only available for installed packages)</i>");
+			else
+				str = "--";
 		}
-		else
-			ygtk_html_wrap_set_text (rtext, text.c_str());
+		ygtk_html_wrap_set_text (rtext, str);
 		ygtk_html_wrap_scroll (rtext, TRUE);
 	}
 };
@@ -1480,7 +1498,7 @@ public:
 	{
 		m_packages = new PackagesView();
 		m_filters = new Filters (update_mode);
-		m_details = new PackageDetails (m_filters);
+		m_details = new PackageDetails (m_filters, update_mode);
 		m_disk = new DiskView();
 		m_changes = new ChangesPane (update_mode);
 		m_packages->setListener (this);

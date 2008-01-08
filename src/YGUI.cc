@@ -14,6 +14,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+static std::string askForFileOrDirectory (GtkFileChooserAction action,
+	const std::string &path, const std::string &filter, const std::string &title);
+
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 
@@ -267,112 +270,6 @@ void YGUI::internalError (const char *msg)
 	abort();	// going down
 }
 
-/* File/directory dialogs. */
-#include <sstream>
-
-static YCPValue askForFileOrDirectory (GtkFileChooserAction action,
-		const YCPString &path, const YCPString &filter_pattern,
-		const YCPString &title)
-{
-	IMPL
-	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new (title->value_cstr(),
-		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
-		GTK_RESPONSE_ACCEPT, NULL);
-	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
-
-	// Yast likes to pass the path and suggested filename as a whole. We will need to
-	// split that up for GTK+.
-	string dirpath (path->value()), filename;
-	if (!dirpath.empty()) {
-		string::size_type i;
-		// we don't support local paths
-		if (dirpath [0] != '/') {
-			filename = dirpath;
-			dirpath = "";
-		}
-		else if (!(g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR))) {
-			i = dirpath.find_last_of ("/");
-			if (i == string::npos) {
-				filename = dirpath;
-				dirpath = "";
-			}
-			else {
-				string path (dirpath);
-				dirpath = path.substr (0, i+1);
-				filename = path.substr (i+1);
-			}
-		}
-
-		// check if dirpath and filename are valid
-		if (!dirpath.empty())
-			if (!g_file_test (dirpath.c_str(), G_FILE_TEST_IS_DIR)) {
-				y2warning ("Path passed to file dialog isn't valid: '%s'", path->value_cstr());
-				dirpath = "";
-			}
-		i = filename.find ("/");
-		if (i != string::npos) {
-			y2warning ("Path passed to file dialog isn't valid: '%s'", path->value_cstr());
-			filename = "";
-		}
-	}
-
-	if (!dirpath.empty())
-		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), dirpath.c_str());
-	if (!filename.empty())
-		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), filename.c_str());
-
-	string filter_str (filter_pattern->value());
-	if (filter_str != "" && filter_str != "*") {
-		GtkFileFilter *filter = gtk_file_filter_new();
-		gtk_file_filter_set_name (filter, filter_str.c_str());
-		// cut filter_pattern into chuncks like GTK likes
-		std::istringstream stream (filter_str);
-		while (!stream.eof()) {
-			string str;
-			stream >> str;
-			if (!str.empty() && str [str.size()-1] == ',')
-				str.erase (str.size()-1);
-			gtk_file_filter_add_pattern (filter, str.c_str());
-		}
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), filter);
-	}
-
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		YCPString ret (filename);
-		g_free (filename);
-
-		gtk_widget_destroy (dialog);
-		return ret;
-	}
-	gtk_widget_destroy (dialog);
-	return YCPVoid();
-}
-
-YCPValue YGUI::askForExistingDirectory (const YCPString &path,
-                                        const YCPString &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
-	                              YCPString (""), title);
-}
-
-YCPValue YGUI::askForExistingFile (const YCPString &path,
-		const YCPString &filter, const YCPString &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
-}
-
-YCPValue YGUI::askForSaveFileName (const YCPString &path,
-		const YCPString &filter, const YCPString &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
-}
-
 gboolean YGUI::busy_timeout_cb (gpointer data)
 {
 	YGUI *pThis = (YGUI *) data;
@@ -481,15 +378,13 @@ void YGUI::makeScreenShot (string filename)
 		}
 		y2debug ("screenshot: %s", filename.c_str());
 
-		YCPValue ret = askForSaveFileName (YCPString (filename.c_str()),
-		                                   YCPString ("*.png"),
-		                                   YCPString ("Save screenshot to"));
-		if (!ret->isString()) {  // user dismissed the dialog
+		filename = askForFileOrDirectory (
+			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", "Save screenshot to");
+		if (filename.empty()) {  // user dismissed the dialog
 			y2debug ("Save screen shot canceled by user");
 			goto makeScreenShot_ret;
 		}
 
-		filename = ret->asString()->value();
 		screenShotNb.erase (baseName);
 		screenShotNb[baseName] = nb + 1;
 	}
@@ -561,42 +456,35 @@ void YGUI::toggleRecordMacro()
 		gtk_widget_destroy (dialog);
 	}
 	else {
-		YCPValue ret = askForSaveFileName (YCPString (DEFAULT_MACRO_FILE_NAME),
-		                                   YCPString ("*.ycp"),
-		                                   YCPString ("Select Macro File to Record to"));
-		if (ret->isString()) {
-			YCPString filename = ret->asString();
-			recordMacro (filename->value_cstr());
-		}
+		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
+		if (!filename.empty())
+			recordMacro (filename);
 	}
 }
 
 void YGUI::askPlayMacro()
 {
-	YCPValue ret = askForExistingFile (YCPString (DEFAULT_MACRO_FILE_NAME),
-		YCPString ("*.ycp"), YCPString ("Select Macro File to Play"));
-
-	if (ret->isString()) {
+	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
+		DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Play");
+	if (!filename.empty()) {
 		busyCursor();
-		YCPString filename = ret->asString();
-
-		playMacro (filename->value_cstr());
+		playMacro (filename);
 		sendEvent (new YEvent());  // flush
 	}
 }
 
 void YGUI::askSaveLogs()
 {
-	YCPValue file = askForSaveFileName (YCPString ("/tmp/y2logs.tgz"),
-		YCPString ("*.tgz *.tar.gz"), YCPString ("Save y2logs to..."));
-
-	if (file->isString()) {
+	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", "Save y2logs to...");
+	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
-		command += " '" + file->asString()->value() + "'";
+		command += " '" + filename + "'";
 	    y2milestone ("Saving y2logs: %s", command.c_str());
 	    int ret = system (command.c_str());
 		if (ret == 0)
-			y2milestone ("y2logs saved to %s", file->asString()->value_cstr());
+			y2milestone ("y2logs saved to %s", filename.c_str());
 		else {
 			char *error = g_strdup_printf (
 				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
@@ -608,9 +496,95 @@ void YGUI::askSaveLogs()
 	}
 }
 
+//** YGApplication
+
 YGApplication::YGApplication()
 {
 	setIconBasePath (ICON_DIR);
+}
+
+/* File/directory dialogs. */
+#include <sstream>
+
+std::string askForFileOrDirectory (GtkFileChooserAction action,
+	const std::string &path, const std::string &filter, const std::string &title)
+{
+	IMPL
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new (title.c_str(),
+		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
+		GTK_RESPONSE_ACCEPT, NULL);
+	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
+
+	// filepath can be a dir or a file path, split that up
+	string dirname, filename;
+	if (!path.empty()) {
+		if (path[0] != '/')
+			y2warning ("FileDialog: Relative paths are unsupported: '%s'", path.c_str());
+		else if (!g_file_test (path.c_str(), G_FILE_TEST_EXISTS))
+			y2warning ("FileDialog: Path doesn't exist: '%s'", path.c_str());
+		else if (g_file_test (path.c_str(), G_FILE_TEST_IS_DIR))
+			dirname = path;
+		else {  // its a file
+			string::size_type i = path.find_last_of ("/");
+			if (i != string::npos) {
+				dirname = path.substr (0, i+1);
+				filename = path.substr (i+1);
+			}
+		}
+	}
+
+	if (!dirname.empty())
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), dirname.c_str());
+	if (!filename.empty())
+		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), filename.c_str());
+
+	if (!filter.empty() && filter != "*") {
+		GtkFileFilter *gtk_filter = gtk_file_filter_new();
+		gtk_file_filter_set_name (gtk_filter, filter.c_str());
+		// cut filter_pattern into chuncks like GTK likes
+		std::istringstream stream (filter);
+		while (!stream.eof()) {
+			string str;
+			stream >> str;
+			if (!str.empty() && str [str.size()-1] == ',')
+				str.erase (str.size()-1);
+			gtk_file_filter_add_pattern (gtk_filter, str.c_str());
+		}
+		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), gtk_filter);
+	}
+
+	std::string ret;
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		ret = filename;
+		g_free (filename);
+	}
+	gtk_widget_destroy (dialog);
+	return ret;
+}
+
+std::string YGApplication::askForExistingDirectory (
+	const std::string &path, const std::string &title)
+{
+	IMPL
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
+	                              "", title);
+}
+
+std::string YGApplication::askForExistingFile (
+	const std::string &path, const std::string &filter, const std::string &title)
+{
+	IMPL
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
+}
+
+std::string YGApplication::askForSaveFileName (
+	const std::string &path, const std::string &filter, const std::string &title)
+{
+	IMPL
+	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
 YWidgetFactory *YGUI::createWidgetFactory()

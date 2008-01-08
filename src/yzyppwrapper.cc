@@ -248,7 +248,7 @@ const std::string &Ypp::Package::summary()
 {
 	std::string &ret = impl->summary;
 	if (ret.empty()) {
-		if (impl->type == PACKAGE_TYPE)
+		if (impl->type == PACKAGE_TYPE || impl->type == PATCH_TYPE)
 			ret = impl->zyppSel->theObj()->summary();
 	}
 	return ret;
@@ -263,15 +263,9 @@ std::string Ypp::Package::description()
 		const char *header = "<!-- DT:Rich -->", header_len = 16;
 		if (!text.compare (0, header_len, header, header_len))
 			text.erase (0, header_len);
-		else {
+		else
 			// add breakline for every double one...
 			YGUtils::replace (text, "\n\n", 2, "<br>");
-/*			std::string::size_type i = 0;
-			while ((i = text.find ("\n\n", i)) < std::string::npos) {
-				text.erase (i, 2);  // remove it, so we don't trip on it again
-				text.insert (i, "<br>");
-			}*/
-		}
 
 		ZyppPackage package = tryCastToZyppPkg (object);
 		std::string url = package->url(), license = package->license();
@@ -281,7 +275,9 @@ std::string Ypp::Package::description()
 			text += br + "<b>" + _("License: ") + "</b>" + license;
 	}
 	else if (impl->type == PATCH_TYPE) {
-		
+		ZyppPatch patch = tryCastToZyppPatch (object);
+		if (patch->reboot_needed())
+			text += br + br + "<b>" + "Reboot needed!" + "</b>";
 	}
 	if (impl->type != PATCH_TYPE)
 		text += br + "<b>" + _("Size: ") + "</b>" + object->size().asString();
