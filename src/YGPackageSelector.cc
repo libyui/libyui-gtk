@@ -750,37 +750,42 @@ class Filters
 
 	class StatusButtons
 	{
+	public:
+		enum Status { AVAILABLE, UPGRADE, INSTALLED, ALL };
+
+	private:
 		GtkWidget *m_box;
 		Filters *m_filters;
-		int m_selectedStatus;
+		Status m_selected;
+		bool m_updateMode;
 
 	public:
 		GtkWidget *getWidget()
 		{ return m_box; }
 
-		StatusButtons (Filters *filters)
-		: m_filters (filters), m_selectedStatus (0)
+		StatusButtons (Filters *filters, bool updateMode)
+		: m_filters (filters), m_selected (AVAILABLE), m_updateMode (updateMode)
 		{
 			m_box = gtk_hbox_new (FALSE, 6);
-			GtkWidget *homo_box = gtk_hbox_new (TRUE, 6);  // same size box
-			gtk_box_pack_start (GTK_BOX (m_box), homo_box, TRUE, TRUE, 0);
 
 			GtkWidget *button;
 			GSList *group;
 			button = createButton ("Available", pkg_available_xpm, NULL);
 			group = ygtk_toggle_button_get_group (YGTK_TOGGLE_BUTTON (button));
-			gtk_box_pack_start (GTK_BOX (homo_box), button, TRUE, TRUE, 0);
-			button = createButton ("Upgrades", pkg_installed_upgradable_xpm, group);
-			gtk_box_pack_start (GTK_BOX (homo_box), button, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
+			if (!updateMode) {
+				button = createButton ("Upgrades", pkg_installed_upgradable_xpm, group);
+				gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
+			}
 			button = createButton ("Installed", pkg_installed_xpm, group);
-			gtk_box_pack_start (GTK_BOX (homo_box), button, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			button = createButton ("All", 0, group);
 			gtk_box_pack_start (GTK_BOX (m_box), button, FALSE, TRUE, 0);
 		}
 
-		int getActive()
+		Status getActive()
 		{
-			return m_selectedStatus;
+			return m_selected;
 		}
 
 		GtkWidget *createButton (const char *label, const char **xpm, GSList *group)
@@ -800,7 +805,9 @@ class Filters
 
 		static void status_toggled_cb (GtkToggleButton *toggle, gint nb, StatusButtons *pThis)
 		{
-			pThis->m_selectedStatus = nb;
+			pThis->m_selected = (Status) nb;
+			if (pThis->m_updateMode && nb >= 1)
+				pThis->m_selected = (Status) (nb+1);
 			pThis->m_filters->signalChanged();
 		}
 	};
@@ -832,7 +839,7 @@ public:
 	: m_listener (NULL), timeout_id (0), m_selectedType (-1), m_updateMode (update_mode)
 	{
 		m_collection = new Collections (this);
-		m_statuses = new StatusButtons (this);
+		m_statuses = new StatusButtons (this, update_mode);
 
 		m_name = ygtk_find_entry_new();
 		gtk_widget_set_tooltip_markup (m_name,
@@ -917,10 +924,10 @@ private:
 
 		switch (m_statuses->getActive())
 		{
-			case 0: query->setIsInstalled (false); break;
-			case 1: query->setHasUpgrade (true); break;
-			case 2: query->setIsInstalled (true); break;
-			case 3: default: break;
+			case StatusButtons::AVAILABLE: query->setIsInstalled (false); break;
+			case StatusButtons::UPGRADE:   query->setHasUpgrade (true); break;
+			case StatusButtons::INSTALLED: query->setIsInstalled (true); break;
+			case StatusButtons::ALL: break;
 		}
 
 		m_collection->writeQuery (query);
