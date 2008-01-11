@@ -25,7 +25,7 @@ public:
 	virtual void setValue (int value)
 	{
 		IMPL
-		float fraction = ((float) value) / maxValue();
+		float fraction = MIN (((float) value) / maxValue(), 1);
 		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()), fraction);
         YProgressBar::setValue (value);
 	}
