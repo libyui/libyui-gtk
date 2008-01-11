@@ -302,10 +302,16 @@ class ChangesPane : public Ypp::Pool::Listener
 		void modified (Ypp::Package *package)
 		{
 			std::string text;
-			if (package->isInstalled() && package->toInstall())
-				text = "upgrade";
-			else if (package->toInstall())
-				text = "install";
+			if (package->toInstall()) {
+				if (package->isInstalled())
+					text = "upgrade";
+				else {
+					if (package->type() == Ypp::Package::PATCH_TYPE)
+						text = "patch";
+					else
+						text = "install";
+				}
+			}
 			else
 				text = "remove";
 			text += " " + package->name();
@@ -924,10 +930,21 @@ private:
 
 		switch (m_statuses->getActive())
 		{
-			case StatusButtons::AVAILABLE: query->setIsInstalled (false); break;
-			case StatusButtons::UPGRADE:   query->setHasUpgrade (true); break;
-			case StatusButtons::INSTALLED: query->setIsInstalled (true); break;
-			case StatusButtons::ALL: break;
+			case StatusButtons::AVAILABLE:
+				if (m_updateMode)
+					// special pane for patches upgrades makes little sense, so
+					// we instead list them together with availables
+					query->setHasUpgrade (true);
+				query->setIsInstalled (false);
+				break;
+			case StatusButtons::UPGRADE:
+				query->setHasUpgrade (true);
+				break;
+			case StatusButtons::INSTALLED:
+				query->setIsInstalled (true);
+				break;
+			case StatusButtons::ALL:
+				break;
 		}
 
 		m_collection->writeQuery (query);
@@ -1767,6 +1784,13 @@ protected:
 				}
 				return FALSE;
 			}
+			static void truncate (std::string &str, int size)
+			{
+				if (str.size() > size) {
+					str.erase (size-3);
+					str += "...";
+				}
+			}
 		};
 
 		// model
@@ -1774,6 +1798,7 @@ protected:
 			G_TYPE_STRING, G_TYPE_INT, G_TYPE_POINTER, G_TYPE_STRING);
 		for (std::list <Ypp::Problem *>::iterator it = problems.begin();
 		     it != problems.end(); it++) {
+			inner::truncate ((*it)->details, 800);
 			GtkTreeIter problem_iter;
 			gtk_tree_store_append (store, &problem_iter, NULL);
 			gtk_tree_store_set (store, &problem_iter, SHOW_TOGGLE_COL, FALSE,
@@ -1783,6 +1808,7 @@ protected:
 
 			for (int i = 0; (*it)->getSolution (i); i++) {
 				Ypp::Problem::Solution *solution = (*it)->getSolution (i);
+				inner::truncate (solution->details, 800);
 				GtkTreeIter solution_iter;
 				const gchar *tooltip_text = solution->details.c_str();
 				if (solution->details.empty())
@@ -1823,6 +1849,7 @@ protected:
 			"visible", SHOW_TOGGLE_COL, "active", ACTIVE_TOGGLE_COL, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 		renderer = gtk_cell_renderer_text_new();
+		g_object_set (G_OBJECT (renderer), "wrap-width", 400, NULL);
 		column = gtk_tree_view_column_new_with_attributes ("", renderer,
 			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);

@@ -12,6 +12,17 @@
 	* src/YGUtils.cc: got rid of strcmp and contains. To use library
 	equivalents.
 
+	* src/yzyppwrapper.cc (Query): status attributes are inclusive
+	(somewhat inconsistent with the rest of the fields... -- we may want
+	to unit them in one field, or add proper query conditions).
+
+	* src/YGPackageSelector.cc (Filters): show upgrades also on Available
+	for patches (another inconsistency -- with regard to the packager -- but
+	should be intuitive).
+
+	* src/YGPackageSelector (resolver stuff): polishing with regard to long
+	strings.
+
 2007-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h/cc: keep up with libyui: file dialogs moved to YApplication.

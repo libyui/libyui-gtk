@@ -774,10 +774,15 @@ struct Ypp::Query::Impl
 		bool match = true;
 		if (match && types.defined)
 			match = types.is (package->type());
-		if (match && isInstalled.defined)
-			match = isInstalled.is (package->isInstalled());
-		if (match && hasUpgrade.defined)
-			match = hasUpgrade.is (package->hasUpgrade());
+		if (match && (isInstalled.defined || hasUpgrade.defined)) {
+			// only one of the specified status must match
+			bool status_match = false;
+			if (isInstalled.defined)
+				status_match = isInstalled.is (package->isInstalled());
+			if (!status_match && hasUpgrade.defined)
+				status_match = hasUpgrade.is (package->hasUpgrade());
+			match = status_match;
+		}
 		if (match && isModified.defined)
 			match = isModified.is (package->isModified());
 		if (match && names.defined) {

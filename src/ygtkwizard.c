@@ -292,7 +292,7 @@ static void ygtk_wizard_popup_help (YGtkWizard *wizard)
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
 		                           wizard->m_help);
 	}
-	gtk_widget_show (wizard->m_help_dialog);
+	gtk_window_present (GTK_WINDOW (wizard->m_help_dialog));
 }
 
 static void help_button_clicked_cb (GtkWidget *button, YGtkWizard *wizard)
