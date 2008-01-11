@@ -378,10 +378,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 static void ygtk_wizard_realize (GtkWidget *widget)
 {
-	YGtkWizard *wizard = YGTK_WIZARD (widget);
-
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->realize (widget);
-
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
 	gtk_widget_grab_default (wizard->m_next_button);
 	gtk_widget_grab_focus (wizard->m_next_button);
 }
@@ -395,6 +393,8 @@ static void destroy_hash (GHashTable **hash)
 
 static void ygtk_wizard_destroy (GtkObject *object)
 {
+	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
+
 	YGtkWizard *wizard = YGTK_WIZARD (object);
 
 	destroy_hash (&wizard->menu_ids);
@@ -419,15 +419,12 @@ static void ygtk_wizard_destroy (GtkObject *object)
 	DESTROY_WIDGET (wizard->m_menu)
 	DESTROY_WIDGET (wizard->m_steps)
 	DESTROY_WIDGET (wizard->m_title)
-	DESTROY_WIDGET (wizard->m_pane)
 #undef DESTROY_WIDGET
 
 	if (wizard->m_help_dialog) {
 		gtk_widget_destroy (wizard->m_help_dialog);
 		wizard->m_help_dialog = NULL;
 	}
-
-	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
 }
 
 GtkWidget *ygtk_wizard_new (void)
@@ -493,6 +490,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 	wizard->m_pane = pane;
 	if (child)
 		gtk_container_add (GTK_CONTAINER (wizard), child);
+	gtk_paned_set_position (GTK_PANED (pane), 180);
 }
 
 static void ygtk_wizard_add_child (GtkContainer *container, GtkWidget *child)
@@ -509,7 +507,7 @@ static void ygtk_wizard_remove_child (GtkContainer *container, GtkWidget *child)
 {
 	YGtkWizard *wizard = YGTK_WIZARD (container);
 	wizard->m_child = NULL;
-	if (wizard->m_pane)
+	if (wizard->m_pane && child != wizard->m_pane)
 		gtk_container_remove (GTK_CONTAINER (wizard->m_pane), child);
 	else
 		GTK_CONTAINER_CLASS (ygtk_wizard_parent_class)->remove (container, child);
@@ -1126,39 +1124,60 @@ static void ygtk_wizard_forall (GtkContainer *container, gboolean include_intern
 		(*callback) (containee, callback_data);
 }
 
-/* Accessibility support */
+//** Accessibility hooks
 
 static gint ygtk_wizard_accessible_get_n_children (AtkObject *accessible)
 {
-	return 1 /* content*/ + 5 /* buttons*/;
+	GtkWidget *widget = GTK_ACCESSIBLE (accessible)->widget;
+	if (!widget)
+		return 0;
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
+	int nb = 1 /*content*/ + 5 /* buttons */;
+	if (wizard->m_tree_view)
+		nb++;  /* side navigator */
+	return nb;
 }
 
-static AtkObject *ygtk_wizard_accessible_ref_child (AtkObject *accessible,
-                                                    gint       index)
+static AtkObject *ygtk_wizard_accessible_ref_child (AtkObject *accessible, gint index)
 {
 	GtkWidget *widget = GTK_ACCESSIBLE (accessible)->widget;
 	if (!widget)
 		return NULL;
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
-
-	if (index == 0) {
-		GtkWidget *child = GTK_BIN (wizard)->child;
-		if (child)
-			return g_object_ref (G_OBJECT (child));
-		return NULL;
+	GtkWidget *child = 0;
+	if (wizard->m_tree_view) {
+		if (index == 0)
+			child = wizard->m_tree_view;
+		index--;
+	}
+	switch (index) {
+		case 0:
+			child = wizard->m_child;
+			break;
+		case 1:
+			child = wizard->m_help_button;
+			break;
+		case 2:
+			child = wizard->m_abort_button;
+			break;
+		case 3:
+			child = wizard->m_back_button;
+			break;
+		case 4:
+			child = wizard->m_next_button;
+			break;
+		case 5:
+			if (GTK_WIDGET_VISIBLE (wizard->m_release_notes_button))
+				child = wizard->m_release_notes_button;
+			break;
+		default:
+			break;
 	}
 
-	if (index >= 1 && index <= 5) {
-		GtkWidget *buttons[5] = { wizard->m_back_button, wizard->m_abort_button,
-		                          wizard->m_next_button, wizard->m_help_button,
-		                          wizard->m_release_notes_button };
-		GtkWidget *button = buttons [index-1];
-
-		if (GTK_WIDGET_VISIBLE (button))
-			return g_object_ref (G_OBJECT (button));
-		return NULL;
+	if (child) {
+		AtkObject *obj = gtk_widget_get_accessible (child);
+		return g_object_ref (obj);
 	}
-	// out of range
 	return NULL;
 }
 
@@ -1172,78 +1191,53 @@ static GType ygtk_wizard_accessible_get_type (void)
 {
 	static GType type = 0;
 	if (!type) {
+		GType derived_type = g_type_parent (YGTK_TYPE_WIZARD);
 		AtkObjectFactory *factory;
-		GType derived_type;
-		GTypeQuery query;
 		GType derived_atk_type;
-
-		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
-		factory = atk_registry_get_factory (atk_get_default_registry (), derived_type);
+		GTypeQuery query;
+		factory = atk_registry_get_factory (atk_get_default_registry(), derived_type);
 		derived_atk_type = atk_object_factory_get_accessible_type (factory);
 		g_type_query (derived_atk_type, &query);
-
-		GTypeInfo type_info = { 0 };
-		type_info.class_size = query.class_size;
-		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_class_init;
-		type_info.instance_size = query.instance_size;
-
-		type = g_type_register_static (derived_atk_type, "YGtkWizardAccessible",
-		                               &type_info, 0);
-
-/*
-		type = g_type_register_static_simple (derived_atk_type,
-			"YGtkWizardAccessible", query.class_size,
-			(GClassInitFunc) ygtk_wizard_accessible_class_init,
-			query.instance_size, NULL, 0);
-*/
+		type = g_type_register_static_simple (derived_atk_type, 
+			"YGtkWizardAccessible",  query.class_size,
+			(GClassInitFunc) ygtk_wizard_accessible_class_init, query.instance_size,
+			NULL, 0);
 	}
 	return type;
 }
 
 static AtkObject *ygtk_wizard_accessible_new (GObject *obj)
 {
-	AtkObject *accessible;
 	g_return_val_if_fail (YGTK_IS_WIZARD (obj), NULL);
-
-	accessible = g_object_new (ygtk_wizard_accessible_get_type (), NULL); 
+	AtkObject *accessible = g_object_new (ygtk_wizard_accessible_get_type (), NULL); 
 	atk_object_initialize (accessible, obj);
 	return accessible;
 }
 
-static GType ygtk_wizard_accessible_factory_get_accessible_type()
+static GType ygtk_wizard_accessible_factory_get_accessible_type (void)
 {
-	return ygtk_wizard_accessible_get_type ();
+	return ygtk_wizard_accessible_get_type();
 }
 
 static AtkObject*ygtk_wizard_accessible_factory_create_accessible (GObject *obj)
 {
-	return ygtk_wizard_accessible_new (obj);
+  return ygtk_wizard_accessible_new (obj);
 }
 
 static void ygtk_wizard_accessible_factory_class_init (AtkObjectFactoryClass *class)
 {
-	class->create_accessible = ygtk_wizard_accessible_factory_create_accessible;
-	class->get_accessible_type = ygtk_wizard_accessible_factory_get_accessible_type;
+  class->create_accessible = ygtk_wizard_accessible_factory_create_accessible;
+  class->get_accessible_type = ygtk_wizard_accessible_factory_get_accessible_type;
 }
 
 static GType ygtk_wizard_accessible_factory_get_type (void)
 {
 	static GType type = 0;
-	if (!type) {
-		GTypeInfo type_info = { 0 };
-		type_info.class_size = sizeof (AtkObjectFactoryClass);
-		type_info.class_init = (GClassInitFunc) ygtk_wizard_accessible_factory_class_init;
-		type_info.instance_size = sizeof (AtkObjectFactory);
-
-		type = g_type_register_static (ATK_TYPE_OBJECT_FACTORY,
-			"YGtkWizardAccessibleFactory", &type_info, 0);
-
-/*
+	if (!type)  {
 		type = g_type_register_static_simple (ATK_TYPE_OBJECT_FACTORY, 
 			"YGtkWizardAccessibleFactory", sizeof (AtkObjectFactoryClass),
 			(GClassInitFunc) ygtk_wizard_accessible_factory_class_init,
 			sizeof (AtkObjectFactory), NULL, 0);
-*/
 	}
 	return type;
 }
@@ -1251,21 +1245,18 @@ static GType ygtk_wizard_accessible_factory_get_type (void)
 static AtkObject *ygtk_wizard_get_accessible (GtkWidget *widget)
 {
 	static gboolean first_time = TRUE;
-	if (first_time) {
+	if (first_time)  {
+		GType derived_type = g_type_parent (YGTK_TYPE_WIZARD);
+		AtkRegistry *registry = atk_get_default_registry();
 		AtkObjectFactory *factory;
-		AtkRegistry *registry;
-		GType derived_type; 
 		GType derived_atk_type; 
-
-		derived_type = g_type_parent (YGTK_TYPE_WIZARD);
-		registry = atk_get_default_registry ();
 		factory = atk_registry_get_factory (registry, derived_type);
 		derived_atk_type = atk_object_factory_get_accessible_type (factory);
 		if (g_type_is_a (derived_atk_type, GTK_TYPE_ACCESSIBLE)) {
 			atk_registry_set_factory_type (registry, YGTK_TYPE_WIZARD,
-			ygtk_wizard_accessible_factory_get_type ());
+				ygtk_wizard_accessible_factory_get_type());
 		}
-	first_time = FALSE;
+		first_time = FALSE;
 	}
 	return GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->get_accessible (widget);
 }
