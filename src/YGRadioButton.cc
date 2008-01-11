@@ -73,7 +73,6 @@ public:
 	virtual void setValue (bool checked)
 	{
 		IMPL
-		fprintf (stderr, "setValue: %d to %s\n", checked, getDebugLabel().c_str());
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
 
 		if (checked)
@@ -90,17 +89,13 @@ public:
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
 	{
 		IMPL
-fprintf(stderr, "toggled\n");
-		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
-{
-fprintf(stderr, "uncheck others\n");
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button))) {
 			pThis->buttonGroup()->uncheckOtherButtons ((YRadioButton *) pThis);
-//			pThis->emitEvent (YEvent::ValueChanged);
-}
+			pThis->emitEvent (YEvent::ValueChanged);
+		}
 		else {
 			// leave it active
 			g_signal_handlers_block_by_func (button, (gpointer) toggled_cb, pThis);
-fprintf(stderr, "set active\n");
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
 			g_signal_handlers_unblock_by_func (button, (gpointer) toggled_cb, pThis);
 		}
