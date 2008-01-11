@@ -1297,7 +1297,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 			{
 				Package *a = (Package *) _a;
 				Package *b = (Package *) _b;
-				return a->name().compare (b->name());
+				return strcasecmp (a->name().c_str(), b->name().c_str());
 			}
 		};
 
