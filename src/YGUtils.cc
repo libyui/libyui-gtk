@@ -401,50 +401,6 @@ int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb)
 void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
 { YGUtils::setWidgetFont (widget, weight, scale); }
 
-int YGUtils::strcmp (const char *str1, const char *str2)
-{
-	// (if you think this is ugly, just wait for the Perl version! :P)
-	const char *i, *j;
-	for (i = str1, j = str2; *i && *j; i++, j++) {
-		// number comparasion
-		if (isdigit (*i) && isdigit (*j)) {
-			int n1, n2;
-			for (n1 = 0; isdigit (*i); i++)
-				n1 = (*i - '0') + (n1 * 10);
-			for (n2 = 0; isdigit (*j); j++)
-				n2 = (*j - '0') + (n2 * 10);
-
-			if (n1 != n2)
-				return n1 - n2;
-
-			// prepare for loop
-			i--; j--;
-		}
-
-		// regular character comparasion
-		else if (g_ascii_tolower (*i) != g_ascii_tolower(*j))
-			return g_ascii_tolower (*i) - g_ascii_tolower (*j);
-	}
-	if (*i)
-		return -1;
-	if (*j)
-		return 1;
-	return 0;  // identicals
-}
-
-bool YGUtils::contains (const string &haystack, const string &needle)
-{
-	unsigned int i, j;
-	for (i = 0; i < haystack.length(); i++) {
-		for (j = 0; j < needle.length() && i+j < haystack.length(); j++)
-			if (g_ascii_tolower (haystack[i+j]) != g_ascii_tolower (needle[j]))
-				break;
-		if (j == needle.length())
-			return true;
-	}
-	return false;
-}
-
 std::list <string> YGUtils::splitString (const string &str, char separator)
 {
 	std::list <string> parts;

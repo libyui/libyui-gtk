@@ -164,9 +164,9 @@ public:
 		yscale = (valign == YAlignUnchanged) ? 1 : 0;
 		if (hasChildren()) {
 			// special case: child has stretch opt
-			if (firstChild()->stretchable (YD_HORIZ))
+			if (!xscale && firstChild()->stretchable (YD_HORIZ))
 				xscale = 1;
-			if (firstChild()->stretchable (YD_VERT))
+			if (!yscale && firstChild()->stretchable (YD_VERT))
 				yscale = 1;
 		}
 		gtk_alignment_set (GTK_ALIGNMENT (getWidget()), xalign, yalign, xscale, yscale);

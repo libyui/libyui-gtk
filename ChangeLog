@@ -6,6 +6,12 @@
 	* src/yzyppwrapper.cc: fixed changelog (markup typo :/). changed
 	date format.
 
+	* src/YGLayout.cc (YGAlignment): some changes there; doesn't yet fix
+	alignment issues though...
+
+	* src/YGUtils.cc: got rid of strcmp and contains. To use library
+	equivalents.
+
 2007-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h/cc: keep up with libyui: file dialogs moved to YApplication.

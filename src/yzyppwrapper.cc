@@ -290,7 +290,7 @@ std::string Ypp::Package::filelist()
 	ZyppObject object = impl->zyppSel->installedObj();
 	ZyppPackage package = tryCastToZyppPkg (object);
 	if (package) {
-		StringTree tree (YGUtils::strcmp, '/');
+		StringTree tree (strcmp, '/');
 
 		const std::list <std::string> &filesList = package->filenames();
 		for (std::list <std::string>::const_iterator it = filesList.begin();
@@ -784,9 +784,9 @@ struct Ypp::Query::Impl
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
 			for (it = values.begin(); it != values.end(); it++)
-				if (!YGUtils::contains (package->name(), *it) &&
-				    !YGUtils::contains (package->summary(), *it) &&
-				    !YGUtils::contains (package->provides(), *it)) {
+				if (package->name().find (*it) == std::string::npos &&
+				    package->summary().find (*it) == std::string::npos &&
+				    package->provides().find (*it) == std::string::npos) {
 					match = false;
 					break;
 				}
@@ -1057,7 +1057,7 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 				return !strcmp (b, "Other") ? 0 : 1;
 			if (!strcmp (b, "Other"))
 				return -1;
-			return YGUtils::strcmp (a, b);
+			return strcmp (a, b);
 		}
 	};
 
@@ -1297,7 +1297,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 			{
 				Package *a = (Package *) _a;
 				Package *b = (Package *) _b;
-				return YGUtils::strcmp (a->name().c_str(), b->name().c_str());
+				return a->name().compare (b->name());
 			}
 		};
 

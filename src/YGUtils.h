@@ -45,13 +45,6 @@ namespace YGUtils
 	/* Sets some widget font proprities. */
 	void setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
-	/* A more sane strcmp() from the user point of view that honors numbers.
-	   i.e. "20" < "100" */
-	int strcmp (const char *str1, const char *str2);
-
-	/* Checks if a std::string contains some other string (case insensitive). */
-	bool contains (const std::string &haystack, const std::string &needle);
-
 	/* Splits a string into parts as separated by the separator characters.
 	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
 	std::list <std::string> splitString (const std::string &str, char separator);
