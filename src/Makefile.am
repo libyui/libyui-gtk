@@ -68,5 +68,19 @@ test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS)
 
-EXTRA_DIST =
+EXTRA_DIST = \
+	icons/pkg-available-locked.xpm \
+	icons/pkg-installed-upgradable.xpm \
+	icons/pkg-remove-auto.xpm \
+	icons/pkg-available.xpm \
+	icons/pkg-installed.xpm \
+	icons/pkg-remove.xpm \
+	icons/pkg-install-auto.xpm \
+	icons/pkg-install.xpm \
+	icons/pkg-tiles-mode.xpm \
+	icons/pkg-installed-locked.xpm \
+	icons/pkg-list-mode.xpm \
+	icons/pkg-unlocked.xpm \
+	icons/pkg-installed-upgradable-locked.xpm \
+	icons/pkg-locked.xpm
 

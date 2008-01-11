@@ -1,10 +1,19 @@
-2007-01-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-11  Boyd Timothy  <btimothy@novell.com>
+
+	* src/Makefile.am: Added the icon files in icons/* to
+	  EXTRA_DIST so that `make package-local` will build
+	  a usable tarball.
+
+	* ChangeLog: Adjusted ChangeLog entries made earlier
+	  this year to be 2008 and not 2007.  :)
+
+2008-01-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: replaced ATK hooks; should work fine now.
 
 	* src/ygtkwizard.c: when paned, fixed child destruction, and init position.
 
-2007-01-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: changed title to "Patch Selector" for
 	online update.
@@ -29,7 +38,7 @@
 	* src/YGPackageSelector (resolver stuff): polishing with regard to long
 	strings.
 
-2007-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h/cc: keep up with libyui: file dialogs moved to YApplication.
 
@@ -41,18 +50,18 @@
 	* src/YGPackageSelector.cc (Filters): don't show upgrade status button for
 	patches (not applicable).
 
-2007-01-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper (Query): reordered query checks for performance.
 
 	* src/yzyppwrapper (Query): search was still broken it seems... This results
 	on a incohrence on the API...
 
-2007-01-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper (Query): bug fix: search broken.
 
-2007-01-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2008-01-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (ChangesPane): don't try building it at start;
 	there aren't changes for sw_single.
