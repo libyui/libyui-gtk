@@ -460,14 +460,6 @@ std::list <string> YGUtils::splitString (const string &str, char separator)
 	return parts;
 }
 
-GValue YGUtils::floatToGValue (float num)
-{
-	GValue value = { 0 };
-	g_value_init (&value, G_TYPE_FLOAT);
-	g_value_set_float (&value, num);
-	return value;
-}
-
 GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 {
 	GdkPixbuf *pixbuf = NULL;

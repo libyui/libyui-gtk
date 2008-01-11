@@ -64,7 +64,7 @@ void YGWidget::show()
 
 YGWidget *YGWidget::get (YWidget *ywidget)
 {
-	g_assert (ywidget->widgetRep() != NULL);
+	//g_assert (ywidget->widgetRep() != NULL);
 	return (YGWidget *) ywidget->widgetRep();
 }
 

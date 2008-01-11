@@ -144,19 +144,32 @@ public:
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
 	{
-		bool hstretch = halign == YAlignUnchanged || stretchable (YD_HORIZ);
-		bool vstretch = valign == YAlignUnchanged || stretchable (YD_VERT);
+		struct inner {
+			// helper -- converts YWidget YAlignmentType to Gtk's align float
+			static float yToGtkAlign (YAlignmentType align)
+			{
+				switch (align) {
+					case YAlignBegin:  return 0.0;
+					default:
+					case YAlignCenter: return 0.5;
+					case YAlignEnd:    return 1.0;
+				}
+			}
+		};
 
-		GValue xalign, yalign, xscale, yscale;
-		xalign = YGUtils::floatToGValue (yToGtkAlign (halign));
-		yalign = YGUtils::floatToGValue (yToGtkAlign (valign));
-		xscale = YGUtils::floatToGValue (hstretch ? 1 : 0);
-		yscale = YGUtils::floatToGValue (vstretch ? 1 : 0);
-
-		g_object_set_property (G_OBJECT (getWidget()), "xalign", &xalign);
-		g_object_set_property (G_OBJECT (getWidget()), "yalign", &yalign);
-		g_object_set_property (G_OBJECT (getWidget()), "xscale", &xscale);
-		g_object_set_property (G_OBJECT (getWidget()), "yscale", &yscale);
+		float xalign, yalign, xscale, yscale;
+		xalign = inner::yToGtkAlign (halign);
+		yalign = inner::yToGtkAlign (valign);
+		xscale = (halign == YAlignUnchanged) ? 1 : 0;
+		yscale = (valign == YAlignUnchanged) ? 1 : 0;
+		if (hasChildren()) {
+			// special case: child has stretch opt
+			if (firstChild()->stretchable (YD_HORIZ))
+				xscale = 1;
+			if (firstChild()->stretchable (YD_VERT))
+				yscale = 1;
+		}
+		gtk_alignment_set (GTK_ALIGNMENT (getWidget()), xalign, yalign, xscale, yscale);
 	}
 
 	void setPadding (int top, int bottom, int left, int right)
@@ -236,18 +249,6 @@ public:
 		str += " x ";
 		str += inner::alignLabel (alignment (YD_VERT));
 		return str;
-	}
-
-private:
-	// helper -- converts YWidget YAlignmentType to Gtk's align float
-	static float yToGtkAlign (YAlignmentType align)
-	{
-		switch (align) {
-			case YAlignBegin:  return 0.0;
-			default:
-			case YAlignCenter: return 0.5;
-			case YAlignEnd:    return 1.0;
-		}
 	}
 };
 
