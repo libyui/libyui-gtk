@@ -1600,7 +1600,8 @@ public:
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
-		ygtk_wizard_set_header_text (wizard, window, _("Package Selector"));
+		ygtk_wizard_set_header_text (wizard, window,
+			onlineUpdateMode() ? _("Patch Selector") : _("Package Selector"));
 		ygtk_wizard_set_help_text (wizard, "");
 
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));

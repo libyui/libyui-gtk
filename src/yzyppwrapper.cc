@@ -356,12 +356,14 @@ std::string Ypp::Package::changelog()
 		const std::list <zypp::ChangelogEntry> &changelogList = package->changelog();
 		for (std::list <zypp::ChangelogEntry>::const_iterator it = changelogList.begin();
 			 it != changelogList.end(); it++) {
-			std::string author = it->author(), changes = it->text();
+			std::string date (it->date().form ("%d %B %Y")), author (it->author()),
+			            changes (it->text());
 			YGUtils::escapeMarkup (author);
 			YGUtils::escapeMarkup (changes);
 			YGUtils::replace (changes, "\n", 1, "<br>");
-			text += it->date().asString() + author + ":<br>"
-				    + "<blockquote>" + changes + "</blockqute>";
+			if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
+				author.erase (0, 2);                  // "- author". wtf?
+			text += date + " (" + author + "):<br><blockquote>" + changes + "</blockquote>";
 		}
 	}
 	return text;

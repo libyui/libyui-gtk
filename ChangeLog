@@ -1,3 +1,11 @@
+2007-01-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: changed title to "Patch Selector" for
+	online update.
+
+	* src/yzyppwrapper.cc: fixed changelog (markup typo :/). changed
+	date format.
+
 2007-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h/cc: keep up with libyui: file dialogs moved to YApplication.
