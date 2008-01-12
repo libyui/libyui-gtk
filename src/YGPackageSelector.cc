@@ -1624,7 +1624,7 @@ public:
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");
 		ygtk_wizard_set_back_button_label (wizard, "");
-		ygtk_wizard_set_next_button_label (wizard, _("_Accept"));
+		ygtk_wizard_set_next_button_label (wizard, _("_Apply"));
 		ygtk_wizard_set_next_button_str_id (wizard, "accept");
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
