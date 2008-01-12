@@ -1,3 +1,9 @@
+2008-01-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: fixed search: ignore cases.
+
+	* src/YGPackageSelector.cc: renamed Accept to Apply.
+
 2008-01-11  Boyd Timothy  <btimothy@novell.com>
 
 	* src/Makefile.am: Added the icon files in icons/* to

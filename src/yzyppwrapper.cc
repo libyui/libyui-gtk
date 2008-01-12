@@ -788,13 +788,15 @@ struct Ypp::Query::Impl
 		if (match && names.defined) {
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++)
-				if (package->name().find (*it) == std::string::npos &&
-				    package->summary().find (*it) == std::string::npos &&
-				    package->provides().find (*it) == std::string::npos) {
+			for (it = values.begin(); it != values.end(); it++) {
+				const char *key = it->c_str();
+				if (!strcasestr (package->name().c_str(), key) &&
+				    !strcasestr (package->summary().c_str(), key) &&
+				    !strcasestr (package->provides().c_str(), key)) {
 					match = false;
 					break;
 				}
+			}
 		}
 		if (match && categories.defined) {
 			Ypp::Node *pkg_category = package->category();
