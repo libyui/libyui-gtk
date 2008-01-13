@@ -258,15 +258,16 @@ std::string Ypp::Package::description()
 {
 	ZyppObject object = impl->zyppSel->theObj();
 	std::string text = object->description(), br = "<br>";
-	if (impl->type == PACKAGE_TYPE) {
-		// if it has this header, then it is HTML
-		const char *header = "<!-- DT:Rich -->", header_len = 16;
-		if (!text.compare (0, header_len, header, header_len))
-			text.erase (0, header_len);
-		else
-			// add breakline for every double one...
-			YGUtils::replace (text, "\n\n", 2, "<br>");
+	// if it has this header, then it is HTML
+	const char *header = "<!-- DT:Rich -->", header_len = 16;
+	if (!text.compare (0, header_len, header, header_len))
+		text.erase (0, header_len);
+	else {
+		YGUtils::escapeMarkup (text);
+		YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
+	}
 
+	if (impl->type == PACKAGE_TYPE) {
 		ZyppPackage package = tryCastToZyppPkg (object);
 		std::string url = package->url(), license = package->license();
 		if (!url.empty())
