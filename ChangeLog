@@ -11,6 +11,9 @@
 	widgets are now added to containers at the constructor, so layout properties are
 	only set afterwards.
 
+	* src/YGRadioButton.cc (YGRadioButton & Group): bug fix: not working, looks
+	like we have to add the button to the group ourselves. And re-written the thing.
+
 2008-01-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix: we weren't escaping description text.

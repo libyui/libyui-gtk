@@ -8,6 +8,8 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
+#if 0
+//** Older approach:
 // Sub-class GtkRadioButton to get a widget that renders like
 // a radio-button, but behaves like a check/toggle-button.
 static GType getCheckRadioButtonType()
@@ -31,26 +33,31 @@ static GType getCheckRadioButtonType()
 	klass_new->clicked = klass_sane->clicked;
 	return type;
 }
+#endif
 
-#include "YRadioButtonGroup.h"
 #include "YRadioButton.h"
+#include "YRadioButtonGroup.h"
 
 class YGRadioButton : public YRadioButton, public YGWidget
 {
 public:
 	YGRadioButton (YWidget *parent, const std::string &label, bool isChecked)
 	:  YRadioButton (NULL, label),
-	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
+	   YGWidget (this, parent, true, GTK_TYPE_RADIO_BUTTON, NULL)
 	{
 		IMPL
 		setBorder (0);
-		setValue (isChecked);
-
-		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
+		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 
-		g_signal_connect (G_OBJECT (getWidget()), "toggled",
-		                  G_CALLBACK (toggled_cb), this);
+		g_signal_connect_after (G_OBJECT (getWidget()), "toggled",
+		                        G_CALLBACK (toggled_cb), this);
+	}
+
+	GSList *setGroup (GSList *group)
+	{
+		gtk_radio_button_set_group (GTK_RADIO_BUTTON (getWidget()), group);
+		return gtk_radio_button_get_group (GTK_RADIO_BUTTON (getWidget()));
 	}
 
 	// YRadioButton
@@ -73,13 +80,11 @@ public:
 	virtual void setValue (bool checked)
 	{
 		IMPL
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
-
-		if (checked)
-			buttonGroup()->uncheckOtherButtons ((YRadioButton *) this);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
-
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
+		if (checked) {  // can't uncheck a radio button
+			g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
+			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
+		}
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -89,16 +94,8 @@ public:
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
 	{
 		IMPL
-		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button))) {
-			pThis->buttonGroup()->uncheckOtherButtons ((YRadioButton *) pThis);
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			pThis->emitEvent (YEvent::ValueChanged);
-		}
-		else {
-			// leave it active
-			g_signal_handlers_block_by_func (button, (gpointer) toggled_cb, pThis);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
-			g_signal_handlers_unblock_by_func (button, (gpointer) toggled_cb, pThis);
-		}
 	}
 };
 
@@ -106,18 +103,44 @@ YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string 
                                                   bool isChecked)
 {
 	IMPL
-	return new YGRadioButton (parent, label, isChecked);
+	YRadioButton *button = new YGRadioButton (parent, label, isChecked);
+
+	// libyui instructs us to do it here due to vfuncs craziness
+	YRadioButtonGroup *group = button->buttonGroup();
+	if (group)
+		group->addRadioButton (button);
+	button->setValue (isChecked);
+
+	return button;
 }
 
 // YRadioButtonGroup
 
 class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
 {
+GSList *group;
+
 public:
 	YGRadioButtonGroup(YWidget *parent)
 	: YRadioButtonGroup (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
-	{}
+	{
+		group = NULL;
+	}
+
+	virtual void addRadioButton (YRadioButton *_button)
+	{
+		YGRadioButton *button = (YGRadioButton *) YGWidget::get (_button);
+		group = button->setGroup (group);
+		YRadioButtonGroup::addRadioButton (_button);
+	}
+
+	virtual void removeRadioButton (YRadioButton *_button)
+	{
+		YGRadioButton *button = (YGRadioButton *) YGWidget::get (_button);
+		button->setGroup (NULL);
+		YRadioButtonGroup::removeRadioButton (_button);
+	}
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
