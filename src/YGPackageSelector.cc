@@ -871,7 +871,7 @@ public:
 
 		m_type = gtk_combo_box_new_text();
 		if (update_mode)
-			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Severity"));
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
