@@ -97,13 +97,6 @@ YGUI::~YGUI()
 	g_free (m_argv);
 }
 
-static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
-                               gpointer data)
-{
-	*(int *)data = TRUE;
-	return TRUE;
-}
-
 void YGUI::checkInit()
 {
 	if (!m_done_init) {
@@ -113,6 +106,13 @@ void YGUI::checkInit()
 }
 
 //#define PRINT_EVENTS
+
+static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
+                               gpointer data)
+{
+	*(int *)data = TRUE;
+	return TRUE;
+}
 
 void YGUI::idleLoop (int fd_ycp)
 {
@@ -149,12 +149,6 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 	if (!pThis->pendingEvent())
 		pThis->sendEvent (new YTimeoutEvent());
 	return FALSE;
-}
-
-void YGUI::sendEvent (YEvent *event)
-{
-	m_event_handler.sendEvent (event);
-	g_main_context_wakeup (NULL);
 }
 
 // utility that implements both userInput() and pollInput()
@@ -205,6 +199,12 @@ YEvent *YGUI::userInput (unsigned long timeout_ms)
 
 YEvent *YGUI::pollInput()
 { return waitInput (0, false); }
+
+void YGUI::sendEvent (YEvent *event)
+{
+	m_event_handler.sendEvent (event);
+	g_main_context_wakeup (NULL);
+}
 
 static inline GdkScreen *getScreen ()
 { return gdk_display_get_default_screen (gdk_display_get_default()); }

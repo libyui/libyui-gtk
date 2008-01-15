@@ -45,7 +45,7 @@ YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const string 
 
 class YGDownloadProgress : public YDownloadProgress, public YGLabeledWidget
 {
-	guint timeout_id;
+guint timeout_id;
 
 public:
 	YGDownloadProgress (YWidget *parent, const string &label,
@@ -153,5 +153,77 @@ YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget 
 		YUIDimension dim, const vector<float> &maxValues)
 {
 	return new YGMultiProgressMeter (parent, dim, maxValues);
+}
+
+#include "YBusyIndicator.h"
+
+/* YBusyIndicator semantics are pretty contrived. It seems we should animate the widget
+   until timeout is reached. The application will ping setAlive(true) calls -- and we
+   reset the timeout -- as an indication that the program hasn't hang in some operation. */
+
+#define PULSE_INTERVAL 150
+
+class YGBusyIndicator : public YBusyIndicator, public YGLabeledWidget
+{
+guint pulse_timeout_id;
+int alive_timeout;
+
+public:
+	YGBusyIndicator (YWidget *parent, const string &label, int timeout)
+	: YBusyIndicator (NULL, label, timeout)
+	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	{
+		pulse_timeout_id = 0;
+		pulse();
+	}
+
+	virtual ~YGBusyIndicator()
+	{ stop(); }
+
+	void pulse()
+	{
+		alive_timeout = timeout();
+		if (!pulse_timeout_id)
+			pulse_timeout_id = g_timeout_add (PULSE_INTERVAL, pulse_timeout_cb, this);
+	}
+
+	void stop()
+	{
+		alive_timeout = 0;
+		if (pulse_timeout_id) {
+			g_source_remove (pulse_timeout_id);
+			pulse_timeout_id = 0;
+		}
+	}
+
+	// YBusyIndicator
+    virtual void setAlive (bool alive)
+    {
+    	alive ? pulse() : stop();
+    	YBusyIndicator::setAlive (alive);
+    }
+
+	// callbacks
+	static gboolean pulse_timeout_cb (void *pData)
+	{
+		YGBusyIndicator *pThis = (YGBusyIndicator*) pData;
+		if (pThis->alive_timeout > 0) {
+			pThis->alive_timeout -= PULSE_INTERVAL;
+			gtk_progress_bar_pulse (GTK_PROGRESS_BAR (pThis->getWidget()));
+			return TRUE;
+		}
+		pThis->pulse_timeout_id = 0;
+		return FALSE;
+	}
+
+	YGWIDGET_IMPL_COMMON
+	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YBusyIndicator)
+};
+
+YBusyIndicator *YGWidgetFactory::createBusyIndicator (YWidget *parent, const string &label, int timeout)
+{
+	IMPL
+	return new YGBusyIndicator (parent, label, timeout);
 }
 

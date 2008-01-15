@@ -148,6 +148,7 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YTree *createTree (YWidget *parent, const string &label);
 	virtual YTable *createTable (YWidget * parent, YTableHeader *header);
 	virtual YProgressBar *createProgressBar	(YWidget *parent, const string &label, int maxValue);
+	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const string &label, int timeout);
 	virtual YRichText *createRichText (YWidget *parent, const string &text, bool plainTextMode);
 
 	virtual YIntField *createIntField (YWidget *parent, const string &label, int minVal, int maxVal, int initialVal);

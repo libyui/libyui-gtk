@@ -1,3 +1,16 @@
+2008-01-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGProgressBar.cc (YGBusyIndicator): implemented YBusyIndicator
+	(which is an undetermined progress bar). IMHO its semantics are a bit
+	contrived...
+
+	* You may notice some layout glitches, like the labels alignment on the tools
+	initialization screens. The thing is that we sync layout properties when
+	widgets are added or removed from a container, but with the new libyui,
+	properties like hstretch are not set on the constructor, and on the other hand,
+	widgets are now added to containers at the constructor, so layout properties are
+	only set afterwards.
+
 2008-01-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix: we weren't escaping description text.

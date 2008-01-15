@@ -290,7 +290,6 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 {
 	YGtkRatioBoxChild *child_info;
 	child_info = ygtk_ratio_get_child_info (box, child);
-
 	if (child_info) {
 		gtk_widget_freeze_child_notify (child);
 
