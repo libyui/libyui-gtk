@@ -1,12 +1,44 @@
 -------------------------------------------------------------------
+Wed Jan 16 14:42:56 CET 2008 - coolo@suse.de
+
+- update to latest yast2-core API
+
+-------------------------------------------------------------------
+Fri Jan 11 23:36:13 CET 2008 - btimothy@suse.de
+
+- Updating the tarball directly from SVN Trunk revision to be
+  version 2.15.9r43566 so the package won't fail to build anymore.
+- Removed all the old patches since they are no longer necessary
+  with newer code.
+
+-------------------------------------------------------------------
+Wed Oct 24 19:21:59 CEST 2007 - btimothy@suse.de
+
+- Include patches from SVN head to fix various package selector
+  bugs.  Included are fixes for bugzilla.novell.com bugs: 300390
+  300750, 300737, 330235, 330467, 336124.
+
+-------------------------------------------------------------------
 Wed Oct 6 15:32:01 BST 2007 - mmichael@suse.de
 
 - n#300750: big speedup wrt. search / sort
 
 -------------------------------------------------------------------
+Wed Sep 26 01:29:22 CEST 2007 - sreeves@suse.de
+
+- Partial fix for Bug# 328213 - package selector untranslated
+
+-------------------------------------------------------------------
 Wed Aug 26 15:32:01 BST 2007 - mmichael@suse.de
 
 - n#300390: warn if cancelling a non-submitted transaction.
+
+-------------------------------------------------------------------
+Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
+
+- Finished integrating Feature #120292, UI as a namespace callable
+  from yast2-*-bindings.
+- 2.5.9
 
 -------------------------------------------------------------------
 Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
