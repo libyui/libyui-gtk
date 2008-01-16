@@ -26,9 +26,9 @@ public:
 	{
 		IMPL
 		if (ordinaryModel) {
-			addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, YGSelectionModel::ICON_COLUMN);
-			addColumn (G_TYPE_STRING, "", YAlignUnchanged, YGSelectionModel::LABEL_COLUMN);
-			gtk_tree_view_set_model (getView(), getModel());
+			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
+			                      YGSelectionModel::LABEL_COLUMN);
+			setModel();
 		}
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), FALSE);
 
@@ -44,14 +44,18 @@ public:
 	inline GtkTreeView *getView()
 	{ return GTK_TREE_VIEW (getWidget()); }
 
-	void addColumn (GType type, string header, YAlignmentType header_align, int col_nb)
+	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
 		IMPL
-		GtkTreeViewColumn *column = 0;
+		GtkTreeViewColumn *column;
+		GtkCellRenderer *renderer;
 
-		// The allignment of the column items
+		renderer = ygtk_cell_renderer_text_pixbuf_new();
+		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
+			renderer, "pixbuf", icon_col, "text", text_col, NULL);
+
 		gfloat xalign = -1;
-		switch (header_align) {
+		switch (align) {
 			case YAlignBegin:
 				xalign = 0.0;
 				break;
@@ -64,45 +68,33 @@ public:
 			case YAlignUnchanged:
 				break;
 		}
-
-		GtkCellRenderer *renderer = 0;
-		if (type == G_TYPE_STRING) {
-			renderer = gtk_cell_renderer_text_new();
-			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-			             renderer, "text", col_nb, NULL);
-		}
-		else if (type == GDK_TYPE_PIXBUF) {
-			renderer = gtk_cell_renderer_pixbuf_new();
-			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-				renderer, "pixbuf", col_nb, NULL);
-		}
-		else if (type == G_TYPE_BOOLEAN) {  // toggle button
-			renderer = gtk_cell_renderer_toggle_new();
-			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
-			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-				renderer, "active", col_nb, NULL);
-
-			g_signal_connect (G_OBJECT (renderer), "toggled",
-			                  G_CALLBACK (toggled_cb), this);
-		}
-		else if (type == YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF) {  // string, pixbuf combo
-			renderer = ygtk_cell_renderer_text_pixbuf_new();
-			g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (col_nb));
-			column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-				renderer, "pixbuf", col_nb, "text", col_nb+1, NULL);
-		}
-		else
-			g_error ("YGTable: no support for column of given type");
-
-		if (renderer && xalign != -1)
+		if (xalign != -1)
 			g_object_set (renderer, "xalign", xalign, NULL);
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
 	}
 
-	virtual void setModel (GtkTreeModel *model)
-	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), model); }
+	void appendCheckColumn (string header, int bool_col)
+	{
+		IMPL
+		GtkTreeViewColumn *column;
+		GtkCellRenderer *renderer;
+
+		renderer = gtk_cell_renderer_toggle_new();
+		g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (bool_col));
+		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
+			renderer, "active", bool_col, NULL);
+
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+		                  G_CALLBACK (toggled_cb), this);
+
+		gtk_tree_view_column_set_resizable (column, TRUE);
+		gtk_tree_view_append_column (getView(), column);
+	}
+
+	void setModel()
+	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), getModel()); }
 
 	// YGSelectionModel
 	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
@@ -216,10 +208,11 @@ public:
 			types.push_back (G_TYPE_STRING);
 		}
 		createModel (types);
-		for (int i = 0; i < columns(); i++)
-			addColumn (YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF,
-			           header (i), alignment (i), i*2);
-		gtk_tree_view_set_model (getView(), getModel());
+		for (int i = 0; i < columns(); i++) {
+			int col = i*2;
+			appendIconTextColumn (header (i), alignment (i), col, col+1);
+		}
+		setModel();
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
@@ -331,10 +324,9 @@ public:
 		types.push_back (GDK_TYPE_PIXBUF);
 		types.push_back (G_TYPE_STRING);
 		createModel (types);
-		addColumn (G_TYPE_BOOLEAN, "", YAlignUnchanged, 0);
-		addColumn (GDK_TYPE_PIXBUF, "", YAlignUnchanged, 1);
-		addColumn (G_TYPE_STRING, "", YAlignUnchanged, 2);
-		gtk_tree_view_set_model (getView(), getModel());
+		appendCheckColumn ("", 0);
+		appendIconTextColumn ("", YAlignUnchanged, 1, 2);
+		setModel();
 
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
@@ -414,6 +406,7 @@ public:
 	: YTree (NULL, label)
 	, YGTableView (this, parent, label, true, true)
 	{
+		gtk_tree_view_set_enable_tree_lines (getView(), TRUE);
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",

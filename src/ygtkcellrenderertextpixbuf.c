@@ -98,8 +98,10 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 	// will be calculated at expose, as both pixbuf and text have their offsets...
 	if (xoffset) *xoffset = 0;
 	if (yoffset) *yoffset = 0;
-	if (!width && !height)
+	if (!width || !height)
 		return;
+	*width = 0;
+	*height = 0;
 
 	if (tpcell->pixbuf) {
 		*width += gdk_pixbuf_get_width (tpcell->pixbuf);
@@ -117,9 +119,8 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 
 		g_object_unref (G_OBJECT (layout));
 	}
-
 	*width += cell->xpad*2;
-	*height += cell->ypad*2;
+	*height += cell->ypad*2 + 2;
 }
 
 static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,

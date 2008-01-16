@@ -8,6 +8,9 @@
 	* src/ygtkfieldentry.c: bug fix: mnemonic on YGTextEntry (and also, but less
 	significatively, to YGDate and YGTime) was not functional.
 
+	* src/YGTable.c: bug fix: trees looked awful. Made everything use our
+	YGtkCellRendererTextPixbuf.
+
 2008-01-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGProgressBar.cc (YGBusyIndicator): implemented YBusyIndicator
