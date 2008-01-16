@@ -1,3 +1,13 @@
+2008-01-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.cc, src/YGLayout.cc & src/YGWidget.cc: ditched the old
+	sync-stretchable approach by an iteration on YDialog::setSize() (called
+	by UI::Recalc() and similar).
+	* src/ygtkratiobox.h/.c: merged and removed some calls.
+
+	* src/ygtkfieldentry.c: bug fix: mnemonic on YGTextEntry (and also, but less
+	significatively, to YGDate and YGTime) was not functional.
+
 2008-01-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGProgressBar.cc (YGBusyIndicator): implemented YBusyIndicator

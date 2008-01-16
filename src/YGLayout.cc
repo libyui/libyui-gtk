@@ -36,63 +36,58 @@ public:
 			g_object_unref (G_OBJECT (m_labels_group));
 	}
 
-	virtual string getDebugLabel() const
-	{ return primary() == YD_HORIZ ? "horizontal" : "vertical"; }
-
-	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
-	{
-		IMPL
-		YGWidget::doAddChild (ychild, container);
-
-		// set labels of YGLabeledWidgets to the same width
-		// we have to do quite some work due to over-clutter on YCP progs
-		while (ychild) {
-			if (ychild->hasChildren()) {  // container
-				// try to see if there is a YGLabeledWidget at start
-				// (and ignore YSpacings)
-				YWidget *container = ychild;
-				for (YWidgetListConstIterator it = container->childrenBegin();
-					 it != container->childrenEnd(); it++) {
-					ychild = *it;
-					if (!dynamic_cast <YSpacing *> (ychild))
-						break;
-				}
-			}
-			else {
-				YGWidget *ygchild = YGWidget::get (ychild);
-				YGLabeledWidget *labeled_child = dynamic_cast <YGLabeledWidget *> (ygchild);
-				if (labeled_child && labeled_child->orientation() == YD_HORIZ) {
-					if (!m_labels_group)
-						m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-					gtk_size_group_add_widget (m_labels_group,
-					          labeled_child->getLabelWidget());
-				}
-				break;
-			}
-		}
-	}
-
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	virtual string getDebugLabel() const
+	{ return primary() == YD_HORIZ ? "horizontal" : "vertical"; }
+	virtual void moveChild (YWidget *child, int x, int y) {}
 
-	virtual void sync_stretchable (YWidget *ychild)
+
+	void addSizeGroup (YGLabeledWidget *labeledWidget)
+	{
+		GtkWidget *label = labeledWidget->getLabelWidget();
+		if (m_labels_group) {
+			GSList *labels = gtk_size_group_get_widgets (m_labels_group);
+			if (g_slist_find (labels, label))  // contains label already?
+				return;
+			// labels is not to be freed!
+		}
+		else
+			m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+		gtk_size_group_add_widget (m_labels_group, label);
+	}
+
+	virtual void syncStretchable (YWidget *ychild, YGWidget *child)
 	{
 		IMPL
 		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
-		YGWidget *child = YGWidget::get (ychild);
 
 		YUIDimension dim = primary();
 		bool horiz_fill = ychild->stretchable (YD_HORIZ) || ychild->hasWeight (YD_HORIZ);
 		bool vert_fill  = ychild->stretchable (YD_VERT) || ychild->hasWeight (YD_VERT);
 
-		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->weight (dim),
-		                                  horiz_fill, vert_fill, 0);
-		ygtk_ratio_box_set_child_expand (box, child->getLayout(),
-			ychild->stretchable (dim), isLayoutStretch (ychild, dim));
-		YGWidget::sync_stretchable();
-	}
+		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->stretchable (dim),
+			isLayoutStretch (ychild, dim), ychild->weight (dim), horiz_fill, vert_fill, 0);
 
-	virtual void moveChild (YWidget *, int, int) {}  // ignore
+		// align horizontal widget labels to the same width
+		// we do some work here, since they may be placed inside a HBox or something...
+		if (!horiz_fill)
+			return;
+		YWidget *yLabeledWidget = ychild;
+		while (yLabeledWidget->hasChildren()) { // container
+			YWidget *container = yLabeledWidget;
+			for (YWidgetListConstIterator it = container->childrenBegin();
+				 it != container->childrenEnd(); it++) {
+				yLabeledWidget = *it;
+				if (!dynamic_cast <YSpacing *> (yLabeledWidget) /*ignore spacings*/)
+					break;
+			}
+		}
+		YGLabeledWidget *labeledWidget =
+			dynamic_cast <YGLabeledWidget *> (YGWidget::get (yLabeledWidget));
+		if (labeledWidget && labeledWidget->orientation() == YD_HORIZ)
+			addSizeGroup (labeledWidget);
+	}
 };
 
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
@@ -134,12 +129,12 @@ public:
 	}
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
+	virtual void moveChild (YWidget *child, int x, int y) {}
 
-	virtual void sync_stretchable (YWidget *child)
+	virtual void syncStretchable (YWidget *ychild, YGWidget *child)
 	{
 		IMPL
 		setAlignment (alignment (YD_HORIZ), alignment (YD_VERT));
-		YGWidget::sync_stretchable();
 	}
 
 	void setAlignment (YAlignmentType halign, YAlignmentType valign)
@@ -222,8 +217,6 @@ public:
 		                                GTK_BIN (widget)->child, event);
 		return TRUE;
 	}
-
-	virtual void moveChild (YWidget *, int, int) {};  // ignore
 
 	virtual string getDebugLabel() const
 	{

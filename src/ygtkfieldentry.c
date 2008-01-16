@@ -167,9 +167,20 @@ const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *fields, guint inde
 	return gtk_entry_get_text (entry);
 }
 
+static gboolean ygtk_field_entry_mnemonic_activate (GtkWidget *widget, gboolean cycling)
+{
+	YGtkFieldEntry *fields = YGTK_FIELD_ENTRY (widget);
+	GtkEntry *entry = ygtk_field_entry_get_field_widget (fields, 0);
+	gtk_widget_grab_focus (GTK_WIDGET (entry));
+	return TRUE;
+}
+
 static void ygtk_field_entry_class_init (YGtkFieldEntryClass *klass)
 {
 	ygtk_field_entry_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->mnemonic_activate  = ygtk_field_entry_mnemonic_activate;
 
 	filter_entry_signal = g_signal_new ("field_entry_changed",
 		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,

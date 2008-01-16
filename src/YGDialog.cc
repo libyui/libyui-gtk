@@ -386,6 +386,35 @@ void YGDialog::busyCursor()
 	gdk_window_set_cursor (m_window->getWidget()->window, cursor);
 }
 
+
+// YWidget
+void YGDialog::setEnabled (bool enabled)
+{
+	doSetEnabled (enabled);
+	YWidget::setEnabled (enabled);
+}
+
+void YGDialog::setSize (int width, int height)
+{
+	// libyui calls YDialog::setSize() to force a geometry recalculation as a
+	// result of changed layout properties
+	struct inner {
+		static void syncStretchable (YWidget *ywidget, YGWidget *widget)
+		{
+			for (YWidgetListConstIterator it = ywidget->childrenBegin();
+				 it != ywidget->childrenEnd(); it++) {
+				YWidget *ychild = const_cast <YWidget *> (*it);
+				YGWidget *child = YGWidget::get (ychild);
+				if (child) {
+					widget->syncStretchable (ychild, child);
+					syncStretchable (ychild, child);
+				}
+			}
+		}
+	};
+	inner::syncStretchable (this, this);
+}
+
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)
 {
 	IMPL

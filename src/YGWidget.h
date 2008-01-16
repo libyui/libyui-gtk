@@ -33,9 +33,10 @@ public:
 
 	// for YWidget
 	virtual bool doSetKeyboardFocus();
-	virtual void doSetEnabling (bool enabled);
+	virtual void doSetEnabled (bool enabled);
 	virtual void doAddChild (YWidget *child, GtkWidget *container);
 	virtual void doRemoveChild (YWidget *child, GtkWidget *container);
+	void doSetUseBoldFont (bool useBold);
 
 	// Event handling
 	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
@@ -48,7 +49,7 @@ public:
 
 	// whenever the stretchable property may change (eg. when adding a child
 	// for a container), call this function to make sure it is honored.
-	virtual void sync_stretchable (YWidget *child = 0);
+	virtual void syncStretchable (YWidget *ychild, YGWidget *child) {}
 
 protected:
 	void show();
@@ -70,17 +71,17 @@ protected:
 #define YGWIDGET_IMPL_COMMON                                    \
 	virtual bool setKeyboardFocus()                             \
 	    { return doSetKeyboardFocus(); }                        \
-	virtual void setEnabling (bool enabled)                     \
-	    { doSetEnabling (enabled); }                            \
+	virtual void setEnabled (bool enabled) {                    \
+		doSetEnabled (enabled);                                 \
+		YWidget::setEnabled (enabled);                          \
+	}                                                           \
 	virtual int  preferredWidth()  { return 0; }                \
 	virtual int  preferredHeight() { return 0; }                \
-	virtual void moveChild (YWidget *child, int x, int y) {}    \
 	virtual void setSize (int width, int height) {}
 
 #define YGWIDGET_IMPL_USE_BOLD(ParentClass)                     \
     virtual void setUseBoldFont (bool useBold) {                \
-    	PangoWeight weight = useBold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL; \
-		YGUtils::setWidgetFont (getWidget(), weight, PANGO_SCALE_MEDIUM);       \
+    	doSetUseBoldFont (useBold);                             \
     	ParentClass::setUseBoldFont (useBold);                  \
     }
 
@@ -89,7 +90,6 @@ protected:
 	virtual void addChild (YWidget *ychild) {                   \
 		YWidget::addChild (ychild);                             \
 		doAddChild (ychild, container);                         \
-		sync_stretchable (ychild);                              \
 	}
 #define YGWIDGET_IMPL_CHILD_REMOVED(container)                  \
 	virtual void removeChild (YWidget *ychild) {                \

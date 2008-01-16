@@ -1784,7 +1784,7 @@ protected:
 				}
 				return FALSE;
 			}
-			static void truncate (std::string &str, int size)
+			static void truncate (std::string &str, unsigned int size)
 			{
 				if (str.size() > size) {
 					str.erase (size-3);

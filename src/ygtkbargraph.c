@@ -95,8 +95,8 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 
 	// Set proportion
 	gtk_widget_set_size_request (box, 10, -1);  // for homogeneous...
-	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1),
-	                                  TRUE, TRUE, 0);
+	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, TRUE, FALSE,
+		MAX (value, 1), TRUE, TRUE, 0);
 
 	// Set background color
 	// The Tango palette

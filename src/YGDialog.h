@@ -28,7 +28,11 @@ public:
 	static YGDialog *currentDialog();
 	static GtkWindow *currentWindow();
 
-	YGWIDGET_IMPL_COMMON
+	virtual void setSize (int width, int height);
+	virtual void setEnabled (bool enabled);
+	virtual int  preferredWidth()  { return 0; }
+	virtual int  preferredHeight() { return 0; }
+
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };

@@ -74,9 +74,15 @@ bool YGWidget::doSetKeyboardFocus()
 	return gtk_widget_is_focus (GTK_WIDGET (getWidget()));
 }
 
-void YGWidget::doSetEnabling (bool enabled)
+void YGWidget::doSetEnabled (bool enabled)
 {
 	gtk_widget_set_sensitive (getWidget(), enabled);
+}
+
+void YGWidget::doSetUseBoldFont (bool useBold)
+{
+   	PangoWeight weight = useBold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
+	YGUtils::setWidgetFont (getWidget(), weight, PANGO_SCALE_MEDIUM);
 }
 
 void YGWidget::doAddChild (YWidget *ychild, GtkWidget *container)
@@ -145,14 +151,6 @@ void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
 	if (height)
 		height = YGUtils::getCharsHeight (getWidget(), height);
 	setMinSize (width, height);
-}
-
-void YGWidget::sync_stretchable (YWidget *child)
-{
-	IMPL
-	YWidget *parent = m_ywidget->parent();
-	if (parent)
-		YGWidget::get (parent)->sync_stretchable (m_ywidget);
 }
 
 /* YGLabeledWidget follows */

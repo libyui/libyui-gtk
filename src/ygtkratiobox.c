@@ -285,8 +285,8 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 }
 
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                       gfloat ratio, gboolean xfill, gboolean yfill,
-                                       guint padding)
+	gboolean expand, gboolean must_expand, gfloat ratio, gboolean xfill, gboolean yfill,
+	guint padding)
 {
 	YGtkRatioBoxChild *child_info;
 	child_info = ygtk_ratio_get_child_info (box, child);
@@ -297,55 +297,14 @@ void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
 		child_info->xfill = xfill;
 		child_info->yfill = yfill;
 		child_info->padding = padding;
-		child_info->expand = 0;
-		child_info->must_expand = 0;
+		child_info->expand = expand;
+		child_info->must_expand = expand && must_expand;
 
 		if (GTK_WIDGET_VISIBLE (child) && GTK_WIDGET_VISIBLE (box))
 			gtk_widget_queue_resize (child);
 
 		gtk_widget_thaw_child_notify (child);
 	}
-}
-
-void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                       gfloat *ratio, gboolean *xfill,
-                                       gboolean *yfill, guint *padding,
-                                       gboolean *expand)
-{
-	YGtkRatioBoxChild *child_info;
-	child_info = ygtk_ratio_get_child_info (box, child);
-
-	if (child_info) {
-		gtk_widget_freeze_child_notify (child);
-
-		if (ratio)   *ratio   = child_info->ratio;
-		if (xfill)   *xfill   = child_info->xfill;
-		if (yfill)   *yfill   = child_info->yfill;
-		if (padding) *padding = child_info->padding;
-		if (expand)  *expand  = child_info->expand;
-	}
-}
-
-void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
-                                      gboolean expand, gboolean must_expand)
-{
-	YGtkRatioBoxChild *child_info;
-	child_info = ygtk_ratio_get_child_info (box, child);
-	if (child_info)
-	{
-		child_info->expand = expand;
-		if (expand)
-			child_info->must_expand = must_expand;
-	}
-}
-
-void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
-                                      gfloat ratio)
-{
-	YGtkRatioBoxChild *child_info;
-	child_info = ygtk_ratio_get_child_info (box, child);
-	if (child_info)
-		child_info->ratio = ratio;
 }
 
 void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing)

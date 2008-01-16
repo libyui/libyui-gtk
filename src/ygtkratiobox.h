@@ -79,22 +79,13 @@ void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
 void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
                           gboolean xfill, gboolean yfill, guint padding);
 
-// If you don't want to use ratios, you can use the ordinary expand flag. NOTE:
-// If some other child has ratio > 0, this one won't expand.
-// All this mess is so we can conform with yast-core.
-void ygtk_ratio_box_set_child_expand (YGtkRatioBox *box, GtkWidget *child,
-                                      gboolean expand, gboolean must_expand);
-void ygtk_ratio_box_set_child_ratio (YGtkRatioBox *box, GtkWidget *child,
-                                     gfloat ratio);
-
+// You can either use ratios or the expand boolean. If some child has a ratio set (to
+// a value other than 0), then expand flags will be ignored -- use must_expand in such
+// cases, when you want a child to expand like the child of the most ratio.
+// (rules based on those of libyui -- check top)
 void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                       gfloat ratio, gboolean xfill,
-                                       gboolean yfill, guint padding);
-
-void ygtk_ratio_box_get_child_packing (YGtkRatioBox *box, GtkWidget *child,
-                                       gfloat *ratio, gboolean *xfill,
-                                       gboolean *yfill, guint *padding,
-                                       gboolean *expandable);
+	gboolean expand, gboolean must_expand, gfloat ratio, gboolean xfill, gboolean yfill,
+	guint padding);
 
 /* RatioHBox */
 
