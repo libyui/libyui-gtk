@@ -1,3 +1,8 @@
+2008-01-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg-selector-help.h: added help to package selector. Thanks to
+	Christian Jäger for writting the 1st version of the help.
+
 2008-01-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc, src/YGLayout.cc & src/YGWidget.cc: ditched the old

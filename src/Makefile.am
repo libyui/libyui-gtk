@@ -82,5 +82,6 @@ EXTRA_DIST = \
 	icons/pkg-list-mode.xpm \
 	icons/pkg-unlocked.xpm \
 	icons/pkg-installed-upgradable-locked.xpm \
-	icons/pkg-locked.xpm
+	icons/pkg-locked.xpm \
+	pkg-selector-help.h
 

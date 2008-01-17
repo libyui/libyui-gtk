@@ -1593,6 +1593,7 @@ public:
 };
 
 #include "YPackageSelector.h"
+#include "pkg-selector-help.h"
 
 class YGPackageSelector : public YPackageSelector, public YGWidget, public Ypp::Interface
 {
@@ -1619,7 +1620,7 @@ public:
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
 		ygtk_wizard_set_header_text (wizard, window,
 			onlineUpdateMode() ? _("Patch Selector") : _("Package Selector"));
-		ygtk_wizard_set_help_text (wizard, "");
+		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? patch_help : pkg_help);
 
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");

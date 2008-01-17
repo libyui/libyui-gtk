@@ -171,8 +171,7 @@ int alive_timeout;
 public:
 	YGBusyIndicator (YWidget *parent, const string &label, int timeout)
 	: YBusyIndicator (NULL, label, timeout)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
-	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_PROGRESS_BAR, NULL)
 	{
 		pulse_timeout_id = 0;
 		pulse();
@@ -208,13 +207,13 @@ public:
 	static gboolean pulse_timeout_cb (void *pData)
 	{
 		YGBusyIndicator *pThis = (YGBusyIndicator*) pData;
-		if (pThis->alive_timeout > 0) {
-			pThis->alive_timeout -= PULSE_INTERVAL;
-			gtk_progress_bar_pulse (GTK_PROGRESS_BAR (pThis->getWidget()));
-			return TRUE;
+		gtk_progress_bar_pulse (GTK_PROGRESS_BAR (pThis->getWidget()));
+		pThis->alive_timeout -= PULSE_INTERVAL;
+		if (pThis->alive_timeout <= 0) {
+			pThis->pulse_timeout_id = 0;
+			return FALSE;
 		}
-		pThis->pulse_timeout_id = 0;
-		return FALSE;
+			return TRUE;
 	}
 
 	YGWIDGET_IMPL_COMMON
