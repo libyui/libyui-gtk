@@ -38,34 +38,6 @@ bool testMapKBAccel()
 	return true;
 }
 
-bool testFilterText ()
-{
-	fprintf (stderr, "Test filter text\t");
-	struct {
-		const char *in;
-		const char *valid;
-		const char *out;
-	} aTests[] = {
-		{ "Foo", "F", "F" },
-		{ "Foo", "Fo", "Foo" },
-		{ "Baa", "a", "aa" },
-		{ "Kuckles", "Ks", "Ks" },
-		{ NULL, NULL }
-	};
-	for (int i = 0; aTests[i].in; i++) {
-		string filtered = YGUtils::filterText
-			(aTests[i].in, strlen (aTests[i].in), aTests[i].valid);
-		if (filtered != aTests[i].out) {
-			fprintf (stderr, "Mis-filtered text '%s' vs '%s'\n",
-				 filtered.c_str(), aTests[i].out);
-			return false;
-		}
-		fprintf (stderr, "%d ", i);
-	}
-	fprintf (stderr, "\n");
-	return true;
-}
-
 bool testXHtmlConvert()
 {
 	fprintf (stderr, "Test HTML->XML rewrite \t");
@@ -75,9 +47,9 @@ bool testXHtmlConvert()
 	} aTests[] = {
 		// preservation
 		{ "<p>foo</p>", "<body><p>foo</p></body>" },
-		// product substitution
+/*		// product substitution
 		{ "&product;", "<body>foo</body>" },
-		{ " <p>&product;</p>", "<body><p>foo</p></body>" },
+		{ " <p>&product;</p>", "<body><p>foo</p></body>" },*/
 		// outer tag
 		{ "some text", "<body>some text</body>" },
 		// unquoted attributes
@@ -121,32 +93,6 @@ bool testXHtmlConvert()
 	return true;
 }
 
-bool testStrCmp()
-{
-	fprintf (stderr, "Test our strcmp\t");
-	struct {
-		const char *in1, *in2;
-		int out;
-	} aTests[] = {
-		{ "aaa", "aaaa", 1 },
-		{ "29", "235", -1 },
-		{ "aA", "Aa", 0 },
-		{ "200rt9", "200rT9", 0 },
-		{ NULL, NULL }
-	};
-	for (int i = 0; aTests[i].in1; i++) {
-		int ret = YGUtils::strcmp(aTests[i].in1, aTests[i].in2);
-		if (ret * aTests[i].out < 0 || (ret && !aTests[i].out) || (!ret && aTests[i].out)) {
-			fprintf (stderr, "Mis-mapped str comp '%d' vs '%d' ('%s' to '%s')\n",
-				 ret, aTests[i].out, aTests[i].in1, aTests[i].in2);
-			return false;
-		}
-		fprintf (stderr, "%d ", i);
-	}
-	fprintf (stderr, "\n");
-	return true;
-}
-
 bool testMarkupEscape()
 {
 	fprintf (stderr, "Test markup escape\t");
@@ -160,7 +106,8 @@ bool testMarkupEscape()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string out = YGUtils::escape_markup (aTests[i].in);
+		string out (aTests[i].in);
+		YGUtils::escapeMarkup (out);
 		if (out != aTests[i].out) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out.c_str(), aTests[i].out);
@@ -177,10 +124,9 @@ int main (int argc, char **argv)
 	bool bSuccess = true;
 
 	bSuccess &= testMapKBAccel();
-	bSuccess &= testFilterText();
 	bSuccess &= testXHtmlConvert();
-	bSuccess &= testStrCmp();
 	bSuccess &= testMarkupEscape();
 
 	return !bSuccess;
 }
+
