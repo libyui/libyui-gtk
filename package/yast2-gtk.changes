@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Fri Jan 18 14:08:57 CET 2008 - coolo@suse.de
+
+- Ricardo fixed make test
+
+-------------------------------------------------------------------
 Wed Jan 16 14:42:56 CET 2008 - coolo@suse.de
 
 - update to latest yast2-core API
