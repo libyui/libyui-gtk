@@ -1,0 +1,250 @@
+/* Documentation on YaST-GTK */
+
+YaST basis
+
+  Yast-core is a simple byte-code interpreted programming
+  language. On execution, two threads will be fired: one
+  for the interpreter that runs the YCP application, the other
+  for the interface. This is so because a user may want
+  to setup another machine while sitting confortably
+  with its GTK+ interface.
+
+  Yast-core offers an interface API, called YWidgets, that
+  is then wrapped, by dynamic loading at run-time, by
+  one of the available interface modules that the user
+  specified. This code is one of these modules.
+
+  Yast is usually distributed with the /sbin/yast script
+  that automatically looks for the best interface for
+  the environment.
+  Yast-core is located at /usr/lib/YaST2/bin/y2base ,
+  on the Suse distribution.
+
+  You don't need to know to program YCP, but you should
+  have a look at its API because it will give you some
+  insight into the platform. Yast documentation:
+  http://forgeftp.novell.com//yast/doc/SL10.1/tdg/
+
+Code structure
+
+  Hierarchy of some of the widgets:
+
+   YGWidget                    YWidget
+          |                          |
+          |                         /|
+          |                        / |
+          |\       YContainerWidget  |
+          |\\      /                 |
+          |\\YGSplit                 |
+          |\\YGEmpty                 |
+          |\\YGSpacing               |
+          | \YSSquash                |
+          |  YGAlignment     /-------|
+          |                 /        |
+          |\          YLabel         |
+          | \          /             |
+          |  \---YGLabel             |
+          |                          |
+          |                          |
+          |\                        /|
+          | \             YTextEntry |
+          |  YGLabeledWidget  /      |
+          |  |    \          /       |
+          |  |    YGTextEntry        |
+          |  |                       |
+          |   \                      |
+          |    YGScrolledWidget  /---|
+          |      \              /    |
+          |       \    YRichText     |
+          |        \    /            |
+          |     YGRichText           |
+          |                          |
+          |..........................|
+
+
+  As you may see, everything inherits from both YGWidget
+  and YWidget. YWidget derivated classes provide virtual functions
+  that we must fill. A pointer to the interface class wrapper may
+  always be obtain with widgetRep().
+
+  On the other hand, YGWidget provides a common set of functionaly
+  with great value for code re-use and also makes the code more
+  robust and flexible since it provides an infrastructure to the
+  whole code.
+  YGWidgets always creates an associated GtkWidget object, as asked
+  by the class that inherits it, and that can be obtained via
+  getWidget().
+
+  Every YGWidget has an associated parent, with the single exception
+  of YGDialog, that provides their children with a GtkFixed container
+  that they sit upon. getFixed() is the recursive function that asks
+  the parent for its associated GtkFixed. Container widgets replace
+  getFixed() by one that returns a GtkFixed that they created, thus
+  closing the cycle.
+
+  YGLabeledWidget and YGSrolledWidget are simple children of
+  YGWidget that create the asked widget with a label or inside
+  a GtkScrolledWindow for code re-use value.
+
+  The force behind the all thing is in YGUI. Its header has the declaration
+  for the creation of all the widgets, while its implementation is done
+  on the widgets files, and also specifies whatever one widget is
+  supported or not. YGUI.cc has, for the most part, the code that switches
+  between our code and the main YWidget, since we all use the same thread.
+
+On specific widgets
+
+  Layout widgets
+
+    Old approach
+      What yast-ncurses and -qt do, and we used to follow, is to let
+      YWidget layout framework do that work for us.
+
+      Every container widget we implemented had an associated GtkFixed
+      that it returned with a getFixed(). Other widgets getFixed()
+      would request the parent's getFixed().
+
+      However this approach was actually quite complicated, because we
+      had to implement nicesize() and setSize() on container widgets in
+      a way that the containee would be placed there correctly. So, for
+      instance, for YGDumbTab, we had to request informations like the
+      tabs labels height, the frame around the page, etc. Furthermore,
+      the ultimate decision to drop the approach was when we redesigned
+      YGtkWizard. This time the steps widget was dynamic and the work
+      to check of any size change and report to YWidget just felt too
+      hackish. Attempts at abstracting this were successful, but not
+      very satisfactory from a code's point of view.
+
+    Current approach
+      Currently, we just implement the layout widgets ourselves. The
+      most important is YGSplit, which would be the equivalent of
+      GtkBox (though we use our YGtkRatioBox to support the weight
+      childs attribute).
+
+      The YGLayout code is just a little bigger than the previous, it's
+      easy to understand, and overall it made the code base smaller.
+      Furthermore, YWidgets had bugs like labels getting truncated
+      (which had to be avoided by an explicit request for recalculating
+      the whole layout geometry) that we don't suffer. The layout is
+      also a lot faster.
+
+      To set minimum size to widgets, to make them look prettier, we
+      install all widgets in our YGtkMinSize container. To be able
+      to honor the stretchable attribute, we also install this
+      into a GtkAlignment. So, YGWidget's getWidget() returns the
+      inner widget that is the one that our YWidget implementation ask
+      it to create, while getLayout() should be used for layouts to get
+      the outter widget, which would be the GtkAlignment. Furthermore
+      the GtkAlignment allows us to align the widget on YGAlignment
+      (which is just a proxy).
+
+  Most of the widgets are a no brainer. Any other widget should have
+  some comments as appropriate.
+
+Code practices
+
+  As you may have noticed from YGWidget.h, we use macros a lot to
+  enable common functionality, instead of virtual functions. This is
+  because simply in a few cases virtual functions would not apply --
+  ie. the need to call a parent class function. You would have to
+  override the virtual function everytime. With a macro, we may do:
+  #define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (ParentClass) \
+    virtual setLabel (const YCPString &label) {             \
+      doSetLabel (label);                                   \
+      ParentClass::setLabel (label);                        \
+    }
+
+  The code style is heavily inspired on the Linux guideline:
+  http://pantransit.reptiles.org/prog/CodingStyle.html
+  There may be some differences as it obviously doesn't mention
+  C++ classes.
+  For identations, tabs are used. For layout, spaces are used.
+  Example:
+  <tab>int variable_with_very_long_name = function (arg1,
+  <tab>.............................................arg2);
+  This ensures the code lays well in whatever editor the reader uses.
+  Lines must just be ensured to be breaked before the 80th column on
+  4 stop tabs.
+
+  Speaking of classes, we don't use headers, unless we have to, as
+  opposite to the other interfaces code. There is no reason to
+  make them publicaly available and it just adds even more
+  files to the pool.
+  Also, we generally don't split classes into declaration and
+  implementation code, for the same reasons.
+
+  Variables and functions names follow Yast style (variableNameOne),
+  for the most part. Our Gtk widgets (on ygtk* files) are written
+  in C and follow this_name_style to fit better with GTK+ one.
+  We always prefix m_ to class memeber variables.
+
+  For GTK+ widgets, we follow some scheme. Most standing, we avoid declaring
+  functions, and do the class initilization, where the overloading is set,
+  at the bottom. When doing a widget, just copy and paste from another.
+
+Morphing Suse to use Yast-GTK
+
+  We haven't yet managed to create a Suse GTK-based installer, but
+  these steps should be close to that end.
+
+  1. Pick the 1st CD of some Suse edition version ISO
+     (let's say it is named SUSE.iso)
+
+  2. Ensure you have a live / working gtk+/Gnome install
+
+  3. Get cramfs (not included on suse cds, just google it and it will be 1st
+     result), and compile it.
+
+  4. Tweak the variables in gtkize-iso to suit
+	+ you need a chunk of tmp space to unpack & re-build the iso
+
+  5. Run ./gtkize-iso SUSE.iso /tmp/new.iso
+
+  6. Ready to burn and try.
+
+LibZypp API overview
+
+  The Zypp library is a wrapper around at least two package repository
+  systems (zmd and rug). It is quite a monster with no clear API or
+  documentation, thus this section.
+
+  The first thing we need to do when using Zypp is to initializate it.
+  This is done for us by yast-core, so we don't have to care about that.
+
+  To get a list of packages, you iterate the Zypp pool, that you can get
+  with zypp::getZYpp()->poolProxy(). So, if you want to iterate through
+  the package pool, you would do:
+    for (zypp::ResPoolProxy::const_iterator it =
+           zypp::getZYpp()->poolProxy().byKindBegin <zypp::Package>();
+         it != zypp::getZYpp()->poolProxy().byKindEnd <zypp::Package>(); it++)
+  To iterate through patches, use zypp::Patch as the kind.
+
+  The iterators point to objects of type zypp::ui::Selectable::Ptr, where Ptr
+  is a boost intrusive_ptr -- so, you may turn that into a C pointers with
+  a "zypp::ui::Selectable *sel = get_pointer (*it);"
+
+  A Selectable object contains pointers to the installed version and all
+  available (through repositories) versions of some packages whose name
+  you may get with a zypp::ui::Selectable::name(). The package it considers
+  as the best from the available packages is what it calls a candidate.
+  Check /usr/include/zypp/ui/Selectable.h for its API.
+
+  You may get more details on a given packages by retriving the correspondent
+  zypp::ResObject from the Selectable of the version you want.
+  Check /usr/include/zypp/ResObject.h for its API.
+
+  To get even more information, you may cast the zypp::ResObject to a
+  zypp::Package or zypp::Patch, according to what you are iterating.
+  Since this is boost pointers we are dealing with, you would cast a
+  zypp::ResObject::constPtr like
+    zypp::dynamic_pointer_cast <const zypp::Package> (res_object);
+  Check /usr/include/zypp/Package.h / Patch.h for their API.
+
+  The reason why our categories tree is build in an ackward way is because you
+  get the category of a package with zypp::Package::group() which returns a
+  std::string like "Productivity/Networking/Email/Utilities". You can't build
+  the tree before you start adding packages since you don't have a way to know
+  its hierarchy.
+
+  To avoid the lengthy names of Zypp, we use some typedefs and inline helper
+  functions that you may find right on the start of YGPackageSelector.cc.
