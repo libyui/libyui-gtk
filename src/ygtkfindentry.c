@@ -28,7 +28,6 @@ static void ygtk_ext_entry_map (GtkWidget *widget)
 {
 	if (GTK_WIDGET_REALIZED (widget) && !GTK_WIDGET_MAPPED (widget)) {
 		GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->map (widget);
-
 		YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
 		if (entry->left_window)
 			gdk_window_show (entry->left_window);
@@ -167,11 +166,13 @@ static void ygtk_ext_entry_size_request (GtkWidget *widget, GtkRequisition *req)
 {
 	GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->size_request (widget, req);
 
+#if 0
 	YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
 	req->width += ygtk_ext_entry_get_border_window_size (entry,
 	                                                     YGTK_EXT_ENTRY_LEFT_WIN);
 	req->width += ygtk_ext_entry_get_border_window_size (entry,
 	                                                     YGTK_EXT_ENTRY_RIGHT_WIN);
+#endif
 }
 
 static void ygtk_ext_entry_size_allocate (GtkWidget *widget,
@@ -452,16 +453,26 @@ static gboolean ygtk_find_entry_button_press_event (GtkWidget *widget,
 	return TRUE;
 }
 
+static gboolean ygtk_find_entry_is_empty (YGtkFindEntry *entry)
+{
+	return *gtk_entry_get_text (GTK_ENTRY (entry)) == '\0';
+}
+
 static void ygtk_find_entry_insert_text (GtkEditable *editable,
 	const gchar *new_text, gint new_text_len, gint *pos)
 {
+	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (editable);
+	gboolean empty = ygtk_find_entry_is_empty (fentry);
+
 	GtkEditableClass *parent_editable_iface = g_type_interface_peek
 		(ygtk_find_entry_parent_class, GTK_TYPE_EDITABLE);
 	parent_editable_iface->insert_text (editable, new_text, new_text_len, pos);
 
-	GdkWindow *clear_win = YGTK_EXT_ENTRY (editable)->right_window;
-	if (clear_win)
+	GdkWindow *clear_win = YGTK_EXT_ENTRY (fentry)->right_window;
+	if (empty && clear_win) {
 		gdk_window_show (clear_win);
+		gtk_widget_queue_resize (GTK_WIDGET (editable));
+	}
 }
 
 static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
@@ -471,9 +482,13 @@ static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
 		(ygtk_find_entry_parent_class, GTK_TYPE_EDITABLE);
 	parent_editable_iface->delete_text (editable, start_pos, end_pos);
 
-	GdkWindow *clear_win = YGTK_EXT_ENTRY (editable)->right_window;
-	if (clear_win)
+	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (editable);
+	gboolean empty = ygtk_find_entry_is_empty (fentry);
+	GdkWindow *clear_win = YGTK_EXT_ENTRY (fentry)->right_window;
+	if (empty && clear_win) {
 		gdk_window_hide (clear_win);
+		gtk_widget_queue_resize (GTK_WIDGET (editable));
+	}
 }
 
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
