@@ -438,6 +438,7 @@ static const StockMap stockMap[] = {
 	{"Abort",     GTK_STOCK_CANCEL      },
 	{"Accept",    GTK_STOCK_APPLY       },
 	{"Add",       GTK_STOCK_ADD         },
+	{"Apply",     GTK_STOCK_APPLY       },
 	{"Back",      GTK_STOCK_GO_BACK     },
 	{"Cancel",    GTK_STOCK_CANCEL      },
 	{"Configure", GTK_STOCK_PREFERENCES },
