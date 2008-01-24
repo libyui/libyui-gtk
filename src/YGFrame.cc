@@ -51,21 +51,12 @@ public:
 	virtual ~YGFrame() {}
 
 	// YFrame
-	virtual void setLabel (const string &_str)
+	virtual void setLabel (const string &str)
 	{
 		IMPL
-		/* Get rid of mnemonics; makes no sense here. */
-		size_t length = _str.length();
-		string str;
-		str.reserve (length);
-		for (size_t i = 0; i < length; i++)
-			if (_str[i] != '&')
-				str += _str[i];
-
 		GtkWidget *label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
 		gtk_label_set_text (GTK_LABEL (label), str.c_str());
-
-		YFrame::setLabel (_str);
+		YFrame::setLabel (str);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -126,8 +117,9 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
-	virtual void setEnabling (bool enabled)
+	virtual void setEnabled (bool enabled)
     {
+
         GtkWidget *frame = getWidget();
         if (enabled) {
             gtk_widget_set_sensitive (frame, TRUE);
@@ -137,6 +129,7 @@ public:
             gtk_widget_set_sensitive (frame, FALSE);
 			YWidget::setChildrenEnabled (false);
         }
+        YWidget::setEnabled (enabled);
     }
 
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
@@ -145,7 +138,7 @@ public:
 private:
 	static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
     {
-        pThis->setEnabling (true);
+        pThis->setEnabled (true);
         if (pThis->notify())
             YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
     }

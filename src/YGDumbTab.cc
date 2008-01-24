@@ -76,9 +76,7 @@ public:
 		g_object_set_data (G_OBJECT (page), "yitem", item);
 
 		gtk_notebook_append_page (notebook, page, tab_label);
-
-		if (!m_last_tab)  /*first tab*/
-			syncTabPage();
+		selectItem (item, item->selected() || !m_last_tab /*first tab*/);
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 	}

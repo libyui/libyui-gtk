@@ -1,3 +1,9 @@
+2008-01-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDumbTab.cc: bug fix: honor tab default flag.
+
+	* src/YGCheckBoxFrame.cc: bug fix: setEnabling() is now setEnabled().
+
 2008-01-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.c: bug fix: clear icon hidden on delete, and not shown
