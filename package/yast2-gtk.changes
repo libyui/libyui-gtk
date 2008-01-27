@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Sun Jan 27 21:03:57 CET 2008 - coolo@suse.de
+
+- fix changelog
+
+-------------------------------------------------------------------
 Fri Jan 18 14:08:57 CET 2008 - coolo@suse.de
 
 - Ricardo fixed make test
@@ -49,17 +54,6 @@ Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
 Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
 
 - #296945: pulse progress bar impl.
-
--------------------------------------------------------------------
-Fri Aug 10 18:01:20 CEST 2007 - mvidner@suse.cz
-
-- Finished integrating Feature #120292, UI as a namespace callable
-  from yast2-*-bindings.
-- 2.5.9
-
--------------------------------------------------------------------
-Wed Aug 8 15:32:01 BST 2007 - mmichael@suse.de
-
 - FaTE #302018: details on how to print the license
 - 2.15.8
 
