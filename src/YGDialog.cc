@@ -424,6 +424,12 @@ YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode
 void
 YGDialog::openInternal()
 {
+#if TESTED
+  // Ensure only one default button ?
+  gtk_widget_show (m_widget);
+  gtk_window_present (GTK_WINDOW (m_widget));
+  gtk_widget_queue_draw (m_widget);
+#endif
 #if 0
     ensureOnlyOneDefaultButton();
     QWidget::show();
@@ -436,6 +442,10 @@ YGDialog::openInternal()
 void
 YGDialog::activate()
 {
+#if TESTED
+  gtk_window_present (GTK_WINDOW (m_widget));
+  gtk_widget_queue_draw (m_widget);
+#endif
 #if 0
     QWidget::raise();
     QWidget::update();
