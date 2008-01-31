@@ -216,7 +216,7 @@ public:
 
 	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
 	{
-		YGUI::ui()->sendEvent (new YMenuEvent (YCPString (url)));
+		YGUI::ui()->sendEvent (new YMenuEvent (url));
 	}
 
 	YGWIDGET_IMPL_COMMON

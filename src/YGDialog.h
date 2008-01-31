@@ -33,6 +33,9 @@ public:
 	virtual int  preferredWidth()  { return 0; }
 	virtual int  preferredHeight() { return 0; }
 
+        virtual void activate();
+        virtual void openInternal();
+
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };

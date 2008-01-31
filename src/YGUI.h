@@ -85,7 +85,7 @@ public:
 
 	virtual void makeScreenShot (string filename);
 	virtual void beep();
-	virtual YCPValue runPkgSelection (YWidget *packageSelector);
+	virtual YEvent * runPkgSelection (YWidget *packageSelector);
 
     void toggleRecordMacro();
 

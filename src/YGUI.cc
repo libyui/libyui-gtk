@@ -297,13 +297,16 @@ void YGUI::normalCursor()
 		dialog->normalCursor();
 }
 
-YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
+YEvent* YGUI::runPkgSelection (YWidget *packageSelector)
 {
 	y2milestone( "Running package selection..." );
-	YCPValue input = YCPVoid();
+	YEvent *event = 0;
 
 	try {
-		input = evaluateUserInput();
+	       do
+               { 
+                    event = filterInvalidEvents( userInput(0) );
+               } while ( ! event );
 	} catch (const std::exception &e) {
 		y2error ("UI::RunPkgSelection() error: %s", e.what());
 		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
@@ -312,8 +315,8 @@ YCPValue YGUI::runPkgSelection (YWidget *packageSelector)
 		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
 	}
 
-	y2milestone ("Package selection done - returning %s", input->toString().c_str());
-	return input;
+	// y2milestone ("Package selection done - returning %s", input->toString().c_str());
+	return event;
 }
 
 void YGUI::makeScreenShot (string filename)

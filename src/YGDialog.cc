@@ -421,3 +421,24 @@ YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode
 	return new YGDialog (dialogType, colorMode);
 }
 
+void
+YGDialog::openInternal()
+{
+#if 0
+    ensureOnlyOneDefaultButton();
+    QWidget::show();
+    QWidget::raise(); // FIXME: is this really necessary?
+    QWidget::update();
+#endif
+}
+
+
+void
+YGDialog::activate()
+{
+#if 0
+    QWidget::raise();
+    QWidget::update();
+#endif 
+}
+

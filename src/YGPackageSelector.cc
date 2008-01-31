@@ -1651,7 +1651,7 @@ protected:
 
 		if (!strcmp (action, "accept")) {
 			y2milestone ("Closing PackageSelector with 'accept'");
-			YGUI::ui()->sendEvent (new YMenuEvent (YCPSymbol ("accept")));
+			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}
 		else if (!strcmp (action, "cancel")) {
 			y2milestone ("Closing PackageSelector with 'cancel'");
