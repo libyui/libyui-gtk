@@ -41,6 +41,136 @@ static void busyCursor()
 static void normalCursor()
 { YGUI::ui()->normalCursor(); }
 
+struct PkgList
+{
+	bool empty() const
+	{ return packages.empty(); }
+	bool single() const
+	{ return packages.size() == 1; }
+	Ypp::Package *front() const
+	{ return packages.front(); }
+
+	bool installed() const
+	{ init(); return _allInstalled;  }
+	bool notInstalled() const
+	{ init(); return _allNotInstalled; }
+	bool upgradable() const
+	{ init(); return _allUpgradable; }
+	bool modified() const
+	{ init(); return _allModified;   }
+	bool locked() const
+	{ init(); return _allLocked;     }
+	bool unlocked() const
+	{ init(); return _allUnlocked;   }
+
+	void install()  // or upgrade
+	{
+		busyCursor();
+		Ypp::get()->startTransactions();
+		for (std::list <Ypp::Package *>::iterator it = packages.begin();
+		     it != packages.end(); it++)
+			(*it)->install (0);
+		Ypp::get()->finishTransactions();
+		normalCursor();
+	}
+
+	void remove()
+	{
+		busyCursor();
+		Ypp::get()->startTransactions();
+		for (std::list <Ypp::Package *>::iterator it = packages.begin();
+		     it != packages.end(); it++)
+			(*it)->remove();
+		Ypp::get()->finishTransactions();
+		normalCursor();
+	}
+
+	void lock (bool toLock)
+	{
+		busyCursor();
+		Ypp::get()->startTransactions();
+		for (std::list <Ypp::Package *>::iterator it = packages.begin();
+		     it != packages.end(); it++)
+			(*it)->lock (toLock);
+		Ypp::get()->finishTransactions();
+		normalCursor();
+	}
+
+	void undo()
+	{
+		busyCursor();
+		Ypp::get()->startTransactions();
+		for (std::list <Ypp::Package *>::iterator it = packages.begin();
+		     it != packages.end(); it++)
+			(*it)->undo();
+		Ypp::get()->finishTransactions();
+		normalCursor();
+	}
+
+	void push (Ypp::Package *package)
+	{ packages.push_back (package); }
+
+	bool contains (const Ypp::Package *package) const
+	{
+		const_iterator it;
+		for (it = packages.begin(); it != packages.end(); it++)
+			if (*it == package)
+				return true;
+		return false;
+	}
+
+	PkgList() : inited (0)
+	{}
+
+	typedef std::list <Ypp::Package *>::const_iterator const_iterator;
+	const_iterator begin() const
+	{ return packages.begin(); }
+	const_iterator end() const
+	{ return packages.end(); }
+
+private:
+	void init() const
+	{ PkgList *packages = const_cast <PkgList *> (this); packages->_init(); }
+	void _init()
+	{
+		if (inited) return; inited = 1;
+		if (packages.empty())
+			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
+				_allLocked = _allUnlocked = false;
+		else {
+			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
+				_allLocked = _allUnlocked = true;
+			for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
+				 it != packages.end(); it++) {
+				if (!(*it)->isInstalled()) {
+					_allInstalled = false;
+					_allUpgradable = false;
+				 }
+				 else {
+				 	_allNotInstalled = false;
+				 	const Ypp::Package::Version *version = (*it)->getAvailableVersion(0);
+				 	if (!version || version->cmp <= 0)
+				 		_allUpgradable = false;
+				 }
+				if ((*it)->isModified()) {
+					// if modified, can't be locked or unlocked
+					_allLocked = _allUnlocked = false;
+				}
+				else
+					_allModified = false;
+				if ((*it)->isLocked())
+					_allUnlocked = false;
+				else
+					_allLocked = false;
+			}
+		}
+	}
+
+	std::list <Ypp::Package *> packages;
+	guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
+	      _allModified : 2, _allLocked : 2, _allUnlocked : 2;
+};
+
 #include "icons/pkg-list-mode.xpm"
 #include "icons/pkg-tiles-mode.xpm"
 
@@ -48,7 +178,7 @@ class PackagesView
 {
 public:
 	struct Listener {
-		virtual void packagesSelected (const std::list <Ypp::Package *> &selection) = 0;
+		virtual void packagesSelected (const PkgList &packages) = 0;
 	};
 	void setListener (Listener *listener)
 	{ m_listener = listener; }
@@ -56,25 +186,50 @@ public:
 private:
 Listener *m_listener;
 
-	void packagesSelected (const std::list <Ypp::Package *> &selection)
+	void packagesSelected (const PkgList &packages)
 	{
 		if (m_listener) {
 			busyCursor();
-			m_listener->packagesSelected (selection);
+			m_listener->packagesSelected (packages);
 			normalCursor();
 		}
 	}
 
-	struct View {
+	struct View
+	{
 		PackagesView *m_parent;
-		GtkWidget *m_widget;
-		View (PackagesView *parent) : m_parent (parent)
+		GtkWidget *m_widget, *m_popup_hack;
+		View (PackagesView *parent) : m_parent (parent), m_popup_hack (NULL)
 		{}
-		virtual void setModel (GtkTreeModel *model) = 0;
 
-		void selectedPaths (GtkTreeModel *model, GList *paths)
+		virtual ~View()
 		{
-			std::list <Ypp::Package *> packages;
+			if (m_popup_hack) gtk_widget_destroy (m_popup_hack);
+		}
+
+		virtual void setModel (GtkTreeModel *model) = 0;
+		virtual GList *getSelectedPaths (GtkTreeModel **model) = 0;
+		virtual void selectAll() = 0;
+
+		virtual int countSelected()
+		{
+			int count = 0;
+			GtkTreeModel *model;
+			GList *paths = getSelectedPaths (&model);
+			for (GList *i = paths; i; i = i->next) {
+				GtkTreePath *path = (GtkTreePath *) i->data;
+				gtk_tree_path_free (path);
+				count++;
+			}
+			g_list_free (paths);
+			return count;
+		}
+
+		PkgList getSelected()
+		{
+			GtkTreeModel *model;
+			GList *paths = getSelectedPaths (&model);
+			PkgList packages;
 			for (GList *i = paths; i; i = i->next) {
 				Ypp::Package *package;
 				GtkTreePath *path = (GtkTreePath *) i->data;
@@ -83,11 +238,86 @@ Listener *m_listener;
 				gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
 				gtk_tree_path_free (path);
 
-				packages.push_back (package);
+				packages.push (package);
 			}
 			g_list_free (paths);
+			return packages;
+		}
+
+		void signalSelected()
+		{
+			PkgList packages = getSelected();
 			m_parent->packagesSelected (packages);
 		}
+
+		void signalPopup (int button, int event_time)
+		{
+			// GtkMenu emits "deactivate" before Items notifications, so there isn't
+			// a better way to de-allocate the popup
+			if (m_popup_hack) gtk_widget_destroy (m_popup_hack);
+			GtkWidget *menu = m_popup_hack = gtk_menu_new();
+
+			struct inner {
+				static void appendItem (GtkWidget *menu, const char *label, const char *stock_icon,
+					void (& callback) (GtkMenuItem *item, View *pThis), View *pThis)
+				{
+					GtkWidget *item;
+					if (stock_icon) {
+						if (label) {
+							item = gtk_image_menu_item_new_with_mnemonic (label);
+							GtkWidget *icon;
+							icon = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_MENU);
+							gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
+						}
+						else
+							item = gtk_image_menu_item_new_from_stock (stock_icon, NULL);
+					}
+					else
+						item = gtk_menu_item_new_with_mnemonic (label);
+					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+					g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (callback), pThis);
+				}
+				static void install_cb (GtkMenuItem *item, View *pThis)
+				{
+					PkgList packages = pThis->getSelected();
+					packages.install();
+				}
+				static void remove_cb (GtkMenuItem *item, View *pThis)
+				{
+					PkgList packages = pThis->getSelected();
+					packages.remove();
+				}
+				static void undo_cb (GtkMenuItem *item, View *pThis)
+				{
+					PkgList packages = pThis->getSelected();
+					packages.undo();
+				}
+				static void select_all_cb (GtkMenuItem *item, View *pThis)
+				{
+					pThis->selectAll();
+				}
+			};
+
+			PkgList packages = getSelected();
+			bool empty = true;
+			if (packages.notInstalled())
+				inner::appendItem (menu, _("_Install"), GTK_STOCK_DELETE, inner::install_cb, this), empty = false;
+			if (packages.upgradable())
+				inner::appendItem (menu, _("_Upgrade"), GTK_STOCK_GOTO_TOP, inner::install_cb, this), empty = false;
+			if (packages.installed())
+				inner::appendItem (menu, _("_Remove"), GTK_STOCK_SAVE, inner::remove_cb, this), empty = false;
+			if (packages.modified())
+				inner::appendItem (menu, _("_Undo"), GTK_STOCK_UNDO, inner::undo_cb, this), empty = false;
+			if (!empty)
+				gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
+			inner::appendItem (menu, NULL, GTK_STOCK_SELECT_ALL, inner::select_all_cb, this);
+
+			gtk_widget_show_all (menu);
+			gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
+		}
+
+		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
+		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
 	};
 	struct ListView : public View
 	{
@@ -118,8 +348,13 @@ Listener *m_listener;
 			GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
 			gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
 			g_signal_connect (G_OBJECT (selection), "changed",
-				                    G_CALLBACK (packages_selected_cb), this);
+			                  G_CALLBACK (packages_selected_cb), this);
 			gtk_widget_show (m_widget);
+
+			g_signal_connect (G_OBJECT (m_widget), "popup-menu",
+			                  G_CALLBACK (popup_key_cb), this);
+			g_signal_connect (G_OBJECT (m_widget), "button-press-event",
+			                  G_CALLBACK (popup_button_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -129,11 +364,39 @@ Listener *m_listener;
 				gtk_tree_view_scroll_to_point (GTK_TREE_VIEW (m_widget), 0, 0);
 		}
 
+		GtkTreeSelection *getTreeSelection()
+		{ return gtk_tree_view_get_selection (GTK_TREE_VIEW (m_widget)); }
+
+		virtual GList *getSelectedPaths (GtkTreeModel **model)
+		{ return gtk_tree_selection_get_selected_rows (getTreeSelection(), model); }
+
+		virtual void selectAll()
+		{ gtk_tree_selection_select_all (getTreeSelection()); }
+
+		virtual int countSelected()
+		{ return gtk_tree_selection_count_selected_rows (getTreeSelection()); }
+
 		static void packages_selected_cb (GtkTreeSelection *selection, View *pThis)
+		{ pThis->signalSelected(); }
+
+		static gboolean popup_button_cb (GtkWidget *widget, GdkEventButton *event, View *pThis)
 		{
-			GtkTreeModel *model;
-			GList *paths = gtk_tree_selection_get_selected_rows (selection, &model);
-			pThis->selectedPaths (model, paths);
+			// workaround (based on gedit): we want the tree view to receive this press in order
+			// to select the row, but we can't use connect_after, so we throw a dummy mouse press
+			if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
+				static bool safeguard = false;
+				if (safeguard) return false;
+				safeguard = true;
+				if (pThis->countSelected() <= 1) {  // if there is a selection, let it be
+					event->button = 1;
+					if (!gtk_widget_event (widget, (GdkEvent *) event))
+						return FALSE;
+				}
+				pThis->signalPopup (3, event->time);
+				safeguard = false;
+				return TRUE;
+			}
+			return FALSE;
 		}
 	};
 	struct IconView : public View
@@ -148,6 +411,11 @@ Listener *m_listener;
 			g_signal_connect (G_OBJECT (m_widget), "selection-changed",
 				                    G_CALLBACK (packages_selected_cb), this);
 			gtk_widget_show (m_widget);
+
+			g_signal_connect (G_OBJECT (m_widget), "popup-menu",
+			                  G_CALLBACK (popup_key_cb), this);
+			g_signal_connect_after (G_OBJECT (m_widget), "button-press-event",
+			                        G_CALLBACK (popup_button_after_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -161,11 +429,26 @@ Listener *m_listener;
 			}
 		}
 
-		static void packages_selected_cb (GtkIconView *view, View *pThis)
+		virtual GList *getSelectedPaths (GtkTreeModel **model)
 		{
-			GtkTreeModel *model = gtk_icon_view_get_model (view);
+			GtkIconView *view = GTK_ICON_VIEW (m_widget);
+			*model = gtk_icon_view_get_model (view);
 			GList *paths = gtk_icon_view_get_selected_items (view);
-			pThis->selectedPaths (model, paths);
+			return paths;
+		}
+
+		virtual void selectAll()
+		{ gtk_icon_view_select_all (GTK_ICON_VIEW (m_widget)); }
+
+		static void packages_selected_cb (GtkIconView *view, View *pThis)
+		{ pThis->signalSelected(); }
+
+		static gboolean popup_button_after_cb (GtkWidget *widget, GdkEventButton *event,
+		                                       View *pThis)
+		{
+			if (event->type == GDK_BUTTON_PRESS && event->button == 3)
+				pThis->signalPopup (3, event->time);
+			return FALSE;
 		}
 	};
 
@@ -217,7 +500,7 @@ public:
 		if (m_model)
 			m_view->setModel (m_model);
 
-		packagesSelected (std::list <Ypp::Package *> ());
+		packagesSelected (PkgList());
 		normalCursor();
 	}
 
@@ -233,10 +516,13 @@ public:
 		m_model = GTK_TREE_MODEL (zmodel);
 		if (m_view) {
 			m_view->setModel (m_model);
-			packagesSelected (std::list <Ypp::Package *> ());
+			packagesSelected (PkgList());
 		}
 		normalCursor();
 	}
+
+	PkgList getSelected()
+	{ return m_view->getSelected(); }
 
 private:
 	GtkWidget *create_toggle_button (const char **xpm, const char *tooltip, GtkWidget *member)
@@ -322,6 +608,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			else
 				gtk_widget_show (m_button);
 			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
+			gtk_widget_set_tooltip_text (m_label, package->summary().c_str());
 		}
 
 		static void undo_clicked_cb (GtkButton *button, Ypp::Package *package)
@@ -671,28 +958,25 @@ class Filters
 				gtk_box_pack_start (GTK_BOX (m_box), m_buttons_box, FALSE, TRUE, 0);
 			}
 
-			std::list <Ypp::Package *> m_selected;
-
-			virtual void packagesSelected (const std::list <Ypp::Package *> &selection)
+			virtual void packagesSelected (const PkgList &selection)
 			{
 				gtk_widget_set_sensitive (m_buttons_box, !selection.empty());
-				m_selected = selection;
 				m_filters->signalChanged();
 			}
 
 			virtual void writeQuery (Ypp::Query *query)
 			{
-				for (std::list <Ypp::Package *>::const_iterator it = m_selected.begin();
-				     it != m_selected.end(); it++)
+				PkgList selected = m_view->getSelected();
+				for (PkgList::const_iterator it = selected.begin();
+				     it != selected.end(); it++)
 					query->addCollection (*it);
 			}
 
 			void doAll (bool install /*or remove*/)
 			{
 				// we just need to mark the collections themselves
-				for (std::list <Ypp::Package *>::iterator it = m_selected.begin();
-				     it != m_selected.end(); it++)
-					install ? (*it)->install(0) : (*it)->remove();
+				PkgList selected = m_view->getSelected();
+				install ? selected.install() : selected.remove();
 			}
 
 			static void install_cb (GtkButton *button, Pool *pThis)
@@ -981,7 +1265,7 @@ GtkWidget *m_widget, *m_install_button, *m_remove_button, *m_installed_version,
           *m_unlocked_image, *m_package_image;
 
 public:
-std::list <Ypp::Package *> m_packages;  // we keep a copy to test against modified...
+PkgList m_packages;  // we keep a copy to test against modified...
 Filters *m_filters;  // used to filter repo versions...
 
 	GtkWidget *getWidget()
@@ -1077,40 +1361,15 @@ Filters *m_filters;  // used to filter repo versions...
 		g_object_unref (G_OBJECT (m_unlocked_image));
 	}
 
-	void setPackages (const std::list <Ypp::Package *> &packages)
+	void setPackages (const PkgList &packages)
 	{
 		m_packages = packages;
 		if (packages.empty())
 			return;
-		Ypp::Package *single_package = packages.size() == 1 ? packages.front() : NULL;
 
-		bool allInstalled = true, allNotInstalled = true, allUpgradable = true,
-		     allModified = true, allLocked = true, allUnlocked = true;
-		for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
-		     it != packages.end(); it++) {
-			if (!(*it)->isInstalled()) {
-				allInstalled = false;
-				allUpgradable = false;
-			 }
-			 else {
-			 	allNotInstalled = false;
-			 	const Ypp::Package::Version *version = (*it)->getAvailableVersion(0);
-			 	if (!version || version->cmp <= 0)
-			 		allUpgradable = false;
-			 }
-			if ((*it)->isModified()) {
-				// if modified, can't be locked or unlocked
-				allLocked = allUnlocked = false;
-			}
-			else
-				allModified = false;
-			if ((*it)->isLocked())
-				allUnlocked = false;
-			else
-				allLocked = false;
-		}
+		Ypp::Package *single_package = packages.single() ? packages.front() : NULL;
 
-		if (allInstalled) {
+		if (packages.installed()) {
 			gtk_widget_show (m_remove_button);
 			if (single_package)
 				gtk_label_set_text (GTK_LABEL (m_installed_version),
@@ -1147,12 +1406,12 @@ Filters *m_filters;  // used to filter repo versions...
 				gtk_widget_hide (m_install_button);
 		}
 		else {
-			if (allUpgradable) {
+			if (packages.upgradable()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(upgrades)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
 				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
 			}
-			else if (allNotInstalled) {
+			else if (packages.notInstalled()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(several)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
 				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
@@ -1162,13 +1421,13 @@ Filters *m_filters;  // used to filter repo versions...
 		}
 
 		// is locked
-		if (allLocked || allUnlocked) {
+		if (packages.locked() || packages.unlocked()) {
 			gtk_widget_show (m_lock_button);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (m_lock_button), allLocked);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (m_lock_button), packages.locked());
 			gtk_button_set_image (GTK_BUTTON (m_lock_button),
-				allLocked ? m_locked_image : m_unlocked_image);
-			gtk_widget_set_sensitive (m_install_button, !allLocked);
-			gtk_widget_set_sensitive (m_remove_button, !allLocked);
+				packages.locked() ? m_locked_image : m_unlocked_image);
+			gtk_widget_set_sensitive (m_install_button, !packages.locked());
+			gtk_widget_set_sensitive (m_remove_button, !packages.locked());
 		}
 		else {
 			gtk_widget_hide (m_lock_button);
@@ -1176,7 +1435,7 @@ Filters *m_filters;  // used to filter repo versions...
 			gtk_widget_set_sensitive (m_remove_button, TRUE);
 		}
 
-		if (allModified)
+		if (packages.modified())
 			gtk_widget_show (m_undo_button);
 		else
 			gtk_widget_hide (m_undo_button);
@@ -1196,59 +1455,37 @@ Filters *m_filters;  // used to filter repo versions...
 private:
 	static void install_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
-		busyCursor();
-		Ypp::get()->startTransactions();
-		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
-		     it != pThis->m_packages.end(); it++) {
-			int version;
-			if (GTK_WIDGET_VISIBLE (pThis->m_available_versions))
-				version = gtk_combo_box_get_active (GTK_COMBO_BOX (
+		if (pThis->m_packages.single()) {
+			busyCursor();
+			Ypp::Package *package = pThis->m_packages.front();
+			int version = gtk_combo_box_get_active (GTK_COMBO_BOX (
 					pThis->m_available_versions));
-			else
-				version = 0;  // i.e. most recent (on multi-packages)
-			(*it)->install (version);
+			package->install (version);
+			normalCursor();
 		}
-		Ypp::get()->finishTransactions();
-		normalCursor();
+		else
+			pThis->m_packages.install();
 	}
 
 	static void remove_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
-		busyCursor();
-		Ypp::get()->startTransactions();
-		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
-		     it != pThis->m_packages.end(); it++)
-			(*it)->remove();
-		Ypp::get()->finishTransactions();
-		normalCursor();
+		pThis->m_packages.remove();
 	}
 
 	static void locked_toggled_cb (GtkToggleButton *button, PackageControl *pThis)
 	{
 		bool lock = gtk_toggle_button_get_active (button);
-		busyCursor();
-		Ypp::get()->startTransactions();
-		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
-		     it != pThis->m_packages.end(); it++)
-			(*it)->lock (lock);
-		Ypp::get()->finishTransactions();
-		normalCursor();
+		pThis->m_packages.lock (lock);
 	}
 
 	static void undo_clicked_cb (GtkButton *button, PackageControl *pThis)
 	{
-		busyCursor();
-		Ypp::get()->startTransactions();
-		for (std::list <Ypp::Package *>::iterator it = pThis->m_packages.begin();
-		     it != pThis->m_packages.end(); it++)
-			(*it)->undo();
-		Ypp::get()->finishTransactions();
-		normalCursor();
+		pThis->m_packages.undo();
 	}
 
 	static void version_changed_cb (GtkComboBox *combo, PackageControl *pThis)
 	{
-		if (pThis->m_packages.size() == 1) {
+		if (pThis->m_packages.single()) {
 			Ypp::Package *package = pThis->m_packages.front();
 			int nb = gtk_combo_box_get_active (GTK_COMBO_BOX (pThis->m_available_versions));
 			if (nb == -1) return;
@@ -1310,7 +1547,7 @@ public:
 		}
 	}
 
-	void setPackages (std::list <Ypp::Package *> packages)
+	void setPackages (const PkgList &packages)
 	{
 		if (packages.empty()) {
 			gtk_widget_hide (m_widget);
@@ -1336,11 +1573,7 @@ public:
 	{
 		// GTK+ doesn't fire selection change when a selected row changes, so we need
 		// to re-load PackageControl in that occasions.
-		std::list <Ypp::Package *>::iterator it;
-		for (it = m_control->m_packages.begin(); it != m_control->m_packages.end(); it++)
-			if (*it == package)
-				break;
-		if (it != m_control->m_packages.end())
+		if (m_control->m_packages.contains (package))
 			m_control->setPackages (m_control->m_packages);
 	}
 
@@ -1564,7 +1797,7 @@ public:
 
 		gtk_widget_show_all (m_box);
 		m_changes->setContainer (changes_box);
-		m_details->setPackages (std::list <Ypp::Package *> ());
+		m_details->setPackages (PkgList());
 	}
 
 	~PackageSelector()
@@ -1581,7 +1814,7 @@ public:
 		m_packages->setQuery (query);
 	}
 
-	virtual void packagesSelected (const std::list <Ypp::Package *> &packages)
+	virtual void packagesSelected (const PkgList &packages)
 	{
 		m_details->setPackages (packages);
 	}
@@ -1607,9 +1840,6 @@ public:
 		setBorder (0);
 		YGTK_WIZARD (getWidget())->child_border_width = 0;
 
-        YGDialog *dialog = YGDialog::currentDialog();
-        dialog->setCloseCallback (confirm_cb, this);
-
         GtkWindow *window = YGDialog::currentWindow();
 		gtk_window_resize (window,
 			MAX (700, GTK_WIDGET (window)->allocation.width),
@@ -1620,7 +1850,6 @@ public:
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
 		ygtk_wizard_set_header_text (wizard, window,
 			onlineUpdateMode() ? _("Patch Selector") : _("Package Selector"));
-		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? patch_help : pkg_help);
 
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");
@@ -1629,6 +1858,12 @@ public:
 		ygtk_wizard_set_next_button_str_id (wizard, "accept");
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
+
+		busyCursor();
+		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? patch_help : pkg_help);
+
+        YGDialog *dialog = YGDialog::currentDialog();
+        dialog->setCloseCallback (confirm_cb, this);
 
 		m_package_selector = new PackageSelector (onlineUpdateMode());
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());

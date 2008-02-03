@@ -1,3 +1,19 @@
+2008-02-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: bug fix: licenses were being rejected regardless
+	user's acceptance.
+
+	* src/YGPackageSelector.cc: Christian Jäger asked for an Update All button.
+	Added a context menu to the listing, that has among package actions, a Select
+	All item, so to make it clear it supports multi-selections and one can easily
+	select-all then the upgrade button.
+
+	* src/YGDialog.cc: keep up with libyui changes.
+
+2008-02-03  Stephan Kulow <coolo@suse.de>
+
+	* src/YGUI.cc/h: maintaince: keep up with libyui changes.
+
 2008-01-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDumbTab.cc: bug fix: honor tab default flag.

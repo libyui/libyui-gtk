@@ -54,8 +54,9 @@ protected:
 public:
     YEvent *waitInput (unsigned long timeout_ms, bool block);
 	virtual void idleLoop (int fd_ycp);
-	virtual YEvent *userInput (unsigned long timeout_millisec);
-	virtual YEvent *pollInput();
+	// these two are now implemented at YDialog...
+	YEvent *userInput (unsigned long timeout_millisec);
+	YEvent *pollInput();
 
 	virtual void internalError (const char *msg);
 

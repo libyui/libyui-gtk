@@ -55,7 +55,6 @@ public:
 		        gtk_window_set_modal (window, TRUE);
 		        gtk_window_set_transient_for (window, parent);
 		        gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
-		        //gtk_window_set_focus_on_map (window, FALSE);
 		    }
 		    else {
 		        gtk_window_set_title (window, "YaST");
@@ -85,6 +84,9 @@ public:
 		                  G_CALLBACK (close_window_cb), this);
 		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
 		                        G_CALLBACK (key_pressed_cb), this);
+		// set busy cursor at start
+		g_signal_connect_after (G_OBJECT (m_widget), "realize",
+		                        G_CALLBACK (realize_cb), this);
 	}
 
 	~YGWindow()
@@ -93,6 +95,31 @@ public:
 		setChild (NULL);
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
+	}
+
+	void show()
+	{ gtk_widget_show (m_widget); }
+
+	void present()
+	{ gtk_window_present (GTK_WINDOW (m_widget)); }
+
+	void normalCursor()
+	{
+		if (GTK_WIDGET_REALIZED (m_widget))
+			gdk_window_set_cursor (m_widget->window, NULL);
+	}
+
+	void busyCursor()
+	{
+		if (GTK_WIDGET_REALIZED (m_widget)) {
+			// GdkDisplay won't change for new dialogs
+			static GdkCursor *cursor = NULL;
+			if (!cursor) {
+				GdkDisplay *display = gtk_widget_get_display (m_widget);
+				cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+			}
+			gdk_window_set_cursor (m_widget->window, cursor);
+		}
 	}
 
 	void setChild (YWidget *new_child)
@@ -226,6 +253,9 @@ private:
 		return TRUE;
 	}
 
+	static void realize_cb (GtkWidget *widget, YGWindow *pThis)
+	{ pThis->busyCursor(); }
+
 	static gboolean expode_window_timeout_cb (gpointer data)
 	{
 		YGWindow *pThis = (YGWindow *) data;
@@ -233,7 +263,7 @@ private:
 		srand (time (NULL));
 		gint x, y;
 		gtk_window_get_position (window, &x, &y);
-	#if 0
+		#if 0
 		// OVAL MOVE
 		for (int i = 180; i < 360+180; i++) {
 		    gtk_window_move (window, x+(int)(sin((i*G_PI)/180)*50),
@@ -242,7 +272,7 @@ private:
 		        gtk_main_iteration();
 		    usleep (25);
 		}
-	#else
+		#else
 		// EXPLOSION
 		for (int i = 0; i < 40; i++) {
 		    gtk_window_move (window, x+(int)((((float)(rand())/RAND_MAX)*40)-20),
@@ -251,7 +281,7 @@ private:
 		        gtk_main_iteration();
 		    usleep (200);
 		}
-	#endif
+		#endif
 		gtk_window_move (window, x, y);
 		return TRUE;
 	}
@@ -371,19 +401,12 @@ void YGDialog::unsetCloseCallback()
 
 void YGDialog::normalCursor()
 {
-	gdk_window_set_cursor (m_window->getWidget()->window, NULL);
+	m_window->normalCursor();
 }
 
 void YGDialog::busyCursor()
 {
-	// NOTE: GdkDisplay won't change for new dialogs, so we don't
-	// have to synchronize between them or something.
-	static GdkCursor *cursor = NULL;
-	if (!cursor) {
-		GdkDisplay *display = gtk_widget_get_display (m_window->getWidget());
-		cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
-	}
-	gdk_window_set_cursor (m_window->getWidget()->window, cursor);
+	m_window->busyCursor();
 }
 
 
@@ -421,34 +444,19 @@ YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode
 	return new YGDialog (dialogType, colorMode);
 }
 
-void
-YGDialog::openInternal()
+void YGDialog::openInternal()
 {
-#if TESTED
-  // Ensure only one default button ?
-  gtk_widget_show (m_widget);
-  gtk_window_present (GTK_WINDOW (m_widget));
-  gtk_widget_queue_draw (m_widget);
-#endif
-#if 0
-    ensureOnlyOneDefaultButton();
-    QWidget::show();
-    QWidget::raise(); // FIXME: is this really necessary?
-    QWidget::update();
-#endif
+	m_window->show();
 }
 
-
-void
-YGDialog::activate()
+void YGDialog::activate()
 {
-#if TESTED
-  gtk_window_present (GTK_WINDOW (m_widget));
-  gtk_widget_queue_draw (m_widget);
-#endif
-#if 0
-    QWidget::raise();
-    QWidget::update();
-#endif 
+	m_window->present();
 }
+
+YEvent *YGDialog::waitForEventInternal (int timeout_millisec)
+{ return YGUI::ui()->userInput (timeout_millisec); }
+
+YEvent *YGDialog::pollEventInternal()
+{ return YGUI::ui()->pollInput(); }
 

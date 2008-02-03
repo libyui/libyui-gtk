@@ -171,8 +171,7 @@ fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
 		timeout = g_timeout_add (timeout_ms,
 			(GSourceFunc) user_input_timeout_cb, this);
 
-	if (block)
-	{
+	if (block) {
 		while (!pendingEvent())
 			g_main_context_iteration (NULL, TRUE);
 	}
@@ -303,10 +302,7 @@ YEvent* YGUI::runPkgSelection (YWidget *packageSelector)
 	YEvent *event = 0;
 
 	try {
-	       do
-               { 
-                    event = filterInvalidEvents( userInput(0) );
-               } while ( ! event );
+		event = packageSelector->findDialog()->waitForEvent();
 	} catch (const std::exception &e) {
 		y2error ("UI::RunPkgSelection() error: %s", e.what());
 		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
@@ -314,8 +310,6 @@ YEvent* YGUI::runPkgSelection (YWidget *packageSelector)
 		y2error ("UI::RunPkgSelection() error (unspecified)");
 		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
 	}
-
-	// y2milestone ("Package selection done - returning %s", input->toString().c_str());
 	return event;
 }
 

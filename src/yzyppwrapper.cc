@@ -1173,7 +1173,7 @@ Ypp::Disk *Ypp::Impl::getDisk()
 bool Ypp::Impl::acceptLicense (Ypp::Package *package, const std::string &license)
 {
 	if (interface)
-		interface->acceptLicense (package, license);
+		return interface->acceptLicense (package, license);
 	return false;
 }
 

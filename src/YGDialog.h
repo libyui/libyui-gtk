@@ -33,8 +33,11 @@ public:
 	virtual int  preferredWidth()  { return 0; }
 	virtual int  preferredHeight() { return 0; }
 
-        virtual void activate();
-        virtual void openInternal();
+	virtual void activate();
+	virtual void openInternal();
+
+	virtual YEvent *waitForEventInternal (int timeout_millisec);
+	virtual YEvent *pollEventInternal();
 
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
