@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Feb  4 20:19:03 CET 2008 - coolo@suse.de
+
+- adapt once more to latest yast2-core
+
+-------------------------------------------------------------------
 Thu Jan 31 20:11:40 CET 2008 - coolo@suse.de
 
 - make it compile against latest yast2-core
