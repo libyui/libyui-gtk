@@ -584,6 +584,54 @@ std::string YGApplication::askForSaveFileName (
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
+int
+YGApplication::displayWidth()
+{
+    // return qApp->desktop()->width();
+    return 1024;
+}
+
+
+int
+YGApplication::displayHeight()
+{
+    //return qApp->desktop()->height();
+    return 768;
+}
+
+
+int
+YGApplication::displayDepth()
+{
+    //return qApp->desktop()->depth();
+    return 16;
+}
+
+
+long
+YGApplication::displayColors()
+{
+    return 1L << displayDepth();
+}
+
+int
+YGApplication::defaultWidth()
+{
+    // return qApp->desktop()->width();
+    return 800;
+}
+
+
+int
+YGApplication::defaultHeight()
+{
+    //return qApp->desktop()->height();
+    return 600;
+}
+
+
+
+
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }
 YOptionalWidgetFactory *YGUI::createOptionalWidgetFactory()

@@ -239,6 +239,30 @@ public:
 		const std::string &filter, const std::string &headline);
 	virtual std::string askForSaveFileName (const std::string &startWith,
 		const std::string &filter, const std::string &headline);
+
+
+    virtual int  displayWidth();
+    virtual int  displayHeight();
+    virtual int  displayDepth();
+    virtual long displayColors();
+
+    // Size of main dialogs
+    virtual int  defaultWidth();
+    virtual int  defaultHeight();
+
+    virtual bool leftHandedMouse()       IMPL_RET (false)
+    //
+    // UI capabilities
+    //
+
+    virtual bool isTextMode()            IMPL_RET (false)
+    virtual bool hasImageSupport()       IMPL_RET (true)
+    virtual bool hasLocalImageSupport()  IMPL_RET (true)
+    virtual bool hasAnimationSupport()   IMPL_RET (true)
+    virtual bool hasIconSupport()        IMPL_RET (true)
+    virtual bool hasFullUtf8Support()    IMPL_RET (true)
+    virtual bool richTextSupportsTable() IMPL_RET (false)
+
 };
 
 #endif /*YGUI_H*/
