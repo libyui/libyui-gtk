@@ -1,3 +1,13 @@
+2008-02-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.h/.cc: libyui sync: moved glyph() from YUI to YApplication.
+
+	* src/YGDialog.h/.cc: fixed new open/activate().
+
+2008-02-03  Stephan Kulow <coolo@suse.de>
+
+	* src/YGUI.cc/h: libyui sync.
+
 2008-02-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix: licenses were being rejected regardless

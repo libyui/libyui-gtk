@@ -15,8 +15,6 @@ class YGDialog : public YDialog, public YGWidget
 public:
 	YGDialog (YDialogType dialogType, YDialogColorMode colorMode);
 	virtual ~YGDialog();
-	void showWindow();
-	void hideWindow();
 
     void setCloseCallback (YGWindowCloseFn closeCallback, void *closeData);
     void unsetCloseCallback();
@@ -33,8 +31,8 @@ public:
 	virtual int  preferredWidth()  { return 0; }
 	virtual int  preferredHeight() { return 0; }
 
-	virtual void activate();
 	virtual void openInternal();
+	virtual void activate();
 
 	virtual YEvent *waitForEventInternal (int timeout_millisec);
 	virtual YEvent *pollEventInternal();

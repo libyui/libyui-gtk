@@ -100,9 +100,6 @@ public:
 	void show()
 	{ gtk_widget_show (m_widget); }
 
-	void present()
-	{ gtk_window_present (GTK_WINDOW (m_widget)); }
-
 	void normalCursor()
 	{
 		if (GTK_WIDGET_REALIZED (m_widget))
@@ -329,47 +326,14 @@ YGDialog::~YGDialog()
     YGWindow::unref (m_window);
 }
 
-void YGDialog::showWindow()
+void YGDialog::openInternal()
 {
-    IMPL
+    m_window->show();
+}
+
+void YGDialog::activate()
+{
     m_window->setChild (this);
-    gtk_widget_show (m_window->getWidget());
-    YGUI::ui()->busyCursor();
-}
-
-void YGDialog::hideWindow()
-{
-    IMPL
-	m_window->setChild (NULL);
-    gtk_widget_hide (m_window->getWidget());
-}
-
-static list <YGDialog *> dialogs_stack;
-
-void YGUI::showDialog (YDialog *_dialog)
-{
-	IMPL
-	YGDialog *dialog = static_cast <YGDialog *> (_dialog);
-	if (dialog->dialogType() == YMainDialog)
-		dialogs_stack.push_back (dialog);
-	dialog->showWindow();
-}
-
-void YGUI::closeDialog (YDialog *_dialog)
-{
-	IMPL
-	YGDialog *dialog = static_cast <YGDialog *> (_dialog);
-	if (dialog->dialogType() == YMainDialog) {
-		dialogs_stack.pop_back();
-		if (!dialogs_stack.empty()) {
-			YGDialog *old_dialog = dialogs_stack.back();
-			old_dialog->showWindow();
-		}
-		else
-			dialog->hideWindow();
-	}
-	else
-		dialog->hideWindow();
 }
 
 YGDialog *YGDialog::currentDialog()
@@ -442,16 +406,6 @@ YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode
 {
 	IMPL
 	return new YGDialog (dialogType, colorMode);
-}
-
-void YGDialog::openInternal()
-{
-	m_window->show();
-}
-
-void YGDialog::activate()
-{
-	m_window->present();
 }
 
 YEvent *YGDialog::waitForEventInternal (int timeout_millisec)

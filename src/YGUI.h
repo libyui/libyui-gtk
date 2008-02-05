@@ -62,24 +62,6 @@ public:
 
 	virtual int deviceUnits (YUIDimension dim, float layout_units);
 	virtual float layoutUnits (YUIDimension dim, int device_units);
-	virtual YCPString glyph (const YCPSymbol &glyphSymbol);
-
-	virtual int	 getDisplayWidth();
-	virtual int	 getDisplayHeight();
-	virtual int	 getDisplayDepth();
-	virtual long getDisplayColors();
-	virtual int	 getDefaultWidth();
-	virtual int	 getDefaultHeight();
-	virtual bool textMode()              IMPL_RET (false)
-	virtual bool hasImageSupport()       IMPL_RET (true)
-	virtual bool hasLocalImageSupport()  IMPL_RET (true)
-	virtual bool hasAnimationSupport()   IMPL_RET (true)
-	virtual bool hasIconSupport()        IMPL_RET (true)
-	virtual bool hasFullUtf8Support()    IMPL_RET (true)
-	virtual bool richTextSupportsTable() IMPL_RET (false)
-
-	virtual void showDialog (YDialog *dialog);
-	virtual void closeDialog (YDialog *dialog);
 
 	virtual void busyCursor();
 	virtual void normalCursor();
@@ -233,6 +215,8 @@ class YGApplication : public YApplication
 public:
 	YGApplication();
 
+	virtual std::string glyph (const std::string &symbolName);
+
 	virtual std::string askForExistingDirectory (const std::string &startDir,
 		const std::string &headline);
 	virtual std::string askForExistingFile (const std::string &startWith,
@@ -240,28 +224,21 @@ public:
 	virtual std::string askForSaveFileName (const std::string &startWith,
 		const std::string &filter, const std::string &headline);
 
-
-    virtual int  displayWidth();
-    virtual int  displayHeight();
-    virtual int  displayDepth();
-    virtual long displayColors();
-
-    // Size of main dialogs
-    virtual int  defaultWidth();
-    virtual int  defaultHeight();
-
-    virtual bool leftHandedMouse()       IMPL_RET (false)
-    //
-    // UI capabilities
-    //
+	virtual int  displayWidth();
+	virtual int  displayHeight();
+	virtual int  displayDepth();
+	virtual long displayColors();
+	virtual int  defaultWidth();  // internally, use _defaultWidth / Height()
+	virtual int  defaultHeight();
 
     virtual bool isTextMode()            IMPL_RET (false)
-    virtual bool hasImageSupport()       IMPL_RET (true)
-    virtual bool hasLocalImageSupport()  IMPL_RET (true)
-    virtual bool hasAnimationSupport()   IMPL_RET (true)
-    virtual bool hasIconSupport()        IMPL_RET (true)
-    virtual bool hasFullUtf8Support()    IMPL_RET (true)
-    virtual bool richTextSupportsTable() IMPL_RET (false)
+	virtual bool leftHandedMouse()       IMPL_RET (false)
+	virtual bool hasImageSupport()       IMPL_RET (true)
+	virtual bool hasLocalImageSupport()  IMPL_RET (true)
+	virtual bool hasAnimationSupport()   IMPL_RET (true)
+	virtual bool hasIconSupport()        IMPL_RET (true)
+	virtual bool hasFullUtf8Support()    IMPL_RET (true)
+	virtual bool richTextSupportsTable() IMPL_RET (false)
 
 };
 

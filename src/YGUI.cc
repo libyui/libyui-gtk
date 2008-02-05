@@ -105,6 +105,27 @@ void YGUI::checkInit()
 	}
 }
 
+static inline GdkScreen *getScreen ()
+{ return gdk_display_get_default_screen (gdk_display_get_default()); }
+static int getDisplayWidth()
+{ return gdk_screen_get_width (getScreen()); }
+static int getDisplayHeight()
+{ return gdk_screen_get_height (getScreen()); }
+
+int YGUI::_getDefaultWidth()
+{ 
+	if (!m_default_size.width)
+		m_default_size.width = MIN (600, getDisplayWidth());
+	return m_default_size.width;
+}
+
+int YGUI::_getDefaultHeight()
+{ 
+	if (!m_default_size.height)
+		m_default_size.height = MIN (450, getDisplayHeight());
+	return m_default_size.height;
+}
+
 //#define PRINT_EVENTS
 
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
@@ -203,41 +224,6 @@ void YGUI::sendEvent (YEvent *event)
 {
 	m_event_handler.sendEvent (event);
 	g_main_context_wakeup (NULL);
-}
-
-static inline GdkScreen *getScreen ()
-{ return gdk_display_get_default_screen (gdk_display_get_default()); }
-
-int YGUI::getDisplayWidth()
-{ return gdk_screen_get_width (getScreen()); }
-
-int YGUI::getDisplayHeight()
-{ return gdk_screen_get_height (getScreen()); }
-
-int YGUI::getDisplayDepth()
-{ return gdk_visual_get_best_depth(); }
-
-long YGUI::getDisplayColors()
-{ return 1L << getDisplayDepth(); /*from yast-qt*/ }
-
-// YCP writers use getDefaultWidth/Height() to do space saving if needed,
-// so just tell me the displayWidth/Height(). If that size is decent, let's
-// us deal with it.
-int YGUI::getDefaultWidth()   { return getDisplayWidth(); }
-int YGUI::getDefaultHeight()  { return getDisplayHeight(); }
-
-int YGUI::_getDefaultWidth()
-{ 
-	if (!m_default_size.width)
-		m_default_size.width = MIN (600, getDisplayWidth());
-	return m_default_size.width;
-}
-
-int YGUI::_getDefaultHeight()
-{ 
-	if (!m_default_size.height)
-		m_default_size.height = MIN (450, getDisplayHeight());
-	return m_default_size.height;
 }
 
 // YWidget layout units -> pixels conversion. Same as yast-qt's.
@@ -418,28 +404,6 @@ void YGUI::beep()
 		gtk_window_present (window);
 }
 
-YCPString YGUI::glyph (const YCPSymbol &symbol)
-{
-	string sym = symbol->symbol();
-	if (sym == YUIGlyph_ArrowLeft)
-		return YCPString ("\u2190");
-	if (sym == YUIGlyph_ArrowRight)
-		return YCPString ("\u2192");
-	if (sym == YUIGlyph_ArrowUp)
-		return YCPString ("\u2191");
-	if (sym == YUIGlyph_ArrowDown)
-		return YCPString ("\u2193");
-	if (sym == YUIGlyph_CheckMark)
-		return YCPString ("\u2714");
-	if (sym == YUIGlyph_BulletArrowRight)
-		return YCPString ("\u279c");
-	if (sym == YUIGlyph_BulletCircle)
-		return YCPString ("\u274d");
-	if (sym == YUIGlyph_BulletSquare)
-		return YCPString ("\u274f");
-	return YCPString ("");
-}
-
 void YGUI::toggleRecordMacro()
 {
 	if (recordingMacro()) {
@@ -584,53 +548,44 @@ std::string YGApplication::askForSaveFileName (
 	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
 }
 
-int
-YGApplication::displayWidth()
+std::string YGApplication::glyph (const std::string &sym)
 {
-    // return qApp->desktop()->width();
-    return 1024;
+	if (sym == YUIGlyph_ArrowLeft)
+		return "\u2190";
+	if (sym == YUIGlyph_ArrowRight)
+		return "\u2192";
+	if (sym == YUIGlyph_ArrowUp)
+		return "\u2191";
+	if (sym == YUIGlyph_ArrowDown)
+		return "\u2193";
+	if (sym == YUIGlyph_CheckMark)
+		return "\u2714";
+	if (sym == YUIGlyph_BulletArrowRight)
+		return "\u279c";
+	if (sym == YUIGlyph_BulletCircle)
+		return "\u274d";
+	if (sym == YUIGlyph_BulletSquare)
+		return "\u274f";
+	return "";
 }
 
+int YGApplication::displayWidth()
+{ return getDisplayWidth(); }
 
-int
-YGApplication::displayHeight()
-{
-    //return qApp->desktop()->height();
-    return 768;
-}
+int YGApplication::displayHeight()
+{ return getDisplayHeight(); }
 
+int YGApplication::displayDepth()
+{ return gdk_visual_get_best_depth(); }
 
-int
-YGApplication::displayDepth()
-{
-    //return qApp->desktop()->depth();
-    return 16;
-}
+long YGApplication::displayColors()
+{ return 1L << displayDepth(); /*from yast-qt*/ }
 
-
-long
-YGApplication::displayColors()
-{
-    return 1L << displayDepth();
-}
-
-int
-YGApplication::defaultWidth()
-{
-    // return qApp->desktop()->width();
-    return 800;
-}
-
-
-int
-YGApplication::defaultHeight()
-{
-    //return qApp->desktop()->height();
-    return 600;
-}
-
-
-
+// YCP writers use getDefaultWidth/Height() to do space saving if needed,
+// so just tell me the displayWidth/Height(). If that size is decent, let's
+// us deal with it.
+int YGApplication::defaultWidth()   { return getDisplayWidth(); }
+int YGApplication::defaultHeight()  { return getDisplayHeight(); }
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }
