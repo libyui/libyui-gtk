@@ -373,8 +373,8 @@ void YGDialog::busyCursor()
 	m_window->busyCursor();
 }
 
-
 // YWidget
+
 void YGDialog::setEnabled (bool enabled)
 {
 	doSetEnabled (enabled);
