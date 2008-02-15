@@ -48,7 +48,7 @@ void YGUI::checkInit()
 		const char *argp = argv[i];
 		if (!argp) continue;
 		if (argp[0] != '-') {
-			printf ("Warning: Unknown argument '%s'\n", argp);
+			//printf ("Warning: Unknown argument '%s'\n", argp);
 			continue;
 		}
 		argp++;
