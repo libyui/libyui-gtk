@@ -7,6 +7,7 @@
 
 #include <gtk/gtk.h>
 #include <YSimpleEventHandler.h>
+#include <map>
 
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
 
@@ -40,9 +41,8 @@ class YGDialog;
 class YGUI: public YUI
 {
 public:
-    YGUI (int argc, char **argv,
-          bool with_threads, const char *macro_file);
-    virtual ~YGUI();
+    YGUI (bool with_threads);
+    void checkInit();  // called 1st time when execution thread kicks in
 
     static YGUI *ui() { return (YGUI *) YUI::ui(); }
 
@@ -86,6 +86,7 @@ public:
     { return m_event_handler.eventPendingFor (widget); }
 
 private:
+    bool m_done_init;
     guint busy_timeout;  // for busy cursor
     static gboolean busy_timeout_cb (gpointer data);
 
@@ -93,15 +94,9 @@ private:
     bool m_have_wm, m_no_border, m_fullscreen;
     GtkRequisition m_default_size;
 
-    // for delayed gtk+ init in the right thread
-    bool   m_done_init;
-    int    m_argc;
-    char **m_argv;
-    void  checkInit();
-
     // for screenshots:
-    map <string, int> screenShotNb;
-    string screenShotNameTemplate;
+    std::map <std::string, int> screenShotNb;
+    std::string screenShotNameTemplate;
 
 public:
     // Helpers for internal use [ visibility hidden ]

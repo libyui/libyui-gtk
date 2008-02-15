@@ -4,9 +4,9 @@
 
 #include <config.h>
 #include <YGUI.h>
-#include <YUIComponent.h>
 #include <ycp/y2log.h>
-#include <Y2CCUI.h>
+#include <ycp-ui/Y2CCUI.h>
+#include <ycp-ui/YUIComponent.h>
 
 class YGUIComponent : public YUIComponent
 {
@@ -16,13 +16,12 @@ public:
 
 	virtual string name() const { return "gtk"; }
 
-	virtual YUI *createUI (int argc, char **argv,
-			       bool with_threads, const char * macro_file)
+	virtual YUI *createUI (bool with_threads)
 	{
 #ifdef IMPL_DEBUG
-		fprintf (stderr, "Create a gtk+ UI: %d '%s' !\n", with_threads, macro_file);
+		fprintf (stderr, "Create a gtk+ UI (with threads: %d) !\n", with_threads);
 #endif
-		return new YGUI (argc, argv, with_threads, macro_file);
+		return new YGUI (with_threads);
 	}
 };
 
@@ -33,7 +32,7 @@ public:
 
 	bool isServerCreator () const { return true; };
 	
-	Y2Component *create (const char * name) const
+	Y2Component *create (const char *name) const
 	{
 		y2milestone( "Creating %s component", name );
 		if (!strcmp (name, "gtk") ) {

@@ -95,9 +95,10 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
     }
 
 	// YComboBox
-	virtual void setInputMaxLength (const YCPInteger &numberOfChars)
+	virtual void setInputMaxLength (int length)
 	{
-		gtk_entry_set_width_chars (getEntry(), numberOfChars->asInteger()->value());
+		gtk_entry_set_width_chars (getEntry(), length);
+		YComboBox::setInputMaxLength (length);
 	}
 
 	virtual void setValidChars (const string &validChars)

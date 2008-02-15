@@ -206,7 +206,8 @@ public:
 	{
 		IMPL
 		string text (_text);
-		YGUtils::replace (text, "&product;", 9, YUI::ui()->productName().c_str());
+		std::string productName = YUI::app()->productName();
+		YGUtils::replace (text, "&product;", 9, productName.c_str());
 
 		ygtk_html_wrap_set_text (getWidget(), text.c_str());
 		if (autoScrollDown())

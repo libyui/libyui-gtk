@@ -7,6 +7,7 @@
 
 int main (int argc, char **argv)
 {
-	YGUI(argc, argv, false, "foo");
+	YGUI(false);
 	return 0;
 }
+

@@ -4,15 +4,16 @@
 
 #include <config.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <ycp/y2log.h>
 #include <YEvent.h>
-#include <YMacroRecorder.h>
+#include <YMacro.h>
+#include <YCommandLine.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGDialog.h"
 #include <glib/gthread.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 static std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title);
@@ -20,28 +21,31 @@ static std::string askForFileOrDirectory (GtkFileChooserAction action,
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 
-YGUI::YGUI (int argc, char **argv, bool with_threads, const char *macro_file)
-	: YUI (with_threads), busy_timeout (0), m_done_init (false), m_argc (0), m_argv (NULL)
+YGUI::YGUI (bool with_threads)
+	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
 	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
 	m_default_size.width = m_default_size.height = 0;
 
-	m_argc = argc;
-	m_argv = g_new0 (char *, argc);
-	memcpy (m_argv, argv, sizeof (char *) * argc);
-	if (!with_threads)
-		checkInit();
+	// without this none of the (default) threading action works ...
+	topmostConstructorHasFinished();
+}
 
-#ifdef IMPL_DEBUG
-	fprintf (stderr, "I'm initialized '%s' - come & get me !\n",
-		with_threads ? "with threads !" : "no threads");
-#endif
+void YGUI::checkInit()
+{
+	if (m_done_init)
+		return;
+	m_done_init = TRUE;
 
-	for (int i = 1; i < m_argc; i++)
-	{
-		const char *argp = m_argv[i];
+	// retrieve command line args from /proc/<pid>/cmdline
+	YCommandLine cmdLine;
+	int argc = cmdLine.argc();
+	char **argv = cmdLine.argv();
+
+	for (int i = 1; i < argc; i++) {
+		const char *argp = argv[i];
 		if (!argp) continue;
 		if (argp[0] != '-') {
 			printf ("Warning: Unknown argument '%s'\n", argp);
@@ -84,25 +88,7 @@ YGUI::YGUI (int argc, char **argv, bool with_threads, const char *macro_file)
 			printf ("Warning: Unknown argument '--%s'\n", argp);
 	}
 
-	if (macro_file)
-		playMacro (macro_file);
-
-	// without this none of the (default) threading action works ...
-	topmostConstructorHasFinished();
-}
-
-YGUI::~YGUI()
-{
-	IMPL
-	g_free (m_argv);
-}
-
-void YGUI::checkInit()
-{
-	if (!m_done_init) {
-		gtk_init (&m_argc, &m_argv);
-		m_done_init = TRUE;
-	}
+	gtk_init (&argc, &argv);
 }
 
 static inline GdkScreen *getScreen ()
@@ -176,6 +162,8 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
+	checkInit();
+
 #ifdef PRINT_EVENTS
 fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
 #endif
@@ -345,9 +333,7 @@ void YGUI::makeScreenShot (string filename)
 		}
 
 		// calculate a default filename...
-		const char *baseName = moduleName();
-		if  (!baseName)
-			baseName = "scr";
+		const char *baseName = "yast2-";
 
 		int nb;
 		map <string, int>::iterator it = screenShotNb.find (baseName);
@@ -383,15 +369,6 @@ void YGUI::makeScreenShot (string filename)
 		goto makeScreenShot_ret;
 	}
 
-	if (recordingMacro()) {
-		// save the taking of the screenshot and its name to the macro
-		macroRecorder->beginBlock();
-		YDialog::currentDialog()->saveUserInput (macroRecorder);
-		macroRecorder->recordMakeScreenShot (true, filename.c_str());
-		macroRecorder->recordUserInput (YCPVoid());
-		macroRecorder->endBlock();
-	}
-
 	makeScreenShot_ret:
 		g_object_unref (G_OBJECT (shot));
 }
@@ -406,8 +383,8 @@ void YGUI::beep()
 
 void YGUI::toggleRecordMacro()
 {
-	if (recordingMacro()) {
-		stopRecordMacro();
+	if (YMacro::recording()) {
+		YMacro::endRecording();
 		normalCursor();
 
 		GtkWidget* dialog = gtk_message_dialog_new (NULL,
@@ -420,7 +397,7 @@ void YGUI::toggleRecordMacro()
 		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
 			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
 		if (!filename.empty())
-			recordMacro (filename);
+			YMacro::record (filename);
 	}
 }
 
@@ -430,7 +407,7 @@ void YGUI::askPlayMacro()
 		DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Play");
 	if (!filename.empty()) {
 		busyCursor();
-		playMacro (filename);
+		YMacro::play (filename);
 		sendEvent (new YEvent());  // flush
 	}
 }

@@ -1,3 +1,7 @@
+2008-02-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.h/.cc, YGCCGtk.cc & YGComboBox.cc: libyui sync.
+
 2008-02-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.h/.cc: libyui sync: moved glyph() from YUI to YApplication.
