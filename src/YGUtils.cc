@@ -69,8 +69,7 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	if (mouth_len < 0)
 		mouth_len = strlen (mouth);
 	unsigned int i = 0;
-	while ((i = str.find (mouth, i)) != string::npos)
-	{
+	while ((i = str.find (mouth, i)) != string::npos) {
 		str.erase (i, mouth_len);
 		str.insert (i, food);
 	}
@@ -89,29 +88,42 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 	gtk_text_buffer_delete_mark (buffer, end_mark);
 }
 
-void YGUtils::escapeMarkup (string &str)
+void YGUtils::escapeMarkup (std::string &str)
 {
-	for (unsigned int i = 0; i < str.length(); i++) {
+	bool modify = false;
+	for (unsigned int i = 0; i < str.length() && !modify; i++) {
 		switch (str[i]) {
 			case '<':
-				str.erase (i, 1);
-				str.insert (i, "&lt;");
-				break;
 			case '>':
-				str.erase (i, 1);
-				str.insert (i, "&gt;");
-				break;
 			case '&':
-				str.erase (i, 1);
-				str.insert (i, "&amp;");
+				modify = true;
 				break;
 			default:
 				break;
 		}
 	}
+	if (modify) {
+		std::string ori (str);
+		str.clear();
+		str.reserve (ori.length()+50);
+		for (unsigned int i = 0; i < ori.length(); i++) {
+			switch (ori[i]) {
+				case '<':
+					str += "&lt;";
+					break;
+				case '>':
+					str += "&gt;";
+					break;
+				case '&':
+					str += "&amp;";
+					break;
+				default:
+					str += ori[i];
+					break;
+			}
+		}
+	}
 }
-
-#define PROD_ENTITY "&product;"
 
 inline void skipSpace(const char *instr, int &i)
 {
@@ -199,7 +211,6 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 
 	return TRUE;
 }
-
 
 // We have to:
 //   + manually substitute the product entity.
@@ -313,15 +324,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *produc
 			if (is_close || is_open_close)
 				g_string_free (tag, TRUE);
 		}
-/*
-		else if (instr[i] == '&' &&
-			 !g_ascii_strncasecmp (instr + i, PROD_ENTITY,
-					       sizeof (PROD_ENTITY) - 1)) {
-			// 1 Magic entity
-			g_string_append (outp, product);
-			i += sizeof (PROD_ENTITY) - 2;
-		}
-*/
+
 		// non-break space entity
 		else if (instr[i] == '&' &&
 			 !g_ascii_strncasecmp (instr + i, "&nbsp;",

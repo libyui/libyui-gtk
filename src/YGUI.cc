@@ -20,6 +20,7 @@ static std::string askForFileOrDirectory (GtkFileChooserAction action,
 
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
+//#define PRINT_EVENTS
 
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
@@ -37,7 +38,10 @@ void YGUI::checkInit()
 {
 	if (m_done_init)
 		return;
-	m_done_init = TRUE;
+#ifdef PRINT_EVENTS
+fprintf (stderr, "init()\n");
+#endif
+	m_done_init = true;
 
 	// retrieve command line args from /proc/<pid>/cmdline
 	YCommandLine cmdLine;
@@ -112,8 +116,6 @@ int YGUI::_getDefaultHeight()
 	return m_default_size.height;
 }
 
-//#define PRINT_EVENTS
-
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
                                gpointer data)
 {
@@ -127,10 +129,10 @@ void YGUI::idleLoop (int fd_ycp)
 #ifdef PRINT_EVENTS
 fprintf (stderr, "idleLoop()\n");
 #endif
+	checkInit();
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
-	checkInit();
 
 	GIOChannel *wakeup;
 	wakeup = g_io_channel_unix_new (fd_ycp);
@@ -162,11 +164,10 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-	checkInit();
-
 #ifdef PRINT_EVENTS
 fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
 #endif
+	checkInit();
 	if (!YDialog::currentDialog (false))
 		return NULL;
 

@@ -260,8 +260,9 @@ std::string Ypp::Package::description()
 	std::string text = object->description(), br = "<br>";
 	// if it has this header, then it is HTML
 	const char *header = "<!-- DT:Rich -->", header_len = 16;
+
 	if (!text.compare (0, header_len, header, header_len))
-		text.erase (0, header_len);
+		;
 	else {
 		YGUtils::escapeMarkup (text);
 		YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
@@ -271,17 +272,17 @@ std::string Ypp::Package::description()
 		ZyppPackage package = tryCastToZyppPkg (object);
 		std::string url = package->url(), license = package->license();
 		if (!url.empty())
-			text += br + "<b>" + _("Website: ") + "</b>" + url;
+			text += br + "<b>" + _("Website:") + " </b>" + url;
 		if (!license.empty())
-			text += br + "<b>" + _("License: ") + "</b>" + license;
+			text += br + "<b>" + _("License:") + " </b>" + license;
 	}
 	else if (impl->type == PATCH_TYPE) {
 		ZyppPatch patch = tryCastToZyppPatch (object);
 		if (patch->reboot_needed())
-			text += br + br + "<b>" + "Reboot needed!" + "</b>";
+			text += br + br + "<b>" + _("Reboot needed!") + "</b>";
 	}
 	if (impl->type != PATCH_TYPE)
-		text += br + "<b>" + _("Size: ") + "</b>" + object->size().asString();
+		text += br + "<b>" + _("Size:") + " </b>" + object->size().asString();
 	return text;
 }
 
