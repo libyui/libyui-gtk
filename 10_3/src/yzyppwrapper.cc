@@ -258,6 +258,7 @@ std::string Ypp::Package::description()
 {
 	ZyppObject object = impl->zyppSel->theObj();
 	std::string text = object->description(), br = "<br>";
+	y2milestone ("package %s description: %s", name().c_str(), text.c_str());
 	// if it has this header, then it is HTML
 	const char *header = "<!-- DT:Rich -->", header_len = 16;
 	if (!text.compare (0, header_len, header, header_len))
