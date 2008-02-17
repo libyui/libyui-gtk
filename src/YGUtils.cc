@@ -75,7 +75,7 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	}
 }
 
-void YGUtils::scrollTextViewDown(GtkTextView *text_view)
+void YGUtils::scrollTextViewDown (GtkTextView *text_view)
 {
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (text_view);
 	GtkTextIter end_iter;
