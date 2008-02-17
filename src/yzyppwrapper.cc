@@ -272,9 +272,9 @@ std::string Ypp::Package::description()
 		ZyppPackage package = tryCastToZyppPkg (object);
 		std::string url = package->url(), license = package->license();
 		if (!url.empty())
-			text += br + "<b>" + _("Website:") + " </b>" + url;
+			text += br + "<b>" + _("Website:") + "</b> " + url;
 		if (!license.empty())
-			text += br + "<b>" + _("License:") + " </b>" + license;
+			text += br + "<b>" + _("License:") + "</b> " + license;
 	}
 	else if (impl->type == PATCH_TYPE) {
 		ZyppPatch patch = tryCastToZyppPatch (object);
@@ -282,7 +282,7 @@ std::string Ypp::Package::description()
 			text += br + br + "<b>" + _("Reboot needed!") + "</b>";
 	}
 	if (impl->type != PATCH_TYPE)
-		text += br + "<b>" + _("Size:") + " </b>" + object->size().asString();
+		text += br + "<b>" + _("Size:") + "</b> " + object->size().asString();
 	return text;
 }
 
