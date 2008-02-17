@@ -283,6 +283,7 @@ std::string Ypp::Package::description()
 	}
 	if (impl->type != PATCH_TYPE)
 		text += br + "<b>" + _("Size: ") + "</b>" + object->size().asString();
+	y2milestone ("end - package %s description: %s", name().c_str(), text.c_str());
 	return text;
 }
 
