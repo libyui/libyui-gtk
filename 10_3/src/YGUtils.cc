@@ -68,9 +68,8 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 {
 	if (mouth_len < 0)
 		mouth_len = strlen (mouth);
-	unsigned int i = 0;
-	while ((i = str.find (mouth, i)) != string::npos)
-	{
+	std::string::size_type i = 0;
+	while ((i = str.find (mouth, i)) != string::npos) {
 		str.erase (i, mouth_len);
 		str.insert (i, food);
 	}
@@ -89,24 +88,40 @@ void YGUtils::scrollTextViewDown(GtkTextView *text_view)
 	gtk_text_buffer_delete_mark (buffer, end_mark);
 }
 
-void YGUtils::escapeMarkup (string &str)
+void YGUtils::escapeMarkup (std::string &str)
 {
-	for (unsigned int i = 0; i < str.length(); i++) {
+	bool modify = false;
+	std::string::size_type i;
+	for (i = 0; i < str.length() && !modify; i++) {
 		switch (str[i]) {
 			case '<':
-				str.erase (i, 1);
-				str.insert (i, "&lt;");
-				break;
 			case '>':
-				str.erase (i, 1);
-				str.insert (i, "&gt;");
-				break;
 			case '&':
-				str.erase (i, 1);
-				str.insert (i, "&amp;");
+				modify = true;
 				break;
 			default:
 				break;
+		}
+	}
+	if (modify) {
+		std::string ori (str);
+		str.clear();
+		str.reserve (ori.length()+50);
+		for (i = 0; i < ori.length(); i++) {
+			switch (ori[i]) {
+				case '<':
+					str += "&lt;";
+					break;
+				case '>':
+					str += "&gt;";
+					break;
+				case '&':
+					str += "&amp;";
+					break;
+				default:
+					str += ori[i];
+					break;
+			}
 		}
 	}
 }
@@ -434,7 +449,7 @@ int YGUtils::strcmp (const char *str1, const char *str2)
 
 bool YGUtils::contains (const string &haystack, const string &needle)
 {
-	unsigned int i, j;
+	std::string::size_type i, j;
 	for (i = 0; i < haystack.length(); i++) {
 		for (j = 0; j < needle.length() && i+j < haystack.length(); j++)
 			if (g_ascii_tolower (haystack[i+j]) != g_ascii_tolower (needle[j]))
@@ -448,7 +463,7 @@ bool YGUtils::contains (const string &haystack, const string &needle)
 std::list <string> YGUtils::splitString (const string &str, char separator)
 {
 	std::list <string> parts;
-	unsigned int i, j;
+	std::string::size_type i, j;
 	// ignore first character, if separator
 	i = j = (str[0] == separator) ? 1 : 0;
 	for (; i < str.length(); i++)
@@ -694,7 +709,7 @@ void YGUtils::setStockIcon (GtkWidget *button, std::string ycp_str)
 	if (!isEnglish)
 		return;
 
-	unsigned int i = 0;
+	std::string::size_type i = 0;
 	while ((i = ycp_str.find ('_', i)) != string::npos)
 		ycp_str.erase (i, 1);
 

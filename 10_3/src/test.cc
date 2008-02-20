@@ -75,9 +75,6 @@ bool testXHtmlConvert()
 	} aTests[] = {
 		// preservation
 		{ "<p>foo</p>", "<body><p>foo</p></body>" },
-		// product substitution
-		{ "&product;", "<body>foo</body>" },
-		{ " <p>&product;</p>", "<body><p>foo</p></body>" },
 		// outer tag
 		{ "some text", "<body>some text</body>" },
 		// unquoted attributes
@@ -160,7 +157,8 @@ bool testMarkupEscape()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string out = YGUtils::escape_markup (aTests[i].in);
+		string out = aTests[i].in;
+		YGUtils::escapeMarkup (out);
 		if (out != aTests[i].out) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out.c_str(), aTests[i].out);
