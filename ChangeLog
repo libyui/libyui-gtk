@@ -3,6 +3,8 @@
 	* src/YGUtils.cc: bug fix: use "string::size_type", not "unsigned int". That's
 	just asking for problems on 64-bits systems.
 
+	* src/YGTable.cc (YGTree): honor new immediate flag.
+
 2008-02-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc (escapeMarkup): optimized.

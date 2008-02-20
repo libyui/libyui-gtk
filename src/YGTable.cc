@@ -409,8 +409,12 @@ public:
 		gtk_tree_view_set_enable_tree_lines (getView(), TRUE);
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		if (immediateMode())
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		else
+			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);
 	}
 
 	// YTree
