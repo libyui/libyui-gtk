@@ -13,7 +13,7 @@ string YGUtils::mapKBAccel (const string &src)
 	int length = src.length();
 	string str;
 	str.reserve (length);
-	for (int i = 0; i < length; i++) {
+	for (std::string::size_type i = 0; i < length; i++) {
 		if (src[i] == '_')
 			str += "__";
 		else if (src[i] == '&')
@@ -68,7 +68,7 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 {
 	if (mouth_len < 0)
 		mouth_len = strlen (mouth);
-	unsigned int i = 0;
+	std::string::size_type i = 0;
 	while ((i = str.find (mouth, i)) != string::npos) {
 		str.erase (i, mouth_len);
 		str.insert (i, food);
@@ -91,7 +91,8 @@ void YGUtils::scrollTextViewDown (GtkTextView *text_view)
 void YGUtils::escapeMarkup (std::string &str)
 {
 	bool modify = false;
-	for (unsigned int i = 0; i < str.length() && !modify; i++) {
+	std::string::size_type i;
+	for (i = 0; i < str.length() && !modify; i++) {
 		switch (str[i]) {
 			case '<':
 			case '>':
@@ -106,7 +107,7 @@ void YGUtils::escapeMarkup (std::string &str)
 		std::string ori (str);
 		str.clear();
 		str.reserve (ori.length()+50);
-		for (unsigned int i = 0; i < ori.length(); i++) {
+		for (i = 0; i < ori.length(); i++) {
 			switch (ori[i]) {
 				case '<':
 					str += "&lt;";
@@ -407,7 +408,7 @@ void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
 std::list <string> YGUtils::splitString (const string &str, char separator)
 {
 	std::list <string> parts;
-	unsigned int i, j;
+	std::string::size_type i, j;
 	// ignore first character, if separator
 	i = j = (str[0] == separator) ? 1 : 0;
 	for (; i < str.length(); i++)
@@ -476,7 +477,7 @@ void YGUtils::setStockIcon (GtkWidget *button, std::string ycp_str)
 	if (!isEnglish)
 		return;
 
-	unsigned int i = 0;
+	std::string::size_type i = 0;
 	while ((i = ycp_str.find ('_', i)) != string::npos)
 		ycp_str.erase (i, 1);
 

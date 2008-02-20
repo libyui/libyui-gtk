@@ -1,3 +1,8 @@
+2008-02-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: bug fix: use "string::size_type", not "unsigned int". That's
+	just asking for problems on 64-bits systems.
+
 2008-02-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc (escapeMarkup): optimized.
