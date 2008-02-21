@@ -4,6 +4,7 @@
 
 #include <config.h>
 #include <stdio.h>
+#include <string.h>
 #include <YUI.h>
 #include <gtk/gtk.h>
 #include <YGUtils.h>
