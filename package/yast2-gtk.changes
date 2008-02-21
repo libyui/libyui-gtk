@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Feb 21 07:29:11 CET 2008 - coolo@suse.de
+
+- compile against yast2-core and libzypp
+- V 2.16.4
+
+-------------------------------------------------------------------
 Mon Feb  4 20:19:03 CET 2008 - coolo@suse.de
 
 - adapt once more to latest yast2-core
