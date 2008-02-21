@@ -15,10 +15,8 @@
 #include <zypp/ResPoolProxy.h>
 #include <zypp/ui/Selectable.h>
 #include <zypp/Patch.h>
-#include <zypp/Selection.h>
 #include <zypp/Package.h>
 #include <zypp/Pattern.h>
-#include <zypp/Language.h>
 #include <zypp/Product.h>
 #include <zypp/Repository.h>
 #include <zypp/RepoManager.h>
@@ -37,15 +35,12 @@ typedef zypp::ResObject*          ZyppObjectPtr;
 typedef zypp::Package::constPtr   ZyppPackage;
 typedef zypp::Patch::constPtr     ZyppPatch;
 typedef zypp::Pattern::constPtr   ZyppPattern;
-typedef zypp::Language::constPtr  ZyppLanguage;
 inline ZyppPackage tryCastToZyppPkg (ZyppObject obj)
 { return zypp::dynamic_pointer_cast <const zypp::Package> (obj); }
 inline ZyppPatch tryCastToZyppPatch (ZyppObject obj)
 { return zypp::dynamic_pointer_cast <const zypp::Patch> (obj); }
 inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 { return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
-inline ZyppLanguage tryCastToZyppLanguage (ZyppObject obj)
-{ return zypp::dynamic_pointer_cast <const zypp::Language> (obj); }
 
 //** Utilities
 
@@ -403,8 +398,8 @@ std::string Ypp::Package::provides()
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
-    const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
-    for (zypp::CapSet::const_iterator it = capSet.begin();
+    const zypp::Capabilities &capSet = object->dep (zypp::Dep::PROVIDES);
+    for (zypp::Capabilities::const_iterator it = capSet.begin();
          it != capSet.end(); it++) {
 		if (!text.empty())
 			text += "\n";
@@ -417,8 +412,8 @@ std::string Ypp::Package::requires()
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
-    const zypp::CapSet &capSet = object->dep (zypp::Dep::REQUIRES);
-    for (zypp::CapSet::const_iterator it = capSet.begin();
+    const zypp::Capabilities &capSet = object->dep (zypp::Dep::REQUIRES);
+    for (zypp::Capabilities::const_iterator it = capSet.begin();
          it != capSet.end(); it++) {
 		if (!text.empty())
 			text += "\n";
@@ -449,6 +444,7 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 			}
 			break;
 		}
+#if 0
 		case Ypp::Package::LANGUAGE_TYPE:
 		{
 			ZyppSelectable selectable = collection->impl->zyppSel;
@@ -456,13 +452,14 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 			ZyppLanguage language = tryCastToZyppLanguage (object);
 
 			ZyppObject pkgobj = this->impl->zyppSel->theObj();
-			const zypp::CapSet &capSet = pkgobj->dep (zypp::Dep::FRESHENS);
-			for (zypp::CapSet::const_iterator it = capSet.begin();
+			const zypp::Capabilities &capSet = pkgobj->dep (zypp::Dep::FRESHENS);
+			for (zypp::Capabilities::const_iterator it = capSet.begin();
 			     it != capSet.end(); it++) {
 				if (it->index() == language->name())
 					return true;
 			}
 		}
+#endif
 		default:
 			break;
 	}
@@ -1320,10 +1317,12 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				it = zyppPool().byKindBegin <zypp::Pattern>();
 				end = zyppPool().byKindEnd <zypp::Pattern>();
 				break;
+#if 0
 			case Package::LANGUAGE_TYPE:
 				it = zyppPool().byKindBegin <zypp::Language>();
 				end = zyppPool().byKindEnd <zypp::Language>();
 				break;
+#endif
 			case Package::PATCH_TYPE:
 				it = zyppPool().byKindBegin <zypp::Patch>();
 				end = zyppPool().byKindEnd <zypp::Patch>();
@@ -1388,8 +1387,7 @@ Ypp::Ypp()
 
     zyppPool().saveState<zypp::Package  >();
     zyppPool().saveState<zypp::Pattern  >();
-    zyppPool().saveState<zypp::Selection>();
-    zyppPool().saveState<zypp::Language >();
+   // zyppPool().saveState<zypp::Language >();
     zyppPool().saveState<zypp::Patch    >();
 }
 
@@ -1411,8 +1409,7 @@ bool Ypp::isModified()
 {
 	return zyppPool().diffState<zypp::Package  >() ||
 	       zyppPool().diffState<zypp::Pattern  >() ||
-	       zyppPool().diffState<zypp::Selection>() ||
-	       zyppPool().diffState<zypp::Language >() ||
+	     //  zyppPool().diffState<zypp::Language >() ||
 	       zyppPool().diffState<zypp::Patch    >();
 }
 
