@@ -1159,7 +1159,9 @@ public:
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
+#if 0
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
+#endif
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), 0);
 		g_signal_connect_after (G_OBJECT (m_type), "changed",

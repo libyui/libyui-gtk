@@ -1,3 +1,12 @@
+2008-02-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: removed Language user-option.
+
+2008-02-21  Stephan Kulow <coolo@suse.de>
+
+	* src/yzyppwrapper.cc: commented out Language support as it is no longer
+	supported by libzypp.
+
 2008-02-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: bug fix: use "string::size_type", not "unsigned int". That's
