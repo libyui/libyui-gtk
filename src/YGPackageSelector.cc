@@ -1017,7 +1017,7 @@ class Filters
 					m_view = new Categories (m_filters, type);
 					break;
 				case Ypp::Package::PATTERN_TYPE:
-				case Ypp::Package::LANGUAGE_TYPE:
+				//case Ypp::Package::LANGUAGE_TYPE:
 					m_view = new Pool (m_filters, type);
 					break;
 				default:

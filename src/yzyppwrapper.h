@@ -38,7 +38,7 @@ struct Ypp
 	// Entries
 	struct Package {
 		enum Type {
-			PACKAGE_TYPE, PATTERN_TYPE, LANGUAGE_TYPE, PATCH_TYPE, TOTAL_TYPES
+			PACKAGE_TYPE, PATTERN_TYPE, PATCH_TYPE, TOTAL_TYPES
 		};
 
 		Type type();

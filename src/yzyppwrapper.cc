@@ -228,9 +228,11 @@ const std::string &Ypp::Package::name()
 			case PATTERN_TYPE:
 				ret = obj->summary();
 				break;
+#if 0
 			case LANGUAGE_TYPE:
 				ret = obj->description();
 				break;
+#endif
 			default:
 				ret = sel->name();
 				break;
