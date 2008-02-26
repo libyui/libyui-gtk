@@ -127,9 +127,11 @@ static void ygtk_help_dialog_realize (GtkWidget *widget)
 	GTK_WIDGET_CLASS (ygtk_help_dialog_parent_class)->realize (widget);
 	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (widget);
 
+#if 0
 	// set help text background
 	gtk_widget_realize (dialog->help_text);
 	ygtk_html_wrap_set_background (dialog->help_text, THEMEDIR "/wizard/help-background.png");
+#endif
 
 	// set close as default widget
 	gtk_widget_grab_default (dialog->close_button);

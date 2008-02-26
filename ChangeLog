@@ -4,6 +4,9 @@
 
 	* src/YGPackageSelector.cc (DiskView): highlight near full disk on table.
 
+	* src/ygtkwizard.c: help-background.png no longer shipped with 11.0. Disable
+	help dialog background.
+
 2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (DiskView): fixed #363473 and enabled as a
