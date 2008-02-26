@@ -10,10 +10,10 @@
 string YGUtils::mapKBAccel (const string &src)
 {
 	// we won't use use replace since we also want to escape _ to __
-	int length = src.length();
+	std::string::size_type length = src.length(), i;
 	string str;
 	str.reserve (length);
-	for (std::string::size_type i = 0; i < length; i++) {
+	for (i = 0; i < length; i++) {
 		if (src[i] == '_')
 			str += "__";
 		else if (src[i] == '&')
@@ -455,6 +455,7 @@ static const StockMap stockMap[] = {
 	{"No",        GTK_STOCK_NO          },
 	{"OK",        GTK_STOCK_OK          },
 	{"Quit",      GTK_STOCK_QUIT        },
+	{"Retry",     GTK_STOCK_REFRESH     },
 	{"Search",    GTK_STOCK_FIND        },
 	{"Up",        GTK_STOCK_GO_UP       },
 	{"Yes",       GTK_STOCK_YES         },

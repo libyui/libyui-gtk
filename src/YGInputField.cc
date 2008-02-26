@@ -162,7 +162,7 @@ public:
 		gtk_widget_show (m_calendar);
 		GtkWidget *popup = ygtk_popup_window_new (m_calendar);
 
-		GtkWidget *menu_button = ygtk_menu_button_new();
+		GtkWidget *menu_button = ygtk_menu_button_new_with_label ("");
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
 		gtk_widget_show (menu_button);
 		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);

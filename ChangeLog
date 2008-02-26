@@ -1,3 +1,13 @@
+2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (DiskView): fixed #363473 and enabled as a
+	popup button.
+
+	* src/ygtkmenubutton.c: ensure popup is placed inside the screen, and
+	allowed custom widget as label.
+
+	* src/YGUtils.cc: int -> size_type.
+
 2008-02-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: removed Language user-option.

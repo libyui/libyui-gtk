@@ -78,6 +78,7 @@ typedef struct _YGtkMenuButtonClass
 } YGtkMenuButtonClass;
 
 GtkWidget* ygtk_menu_button_new (void);
+GtkWidget* ygtk_menu_button_new_with_label (const gchar *label);
 GType ygtk_menu_button_get_type (void) G_GNUC_CONST;
 
 void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label);
