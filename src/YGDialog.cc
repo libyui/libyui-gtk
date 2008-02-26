@@ -195,7 +195,7 @@ private:
 		    y2milestone ("Caught YaST2 magic key combination");
 		    switch (event->keyval) {
 				case GDK_S:
-				    YGUI::ui()->makeScreenShot("");
+				    YGUI::ui()->makeScreenShot();
 				    return TRUE;
 				case GDK_M:
 				    YGUI::ui()->toggleRecordMacro();
@@ -409,8 +409,8 @@ YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode
 }
 
 YEvent *YGDialog::waitForEventInternal (int timeout_millisec)
-{ return YGUI::ui()->userInput (timeout_millisec); }
+{ return YGUI::ui()->waitInput (timeout_millisec, true); }
 
 YEvent *YGDialog::pollEventInternal()
-{ return YGUI::ui()->pollInput(); }
+{ return YGUI::ui()->waitInput (0, false); }
 

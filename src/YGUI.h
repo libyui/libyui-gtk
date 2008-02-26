@@ -52,29 +52,21 @@ protected:
 	virtual YApplication *createApplication();
 
 public:
-    YEvent *waitInput (unsigned long timeout_ms, bool block);
 	virtual void idleLoop (int fd_ycp);
-	// these two are now implemented at YDialog...
-	YEvent *userInput (unsigned long timeout_millisec);
-	YEvent *pollInput();
+	// called by YDialog::waitInput() / pollEvent()...
+    YEvent *waitInput (unsigned long timeout_ms, bool block);
 
-	virtual void internalError (const char *msg);
-
-	virtual int deviceUnits (YUIDimension dim, float layout_units);
-	virtual float layoutUnits (YUIDimension dim, int device_units);
-
-	virtual void busyCursor();
-	virtual void normalCursor();
-
-	virtual void makeScreenShot (string filename);
-	virtual void beep();
 	virtual YEvent * runPkgSelection (YWidget *packageSelector);
 
-    void toggleRecordMacro();
+	// used internally: for public use, see YApplication
+	void busyCursor();
+	void normalCursor();
+	void makeScreenShot();
 
     // Plays a macro, opening a dialog first to ask for the filename
     // activated by Ctrl-Shift-Alt-P
     void askPlayMacro();
+    void toggleRecordMacro();
 
 	// On Shift-F8, run save_logs
 	void askSaveLogs();
@@ -93,10 +85,6 @@ private:
     // window-related arguments
     bool m_have_wm, m_no_border, m_fullscreen;
     GtkRequisition m_default_size;
-
-    // for screenshots:
-    std::map <std::string, int> screenShotNb;
-    std::string screenShotNameTemplate;
 
 public:
     // Helpers for internal use [ visibility hidden ]
@@ -219,6 +207,15 @@ public:
 	virtual std::string askForSaveFileName (const std::string &startWith,
 		const std::string &filter, const std::string &headline);
 
+	virtual void busyCursor() { YGUI::ui()->busyCursor(); }
+	virtual void normalCursor() { YGUI::ui()->normalCursor(); }
+
+	virtual void makeScreenShot (string filename);
+	virtual void beep();
+
+	virtual int deviceUnits (YUIDimension dim, float layout_units);
+	virtual float layoutUnits (YUIDimension dim, int device_units);
+
 	virtual int  displayWidth();
 	virtual int  displayHeight();
 	virtual int  displayDepth();
@@ -235,6 +232,10 @@ public:
 	virtual bool hasFullUtf8Support()    IMPL_RET (true)
 	virtual bool richTextSupportsTable() IMPL_RET (false)
 
+private:
+    // for screenshots:
+    std::map <std::string, int> screenShotNb;
+    std::string screenShotNameTemplate;
 };
 
 #endif /*YGUI_H*/

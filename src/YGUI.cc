@@ -18,6 +18,14 @@
 static std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title);
 
+static void errorMsg (const char *msg)
+{
+	GtkWidget* dialog = gtk_message_dialog_new (NULL,
+		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", msg);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+}
+
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 //#define PRINT_EVENTS
@@ -203,45 +211,10 @@ fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (
 	return event;
 }
 
-YEvent *YGUI::userInput (unsigned long timeout_ms)
-{ return waitInput (timeout_ms, true); }
-
-YEvent *YGUI::pollInput()
-{ return waitInput (0, false); }
-
 void YGUI::sendEvent (YEvent *event)
 {
 	m_event_handler.sendEvent (event);
 	g_main_context_wakeup (NULL);
-}
-
-// YWidget layout units -> pixels conversion. Same as yast-qt's.
-int YGUI::deviceUnits (YUIDimension dim, float size)
-{
-	if (dim == YD_HORIZ) return (long) ((size * (640.0/80)) + 0.5);
-	else                 return (long) ((size * (480.0/25)) + 0.5);
-}
-
-float YGUI::layoutUnits (YUIDimension dim, int device_units)
-{
-	float size = (float) device_units;
-	if (dim == YD_HORIZ) return size * (80/640.0);
-	else                 return size * (25/480.0);
-}
-
-static void errorMsg (const char *msg)
-{
-	GtkWidget* dialog = gtk_message_dialog_new
-        (NULL, GtkDialogFlags (0), GTK_MESSAGE_ERROR,
-         GTK_BUTTONS_OK, "%s", msg);
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
-}
-
-void YGUI::internalError (const char *msg)
-{
-	errorMsg (msg);
-	abort();	// going down
 }
 
 gboolean YGUI::busy_timeout_cb (gpointer data)
@@ -271,7 +244,10 @@ void YGUI::normalCursor()
 		dialog->normalCursor();
 }
 
-YEvent* YGUI::runPkgSelection (YWidget *packageSelector)
+void YGUI::makeScreenShot()
+{ ((YGApplication *) app())->makeScreenShot (""); }
+
+YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 {
 	y2milestone( "Running package selection..." );
 	YEvent *event = 0;
@@ -288,7 +264,67 @@ YEvent* YGUI::runPkgSelection (YWidget *packageSelector)
 	return event;
 }
 
-void YGUI::makeScreenShot (string filename)
+void YGUI::askPlayMacro()
+{
+	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
+		DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Play");
+	if (!filename.empty()) {
+		busyCursor();
+		YMacro::play (filename);
+		sendEvent (new YEvent());  // flush
+	}
+}
+
+void YGUI::toggleRecordMacro()
+{
+	if (YMacro::recording()) {
+		YMacro::endRecording();
+		normalCursor();
+
+		GtkWidget* dialog = gtk_message_dialog_new (NULL,
+			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+			"Macro recording done.");
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+	}
+	else {
+		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
+		if (!filename.empty())
+			YMacro::record (filename);
+	}
+}
+
+void YGUI::askSaveLogs()
+{
+	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", "Save y2logs to...");
+	if (!filename.empty()) {
+		std::string command = "/sbin/save_y2logs";
+		command += " '" + filename + "'";
+	    y2milestone ("Saving y2logs: %s", command.c_str());
+	    int ret = system (command.c_str());
+		if (ret == 0)
+			y2milestone ("y2logs saved to %s", filename.c_str());
+		else {
+			char *error = g_strdup_printf (
+				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
+				command.c_str(), ret);
+			y2error (error);
+			errorMsg (error);
+			g_free (error);
+		}
+	}
+}
+
+//** YGApplication
+
+YGApplication::YGApplication()
+{
+	setIconBasePath (ICON_DIR);
+}
+
+void YGApplication::makeScreenShot (string filename)
 {
 	IMPL
 	bool interactive = filename.empty();
@@ -374,7 +410,7 @@ void YGUI::makeScreenShot (string filename)
 		g_object_unref (G_OBJECT (shot));
 }
 
-void YGUI::beep()
+void YGApplication::beep()
 {
 	gdk_beep();
 	GtkWindow *window = YGDialog::currentWindow();
@@ -382,67 +418,7 @@ void YGUI::beep()
 		gtk_window_present (window);
 }
 
-void YGUI::toggleRecordMacro()
-{
-	if (YMacro::recording()) {
-		YMacro::endRecording();
-		normalCursor();
-
-		GtkWidget* dialog = gtk_message_dialog_new (NULL,
-			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-			"Macro recording done.");
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
-	}
-	else {
-		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
-		if (!filename.empty())
-			YMacro::record (filename);
-	}
-}
-
-void YGUI::askPlayMacro()
-{
-	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
-		DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Play");
-	if (!filename.empty()) {
-		busyCursor();
-		YMacro::play (filename);
-		sendEvent (new YEvent());  // flush
-	}
-}
-
-void YGUI::askSaveLogs()
-{
-	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", "Save y2logs to...");
-	if (!filename.empty()) {
-		std::string command = "/sbin/save_y2logs";
-		command += " '" + filename + "'";
-	    y2milestone ("Saving y2logs: %s", command.c_str());
-	    int ret = system (command.c_str());
-		if (ret == 0)
-			y2milestone ("y2logs saved to %s", filename.c_str());
-		else {
-			char *error = g_strdup_printf (
-				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
-				command.c_str(), ret);
-			y2error (error);
-			errorMsg (error);
-			g_free (error);
-		}
-	}
-}
-
-//** YGApplication
-
-YGApplication::YGApplication()
-{
-	setIconBasePath (ICON_DIR);
-}
-
-/* File/directory dialogs. */
+// File/directory dialogs
 #include <sstream>
 
 std::string askForFileOrDirectory (GtkFileChooserAction action,
@@ -545,6 +521,23 @@ std::string YGApplication::glyph (const std::string &sym)
 	if (sym == YUIGlyph_BulletSquare)
 		return "\u274f";
 	return "";
+}
+
+// YWidget layout units -> pixels conversion. Same as yast-qt's.
+int YGApplication::deviceUnits (YUIDimension dim, float size)
+{
+	if (dim == YD_HORIZ)
+		size *= 640.0 / 80;
+	else
+		size *= 480.0 / 25;
+	return size + 0.5;
+}
+
+float YGApplication::layoutUnits (YUIDimension dim, int units)
+{
+	float size = (float) units;
+	if (dim == YD_HORIZ) return size * (80/640.0);
+	else                 return size * (25/480.0);
 }
 
 int YGApplication::displayWidth()

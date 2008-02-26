@@ -10,6 +10,10 @@
 	* src/YGIntField.cc (YSlider): don't draw values (that's what the side
 	int field is for).
 
+	* src/YGLayout.cc: removed label alignment tweak for non-stretchable widgets.
+
+	* src/YGUI.h/cc: sync with libyui changes: moved some methods from YUI to YApplication.
+
 2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (DiskView): fixed #363473 and enabled as a

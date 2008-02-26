@@ -59,6 +59,10 @@ public:
 		YFrame::setLabel (str);
 	}
 
+	// Debug
+	virtual string getDebugLabel() const
+	{ return label(); }
+
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())

@@ -71,7 +71,7 @@ public:
 
 		// align horizontal widget labels to the same width
 		// we do some work here, since they may be placed inside a HBox or something...
-		if (!horiz_fill)
+		if (dim == YD_HORIZ && !horiz_fill)
 			return;
 		YWidget *yLabeledWidget = ychild;
 		while (yLabeledWidget->hasChildren()) { // container
@@ -85,8 +85,11 @@ public:
 		}
 		YGLabeledWidget *labeledWidget =
 			dynamic_cast <YGLabeledWidget *> (YGWidget::get (yLabeledWidget));
-		if (labeledWidget && labeledWidget->orientation() == YD_HORIZ)
-			addSizeGroup (labeledWidget);
+		if (labeledWidget && labeledWidget->orientation() == YD_HORIZ) {
+			horiz_fill = yLabeledWidget->stretchable (YD_HORIZ) || yLabeledWidget->hasWeight (YD_HORIZ);
+			if (horiz_fill)
+				addSizeGroup (labeledWidget);
+		}
 	}
 };
 
