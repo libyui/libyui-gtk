@@ -662,7 +662,7 @@ static Ypp::Package::Version *constructVersion (ZyppObject object)
 {
 	Ypp::Package::Version *version = new Ypp::Package::Version();
 	version->number = object->edition().version();
-	version->repo = ypp->impl->getRepository (object->repository().info().alias());
+	version->repo = ypp->impl->getRepository (object->repoInfo().alias());
 	version->cmp = 0;
 	version->impl = (void *) get_pointer (object);
 	return version;

@@ -1633,8 +1633,9 @@ public:
 	: m_hasWarn (false)
 	{
 		m_model = GTK_TREE_MODEL (gtk_list_store_new (
-			// 0 - mount point, 1 - usage percent, 2 - usage string
-			3, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING));
+			// 0 - mount point, 1 - usage percent, 2 - usage string,
+			// (highlight warns) 3 - font weight, 4 - font color string
+			5, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING));
 		GtkListStore *store = GTK_LIST_STORE (m_model);
 		Ypp::Disk *disk = Ypp::get()->getDisk();
 		for (int i = 0; disk->getPartition (i); i++) {
@@ -1668,14 +1669,19 @@ private:
 		Ypp::Disk *disk = Ypp::get()->getDisk();
 		for (int i = 0; disk->getPartition (i); i++) {
 			const Ypp::Disk::Partition *part = disk->getPartition (i);
+
 			long usage = (part->used * 100) / (part->total + 1);
+			bool full = usage > MIN_PERCENT_WARN && (part->total - part->used) < MIN_FREE_MB_WARN;
 			std::string usage_str = part->used_str + " / " + part->total_str;
+			if (full)
+				warn = true;
+
 			GtkTreeIter iter;
 			g_assert (gtk_tree_model_iter_nth_child (m_model, &iter, NULL, i));
 			gtk_list_store_set (store, &iter, 0, part->path.c_str(), 1, usage,
-			                    2, usage_str.c_str(), -1);
-			if (usage > MIN_PERCENT_WARN && (part->total - part->used) < MIN_FREE_MB_WARN)
-				warn = true;
+			                    2, usage_str.c_str(), 3, PANGO_WEIGHT_NORMAL, 4, NULL, -1);
+			if (full)
+				gtk_list_store_set (store, &iter, 3, PANGO_WEIGHT_BOLD, 4, "red", -1);
 		}
 		GdkPixbuf *pixbuf = m_diskPixbuf;
 		if (warn) {
@@ -1717,7 +1723,7 @@ private:
 
 		GtkTreeViewColumn *column;
 		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),
-			gtk_cell_renderer_text_new(), "text", 0, NULL);
+			gtk_cell_renderer_text_new(), "text", 0, "weight", 3, "foreground", 4, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 		column = gtk_tree_view_column_new_with_attributes (_("Usage"),
 			gtk_cell_renderer_progress_new(), "value", 1, "text", 2, NULL);
