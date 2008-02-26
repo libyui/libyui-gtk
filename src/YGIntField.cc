@@ -28,7 +28,7 @@ public:
 			if (maxValue - minValue < 20)
 				// GtkScale by default uses a step of 10 -- use a lower for low values
 				gtk_range_set_increments (GTK_RANGE (m_slider), 1, 2);
-			gtk_scale_set_draw_value (GTK_SCALE (m_slider), TRUE);
+			gtk_scale_set_draw_value (GTK_SCALE (m_slider), FALSE);
 			YGLabeledWidget::setBuddy (m_slider);
 			gtk_widget_set_size_request (m_slider,
 				YGUtils::getCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS), -1);

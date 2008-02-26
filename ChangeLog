@@ -7,6 +7,9 @@
 	* src/ygtkwizard.c: help-background.png no longer shipped with 11.0. Disable
 	help dialog background.
 
+	* src/YGIntField.cc (YSlider): don't draw values (that's what the side
+	int field is for).
+
 2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (DiskView): fixed #363473 and enabled as a
