@@ -86,8 +86,8 @@ public:
 		YGLabeledWidget *labeledWidget =
 			dynamic_cast <YGLabeledWidget *> (YGWidget::get (yLabeledWidget));
 		if (labeledWidget && labeledWidget->orientation() == YD_HORIZ) {
-			horiz_fill = yLabeledWidget->stretchable (YD_HORIZ) || yLabeledWidget->hasWeight (YD_HORIZ);
-			if (horiz_fill)
+/*			horiz_fill = yLabeledWidget->stretchable (YD_HORIZ) || yLabeledWidget->hasWeight (YD_HORIZ);
+			if (horiz_fill)*/
 				addSizeGroup (labeledWidget);
 		}
 	}
