@@ -1659,9 +1659,8 @@ public:
 	}
 
 private:
-// FIXME: check yast-qt warn code
 	#define MIN_PERCENT_WARN 90
-	#define MIN_FREE_MB_WARN (80*1024)
+	#define MIN_FREE_MB_WARN (500*1024)
 	virtual void update()
 	{
 		bool warn = false;
@@ -1690,6 +1689,7 @@ private:
 	{
 		if (m_hasWarn) return;
 		m_hasWarn = true;
+		if (!GTK_WIDGET_REALIZED (m_widget)) return;
 
 		GtkWidget *dialog, *view;
 		dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
@@ -1714,7 +1714,6 @@ private:
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
 		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
 		                             GTK_SELECTION_NONE);
-		GTK_WIDGET_UNSET_FLAGS (view, GTK_CAN_FOCUS);
 
 		GtkTreeViewColumn *column;
 		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),

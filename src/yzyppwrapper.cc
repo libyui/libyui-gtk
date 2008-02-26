@@ -981,7 +981,7 @@ GSList *partitions;
 		clearPartitions();
 	}
 
-	void packageModified (Package *package)
+	void packageModified()
 	{
 		clearPartitions();
 		if (listener)
@@ -1250,8 +1250,6 @@ void Ypp::Impl::packageModified (Ypp::Package *package)
 	// notify listeners of package change
 	for (GSList *i = pools; i; i = i->next)
 		((Pool::Impl *) i->data)->packageModified (package);
-	if (disk)
-		disk->impl->packageModified (package);
 	if (interface)
 		interface->packageModified (package);
 
@@ -1289,6 +1287,9 @@ void Ypp::Impl::finishTransactions()
 	g_slist_free (transactions);
 	transactions = NULL;
 	inTransaction = false;
+
+	if (disk)
+		disk->impl->packageModified();
 }
 
 void Ypp::Impl::addPool (Pool::Impl *pool)
