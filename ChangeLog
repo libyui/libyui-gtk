@@ -26,6 +26,8 @@
 
 	* src/yzyppwrapper.cc: added 10.3 zypp compatibility flag.
 
+	* src/YGBarGraph.cc & src/ygtkbargraph.c: honor bar graph segment's custom color.
+
 2008-02-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: got rid of depreacated warning.

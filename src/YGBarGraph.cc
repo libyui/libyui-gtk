@@ -21,11 +21,20 @@ public:
 	// YBarGraph
 	virtual void doUpdate()
 	{
+		GdkColor clr;
 		ygtk_bar_graph_create_entries (YGTK_BAR_GRAPH (getWidget()), segments());
 		for (int i = 0; i < segments(); i++) {
 			const YBarGraphSegment &s = segment (i);
+			GdkColor *c = 0;
+			if (s.hasSegmentColor()) {
+				const YColor &color = s.segmentColor();
+				clr.red   = color.red();
+				clr.green = color.green();
+				clr.blue  = color.blue();
+				c = &clr;
+			}
 			ygtk_bar_graph_setup_entry (YGTK_BAR_GRAPH (getWidget()), i,
-				s.label().c_str(), s.value());
+				s.label().c_str(), s.value(), c);
 		}
 		// FIXME: new libyui colors segments ... We probably should honor that
 	}
@@ -57,7 +66,7 @@ public:
 		GtkWidget *graph = ygtk_bar_graph_new();
 		m_barGraph = YGTK_BAR_GRAPH (graph);
 		ygtk_bar_graph_create_entries (m_barGraph, 3);
-		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize);
+		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize, NULL);
 
 		/* Labels over the slider */
 		GtkWidget *labels_box, *free_label, *new_part_label;
@@ -106,9 +115,9 @@ public:
 	{
 		IMPL
 		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(),
-		                            freeSize());
+		                            freeSize(), NULL);
 		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(),
-		                            newPartSize());
+		                            newPartSize(), NULL);
 
 		// block connections
 		g_signal_handlers_block_by_func (m_scale,

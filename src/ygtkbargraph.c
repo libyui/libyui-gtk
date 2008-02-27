@@ -61,8 +61,8 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 	}
 }
 
-void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
-                                 const gchar *label_entry, int value)
+void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *label_entry,
+                                 int value, GdkColor *color)
 {
 	YGtkRatioBoxChild *box_child = (YGtkRatioBoxChild *)
 		g_list_nth_data (YGTK_RATIO_BOX (bar)->children, index);
@@ -130,10 +130,14 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index,
 		{  46,  52,  54 },   // Aluminium 6
 	};
 
-	const guint *color = palette [index % G_N_ELEMENTS (palette)];
-
 	YGtkColoredLabel *color_label = YGTK_COLORED_LABEL (label);
-	ygtk_colored_label_set_background (color_label, color[0], color[1], color[2]);
+
+	if (color)
+		ygtk_colored_label_set_background (color_label, color->red, color->green, color->blue);
+	else { 
+		const guint *color = palette [index % G_N_ELEMENTS (palette)];
+		ygtk_colored_label_set_background (color_label, color[0], color[1], color[2]);
+	}
 }
 
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
