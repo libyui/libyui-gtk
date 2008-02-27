@@ -688,7 +688,7 @@ void dumpYastHtml (YWidget *widget)
 			YRichText *rtext = dynamic_cast <YRichText *> (widget);
 			if (rtext) {
 				std::string text = rtext->text();
-				char *xml = ygutils_convert_to_xhmlt_and_subst (text.c_str(), NULL);
+				char *xml = ygutils_convert_to_xhmlt_and_subst (text.c_str());
 
 				GtkWidget *view = gtk_text_view_new();
 				gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (view), GTK_WRAP_WORD);

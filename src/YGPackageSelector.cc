@@ -1148,7 +1148,8 @@ public:
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), _("All Repositories"));
 		for (int i = 0; Ypp::get()->getRepository (i); i++) {
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
-			gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), repo->name.c_str());
+			string repo_name = YGUtils::truncate (repo->name, 25);
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), repo_name.c_str());
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
 		g_signal_connect (G_OBJECT (m_repos), "changed",
@@ -1610,7 +1611,7 @@ private:
 			else
 				str = "--";
 		}
-		ygtk_html_wrap_set_text (rtext, str);
+		ygtk_html_wrap_set_text (rtext, str, FALSE);
 		ygtk_html_wrap_scroll (rtext, TRUE);
 	}
 };
@@ -1984,7 +1985,7 @@ protected:
 		GtkWidget *license_view, *license_window;
 
 		license_view = ygtk_html_wrap_new();
-		ygtk_html_wrap_set_text (license_view, license.c_str());
+		ygtk_html_wrap_set_text (license_view, license.c_str(), FALSE);
 
 		license_window = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (license_window),
@@ -2074,13 +2075,6 @@ protected:
 				}
 				return FALSE;
 			}
-			static void truncate (std::string &str, unsigned int size)
-			{
-				if (str.size() > size) {
-					str.erase (size-3);
-					str += "...";
-				}
-			}
 		};
 
 		// model
@@ -2088,20 +2082,20 @@ protected:
 			G_TYPE_STRING, G_TYPE_INT, G_TYPE_POINTER, G_TYPE_STRING);
 		for (std::list <Ypp::Problem *>::iterator it = problems.begin();
 		     it != problems.end(); it++) {
-			inner::truncate ((*it)->details, 800);
+			string details = YGUtils::truncate ((*it)->details, 800);
 			GtkTreeIter problem_iter;
 			gtk_tree_store_append (store, &problem_iter, NULL);
 			gtk_tree_store_set (store, &problem_iter, SHOW_TOGGLE_COL, FALSE,
 				TEXT_COL, (*it)->description.c_str(),
 				WEIGHT_TEXT_COL, PANGO_WEIGHT_BOLD, APPLY_PTR_COL, NULL,
-				TOOLTIP_TEXT_COL, (*it)->details.c_str(), -1);
+				TOOLTIP_TEXT_COL, details.c_str(), -1);
 
 			for (int i = 0; (*it)->getSolution (i); i++) {
 				Ypp::Problem::Solution *solution = (*it)->getSolution (i);
-				inner::truncate (solution->details, 800);
+				string sol_details = YGUtils::truncate (solution->details, 800);
 				GtkTreeIter solution_iter;
-				const gchar *tooltip_text = solution->details.c_str();
-				if (solution->details.empty())
+				const gchar *tooltip_text = sol_details.c_str();
+				if (sol_details.empty())
 					tooltip_text = NULL;
 				gtk_tree_store_append (store, &solution_iter, &problem_iter);
 				gtk_tree_store_set (store, &solution_iter, SHOW_TOGGLE_COL, TRUE,

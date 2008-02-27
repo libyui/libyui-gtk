@@ -48,9 +48,6 @@ bool testXHtmlConvert()
 	} aTests[] = {
 		// preservation
 		{ "<p>foo</p>", "<body><p>foo</p></body>" },
-/*		// product substitution
-		{ "&product;", "<body>foo</body>" },
-		{ " <p>&product;</p>", "<body><p>foo</p></body>" },*/
 		// outer tag
 		{ "some text", "<body>some text</body>" },
 		// unquoted attributes
@@ -81,7 +78,7 @@ bool testXHtmlConvert()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in, "foo");
+		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in);
 		if (strcmp (out, aTests[i].out)) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);

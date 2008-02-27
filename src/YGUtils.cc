@@ -75,6 +75,16 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	}
 }
 
+std::string YGUtils::truncate (const std::string &str, unsigned int length)
+{
+	std::string ret (str);
+	if (ret.size() > length) {
+		ret.erase (length-3);
+		ret += "...";
+	}
+	return ret;
+}
+
 void YGUtils::scrollTextViewDown (GtkTextView *text_view)
 {
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (text_view);
@@ -214,10 +224,9 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 }
 
 // We have to:
-//   + manually substitute the product entity.
 //   + rewrite <br> and <hr> tags
 //   + deal with <a attrib=noquotes>
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product)
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 {
 	GString *outp = g_string_new ("");
 	GQueue *tag_queue = g_queue_new();

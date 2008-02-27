@@ -19,7 +19,7 @@ GtkWidget *ygtk_html_wrap_new (void);
 GType ygtk_html_wrap_get_type (void);
 void ygtk_html_wrap_init (GtkWidget *widget);  // if you use g_object_new(), call this
 
-void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text);
+void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode);
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top /* or bottom */);
 
 // callback of type: void (GtkWidget *htmlwrap, const gchar *url, gpointer data)

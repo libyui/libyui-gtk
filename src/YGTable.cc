@@ -97,7 +97,7 @@ public:
 	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), getModel()); }
 
 	// YGSelectionModel
-	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
+	virtual void setFocusItem (GtkTreeIter *iter)
 	{
 		blockEvents();
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
@@ -233,7 +233,7 @@ public:
     	YTableItem *item = dynamic_cast <YTableItem *> (_item);
     	if (item) {
 			GtkTreeIter iter;
-			addRow (&iter, _item);
+			addRow (&iter, _item, true);
    			for (int i = 0; i < columns(); i++)
    				setCell (&iter, item->cell (i));
     	}
@@ -339,7 +339,7 @@ public:
     virtual void addItem (YItem *item)
     {
     	GtkTreeIter iter;
-		addRow (&iter, item);
+		addRow (&iter, item, false);
    		setCellToggle (&iter, 0, item->selected());
    		setCellIcon   (&iter, 1, item->iconName());
    		setCellLabel  (&iter, 2, item->label());
@@ -370,13 +370,6 @@ public:
 
 	virtual void setCurrentItem (YItem *item)
 	{ implFocusItem (item); }
-
-	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
-	{
-		// item->selected() doesn't apply to focus, filter them
-		if (!addingRow)
-			YGTableView::setFocusItem (iter, addingRow);
-	}
 
 	// Events
 	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,

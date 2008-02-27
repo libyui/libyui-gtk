@@ -24,6 +24,8 @@
 #include <glib/gslist.h>
 #include "YGUtils.h"
 
+//#define OLD_ZYPP
+
 //** Zypp shortcuts
 
 typedef zypp::ResPoolProxy ZyppPool;
@@ -400,9 +402,15 @@ std::string Ypp::Package::provides()
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
+#ifdef OLD_ZYPP
+	const zypp::CapSet &capSet = object->dep (zypp::Dep::PROVIDES);
+	for (zypp::CapSet::const_iterator it = capSet.begin();
+	     it != capSet.end(); it++) {
+#else
     const zypp::Capabilities &capSet = object->dep (zypp::Dep::PROVIDES);
     for (zypp::Capabilities::const_iterator it = capSet.begin();
          it != capSet.end(); it++) {
+#endif
 		if (!text.empty())
 			text += "\n";
 		text += it->asString();
@@ -414,9 +422,15 @@ std::string Ypp::Package::requires()
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
+#ifdef OLD_ZYPP
+	const zypp::CapSet &capSet = object->dep (zypp::Dep::REQUIRES);
+	for (zypp::CapSet::const_iterator it = capSet.begin();
+	     it != capSet.end(); it++) {
+#else
     const zypp::Capabilities &capSet = object->dep (zypp::Dep::REQUIRES);
     for (zypp::Capabilities::const_iterator it = capSet.begin();
          it != capSet.end(); it++) {
+#endif
 		if (!text.empty())
 			text += "\n";
 		text += it->asString();
@@ -662,7 +676,11 @@ static Ypp::Package::Version *constructVersion (ZyppObject object)
 {
 	Ypp::Package::Version *version = new Ypp::Package::Version();
 	version->number = object->edition().version();
+#ifdef OLD_ZYPP
+	version->repo = ypp->impl->getRepository (object->repository().info().alias());
+#else
 	version->repo = ypp->impl->getRepository (object->repoInfo().alias());
+#endif
 	version->cmp = 0;
 	version->impl = (void *) get_pointer (object);
 	return version;

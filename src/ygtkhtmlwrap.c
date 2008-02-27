@@ -84,8 +84,9 @@ void ygtk_html_wrap_init (GtkWidget *widget)
 	                  G_CALLBACK (gtkhtml_url_requested_cb), NULL);
 }
 
-void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text)
+void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
 {
+	// TODO: implement plain_mode
 	GtkHTMLStream *stream = gtk_html_begin (GTK_HTML (widget));
 	gtk_html_write (GTK_HTML (widget), stream, text, strlen (text));
 	gtk_html_end (GTK_HTML (widget), stream, GTK_HTML_STREAM_OK);
@@ -131,9 +132,9 @@ void ygtk_html_wrap_init (GtkWidget *widget)
 {
 }
 
-void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text)
+void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
 {
-	ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), text, TRUE);
+	ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), text, plain_mode);
 }
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)

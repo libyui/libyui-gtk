@@ -30,7 +30,7 @@ struct YGSelectionModel
 	void doDeleteAllItems();
 
 	virtual YItem *focusItem() = 0;
-	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow) = 0;
+	virtual void setFocusItem (GtkTreeIter *iter) = 0;
 	virtual void unsetFocus() = 0;
 
 	// to be implemented by trees
@@ -39,7 +39,7 @@ struct YGSelectionModel
 	YItem *getItem (GtkTreeIter *iter);
 	bool getIter (YItem *item, GtkTreeIter *iter);
 
-	void addRow (GtkTreeIter *iter, YItem *item);
+	void addRow (GtkTreeIter *iter, YItem *item, bool honor_select);
 	void setCellLabel (GtkTreeIter *iter, int col, const string &label);
 	void setCellIcon (GtkTreeIter *iter, int col, const string &icon);
 	void setCellToggle (GtkTreeIter *iter, int col, bool selected);

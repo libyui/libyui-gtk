@@ -32,6 +32,9 @@ namespace YGUtils
 	/* Replaces every 'mouth' by 'food' in 'str'. */
 	void replace (std::string &str, const char *mouth, int mouth_len, const char *food);
 
+	/* Truncates the text with "..." past the given length. */
+	std::string truncate (const std::string &str, unsigned int length);
+
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	void escapeMarkup (std::string &str);
 
@@ -63,7 +66,7 @@ extern "C" {
 	void ygutils_setFilter (GtkEntry *entry, const char *validChars);
 
 	/* Convert html to xhtml (or at least try) */
-	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
 	void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 };
 

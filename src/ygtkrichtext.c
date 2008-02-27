@@ -17,7 +17,7 @@
 
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr, const char *product);
+gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
 
 G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
 
@@ -103,8 +103,6 @@ static gboolean isIdentTag (const char *tag)
 
 void ygtk_rich_text_init (YGtkRichText *rtext)
 {
-	rtext->prodname = NULL;
-
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_editable (tview, FALSE);
@@ -161,19 +159,11 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 
 static void ygtk_rich_text_destroy (GtkObject *object)
 {
-	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
-
-	if (rtext->prodname)
-		// destroy can be called multiple times, and we must ref only once
-		if (ref_cursor > 0 && (--ref_cursor == 0)) {
-			gdk_cursor_unref (hand_cursor);
-			gdk_cursor_unref (regular_cursor);
-		}
-
-	if (rtext->prodname)
-		g_free (rtext->prodname);
-	rtext->prodname = NULL;
-
+	// destroy can be called multiple times, and we must ref only once
+	if (ref_cursor > 0 && (--ref_cursor == 0)) {
+		gdk_cursor_unref (hand_cursor);
+		gdk_cursor_unref (regular_cursor);
+	}
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
 
@@ -575,18 +565,12 @@ static char *elide_whitespace (const char *instr, int len)
 	return g_string_free (dest, FALSE);
 }
 
-void ygtk_richttext_set_prodname (YGtkRichText *rtext, const char *prodname)
-{
-	rtext->prodname = g_strdup (prodname);
-}
-
-void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text,
-                              gboolean rich_text)
+void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)
 {
 	GtkTextBuffer *buffer;
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 
-	if (!rich_text) {
+	if (plain_mode) {
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
@@ -600,7 +584,7 @@ void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text,
 	GMarkupParseContext *ctx;
 	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
 
-	char *xml = ygutils_convert_to_xhmlt_and_subst (text, rtext->prodname);
+	char *xml = ygutils_convert_to_xhmlt_and_subst (text);
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error)) {
 #ifdef PRINT_WARNINGS

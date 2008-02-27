@@ -54,11 +54,14 @@ bool YGSelectionModel::isEmpty()
 void YGSelectionModel::doAddItem (YItem *item)
 {
 	GtkTreeIter iter;
-	addRow (&iter, item);
+	bool empty = isEmpty();
+	addRow (&iter, item, false);
 	setCellLabel (&iter, LABEL_COLUMN, item->label());
 	setCellIcon (&iter, ICON_COLUMN, item->iconName());
 	for (YItemIterator it = item->childrenBegin(); it != item->childrenEnd(); it++)
 		doAddItem (*it);
+	if (empty || item->selected())
+		setFocusItem (&iter);
 }
 
 void YGSelectionModel::doDeleteAllItems()
@@ -95,7 +98,7 @@ void YGSelectionModel::implFocusItem (YItem *item)
 {
 	GtkTreeIter iter;
 	if (getIter (item, &iter))
-		setFocusItem (&iter, false);
+		setFocusItem (&iter);
 }
 
 int YGSelectionModel::getPtrCol()
@@ -103,7 +106,7 @@ int YGSelectionModel::getPtrCol()
 	return gtk_tree_model_get_n_columns (getModel()) - 1;
 }
 
-void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item)
+void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select)
 {
 	struct inner {
 		static void setItemData (GtkTreeModel *model, GtkTreeIter *iter, YItem *item)
@@ -121,8 +124,6 @@ void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item)
 			item->setData (GINT_TO_POINTER (index));
 		}
 	};
-
-	bool empty = isEmpty();
 
 	if (isTree) {
 		GtkTreeStore *store = getTreeStore();
@@ -147,8 +148,8 @@ void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item)
 		inner::setItemData (getModel(), iter, item);
 	}
 
-	if (item->selected() || empty)
-		setFocusItem (iter, true);
+	if (honor_select && item->selected())
+		setFocusItem (iter);
 }
 
 void YGSelectionModel::setCellLabel (GtkTreeIter *iter, int col, const string &label)

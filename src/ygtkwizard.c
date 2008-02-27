@@ -176,7 +176,7 @@ GtkWidget *ygtk_help_dialog_new (GtkWindow *parent)
 void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
-	ygtk_html_wrap_set_text (dialog->help_text, text);
+	ygtk_html_wrap_set_text (dialog->help_text, text, FALSE);
 }
 
 static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)

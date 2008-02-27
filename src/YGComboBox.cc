@@ -43,6 +43,11 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	inline GtkComboBox *getComboBox()
 	{ return GTK_COMBO_BOX (getWidget()); }
 
+	void blockEvents()
+	{ g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
+	void unblockEvents()
+	{ g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
+
 	GtkEntry *getEntry()
 	{
 		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
@@ -67,23 +72,24 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	virtual void setText (const string &value)
 	{
 		IMPL
+		blockEvents();
 		gtk_entry_set_text (getEntry(), value.c_str());
+		unblockEvents();
 	}
 
 	// YGSelectionModel
-	virtual void setFocusItem (GtkTreeIter *iter, bool addingRow)
+	virtual void setFocusItem (GtkTreeIter *iter)
 	{
-		// GtkComboBox wants a string on the model, not NULL, when setting it as
-		// the active row. As, we only set that value after addingRow, we need to
-		// initialize it here...
-		if (addingRow)
-			setCellLabel (iter, YGSelectionModel::LABEL_COLUMN, string());
+		blockEvents();
 		gtk_combo_box_set_active_iter (getComboBox(), iter);
+		unblockEvents();
 	}
 
 	virtual void unsetFocus()
 	{
+		blockEvents();
 		gtk_combo_box_set_active (getComboBox(), -1);
+		unblockEvents();
 	}
 
     virtual YItem *focusItem()

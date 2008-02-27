@@ -14,6 +14,34 @@
 
 	* src/YGUI.h/cc: sync with libyui changes: moved some methods from YUI to YApplication.
 
+	* src/YGComboBox.cc / YGSelectionModel.cc/h: bug fix: honor select item flag
+	when on editable mode.
+
+	* src/YGMultiLineEdit.cc (YGRichText): bug fix (#365257): honor default text
+	when on plain text mode.
+	* src/YGMultiLineEdit.cc (YGRichText): libyui sync: support toggle function
+	between plain text and rich text mode.
+
+	* src/YGPackageSelector.cc: truncate repository combo at the 25th character.
+
+	* src/yzyppwrapper.cc: added 10.3 zypp compatibility flag.
+
+2008-02-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: got rid of depreacated warning.
+
+	* src/YGPackageSelector.cc (DiskView): highlight near full disk on table.
+
+	* src/ygtkwizard.c: help-background.png no longer shipped with 11.0. Disable
+	help dialog background.
+
+	* src/YGIntField.cc (YSlider): don't draw values (that's what the side
+	int field is for).
+
+	* src/YGLayout.cc: removed label alignment tweak for non-stretchable widgets.
+
+	* src/YGUI.h/cc: sync with libyui changes: moved some methods from YUI to YApplication.
+
 2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (DiskView): fixed #363473 and enabled as a
