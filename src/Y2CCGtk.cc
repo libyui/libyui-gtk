@@ -4,8 +4,6 @@
 
 #include <config.h>
 #include <YGUI.h>
-#include <ycp/y2log.h>
-#include <ycp-ui/YUIComponent.h>
 
 YUI * createUI( bool withThreads )
 {

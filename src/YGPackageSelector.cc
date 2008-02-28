@@ -3,9 +3,12 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
+#include <string.h>
+
+#define YUILogComponent "gtk-pkg"
 
 #include "YGUI.h"
+#include "YUILog.h"
 #include "YGUtils.h"
 #include "YGi18n.h"
 #include "YGDialog.h"
@@ -1940,11 +1943,11 @@ protected:
 		const gchar *action = (gchar *) id;
 
 		if (!strcmp (action, "accept")) {
-			y2milestone ("Closing PackageSelector with 'accept'");
+			yuiMilestone() << "Closing PackageSelector with 'accept'" << endl;
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}
 		else if (!strcmp (action, "cancel")) {
-			y2milestone ("Closing PackageSelector with 'cancel'");
+			yuiMilestone() << "Closing PackageSelector with 'cancel'" << endl;
 			if (pThis->confirmExit())
 				YGUI::ui()->sendEvent (new YCancelEvent());
 		}

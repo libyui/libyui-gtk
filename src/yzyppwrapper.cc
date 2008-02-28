@@ -8,8 +8,12 @@
 #include <config.h>
 #include "YGi18n.h"
 #include "yzyppwrapper.h"
+#include <string.h>
+#include <string>
 
-#include <ycp/y2log.h>
+#define YUILogComponent "gtk-pkg"
+
+#include <YUILog.h>
 #include <zypp/ZYppFactory.h>
 #include <zypp/ResObject.h>
 #include <zypp/ResPoolProxy.h>
@@ -350,7 +354,7 @@ std::string Ypp::Package::filelist()
 
 std::string Ypp::Package::changelog()
 {
-	string text;
+	std::string text;
 	ZyppObject object = impl->zyppSel->installedObj();
 	ZyppPackage package = tryCastToZyppPkg (object);
 	if (package) {
@@ -452,8 +456,8 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 			ZyppObject object = selectable->theObj();
 			ZyppPattern pattern = tryCastToZyppPattern (object);
 
-			const set <string> &packages = pattern->install_packages();
-			for (set <string>::iterator it = packages.begin();
+			const std::set <std::string> &packages = pattern->install_packages();
+			for (std::set <std::string>::iterator it = packages.begin();
 			     it != packages.end(); it++) {
 				if (this->impl->zyppSel->name() == *it)
 					return true;
@@ -583,8 +587,7 @@ void Ypp::Package::install (int nb)
 		const Version *version = getAvailableVersion (nb);
 		ZyppObject candidate = (ZyppObjectPtr) version->impl;
 		if (!impl->zyppSel->setCandidate (candidate)) {
-			y2warning ("Error: Could not set package '%s' candidate to '%s'\n",
-			           name().c_str(), version->number.c_str());
+			yuiWarning () << "Error: Could not set package '" << name() << "' candidate to '" << version->number << "'\n";
 			return;
 		}
 	}

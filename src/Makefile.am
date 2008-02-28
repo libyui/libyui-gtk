@@ -12,9 +12,9 @@ noinst_PROGRAMS = dummy
 # plugin, libtool forces 'lib' prefix
 plugin_LTLIBRARIES = libpy2gtk.la
 
-libpy2gtk_la_LDFLAGS = -version-info 2:0
-libpy2gtk_la_LIBADD = -L$(plugindir) $(PYUI_LIBS) -L$(libdir) -lycp -ly2 \
-                      $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS)
+libpy2gtk_la_LDFLAGS = -version-info 2:0 -Wl,--no-undefined
+libpy2gtk_la_LIBADD = -L$(plugindir) -L$(libdir) -lycp -ly2 -lyui \
+                      $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS) -ly2util
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
 	YGUtils.cc \
@@ -83,5 +83,7 @@ EXTRA_DIST = \
 	icons/pkg-unlocked.xpm \
 	icons/pkg-installed-upgradable-locked.xpm \
 	icons/pkg-locked.xpm \
+	icons/harddisk.xpm \
+	icons/harddisk-full.xpm \
 	pkg-selector-help.h
 
