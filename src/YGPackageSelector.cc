@@ -1904,7 +1904,7 @@ public:
 		ygtk_wizard_set_header_icon (wizard, window,
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
 		ygtk_wizard_set_header_text (wizard, window,
-			onlineUpdateMode() ? _("Patch Selector") : _("Package Selector"));
+			onlineUpdateMode() ? _("Patch Selection") : _("Package Selection"));
 
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
 		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");
