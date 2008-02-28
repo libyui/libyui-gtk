@@ -38,10 +38,7 @@ public:
 
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
-	virtual string getDebugLabel() const
-	{ return primary() == YD_HORIZ ? "horizontal" : "vertical"; }
 	virtual void moveChild (YWidget *child, int x, int y) {}
-
 
 	void addSizeGroup (YGLabeledWidget *labeledWidget)
 	{
