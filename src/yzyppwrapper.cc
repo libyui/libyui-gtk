@@ -679,7 +679,7 @@ static Ypp::Package::Version *constructVersion (ZyppObject object)
 {
 	Ypp::Package::Version *version = new Ypp::Package::Version();
 	version->number = object->edition().version();
-	version->number += " (" + object->arch().asString() + ")";
+	version->number += "  (" + object->arch().asString() + ")";
 #ifdef OLD_ZYPP
 	version->repo = ypp->impl->getRepository (object->repository().info().alias());
 #else
