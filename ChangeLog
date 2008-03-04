@@ -1,3 +1,8 @@
+2008-03-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (resolveProblems): zypp changed the semantics of
+	the conflict details. They now need to be inlined to the string.
+
 2008-02-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: got rid of depreacated warning.
@@ -27,22 +32,6 @@
 	* src/yzyppwrapper.cc: added 10.3 zypp compatibility flag.
 
 	* src/YGBarGraph.cc & src/ygtkbargraph.c: honor bar graph segment's custom color.
-
-2008-02-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
-
-	* src/yzyppwrapper.cc: got rid of depreacated warning.
-
-	* src/YGPackageSelector.cc (DiskView): highlight near full disk on table.
-
-	* src/ygtkwizard.c: help-background.png no longer shipped with 11.0. Disable
-	help dialog background.
-
-	* src/YGIntField.cc (YSlider): don't draw values (that's what the side
-	int field is for).
-
-	* src/YGLayout.cc: removed label alignment tweak for non-stretchable widgets.
-
-	* src/YGUI.h/cc: sync with libyui changes: moved some methods from YUI to YApplication.
 
 2008-02-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

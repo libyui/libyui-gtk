@@ -2015,9 +2015,10 @@ protected:
 		// we can't use ordinary radio buttons, as gtk+ enforces that in a group
 		// one must be selected...
 
+		#define DETAILS_PAD  25
 		enum ColumnAlias {
 			SHOW_TOGGLE_COL, ACTIVE_TOGGLE_COL, TEXT_COL, WEIGHT_TEXT_COL,
-			APPLY_PTR_COL, TOOLTIP_TEXT_COL
+			TEXT_PAD_COL, APPLY_PTR_COL
 		};
 
 		struct inner {
@@ -2031,6 +2032,8 @@ protected:
 				gtk_tree_model_get_iter (model, &iter, path);
 				gtk_tree_model_get (model, &iter, ACTIVE_TOGGLE_COL, &enabled,
 				                    APPLY_PTR_COL, &apply, -1);
+				if (!apply)
+					return;
 
 				// disable all the other radios on the group, setting current
 				gtk_tree_model_get_iter (model, &iter, path);
@@ -2040,13 +2043,12 @@ protected:
 						gtk_tree_store_set (store, &iter, ACTIVE_TOGGLE_COL, FALSE, -1);
 						bool *apply;
 						gtk_tree_model_get (model, &iter, APPLY_PTR_COL, &apply, -1);
-						*apply = false;
+						if (apply) *apply = false;
 					} while (gtk_tree_model_iter_next (model, &iter));
 				}
 
 				enabled = !enabled;
-				if (apply)
-					*apply = enabled;
+				*apply = enabled;
 				gtk_tree_model_get_iter (model, &iter, path);
 				gtk_tree_store_set (store, &iter, ACTIVE_TOGGLE_COL, enabled, -1);
 			}
@@ -2057,6 +2059,7 @@ protected:
 				solution_toggled (model, path);
 				gtk_tree_path_free (path);
 			}
+#if 0
 			static gboolean query_tooltip_cb (GtkWidget *view, gint x, gint y,
 				gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
 			{
@@ -2078,33 +2081,37 @@ protected:
 				}
 				return FALSE;
 			}
+#endif
 		};
 
 		// model
-		GtkTreeStore *store = gtk_tree_store_new (6, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-			G_TYPE_STRING, G_TYPE_INT, G_TYPE_POINTER, G_TYPE_STRING);
+		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+			G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_BOOLEAN, G_TYPE_UINT, G_TYPE_POINTER);
 		for (std::list <Ypp::Problem *>::iterator it = problems.begin();
 		     it != problems.end(); it++) {
-			string details = YGUtils::truncate ((*it)->details, 800);
 			GtkTreeIter problem_iter;
 			gtk_tree_store_append (store, &problem_iter, NULL);
 			gtk_tree_store_set (store, &problem_iter, SHOW_TOGGLE_COL, FALSE,
-				TEXT_COL, (*it)->description.c_str(),
-				WEIGHT_TEXT_COL, PANGO_WEIGHT_BOLD, APPLY_PTR_COL, NULL,
-				TOOLTIP_TEXT_COL, details.c_str(), -1);
+				TEXT_COL, (*it)->description.c_str(), WEIGHT_TEXT_COL, PANGO_WEIGHT_BOLD, -1);
+			if (!(*it)->details.empty()) {
+				GtkTreeIter details_iter;
+				gtk_tree_store_append (store, &details_iter, &problem_iter);
+				gtk_tree_store_set (store, &details_iter, SHOW_TOGGLE_COL, FALSE,
+					TEXT_COL, (*it)->details.c_str(), TEXT_PAD_COL, DETAILS_PAD, -1);
+			}
 
 			for (int i = 0; (*it)->getSolution (i); i++) {
 				Ypp::Problem::Solution *solution = (*it)->getSolution (i);
-				string sol_details = YGUtils::truncate (solution->details, 800);
 				GtkTreeIter solution_iter;
-				const gchar *tooltip_text = sol_details.c_str();
-				if (sol_details.empty())
-					tooltip_text = NULL;
 				gtk_tree_store_append (store, &solution_iter, &problem_iter);
 				gtk_tree_store_set (store, &solution_iter, SHOW_TOGGLE_COL, TRUE,
 					ACTIVE_TOGGLE_COL, FALSE, TEXT_COL, solution->description.c_str(),
-					APPLY_PTR_COL, &solution->apply,
-					TOOLTIP_TEXT_COL, tooltip_text, -1);
+					APPLY_PTR_COL, &solution->apply, -1);
+				if (!solution->details.empty()) {
+					gtk_tree_store_append (store, &solution_iter, &problem_iter);
+					gtk_tree_store_set (store, &solution_iter, SHOW_TOGGLE_COL, FALSE,
+						TEXT_COL, solution->details.c_str(), TEXT_PAD_COL, DETAILS_PAD, -1);
+				}
 			}
 		}
 
@@ -2138,12 +2145,10 @@ protected:
 		renderer = gtk_cell_renderer_text_new();
 		g_object_set (G_OBJECT (renderer), "wrap-width", 400, NULL);
 		column = gtk_tree_view_column_new_with_attributes ("", renderer,
-			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, NULL);
+			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, "xpad", TEXT_PAD_COL, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 		gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
 		gtk_widget_set_has_tooltip (view, TRUE);
-		g_signal_connect (G_OBJECT (view), "query-tooltip",
-			G_CALLBACK (inner::query_tooltip_cb), store);
 
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
