@@ -79,7 +79,6 @@ fprintf (stderr, "init()\n");
 			else if (sscanf (argp, "%dx%d", &m_default_size.width,
 			                 &m_default_size.height) == EOF) {
 				printf ("Warning: invalid --geometry value: %s\n", argp);
-				m_default_size.width = m_default_size.height = 0;
 			}
 		}
 		else if (!strcmp (argp, "help")) {
@@ -96,8 +95,10 @@ fprintf (stderr, "init()\n");
 				 );
 			exit (0);
 		}
+/*
 		else
 			printf ("Warning: Unknown argument '--%s'\n", argp);
+*/
 	}
 
 	gtk_init (&argc, &argv);
@@ -137,10 +138,10 @@ void YGUI::idleLoop (int fd_ycp)
 #ifdef PRINT_EVENTS
 fprintf (stderr, "idleLoop()\n");
 #endif
-	checkInit();
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
+	checkInit();
 
 	GIOChannel *wakeup;
 	wakeup = g_io_channel_unix_new (fd_ycp);
