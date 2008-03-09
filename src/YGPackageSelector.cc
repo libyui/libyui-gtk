@@ -130,6 +130,9 @@ struct PkgList
 	PkgList() : inited (0)
 	{}
 
+	void clearCache()
+	{ inited = 0; }
+
 	typedef std::list <Ypp::Package *>::const_iterator const_iterator;
 	const_iterator begin() const
 	{ return packages.begin(); }
@@ -1483,8 +1486,10 @@ Filters *m_filters;  // used to filter repo versions...
 	{
 		// GTK+ doesn't fire selection change when a selected row changes, so we need
 		// to re-load PackageControl in that occasions.
-		if (m_packages.contains (package))
+		if (m_packages.contains (package)) {
+			m_packages.clearCache();
 			setPackages (m_packages);
+		}
 	}
 
 private:
