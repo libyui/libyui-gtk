@@ -108,6 +108,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_view_set_editable (tview, FALSE);
 	gtk_text_view_set_cursor_visible (tview, FALSE);
 	gtk_text_view_set_pixels_below_lines (tview, 4);
+	gtk_text_view_set_left_margin (tview, 4);
 
 	// Init link support
 	if (!ref_cursor) {

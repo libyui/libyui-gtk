@@ -1,3 +1,21 @@
+2008-03-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: padded 4 pixels to the left margin.
+
+	* src/ygtkwizard.c: bug fix: change wizard headers to the selected color,
+	and listen to style changes.
+
+	* src/yzyppwrapper.cc: some commented debug code for when not online.
+
+	* src/YGPackageSelector.cc: removed locking and undo from the ordinary
+	controls, and added them to the popup menu.
+
+	* src/YGPackageSelector.cc: de-coupled package information and controls, and
+	changed the layout of them.
+
+	* src/YGPackageSelector.cc (Filters): italic for available versions
+	repositories.
+
 2008-03-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (resolveProblems): zypp changed the semantics of

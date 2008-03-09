@@ -703,6 +703,25 @@ const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
 const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
 {
 	if (!impl->availableVersions) {
+#if 0  // for debug purposes, when not online
+		Ypp::Package::Version *version;
+
+		version = new Ypp::Package::Version();
+		version->number = "5.0.6";
+		version->number += "  (i586)";
+		version->repo = 0;
+		version->cmp = 1;
+		version->impl = NULL;
+		impl->availableVersions = g_slist_append (impl->availableVersions, version);
+
+		version = new Ypp::Package::Version();
+		version->number = "4.1.2";
+		version->number += "  (i586)";
+		version->repo = 1;
+		version->cmp = -1;
+		version->impl = NULL;
+		impl->availableVersions = g_slist_append (impl->availableVersions, version);
+#else
 		const ZyppObject installedObj = impl->zyppSel->installedObj();
 		for (zypp::ui::Selectable::available_iterator it = impl->zyppSel->availableBegin();
 			 it != impl->zyppSel->availableEnd(); it++) {
@@ -722,6 +741,7 @@ const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
 		};
 		impl->availableVersions = g_slist_sort (impl->availableVersions,
 		                                        inner::version_compare);
+#endif
 	}
 	return (Version *) g_slist_nth_data (impl->availableVersions, nb);
 }

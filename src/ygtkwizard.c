@@ -24,6 +24,16 @@ extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
 extern void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 
+static void label_style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
+{
+	static gboolean safeguard = FALSE;
+	if (safeguard) return;
+	safeguard = TRUE;
+	gtk_widget_modify_fg (widget, GTK_STATE_NORMAL, &widget->style->fg [GTK_STATE_SELECTED]);
+	ygutils_setWidgetFont (widget, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_LARGE);
+	safeguard = FALSE;
+}
+
 //** YGtkHelpDialog
 
 G_DEFINE_TYPE (YGtkHelpDialog, ygtk_help_dialog, GTK_TYPE_WINDOW)
@@ -74,10 +84,8 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	dialog->title_image = gtk_image_new_from_stock (GTK_STOCK_HELP,
 	                                   GTK_ICON_SIZE_LARGE_TOOLBAR);
 	dialog->title_label = gtk_label_new ("Help");
-	gtk_widget_modify_fg (dialog->title_label, GTK_STATE_NORMAL,
-	                      &dialog->title_label->style->fg [GTK_STATE_SELECTED]);
-	ygutils_setWidgetFont (dialog->title_label, PANGO_WEIGHT_ULTRABOLD,
-	                       PANGO_SCALE_LARGE);
+	g_signal_connect (G_OBJECT (dialog->title_label), "style-set",
+	                  G_CALLBACK (label_style_set_cb), NULL);
 	gtk_box_pack_start (GTK_BOX (dialog->title_box), dialog->title_image,
 	                    FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (dialog->title_box), dialog->title_label,
@@ -319,6 +327,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	wizard->m_title_image = gtk_image_new();
 	wizard->m_title_label = gtk_label_new("");
+	g_signal_connect (G_OBJECT (wizard->m_title_label), "style-set",
+	                  G_CALLBACK (label_style_set_cb), NULL);
 	gtk_label_set_ellipsize (GTK_LABEL (wizard->m_title_label), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0.5);
 
