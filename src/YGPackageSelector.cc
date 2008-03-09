@@ -272,6 +272,7 @@ Listener *m_listener;
 			struct inner {
 				static void appendItem (GtkWidget *menu, const char *label,
 					const char *tooltip, const char *stock_icon, const char **xpm_icon,
+					bool sensitive,
 					void (& callback) (GtkMenuItem *item, View *pThis), View *pThis)
 				{
 					GtkWidget *item;
@@ -292,6 +293,8 @@ Listener *m_listener;
 						item = gtk_menu_item_new_with_mnemonic (label);
 					if (tooltip)
 						gtk_widget_set_tooltip_markup (item, tooltip);
+					if (!sensitive)
+						gtk_widget_set_sensitive (item, FALSE);
 					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 					g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (callback), pThis);
 				}
@@ -327,28 +330,29 @@ Listener *m_listener;
 			};
 
 			PkgList packages = getSelected();
-			bool empty = true;
+			bool empty = true, unlocked = packages.unlocked();
 			if (packages.notInstalled())
 				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_DELETE, 0,
-				                   inner::install_cb, this), empty = false;
+				                   unlocked, inner::install_cb, this), empty = false;
 			if (packages.upgradable())
 				inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP, 0,
-				                   inner::install_cb, this), empty = false;
+				                   unlocked, inner::install_cb, this), empty = false;
 			if (packages.installed())
 				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_SAVE, 0,
-				                   inner::remove_cb, this), empty = false;
+				                   unlocked, inner::remove_cb, this), empty = false;
 			if (packages.modified())
 				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO, 0,
-				                   inner::undo_cb, this), empty = false;
+				                   true, inner::undo_cb, this), empty = false;
 			if (packages.locked())
 				inner::appendItem (menu, _("_Unlock"), lock_tooltip, 0, pkg_unlocked_xpm,
-				                   inner::unlock_cb, this), empty = false;
-			if (packages.unlocked())
+				                   true, inner::unlock_cb, this), empty = false;
+			if (unlocked)
 				inner::appendItem (menu, _("_Lock"), lock_tooltip, 0, pkg_locked_xpm,
-				                   inner::lock_cb, this), empty = false;
+				                   true, inner::lock_cb, this), empty = false;
 			if (!empty)
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
-			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL, 0, inner::select_all_cb, this);
+			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL, 0,
+			                   true, inner::select_all_cb, this);
 
 			gtk_widget_show_all (menu);
 			gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
@@ -1319,6 +1323,7 @@ Filters *m_filters;  // used to filter repo versions...
 		                  G_CALLBACK (remove_clicked_cb), this);
 
 		m_installed_version = gtk_label_new ("");
+		gtk_label_set_selectable (GTK_LABEL (m_installed_version), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (m_installed_version), 0, 0.5);
 
 		m_installed_box = gtk_vbox_new (FALSE, 2);
@@ -1606,7 +1611,6 @@ public:
 	{
 		if (packages.empty())
 			return;
-
 		Ypp::Package *package = packages.front();
 
 		gtk_widget_hide (m_icon_frame);
