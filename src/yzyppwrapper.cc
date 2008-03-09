@@ -267,8 +267,20 @@ std::string Ypp::Package::description()
 	if (!text.compare (0, header_len, header, header_len))
 		;
 	else {
+		// cut authors block
+		std::string::size_type i = text.find ("\nAuthors:", 0);
+		if (i != std::string::npos) {
+			int j = i + sizeof ("\nAuthors:\n");
+			if (text.compare (j, sizeof ("-----"), "-----")) {
+				text.erase (i);
+			}
+		}
+		while (text.length() > 0 && text [text.length()-1] == '\n')
+			text.erase (text.length()-1);
+
 		YGUtils::escapeMarkup (text);
 		YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
+		text += "<br>";
 	}
 
 	if (impl->type == PACKAGE_TYPE) {
@@ -391,13 +403,27 @@ std::string Ypp::Package::authors()
 				authors += "<br>";
 			authors += author;
 		}
-		// Some packagers put Authors over the Descriptions field. This seems to be rare
-		// on, so I'm not even going to bother.
+		// look for Authors line in description
+		std::string description = package->description();
+		std::string::size_type i = description.find ("\nAuthors:", 0);
+		if (i != std::string::npos) {
+			i += sizeof ("\nAuthors:\n");
+			if (description.compare (i, sizeof ("-----"), "-----")) {
+				i = description.find ("\n", i+1);
+				if (i != std::string::npos) {
+					std::string str = description.substr (i+1);
+					YGUtils::escapeMarkup (str);
+					YGUtils::replace (str, "\n", 1, "<br>");
+					authors += str;
+					
+				}
+			}
+		}
 
-		if (!packager.empty())
-			text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
 		if (!authors.empty())
 			text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
+		if (!packager.empty())
+			text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
 	}
 	return text;
 }

@@ -16,6 +16,18 @@
 	* src/YGPackageSelector.cc (Filters): italic for available versions
 	repositories.
 
+	* src/YGPackageSelector.cc: de-activate some of the popup items when a package
+	is locked.
+
+	* src/YGPackageSelector.cc (PackageControl): set installed version label
+	selectable.
+
+	* src/YGPackageSelector.cc (PackageControl): bug fix: force packages control
+	to be re-loaded on change.
+
+	* src/yzyppwrapper.cc: packagers tend to list Authors in the description
+	field; work around that.
+
 2008-03-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (resolveProblems): zypp changed the semantics of
