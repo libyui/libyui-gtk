@@ -10,22 +10,17 @@
 #include <string.h>
 #include "ygtkhtmlwrap.h"
 
+// ygutils
+#include <gtk/gtktextview.h>
+void ygutils_scrollView (GtkTextView *view, gboolean top);
+void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
+
 GtkWidget *ygtk_html_wrap_new (void)
 {
 	return g_object_new (ygtk_html_wrap_get_type(), NULL);
 }
 
-
 // Utilities
-static inline void adjust_scroll (GtkAdjustment *vadj, gboolean top)
-{
-	g_assert (vadj != 0);
-	if (top)
-		gtk_adjustment_set_value (vadj, vadj->lower);	
-	else  /* bottom */
-		gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);		
-}
-
 static void gdkwindow_set_background (GdkWindow *window, const char *image)
 {
 	if (image) {
@@ -94,7 +89,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean pla
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-	adjust_scroll (GTK_LAYOUT (widget)->vadjustment, top);
+	ygutils_scrollAdj (GTK_LAYOUT (widget)->vadjustment, top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
@@ -139,7 +134,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean pla
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-	adjust_scroll (GTK_TEXT_VIEW (widget)->vadjustment, top);
+	ygutils_scrollView (GTK_TEXT_VIEW (widget), top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)

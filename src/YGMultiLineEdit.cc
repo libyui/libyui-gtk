@@ -82,7 +82,7 @@ public:
 
 	void scrollToBottom()
 	{
-		YGUtils::scrollTextViewDown (GTK_TEXT_VIEW (getWidget()));
+		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget()), false);
 	}
 
 	// Event callbacks

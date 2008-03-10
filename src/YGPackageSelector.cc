@@ -842,25 +842,25 @@ class Filters
 				GtkCellRenderer *renderer;
 
 				m_view = gtk_tree_view_new();
-				gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (m_view), FALSE);
-				gtk_tree_view_set_search_column (GTK_TREE_VIEW (m_view), 0);
+				GtkTreeView *view = GTK_TREE_VIEW (m_view);
+				gtk_tree_view_set_headers_visible (view, FALSE);
+				gtk_tree_view_set_search_column (view, 0);
 				renderer = gtk_cell_renderer_pixbuf_new();
 				column = gtk_tree_view_column_new_with_attributes ("",
 					renderer, "pixbuf", 2, NULL);
 				gtk_tree_view_column_set_expand (column, FALSE);
-				gtk_tree_view_append_column (GTK_TREE_VIEW (m_view), column);
+				gtk_tree_view_append_column (view, column);
 				renderer = gtk_cell_renderer_text_new();
 				column = gtk_tree_view_column_new_with_attributes ("",
 					renderer, "text", 0, NULL);
 				gtk_tree_view_column_set_expand (column, TRUE);
-				gtk_tree_view_append_column (GTK_TREE_VIEW (m_view), column);
+				gtk_tree_view_append_column (view, column);
 				if (type == Ypp::Package::PATCH_TYPE)
-					gtk_tree_view_set_show_expanders (GTK_TREE_VIEW (m_view), FALSE);
+					gtk_tree_view_set_show_expanders (view, FALSE);
 				else
-					gtk_tree_view_set_expander_column (GTK_TREE_VIEW (m_view), column);
+					gtk_tree_view_set_expander_column (view, column);
 
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (
-					GTK_TREE_VIEW (m_view));
+				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 				gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
 				g_signal_connect (G_OBJECT (selection), "changed",
 						          G_CALLBACK (selection_cb), this);
@@ -914,27 +914,20 @@ class Filters
 							                              GDK_TYPE_PIXBUF);
 				model = GTK_TREE_MODEL (store);
 
+				GtkTreeView *view = GTK_TREE_VIEW (m_view);
+				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+
+				g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
+
 				GtkTreeIter iter;
 				gtk_tree_store_append (store, &iter, NULL);
 				gtk_tree_store_set (store, &iter, 0, _("All"), 1, NULL, -1);
 
 				inner::populate (store, NULL, Ypp::get()->getFirstCategory (type));
 
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (
-					GTK_TREE_VIEW (m_view));
-				g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
-
-				gtk_tree_view_set_model (GTK_TREE_VIEW (m_view), model);
-				if (model) {
-					g_object_unref (G_OBJECT (model));
-
-					/* we use gtk_tree_view_set_cursor(), rather than gtk_tree_selection_select_iter()
-					   because that one is buggy in that when the user first interacts with the treeview,
-					   a change signal is sent, even if he was just expanding one node... */
-					GtkTreePath *path = gtk_tree_path_new_first();
-					gtk_tree_view_set_cursor (GTK_TREE_VIEW (m_view), path, NULL, FALSE);
-					gtk_tree_path_free (path);
-				}
+				gtk_tree_view_set_model (view, model);
+				g_object_unref (G_OBJECT (model));
+				selectFirstItem();
 
 				g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
 			}
@@ -950,9 +943,42 @@ class Filters
 				return category;
 			}
 
-			static void selection_cb (GtkTreeSelection *selection, View *pThis)
+			void selectFirstItem()
+			{
+				GtkTreeView *view = GTK_TREE_VIEW (m_view);
+				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+
+				g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
+
+				/* we use gtk_tree_view_set_cursor(), rather than gtk_tree_selection_select_iter()
+				   because that one is buggy in that when the user first interacts with the treeview,
+				   a change signal is sent, even if he was just expanding one node... */
+				GtkTreePath *path = gtk_tree_path_new_first();
+				gtk_tree_view_set_cursor (view, path, NULL, FALSE);
+				gtk_tree_path_free (path);
+
+				g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
+			}
+
+			static void selection_cb (GtkTreeSelection *selection, Categories *pThis)
 			{
 				pThis->m_filters->signalChanged();
+
+				// if an item is unselect (e.g. the user collapsed the node its in), we
+				// always want to every the first ("All") item selected. selection's changed
+				// signal is called first, and connect_after doesn't help, so can only
+				// know if there is any selected item, after idle...
+				struct inner {
+					static gboolean ensure_one_item_selected_cb (gpointer data)
+					{
+						Categories *pThis = (Categories *) data;
+						if (!pThis->getActive())
+							pThis->selectFirstItem();
+						return FALSE;
+					}
+				};
+				g_idle_add_full (G_PRIORITY_LOW, inner::ensure_one_item_selected_cb,
+				                 pThis, NULL);
 			}
 
 			virtual void writeQuery (Ypp::Query *query)
@@ -1571,8 +1597,69 @@ private:
 
 class PackageDetails
 {
-GtkWidget *m_widget, *m_description, *m_filelist, *m_changelog, *m_authors,
-          *m_details_box, *m_icon, *m_icon_frame;
+	struct TextExpander {
+		GtkWidget *expander, *text;
+
+		TextExpander (const char *name)
+		{
+			text = ygtk_html_wrap_new();
+
+			string str = string ("<b>") + name + "</b>";
+			expander = gtk_expander_new (str.c_str());
+			gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
+			gtk_container_add (GTK_CONTAINER (expander), text);
+		}
+
+		void setText (const std::string &str)
+		{
+			ygtk_html_wrap_set_text (text, str.c_str(), FALSE);
+			str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
+		}
+	};
+	struct DepExpander {
+		GtkWidget *expander, *table, *requires, *provides;
+
+		DepExpander (const char *name)
+		{
+			requires = ygtk_html_wrap_new();
+			provides = ygtk_html_wrap_new();
+
+			table = gtk_hbox_new (FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (table), requires, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (table), provides, TRUE, TRUE, 0);
+
+			string str = string ("<b>") + name + "</b>";
+			expander = gtk_expander_new (str.c_str());
+			gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
+			gtk_container_add (GTK_CONTAINER (expander), table);
+		}
+
+		void setPackage (const Ypp::Package *package)
+		{
+			if (package) {
+				std::string requires_str = _("Requires:");
+				std::string provides_str = _("Provides:");
+				requires_str += "<br><blockquote>";
+				provides_str += "<br><blockquote>";
+				requires_str += package->requires();
+				provides_str += package->provides();
+				YGUtils::replace (requires_str, "\n", 1, "<br>");
+				YGUtils::replace (provides_str, "\n", 1, "<br>");
+				requires_str += "</blockquote>";
+				provides_str += "</blockquote>";
+
+				ygtk_html_wrap_set_text (requires, requires_str.c_str(), FALSE);
+				ygtk_html_wrap_set_text (provides, provides_str.c_str(), FALSE);
+				gtk_widget_show (expander);
+			}
+			else
+				gtk_widget_hide (expander);
+		}
+	};
+
+GtkWidget *m_widget, *m_description, *m_icon, *m_icon_frame;
+TextExpander *m_filelist, *m_changelog, *m_authors;
+DepExpander *m_dependencies;
 
 public:
 	GtkWidget *getWidget()
@@ -1591,25 +1678,35 @@ public:
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
 
 		if (!update_mode) {
-			m_details_box = gtk_vbox_new (FALSE, 0);
-			gtk_box_pack_start (GTK_BOX (m_details_box),
-				createHtmlWidget (_("File List"), &m_filelist, false), FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_details_box),
-				createHtmlWidget (_("Changelog"), &m_changelog, false), FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_details_box),
-				createHtmlWidget (_("Authors"), &m_authors, false), FALSE, TRUE, 0);
-			ygtk_html_wrap_connect_link_clicked (m_filelist,
+			m_filelist = new TextExpander (_("File List"));
+			m_changelog = new TextExpander (_("Changelog"));
+			m_authors = new TextExpander (_("Authors"));
+			m_dependencies = new DepExpander (_("Dependencies"));
+			gtk_box_pack_start (GTK_BOX (vbox), m_filelist->expander, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->expander, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_authors->expander, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->expander, FALSE, TRUE, 0);
+			ygtk_html_wrap_connect_link_clicked (m_filelist->text,
 				G_CALLBACK (path_pressed_cb), NULL);
-			gtk_box_pack_start (GTK_BOX (vbox), m_details_box, FALSE, TRUE, 0);
 		}
-		else
-			m_details_box = NULL;
+		else {
+			m_filelist = m_changelog = m_authors = NULL;
+			m_dependencies = NULL;
+		}
 
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), vbox);
 		m_widget = scroll;
+	}
+
+	~PackageDetails()
+	{
+		delete m_filelist;
+		delete m_changelog;
+		delete m_authors;
+		delete m_dependencies;
 	}
 
 	void setPackages (const PkgList &packages)
@@ -1622,13 +1719,11 @@ public:
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
 			description += package->description();
-			setText (m_description, description, false);
-			if (m_details_box) {
-				gtk_widget_show (m_details_box);
-				setText (m_filelist, package->filelist(), true);
-				setText (m_changelog, package->changelog(), true);
-				setText (m_authors, package->authors(), false);
-			}
+			ygtk_html_wrap_set_text (m_description, description.c_str(), FALSE);
+			if (m_filelist)  m_filelist->setText (package->filelist());
+			if (m_changelog) m_changelog->setText (package->changelog());
+			if (m_authors)   m_authors->setText (package->authors());
+			if (m_dependencies) m_dependencies->setPackage (package);
 
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
@@ -1639,6 +1734,7 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
 			}
+			scrollTop();
 		}
 		else {
 			string description = "Selected:";
@@ -1647,27 +1743,23 @@ public:
 			     it != packages.end(); it++)
 				description += "<li><b>" + (*it)->name() + "</b></li>";
 			description += "</ul>";
-			setText (m_description, description, false);
-			if (m_details_box)
-				gtk_widget_hide (m_details_box);
+			ygtk_html_wrap_set_text (m_description, description.c_str(), FALSE);
+			if (m_filelist)  m_filelist->setText ("");
+			if (m_changelog) m_changelog->setText ("");
+			if (m_authors)   m_authors->setText ("");
+			if (m_dependencies) m_dependencies->setPackage (NULL);
 		}
 	}
 
 private:
-	void setText (GtkWidget *rtext, const std::string &text, bool only_availables)
-	{
-		const char *str = text.c_str();
-		if (text.empty()) {
-			if (only_availables)
-				str = _("<i>(only available for installed packages)</i>");
-			else
-				str = "--";
-		}
-		ygtk_html_wrap_set_text (rtext, str, FALSE);
-	}
-
 	static void path_pressed_cb (GtkWidget *text, const gchar *link)
 	{ FILEMANAGER_LAUNCH (link); }
+
+	void scrollTop()
+	{
+		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (m_widget);
+		YGUtils::scrollWidget (gtk_scrolled_window_get_vadjustment (scroll), true);
+	}
 
 	// utilities:
 	static GtkWidget *createHtmlWidget (const char *name, GtkWidget **html_widget,

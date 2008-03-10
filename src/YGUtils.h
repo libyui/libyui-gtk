@@ -38,8 +38,9 @@ namespace YGUtils
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	void escapeMarkup (std::string &str);
 
-	/* Adds functionality to GtkTextView to scroll to bottom. */
-	void scrollTextViewDown(GtkTextView *text_view);
+	/* Adds functionality to scroll widgets to top or bottom. */
+	void scrollWidget (GtkAdjustment *vadj, bool top);
+	void scrollWidget (GtkTextView *text_view, bool top);
 
 	/* Returns the average width of the given number of characters in pixels. */
 	int getCharsWidth (GtkWidget *widget, int chars_nb);
@@ -64,6 +65,9 @@ extern "C" {
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
 	void ygutils_setFilter (GtkEntry *entry, const char *validChars);
+
+	void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
+	void ygutils_scrollView (GtkTextView *view, gboolean top);
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);

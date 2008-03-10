@@ -85,18 +85,23 @@ std::string YGUtils::truncate (const std::string &str, unsigned int length)
 	return ret;
 }
 
-void YGUtils::scrollTextViewDown (GtkTextView *text_view)
+void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
-	GtkTextBuffer *buffer = gtk_text_view_get_buffer (text_view);
-	GtkTextIter end_iter;
-	gtk_text_buffer_get_end_iter (buffer, &end_iter);
-	GtkTextMark *end_mark;
-	end_mark = gtk_text_buffer_create_mark
-	               (buffer, NULL, &end_iter, FALSE);
-	gtk_text_view_scroll_to_mark (text_view,
-	               end_mark, 0.0, FALSE, 0, 0);
-	gtk_text_buffer_delete_mark (buffer, end_mark);
+	if (top)
+		gtk_adjustment_set_value (vadj, vadj->lower);	
+	else  /* bottom */
+		gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
 }
+
+void YGUtils::scrollWidget (GtkTextView *text_view, bool top)
+{
+	scrollWidget (text_view->vadjustment, top);
+}
+
+void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)
+{ YGUtils::scrollWidget (vadj, top); }
+void ygutils_scrollView (GtkTextView *view, gboolean top)
+{ YGUtils::scrollWidget (view, top); }
 
 void YGUtils::escapeMarkup (std::string &str)
 {

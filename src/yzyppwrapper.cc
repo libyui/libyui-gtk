@@ -428,7 +428,7 @@ std::string Ypp::Package::authors()
 	return text;
 }
 
-std::string Ypp::Package::provides()
+std::string Ypp::Package::provides() const
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
@@ -448,7 +448,7 @@ std::string Ypp::Package::provides()
 	return text;
 }
 
-std::string Ypp::Package::requires()
+std::string Ypp::Package::requires() const
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();

@@ -1,3 +1,22 @@
+2008-03-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: replaced specific GtkTextView-scroll set function by a
+	generic one and a specific convenience one.
+
+	* src/YGPackageSelector.cc (Categories): bug fix: make sure the "All" item
+	is selected if none is (which could happen if the user collapsed the node
+	of the current selected item). Because the timing and lack of info from
+	the related GTK signal, this required a hack, that gets fired in the next
+	idle state after selection is changed.
+
+	* src/YGPackageSelector.cc (PackageDetails): hide expanders of information
+	not available.
+	* src/YGPackageSelector.cc (PackageDetails): added Dependencies expander
+	with RPM Requires and Provides (if there's interest, we'll add more, and
+	show for available versions too.
+	* src/YGPackageSelector.cc (PackageDetails): scroll up when a package
+	is selected.
+
 2008-03-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.c: padded 4 pixels to the left margin.

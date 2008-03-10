@@ -52,8 +52,8 @@ struct Ypp
 		std::string changelog();
 		std::string authors();
 
-		std::string provides();
-		std::string requires();
+		std::string provides() const;
+		std::string requires() const;
 
 		bool isInstalled();
 		bool hasUpgrade();
