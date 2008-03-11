@@ -17,6 +17,9 @@
 	* src/YGPackageSelector.cc (PackageDetails): scroll up when a package
 	is selected.
 
+	* src/YGPackageSelector.cc (Categories): it seems we don't actually need to
+	hack the previous bug fix.
+
 2008-03-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.c: padded 4 pixels to the left margin.

@@ -964,21 +964,9 @@ class Filters
 			{
 				pThis->m_filters->signalChanged();
 
-				// if an item is unselect (e.g. the user collapsed the node its in), we
-				// always want to every the first ("All") item selected. selection's changed
-				// signal is called first, and connect_after doesn't help, so can only
-				// know if there is any selected item, after idle...
-				struct inner {
-					static gboolean ensure_one_item_selected_cb (gpointer data)
-					{
-						Categories *pThis = (Categories *) data;
-						if (!pThis->getActive())
-							pThis->selectFirstItem();
-						return FALSE;
-					}
-				};
-				g_idle_add_full (G_PRIORITY_LOW, inner::ensure_one_item_selected_cb,
-				                 pThis, NULL);
+				// if item unselected, make sure "All" is
+				if (!gtk_tree_selection_get_selected (selection, NULL, NULL))
+					pThis->selectFirstItem();
 			}
 
 			virtual void writeQuery (Ypp::Query *query)
