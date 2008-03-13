@@ -752,6 +752,11 @@ void ygtk_wizard_focus_back_button (YGtkWizard *wizard)
 	gtk_widget_grab_focus (wizard->m_back_button);
 }
 
+void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget)
+{
+	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), widget, FALSE, TRUE, 0);
+}
+
 void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
                            const char *id)
 {

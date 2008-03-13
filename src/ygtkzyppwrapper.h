@@ -40,14 +40,11 @@ struct YGtkZyppModelClass
 	GObjectClass parent_class;
 };
 
-YGtkZyppModel *ygtk_zypp_model_new (Ypp::Query *query);
+YGtkZyppModel *ygtk_zypp_model_new (Ypp::Pool *pool);
 GType ygtk_zypp_model_get_type (void) G_GNUC_CONST;
-// besides calling Ypp for cleaning, it also cleans the icons of this hook
-void ygtk_zypp_model_finish();
 
-void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter iter);
-void ygtk_zypp_model_entry_inserted (YGtkZyppModel *model, Ypp::Pool::Iter iter);
-void ygtk_zypp_model_entry_deleted (YGtkZyppModel *model, Ypp::Pool::Iter iter);
+// besides calling Ypp for cleaning, it also cleans the icons of this hook
+void ygtk_zypp_model_finish (void);
 
 #endif /*YGTK_ZYPP_WRAPPER_H*/
 

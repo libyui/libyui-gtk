@@ -1,3 +1,22 @@
+2008-03-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.h/c: added support for an extra button.
+
+	* src/yzyppwrapper.h/cc: added functions to import/exportList, and
+	createSolverTestcase.
+
+	* src/YGPackageSelector.cc: added Tools button with the options to
+	import and export the patterns/packages list, and to output a solver
+	testcase to a file.
+
+	* src/yzyppwrapper.h/cc: splitted Ypp::Pool into QueryPool and TreePool.
+	The first is the usual live pool that filters packages to the specified
+	query. TreePool lays the packages of a specified type (like Patterns)
+	under category nodes.
+
+	* src/YGPackageSelector.cc & src/ygtkzyppwrapper.cc/h: modified PackagesView,
+	Collections::Pool (ie. Patterns) and zypp model to support the TreePool.
+
 2008-03-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: replaced specific GtkTextView-scroll set function by a

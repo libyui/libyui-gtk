@@ -91,35 +91,21 @@ struct Ypp
 	void startTransactions();
 	void finishTransactions();
 
-	// Query
-	struct Query {
-		Query();
-		void addType (Package::Type type);
-		void addNames (std::string name, char separator = 0);
-		void addCategory (Ypp::Node *category);
-		void addCollection (Ypp::Package *package);
-		void addRepository (int repositories);
-		void setIsInstalled (bool installed);
-		void setHasUpgrade (bool upgradable);
-		void setIsModified (bool modified);
-
-		~Query();
-		struct Impl;
-		Impl *impl;
-	};
-
 	// Pool
 	struct Pool {
-		Pool (Query *query, bool startEmpty = false);
-		// startEmpty is an optimization when you know the pool won't have
-		// elements at creations.
-
 		typedef void * Iter;
-		Iter getFirst();
-		Iter getNext (Iter it);
-		Package *get (Iter it);
-		int getIndex (Iter it);
-		Iter getIter (int index);
+		virtual Iter getFirst() = 0;
+		virtual Iter getNext (Iter it) = 0;
+		virtual Iter getParent (Iter it) = 0;
+		virtual Iter getChild (Iter it) = 0;
+		virtual bool isPlainList() const = 0;
+
+		typedef std::list <int> Path;
+		Iter fromPath (const Path &path);
+		Path toPath (Iter it);
+
+		virtual std::string getName (Iter it) = 0;
+		virtual Package *get (Iter it) = 0; /* may be NULL */
 
 		struct Listener {
 			virtual void entryInserted (Iter iter, Package *package) = 0;
@@ -128,7 +114,63 @@ struct Ypp
 		};
 		void setListener (Listener *listener);
 
-		~Pool();
+		struct Impl;
+		Impl *impl;
+		Pool (Impl *impl);
+		virtual ~Pool();
+	};
+
+	// plain listing of packages as filtered
+	// this is a live pool -- entries can be inserted and removed
+	struct QueryPool : public Pool {
+		struct Query {
+			Query();
+			void addType (Package::Type type);
+			void addNames (std::string name, char separator = 0);
+			void addCategory (Ypp::Node *category);
+			void addCollection (Ypp::Package *package);
+			void addRepository (int repositories);
+			void setIsInstalled (bool installed);
+			void setHasUpgrade (bool upgradable);
+			void setIsModified (bool modified);
+
+			~Query();
+			struct Impl;
+			Impl *impl;
+		};
+
+		// startEmpty is an optimization when you know the pool won't have
+		// elements at creations.
+		QueryPool (Query *query, bool startEmpty = false);
+
+		virtual Pool::Iter getFirst();
+		virtual Pool::Iter getNext (Pool::Iter it);
+		virtual Pool::Iter getParent (Pool::Iter it) { return NULL; }
+		virtual Pool::Iter getChild (Pool::Iter it)  { return NULL; }
+		virtual bool isPlainList() const { return true; }
+
+		virtual Package *get (Pool::Iter it);
+		virtual std::string getName (Pool::Iter it)
+		{ return get (it)->name(); }
+
+		struct Impl;
+		Impl *impl;
+	};
+
+	// Pool of categories with the packages as leaves -- only for 1D categories
+	// this is a dead pool -- entries can be changed, but not inserted or removed
+	struct TreePool : public Pool {
+		TreePool (Ypp::Package::Type type);
+
+		virtual Pool::Iter getFirst();
+		virtual Pool::Iter getNext (Pool::Iter it);
+		virtual Pool::Iter getParent (Pool::Iter it);
+		virtual Pool::Iter getChild (Pool::Iter it);
+		virtual bool isPlainList() const { return false; }
+
+		virtual std::string getName (Pool::Iter it);
+		virtual Package *get (Pool::Iter it); /* may be NULL */
+
 		struct Impl;
 		Impl *impl;
 	};
@@ -153,14 +195,14 @@ struct Ypp
 		virtual bool acceptLicense (Package *package, const std::string &license) = 0;
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (std::list <Problem *> problems) = 0;
-
-		// FIXME: this is mostly a hack; the thing is that GtkTreeSelection doesn't
-		// signal when a selected row changes values. Anyway, to be done differently.
-		virtual void packageModified (Package *package) = 0;
 	};
 	void setInterface (Interface *interface);
 
-	bool isModified();  // any change made?
+	struct PkgListener {
+		virtual void packageModified (Package *package) = 0;
+	};
+	void addPkgListener (PkgListener *listener);
+	void removePkgListener (PkgListener *listener);
 
 	// Misc
 	struct Repository {
@@ -189,6 +231,12 @@ struct Ypp
 		Impl *impl;
 	};
 	Disk *getDisk();
+
+	bool isModified();  // any change made?
+
+	bool importList (const char *filename);
+	bool exportList (const char *filename);
+	bool createSolverTestcase (const char *dirname);
 
 	Ypp();
 	~Ypp();

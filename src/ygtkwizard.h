@@ -147,6 +147,8 @@ void ygtk_wizard_protect_next_button (YGtkWizard *wizard, gboolean protect);
 void ygtk_wizard_focus_next_button (YGtkWizard *wizard);
 void ygtk_wizard_focus_back_button (YGtkWizard *wizard);
 
+void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget);
+
 void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
                            const char *id);
 gboolean ygtk_wizard_add_menu_entry (YGtkWizard *wizard, const char *parent_id,

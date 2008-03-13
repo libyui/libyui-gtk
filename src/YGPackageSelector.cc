@@ -253,7 +253,8 @@ Listener *m_listener;
 				gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
 				gtk_tree_path_free (path);
 
-				packages.push (package);
+				if (package)
+					packages.push (package);
 			}
 			g_list_free (paths);
 			return packages;
@@ -366,12 +367,13 @@ Listener *m_listener;
 	};
 	struct ListView : public View
 	{
-		ListView (PackagesView *parent)
-		: View (parent)
+		bool m_isTree;
+		ListView (bool isTree, PackagesView *parent)
+		: View (parent), m_isTree (isTree)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
-			gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
-			gtk_tree_view_set_search_column (GTK_TREE_VIEW (view), YGtkZyppModel::NAME_COLUMN);
+			gtk_tree_view_set_headers_visible (view, FALSE);
+			gtk_tree_view_set_search_column (view, YGtkZyppModel::NAME_COLUMN);
 			GtkTreeViewColumn *column;
 			GtkCellRenderer *renderer;
 			renderer = gtk_cell_renderer_pixbuf_new();
@@ -379,7 +381,7 @@ Listener *m_listener;
 				"pixbuf", YGtkZyppModel::ICON_COLUMN, NULL);
 			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_fixed_width (column, 38);
-			gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+			gtk_tree_view_append_column (view, column);
 			renderer = gtk_cell_renderer_text_new();
 			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 			column = gtk_tree_view_column_new_with_attributes ("", renderer,
@@ -387,13 +389,17 @@ Listener *m_listener;
 			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
 			gtk_tree_view_column_set_expand (column, TRUE);
-			gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
-			gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (view), TRUE);
+			gtk_tree_view_append_column (view, column);
+			if (!isTree)
+				gtk_tree_view_set_fixed_height_mode (view, TRUE);
+			gtk_tree_view_set_show_expanders (view, FALSE);
 
-			GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 			gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
 			g_signal_connect (G_OBJECT (selection), "changed",
 			                  G_CALLBACK (packages_selected_cb), this);
+			gtk_tree_selection_set_select_function (selection, can_select_row_cb,
+			                                        this, NULL);
 			gtk_widget_show (m_widget);
 
 			g_signal_connect (G_OBJECT (m_widget), "popup-menu",
@@ -404,9 +410,12 @@ Listener *m_listener;
 
 		virtual void setModel (GtkTreeModel *model)
 		{
-			gtk_tree_view_set_model (GTK_TREE_VIEW (m_widget), model);
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			gtk_tree_view_set_model (view, model);
+			if (m_isTree)
+				gtk_tree_view_expand_all (view);
 			if (GTK_WIDGET_REALIZED (m_widget))
-				gtk_tree_view_scroll_to_point (GTK_TREE_VIEW (m_widget), 0, 0);
+				gtk_tree_view_scroll_to_point (view, 0, 0);
 		}
 
 		GtkTreeSelection *getTreeSelection()
@@ -442,6 +451,16 @@ Listener *m_listener;
 				return TRUE;
 			}
 			return FALSE;
+		}
+
+		static gboolean can_select_row_cb (GtkTreeSelection *selection, GtkTreeModel *model,
+			GtkTreePath *path, gboolean path_currently_selected, gpointer data)
+		{
+			void *package;
+			GtkTreeIter iter;
+			gtk_tree_model_get_iter (model, &iter, path);
+			gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
+			return package != NULL;
 		}
 	};
 	struct IconView : public View
@@ -500,22 +519,28 @@ Listener *m_listener;
 GtkWidget *m_bin;
 GtkTreeModel *m_model;
 View *m_view;
+bool m_isTree;
 
 public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	PackagesView() : m_listener (NULL), m_model (NULL), m_view (NULL)
+	PackagesView (bool isTree)
+	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree)
 	{
-		GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-		button = create_toggle_button (pkg_list_mode_xpm, "List view", NULL);
-		gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-		button = create_toggle_button (pkg_tiles_mode_xpm, "Tiles view", button);
-		gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-		gtk_widget_show_all (buttons);
-
 		m_bin = ygtk_scrolled_window_new();
-		ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
+
+		if (!isTree) {
+			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
+			button = create_toggle_button (pkg_list_mode_xpm, "List view", NULL);
+			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
+			button = create_toggle_button (pkg_tiles_mode_xpm, "Tiles view", button);
+			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
+			gtk_widget_show_all (buttons);
+
+			ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
+		}
+
 		setMode (LIST_MODE);
 	}
 
@@ -538,7 +563,7 @@ public:
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
 		if (mode == LIST_MODE)
-			m_view = new ListView (this);
+			m_view = new ListView (m_isTree, this);
 		else
 			m_view = new IconView (this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
@@ -549,7 +574,7 @@ public:
 		normalCursor();
 	}
 
-	void setQuery (Ypp::Query *query)
+	void setPool (Ypp::Pool *pool)
 	{
 		if (GTK_WIDGET_REALIZED (m_bin))
 			busyCursor();
@@ -557,13 +582,19 @@ public:
 		if (m_model)
 			g_object_unref (G_OBJECT (m_model));
 
-		YGtkZyppModel *zmodel = ygtk_zypp_model_new (query);
+		YGtkZyppModel *zmodel = ygtk_zypp_model_new (pool);
 		m_model = GTK_TREE_MODEL (zmodel);
 		if (m_view) {
 			m_view->setModel (m_model);
 			packagesSelected (PkgList());
 		}
 		normalCursor();
+	}
+
+	void setQuery (Ypp::QueryPool::Query *query)
+	{
+		Ypp::QueryPool *pool = new Ypp::QueryPool (query);
+		setPool (pool);
 	}
 
 	PkgList getSelected()
@@ -713,14 +744,14 @@ public:
 		g_signal_connect_after (G_OBJECT (port), "style-set",
 		                        G_CALLBACK (style_set_cb), NULL);
 
-		Ypp::Query *query = new Ypp::Query();
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 		query->setIsModified (true);
 		if (update_mode) {
 			query->addType (Ypp::Package::PATCH_TYPE);
-			m_pool = new Ypp::Pool (query);
+			m_pool = new Ypp::QueryPool (query);
 		}
 		else
-			m_pool = new Ypp::Pool (query, true);
+			m_pool = new Ypp::QueryPool (query, true);
 		// initialize list -- there could already be packages modified
 		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it))
 			ChangesPane::entryInserted (it, m_pool->get (it));
@@ -752,7 +783,7 @@ public:
 	{
 		Entry *entry = new Entry (package);
 		gtk_box_pack_start (GTK_BOX (m_entries_box), entry->getWidget(), FALSE, TRUE, 0);
-		int index = m_pool->getIndex (iter);
+		int index = m_pool->toPath (iter).front();
 		m_entries = g_list_insert (m_entries, entry, index);
 		if (m_container)
 			gtk_widget_show (m_container);
@@ -760,7 +791,7 @@ public:
 
 	virtual void entryDeleted  (Ypp::Pool::Iter iter, Ypp::Package *package)
 	{
-		int index = m_pool->getIndex (iter);
+		int index = m_pool->toPath (iter).front();
 		GList *i = g_list_nth (m_entries, index);
 		Entry *entry = (Entry *) i->data;
 		gtk_container_remove (GTK_CONTAINER (m_entries_box), entry->getWidget());
@@ -772,7 +803,7 @@ public:
 
 	virtual void entryChanged  (Ypp::Pool::Iter iter, Ypp::Package *package)
 	{
-		int index = m_pool->getIndex (iter);
+		int index = m_pool->toPath (iter).front();
 		Entry *entry = (Entry *) g_list_nth_data (m_entries, index);
 		entry->modified (package);
 	}
@@ -813,288 +844,307 @@ static const CategoriesIconMap catIconMap[] = {
 #include "icons/pkg-installed-upgradable.xpm"
 #include "icons/pkg-available.xpm"
 
-class Filters
+class Collections
 {
-	class Collections
+public:
+	struct Listener {
+		virtual void collectionChanged() = 0;
+	};
+
+private:
+	struct View
 	{
-		struct View
+		virtual GtkWidget *getWidget() = 0;
+		virtual void writeQuery (Ypp::QueryPool::Query *query) = 0;
+
+		Collections::Listener *m_listener;
+		View (Collections::Listener *listener)
+		: m_listener (listener)
+		{}
+		virtual ~View() {}
+
+		void signalChanged()
+		{ m_listener->collectionChanged(); }
+	};
+
+	struct Categories : public View
+	{
+		GtkWidget *m_scroll, *m_view;
+	public:
+		virtual GtkWidget *getWidget()
+		{ return m_scroll; }
+
+		Categories (Collections::Listener *listener, Ypp::Package::Type type)
+		: View (listener)
 		{
-			virtual GtkWidget *getWidget() = 0;
-			virtual void writeQuery (Ypp::Query *query) = 0;
+			GtkTreeViewColumn *column;
+			GtkCellRenderer *renderer;
 
-			Filters *m_filters;
-			View (Filters *filters)
-			: m_filters (filters)
-			{}
-		};
+			m_view = gtk_tree_view_new();
+			GtkTreeView *view = GTK_TREE_VIEW (m_view);
+			gtk_tree_view_set_headers_visible (view, FALSE);
+			gtk_tree_view_set_search_column (view, 0);
+			renderer = gtk_cell_renderer_pixbuf_new();
+			column = gtk_tree_view_column_new_with_attributes ("",
+				renderer, "pixbuf", 2, NULL);
+			gtk_tree_view_column_set_expand (column, FALSE);
+			gtk_tree_view_append_column (view, column);
+			renderer = gtk_cell_renderer_text_new();
+			column = gtk_tree_view_column_new_with_attributes ("",
+				renderer, "text", 0, NULL);
+			gtk_tree_view_column_set_expand (column, TRUE);
+			gtk_tree_view_append_column (view, column);
+			if (type != Ypp::Package::PACKAGE_TYPE)
+				gtk_tree_view_set_show_expanders (view, FALSE);
+			else
+				gtk_tree_view_set_expander_column (view, column);
 
-		struct Categories : public View
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+			gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
+			g_signal_connect (G_OBJECT (selection), "changed",
+					          G_CALLBACK (selection_cb), this);
+
+			m_scroll = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (m_scroll),
+					                             GTK_SHADOW_IN);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
+					                        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+			gtk_widget_set_size_request (m_scroll, -1, 200);
+			gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
+
+			build (type);
+		}
+
+		void build (Ypp::Package::Type type)
 		{
-			GtkWidget *m_scroll, *m_view;
-		public:
-			virtual GtkWidget *getWidget()
-			{ return m_scroll; }
+			GtkTreeModel *model = NULL;
 
-			Categories (Filters *filters, Ypp::Package::Type type)
-			: View (filters)
-			{
-				GtkTreeViewColumn *column;
-				GtkCellRenderer *renderer;
-
-				m_view = gtk_tree_view_new();
-				GtkTreeView *view = GTK_TREE_VIEW (m_view);
-				gtk_tree_view_set_headers_visible (view, FALSE);
-				gtk_tree_view_set_search_column (view, 0);
-				renderer = gtk_cell_renderer_pixbuf_new();
-				column = gtk_tree_view_column_new_with_attributes ("",
-					renderer, "pixbuf", 2, NULL);
-				gtk_tree_view_column_set_expand (column, FALSE);
-				gtk_tree_view_append_column (view, column);
-				renderer = gtk_cell_renderer_text_new();
-				column = gtk_tree_view_column_new_with_attributes ("",
-					renderer, "text", 0, NULL);
-				gtk_tree_view_column_set_expand (column, TRUE);
-				gtk_tree_view_append_column (view, column);
-				if (type == Ypp::Package::PATCH_TYPE)
-					gtk_tree_view_set_show_expanders (view, FALSE);
-				else
-					gtk_tree_view_set_expander_column (view, column);
-
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
-				gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
-				g_signal_connect (G_OBJECT (selection), "changed",
-						          G_CALLBACK (selection_cb), this);
-
-				m_scroll = gtk_scrolled_window_new (NULL, NULL);
-				gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (m_scroll),
-						                             GTK_SHADOW_IN);
-				gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
-						                        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-				gtk_widget_set_size_request (m_scroll, -1, 200);
-				gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
-
-				build (type);
-			}
-
-			void build (Ypp::Package::Type type)
-			{
-				GtkTreeModel *model = NULL;
-
-				struct inner {
-					static void populate (GtkTreeStore *store, GtkTreeIter *parent,
-								          Ypp::Node *category)
-					{
-						if (!category)
-							return;
-						GtkTreeIter iter;
-						gtk_tree_store_append (store, &iter, parent);
-						const std::string &name = category->name;
-						gtk_tree_store_set (store, &iter, 0, name.c_str(), 1, category, -1);
-						if (!parent) {
-							const gchar *icon = 0;
-							for (unsigned int i = 0; i < CAT_SIZE; i++)
-								if (name == catIconMap[i].category) {
-									icon = catIconMap[i].icon;
-									break;
-								}
-							if (icon) {
-								GtkIconTheme *icons = gtk_icon_theme_get_default();
-								GdkPixbuf *pixbuf;
-								pixbuf = gtk_icon_theme_load_icon (icons, icon, 22,
-									GtkIconLookupFlags (0), NULL);
-								gtk_tree_store_set (store, &iter, 2, pixbuf, -1);
+			struct inner {
+				static void populate (GtkTreeStore *store, GtkTreeIter *parent,
+							          Ypp::Node *category)
+				{
+					if (!category)
+						return;
+					GtkTreeIter iter;
+					gtk_tree_store_append (store, &iter, parent);
+					const std::string &name = category->name;
+					gtk_tree_store_set (store, &iter, 0, name.c_str(), 1, category, -1);
+					if (!parent) {
+						const gchar *icon = 0;
+						for (unsigned int i = 0; i < CAT_SIZE; i++)
+							if (name == catIconMap[i].category) {
+								icon = catIconMap[i].icon;
+								break;
 							}
+						if (icon) {
+							GtkIconTheme *icons = gtk_icon_theme_get_default();
+							GdkPixbuf *pixbuf;
+							pixbuf = gtk_icon_theme_load_icon (icons, icon, 22,
+								GtkIconLookupFlags (0), NULL);
+							gtk_tree_store_set (store, &iter, 2, pixbuf, -1);
 						}
-						populate (store, &iter, category->child());
-						populate (store, parent, category->next());
 					}
-				};
+					populate (store, &iter, category->child());
+					populate (store, parent, category->next());
+				}
+			};
 
-				GtkTreeStore *store = gtk_tree_store_new (3, G_TYPE_STRING, G_TYPE_POINTER,
-							                              GDK_TYPE_PIXBUF);
-				model = GTK_TREE_MODEL (store);
+			GtkTreeStore *store = gtk_tree_store_new (3, G_TYPE_STRING, G_TYPE_POINTER,
+						                              GDK_TYPE_PIXBUF);
+			model = GTK_TREE_MODEL (store);
 
-				GtkTreeView *view = GTK_TREE_VIEW (m_view);
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+			GtkTreeView *view = GTK_TREE_VIEW (m_view);
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 
-				g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
+			g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
 
-				GtkTreeIter iter;
-				gtk_tree_store_append (store, &iter, NULL);
-				gtk_tree_store_set (store, &iter, 0, _("All"), 1, NULL, -1);
+			GtkTreeIter iter;
+			gtk_tree_store_append (store, &iter, NULL);
+			gtk_tree_store_set (store, &iter, 0, _("All"), 1, NULL, -1);
 
-				inner::populate (store, NULL, Ypp::get()->getFirstCategory (type));
+			inner::populate (store, NULL, Ypp::get()->getFirstCategory (type));
 
-				gtk_tree_view_set_model (view, model);
-				g_object_unref (G_OBJECT (model));
-				selectFirstItem();
+			gtk_tree_view_set_model (view, model);
+			g_object_unref (G_OBJECT (model));
+			selectFirstItem();
 
-				g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
-			}
-
-			Ypp::Node *getActive()
-			{
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (m_view));
-				GtkTreeModel *model;
-				GtkTreeIter iter;
-				Ypp::Node *category = 0;
-				if (gtk_tree_selection_get_selected (selection, &model, &iter))
-					gtk_tree_model_get (model, &iter, 1, &category, -1);
-				return category;
-			}
-
-			void selectFirstItem()
-			{
-				GtkTreeView *view = GTK_TREE_VIEW (m_view);
-				GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
-
-				g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
-
-				/* we use gtk_tree_view_set_cursor(), rather than gtk_tree_selection_select_iter()
-				   because that one is buggy in that when the user first interacts with the treeview,
-				   a change signal is sent, even if he was just expanding one node... */
-				GtkTreePath *path = gtk_tree_path_new_first();
-				gtk_tree_view_set_cursor (view, path, NULL, FALSE);
-				gtk_tree_path_free (path);
-
-				g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
-			}
-
-			static void selection_cb (GtkTreeSelection *selection, Categories *pThis)
-			{
-				pThis->m_filters->signalChanged();
-
-				// if item unselected, make sure "All" is
-				if (!gtk_tree_selection_get_selected (selection, NULL, NULL))
-					pThis->selectFirstItem();
-			}
-
-			virtual void writeQuery (Ypp::Query *query)
-			{
-				Ypp::Node *node = getActive();
-				if (node)
-					query->addCategory (node);
-			}
-		};
-
-		struct Pool : public View, public PackagesView::Listener
-		{
-			PackagesView *m_view;
-			GtkWidget *m_box, *m_buttons_box;
-		public:
-			virtual GtkWidget *getWidget()
-			{ return m_box; }
-
-			Pool (Filters *filters, Ypp::Package::Type type)
-			: View (filters)
-			{
-				m_view = new PackagesView();
-				Ypp::Query *query = new Ypp::Query();
-				query->addType (type); 
-				m_view->setQuery (query);
-				m_view->setListener (this);
-
-				m_buttons_box = gtk_hbox_new (TRUE, 2);
-				GtkWidget *image, *button;
-				button = gtk_button_new_with_label (_("Install All"));
-				image = gtk_image_new_from_stock (GTK_STOCK_SAVE, GTK_ICON_SIZE_BUTTON);
-				gtk_button_set_image (GTK_BUTTON (button), image);
-				g_signal_connect (G_OBJECT (button), "clicked",
-				                  G_CALLBACK (install_cb), this);
-				gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
-				button = gtk_button_new_with_label (_("Remove All"));
-				image = gtk_image_new_from_stock (GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON);
-				gtk_button_set_image (GTK_BUTTON (button), image);
-				g_signal_connect (G_OBJECT (button), "clicked",
-				                  G_CALLBACK (remove_cb), this);
-				gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
-				gtk_widget_set_sensitive (m_buttons_box, FALSE);
-
-				m_box = gtk_vbox_new (FALSE, 4);
-				gtk_box_pack_start (GTK_BOX (m_box), m_view->getWidget(), TRUE, TRUE, 0);
-				gtk_box_pack_start (GTK_BOX (m_box), m_buttons_box, FALSE, TRUE, 0);
-			}
-
-			virtual void packagesSelected (const PkgList &selection)
-			{
-				gtk_widget_set_sensitive (m_buttons_box, !selection.empty());
-				m_filters->signalChanged();
-			}
-
-			virtual void writeQuery (Ypp::Query *query)
-			{
-				PkgList selected = m_view->getSelected();
-				for (PkgList::const_iterator it = selected.begin();
-				     it != selected.end(); it++)
-					query->addCollection (*it);
-			}
-
-			void doAll (bool install /*or remove*/)
-			{
-				// we just need to mark the collections themselves
-				PkgList selected = m_view->getSelected();
-				install ? selected.install() : selected.remove();
-			}
-
-			static void install_cb (GtkButton *button, Pool *pThis)
-			{ pThis->doAll (true); }
-			static void remove_cb (GtkButton *button, Pool *pThis)
-			{ pThis->doAll (false); }
-		};
-
-		View *m_view;
-		GtkWidget *m_bin;
-		Filters *m_filters;
-
-		public:
-		Collections (Filters *filters)
-		: m_view (NULL), m_filters (filters)
-		{
-			m_bin = gtk_event_box_new();
+			g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
 		}
 
-		~Collections()
+		Ypp::Node *getActive()
 		{
-			delete m_view;
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (m_view));
+			GtkTreeModel *model;
+			GtkTreeIter iter;
+			Ypp::Node *category = 0;
+			if (gtk_tree_selection_get_selected (selection, &model, &iter))
+				gtk_tree_model_get (model, &iter, 1, &category, -1);
+			return category;
 		}
 
-		GtkWidget *getWidget()
-		{ return m_bin; }
-
-		void setType (Ypp::Package::Type type)
+		void selectFirstItem()
 		{
-			if (m_view)
-				gtk_container_remove (GTK_CONTAINER (m_bin), m_view->getWidget());
-			delete m_view;
+			GtkTreeView *view = GTK_TREE_VIEW (m_view);
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 
-			switch (type)
-			{
-				case Ypp::Package::PACKAGE_TYPE:
-				case Ypp::Package::PATCH_TYPE:
-					m_view = new Categories (m_filters, type);
-					break;
-				case Ypp::Package::PATTERN_TYPE:
-				//case Ypp::Package::LANGUAGE_TYPE:
-					m_view = new Pool (m_filters, type);
-					break;
-				default:
-					m_view = NULL;
-					break;
-			}
+			g_signal_handlers_block_by_func (selection, (gpointer) selection_cb, this);
 
-			if (m_view) {
-				gtk_widget_show_all (m_view->getWidget());
-				gtk_container_add (GTK_CONTAINER (m_bin), m_view->getWidget());
-			}
+			/* we use gtk_tree_view_set_cursor(), rather than gtk_tree_selection_select_iter()
+			   because that one is buggy in that when the user first interacts with the treeview,
+			   a change signal is sent, even if he was just expanding one node... */
+			GtkTreePath *path = gtk_tree_path_new_first();
+			gtk_tree_view_set_cursor (view, path, NULL, FALSE);
+			gtk_tree_path_free (path);
+
+			g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
 		}
 
-		void writeQuery (Ypp::Query *query)
+		static void selection_cb (GtkTreeSelection *selection, Categories *pThis)
 		{
-			if (m_view)
-				m_view->writeQuery (query);
+			pThis->signalChanged();
+
+			// if item unselected, make sure "All" is
+			if (!gtk_tree_selection_get_selected (selection, NULL, NULL))
+				pThis->selectFirstItem();
+		}
+
+		virtual void writeQuery (Ypp::QueryPool::Query *query)
+		{
+			Ypp::Node *node = getActive();
+			if (node)
+				query->addCategory (node);
 		}
 	};
 
+	struct Pool : public View, public PackagesView::Listener
+	{
+		PackagesView * m_view;
+		GtkWidget *m_box, *m_buttons_box;
+		Ypp::Package::Type m_type;
+
+	public:
+		virtual GtkWidget *getWidget()
+		{ return m_box; }
+
+		Pool (Collections::Listener *listener, Ypp::Package::Type type)
+		: View (listener)
+		{
+			m_type = type;
+
+			m_view = new PackagesView (true);
+			m_view->setPool (new Ypp::TreePool (type));
+			m_view->setListener (this);
+
+			// control buttons
+			m_buttons_box = gtk_hbox_new (TRUE, 2);
+			GtkWidget *image, *button;
+			button = gtk_button_new_with_label (_("Install All"));
+			image = gtk_image_new_from_stock (GTK_STOCK_SAVE, GTK_ICON_SIZE_BUTTON);
+			gtk_button_set_image (GTK_BUTTON (button), image);
+			g_signal_connect (G_OBJECT (button), "clicked",
+			                  G_CALLBACK (install_cb), this);
+			gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
+			button = gtk_button_new_with_label (_("Remove All"));
+			image = gtk_image_new_from_stock (GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON);
+			gtk_button_set_image (GTK_BUTTON (button), image);
+			g_signal_connect (G_OBJECT (button), "clicked",
+			                  G_CALLBACK (remove_cb), this);
+			gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
+			gtk_widget_set_sensitive (m_buttons_box, FALSE);
+
+			// layout
+			m_box = gtk_vbox_new (FALSE, 4);
+			gtk_box_pack_start (GTK_BOX (m_box), m_view->getWidget(), TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_box), m_buttons_box, FALSE, TRUE, 0);
+		}
+
+		virtual ~Pool()
+		{
+			delete m_view;
+		}
+
+		virtual void packagesSelected (const PkgList &selection)
+		{
+			gtk_widget_set_sensitive (m_buttons_box, !selection.empty());
+			signalChanged();
+		}
+
+		virtual void writeQuery (Ypp::QueryPool::Query *query)
+		{
+			PkgList selected = m_view->getSelected();
+			for (PkgList::const_iterator it = selected.begin();
+			     it != selected.end(); it++)
+				query->addCollection (*it);
+		}
+
+		void doAll (bool install /*or remove*/)
+		{
+			// we just need to mark the collections themselves
+			PkgList selected = m_view->getSelected();
+			install ? selected.install() : selected.remove();
+		}
+
+		static void install_cb (GtkButton *button, Pool *pThis)
+		{ pThis->doAll (true); }
+		static void remove_cb (GtkButton *button, Pool *pThis)
+		{ pThis->doAll (false); }
+	};
+
+	View *m_view;
+	GtkWidget *m_bin;
+	Collections::Listener *m_listener;
+
+	public:
+	Collections (Collections::Listener *listener)
+	: m_view (NULL), m_listener (listener)
+	{
+		m_bin = gtk_event_box_new();
+	}
+
+	~Collections()
+	{
+		delete m_view;
+	}
+
+	GtkWidget *getWidget()
+	{ return m_bin; }
+
+	void setType (Ypp::Package::Type type)
+	{
+		if (m_view)
+			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->getWidget());
+		delete m_view;
+
+		switch (type)
+		{
+			case Ypp::Package::PACKAGE_TYPE:
+			case Ypp::Package::PATCH_TYPE:
+				m_view = new Categories (m_listener, type);
+				break;
+			case Ypp::Package::PATTERN_TYPE:
+			//case Ypp::Package::LANGUAGE_TYPE:
+				m_view = new Pool (m_listener, type);
+				break;
+			default:
+				m_view = NULL;
+				break;
+		}
+
+		if (m_view) {
+			gtk_widget_show_all (m_view->getWidget());
+			gtk_container_add (GTK_CONTAINER (m_bin), m_view->getWidget());
+		}
+	}
+
+	void writeQuery (Ypp::QueryPool::Query *query)
+	{
+		if (m_view)
+			m_view->writeQuery (query);
+	}
+};
+
+class Filters : public Collections::Listener
+{
 	class StatusButtons
 	{
 	public:
@@ -1161,7 +1211,7 @@ class Filters
 
 public:
 	struct Listener {
-		virtual void doQuery (Ypp::Query *query) = 0;
+		virtual void doQuery (Ypp::QueryPool::Query *query) = 0;
 	};
 	void setListener (Listener *listener)
 	{ m_listener = listener; signalChanged(); }
@@ -1208,8 +1258,8 @@ public:
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), repo_name.c_str());
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
-		g_signal_connect (G_OBJECT (m_repos), "changed",
-		                  G_CALLBACK (combo_changed_cb), this);
+		g_signal_connect_after (G_OBJECT (m_repos), "changed",
+		                        G_CALLBACK (combo_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
 		if (update_mode)
@@ -1244,6 +1294,8 @@ private:
 	{ pThis->signalChangedDelay(); }
 	static void combo_changed_cb (GtkComboBox *combo, Filters *pThis)
 	{ pThis->signalChanged(); }
+	virtual void collectionChanged()
+	{ signalChanged(); }
 
 	void signalChanged()
 	{
@@ -1262,7 +1314,7 @@ private:
 		}
 
 		// create query
-		Ypp::Query *query = new Ypp::Query();
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 		if (type == Ypp::Package::PATCH_TYPE)
 			query->addType (Ypp::Package::PATCH_TYPE);
 		else
@@ -1655,8 +1707,8 @@ public:
 
 	PackageDetails (bool update_mode)
 	{
-		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
-		setWhiteBackground (vbox);
+		GtkWidget *vbox;
+		m_widget = createWhiteViewPort (&vbox);
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		m_description = ygtk_html_wrap_new();
@@ -1681,12 +1733,6 @@ public:
 			m_filelist = m_changelog = m_authors = NULL;
 			m_dependencies = NULL;
 		}
-
-		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), vbox);
-		m_widget = scroll;
 	}
 
 	~PackageDetails()
@@ -1787,22 +1833,31 @@ private:
 		return align;
 	}
 
-	static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
+	static GtkWidget *createWhiteViewPort (GtkWidget **vbox)
 	{
-		cairo_t *cr = gdk_cairo_create (widget->window);
-		GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
-		gdk_cairo_set_source_color (cr, &color);
-		cairo_rectangle (cr, event->area.x, event->area.y,
-		                 event->area.width, event->area.height);
-		cairo_fill (cr);
-		cairo_destroy (cr);
-		return FALSE;
-	}
+		struct inner {
+			static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
+			{
+				cairo_t *cr = gdk_cairo_create (widget->window);
+				GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
+				gdk_cairo_set_source_color (cr, &color);
+				cairo_rectangle (cr, event->area.x, event->area.y,
+						         event->area.width, event->area.height);
+				cairo_fill (cr);
+				cairo_destroy (cr);
+				return FALSE;
+			}
+		};
 
-	static void setWhiteBackground (GtkWidget *widget)
-	{
-		g_signal_connect (G_OBJECT (widget), "expose-event",
-		                  G_CALLBACK (expose_cb), NULL);
+		*vbox = gtk_vbox_new (FALSE, 0);
+		g_signal_connect (G_OBJECT (*vbox), "expose-event",
+			              G_CALLBACK (inner::expose_cb), NULL);
+
+		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), *vbox);
+		return scroll;
 	}
 };
 
@@ -1998,7 +2053,7 @@ public:
 
 	PackageSelector (bool update_mode)
 	{
-		m_packages = new PackagesView();
+		m_packages = new PackagesView (false);
 		m_filters = new Filters (update_mode);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (update_mode);
@@ -2060,7 +2115,7 @@ public:
 		delete m_changes;
 	}
 
-	virtual void doQuery (Ypp::Query *query)
+	virtual void doQuery (Ypp::QueryPool::Query *query)
 	{
 		m_packages->setQuery (query);
 	}
@@ -2084,7 +2139,8 @@ public:
 #include "YPackageSelector.h"
 #include "pkg-selector-help.h"
 
-class YGPackageSelector : public YPackageSelector, public YGWidget, public Ypp::Interface
+class YGPackageSelector : public YPackageSelector, public YGWidget,
+                          public Ypp::Interface, public Ypp::PkgListener
 {
 PackageSelector *m_package_selector;
 
@@ -2117,6 +2173,7 @@ public:
 
 		busyCursor();
 		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? patch_help : pkg_help);
+		createToolsButton();
 
         YGDialog *dialog = YGDialog::currentDialog();
         dialog->setCloseCallback (confirm_cb, this);
@@ -2125,6 +2182,7 @@ public:
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 
 		Ypp::get()->setInterface (this);
+		Ypp::get()->addPkgListener (this);
 	}
 
 	virtual ~YGPackageSelector()
@@ -2367,10 +2425,137 @@ protected:
 
 	virtual void packageModified (Ypp::Package *package)
 	{
+		// FIXME: this is mostly a hack; the thing is that GtkTreeSelection doesn't
+		// signal when a selected row changes values. Anyway, to be done differently.
 		m_package_selector->packageModified (package);
 	}
 
 	YGWIDGET_IMPL_COMMON
+
+	// Utilities
+	void createToolsButton()
+	{
+		struct inner {
+			static void errorMsg (const std::string &header, const std::string &message)
+			{
+				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+					header.c_str(), NULL);
+				gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
+						                                    message.c_str());
+				gtk_dialog_run (GTK_DIALOG (dialog));
+				gtk_widget_destroy (dialog);
+			}
+			static void import_file_cb (GtkMenuItem *item, YGPackageSelector *pThis)
+			{
+				GtkWidget *dialog;
+				dialog = gtk_file_chooser_dialog_new (_("Import Package List"),
+					YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_OPEN,
+					GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
+					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL);
+
+				int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+				if (ret == GTK_RESPONSE_ACCEPT) {
+					char *filename;
+					filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+					if (!Ypp::get()->importList (filename)) {
+						std::string error = _("Couldn't load package list from: ");
+						error += filename;
+						errorMsg (_("Import Failed"), error);
+					}
+					g_free (filename);
+				}
+				gtk_widget_destroy (dialog);
+			}
+			static void export_file_cb (GtkMenuItem *item, YGPackageSelector *pThis)
+			{
+				GtkWidget *dialog;
+				dialog = gtk_file_chooser_dialog_new (_("Export Package List"),
+					YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_SAVE,
+					GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
+					GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
+
+				int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+				if (ret == GTK_RESPONSE_ACCEPT) {
+					char *filename;
+					filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+					if (!Ypp::get()->exportList (filename)) {
+						std::string error = _("Couldn't save package list to: ");
+						error += filename;
+						errorMsg (_("Export Failed"), error);
+					}
+					g_free (filename);
+				}
+				gtk_widget_destroy (dialog);
+			}
+			static void create_solver_testcase_cb (GtkMenuItem *item)
+			{
+				const char *dirname = "/var/log/YaST2/solverTestcase";
+				std::string msg = _("Use this to generate extensive logs to help tracking down "
+				                  "bugs in the dependency resolver.\nThe logs will be stored in "
+				                  "directory: ");
+				msg += dirname;
+
+				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
+					_("Create Dependency Resolver Test Case"), NULL);
+				gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+						                                  msg.c_str());
+				int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+				gtk_widget_destroy (dialog);
+
+				if (ret == GTK_RESPONSE_OK) {
+				    if (Ypp::get()->createSolverTestcase (dirname)) {
+						GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+							GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
+							GTK_BUTTONS_YES_NO, _("Success"), NULL);
+						msg = _("Dependency resolver test case written to");
+						msg += " <tt>";
+						msg += dirname;
+						msg += "</tt>\n";
+						msg += _("Prepare <tt>y2logs.tgz tar</tt> archive to attach to Bugzilla?");
+						gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
+										                            msg.c_str());
+						ret = gtk_dialog_run (GTK_DIALOG (dialog));
+						gtk_widget_destroy (dialog);
+						if (ret == GTK_RESPONSE_YES)
+							YGUI::ui()->askSaveLogs();
+				    }
+				    else {
+				    	msg = _( "Failed to create dependency resolver test case.\n"
+							"Please check disk space and permissions for");
+						msg += " <tt>";
+						msg += dirname;
+						msg += "</tt>";
+						errorMsg ("Error", msg.c_str());
+				    }
+				}
+			}
+		};
+
+		GtkWidget *button, *popup, *item;
+		button = ygtk_menu_button_new_with_label (_("Tools"));
+		popup = gtk_menu_new();
+
+		item = gtk_menu_item_new_with_label (_("Import List..."));
+		gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+		g_signal_connect (G_OBJECT (item), "activate",
+		                  G_CALLBACK (inner::import_file_cb), this);
+		item = gtk_menu_item_new_with_label (_("Export List..."));
+		gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+		g_signal_connect (G_OBJECT (item), "activate",
+		                  G_CALLBACK (inner::export_file_cb), this);
+		gtk_menu_shell_append (GTK_MENU_SHELL (popup), gtk_separator_menu_item_new());
+		item = gtk_menu_item_new_with_label (_("Generate Dependency Testcase..."));
+		gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+		g_signal_connect (G_OBJECT (item), "activate",
+		                  G_CALLBACK (inner::create_solver_testcase_cb), this);
+
+		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (button), popup);
+		ygtk_wizard_set_extra_button (YGTK_WIZARD (getWidget()), button);
+		gtk_widget_show (button);
+		gtk_widget_show_all (popup);
+	}
 };
 
 #else

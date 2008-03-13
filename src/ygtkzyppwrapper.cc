@@ -21,6 +21,9 @@
 #include "icons/pkg-remove-auto.xpm"
 
 // bridge as we don't want to mix c++ class polymorphism and gobject
+static void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter iter);
+static void ygtk_zypp_model_entry_inserted (YGtkZyppModel *model, Ypp::Pool::Iter iter);
+static void ygtk_zypp_model_entry_deleted (YGtkZyppModel *model, Ypp::Pool::Iter iter);
 struct YGtkZyppModel::PoolNotify : public Ypp::Pool::Listener {
 YGtkZyppModel *model;
 	virtual void entryChanged  (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -65,7 +68,7 @@ struct PackageIcons {
 };
 
 static PackageIcons *icons = NULL;
-void ygtk_zypp_model_finish()
+void ygtk_zypp_model_finish (void)
 {
 	delete icons; icons = NULL;
 	Ypp::finish();
@@ -92,28 +95,38 @@ static void ygtk_zypp_model_finalize (GObject *object)
 	G_OBJECT_CLASS (ygtk_zypp_model_parent_class)->finalize (object);
 }
 
-static GtkTreeModelFlags ygtk_zypp_model_get_flags (GtkTreeModel *)
+static GtkTreeModelFlags ygtk_zypp_model_get_flags (GtkTreeModel *model)
 {
-  return GtkTreeModelFlags (GTK_TREE_MODEL_ITERS_PERSIST | GTK_TREE_MODEL_LIST_ONLY);
+	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
+	int flags = GTK_TREE_MODEL_ITERS_PERSIST;
+	if (zmodel->pool->isPlainList())
+		flags |= (GtkTreeModelFlags) GTK_TREE_MODEL_LIST_ONLY;
+	return (GtkTreeModelFlags) flags;
 }
 
 static gboolean ygtk_zypp_model_get_iter (GtkTreeModel *model, GtkTreeIter *iter,
                                           GtkTreePath  *path)
 {
 	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
-	gint row = gtk_tree_path_get_indices (path)[0];
+	gint *indices = gtk_tree_path_get_indices (path);
+	gint depth = gtk_tree_path_get_depth (path);
 
-	iter->user_data = (gpointer) zmodel->pool->getIter (row);
+	Ypp::Pool::Path zpath;	
+	for (gint i = 0; i < depth; i++)
+		zpath.push_back (indices[i]);
+
+	iter->user_data = (gpointer) zmodel->pool->fromPath (zpath);
 	return iter->user_data != NULL;
 }
 
 static GtkTreePath *ygtk_zypp_model_get_path (GtkTreeModel *model, GtkTreeIter *iter)
 {
 	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
-	int row = zmodel->pool->getIndex (iter->user_data);
+	Ypp::Pool::Path zpath = zmodel->pool->toPath (iter->user_data);
 
 	GtkTreePath *path = gtk_tree_path_new();
-	gtk_tree_path_append_index (path, row);
+	for (Ypp::Pool::Path::const_iterator it = zpath.begin(); it != zpath.end(); it++)
+		gtk_tree_path_append_index (path, *it);
 	return path;
 }
 
@@ -124,10 +137,65 @@ static gboolean ygtk_zypp_model_iter_next (GtkTreeModel *model, GtkTreeIter *ite
 	return iter->user_data != NULL;
 }
 
-void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter it)
+static gboolean ygtk_zypp_model_iter_parent (GtkTreeModel *model, GtkTreeIter *iter,
+                                             GtkTreeIter  *child)
+{
+	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
+	iter->user_data = zmodel->pool->getParent (child->user_data);
+	return iter->user_data != NULL;
+}
+
+static gboolean ygtk_zypp_model_iter_has_child (GtkTreeModel *model, GtkTreeIter *iter)
+{
+	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
+	return zmodel->pool->getChild (iter->user_data) != NULL;
+}
+
+static gint ygtk_zypp_model_iter_n_children (GtkTreeModel *model, GtkTreeIter *iter)
+{
+	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
+	Ypp::Pool::Iter ziter;
+	if (iter == NULL)  /* root */
+		ziter = zmodel->pool->getFirst();
+	else {
+		ziter = (Ypp::Pool::Iter) iter->user_data;
+		ziter = zmodel->pool->getChild (ziter);
+	}
+	if (!ziter)
+		return 0;
+	int children = 1;
+	while ((ziter = zmodel->pool->getNext (ziter)))
+		children++;
+	return children;
+}
+
+static gboolean ygtk_zypp_model_iter_nth_child (GtkTreeModel *model, GtkTreeIter *iter,
+                                                GtkTreeIter  *parent, gint        n)
+{
+	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
+	Ypp::Pool::Iter ziter;
+	if (parent == NULL)  /* root */
+		ziter = zmodel->pool->getFirst();
+	else
+		ziter = zmodel->pool->getChild (parent->user_data);
+	if (!ziter)
+		return FALSE;
+	for (int c = 0; c < n; c++)
+		ziter = zmodel->pool->getNext (ziter);
+	iter->user_data = ziter;
+	return iter->user_data != NULL;
+}
+
+static gboolean ygtk_zypp_model_iter_children (GtkTreeModel *model, GtkTreeIter *iter,
+                                               GtkTreeIter  *parent)
+{
+	return ygtk_zypp_model_iter_nth_child (model, iter, parent, 0);
+}
+
+void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter ziter)
 {
 	GtkTreeIter iter;
-	iter.user_data = it;
+	iter.user_data = ziter;
 	GtkTreePath *path = ygtk_zypp_model_get_path (GTK_TREE_MODEL (model), &iter);
 	gtk_tree_model_row_changed (GTK_TREE_MODEL (model), path, &iter);
 	gtk_tree_path_free (path);
@@ -178,6 +246,18 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 	Ypp::Package *package = zmodel->pool->get (iter->user_data);
 
 	g_value_init (value, ygtk_zypp_model_get_column_type (model, column));
+
+	if (!package) {
+		if (column == YGtkZyppModel::NAME_COLUMN ||
+		    column == YGtkZyppModel::NAME_DESCRIPTION_COLUMN) {
+			std::string name = zmodel->pool->getName (iter->user_data);
+			if (column == YGtkZyppModel::NAME_DESCRIPTION_COLUMN)
+				name = "<b>" + name + "</b>";
+			g_value_set_string (value, g_strdup (name.c_str()));
+		}
+		return;
+	}
+
 	switch (column)
 	{
 		case YGtkZyppModel::ICON_COLUMN:
@@ -220,12 +300,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		}
 		case YGtkZyppModel::NAME_COLUMN:
 		{
-			std::string name = package->name();
-			const unsigned int max_width = 15;
-			if (name.size() > max_width) {
-				name.erase (max_width-3);
-				name += "...";
-			}
+			std::string name = YGUtils::truncate (package->name(), 15);
 			g_value_set_string (value, g_strdup (name.c_str()));
 			break;
 		}
@@ -253,57 +328,12 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 	}
 }
 
-static gboolean ygtk_zypp_model_iter_has_child (GtkTreeModel *model, GtkTreeIter *iter)
-{
-  return FALSE;
-}
-
-static gboolean ygtk_zypp_model_iter_parent (GtkTreeModel *model, GtkTreeIter *iter,
-                                             GtkTreeIter  *child)
-{
-  return FALSE;
-}
-
-static gint ygtk_zypp_model_iter_n_children (GtkTreeModel *model, GtkTreeIter *iter)
-{
-	if (iter == NULL) {  // special case: root
-		YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
-		int length = 0;
-		Ypp::Pool::Iter iter = zmodel->pool->getFirst();
-		while (iter) {
-			length++;
-			iter = zmodel->pool->getNext (iter);
-		}
-		return length;
-	}
-	return 0;
-}
-
-static gboolean ygtk_zypp_model_iter_nth_child (GtkTreeModel *model, GtkTreeIter *iter,
-                                                GtkTreeIter  *parent, gint        n)
-{
-	if (parent == NULL) {
-		gboolean ret;
-		GtkTreePath *path = gtk_tree_path_new_from_indices (n, -1);
-		ret = ygtk_zypp_model_get_iter (model, iter, path);
-		gtk_tree_path_free (path);
-		return ret;
-	}
-	return FALSE;
-}
-
-static gboolean ygtk_zypp_model_iter_children (GtkTreeModel *model, GtkTreeIter *iter,
-                                               GtkTreeIter  *parent)
-{
-	return ygtk_zypp_model_iter_nth_child (model, iter, parent, 0);
-}
-
-YGtkZyppModel *ygtk_zypp_model_new (Ypp::Query *query)
+YGtkZyppModel *ygtk_zypp_model_new (Ypp::Pool *pool)
 {
 	YGtkZyppModel *zmodel = (YGtkZyppModel *) g_object_new (YGTK_TYPE_ZYPP_MODEL, NULL);
 	zmodel->notify = new YGtkZyppModel::PoolNotify();
 	zmodel->notify->model = zmodel;
-	zmodel->pool = new Ypp::Pool (query);
+	zmodel->pool = pool;
 	zmodel->pool->setListener (zmodel->notify);
 	return zmodel;
 }
