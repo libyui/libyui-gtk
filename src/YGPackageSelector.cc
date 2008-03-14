@@ -2011,15 +2011,20 @@ private:
 			gtk_cell_renderer_progress_new(), "value", 1, "text", 2, NULL);
 		gtk_tree_view_column_set_min_width (column, 150);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		gtk_widget_show (view);
 
-		scroll = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
-			shadow ? GTK_SHADOW_IN : GTK_SHADOW_NONE);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-		                                GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-		gtk_container_add (GTK_CONTAINER (scroll), view);
-		gtk_widget_show_all (scroll);
-		return scroll;
+		if (shadow) {
+			scroll = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
+			                                     GTK_SHADOW_IN);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+				                            GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+			gtk_container_add (GTK_CONTAINER (scroll), view);
+			gtk_widget_show (scroll);
+			return scroll;
+		}
+		g_object_set (view, "can-focus", FALSE, NULL);
+		return view;
 	}
 #if 0
 	static void packCellRenderers (GtkCellLayout *layout)

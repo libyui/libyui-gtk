@@ -7,6 +7,13 @@
 	`repo_mgr event, in order to launch the RepoManager in the new sw_single
 	code.
 
+	* src/YGPackageSelector.cc (Filters): renamed Setup to the more descriptive
+	"Add or Remove". This is also the terminology used in Gnome apps like the
+	encoding menu in gnome-terminal.
+
+	* src/YGPackageSelector.cc (DiskView): get rid of focus drawing on the disk
+	view.
+
 2008-03-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/c: added support for an extra button.
