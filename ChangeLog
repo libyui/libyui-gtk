@@ -17,6 +17,13 @@
 	* src/YGPackageSelector.cc & src/ygtkzyppwrapper.cc/h: modified PackagesView,
 	Collections::Pool (ie. Patterns) and zypp model to support the TreePool.
 
+	* src/ygtkmenubutton.h/c: added API with a couple of align floats to better
+	place the popup.
+	* src/YGPackageSelector.cc (DiskView): center popup horizontally.
+
+	* src/ygtkmenubutton.h/c: bug fix: menu button not released for non-native
+	popups.
+
 2008-03-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: replaced specific GtkTextView-scroll set function by a

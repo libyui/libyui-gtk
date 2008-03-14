@@ -2013,7 +2013,7 @@ private:
 		gtk_container_add (GTK_CONTAINER (button), gtk_image_new_from_pixbuf (NULL));
 
 #if 1
-		menu = ygtk_popup_window_new (createView (model, false));
+		menu = createView (model, false);
 #else
 		menu = gtk_menu_new();
 		Ypp::Disk *disk = Ypp::get()->getDisk();
@@ -2032,7 +2032,7 @@ private:
 			gtk_widget_show_all (item);
 		}
 #endif
-		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (button), menu);
+		ygtk_menu_button_set_popup_align (YGTK_MENU_BUTTON (button), menu, 0.5, 1.0);
 		return button;
 	}
 };

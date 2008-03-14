@@ -70,6 +70,7 @@ typedef struct _YGtkMenuButton
 
 	// private:
 	GtkWidget *label, *popup;
+	gfloat xalign, yalign;
 } YGtkMenuButton;
 
 typedef struct _YGtkMenuButtonClass
@@ -86,6 +87,8 @@ void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label);
 /* Popup must be either a GtkMenu or a YGtkPopupWindow. */
 // You may hide your popup "manually" issueing a gtk_widget_hide() on it
 void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup);
+void ygtk_menu_button_set_popup_align (YGtkMenuButton *button, GtkWidget *popup,
+                                       gfloat xalign, gfloat yalign);
 
 G_END_DECLS
 #endif /*YGTK_MENU_BUTTON_H*/

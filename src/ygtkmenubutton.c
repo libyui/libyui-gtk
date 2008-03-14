@@ -123,7 +123,6 @@ G_DEFINE_TYPE (YGtkMenuButton, ygtk_menu_button, GTK_TYPE_TOGGLE_BUTTON)
 
 static void ygtk_menu_button_init (YGtkMenuButton *button)
 {
-	button->popup = NULL;
 }
 
 static void ygtk_menu_button_free_popup (YGtkMenuButton *button)
@@ -141,39 +140,46 @@ static void ygtk_menu_button_finalize (GObject *object)
 	G_OBJECT_CLASS (ygtk_menu_button_parent_class)->finalize (object);
 }
 
-static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
-                                           gboolean *push_in, gpointer pointer)
+static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gint *y)
 {
-	GtkWidget *widget = (GtkWidget*) pointer;
+	GtkWidget *widget = GTK_WIDGET (button);
+	GtkAllocation *button_alloc = &widget->allocation;
+
+	GtkRequisition req;
+	gtk_widget_size_request (button->popup, &req);
+	int popup_width = req.width, popup_height = req.height;
+	if (button_alloc->width > req.width) {
+		gtk_widget_set_size_request (button->popup, button_alloc->width, -1);
+		popup_width = button_alloc->width;
+	}
+
 	gdk_window_get_origin (widget->window, x, y);
-	*x += widget->allocation.x;
-	*y += widget->allocation.y + widget->allocation.height;
+	*x += button_alloc->x - popup_width*button->xalign;
+	*y += (button_alloc->y-popup_height) + (button_alloc->height+popup_height)*button->yalign;
+}
+
+static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
+                                           gboolean *push_in, gpointer data)
+{
+	ygtk_menu_button_get_popup_pos (YGTK_MENU_BUTTON (data), x, y);
 	*push_in = TRUE;
 }
 
 static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 {
-	GtkWidget *widget = GTK_WIDGET (button);
 	GtkWidget *popup = button->popup;
 	if (!popup)
 		return;
 
 	guint activate_time = gtk_get_current_event_time();
-
 	if (GTK_IS_MENU (popup))
 		gtk_menu_popup (GTK_MENU (popup), NULL, NULL, ygtk_menu_button_get_menu_pos,
-		                widget, 0, activate_time);
+		                button, 0, activate_time);
 	else {  // GTK_IS_WINDOW
 		gint x, y;
-		gdk_window_get_origin (GDK_WINDOW (widget->window), &x, &y);
-		x += widget->allocation.x;
-		y += widget->allocation.y + widget->allocation.height;
-
+		ygtk_menu_button_get_popup_pos (button, &x, &y);
 		ygtk_popup_window_popup (popup, x, y, activate_time);
 	}
-
-	if (widget->allocation.width > popup->allocation.width)
-		gtk_widget_set_size_request (popup, widget->allocation.width, -1);
 }
 
 static void ygtk_menu_button_hide_popup (YGtkMenuButton *button)
@@ -238,9 +244,12 @@ void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
 static void menu_button_hide_popup (GtkWidget *widget, YGtkMenuButton *button)
 { ygtk_menu_button_hide_popup (button); }
 
-void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
+void ygtk_menu_button_set_popup_align (YGtkMenuButton *button, GtkWidget *popup,
+                                       gfloat xalign, gfloat yalign)
 {
 	ygtk_menu_button_free_popup (button);
+	button->xalign = xalign;
+	button->yalign = yalign;
 
 	if (!GTK_IS_MENU (popup) && !IS_YGTK_POPUP_WINDOW (popup)) {
 		// install widget on a YGtkPopupMenu
@@ -249,11 +258,14 @@ void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
 	else
 		button->popup = popup;
 
-	g_object_ref (G_OBJECT (button->popup));
-	gtk_object_sink (GTK_OBJECT (button->popup));
-
-	g_signal_connect (G_OBJECT (popup), "hide",
+	g_object_ref_sink (G_OBJECT (button->popup));
+	g_signal_connect (G_OBJECT (button->popup), "hide",
 	                  G_CALLBACK (menu_button_hide_popup), button);
+}
+
+void ygtk_menu_button_set_popup (YGtkMenuButton *button, GtkWidget *popup)
+{
+	ygtk_menu_button_set_popup_align (button, popup, 0.0, 1.0);
 }
 
 static void ygtk_menu_button_class_init (YGtkMenuButtonClass *klass)
