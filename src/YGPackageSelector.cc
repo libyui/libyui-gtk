@@ -1271,7 +1271,7 @@ public:
 		gtk_list_store_append (store, &iter);
 		gtk_list_store_set (store, &iter, 0, "-", 1, TRUE, -1);
 		gtk_list_store_append (store, &iter);
-		gtk_list_store_set (store, &iter, 0, _("Setup..."), 1, FALSE, -1);
+		gtk_list_store_set (store, &iter, 0, _("Add or Remove..."), 1, FALSE, -1);
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
 		gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (m_repos),
 			is_combo_entry_separator_cb, this, NULL);
