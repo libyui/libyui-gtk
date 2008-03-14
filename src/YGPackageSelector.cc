@@ -1247,17 +1247,34 @@ public:
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (entry_changed_cb), this);
 
-		m_repos = gtk_combo_box_new_text();
+		m_repos = gtk_combo_box_new();
 		gtk_widget_set_tooltip_markup (m_repos,
 			_("<b>Package repositories:</b> Limits the query to one repository.\n"
 			"Repositories may be added or managed through YaST control center."));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), _("All Repositories"));
+		GtkListStore *store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_BOOLEAN);
+		gtk_combo_box_set_model (GTK_COMBO_BOX (m_repos), GTK_TREE_MODEL (store));
+		g_object_unref (G_OBJECT (store));
+		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (m_repos), renderer, TRUE);
+		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (m_repos), renderer,
+			"markup", 0, NULL);
+		g_object_set (G_OBJECT (renderer), "width-chars", 25,
+		              "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+		GtkTreeIter iter;
+		gtk_list_store_append (store, &iter);
+		gtk_list_store_set (store, &iter, 0, _("All Repositories"), 1, FALSE, -1);
 		for (int i = 0; Ypp::get()->getRepository (i); i++) {
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
-			string repo_name = YGUtils::truncate (repo->name, 25);
-			gtk_combo_box_append_text (GTK_COMBO_BOX (m_repos), repo_name.c_str());
+			gtk_list_store_append (store, &iter);
+			gtk_list_store_set (store, &iter, 0, repo->name.c_str(), 1, FALSE, -1);
 		}
+		gtk_list_store_append (store, &iter);
+		gtk_list_store_set (store, &iter, 0, "-", 1, TRUE, -1);
+		gtk_list_store_append (store, &iter);
+		gtk_list_store_set (store, &iter, 0, _("Setup..."), 1, FALSE, -1);
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
+		gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (m_repos),
+			is_combo_entry_separator_cb, this, NULL);
 		g_signal_connect_after (G_OBJECT (m_repos), "changed",
 		                        G_CALLBACK (combo_changed_cb), this);
 
@@ -1285,8 +1302,17 @@ public:
 public:
 	int selectedRepo()
 	{
-		int repo = gtk_combo_box_get_active (GTK_COMBO_BOX (m_repos))-1;
-		return repo;
+		GtkComboBox *combo = GTK_COMBO_BOX (m_repos);
+		int repo = gtk_combo_box_get_active (combo);
+
+		GtkTreeModel *model = gtk_combo_box_get_model (combo);
+		int setup_id = gtk_tree_model_iter_n_children (model, NULL);
+		if (repo == setup_id-1) {
+			YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr"));
+			repo = 0;
+		}
+
+		return repo-1;
 	}
 
 private:
@@ -1365,6 +1391,15 @@ private:
 		if (timeout_id) g_source_remove (timeout_id);
 		timeout_id = g_timeout_add (250, inner::timeout_cb, this);
 	}
+
+	// callbacks
+	static gboolean is_combo_entry_separator_cb (GtkTreeModel *model, GtkTreeIter *iter,
+	                                             gpointer data)
+	{
+		gboolean ret;
+		gtk_tree_model_get (model, iter, 1, &ret, -1);
+		return ret;
+	}
 };
 
 class PackageControl
@@ -1410,6 +1445,7 @@ Filters *m_filters;  // used to filter repo versions...
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (m_available_versions),
 		                         GTK_TREE_MODEL (store));
+		g_object_unref (G_OBJECT (store));
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
 		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (m_available_versions), renderer, TRUE);
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (m_available_versions), renderer,

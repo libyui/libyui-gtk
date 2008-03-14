@@ -1,3 +1,12 @@
+2008-03-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (PackageControl): fixed memory leak, on
+	available combo model.
+
+	* src/YGPackageSelector.cc (Filters): added Setup entry that fires the
+	`repo_mgr event, in order to launch the RepoManager in the new sw_single
+	code.
+
 2008-03-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/c: added support for an extra button.
