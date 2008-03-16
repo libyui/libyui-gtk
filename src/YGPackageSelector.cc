@@ -1250,7 +1250,8 @@ public:
 		m_repos = gtk_combo_box_new();
 		gtk_widget_set_tooltip_markup (m_repos,
 			_("<b>Package repositories:</b> Limits the query to one repository.\n"
-			"Repositories may be added or managed through YaST control center."));
+			"You can add or remove them  through the YaST control center or by "
+			"selecting the respective option."));
 		GtkListStore *store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_BOOLEAN);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (m_repos), GTK_TREE_MODEL (store));
 		g_object_unref (G_OBJECT (store));

@@ -63,7 +63,8 @@ static const char *pkg_help = _(
 "button in the lower-right corner. If you want to leave the software-manager "
 "without performing any changes, simply press the button labeled 'Abort'.</p>"
 ""
-"<p><i>Thanks to Christian Jäger for co-designing this tool.</i></p>" 
+"<blockquote><i>Developed by Ricardo Cruz &lt;rpmcruz@alunos.dcc.fc.up.pt&gt;<br>" 
+"Thanks to Christian Jäger for co-designing this tool.</i></blockquote>" 
 );
 
 static const char *patch_help = _(
