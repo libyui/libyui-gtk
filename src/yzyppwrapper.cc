@@ -295,7 +295,7 @@ std::string Ypp::Package::description()
 			text += br + br + "<b>" + _("Reboot needed!") + "</b>";
 	}
 	if (impl->type != PATCH_TYPE)
-		text += br + "<b>" + _("Size:") + "</b> " + object->size().asString();
+		text += br + "<b>" + _("Size:") + "</b> " + object->size().asString() + "B";
 	return text;
 }
 
@@ -1225,9 +1225,9 @@ GSList *partitions;
 					partition->used = it->pkg_size;
 					partition->total = it->total_size;
 					partition->used_str =
-						zypp::ByteCount (partition->used, zypp::ByteCount::K).asString();
+						zypp::ByteCount (partition->used, zypp::ByteCount::K).asString() + "B";
 					partition->total_str =
-						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString();
+						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString() + "B";
 					partitions = g_slist_append (partitions, (gpointer) partition);
 				}
 			}
