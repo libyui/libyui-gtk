@@ -480,12 +480,15 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 			ZyppObject object = selectable->theObj();
 			ZyppPattern pattern = tryCastToZyppPattern (object);
 
+#warning should use PatternContent
+#if 0
 			const std::set <std::string> &packages = pattern->install_packages();
 			for (std::set <std::string>::iterator it = packages.begin();
 			     it != packages.end(); it++) {
 				if (this->impl->zyppSel->name() == *it)
 					return true;
 			}
+#endif
 			break;
 		}
 #if 0
