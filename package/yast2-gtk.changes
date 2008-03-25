@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Mar 25 21:28:56 CET 2008 - coolo@suse.de
+
+- update from SVN to compile with latest SVN
+
+-------------------------------------------------------------------
 Thu Feb 28 13:54:27 CET 2008 - coolo@suse.de
 
 - fix make dist
