@@ -371,8 +371,7 @@ Listener *m_listener;
 			GList *paths = pThis->getSelectedPaths (NULL);
 			if (paths && !paths->next /* single selection */)
 				pThis->ensureVisible ((GtkTreePath *) paths->data);
-			for (GList *i = paths; i; i = i->next)
-				gtk_tree_path_free ((GtkTreePath *) i->data);
+			g_list_foreach (paths, (GFunc) gtk_tree_path_free, 0);
 			g_list_free (paths);
 		}
 	};
