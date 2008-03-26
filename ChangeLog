@@ -2,6 +2,11 @@
 
 	* src/yzyppwrapper.cc: fixed Patterns install_packages() warning.
 
+	* src/YGPackageSelector.cc: as requested by bug #373474, don't hide
+	package info/control view once shown, and don't let it overlap the
+	first selected package (in fact, we make sure a selection is always
+	visible when the list/icon view changes size).
+
 2008-03-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (PackageControl): fixed memory leak, on

@@ -225,6 +225,7 @@ Listener *m_listener;
 		virtual void setModel (GtkTreeModel *model) = 0;
 		virtual GList *getSelectedPaths (GtkTreeModel **model) = 0;
 		virtual void selectAll() = 0;
+		virtual void ensureVisible (GtkTreePath *path) = 0;
 
 		virtual int countSelected()
 		{
@@ -364,6 +365,16 @@ Listener *m_listener;
 
 		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
 		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
+
+		static void size_allocated_cb (GtkWidget *widget, GtkAllocation *alloc, View *pThis)
+		{
+			GList *paths = pThis->getSelectedPaths (NULL);
+			if (paths && !paths->next /* single selection */)
+				pThis->ensureVisible ((GtkTreePath *) paths->data);
+			for (GList *i = paths; i; i = i->next)
+				gtk_tree_path_free ((GtkTreePath *) i->data);
+			g_list_free (paths);
+		}
 	};
 	struct ListView : public View
 	{
@@ -406,6 +417,8 @@ Listener *m_listener;
 			                  G_CALLBACK (popup_key_cb), this);
 			g_signal_connect (G_OBJECT (m_widget), "button-press-event",
 			                  G_CALLBACK (popup_button_cb), this);
+			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
+			                        G_CALLBACK (size_allocated_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -462,6 +475,12 @@ Listener *m_listener;
 			gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
 			return package != NULL;
 		}
+
+		virtual void ensureVisible (GtkTreePath *path)
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
+		}
 	};
 	struct IconView : public View
 	{
@@ -480,6 +499,8 @@ Listener *m_listener;
 			                  G_CALLBACK (popup_key_cb), this);
 			g_signal_connect_after (G_OBJECT (m_widget), "button-press-event",
 			                        G_CALLBACK (popup_button_after_cb), this);
+			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
+			                        G_CALLBACK (size_allocated_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -496,7 +517,8 @@ Listener *m_listener;
 		virtual GList *getSelectedPaths (GtkTreeModel **model)
 		{
 			GtkIconView *view = GTK_ICON_VIEW (m_widget);
-			*model = gtk_icon_view_get_model (view);
+			if (model)
+				*model = gtk_icon_view_get_model (view);
 			GList *paths = gtk_icon_view_get_selected_items (view);
 			return paths;
 		}
@@ -513,6 +535,12 @@ Listener *m_listener;
 			if (event->type == GDK_BUTTON_PRESS && event->button == 3)
 				pThis->signalPopup (3, event->time);
 			return FALSE;
+		}
+
+		virtual void ensureVisible (GtkTreePath *path)
+		{
+			GtkIconView *view = GTK_ICON_VIEW (m_widget);
+			gtk_icon_view_scroll_to_path (view, path, FALSE, 0, 0);
 		}
 	};
 
@@ -2146,6 +2174,7 @@ public:
 		gtk_widget_show_all (m_box);
 		m_changes->setContainer (changes_box);
 		packagesSelected (PkgList());
+		gtk_widget_hide (m_details_box);
 	}
 
 	~PackageSelector()
@@ -2166,9 +2195,7 @@ public:
 	{
 		m_details->setPackages (packages);
 		m_control->setPackages (packages);
-		if (packages.empty())
-			gtk_widget_hide (m_details_box);
-		else
+		if (!packages.empty())
 			gtk_widget_show (m_details_box);
 	}
 
