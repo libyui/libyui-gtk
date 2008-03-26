@@ -8,8 +8,8 @@
    it. Package has a set of manipulation methods, the results of which are
    then reported to Pool listeners, which you can choose to act on your
    interface, if you want them reflected on the viewer.
-   Iterate the pool using Pool::Iter. Don't keep it around though, instead use
-   getIndex() and getIter(index).
+   Iterate the pool using Pool::Iter. If you want to keep references to them
+   around for the UI, you probably want to look at paths.
 
    You must register an object that implements Interface, as some transactions
    are bound by user decisions. Ypp is a singleton; first call to get() will

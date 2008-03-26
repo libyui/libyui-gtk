@@ -21,6 +21,7 @@
 #include <zypp/Patch.h>
 #include <zypp/Package.h>
 #include <zypp/Pattern.h>
+#include <zypp/ui/PatternContents.h>
 #include <zypp/Product.h>
 #include <zypp/Repository.h>
 #include <zypp/RepoManager.h>
@@ -480,15 +481,13 @@ bool Ypp::Package::fromCollection (Ypp::Package *collection)
 			ZyppObject object = selectable->theObj();
 			ZyppPattern pattern = tryCastToZyppPattern (object);
 
-#warning should use PatternContent
-#if 0
-			const std::set <std::string> &packages = pattern->install_packages();
+			zypp::ui::PatternContents contents (pattern);
+			const std::set <std::string> &packages = contents.install_packages();
 			for (std::set <std::string>::iterator it = packages.begin();
 			     it != packages.end(); it++) {
 				if (this->impl->zyppSel->name() == *it)
 					return true;
 			}
-#endif
 			break;
 		}
 #if 0
