@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Mar 28 21:28:56 CET 2008 - jpr@suse.de
+
+- don't hide package info/control view once shown (bnc #373474)
+
+-------------------------------------------------------------------
 Tue Mar 25 21:28:56 CET 2008 - coolo@suse.de
 
 - update from SVN to compile with latest libzypp
