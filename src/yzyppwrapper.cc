@@ -517,7 +517,7 @@ bool Ypp::Package::isInstalled()
 	if (impl->type == Ypp::Package::PATCH_TYPE) {
 		if (impl->zyppSel->hasInstalledObj()) {
 			// broken? show as available
-			if (impl->zyppSel->installedPoolItem().status().isIncomplete())
+			if (impl->zyppSel->installedPoolItem().isBroken())
 				return false;
 		}
 	}
@@ -1568,7 +1568,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					if (!patch)
 						continue;
 					if (!(*it)->hasInstalledObj())
-						if (!(*it)->hasCandidateObj() || !(*it)->candidatePoolItem().status().isNeeded())
+						if (!(*it)->hasCandidateObj() || !(*it)->candidatePoolItem().isBroken())
 							continue;
 					category = addCategory (type, patch->category());
 					break;
