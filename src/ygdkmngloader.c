@@ -243,7 +243,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long 
 					if (chunk_size > 1)
 					{
 						// Read TERM chunk data
-						guint8 t;
+						guint8 t = 0;
 						error = !read_uint8 (&data, &t);  // term action
 						if (t == 3 && chunk_size == 2+8)
 						{

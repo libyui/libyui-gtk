@@ -311,7 +311,7 @@ void YGUI::askSaveLogs()
 			char *error = g_strdup_printf (
 				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
 				command.c_str(), ret);
-			y2error (error);
+			y2error ("%s", error);
 			errorMsg (error);
 			g_free (error);
 		}

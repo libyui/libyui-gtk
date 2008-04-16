@@ -2009,9 +2009,9 @@ private:
 
 		GtkWidget *dialog, *view;
 		dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-			GTK_BUTTONS_OK, _("Disk Almost Full !"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+                                                 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+                                                 GTK_BUTTONS_OK, "%s", _("Disk Almost Full !"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
 			_("One of the partitions is reaching its limit of capacity. You may "
 			"have to remove packages if you wish to install some."));
 
@@ -2286,8 +2286,8 @@ protected:
 		dialog = gtk_message_dialog_new
             (YGDialog::currentWindow(),
 			 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-             GTK_BUTTONS_NONE, _("Changes not saved!"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+             GTK_BUTTONS_NONE, "%s", _("Changes not saved!"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
 		                                          _("Quit anyway?"));
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
 		                        GTK_STOCK_QUIT, GTK_RESPONSE_YES, NULL);
@@ -2441,9 +2441,9 @@ protected:
 
 		// interface
 		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-			GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE,
-			_("There are some conflicts on the transaction that must be "
-			  "solved manually."));
+                                                            GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE, "%s",
+                                                            _("There are some conflicts on the transaction that must be "
+                                                              "solved manually."));
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog),
 			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 			GTK_STOCK_APPLY, GTK_RESPONSE_APPLY, NULL);
@@ -2507,10 +2507,10 @@ protected:
 			static void errorMsg (const std::string &header, const std::string &message)
 			{
 				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-					header.c_str(), NULL);
+                                                                            GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                                            "%s", header.c_str());
 				gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
-						                                    message.c_str());
+                                                                            "%s", message.c_str());
 				gtk_dialog_run (GTK_DIALOG (dialog));
 				gtk_widget_destroy (dialog);
 			}
@@ -2565,25 +2565,25 @@ protected:
 				msg += dirname;
 
 				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
-					_("Create Dependency Resolver Test Case"), NULL);
+                                                                            GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
+                                                                            "%s", _("Create Dependency Resolver Test Case"));
 				gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-						                                  msg.c_str());
+                                                                          "%s", msg.c_str());
 				int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 				gtk_widget_destroy (dialog);
 
 				if (ret == GTK_RESPONSE_OK) {
 				    if (Ypp::get()->createSolverTestcase (dirname)) {
 						GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-							GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
-							GTK_BUTTONS_YES_NO, _("Success"), NULL);
+                                                                                            GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
+                                                                                            GTK_BUTTONS_YES_NO, "%s", _("Success"));
 						msg = _("Dependency resolver test case written to");
 						msg += " <tt>";
 						msg += dirname;
 						msg += "</tt>\n";
 						msg += _("Prepare <tt>y2logs.tgz tar</tt> archive to attach to Bugzilla?");
 						gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
-										                            msg.c_str());
+                                                                                            "%s", msg.c_str());
 						ret = gtk_dialog_run (GTK_DIALOG (dialog));
 						gtk_widget_destroy (dialog);
 						if (ret == GTK_RESPONSE_YES)
