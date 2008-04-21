@@ -1,3 +1,15 @@
+2008-04-21  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGSelectionModel.cc (findByText),
+	* src/YGComboBox.cc (setText): stub switching to an existing
+	entry if a setText for an existing item comes in (on a non-editable
+	combo box) - instead of failing. No impl yet.
+	
+	* src/ygtksteps.c (ygtk_steps_get_step_layout): don't return a
+	NULL layout_bold layout.
+	(ygtk_steps_size_request): init w & h to 0 at least in case of NULL
+	layout.
+
 2008-04-16  Michael Meeks  <michael.meeks@novell.com>
 	
 	* src/YGUI.cc, src/YGPackageSelector.cc: fix a few format warnings.

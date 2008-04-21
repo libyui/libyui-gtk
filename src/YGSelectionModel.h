@@ -38,6 +38,7 @@ struct YGSelectionModel
 
 	YItem *getItem (GtkTreeIter *iter);
 	bool getIter (YItem *item, GtkTreeIter *iter);
+    bool findByText (const string &text, GtkTreeIter *iter);
 
 	void addRow (GtkTreeIter *iter, YItem *item, bool honor_select);
 	void setCellLabel (GtkTreeIter *iter, int col, const string &label);

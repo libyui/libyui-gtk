@@ -48,7 +48,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	void unblockEvents()
 	{ g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
 
-	GtkEntry *getEntry()
+	GtkEntry *getEntry ()
 	{
 		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
 			y2error ("YGComboBox: trying to edit read-only combo box");
@@ -73,7 +73,12 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	{
 		IMPL
 		blockEvents();
-		gtk_entry_set_text (getEntry(), value.c_str());
+
+        GtkTreeIter iter;
+        if (findByText (value, &iter))
+            setFocusItem (&iter);
+        else
+            gtk_entry_set_text (getEntry(), value.c_str());
 		unblockEvents();
 	}
 

@@ -178,3 +178,34 @@ void YGSelectionModel::setCellToggle (GtkTreeIter *iter, int col, bool select)
 		gtk_list_store_set (getListStore(), iter, col, select, -1);
 }
 
+/*
+extern "C" {
+    struct FindClosure {
+        const string &text;
+        bool         found;
+        GtkTreeIter *output;
+    };
+    static gboolean find_text (GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer data)
+    {
+		gtk_tree_store_get (getTreeStore(), iter, col, label.c_str(), -1);
+    }
+};
+*/
+
+bool YGSelectionModel::findByText (const string &text, GtkTreeIter *iter)
+{
+    g_return_val_if_fail (!isTree, false);
+
+    return false;
+/*
+    FindClosure cl;
+    cl.text = text;
+    cl.found = false;
+    cl.output = iter;
+    gtk_tree_model_foreach (getModel(), find_text,
+						  GtkTreeModelForeachFunc  func,
+						  gpointer                 user_data);
+
+    gtk_list_store_set (getListStore(), iter, col, label.c_str(), -1);
+*/
+}

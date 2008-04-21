@@ -107,7 +107,7 @@ static PangoLayout *ygtk_steps_get_step_layout (YGtkSteps *steps, guint step_nb)
 		}
 	}
 
-	if (steps->current_step == step_nb)
+	if (steps->current_step == step_nb && step->layout_bold != NULL)
 		return step->layout_bold;
 	return step->layout;
 }
@@ -149,7 +149,7 @@ static void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisit
 		if (!step->is_heading)
 			layout = step->layout_bold;
 
-		int w, h;
+		int w = 0, h = 0;
 		pango_layout_get_pixel_size (layout, &w, &h);
 		w += PANGO_PIXELS (pango_layout_get_indent (layout));
 		h += PANGO_PIXELS (pango_layout_get_spacing (layout)) * 2;
