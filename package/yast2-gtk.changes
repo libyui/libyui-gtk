@@ -1,6 +1,13 @@
 -------------------------------------------------------------------
 Tue Mar 28 21:28:56 CET 2008 - jpr@suse.de
 
+- Fix live installer sizing (bnc #381153)
+- Combo box improvements
+- Minor warning fixes
+
+-------------------------------------------------------------------
+Tue Mar 28 21:28:56 CET 2008 - jpr@suse.de
+
 - don't hide package info/control view once shown (bnc #373474)
 
 -------------------------------------------------------------------
