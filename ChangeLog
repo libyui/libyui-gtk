@@ -1,5 +1,9 @@
 2008-04-21  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGSelectionModel.cc (findByText): implemented.
+
+2008-04-21  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/YGSelectionModel.cc (findByText),
 	* src/YGComboBox.cc (setText): stub switching to an existing
 	entry if a setText for an existing item comes in (on a non-editable
