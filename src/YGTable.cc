@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -96,6 +95,8 @@ public:
 	void setModel()
 	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), getModel()); }
 
+	virtual bool immediateEvent() { return true; }
+
 	// YGSelectionModel
 	virtual void setFocusItem (GtkTreeIter *iter)
 	{
@@ -134,12 +135,10 @@ protected:
 	void blockEvents()
 	{
 		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 	}
 	void unblockEvents()
 	{
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_delayed_cb, this);
 	}
 
 	// toggled by user (through clicking on the renderer or some other action)
@@ -154,21 +153,15 @@ protected:
 		gtk_tree_model_get (getModel(), &iter, column, &state, -1);
 		state = !state;
 		gtk_list_store_set (GTK_LIST_STORE (getModel()), &iter, column, state, -1);
-
-		((YSelectionWidget *) m_ywidget)->selectItem (getItem (&iter), state);
+		getItem (&iter)->setSelected (state);
 		emitEvent (YEvent::ValueChanged);
 	}
 
 	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
 	{
 		IMPL
-		pThis->emitEvent (YEvent::SelectionChanged, true, true);
-	}
-
-	static void selected_delayed_cb (GtkTreeView *tree_view, YGTableView* pThis)
-	{
-		IMPL
-		pThis->emitEvent (YEvent::SelectionChanged, true, true, false);
+		if (pThis->immediateEvent())
+			pThis->emitEvent (YEvent::SelectionChanged, true, true);
 	}
 
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
@@ -216,9 +209,8 @@ public:
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		if (immediateMode())
-			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 		setSortable (true);
 	}
 
@@ -238,7 +230,7 @@ public:
    				setCell (&iter, item->cell (i));
     	}
     	else
-    		y2error ("Can only add YTableItems to a YTable.");
+			yuiError() << "Can only add YTableItems to a YTable.\n";
     	YTable::addItem (_item);
     }
 
@@ -271,6 +263,9 @@ public:
 		g_list_free (columns);
 	}
 
+	virtual bool immediateEvent()
+	{ return immediateMode(); }
+
 	YGWIDGET_IMPL_COMMON
 	YGSELECTION_WIDGET_IMPL_CLEAR (YTable)
 	YGSELECTION_WIDGET_IMPL_SELECT (YTable)
@@ -292,12 +287,8 @@ public:
 	{
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		if (immediateMode())
-			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_cb), (YGTableView*) this);
-		else
-			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -391,6 +382,7 @@ YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent,
 }
 
 #include "YTree.h"
+#include "YTreeItem.h"
 
 class YGTree : public YTree, public YGTableView
 {
@@ -402,12 +394,12 @@ public:
 		gtk_tree_view_set_enable_tree_lines (getView(), TRUE);
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		if (immediateMode())
-			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_cb), (YGTableView*) this);
-		else
-			g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-			                  G_CALLBACK (selected_delayed_cb), (YGTableView*) this);
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		g_signal_connect (G_OBJECT (getWidget()), "row-collapsed",
+		                  G_CALLBACK (row_collapsed_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "row-expanded",
+		                  G_CALLBACK (row_expanded_cb), this);
 	}
 
 	// YTree
@@ -433,6 +425,23 @@ public:
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 		gtk_tree_view_expand_to_path (getView(), path);
 		gtk_tree_path_free (path);
+	}
+
+	// callbacks
+	void setRowOpen (GtkTreeIter *iter, bool open)
+	{
+		YTreeItem *item = static_cast <YTreeItem *> (getItem (iter));
+		item->setOpen (open);
+	}
+	static void row_collapsed_cb (GtkTreeView *view, GtkTreeIter *iter,
+	                              GtkTreePath *path, YGTree *pThis)
+	{
+		pThis->setRowOpen (iter, false);
+	}
+	static void row_expanded_cb (GtkTreeView *view, GtkTreeIter *iter,
+	                             GtkTreePath *path, YGTree *pThis)
+	{
+		pThis->setRowOpen (iter, true);
 	}
 
 	YGWIDGET_IMPL_COMMON

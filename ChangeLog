@@ -1,3 +1,41 @@
+2008-05-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Fixed y2log warnings across the various files: y2error() ->
+	yuiError().
+
+	* src/YGDumbTab.cc: fixed 381195: Query items of DumbTab broken with Gtk.
+
+	* src/YGLayout.cc: set all buttons of same height.
+
+	* src/YGRadioButton.cc: fixed bug 373160: support all radio buttons
+	being disabled.
+
+	* src/YGTable.cc: fixed bug 381746: immediateMode() can now change
+	return on run-time.
+	* src/YGTable.cc: fixed bug 381648: let libyui know when the user
+	expands and collapses rows.
+
+	* src/YGUtils.cc: fixed bug 384135: warning cause of disconnecting a
+	signal when was never connected.
+	* src/YGUtils.cc: fixed bug: scroll YLog text down properly.
+
+	* src/YGWizard.cc: fixed bug 384649: must re-load stock icon when
+	button changes senstitive state.
+
+	* src/ygtkratiobox.c: fixed bug 373159: long windows -- hack for now:
+	let's make use of the new gtk layout stuff when it becomes available.
+
+	* src/ygtkwizard.c: fixed bug: growing wizard headers.
+
+	* src/yzyppwrapper.cc & src/YGPackageSelector.cc: fixed patterns install
+	state, and added popup with info about them like -qt.
+
+	* src/yzyppwrapper.cc & src/ygtkzyppwrapper.cc: added highlighting for
+	exact matches.
+
+	* src/YGPackageSelector.cc: some massage for bug 381689: reduced
+	default size, changed installed version layout button a bit.
+
 2008-04-21  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGSelectionModel.cc (findByText): implemented.

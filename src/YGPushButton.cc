@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YPushButton.h"
 #include "YGUtils.h"
@@ -56,8 +55,8 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
-				y2warning ("YGPushButton: Couldn't load icon image: %s.\n"
-				           "Reason: %s", path.c_str(), error->message);
+				yuiWarning() << "YGPushButton: Couldn't load icon image: " << path << endl
+				             << "Reason: " << error->message << endl;
 		}
 	}
 

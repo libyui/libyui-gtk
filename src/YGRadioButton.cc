@@ -3,13 +3,10 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-#if 0
-//** Older approach:
 // Sub-class GtkRadioButton to get a widget that renders like
 // a radio-button, but behaves like a check/toggle-button.
 static GType getCheckRadioButtonType()
@@ -33,7 +30,6 @@ static GType getCheckRadioButtonType()
 	klass_new->clicked = klass_sane->clicked;
 	return type;
 }
-#endif
 
 #include "YRadioButton.h"
 #include "YRadioButtonGroup.h"
@@ -43,21 +39,16 @@ class YGRadioButton : public YRadioButton, public YGWidget
 public:
 	YGRadioButton (YWidget *parent, const std::string &label, bool isChecked)
 	:  YRadioButton (NULL, label),
-	   YGWidget (this, parent, true, GTK_TYPE_RADIO_BUTTON, NULL)
+	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
 		setBorder (0);
 		setLabel (label);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), FALSE);
 
 		g_signal_connect_after (G_OBJECT (getWidget()), "toggled",
 		                        G_CALLBACK (toggled_cb), this);
-	}
-
-	GSList *setGroup (GSList *group)
-	{
-		gtk_radio_button_set_group (GTK_RADIO_BUTTON (getWidget()), group);
-		return gtk_radio_button_get_group (GTK_RADIO_BUTTON (getWidget()));
 	}
 
 	// YRadioButton
@@ -80,11 +71,13 @@ public:
 	virtual void setValue (bool checked)
 	{
 		IMPL
-		if (checked) {  // can't uncheck a radio button
-			g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
-			g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
+		if (checked) {
+			YRadioButton *yradio = static_cast <YRadioButton *> (m_ywidget);
+			buttonGroup()->uncheckOtherButtons (yradio);
 		}
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -96,6 +89,7 @@ public:
 		IMPL
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			pThis->emitEvent (YEvent::ValueChanged);
+		pThis->setValue (true);
 	}
 };
 
@@ -114,33 +108,13 @@ YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string 
 	return button;
 }
 
-// YRadioButtonGroup
-
 class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
 {
-GSList *group;
-
 public:
 	YGRadioButtonGroup(YWidget *parent)
 	: YRadioButtonGroup (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
-	{
-		group = NULL;
-	}
-
-	virtual void addRadioButton (YRadioButton *_button)
-	{
-		YGRadioButton *button = (YGRadioButton *) YGWidget::get (_button);
-		group = button->setGroup (group);
-		YRadioButtonGroup::addRadioButton (_button);
-	}
-
-	virtual void removeRadioButton (YRadioButton *_button)
-	{
-		YGRadioButton *button = (YGRadioButton *) YGWidget::get (_button);
-		button->setGroup (NULL);
-		YRadioButtonGroup::removeRadioButton (_button);
-	}
+	{}
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)

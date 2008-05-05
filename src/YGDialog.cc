@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include "YGUI.h"
 #include "YGDialog.h"
 #include <gdk/gdkkeysyms.h>
@@ -192,7 +191,7 @@ private:
 		}
 		if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
 		    && (event->state & GDK_MOD1_MASK)) {
-		    y2milestone ("Caught YaST2 magic key combination");
+		    yuiMilestone() << "Caught YaST2 magic key combination\n";
 		    switch (event->keyval) {
 				case GDK_S:
 				    YGUI::ui()->makeScreenShot();
@@ -207,7 +206,7 @@ private:
 				    YGUI::ui()->sendEvent (new YDebugEvent());
 				    return TRUE;
 				case GDK_X:
-				    y2milestone ("Starting xterm");
+				    yuiMilestone() << "Starting xterm\n";
 				    system ("/usr/bin/xterm &");
 				    return TRUE;
 				case GDK_T:

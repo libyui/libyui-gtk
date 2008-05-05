@@ -26,7 +26,7 @@ libpy2gtk_la_SOURCES = \
 	YGPushButton.cc \
 	YGProgressBar.cc \
 	YGInputField.cc \
-	YGMultiLineEdit.cc \
+	YGTextView.cc \
 	YGIntField.cc \
 	YGRadioButton.cc \
 	YGImage.cc \

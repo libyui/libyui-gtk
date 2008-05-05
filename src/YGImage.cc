@@ -4,7 +4,6 @@
 
 #include "ygdkmngloader.h"
 #include <config.h>
-#include <ycp/y2log.h>
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "YImage.h"

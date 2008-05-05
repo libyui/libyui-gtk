@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -79,6 +78,7 @@ public:
 		selectItem (item, item->selected() || !m_last_tab /*first tab*/);
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
+		YDumbTab::addItem (item);
 	}
 
 	virtual void deleteAllItems()
@@ -87,6 +87,7 @@ public:
 		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (getWidget()), (GtkWidget *) i->data);
 		g_list_free (children);
+		YDumbTab::deleteAllItems();
 	}
 
 	// to re-use the same widget in all tabs (m_fixed), we will remove and

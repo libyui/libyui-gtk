@@ -9,6 +9,9 @@
 #include <YSimpleEventHandler.h>
 #include <map>
 
+#define YUILogComponent "gtk"
+#include <YUILog.h>
+
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
 
 /* Comment the following line to disable debug messages */

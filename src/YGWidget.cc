@@ -55,6 +55,7 @@ YGWidget::~YGWidget()
 	IMPL
 	gtk_widget_destroy (m_adj_size);
 	g_object_unref (G_OBJECT (m_adj_size));
+	// remove all children if container?
 }
 
 void YGWidget::show()

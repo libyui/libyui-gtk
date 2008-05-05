@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -51,8 +50,11 @@ class YGWizard : public YWizard, public YGWidget
 		}
 
 		void setEnabled (bool enable) {
-			gtk_widget_set_sensitive (m_widget, enable);
-			YWidget::setEnabled (enable);
+			if (isEnabled() != enable) {
+				gtk_widget_set_sensitive (m_widget, enable);
+				YWidget::setEnabled (enable);
+				setLabel (label());  // re-load stock icon for new state
+			}
 		}
 
 		int preferredWidth() { return 0; }
@@ -94,8 +96,8 @@ public:
 		bool steps_enabled = wizardMode == YWizardMode_Steps;
 		bool tree_enabled  = wizardMode == YWizardMode_Tree;
 		if (steps_enabled && tree_enabled) {
-			y2error ("YGWizard doesn't support both steps and tree enabled at the "
-			         "same time.\nDisabling the steps...");
+			yuiError() << "YGWizard doesn't support both steps and tree enabled at the "
+			         "same time.\nDisabling the steps...\n";
 			steps_enabled = false;
 		}
 		if (steps_enabled)
@@ -151,7 +153,7 @@ public:
 	{
 		if (!ygtk_wizard_set_header_icon (getWizard(), YGDialog::currentWindow(),
 		        icon.c_str()))
-			y2warning ("YGWizard: could not load image: %s", icon.c_str());
+			yuiWarning() << "YGWizard: could not load image: " << icon << endl;
 	}
 
 	virtual void setDialogHeading (const string &heading)
@@ -178,7 +180,7 @@ public:
 	virtual void setCurrentStep (const string &id)
 	{
 		if (!ygtk_wizard_set_current_step (getWizard(), id.c_str()))
-			y2error ("YGWizard: there is no step with id %s.", id.c_str());
+			yuiError() << "YGWizard: there is no step with id " << id << endl;
 	}
 
 	virtual void updateSteps()
@@ -189,14 +191,13 @@ public:
 	{
 		if (!ygtk_wizard_add_tree_item (getWizard(), parentID.c_str(),
 		        text.c_str(), id.c_str()))
-			y2error ("YGWizard: there is no tree item with id '%s'",
-			         parentID.c_str());
+			yuiError() << "YGWizard: there is no tree item with id " << parentID << endl;
 	}
 
 	virtual void selectTreeItem (const string &id)
 	{
 		if (!ygtk_wizard_select_tree_item (getWizard(), id.c_str()))
-			y2error ("YGWizard: there is no tree item with id '%s'", id.c_str());
+			yuiError() << "YGWizard: there is no tree item with id " << id << endl;
 	}
 
 	virtual string currentTreeSelection()
@@ -224,8 +225,7 @@ public:
 		string str = YGUtils::mapKBAccel(text);
 		if (!ygtk_wizard_add_sub_menu (getWizard(), parentID.c_str(), str.c_str(),
 		        id.c_str()))
-			y2error ("YGWizard: there is no menu item with id '%s'",
-			         parentID.c_str());
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
 	}
 
 	virtual void addMenuEntry (const string &parentID, const string &text,
@@ -234,15 +234,13 @@ public:
 		string str = YGUtils::mapKBAccel (text);
 		if (!ygtk_wizard_add_menu_entry (getWizard(), parentID.c_str(),
 			str.c_str(), id.c_str()))
-			y2error ("YGWizard: there is no menu item with id '%s'",
-			         parentID.c_str());
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
 	}
 
 	virtual void addMenuSeparator (const string & parentID)
 	{
 		if (!ygtk_wizard_add_menu_separator (getWizard(), parentID.c_str()))
-			y2error ("YGWizard: there is no menu item with id '%s'",
-			         parentID.c_str());
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
 	}
 
 	virtual void deleteMenus()

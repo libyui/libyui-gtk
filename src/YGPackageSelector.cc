@@ -4,11 +4,7 @@
 
 #include <config.h>
 #include <string.h>
-
-#define YUILogComponent "gtk-pkg"
-
 #include "YGUI.h"
-#include "YUILog.h"
 #include "YGUtils.h"
 #include "YGi18n.h"
 #include "YGDialog.h"
@@ -378,7 +374,7 @@ Listener *m_listener;
 	struct ListView : public View
 	{
 		bool m_isTree;
-		ListView (bool isTree, PackagesView *parent)
+		ListView (bool isTree, bool showTooltips, PackagesView *parent)
 		: View (parent), m_isTree (isTree)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
@@ -418,6 +414,8 @@ Listener *m_listener;
 			                  G_CALLBACK (popup_button_cb), this);
 			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
 			                        G_CALLBACK (size_allocated_cb), this);
+			if (showTooltips)
+				gtk_tree_view_set_tooltip_column (view, YGtkZyppModel::PATTERN_DESCRIPTION_COLUMN);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -480,6 +478,30 @@ Listener *m_listener;
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
 			gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
 		}
+
+#if 0
+			static gboolean query_tooltip_cb (GtkWidget *view, gint x, gint y,
+				gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
+			{
+				GtkTreeModel *model;
+				GtkTreePath *path;
+				GtkTreeIter iter;
+				if (gtk_tree_view_get_tooltip_context (GTK_TREE_VIEW (view),
+				        &x, &y, keyboard_mode, &model, &path, &iter)) {
+					gchar *tooltip_str;
+					gtk_tree_model_get (model, &iter, TOOLTIP_TEXT_COL,
+					                    &tooltip_str, -1);
+					gtk_tree_view_set_tooltip_row (GTK_TREE_VIEW (view), tooltip, path);
+					gtk_tree_path_free (path);
+					if (tooltip_str) {
+						gtk_tooltip_set_text (tooltip, tooltip_str);
+						g_free (tooltip_str);
+						return TRUE;
+					}
+				}
+				return FALSE;
+			}
+#endif
 	};
 	struct IconView : public View
 	{
@@ -590,7 +612,7 @@ public:
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
 		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, this);
+			m_view = new ListView (m_isTree, m_isTree, this);
 		else
 			m_view = new IconView (this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
@@ -1449,8 +1471,11 @@ Filters *m_filters;  // used to filter repo versions...
 	PackageControl (Filters *filters)
 	: m_filters (filters)
 	{
+		GtkWidget *box;
+
 		// installed
-		m_remove_button = createButton (_("_Remove"), GTK_STOCK_DELETE);
+		m_remove_button = createButton (NULL, GTK_STOCK_DELETE);
+		gtk_widget_set_tooltip_text (m_remove_button, _("Remove"));
 		g_signal_connect (G_OBJECT (m_remove_button), "clicked",
 		                  G_CALLBACK (remove_clicked_cb), this);
 
@@ -1458,11 +1483,16 @@ Filters *m_filters;  // used to filter repo versions...
 		gtk_label_set_selectable (GTK_LABEL (m_installed_version), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (m_installed_version), 0, 0.5);
 
-		m_installed_box = gtk_vbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (m_installed_box), createBoldLabel (_("Installed:")),
+		box = gtk_vbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (box), createBoldLabel (_("Installed:")),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_installed_box), m_installed_version, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_installed_box), m_remove_button, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), m_installed_version, FALSE, TRUE, 0);
+
+		m_installed_box = gtk_hbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (m_installed_box), box, TRUE, TRUE, 0);
+		box = gtk_alignment_new (0, 1, 0, 0);
+		gtk_container_add (GTK_CONTAINER (box), m_remove_button);
+		gtk_box_pack_start (GTK_BOX (m_installed_box), box, FALSE, TRUE, 0);
 
 		// available
 		m_install_button = createButton ("", GTK_STOCK_SAVE);
@@ -1683,10 +1713,16 @@ private:
 	static GtkWidget *createButton (const char *label_str, const gchar *stock_id)
 	{
 		GtkWidget *button, *image;
-		button = gtk_button_new_with_mnemonic (label_str);
+		if (label_str)
+			button = gtk_button_new_with_mnemonic (label_str);
+		else
+			button = gtk_button_new();
 		if (stock_id) {
 			image = gtk_image_new_from_stock (stock_id, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (button), image);
+			if (label_str)
+				gtk_button_set_image (GTK_BUTTON (button), image);
+			else
+				gtk_container_add (GTK_CONTAINER (button), image);
 		}
 		return button;
 	}
@@ -2222,8 +2258,8 @@ public:
 
         GtkWindow *window = YGDialog::currentWindow();
 		gtk_window_resize (window,
-			MAX (700, GTK_WIDGET (window)->allocation.width),
-			MAX (680, GTK_WIDGET (window)->allocation.height));
+			MAX (650, GTK_WIDGET (window)->allocation.width),
+			MAX (600, GTK_WIDGET (window)->allocation.height));
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard, window,
@@ -2303,14 +2339,14 @@ protected:
 
 	virtual bool acceptLicense (Ypp::Package *package, const std::string &license)
 	{
-		std::string title = package->name() + _(" License Agreement");
-		GtkWidget *dialog = gtk_dialog_new_with_buttons (title.c_str(),
-			YGDialog::currentWindow(), GTK_DIALOG_NO_SEPARATOR,
-			_("_Reject"), GTK_RESPONSE_REJECT, _("_Accept"), GTK_RESPONSE_ACCEPT, NULL);
-        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_ACCEPT);
+		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+			(GtkDialogFlags) 0, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
+			"%s %s", package->name().c_str(), _("License Agreement"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+			"%s", _("Do you accept the terms of this license?"));
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
 
 		GtkWidget *license_view, *license_window;
-
 		license_view = ygtk_html_wrap_new();
 		ygtk_html_wrap_set_text (license_view, license.c_str(), FALSE);
 
@@ -2324,11 +2360,12 @@ protected:
 		GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
 		gtk_box_pack_start (vbox, license_window, TRUE, TRUE, 6);
 
-		gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 400);
+		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 450);
 		gtk_widget_show_all (dialog);
 
 		gint ret = gtk_dialog_run (GTK_DIALOG (dialog));
-		bool confirmed = (ret == GTK_RESPONSE_ACCEPT);
+		bool confirmed = (ret == GTK_RESPONSE_YES);
 
 		gtk_widget_destroy (dialog);
 		return confirmed;
@@ -2383,34 +2420,11 @@ protected:
 				solution_toggled (model, path);
 				gtk_tree_path_free (path);
 			}
-#if 0
-			static gboolean query_tooltip_cb (GtkWidget *view, gint x, gint y,
-				gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
-			{
-				GtkTreeModel *model;
-				GtkTreePath *path;
-				GtkTreeIter iter;
-				if (gtk_tree_view_get_tooltip_context (GTK_TREE_VIEW (view),
-				        &x, &y, keyboard_mode, &model, &path, &iter)) {
-					gchar *tooltip_str;
-					gtk_tree_model_get (model, &iter, TOOLTIP_TEXT_COL,
-					                    &tooltip_str, -1);
-					gtk_tree_view_set_tooltip_row (GTK_TREE_VIEW (view), tooltip, path);
-					gtk_tree_path_free (path);
-					if (tooltip_str) {
-						gtk_tooltip_set_text (tooltip, tooltip_str);
-						g_free (tooltip_str);
-						return TRUE;
-					}
-				}
-				return FALSE;
-			}
-#endif
 		};
 
 		// model
 		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-			G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_BOOLEAN, G_TYPE_UINT, G_TYPE_POINTER);
+			G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_POINTER);
 		for (std::list <Ypp::Problem *>::iterator it = problems.begin();
 		     it != problems.end(); it++) {
 			GtkTreeIter problem_iter;

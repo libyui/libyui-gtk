@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YComboBox.h"
@@ -51,7 +50,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	GtkEntry *getEntry ()
 	{
 		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
-			y2error ("YGComboBox: trying to edit read-only combo box");
+			yuiError() << "YGComboBox: trying to edit read-only combo box\n";
 			return NULL;
 		}
 

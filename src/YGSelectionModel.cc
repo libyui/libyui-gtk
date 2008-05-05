@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include <gtk/gtk.h>
 #include <YTreeItem.h>
 #include "YGSelectionModel.h"

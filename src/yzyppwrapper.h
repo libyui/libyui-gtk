@@ -106,6 +106,7 @@ struct Ypp
 
 		virtual std::string getName (Iter it) = 0;
 		virtual Package *get (Iter it) = 0; /* may be NULL */
+		virtual bool highlight (Iter it) = 0;
 
 		struct Listener {
 			virtual void entryInserted (Iter iter, Package *package) = 0;
@@ -153,6 +154,8 @@ struct Ypp
 		virtual std::string getName (Pool::Iter it)
 		{ return get (it)->name(); }
 
+		virtual bool highlight (Pool::Iter it);
+
 		struct Impl;
 		Impl *impl;
 	};
@@ -170,6 +173,7 @@ struct Ypp
 
 		virtual std::string getName (Pool::Iter it);
 		virtual Package *get (Pool::Iter it); /* may be NULL */
+		virtual bool highlight (Pool::Iter it) { return false; }
 
 		struct Impl;
 		Impl *impl;

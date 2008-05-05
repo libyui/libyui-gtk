@@ -3,10 +3,10 @@
  ********************************************************************/
 
 #include <config.h>
+#include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <ycp/y2log.h>
 #include <YEvent.h>
 #include <YMacro.h>
 #include <YCommandLine.h>
@@ -250,17 +250,17 @@ void YGUI::makeScreenShot()
 
 YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 {
-	y2milestone( "Running package selection..." );
+	yuiMilestone() << "Running package selection...\n";
 	YEvent *event = 0;
 
 	try {
 		event = packageSelector->findDialog()->waitForEvent();
 	} catch (const std::exception &e) {
-		y2error ("UI::RunPkgSelection() error: %s", e.what());
-		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
+		yuiError() << "UI::RunPkgSelection() error: " << e.what() << endl;
+		yuiError() << "This is a libzypp problem. Do not file a bug against the UI!\n";
 	} catch (...) {
-		y2error ("UI::RunPkgSelection() error (unspecified)");
-		y2error( "This is a libzypp problem. Do not file a bug against the UI!" );
+		yuiError() << "UI::RunPkgSelection() error (unspecified)\n";
+		yuiError() << "This is a libzypp problem. Do not file a bug against the UI!\n";
 	}
 	return event;
 }
@@ -303,15 +303,15 @@ void YGUI::askSaveLogs()
 	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
 		command += " '" + filename + "'";
-	    y2milestone ("Saving y2logs: %s", command.c_str());
+	    yuiMilestone() << "Saving y2logs: " << command << endl;
 	    int ret = system (command.c_str());
 		if (ret == 0)
-			y2milestone ("y2logs saved to %s", filename.c_str());
+			yuiMilestone() << "y2logs saved to " << filename << endl;
 		else {
 			char *error = g_strdup_printf (
 				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
 				command.c_str(), ret);
-			y2error ("%s", error);
+			yuiError() << error << endl;
 			errorMsg (error);
 			g_free (error);
 		}
@@ -383,12 +383,12 @@ void YGApplication::makeScreenShot (string filename)
 			filename = tmp_name;
 			g_free (tmp_name);
 		}
-		y2debug ("screenshot: %s", filename.c_str());
+		yuiDebug() << "screenshot: " << filename << endl;
 
 		filename = askForFileOrDirectory (
 			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", "Save screenshot to");
 		if (filename.empty()) {  // user dismissed the dialog
-			y2debug ("Save screen shot canceled by user");
+			yuiDebug() << "Save screen shot canceled by user\n";
 			goto makeScreenShot_ret;
 		}
 
@@ -396,9 +396,9 @@ void YGApplication::makeScreenShot (string filename)
 		screenShotNb[baseName] = nb + 1;
 	}
 
-	y2debug ("Saving screen shot to %s", filename.c_str());
+	yuiDebug() << "Saving screen shot to " << filename << endl;
 	if (gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
-		y2error ("Couldn't save screen shot %s", filename.c_str());
+		yuiError() << "Couldn't save screen shot " << filename << endl;
 		if (interactive) {
 			string msg = "Couldn't save screenshot to file " + filename
 			             + " - " + error->message;
@@ -437,9 +437,9 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	string dirname, filename;
 	if (!path.empty()) {
 		if (path[0] != '/')
-			y2warning ("FileDialog: Relative paths are unsupported: '%s'", path.c_str());
+			yuiWarning() << "FileDialog: Relative paths are unsupported: '" << path << "'\n";
 		else if (!g_file_test (path.c_str(), G_FILE_TEST_EXISTS))
-			y2warning ("FileDialog: Path doesn't exist: '%s'", path.c_str());
+			yuiWarning() << "FileDialog: Path doesn't exist: '" << path << "'\n";
 		else if (g_file_test (path.c_str(), G_FILE_TEST_IS_DIR))
 			dirname = path;
 		else {  // its a file

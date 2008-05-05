@@ -232,6 +232,7 @@ static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint col
 			return GDK_TYPE_PIXBUF;
 		case YGtkZyppModel::NAME_COLUMN:
 		case YGtkZyppModel::NAME_DESCRIPTION_COLUMN:
+		case YGtkZyppModel::PATTERN_DESCRIPTION_COLUMN:
 			return G_TYPE_STRING;
 		case YGtkZyppModel::PTR_COLUMN:
 			return G_TYPE_POINTER;
@@ -243,7 +244,8 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
                                        gint column, GValue *value)
 {
 	YGtkZyppModel *zmodel = YGTK_ZYPP_MODEL (model);
-	Ypp::Package *package = zmodel->pool->get (iter->user_data);
+	Ypp::Pool::Iter pool_iter = iter->user_data;
+	Ypp::Package *package = zmodel->pool->get (pool_iter);
 
 	g_value_init (value, ygtk_zypp_model_get_column_type (model, column));
 
@@ -306,12 +308,23 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		}
 		case YGtkZyppModel::NAME_DESCRIPTION_COLUMN:
 		{
+			bool highlight = zmodel->pool->highlight (pool_iter);
 			std::string str = package->name();
+/*			if (highlight)
+				str = "<span color=\"red\">" + str + "</span>";*/
 			std::string summary = package->summary();
 			if (!summary.empty()) {
 				YGUtils::escapeMarkup (summary);
 				str += "\n<small>" + summary + "</small>";
 			}
+			if (highlight)
+				str = "<b>" + str + "</b>";
+			g_value_set_string (value, g_strdup (str.c_str()));
+			break;
+		}
+		case YGtkZyppModel::PATTERN_DESCRIPTION_COLUMN:
+		{
+			std::string str (package->description());
 			g_value_set_string (value, g_strdup (str.c_str()));
 			break;
 		}
@@ -322,8 +335,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			g_value_set_pointer (value, ptr);
 			break;
 		}
-		default:
-			g_warning ("YGtkZyppModel column %d doesn't exist.", column);
+		case YGtkZyppModel::TOTAL_COLUMNS:
 			break;
 	}
 }

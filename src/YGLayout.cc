@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -11,6 +10,8 @@
 #include "YLayoutBox.h"
 #include "ygtkratiobox.h"
 #include "YSpacing.h"
+#include "YPushButton.h"
+#include "YMenuButton.h"
 
 // GtkBox-like container (actually, more like our YGtkRatioBox)
 class YGLayoutBox : public YLayoutBox, public YGWidget
@@ -18,7 +19,7 @@ class YGLayoutBox : public YLayoutBox, public YGWidget
 	// This group is meant to set all YGLabeledWidget with horizontal label
 	// to share the same width (if they belong to the same YSplit), so they
 	// look right
-	GtkSizeGroup *m_labels_group;
+	GtkSizeGroup *m_labels_group, *m_buttons_group;
 
 public:
 	YGLayoutBox (YWidget *parent, YUIDimension dim)
@@ -27,13 +28,15 @@ public:
 	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		setBorder (0);
-		m_labels_group = NULL;
+		m_labels_group = m_buttons_group = NULL;
 	}
 
 	~YGLayoutBox()
 	{
 		if (m_labels_group)
 			g_object_unref (G_OBJECT (m_labels_group));
+		if (m_buttons_group)
+			g_object_unref (G_OBJECT (m_buttons_group));
 	}
 
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
@@ -65,6 +68,20 @@ public:
 
 		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->stretchable (dim),
 			isLayoutStretch (ychild, dim), ychild->weight (dim), horiz_fill, vert_fill, 0);
+
+		// set all buttons to same height -- cause of stock icons...
+		if (dim == YD_HORIZ) {
+			bool isButton = false;
+			if (dynamic_cast <YPushButton *> (ychild))
+				isButton = true;
+			else if (dynamic_cast <YMenuButton *> (ychild))
+				isButton = true;
+			if (isButton) {
+				if (!m_buttons_group)
+					m_buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
+				gtk_size_group_add_widget (m_buttons_group, child->getWidget());
+			}
+		}
 
 		// align horizontal widget labels to the same width
 		// we do some work here, since they may be placed inside a HBox or something...

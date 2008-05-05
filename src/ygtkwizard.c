@@ -24,14 +24,17 @@ extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                    double scale);
 extern void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 
-static void label_style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
+static void set_label_header_cb (GtkWidget *label, GtkStyle *prev_style, gpointer psize)
 {
-	static gboolean safeguard = FALSE;
-	if (safeguard) return;
-	safeguard = TRUE;
-	gtk_widget_modify_fg (widget, GTK_STATE_NORMAL, &widget->style->fg [GTK_STATE_SELECTED]);
-	ygutils_setWidgetFont (widget, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_LARGE);
-	safeguard = FALSE;
+	if (prev_style) return;
+	double size = psize == 0 ? PANGO_SCALE_LARGE : PANGO_SCALE_XX_LARGE;
+	gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &label->style->fg [GTK_STATE_SELECTED]);
+	ygutils_setWidgetFont (label, PANGO_WEIGHT_ULTRABOLD, size);
+}
+static void set_label_header (GtkWidget *label, int size)
+{
+	g_signal_connect (G_OBJECT (label), "style-set",
+	                  G_CALLBACK (set_label_header_cb), GINT_TO_POINTER (size));
 }
 
 //** YGtkHelpDialog
@@ -84,8 +87,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	dialog->title_image = gtk_image_new_from_stock (GTK_STOCK_HELP,
 	                                   GTK_ICON_SIZE_LARGE_TOOLBAR);
 	dialog->title_label = gtk_label_new ("Help");
-	g_signal_connect (G_OBJECT (dialog->title_label), "style-set",
-	                  G_CALLBACK (label_style_set_cb), NULL);
+	set_label_header (dialog->title_label, 0);
 	gtk_box_pack_start (GTK_BOX (dialog->title_box), dialog->title_image,
 	                    FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (dialog->title_box), dialog->title_label,
@@ -327,17 +329,9 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	wizard->m_title_image = gtk_image_new();
 	wizard->m_title_label = gtk_label_new("");
-	g_signal_connect (G_OBJECT (wizard->m_title_label), "style-set",
-	                  G_CALLBACK (label_style_set_cb), NULL);
 	gtk_label_set_ellipsize (GTK_LABEL (wizard->m_title_label), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (wizard->m_title_label), 0, 0.5);
-
-	// setup label look
-	gtk_widget_modify_fg (wizard->m_title_label, GTK_STATE_NORMAL,
-	                      &wizard->m_title_label->style->fg [GTK_STATE_SELECTED]);
-	// set a strong font to the heading label
-	ygutils_setWidgetFont (wizard->m_title_label, PANGO_WEIGHT_ULTRABOLD,
-	                       PANGO_SCALE_XX_LARGE);
+	set_label_header (wizard->m_title_label, 1);
 
 	gtk_box_pack_start (GTK_BOX (wizard->m_title), wizard->m_title_label,
 	                    TRUE, TRUE, 0);

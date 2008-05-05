@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
+#include <string.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 
@@ -50,15 +50,19 @@ void YGUtils::setFilter (GtkEntry *entry, const string &validChars)
 		}
 	};
 
+	if (g_object_get_data (G_OBJECT (entry), "insert-text-set"))
+		g_object_disconnect (G_OBJECT (entry), "insert-text",
+		                     G_CALLBACK (inner::insert_text_cb), NULL);
+
 	if (!validChars.empty()) {
 		gchar *chars = g_strdup (validChars.c_str());
 		g_object_set_data_full (G_OBJECT (entry), "valid-chars", chars, g_free);
 		g_signal_connect (G_OBJECT (entry), "insert-text",
 		                  G_CALLBACK (inner::insert_text_cb), NULL);
+		g_object_set_data (G_OBJECT (entry), "insert-text-set", GINT_TO_POINTER (1));
 	}
 	else
-		g_object_disconnect (G_OBJECT (entry), "insert-text",
-		                     G_CALLBACK (inner::insert_text_cb), NULL);
+		g_object_set_data (G_OBJECT (entry), "insert-text-set", GINT_TO_POINTER (0));
 }
 
 void ygutils_setFilter (GtkEntry *entry, const char *validChars)
@@ -93,9 +97,17 @@ void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 		gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
 }
 
-void YGUtils::scrollWidget (GtkTextView *text_view, bool top)
+void YGUtils::scrollWidget (GtkTextView *view, bool top)
 {
-	scrollWidget (text_view->vadjustment, top);
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+	GtkTextIter iter;
+	gtk_text_buffer_get_end_iter (buffer, &iter);
+	GtkTextMark *mark = gtk_text_buffer_get_mark (buffer, "scroll");
+	if (mark)
+		gtk_text_buffer_move_mark (buffer, mark, &iter);
+	else
+		mark = gtk_text_buffer_create_mark (buffer, "scroll", &iter, FALSE);
+	gtk_text_view_scroll_mark_onscreen (view, mark);
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)
@@ -403,7 +415,6 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale
 {
 	PangoFontDescription *font_desc = widget->style->font_desc;
 	int size = pango_font_description_get_size (font_desc);
-
 	PangoFontDescription* font = pango_font_description_new();
 	pango_font_description_set_weight (font, weight);
 	pango_font_description_set_size   (font, (int)(size * scale));
@@ -441,8 +452,8 @@ GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 		GError *error = 0;
 		pixbuf = gdk_pixbuf_new_from_file (filename.c_str(), &error);
 		if (!pixbuf)
-			y2warning ("Could not load icon: %s.\nReason: %s\n",
-				filename.c_str(), error->message);
+			yuiWarning() << "Could not load icon: " << filename << "\n"
+			                "Reason: " << error->message << "\n";
 	}
 	return pixbuf;
 }
@@ -459,6 +470,7 @@ static const StockMap stockMap[] = {
 	{"Apply",     GTK_STOCK_APPLY       },
 	{"Back",      GTK_STOCK_GO_BACK     },
 	{"Cancel",    GTK_STOCK_CANCEL      },
+	{"Close",     GTK_STOCK_CLOSE       },
 	{"Configure", GTK_STOCK_PREFERENCES },
 	{"Continue",  GTK_STOCK_OK          },
 	{"Delete",    GTK_STOCK_DELETE      },

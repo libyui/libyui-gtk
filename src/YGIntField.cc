@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include <ycp/y2log.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"

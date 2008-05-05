@@ -164,6 +164,12 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 		requisition->width = secondary_req;
 		requisition->height = primary_req;
 	}
+
+	// hack for bug #373159 -- we'll want to use the new layout stuff to
+	// get nice window default sizes, and eliminate the minSize hacks
+	#define MAX_SIZE 400
+	requisition->width = MIN (MAX_SIZE, requisition->width);
+	requisition->height = MIN (MAX_SIZE, requisition->height);
 }
 
 static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
