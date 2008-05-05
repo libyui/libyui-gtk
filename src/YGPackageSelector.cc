@@ -1272,7 +1272,7 @@ private:
 	Listener *m_listener;
 	guint timeout_id;
 	int m_selectedType;
-	bool m_updateMode;
+	bool m_updateMode, m_enableRepoMgr;
 
 public:
 	GtkWidget *getCollectionWidget() { return m_collection->getWidget(); }
@@ -1281,11 +1281,12 @@ public:
 	GtkWidget *getReposWidget()      { return m_repos; }
 	GtkWidget *getTypeWidget()       { return m_type; }
 
-	Filters (bool update_mode)
-	: m_listener (NULL), timeout_id (0), m_selectedType (-1), m_updateMode (update_mode)
+	Filters (bool updateMode, bool enableRepoMgr)
+	: m_listener (NULL), timeout_id (0), m_selectedType (-1),
+	  m_updateMode (updateMode), m_enableRepoMgr (enableRepoMgr)
 	{
 		m_collection = new Collections (this);
-		m_statuses = new StatusButtons (this, update_mode);
+		m_statuses = new StatusButtons (this, updateMode);
 
 		m_name = ygtk_find_entry_new();
 		gtk_widget_set_tooltip_markup (m_name,
@@ -1316,12 +1317,15 @@ public:
 		for (int i = 0; Ypp::get()->getRepository (i); i++) {
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
 			gtk_list_store_append (store, &iter);
-			gtk_list_store_set (store, &iter, 0, repo->name.c_str(), 1, FALSE, -1);
+			std::string str = "  " + repo->name;
+			gtk_list_store_set (store, &iter, 0, str.c_str(), 1, FALSE, -1);
 		}
-		gtk_list_store_append (store, &iter);
-		gtk_list_store_set (store, &iter, 0, "-", 1, TRUE, -1);
-		gtk_list_store_append (store, &iter);
-		gtk_list_store_set (store, &iter, 0, _("Add or Remove..."), 1, FALSE, -1);
+		if (enableRepoMgr) {
+			gtk_list_store_append (store, &iter);
+			gtk_list_store_set (store, &iter, 0, "-", 1, TRUE, -1);
+			gtk_list_store_append (store, &iter);
+			gtk_list_store_set (store, &iter, 0, _("Add or Remove..."), 1, FALSE, -1);
+		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
 		gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (m_repos),
 			is_combo_entry_separator_cb, this, NULL);
@@ -1329,7 +1333,7 @@ public:
 		                        G_CALLBACK (combo_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
-		if (update_mode)
+		if (updateMode)
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
@@ -1355,11 +1359,13 @@ public:
 		GtkComboBox *combo = GTK_COMBO_BOX (m_repos);
 		int repo = gtk_combo_box_get_active (combo);
 
-		GtkTreeModel *model = gtk_combo_box_get_model (combo);
-		int setup_id = gtk_tree_model_iter_n_children (model, NULL);
-		if (repo == setup_id-1) {
-			YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr"));
-			repo = 0;
+		if (m_enableRepoMgr) {
+			GtkTreeModel *model = gtk_combo_box_get_model (combo);
+			int setup_id = gtk_tree_model_iter_n_children (model, NULL);
+			if (repo == setup_id-1) {
+				YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr"));
+				repo = 0;
+			}
 		}
 
 		return repo-1;
@@ -2156,14 +2162,14 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	PackageSelector (bool update_mode)
+	PackageSelector (bool updateMode, bool enableRepoMgr)
 	{
 		m_packages = new PackagesView (false);
-		m_filters = new Filters (update_mode);
+		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
-		m_details = new PackageDetails (update_mode);
+		m_details = new PackageDetails (updateMode);
 		m_disk = new DiskView();
-		m_changes = new ChangesPane (update_mode);
+		m_changes = new ChangesPane (updateMode);
 		m_packages->setListener (this);
 		m_filters->setListener (this);
 
@@ -2282,7 +2288,7 @@ public:
         YGDialog *dialog = YGDialog::currentDialog();
         dialog->setCloseCallback (confirm_cb, this);
 
-		m_package_selector = new PackageSelector (onlineUpdateMode());
+		m_package_selector = new PackageSelector (onlineUpdateMode(), repoMgrEnabled());
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 
 		Ypp::get()->setInterface (this);

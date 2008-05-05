@@ -36,6 +36,10 @@
 	* src/YGPackageSelector.cc: some massage for bug 381689: reduced
 	default size, changed installed version layout button a bit.
 
+	* src/YGPackageSelector.cc: feature request 381956: supported
+	repoMgrEnabled() flag, to avoid having the "add/remove" entry
+	on install.
+
 2008-04-21  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGSelectionModel.cc (findByText): implemented.
