@@ -1,3 +1,13 @@
+2008-05-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc (YGTree): fixed bug 381648 - 2nd issue - `open was not
+	working at start -- it seems GtkTreeView changes the collapse/expand
+	state when changing row properties. Also blocked item->setOpen() being
+	called at start.
+
+	* src/YGTable.cc: request bug 387114: don't grab focus when a ycp
+	program sets a row selected in a table-widget.
+
 2008-05-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Fixed y2log warnings across the various files: y2error() ->

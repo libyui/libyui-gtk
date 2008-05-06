@@ -110,7 +110,6 @@ public:
 		gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
 		gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
 		gtk_tree_path_free (path);
-		gtk_widget_grab_focus (getWidget());
 		unblockEvents();
 	}
 
@@ -422,9 +421,13 @@ public:
 	// YGSelectionModel
 	virtual void expand (GtkTreeIter *iter)
 	{
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) row_expanded_cb, this);
+
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 		gtk_tree_view_expand_to_path (getView(), path);
 		gtk_tree_path_free (path);
+
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) row_expanded_cb, this);
 	}
 
 	// callbacks

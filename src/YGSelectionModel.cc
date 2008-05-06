@@ -61,6 +61,10 @@ void YGSelectionModel::doAddItem (YItem *item)
 		doAddItem (*it);
 	if (empty || item->selected())
 		setFocusItem (&iter);
+
+	YTreeItem *tree_item = dynamic_cast <YTreeItem *> (item);
+	if (tree_item && tree_item->isOpen())
+		expand (&iter);
 }
 
 void YGSelectionModel::doDeleteAllItems()
@@ -135,10 +139,6 @@ void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select
 			gtk_tree_store_append (store, iter, NULL);
 		gtk_tree_store_set (store, iter, getPtrCol(), item, -1);
 		inner::setItemData (getModel(), iter, item);
-
-		YTreeItem *tree_item = dynamic_cast <YTreeItem *> (item);
-		if (tree_item && tree_item->isOpen())
-			expand (iter);
 	}
 	else {
 		GtkListStore *store = getListStore();
