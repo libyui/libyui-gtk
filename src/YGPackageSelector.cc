@@ -1616,12 +1616,12 @@ Filters *m_filters;  // used to filter repo versions...
 			if (packages.upgradable()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(upgrades)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-//				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
+				setInstallButtonIcon (GTK_STOCK_GO_UP, _("Upgrade"));
 			}
 			else if (packages.notInstalled()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(several)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-//				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
+				setInstallButtonIcon (GTK_STOCK_SAVE, _("Install"));
 			}
 			else
 				gtk_widget_hide (m_available_box);
@@ -1697,6 +1697,13 @@ private:
 	}
 #endif
 
+	void setInstallButtonIcon (const char *stock_icon, const char *tooltip)
+	{
+		GtkWidget *icon = gtk_bin_get_child (GTK_BIN (m_install_button));
+		gtk_image_set_from_stock (GTK_IMAGE (icon), stock_icon, GTK_ICON_SIZE_BUTTON);
+		gtk_widget_set_tooltip_text (m_install_button, tooltip);
+	}
+
 	static void version_changed_cb (GtkComboBox *combo, PackageControl *pThis)
 	{
 		if (pThis->m_packages.single()) {
@@ -1723,10 +1730,7 @@ private:
 					stock = GTK_STOCK_GO_DOWN;
 				}
 			}
-			GtkWidget *button = pThis->m_install_button, *icon;
-			icon = gtk_bin_get_child (GTK_BIN (button));
-			gtk_image_set_from_stock (GTK_IMAGE (icon), stock, GTK_ICON_SIZE_BUTTON);
-			gtk_widget_set_tooltip_text (button, tooltip);
+			pThis->setInstallButtonIcon (stock, tooltip);
 		}
 	}
 
