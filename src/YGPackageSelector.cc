@@ -958,7 +958,6 @@ private:
 					                             GTK_SHADOW_IN);
 			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
 					                        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-			gtk_widget_set_size_request (m_scroll, -1, 200);
 			gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
 
 			build (type);
@@ -1310,7 +1309,7 @@ public:
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (m_repos), renderer,
 			"markup", 0, NULL);
 		g_object_set (G_OBJECT (renderer), "width-chars", 25,
-		              "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+		              "ellipsize", PANGO_ELLIPSIZE_MIDDLE, NULL);
 		GtkTreeIter iter;
 		gtk_list_store_append (store, &iter);
 		gtk_list_store_set (store, &iter, 0, _("All Repositories"), 1, FALSE, -1);
@@ -1501,10 +1500,9 @@ Filters *m_filters;  // used to filter repo versions...
 		gtk_box_pack_start (GTK_BOX (m_installed_box), box, FALSE, TRUE, 0);
 
 		// available
-		m_install_button = createButton ("", GTK_STOCK_SAVE);
+		m_install_button = createButton (NULL, GTK_STOCK_SAVE);
 		g_signal_connect (G_OBJECT (m_install_button), "clicked",
 		                  G_CALLBACK (install_clicked_cb), this);
-
 		m_available_versions = gtk_combo_box_new();
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (m_available_versions),
@@ -1517,12 +1515,18 @@ Filters *m_filters;  // used to filter repo versions...
 		g_signal_connect (G_OBJECT (m_available_versions), "changed",
 		                  G_CALLBACK (version_changed_cb), this);
 
-		m_available_box = gtk_vbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (m_available_box), createBoldLabel (_("Available:")),
+		box = gtk_vbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (box), createBoldLabel (_("Available:")),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_available_box), m_available_versions, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_available_box), m_install_button, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), m_available_versions, FALSE, TRUE, 0);
 
+		m_available_box = gtk_hbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (m_available_box), box, TRUE, TRUE, 0);
+		box = gtk_alignment_new (0, 1, 0, 0);
+		gtk_container_add (GTK_CONTAINER (box), m_install_button);
+		gtk_box_pack_start (GTK_BOX (m_available_box), box, FALSE, TRUE, 0);
+
+		// final box
 		m_widget = gtk_vbox_new (FALSE, 12);
 		gtk_box_pack_start (GTK_BOX (m_widget), m_installed_box, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), m_available_box, FALSE, TRUE, 0);
@@ -1596,7 +1600,9 @@ Filters *m_filters;  // used to filter repo versions...
 					if (selectedRepo >= 0 && version->repo != selectedRepo)
 						continue;
 					string text = version->number + "\n";
-					text += "<i>" + Ypp::get()->getRepository (version->repo)->name + "</i>";
+					string repo (Ypp::get()->getRepository (version->repo)->name);
+					repo = YGUtils::truncate (repo, 25);
+					text += "<i>" + repo + "</i>";
 					GtkTreeIter iter;
 					gtk_list_store_append (GTK_LIST_STORE (model), &iter);
 					gtk_list_store_set (GTK_LIST_STORE (model), &iter, 0, text.c_str(), -1);
@@ -1610,12 +1616,12 @@ Filters *m_filters;  // used to filter repo versions...
 			if (packages.upgradable()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(upgrades)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
+//				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
 			}
 			else if (packages.notInstalled()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(several)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
+//				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
 			}
 			else
 				gtk_widget_hide (m_available_box);
@@ -1702,16 +1708,25 @@ private:
 			version = package->getAvailableVersion (nb);
 			assert (version != NULL);
 
-			const char *installLabel = _("Install");
+			const char *tooltip = _("Install"), *stock = GTK_STOCK_SAVE;
 			if (package->isInstalled()) {
-				if (version->cmp > 0)
-					installLabel = _("Upgrade");
-				else if (version->cmp == 0)
-					installLabel = _("Re-install");
-				else //if (version->cmp < 0)
-					installLabel = _("Downgrade");
+				if (version->cmp > 0) {
+					tooltip = _("Upgrade");
+					stock = GTK_STOCK_GO_UP;
+				}
+				else if (version->cmp == 0) {
+					tooltip = _("Re-install");
+					stock = GTK_STOCK_REFRESH;
+				}
+				else {  //if (version->cmp < 0)
+					tooltip = _("Downgrade");
+					stock = GTK_STOCK_GO_DOWN;
+				}
 			}
-			gtk_button_set_label (GTK_BUTTON (pThis->m_install_button), installLabel);
+			GtkWidget *button = pThis->m_install_button, *icon;
+			icon = gtk_bin_get_child (GTK_BIN (button));
+			gtk_image_set_from_stock (GTK_IMAGE (icon), stock, GTK_ICON_SIZE_BUTTON);
+			gtk_widget_set_tooltip_text (button, tooltip);
 		}
 	}
 

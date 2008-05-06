@@ -8,6 +8,9 @@
 	* src/YGTable.cc: request bug 387114: don't grab focus when a ycp
 	program sets a row selected in a table-widget.
 
+	* src/YGPackageSelector.cc (PackageControl): massaged it a little more
+	for bug 381689, so it fits 800x600.
+
 2008-05-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Fixed y2log warnings across the various files: y2error() ->
