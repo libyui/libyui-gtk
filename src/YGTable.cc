@@ -421,13 +421,9 @@ public:
 	// YGSelectionModel
 	virtual void expand (GtkTreeIter *iter)
 	{
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) row_expanded_cb, this);
-
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 		gtk_tree_view_expand_to_path (getView(), path);
 		gtk_tree_path_free (path);
-
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) row_expanded_cb, this);
 	}
 
 	// callbacks
@@ -445,6 +441,20 @@ public:
 	                             GtkTreePath *path, YGTree *pThis)
 	{
 		pThis->setRowOpen (iter, true);
+
+		// we do a bit of a work-around here to mimic -qt behavior... A node can
+		// be initialized as open, yet its parent, or some grand-parent, be closed.
+		// We thus honor the open state when its parent gets open.
+		YTreeItem *item = static_cast <YTreeItem *> (pThis->getItem (iter));
+		for (YItemConstIterator it = item->childrenBegin();
+		     it != item->childrenEnd(); it++) {
+			const YTreeItem *child = static_cast <YTreeItem *> (*it);
+			if (child->isOpen()) {
+				GtkTreeIter iter;
+				if (pThis->getIter (child, &iter))
+					pThis->expand (&iter);
+			}
+		}
 	}
 
 	YGWIDGET_IMPL_COMMON

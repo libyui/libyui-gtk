@@ -11,6 +11,9 @@
 	* src/YGPackageSelector.cc (PackageControl): massaged it a little more
 	for bug 381689, so it fits 800x600.
 
+	* src/YGTable.cc (YGTree): fixed bug 381648 - 3rd issue - make
+	`open state behaving mimic that of -qt.
+
 2008-05-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Fixed y2log warnings across the various files: y2error() ->

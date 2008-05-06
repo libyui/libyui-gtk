@@ -63,8 +63,15 @@ void YGSelectionModel::doAddItem (YItem *item)
 		setFocusItem (&iter);
 
 	YTreeItem *tree_item = dynamic_cast <YTreeItem *> (item);
-	if (tree_item && tree_item->isOpen())
-		expand (&iter);
+	if (tree_item && tree_item->isOpen()) {
+		// only expand if all parent's are expand too
+		YTreeItem *i;
+		for (i = tree_item->parent(); i; i = i->parent())
+			if (!i->isOpen())
+				break;
+		if (!i)
+			expand (&iter);
+	}
 }
 
 void YGSelectionModel::doDeleteAllItems()
@@ -82,7 +89,7 @@ YItem *YGSelectionModel::getItem (GtkTreeIter *iter)
 	return (YItem *) ptr;
 }
 
-bool YGSelectionModel::getIter (YItem *item, GtkTreeIter *iter)
+bool YGSelectionModel::getIter (const YItem *item, GtkTreeIter *iter)
 {
 	if (!item)
 		return false;

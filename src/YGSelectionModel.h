@@ -37,7 +37,7 @@ struct YGSelectionModel
 	virtual void expand (GtkTreeIter *iter) {}
 
 	YItem *getItem (GtkTreeIter *iter);
-	bool getIter (YItem *item, GtkTreeIter *iter);
+	bool getIter (const YItem *item, GtkTreeIter *iter);
     bool findByText (const string &text, GtkTreeIter *iter);
 
 	void addRow (GtkTreeIter *iter, YItem *item, bool honor_select);
