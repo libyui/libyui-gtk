@@ -16,7 +16,7 @@ Mon May 7 20:13:49 CEST 2008 - jpr@suse.de
 * fix patterns installstate, and added popup with info about them
   like -qt.
 * added highlighting for exact package matches
-* add suppor tfor repoMgrEnabled bnc #381956
+* add support for repoMgrEnabled bnc #381956
 
 -------------------------------------------------------------------
 Mon Apr 21 20:13:49 CEST 2008 - jpr@suse.de
