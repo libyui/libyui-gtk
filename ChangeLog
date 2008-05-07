@@ -1,3 +1,10 @@
+2008-05-07  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGDialog.cc (class YGWindow): only set 'fullscreen' on the main
+	window - if we set it on the popups: not only do they bloat to the
+	full screen size (not what we want), but they disappear behind the
+	main window in a highly strange way #385563#
+
 2008-05-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc (YGTree): fixed bug 381648 - 2nd issue - `open was not

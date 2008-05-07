@@ -65,10 +65,10 @@ public:
 		        int w = YGUI::ui()->_getDefaultWidth(),
 		            h = YGUI::ui()->_getDefaultHeight();
 		        gtk_window_set_default_size (window, w, h);
-		    }
 
-			if (YGUI::ui()->setFullscreen())
-				gtk_window_fullscreen (window);
+                if (YGUI::ui()->setFullscreen())
+                    gtk_window_fullscreen (window);
+		    }
 
 		    gtk_window_set_role (window, "yast-gtk");
 		    if (!YGUI::ui()->hasWM())
