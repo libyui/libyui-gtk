@@ -119,7 +119,8 @@ void YGUtils::scrollWidget (GtkTextView *view, bool top)
 	else
 		mark = gtk_text_buffer_create_mark (buffer, "scroll", &iter, FALSE);
 	gtk_text_view_scroll_mark_onscreen (view, mark);
-// gtk_widget_redraw .... // FIXME: package selector change bug
+	// GTK 2.12.9 suffers from glitches otherwise:
+	gtk_widget_queue_draw (GTK_WIDGET (view));
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)

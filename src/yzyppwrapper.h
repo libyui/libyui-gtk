@@ -221,6 +221,8 @@ struct Ypp
 	const Repository *favoriteRepository();
 
 	// Misc
+	Package *findPackage (Package::Type type, const std::string &name);
+
 	Node *getFirstCategory (Package::Type type);
 
 	struct Disk

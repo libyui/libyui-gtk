@@ -14,6 +14,9 @@
 	Also replaced the usage of integers for Repositories and Versions for
 	an actual pointer.
 
+	* src/YGPackageSelector.cc: added support for links in package
+	descriptions.
+
 2008-05-07  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGDialog.cc (class YGWindow): only set 'fullscreen' on the main

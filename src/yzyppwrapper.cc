@@ -143,6 +143,7 @@ public:
 
 	const Repository *getRepository (int nb);
 	const Repository *getRepository (const std::string &zyppId);
+	zypp::RepoInfo getRepoInfo (const Repository *repo);
 	Disk *getDisk();
 
 	// for Packages
@@ -165,6 +166,7 @@ private:
 	StringTree *categories [Package::TOTAL_TYPES];
 	GSList *repos;
 	const Repository *favoriteRepo;
+	int favoriteRepoPriority;
 	Disk *disk;
 	Interface *interface;
 	GSList *pkg_listeners;
@@ -928,9 +930,12 @@ struct Ypp::QueryPool::Query::Impl
 					const Ypp::Package::Version *version = package->getAvailableVersion (i);
 					if (version->repo == *it) {
 						// filter if available isn't upgrade
-						if (package->isInstalled() && hasUpgrade.defined && hasUpgrade.value)
+						if (package->isInstalled() && hasUpgrade.defined && hasUpgrade.value) {
 							if (version->cmp > 0)
 								match = true;
+						}
+						else
+							match = true;
 						break;
 					}
 				}
@@ -1305,6 +1310,17 @@ void Ypp::Disk::setListener (Ypp::Disk::Listener *listener)
 const Ypp::Disk::Partition *Ypp::Disk::getPartition (int nb)
 { return impl->getPartition (nb); }
 
+Ypp::Package *Ypp::findPackage (Ypp::Package::Type type, const std::string &name)
+{
+	GSList *pool = ypp->impl->getPackages (type);
+	for (GSList *i = pool; i; i = i->next) {
+		Package *pkg = (Package *) i->data;
+		if (pkg->name() == name)
+			return pkg;
+	}
+	return NULL;
+}
+
 Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 {
 	if (!impl->getPackages (type))
@@ -1432,6 +1448,19 @@ const Ypp::Repository *Ypp::Impl::getRepository (const std::string &alias)
 		if (getRepository (i)->alias == alias)
 			return getRepository (i);
 	return NULL; /*error*/
+}
+
+zypp::RepoInfo Ypp::Impl::getRepoInfo (const Repository *repo)
+{
+	zypp::RepoManager manager;
+	std::list <zypp::RepoInfo> zrepos = manager.knownRepositories();
+	for (std::list <zypp::RepoInfo>::const_iterator it = zrepos.begin();
+		 it != zrepos.end(); it++)
+		if (repo->alias == it->alias())
+			return *it;
+	// error
+	zypp::RepoInfo i;
+	return i;
 }
 
 Ypp::Disk *Ypp::Impl::getDisk()
@@ -1681,6 +1710,7 @@ Ypp::Ypp()
 
 Ypp::~Ypp()
 {
+	setFavoriteRepository (NULL);
 	delete impl;
 }
 
@@ -1688,7 +1718,20 @@ const Ypp::Repository *Ypp::getRepository (int nb)
 { return impl->getRepository (nb); }
 
 void Ypp::setFavoriteRepository (const Ypp::Repository *repo)
-{ impl->favoriteRepo = repo; }
+{
+	if (impl->favoriteRepo) {
+		zypp::RepoInfo info = impl->getRepoInfo (impl->favoriteRepo);
+		info.setPriority (impl->favoriteRepoPriority);
+	}
+
+	impl->favoriteRepo = repo;
+
+	if (repo) {
+		zypp::RepoInfo info = impl->getRepoInfo (repo);
+		impl->favoriteRepoPriority = info.priority();
+		info.setPriority (1);
+	}
+}
 
 const Ypp::Repository *Ypp::favoriteRepository()
 { return impl->favoriteRepo; }
@@ -1718,16 +1761,6 @@ void Ypp::startTransactions()
 void Ypp::finishTransactions()
 { impl->finishTransactions(); }
 
-static Ypp::Package *findPackage (GSList *list, std::string name)
-{
-	for (GSList *i = list; i; i = i->next) {
-		Ypp::Package *pkg = (Ypp::Package *) i->data;
-		if (pkg->impl->zyppSel->name() == name)
-			return pkg;
-	}
-	return NULL;
-}
-
 #include <fstream>
 #include <zypp/SysContent.h>
 
@@ -1743,13 +1776,12 @@ bool Ypp::importList (const char *filename)
 		     it != reader.end(); it++) {
 			std::string kind = it->kind(), name = it->name();
 
-			GSList *list = 0;
-			if (kind == "package")
-				list = impl->getPackages (Ypp::Package::PACKAGE_TYPE);
-			else if (kind == "pattern")
-				list = impl->getPackages (Ypp::Package::PATTERN_TYPE);
+			Package::Type type = Ypp::Package::PACKAGE_TYPE;
+//			if (kind == "package")
+			if (kind == "pattern")
+				type = Ypp::Package::PATTERN_TYPE;
 
-			Ypp::Package *pkg = findPackage (list, name);
+			Ypp::Package *pkg = findPackage (type, name);
 			if (pkg && !pkg->isInstalled())
 				pkg->install (0);
 		}

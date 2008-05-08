@@ -221,6 +221,7 @@ Listener *m_listener;
 		virtual void setModel (GtkTreeModel *model) = 0;
 		virtual GList *getSelectedPaths (GtkTreeModel **model) = 0;
 		virtual void selectAll() = 0;
+		virtual void unselectAll() = 0;
 		virtual void ensureVisible (GtkTreePath *path) = 0;
 
 		virtual int countSelected()
@@ -437,6 +438,9 @@ Listener *m_listener;
 		virtual void selectAll()
 		{ gtk_tree_selection_select_all (getTreeSelection()); }
 
+		virtual void unselectAll()
+		{ gtk_tree_selection_unselect_all (getTreeSelection()); }
+
 		virtual int countSelected()
 		{ return gtk_tree_selection_count_selected_rows (getTreeSelection()); }
 
@@ -546,6 +550,8 @@ Listener *m_listener;
 
 		virtual void selectAll()
 		{ gtk_icon_view_select_all (GTK_ICON_VIEW (m_widget)); }
+		virtual void unselectAll()
+		{ gtk_icon_view_unselect_all (GTK_ICON_VIEW (m_widget)); }
 
 		static void packages_selected_cb (GtkIconView *view, View *pThis)
 		{ pThis->signalSelected(); }
@@ -648,6 +654,9 @@ public:
 
 	PkgList getSelected()
 	{ return m_view->getSelected(); }
+
+	void unselectAll()
+	{ m_view->unselectAll(); }
 
 private:
 	GtkWidget *create_toggle_button (const char **xpm, const char *tooltip, GtkWidget *member)
@@ -1773,6 +1782,12 @@ private:
 
 class PackageDetails
 {
+public:
+	struct Listener {
+		virtual void goToPackage (Ypp::Package *package) = 0;
+	};
+
+private:
 	struct TextExpander {
 		GtkWidget *expander, *text;
 
@@ -1836,18 +1851,25 @@ class PackageDetails
 GtkWidget *m_widget, *m_description, *m_icon, *m_icon_frame;
 TextExpander *m_filelist, *m_changelog, *m_authors;
 DepExpander *m_dependencies;
+Listener *m_listener;
 
 public:
+	void setListener (Listener *listener)
+	{ m_listener = listener; }
+
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
 	PackageDetails (bool update_mode)
+	: m_listener (NULL)
 	{
 		GtkWidget *vbox;
 		m_widget = createWhiteViewPort (&vbox);
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		m_description = ygtk_html_wrap_new();
+		ygtk_html_wrap_connect_link_clicked (m_description,
+			G_CALLBACK (description_pressed_cb), this);
 		gtk_box_pack_start (GTK_BOX (hbox), m_description, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), createIconWidget (&m_icon, &m_icon_frame),
 		                    FALSE, TRUE, 0);
@@ -1924,6 +1946,28 @@ public:
 private:
 	static void path_pressed_cb (GtkWidget *text, const gchar *link)
 	{ FILEMANAGER_LAUNCH (link); }
+
+	static void description_pressed_cb (GtkWidget *text, const gchar *link,
+	                                    PackageDetails *pThis)
+	{
+		if (!strncmp (link, "pkg://", 6)) {
+			const gchar *pkg_name = link + 6;
+			yuiMilestone() << "Hyperlinking to package \"" << pkg_name << "\"" << endl;
+			Ypp::Package *pkg = Ypp::get()->findPackage (Ypp::Package::PACKAGE_TYPE, pkg_name);
+			if (pThis->m_listener && pkg)
+				pThis->m_listener->goToPackage (pkg);
+			else {
+				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR,
+					GTK_BUTTONS_OK, _("Package '%s' was not found."), pkg_name);
+				gtk_dialog_run (GTK_DIALOG (dialog));
+				gtk_widget_destroy (dialog);
+			}
+		}
+		else
+			yuiError() << "Protocol not supported - can't follow hyperlink \""
+			           << link << "\"" << endl;
+	}
 
 	void scrollTop()
 	{
@@ -2178,7 +2222,8 @@ private:
 	}
 };
 
-class PackageSelector : public Filters::Listener, public PackagesView::Listener
+class PackageSelector : public Filters::Listener, public PackagesView::Listener,
+                        public PackageDetails::Listener
 {
 PackagesView *m_packages;
 Filters *m_filters;
@@ -2202,6 +2247,7 @@ public:
 		m_changes = new ChangesPane (updateMode);
 		m_packages->setListener (this);
 		m_filters->setListener (this);
+		m_details->setListener (this);
 
 		GtkWidget *filter_box = gtk_hbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (filter_box), gtk_label_new (_("Filters:")), FALSE, TRUE, 0);
@@ -2268,6 +2314,15 @@ public:
 		m_control->setPackages (packages);
 		if (!packages.empty())
 			gtk_widget_show (m_details_box);
+	}
+
+	virtual void goToPackage (Ypp::Package *package)
+	{
+		m_packages->unselectAll();
+		PkgList list;
+		list.push (package);
+		m_details->setPackages (list);
+		m_control->setPackages (list);
 	}
 
 	void packageModified (Ypp::Package *package)
