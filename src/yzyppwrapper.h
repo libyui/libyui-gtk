@@ -27,6 +27,8 @@
 
 struct Ypp
 {
+	struct Repository;
+
 	// Utilities
 	struct Node {
 		std::string name;
@@ -41,11 +43,11 @@ struct Ypp
 			PACKAGE_TYPE, PATTERN_TYPE, PATCH_TYPE, TOTAL_TYPES
 		};
 
-		Type type();
-		const std::string &name();
+		Type type() const;
+		const std::string &name() const;
 		const std::string &summary();
 		Node *category();
-		bool fromCollection (Ypp::Package *package);
+		bool fromCollection (const Ypp::Package *collection) const;
 
 		std::string description();
 		std::string filelist();
@@ -55,30 +57,31 @@ struct Ypp
 		std::string provides() const;
 		std::string requires() const;
 
-		bool isInstalled();
-		bool hasUpgrade();
-		bool isLocked();
-
-		bool toInstall (int *nb = 0);
-		bool toRemove();
-		bool isModified();
-		bool isAuto(); /* installing/removing cause of dependency */
-
-		void install (int nb);  /* if installed, will replace it by that version */
-		void remove();
-		void undo();
-		void lock (bool lock);
-
 		struct Version {
 			std::string number;
-			int repo, cmp /*relatively to installed*/;
+			const Repository *repo;
+			int cmp /* relatively to installed -- ignore if not installed */;
 			void *impl;
 		};
 		const Version *getInstalledVersion();
 		const Version *getAvailableVersion (int nb);
+		  // convinience -- null if not:
+		const Version *fromRepository (const Repository *repo);
 
-		// convinience -- true if any available is from the given repo
-		bool isOnRepository (int repo);
+		bool isInstalled();
+		bool hasUpgrade();
+		bool isLocked();
+
+		bool toInstall (const Version **repo = 0);
+		bool toRemove();
+		bool isModified();
+		bool isAuto(); /* installing/removing cause of dependency */
+
+		void install (const Version *repo);  // if installed, will re-install
+		                                     // null for most recent version
+		void remove();
+		void undo();
+		void lock (bool lock);
 
 		struct Impl;
 		Impl *impl;
@@ -129,8 +132,8 @@ struct Ypp
 			void addType (Package::Type type);
 			void addNames (std::string name, char separator = 0);
 			void addCategory (Ypp::Node *category);
-			void addCollection (Ypp::Package *package);
-			void addRepository (int repositories);
+			void addCollection (const Ypp::Package *package);
+			void addRepository (const Ypp::Repository *repositories);
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
 			void setIsModified (bool modified);
@@ -198,7 +201,8 @@ struct Ypp
 	struct Interface {
 		virtual bool acceptLicense (Package *package, const std::string &license) = 0;
 		// resolveProblems = false to cancel the action that had that effect
-		virtual bool resolveProblems (std::list <Problem *> problems) = 0;
+		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
+		virtual bool allowRestrictedRepo (const std::list <std::pair <const Package *, const Repository *> > &pkgs) = 0;
 	};
 	void setInterface (Interface *interface);
 
@@ -208,12 +212,15 @@ struct Ypp
 	void addPkgListener (PkgListener *listener);
 	void removePkgListener (PkgListener *listener);
 
-	// Misc
+	// Repositories
 	struct Repository {
 		std::string name, alias /*internal use*/;
 	};
 	const Repository *getRepository (int nb);
+	void setFavoriteRepository (const Repository *repo);  /* -1 to disable restrictions */
+	const Repository *favoriteRepository();
 
+	// Misc
 	Node *getFirstCategory (Package::Type type);
 
 	struct Disk

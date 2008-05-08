@@ -142,7 +142,7 @@ public:
 	~Impl();
 
 	const Repository *getRepository (int nb);
-	int getRepository (const std::string &zyppId);
+	const Repository *getRepository (const std::string &zyppId);
 	Disk *getDisk();
 
 	// for Packages
@@ -164,6 +164,7 @@ private:
 	GSList *packages [Package::TOTAL_TYPES];  // primitive pools
 	StringTree *categories [Package::TOTAL_TYPES];
 	GSList *repos;
+	const Repository *favoriteRepo;
 	Disk *disk;
 	Interface *interface;
 	GSList *pkg_listeners;
@@ -237,12 +238,12 @@ Ypp::Package::Package (Ypp::Package::Impl *impl)
 Ypp::Package::~Package()
 { delete impl; }
 
-Ypp::Package::Type Ypp::Package::type()
+Ypp::Package::Type Ypp::Package::type() const
 { return impl->type; }
 
-const std::string &Ypp::Package::name()
+const std::string &Ypp::Package::name() const
 {
-	std::string &ret = impl->name;
+	std::string &ret = const_cast <Package *> (this)->impl->name;
 	if (ret.empty()) {
 		ZyppSelectable sel = impl->zyppSel;
 		ZyppObject obj = sel->theObj();
@@ -500,37 +501,16 @@ Ypp::Node *Ypp::Package::category()
 	return impl->category;
 }
 
-bool Ypp::Package::fromCollection (Ypp::Package *collection)
+bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
 {
 	switch (collection->type()) {
 		case Ypp::Package::PATTERN_TYPE:
 		{
-//fprintf (stderr, "check if package %s is from collection %s\n", name().c_str(), collection->name().c_str());
-#if 0
-			ZyppSelectable selectable = collection->impl->zyppSel;
-			ZyppObject object = selectable->theObj();
-			ZyppPattern pattern = tryCastToZyppPattern (object);
-
-			zypp::Pattern::Contents contents (pattern->contents());
-			for (zypp::Pattern::Contents::Selectable_iterator it =
-				contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-//				ZyppPackage pkg = tryCastToZyppPkg ((*it)->theObj());
-//				if (this->impl->zyppSel->name() == pkg->name()) {
-if (this->impl->zyppSel == *it) {
-//fprintf (stderr, "return true\n");
-					return true;
-				}
-			}
-#endif
-
 			for (GSList *i = collection->impl->packagesCache; i; i = i->next) {
 				if (this->impl->zyppSel == i->data)
 					return true;
 			}
 			return false;
-
-//fprintf (stderr, "return false\n");
-			break;
 		}
 #if 0
 		case Ypp::Package::LANGUAGE_TYPE:
@@ -583,15 +563,15 @@ bool Ypp::Package::isLocked()
 	return status == zypp::ui::S_Taboo || status == zypp::ui::S_Protected;
 }
 
-bool Ypp::Package::toInstall (int *nb)
+bool Ypp::Package::toInstall (const Version **version)
 {
-	if (nb) {
+	if (version) {
 		ZyppObject candidate = impl->zyppSel->candidateObj();
 		for (int i = 0; getAvailableVersion (i); i++) {
-			const Version *version = getAvailableVersion (i);
-			ZyppObject i_obj = (ZyppObjectPtr) version->impl;
-			if (i_obj == candidate) {
-				*nb = i;
+			const Version *v = getAvailableVersion (i);
+			ZyppObject obj = (ZyppObjectPtr) v->impl;
+			if (obj == candidate) {
+				*version = v;
 				break;
 			}
 		}
@@ -616,7 +596,7 @@ bool Ypp::Package::isAuto()
 	       status == zypp::ui::S_AutoDel;
 }
 
-void Ypp::Package::install (int nb)
+void Ypp::Package::install (const Ypp::Package::Version *version)
 {
 	if (isLocked())
 		return;
@@ -657,7 +637,12 @@ void Ypp::Package::install (int nb)
 
 	impl->zyppSel->setStatus (status);
 	if (toInstall()) {
-		const Version *version = getAvailableVersion (nb);
+		if (!version) {
+			version = getAvailableVersion (0);
+			const Repository *repo = ypp->favoriteRepository();
+			if (repo && fromRepository (repo))
+				version = fromRepository (repo);
+		}
 		ZyppObject candidate = (ZyppObjectPtr) version->impl;
 		if (!impl->zyppSel->setCandidate (candidate)) {
 			yuiWarning () << "Error: Could not set package '" << name() << "' candidate to '" << version->number << "'\n";
@@ -815,14 +800,12 @@ const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
 	return (Version *) g_slist_nth_data (impl->availableVersions, nb);
 }
 
-bool Ypp::Package::isOnRepository (int repo_nb)
+const Ypp::Package::Version *Ypp::Package::fromRepository (const Ypp::Repository *repo)
 {
-	int i;
-	for (i = 0; getAvailableVersion (i); i++)
-		if (getAvailableVersion (i)->repo == repo_nb)
-			return true;
-	// if there are no availables, answer yes to all repos
-	return i == 0;
+	for (int i = 0; getAvailableVersion (i); i++)
+		if (getAvailableVersion (i)->repo == repo)
+			return getAvailableVersion (i);
+	return NULL;
 }
 
 //** Query
@@ -871,9 +854,9 @@ struct Ypp::QueryPool::Query::Impl
 
 	Keys <Ypp::Package::Type> types;
 	Keys <std::string> names;
-	Keys <Ypp::Node *> categories;
-	Keys <Ypp::Package *> collections;
-	Keys <int> repositories;
+	Keys <Node *> categories;
+	Keys <const Package *> collections;
+	Keys <const Repository *> repositories;
 	Key <bool> isInstalled;
 	Key <bool> hasUpgrade;
 	Key <bool> isModified;
@@ -937,16 +920,28 @@ struct Ypp::QueryPool::Query::Impl
 			match = it != values.end();
 		}
 		if (match && repositories.defined) {
-			const std::list <int> &values = repositories.values;
-			std::list <int>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++)
-				if (package->isOnRepository (*it))
+			const std::list <const Repository *> &values = repositories.values;
+			std::list <const Repository *>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++) {
+				bool match = false;
+				for (int i = 0; package->getAvailableVersion (i); i++) {
+					const Ypp::Package::Version *version = package->getAvailableVersion (i);
+					if (version->repo == *it) {
+						// filter if available isn't upgrade
+						if (package->isInstalled() && hasUpgrade.defined && hasUpgrade.value)
+							if (version->cmp > 0)
+								match = true;
+						break;
+					}
+				}
+				if (match)
 					break;
+			}
 			match = it != values.end();
 		}
 		if (match && collections.defined) {
-			const std::list <Ypp::Package *> &values = collections.values;
-			std::list <Ypp::Package *>::const_iterator it;
+			const std::list <const Ypp::Package *> &values = collections.values;
+			std::list <const Ypp::Package *>::const_iterator it;
 			for (it = values.begin(); it != values.end(); it++)
 				if (package->fromCollection (*it))
 					break;
@@ -976,9 +971,9 @@ void Ypp::QueryPool::Query::addNames (std::string value, char separator)
 }
 void Ypp::QueryPool::Query::addCategory (Ypp::Node *value)
 { impl->categories.add (value); }
-void Ypp::QueryPool::Query::addCollection (Ypp::Package *value)
+void Ypp::QueryPool::Query::addCollection (const Ypp::Package *value)
 { impl->collections.add (value); }
-void Ypp::QueryPool::Query::addRepository (int value)
+void Ypp::QueryPool::Query::addRepository (const Repository *value)
 { impl->repositories.add (value); }
 void Ypp::QueryPool::Query::setIsInstalled (bool value)
 { impl->isInstalled.set (value); }
@@ -1381,8 +1376,8 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 //** Ypp top methods & internal connections
 
 Ypp::Impl::Impl()
-: repos (NULL), disk (NULL), interface (NULL), pkg_listeners (NULL),
-  inTransaction (false), transactions (NULL)
+: repos (NULL), favoriteRepo (NULL), disk (NULL), interface (NULL),
+  pkg_listeners (NULL), inTransaction (false), transactions (NULL)
 {
 	for (int i = 0; i < Package::TOTAL_TYPES; i++) {
 		packages[i] = NULL;
@@ -1431,12 +1426,12 @@ const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 	return (Repository *) g_slist_nth_data (repos, nb);
 }
 
-int Ypp::Impl::getRepository (const std::string &alias)
+const Ypp::Repository *Ypp::Impl::getRepository (const std::string &alias)
 {
 	for (int i = 0; getRepository (i); i++)
 		if (getRepository (i)->alias == alias)
-			return i;
-	return -1; /*error*/
+			return getRepository (i);
+	return NULL; /*error*/
 }
 
 Ypp::Disk *Ypp::Impl::getDisk()
@@ -1541,8 +1536,34 @@ void Ypp::Impl::startTransactions()
 void Ypp::Impl::finishTransactions()
 {
 	inTransaction = true;
-	bool resolved = resolveProblems();
-	if (resolved) {
+	bool cancel = (resolveProblems() == false);
+
+	// check if any package was modified from a restricted repo
+	if (!cancel && ypp->favoriteRepository()) {
+		const Repository *repo = ypp->favoriteRepository();
+		std::list <std::pair <const Package *, const Repository *> > confirmPkgs;
+		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
+			Ypp::Package *pkg = (Ypp::Package *) p->data;
+			if (pkg->impl->isModified()) {
+				const Ypp::Package::Version *version = 0;
+				if (pkg->toInstall (&version)) {
+					if (version->repo != repo) {
+						std::pair <const Package *, const Repository *> p (pkg, version->repo);
+						confirmPkgs.push_back (p);
+					}
+				}
+			}
+		}
+		if (!confirmPkgs.empty())
+			cancel = (interface->allowRestrictedRepo (confirmPkgs) == false);
+	}
+
+	if (cancel) {
+		// user canceled resolver -- undo all
+		for (GSList *i = transactions; i; i = i->next)
+			((Ypp::Package *) i->data)->undo();
+	}
+	else {
 		// resolver won't tell us what changed -- tell pools about Auto packages
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
@@ -1552,11 +1573,6 @@ void Ypp::Impl::finishTransactions()
 				pkg->impl->setUnmodified();
 			}
 		}
-	}
-	else {
-		// user canceled resolver -- undo all
-		for (GSList *i = transactions; i; i = i->next)
-			((Ypp::Package *) i->data)->undo();
 	}
 	g_slist_free (transactions);
 	transactions = NULL;
@@ -1670,6 +1686,12 @@ Ypp::~Ypp()
 
 const Ypp::Repository *Ypp::getRepository (int nb)
 { return impl->getRepository (nb); }
+
+void Ypp::setFavoriteRepository (const Ypp::Repository *repo)
+{ impl->favoriteRepo = repo; }
+
+const Ypp::Repository *Ypp::favoriteRepository()
+{ return impl->favoriteRepo; }
 
 Ypp::Disk *Ypp::getDisk()
 { return impl->getDisk(); }

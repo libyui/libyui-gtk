@@ -79,12 +79,23 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	}
 }
 
-std::string YGUtils::truncate (const std::string &str, unsigned int length)
+std::string YGUtils::truncate (const std::string &str, unsigned int length, int pos)
 {
 	std::string ret (str);
 	if (ret.size() > length) {
-		ret.erase (length-3);
-		ret += "...";
+		if (pos > 0) {
+			ret.erase (length-3);
+			ret.append ("...");
+		}
+		else if (pos < 0) {
+			ret.erase (0, ret.size()-(length-3));
+			ret.insert (0, "...");
+		}
+		else /* (pos == 0) */ {
+			int delta = ret.size()-(length-3);
+			ret.erase ((ret.size()/2)-(delta/2), delta);
+			ret.insert (ret.size()/2, "...");
+		}
 	}
 	return ret;
 }
@@ -108,6 +119,7 @@ void YGUtils::scrollWidget (GtkTextView *view, bool top)
 	else
 		mark = gtk_text_buffer_create_mark (buffer, "scroll", &iter, FALSE);
 	gtk_text_view_scroll_mark_onscreen (view, mark);
+// gtk_widget_redraw .... // FIXME: package selector change bug
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)

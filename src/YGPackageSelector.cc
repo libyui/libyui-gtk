@@ -712,8 +712,9 @@ class ChangesPane : public Ypp::Pool::Listener
 
 		void modified (Ypp::Package *package)
 		{
+			const Ypp::Package::Version *version = 0;
 			std::string text;
-			if (package->toInstall()) {
+			if (package->toInstall (&version)) {
 				if (package->isInstalled())
 					text = "upgrade";
 				else {
@@ -733,7 +734,10 @@ class ChangesPane : public Ypp::Pool::Listener
 			else
 				gtk_widget_show (m_button);
 			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
-			gtk_widget_set_tooltip_text (m_label, package->summary().c_str());
+			std::string tooltip = package->summary();
+			if (version)
+				tooltip += "\nfrom <i>" + version->repo->name + "</i>";
+			gtk_widget_set_tooltip_markup (m_label, tooltip.c_str());
 		}
 
 		static void undo_clicked_cb (GtkButton *button, Ypp::Package *package)
@@ -1353,7 +1357,7 @@ public:
 	}
 
 public:
-	int selectedRepo()
+	const Ypp::Repository *selectedRepo()
 	{
 		GtkComboBox *combo = GTK_COMBO_BOX (m_repos);
 		int repo = gtk_combo_box_get_active (combo);
@@ -1367,7 +1371,11 @@ public:
 			}
 		}
 
-		return repo-1;
+		const Ypp::Repository *ret = 0;
+		if (repo > 0)
+			ret = Ypp::get()->getRepository (repo-1);
+		Ypp::get()->setFavoriteRepository (ret);
+		return ret;
 	}
 
 private:
@@ -1426,7 +1434,7 @@ private:
 
 		m_collection->writeQuery (query);
 
-		if (selectedRepo() >= 0)
+		if (selectedRepo())
 			query->addRepository (selectedRepo());
 
 		m_listener->doQuery (query);
@@ -1594,20 +1602,23 @@ Filters *m_filters;  // used to filter repo versions...
 			if (single_package->getAvailableVersion (0)) {
 				gtk_widget_set_sensitive (m_available_versions, TRUE);
 				gtk_widget_show (m_available_box);
-				int selectedRepo = m_filters->selectedRepo();
+				const Ypp::Repository *selectedRepo = m_filters->selectedRepo();
 				for (int i = 0; single_package->getAvailableVersion (i); i++) {
 					const Ypp::Package::Version *version = single_package->getAvailableVersion (i);
-					if (selectedRepo >= 0 && version->repo != selectedRepo)
-						continue;
 					string text = version->number + "\n";
-					string repo (Ypp::get()->getRepository (version->repo)->name);
-					repo = YGUtils::truncate (repo, 25);
+					string repo = YGUtils::truncate (version->repo->name,
+						MAX (20, version->number.length()), 0);
 					text += "<i>" + repo + "</i>";
 					GtkTreeIter iter;
 					gtk_list_store_append (GTK_LIST_STORE (model), &iter);
 					gtk_list_store_set (GTK_LIST_STORE (model), &iter, 0, text.c_str(), -1);
+					if (selectedRepo && version->repo == selectedRepo) {
+						gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), i);
+						gtk_widget_set_sensitive (m_available_versions, FALSE);
+					}
+					else if (i == 0)
+						gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
 				}
-				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
 			}
 			else
 				gtk_widget_hide (m_available_box);
@@ -1672,7 +1683,7 @@ private:
 			Ypp::Package *package = pThis->m_packages.front();
 			int version = gtk_combo_box_get_active (GTK_COMBO_BOX (
 					pThis->m_available_versions));
-			package->install (version);
+			package->install (package->getAvailableVersion (version));
 			normalCursor();
 		}
 		else
@@ -2396,7 +2407,7 @@ protected:
 		return confirmed;
 	}
 
-	virtual bool resolveProblems (std::list <Ypp::Problem *> problems)
+	virtual bool resolveProblems (const std::list <Ypp::Problem *> &problems)
 	{
 		// we can't use ordinary radio buttons, as gtk+ enforces that in a group
 		// one must be selected...
@@ -2450,7 +2461,7 @@ protected:
 		// model
 		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
 			G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_POINTER);
-		for (std::list <Ypp::Problem *>::iterator it = problems.begin();
+		for (std::list <Ypp::Problem *>::const_iterator it = problems.begin();
 		     it != problems.end(); it++) {
 			GtkTreeIter problem_iter;
 			gtk_tree_store_append (store, &problem_iter, NULL);
@@ -2528,6 +2539,50 @@ protected:
 		bool apply = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_APPLY);
 		gtk_widget_destroy (dialog);
 		return apply;
+	}
+
+	virtual bool allowRestrictedRepo (const std::list <std::pair <const Ypp::Package *, const Ypp::Repository *> > &pkgs)
+	{
+		std::string text;
+		std::list < std::pair <const Ypp::Package *, const Ypp::Repository *> >::const_iterator it;
+		for (it = pkgs.begin(); it != pkgs.end(); it++) {
+			const Ypp::Package *pkg = it->first;
+			const Ypp::Repository *repo = it->second;
+			if (!text.empty())
+				text += "\n\n";
+			text += pkg->name() + "\n<i>" + repo->name + "</i>";
+		}
+
+		// interface
+		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+			GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE, "%s",
+			_("Dependencies from Filtered Repositories"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
+			_("The following packages are necessary dependencies that are not provided "
+			  "by the filtered repository. Install them?"));
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog),
+			GTK_STOCK_NO, GTK_RESPONSE_NO,
+			GTK_STOCK_YES, GTK_RESPONSE_YES, NULL);
+        gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
+
+		GtkWidget *label = gtk_label_new (text.c_str());
+		gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+		gtk_label_set_selectable (GTK_LABEL (label), TRUE);
+		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+
+		GtkWidget *scroll = gtk_viewport_new (NULL, NULL);
+		gtk_viewport_set_shadow_type (GTK_VIEWPORT (scroll), GTK_SHADOW_IN);
+		gtk_container_add (GTK_CONTAINER (scroll), label);
+
+		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll);
+
+		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 480);
+		gtk_widget_show_all (dialog);
+
+		bool confirm = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES);
+		gtk_widget_destroy (dialog);
+		return confirm;
 	}
 
 	virtual void packageModified (Ypp::Package *package)

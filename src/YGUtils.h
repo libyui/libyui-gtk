@@ -9,14 +9,6 @@
 #include <list>
 #include <gtk/gtktextview.h>
 #include <gtk/gtkentry.h>
-#include <gtk/gtktreeview.h>
-#include <gtk/gtktreemodel.h>
-#include <gtk/gtkcellrenderertoggle.h>
-
-// TODO: do a cleanup here. We should probably split string, gtk and stuff
-// Some GtkTreeView should probably go to their own files
-// Let's avoid GTK+ stuff, better to replicate that, if needed, than leave in
-// this general purpose utils.
 
 /* YGUtils.h/cc have some functionality that is shared between different parts
    of the code. */
@@ -32,8 +24,9 @@ namespace YGUtils
 	/* Replaces every 'mouth' by 'food' in 'str'. */
 	void replace (std::string &str, const char *mouth, int mouth_len, const char *food);
 
-	/* Truncates the text with "..." past the given length. */
-	std::string truncate (const std::string &str, unsigned int length);
+	/* Truncates the text with "..." past the given length.
+	   pos: -1 = start, 0 = middle, 1 = end */
+	std::string truncate (const std::string &str, unsigned int length, int pos);
 
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	void escapeMarkup (std::string &str);

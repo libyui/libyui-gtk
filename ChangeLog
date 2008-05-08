@@ -1,3 +1,19 @@
+2008-05-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: fixed bug 386536: be more strict in the
+	enforcement of a repository filter:
+	1st: was showing upgrades for other repositories if the filtered
+	repository had any version for it, even if an older one.
+	2nd: make sure context menu and collective installs, use the filtered
+	repository.
+	3rd: popup a dialog to confirm the installation of dependencies needed
+	from other repositories than the filtered one.
+	* src/yzyppwrapper.h/cc: added a setFavoriteRepository() method and a
+	callback for the interface to confirm a package from a repository
+	different than that.
+	Also replaced the usage of integers for Repositories and Versions for
+	an actual pointer.
+
 2008-05-07  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGDialog.cc (class YGWindow): only set 'fullscreen' on the main

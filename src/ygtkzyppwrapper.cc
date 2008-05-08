@@ -302,7 +302,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		}
 		case YGtkZyppModel::NAME_COLUMN:
 		{
-			std::string name = YGUtils::truncate (package->name(), 15);
+			std::string name = YGUtils::truncate (package->name(), 15, 1);
 			g_value_set_string (value, g_strdup (name.c_str()));
 			break;
 		}
