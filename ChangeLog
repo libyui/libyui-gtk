@@ -1,3 +1,9 @@
+2008-05-09  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkfieldentry.c (ygtk_field_entry_set_focus),
+	* src/YGInputField.cc (doSetKeyboardFocus): set focus correctly
+	on YInputFields #388718#
+
 2008-05-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed bug 386536: be more strict in the

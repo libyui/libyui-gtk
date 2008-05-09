@@ -65,6 +65,12 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
+	virtual bool doSetKeyboardFocus()
+    {
+		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
+        return ygtk_field_entry_set_focus (field);
+    }
+
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YInputField)
 };

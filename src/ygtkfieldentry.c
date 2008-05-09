@@ -23,7 +23,8 @@ static void ygtk_field_entry_init (YGtkFieldEntry *entry)
 }
 
 static GtkEntry *ygtk_field_entry_focus_next_entry (YGtkFieldEntry *fields,
-	GtkEntry *current_entry, gint side)
+                                                    GtkEntry *current_entry,
+                                                    gint side)
 {
 	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
 	gint pos = g_list_index (children, current_entry);
@@ -188,3 +189,12 @@ static void ygtk_field_entry_class_init (YGtkFieldEntryClass *klass)
 		NULL, NULL, gtk_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT);
 }
 
+gboolean ygtk_field_entry_set_focus (YGtkFieldEntry *fields)
+{
+	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
+    g_return_val_if_fail (children != NULL, FALSE);
+    GtkWidget *widget = GTK_WIDGET (children->data);
+
+	gtk_widget_grab_focus (widget);
+	return gtk_widget_is_focus (widget);
+}

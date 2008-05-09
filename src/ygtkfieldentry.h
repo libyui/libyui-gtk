@@ -40,19 +40,21 @@ typedef struct _YGtkFieldEntryClass
 	void (* filter_entry_changed) (YGtkFieldEntry *entry, gint field_nb);
 } YGtkFieldEntryClass;
 
-GtkWidget* ygtk_field_entry_new (void);
-GType ygtk_field_entry_get_type (void) G_GNUC_CONST;
+GtkWidget* ygtk_field_entry_new      (void);
+GType      ygtk_field_entry_get_type (void) G_GNUC_CONST;
 
 // if this is the first field, separator will be ignored. 
-guint ygtk_field_entry_add_field (YGtkFieldEntry *entry, gchar separator);
-//max_length can be 0 to disable it. valids_chars can be NULL to disable it.
-void ygtk_field_entry_setup_field (YGtkFieldEntry *entry, guint index,
-                                   gint max_length, const gchar *valid_chars);
+guint      ygtk_field_entry_add_field         (YGtkFieldEntry *entry, gchar separator);
+// max_length can be 0 to disable it. valids_chars can be NULL to disable it.
+void       ygtk_field_entry_setup_field       (YGtkFieldEntry *entry, guint index,
+                                               gint max_length, const gchar *valid_chars);
 
-void ygtk_field_entry_set_field_text (YGtkFieldEntry *entry, guint index, const gchar *text);
-const gchar *ygtk_field_entry_get_field_text (YGtkFieldEntry *entry, guint index);
+const gchar *ygtk_field_entry_get_field_text   (YGtkFieldEntry *entry, guint index);
+void         ygtk_field_entry_set_field_text   (YGtkFieldEntry *entry, guint index,
+                                                const gchar *text);
 
-GtkEntry *ygtk_field_entry_get_field_widget (YGtkFieldEntry *entry, guint index);
+GtkEntry    *ygtk_field_entry_get_field_widget (YGtkFieldEntry *entry, guint index);
+gboolean     ygtk_field_entry_set_focus        (YGtkFieldEntry *entry);
 
 G_END_DECLS
 #endif /*YGTK_FIELD_ENTRY_H*/
