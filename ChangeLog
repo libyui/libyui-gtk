@@ -1,5 +1,9 @@
 2008-05-09  Michael Meeks  <michael.meeks@novell.com>
 
+	* tests/Wizard.ycp: add test case for bug 388715.
+
+2008-05-09  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/ygtkfieldentry.c (ygtk_field_entry_set_focus),
 	* src/YGInputField.cc (doSetKeyboardFocus): set focus correctly
 	on YInputFields #388718#

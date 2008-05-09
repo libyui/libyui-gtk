@@ -1,0 +1,108 @@
+// Example of using the Wizard widget.
+//
+// Note: YCP applications are discouraged from using the Wizard widget directly.
+// Use the Wizard module instead.
+
+{
+    if ( ! UI::HasSpecialWidget(`Wizard) )
+    {
+	y2error( "This works only with UIs that provide the wizard widget!" );
+	return;
+    }
+
+    string help_text =
+	"<p>This is a help text.</p>"
+	+ "<p>It should be helpful.</p>"
+	+ "<p>If it isn't helpful, it should rather not be called a <i>help text</i>.</p>";
+
+    UI::OpenDialog(`opt(`defaultsize ),
+		   `Wizard(`opt(`stepsEnabled),
+			   `back,  "&Back",
+			   `abort, "Ab&ort",
+			   `next,  "&Next" ) );
+
+    // UI::DumpWidgetTree();
+
+    UI::WizardCommand(`SetDialogIcon( "/usr/share/YaST2/theme/current/icons/22x22/apps/YaST.png" ) );
+    UI::WizardCommand(`SetDialogHeading( "Welcome to the YaST2 installation" ) );
+    UI::WizardCommand(`SetHelpText( help_text ) );
+
+    UI::WizardCommand(`AddStepHeading( "Base Installation" ) );
+    UI::WizardCommand(`AddStep( "Language", 			"lang" 		) );
+    UI::WizardCommand(`AddStep( "Installation Settings", 	"proposal" 	) );
+    UI::WizardCommand(`AddStep( "Perform Installation",		"doit"		) );
+
+    UI::WizardCommand(`AddStepHeading( "Configuration" ) );
+    UI::WizardCommand(`AddStep( "Root Password",		"root_pw"	) );
+    UI::WizardCommand(`AddStep( "Network",			"net"		) );
+    UI::WizardCommand(`AddStep( "Online Update",		"you"		) );
+    UI::WizardCommand(`AddStep( "Users",			"auth"		) );
+    UI::WizardCommand(`AddStep( "Clean Up",			"suse_config"	) );
+    UI::WizardCommand(`AddStep( "Release Notes",		"rel_notes"	) );
+    UI::WizardCommand(`AddStep( "Device Configuration",		"hw_proposal"	) );
+    UI::WizardCommand(`UpdateSteps() );
+
+    if ( false )
+    {
+	UI::WizardCommand(`SetAbortButtonLabel( "&Cancel" ) );
+	UI::WizardCommand(`SetBackButtonLabel( "" ) );
+	UI::WizardCommand(`SetNextButtonLabel( "&Accept" ) );
+    }
+
+    UI::WizardCommand(`SetCurrentStep( "net" ) );
+
+
+    term languagesel = `ComboBox (
+        `id (`language), `opt (`notify, `hstretch),
+        "&Language", [ "a", "b", "c" ]
+        );
+
+    term keyboardsel = `ComboBox (
+        `id (`keyboard), `opt (`notify, `hstretch),
+        "&Keyboard Layout", [ "a", "b", "c" ]
+        );
+
+    // this type of contents will be shown only for initial installation dialog
+    term contents = `VBox (
+	`VWeight (3, `VStretch()),
+	`HSquash (`VBox (
+	    `HBox (
+		`HSpacing (2),
+		`Left (languagesel)
+	    ),
+	    `VSpacing (1),
+	    `HBox (
+		`HSpacing (2),
+		`Left (keyboardsel)
+	    )
+	)),
+	`VWeight (1, `VStretch()),
+	`HSquash (
+	    `VBox (
+		`Left (`Label (`opt(`boldFont), "License Agreement")),
+		`HSquash(`MinSize (
+//                     80, 13,
+                     80, 17,
+                     `Left (`ReplacePoint (`id (`base_license_rp), `Empty()))
+		)),
+		`VSpacing (0.5),
+		`MinHeight (1, `HBox (
+		    `Left (`CheckBox (
+			`id (`license_agreement), `opt (`notify), "I &Agree to the License Terms.", true
+		    )),
+		    `VStretch (),
+		    `Right (`PushButton (`id (`show_fulscreen_license), "&Show License..."))
+		))
+	    )
+        ),
+	`VWeight (3, `VStretch())
+        );
+	
+    {
+        UI::ReplaceWidget(`id(`contents), contents );
+        UI::WaitForEvent();
+    }
+
+    UI::CloseDialog();
+
+}
