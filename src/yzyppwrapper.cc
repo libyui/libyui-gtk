@@ -899,14 +899,7 @@ struct Ypp::QueryPool::Query::Impl
 			}
 
 			if (match && !highlight) {
-				bool full_match = true;
-				std::list <std::string>::const_iterator it;
-				for (it = values.begin(); it != values.end(); it++)
-					if (package->name() != *it) {
-						full_match = false;
-						break;
-					}
-				if (full_match)
+				if (values.size() == 1 && values.front() == package->name())
 					highlight = package;
 			}
 		}
