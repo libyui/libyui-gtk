@@ -51,51 +51,12 @@
 
     UI::WizardCommand(`SetCurrentStep( "net" ) );
 
-
-    term languagesel = `ComboBox (
-        `id (`language), `opt (`notify, `hstretch),
-        "&Language", [ "a", "b", "c" ]
-        );
-
-    term keyboardsel = `ComboBox (
-        `id (`keyboard), `opt (`notify, `hstretch),
-        "&Keyboard Layout", [ "a", "b", "c" ]
-        );
-
-    // this type of contents will be shown only for initial installation dialog
     term contents = `VBox (
-	`VWeight (3, `VStretch()),
-	`HSquash (`VBox (
-	    `HBox (
-		`HSpacing (2),
-		`Left (languagesel)
-	    ),
-	    `VSpacing (1),
-	    `HBox (
-		`HSpacing (2),
-		`Left (keyboardsel)
-	    )
-	)),
-	`VWeight (1, `VStretch()),
-	`HSquash (
-	    `VBox (
-		`Left (`Label (`opt(`boldFont), "License Agreement")),
-		`HSquash(`MinSize (
-//                     80, 13,
-                     80, 17,
-                     `Left (`ReplacePoint (`id (`base_license_rp), `Empty()))
-		)),
-		`VSpacing (0.5),
-		`MinHeight (1, `HBox (
-		    `Left (`CheckBox (
-			`id (`license_agreement), `opt (`notify), "I &Agree to the License Terms.", true
-		    )),
-		    `VStretch (),
-		    `Right (`PushButton (`id (`show_fulscreen_license), "&Show License..."))
-		))
-	    )
-        ),
-	`VWeight (3, `VStretch())
+        `MinSize (
+            80, 20, // tweak me ! :-)
+            `ReplacePoint (`id (`base_license_rp), `Empty())
+		),
+        `PushButton (`id (`show_fulscreen_license), "&Show License...")
         );
 	
     {
