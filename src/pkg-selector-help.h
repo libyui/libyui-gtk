@@ -1,4 +1,6 @@
-//  Textdomain "yast2-gtk"
+/*
+  Textdomain "yast2-gtk"
+ */
 
 static const char *pkg_help =
 "<h1>Purpose</h1>"

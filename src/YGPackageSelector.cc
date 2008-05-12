@@ -1,8 +1,9 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-
-//  Textdomain "yast2-gtk"
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include <config.h>
 #include <string.h>
