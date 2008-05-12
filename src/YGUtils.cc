@@ -490,6 +490,7 @@ static const StockMap stockMap[] = {
 	{"Down",      GTK_STOCK_GO_DOWN     },
 	{"Edit",      GTK_STOCK_EDIT        },
 	{"Finish",    GTK_STOCK_APPLY       },
+	{"Install",   GTK_STOCK_SAVE        },
 	{"Launch",    GTK_STOCK_EXECUTE     },
 	{"Next",      GTK_STOCK_GO_FORWARD  },
 	{"No",        GTK_STOCK_NO          },

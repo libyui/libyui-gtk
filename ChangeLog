@@ -1,3 +1,8 @@
+2007-05-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: feature request 388068: stock icon for
+	"Install".
+
 2008-05-12  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.16.10
