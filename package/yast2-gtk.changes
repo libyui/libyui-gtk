@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Mon May 12 10:21:00 BST 2008 - mmichael@suse.de
+
+- Update to version 2.16.10
+* fix i18n issues
+* remove size cropping bnc #388715
+* fix focus issue bnc #388718
+* repo filter fix bnc #386536
+
+-------------------------------------------------------------------
 Mon May 7 20:13:49 CEST 2008 - jpr@suse.de
 
 - Update to version 2.16.9
