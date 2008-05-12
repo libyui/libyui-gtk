@@ -1,5 +1,8 @@
 2008-05-09  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/ygtkratiobox.c (ygtk_ratio_box_size_request): remove
+	the size cropping - potentially re-opening #373159 - which I
+	can't reproduce.
 	* tests/Wizard.ycp: add test case for bug 388715.
 
 2008-05-09  Michael Meeks  <michael.meeks@novell.com>
