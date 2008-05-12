@@ -1,3 +1,5 @@
+//  Textdomain "yast2-gtk"
+
 static const char *pkg_help =
 "<h1>Purpose</h1>"
 "<p>This tool lets you manage software, as in 'install, remove, update applications'.</p>"
