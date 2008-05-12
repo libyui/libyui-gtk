@@ -1,0 +1,3 @@
+./src/YGPackageSelector.cc
+./src/yzyppwrapper.cc
+./src/pkg-selector-help.h
