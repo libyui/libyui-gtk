@@ -42,8 +42,8 @@ static void normalCursor()
 { YGUI::ui()->normalCursor(); }
 
 const char *lock_tooltip =
-	_("<b>Package lock:</b> prevents the package status from being modified by "
-	  "the solver (that is, it won't honour dependencies or collections ties.)");
+	"<b>Package lock:</b> prevents the package status from being modified by "
+    "the solver (that is, it won't honour dependencies or collections ties.)";
 
 struct PkgList
 {
@@ -346,10 +346,10 @@ Listener *m_listener;
 				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO, 0,
 				                   true, inner::undo_cb, this), empty = false;
 			if (packages.locked())
-				inner::appendItem (menu, _("_Unlock"), lock_tooltip, 0, pkg_unlocked_xpm,
+				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), 0, pkg_unlocked_xpm,
 				                   true, inner::unlock_cb, this), empty = false;
 			if (unlocked)
-				inner::appendItem (menu, _("_Lock"), lock_tooltip, 0, pkg_locked_xpm,
+				inner::appendItem (menu, _("_Lock"), _(lock_tooltip), 0, pkg_locked_xpm,
 				                   true, inner::lock_cb, this), empty = false;
 			if (!empty)
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
@@ -1550,7 +1550,7 @@ Filters *m_filters;  // used to filter repo versions...
 
 #ifdef SHOW_LOCK_UNDO_BUTTON
 		m_lock_button = gtk_toggle_button_new();
-		gtk_widget_set_tooltip_markup (m_lock_button, lock_tooltip);
+		gtk_widget_set_tooltip_markup (m_lock_button, _(lock_tooltip));
 		g_signal_connect (G_OBJECT (m_lock_button), "toggled",
 		                  G_CALLBACK (locked_toggled_cb), this);
 		m_locked_image = createImageFromXPM (pkg_locked_xpm);
@@ -2367,7 +2367,7 @@ public:
 		                  G_CALLBACK (wizard_action_cb), this);
 
 		busyCursor();
-		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? patch_help : pkg_help);
+		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? _(patch_help) : _(pkg_help));
 		createToolsButton();
 
         YGDialog *dialog = YGDialog::currentDialog();

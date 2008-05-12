@@ -1,5 +1,13 @@
 2008-05-12  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/pkg-selector-help.h, src/YGPackageSelector.cc
+	(Ypp::PkgListener): translate later when we have the
+	textdomain setup correctly.
+
+	* src/YGUI.cc (YGUI::setTextdomain): impl.
+	* src/YGi18n.h: add TEXTDOMAIN / dgettext / dngettext
+	to the calls.
+
 	* POTFILES: add missing files-to-be-translated.
 
 2008-05-09  Michael Meeks  <michael.meeks@novell.com>

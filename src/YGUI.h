@@ -55,6 +55,8 @@ protected:
 	virtual YApplication *createApplication();
 
 public:
+    static void setTextdomain( const char * domain );
+
 	virtual void idleLoop (int fd_ycp);
 	// called by YDialog::waitInput() / pollEvent()...
     YEvent *waitInput (unsigned long timeout_ms, bool block);

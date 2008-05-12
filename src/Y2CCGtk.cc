@@ -4,11 +4,12 @@
 
 #include <config.h>
 #include <YGUI.h>
+#include <YGi18n.h>
 
 YUI * createUI( bool withThreads )
 {
     static YGUI *_ui = 0;
-    
+
     if ( ! _ui )
     {
         _ui = new YGUI( withThreads );

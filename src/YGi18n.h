@@ -23,15 +23,16 @@
 
 #include <libintl.h>
 
+#define TEXTDOMAIN "yast2-gtk"
 
 inline const char * _( const char * msgid )
 {
-	return ( !msgid || !*msgid ) ? "" : gettext(msgid );
+	return ( !msgid || !*msgid ) ? "" : dgettext( TEXTDOMAIN, msgid );
 }
 
 inline const char * _( const char * msgid1, const char * msgid2, unsigned long int n )
 {
-	return ngettext(msgid1, msgid2, n );
+	return dngettext( TEXTDOMAIN, msgid1, msgid2, n );
 }
 
 

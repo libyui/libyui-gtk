@@ -11,6 +11,7 @@
 #include <YMacro.h>
 #include <YCommandLine.h>
 #include "YGUI.h"
+#include "YGi18n.h"
 #include "YGUtils.h"
 #include "YGDialog.h"
 #include <glib/gthread.h>
@@ -38,8 +39,23 @@ YGUI::YGUI (bool with_threads)
 	m_no_border = m_fullscreen = false;
 	m_default_size.width = m_default_size.height = 0;
 
+    YGUI::setTextdomain( TEXTDOMAIN );
+
 	// without this none of the (default) threading action works ...
 	topmostConstructorHasFinished();
+}
+
+void YGUI::setTextdomain( const char * domain )
+{
+    bindtextdomain( domain, LOCALEDIR );
+    bind_textdomain_codeset( domain, "utf8" );
+    textdomain( domain );
+
+    // Make change known.
+    {
+	extern int _nl_msg_cat_cntr;
+	++_nl_msg_cat_cntr;
+    }
 }
 
 void YGUI::checkInit()

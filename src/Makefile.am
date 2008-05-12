@@ -1,8 +1,8 @@
 AM_CFLAGS = $(GTK_CFLAGS) \
-	-DTHEMEDIR=\"${themedir}/current\"
-AM_CXXFLAGS = $(GTK_CFLAGS) \
 	-DY2LOG=\"ui-gtk\" \
-	-DTHEMEDIR=\"${themedir}/current\"
+	-DTHEMEDIR=\"${themedir}/current\" \
+	-DLOCALEDIR=\"${localedir}\"
+AM_CXXFLAGS = $(AM_CFLAGS)
 
 noinst_HEADERS = $(wildcard *.h)
 
