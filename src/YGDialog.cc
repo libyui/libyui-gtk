@@ -1,12 +1,95 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-
 #include <config.h>
 #include "YGUI.h"
 #include "YGDialog.h"
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
+
+/*
+ * GtkWindow sub-class to ensure we can't get a size-allocation
+ * that is larger than the screen.
+ */
+typedef struct {
+  GtkWindow parent;
+  gboolean  fullscreen;
+} YGtkWindow;
+
+typedef struct {
+  GtkWindowClass parent_class;
+} YGtkWindowClass;
+
+G_DEFINE_TYPE (YGtkWindow, ygtk_window, GTK_TYPE_WINDOW)
+
+static void ygtk_window_set_fullscreen (YGtkWindow *window,
+					gboolean    fullscreen)
+{
+  window->fullscreen = fullscreen;
+}
+
+static void ygtk_window_size_request (GtkWidget      *widget,
+				      GtkRequisition *requisition)
+{
+  YGtkWindow *ywindow = (YGtkWindow *) widget;
+
+  GTK_WIDGET_CLASS (ygtk_window_parent_class)->size_request (widget, requisition);
+
+//  fprintf (stderr, "ygtk_window_size_request: %d %d\n",
+//	     requisition->width, requisition->height);
+
+  GdkScreen *screen = gtk_widget_get_screen (widget);
+  int max_screen_width = gdk_screen_get_width (screen);
+  int max_screen_height = gdk_screen_get_height (screen);
+
+  /*
+   * FIXME: do we want to call gdk_window_get_frame_extents
+   * on the root window ? - will that tell us about panels etc. ?
+   *
+   * FIXME: do we want to defer 'map' until we can get our
+   * frame size from the realized window to do better here ?
+   */
+ 
+  // in the meantime shrink ourselves a little, to account for
+  // window decoration / panels etc.
+  if (!ywindow->fullscreen)
+    {
+      max_screen_height = 0.90 * max_screen_height;
+      max_screen_width = 0.90 * max_screen_width;
+    }
+
+  if (requisition->width > max_screen_width)
+    {
+//      fprintf (stderr, "cropping width from %d to %d\n",
+//	      requisition->width, max_screen_width);
+      requisition->width = max_screen_width;
+    }
+  if (requisition->height > max_screen_height)
+    {
+//      fprintf (stderr, "cropping height from %d to %d\n",
+//	requisition->height, max_screen_height);
+      requisition->height = max_screen_height;
+    }
+}
+
+static void ygtk_window_size_allocate (GtkWidget     *widget,
+				       GtkAllocation *allocation)
+{
+/*        fprintf (stderr, "YGDialog size alloc %d %d\n",
+	    allocation->width, allocation->height); */
+	GTK_WIDGET_CLASS (ygtk_window_parent_class)->size_allocate (widget, allocation);
+}
+
+static void ygtk_window_init (YGtkWindow *) {}
+static void ygtk_window_class_init (YGtkWindowClass *klass)
+{
+  GtkWidgetClass *wklass = (GtkWidgetClass *) klass;
+
+  ygtk_window_parent_class = g_type_class_peek_parent (klass);
+
+  wklass->size_request = ygtk_window_size_request;
+  wklass->size_allocate = ygtk_window_size_allocate;
+}
 
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
    there is already a main window, it should replace its content -- and when closed,
@@ -16,6 +99,7 @@
    that does the windowing work and has a YWidget has its children, which can
    be a YGDialog and is swap-able.
 */
+
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -29,12 +113,12 @@ class YGWindow
 	YWidget *m_child;
 
 public:
-    YGWindowCloseFn m_canClose;
-    void *m_canCloseData;
+        YGWindowCloseFn m_canClose;
+        void *m_canCloseData;
 
 	YGWindow (bool _main_window)
 	{
-		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+                m_widget = GTK_WIDGET (g_object_new (ygtk_window_get_type(), NULL));
 		g_object_ref (G_OBJECT (m_widget));
 		gtk_object_sink (GTK_OBJECT (m_widget));
 
@@ -66,8 +150,10 @@ public:
 		            h = YGUI::ui()->_getDefaultHeight();
 		        gtk_window_set_default_size (window, w, h);
 
-                if (YGUI::ui()->setFullscreen())
-                    gtk_window_fullscreen (window);
+			if (YGUI::ui()->setFullscreen()) {
+			  gtk_window_fullscreen (window);
+			  ygtk_window_set_fullscreen ((YGtkWindow *)window, TRUE);
+			}
 		    }
 
 		    gtk_window_set_role (window, "yast-gtk");
@@ -211,6 +297,7 @@ private:
 				    return TRUE;
 				case GDK_T:
 				    dumpYastTree (pThis->getChild());
+				    dumpGtkTree (pThis->m_widget);
 				    return TRUE;
 				case GDK_H:
 				    dumpYastHtml (pThis->getChild());

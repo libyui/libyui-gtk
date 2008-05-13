@@ -13,7 +13,7 @@ noinst_PROGRAMS = dummy
 plugin_LTLIBRARIES = libpy2gtk.la
 
 libpy2gtk_la_LDFLAGS = -version-info 2:0 -Wl,--no-undefined
-libpy2gtk_la_LIBADD = -L$(plugindir) -L$(libdir) -lycp -ly2 -lyui \
+libpy2gtk_la_LIBADD = -L$(plugindir) -L$(libdir) -lycp -ly2 -lyui -lm \
                       $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS) -ly2util
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \

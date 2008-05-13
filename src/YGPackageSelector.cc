@@ -2350,10 +2350,12 @@ public:
 		setBorder (0);
 		YGTK_WIZARD (getWidget())->child_border_width = 0;
 
-        GtkWindow *window = YGDialog::currentWindow();
+		GtkWindow *window = YGDialog::currentWindow();
+		int enlarge_width = MIN (0.95 * YUI::app()->displayWidth(), 650);
+		int enlarge_height = MIN (0.95 * YUI::app()->displayHeight(), 600);
 		gtk_window_resize (window,
-			MAX (650, GTK_WIDGET (window)->allocation.width),
-			MAX (600, GTK_WIDGET (window)->allocation.height));
+			MAX (enlarge_width, GTK_WIDGET (window)->allocation.width),
+			MAX (enlarge_height, GTK_WIDGET (window)->allocation.height));
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard, window,

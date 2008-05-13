@@ -6,6 +6,7 @@
 // check the header file for information about this widget
 
 #include <config.h>
+#include <math.h>
 #include "ygtkratiobox.h"
 
 G_DEFINE_ABSTRACT_TYPE (YGtkRatioBox, ygtk_ratio_box, GTK_TYPE_CONTAINER)
@@ -164,12 +165,6 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 		requisition->width = secondary_req;
 		requisition->height = primary_req;
 	}
-
-	// hack for bug #373159 -- we'll want to use the new layout stuff to
-	// get nice window default sizes, and eliminate the minSize hacks
-	#define MAX_SIZE 400
-//	requisition->width = MIN (MAX_SIZE, requisition->width);
-//	requisition->height = MIN (MAX_SIZE, requisition->height);
 }
 
 static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
@@ -182,7 +177,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 	// a first loop to get some data for expansibles (ie. childs with weight)
 	gfloat ratios_sum = 0;
 	gint expand_num = 0, max_ratio = 0;
-	gint expansable_length;
+	gint expansable_length, num_children = 0;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
 		expansable_length = allocation->width - border*2;
 	else
@@ -212,8 +207,14 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 				expansable_length -= child_req.height;
 		}
 		expansable_length -= box->spacing - box_child->padding;
+		num_children++;
 	}
 	expansable_length -= box->weight_length;
+/*	fprintf (stderr, "%p: expansible length %d allocation %d num children %d\n",
+		 box, expansable_length,
+		 (orientation == GTK_ORIENTATION_HORIZONTAL ?
+		  allocation->width : allocation->height),
+		  num_children); */
 
 	gint child_pos = 0;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
@@ -226,6 +227,11 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		YGtkRatioBoxChild* box_child = (YGtkRatioBoxChild*) child->data;
 		if (!GTK_WIDGET_VISIBLE (box_child->widget))
 			continue;
+
+/*		fprintf (stderr, "%p: ratio box child: ratio %g expand %d must_expand %d "
+			 "xfill %d yfill %d\n", box,
+			 box_child->ratio, box_child->expand, box_child->must_expand,
+			 box_child->xfill, box_child->yfill); */
 
 		GtkAllocation child_alloc;
 		gint length;
@@ -251,11 +257,28 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		}
 		else if (box_child->expand && (ratios_sum == 0 || box_child->must_expand))
 		{
-			// FIXME: something is wrong for expansable_length being < 0 at times
-			// we aren't asking for enough size!
 			if (expansable_length > 0)
 				length += expansable_length / expand_num;
 		}
+
+		gint spacing_to_next = length + box->spacing + box_child->padding;
+		if (!box_child->ratio && expansable_length < 0)
+		{
+			// oh dear - we can't shrink anything, but we didn't get the size
+			// we requested this can happen with some large text entry fields.
+			// try to shrink everything just a bit & hope. Should we shrink
+			// things marked 'expandable' instead ? - what if there are none ?
+			double scale;
+			if (orientation == GTK_ORIENTATION_HORIZONTAL)
+			       scale = (double)(allocation->width + expansable_length) / allocation->width;
+			else
+			       scale = (double)(allocation->height + expansable_length) / allocation->height;
+//			fprintf (stderr, "%p: trunc length %d -> %d by scale %g\n",
+//				 box, length, (int) floor (scale * length), scale);
+			length = floor (scale * length);
+			spacing_to_next = floor (scale * spacing_to_next);
+		}
+
 
 		if (orientation == GTK_ORIENTATION_HORIZONTAL) {
 			child_alloc.x = child_pos;
@@ -286,7 +309,7 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_alloc.x = allocation->width - child_alloc.x - child_alloc.width;
 
 		gtk_widget_size_allocate (box_child->widget, &child_alloc);
-		child_pos += length + box->spacing + box_child->padding;
+		child_pos += spacing_to_next;
 	}
 }
 

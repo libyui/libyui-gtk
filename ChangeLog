@@ -1,3 +1,30 @@
+2008-05-13  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/ygtkwizard.c (ygtk_wizard_enable_tree): don't let
+	the tree-paned shrink below it's minimum size request:
+	cf. firewall->'broadcast' oddness otherwise.
+
+2008-05-13  Michael Meeks  <michael.meeks@novell.com>
+
+	Tested at 800x600 & much larger too.
+
+	* src/YGDialog.cc (YGtkWindow): impl. new toplevel window class
+	to crop size allocations to the size of the screen: ie. force no
+	oversize windows with a hammer: bug 373159
+
+	* src/ygtkratiobox.c: try to gracefully handle cases where
+	we are in a corner: not enough space to hand out to people
+	asking for it: shrink everyone just enough.
+
+	* src/Makefile.am (libpy2gtk_la_LIBADD): link with -lm.
+
+	* src/YGPackageSelector.cc (YGPackageSelector): don't try to
+	resize the beastie larger than the screensize: (useful) for
+	640x480 screens.
+
+	* src/YGUI.cc (dumpGtkTree): add more debugging code, and
+	re-factor existing debug code a little.
+
 2007-05-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: feature request 388068: stock icon for
