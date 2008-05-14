@@ -1042,6 +1042,7 @@ private:
 			gtk_tree_store_append (store, &iter, NULL);
 			gtk_tree_store_set (store, &iter, 0, _("Suggested"), 1, GINT_TO_POINTER (2),
 			                    2, pixbuf, -1);
+			g_object_unref (G_OBJECT (pixbuf));
 
 			gtk_tree_view_set_model (view, model);
 			g_object_unref (G_OBJECT (model));
