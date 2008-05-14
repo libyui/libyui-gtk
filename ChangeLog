@@ -1,3 +1,7 @@
+2008-05-14  Michael Meeks  <michael.meeks@novell.com>
+
+	* Version 2.16.11
+
 2008-05-13  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/ygtkwizard.c (ygtk_wizard_enable_tree): don't let
@@ -14,7 +18,7 @@
 
 	* src/ygtkratiobox.c: try to gracefully handle cases where
 	we are in a corner: not enough space to hand out to people
-	asking for it: shrink everyone just enough.
+	asking for it: shrink everyone just enough. (bug 390031?)
 
 	* src/Makefile.am (libpy2gtk_la_LIBADD): link with -lm.
 

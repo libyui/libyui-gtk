@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Wed May 14 12:17:00 BST 2008 - mmichael@suse.de
+
+- Update to version 2.16.11
+* fix various 640x480 sizing problems
+* fix window-larger-than-screen issue bnc #373159
+* fix size allocation issue bnc #390031
+
+-------------------------------------------------------------------
 Mon May 12 10:21:00 BST 2008 - mmichael@suse.de
 
 - Update to version 2.16.10
