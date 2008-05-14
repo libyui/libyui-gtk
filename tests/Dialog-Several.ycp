@@ -1,0 +1,14 @@
+// bug 389635
+{
+    UI::OpenDialog(`opt (`defaultsize), `PushButton ("One"));
+    UI::WaitForEvent();
+	sleep (2000);
+
+    UI::OpenDialog(`PushButton ("Two"));
+    UI::WaitForEvent();
+	sleep (2000);
+
+    UI::OpenDialog(`PushButton ("Three"));
+    UI::WaitForEvent();
+}
+

@@ -9,6 +9,7 @@ typedef bool (*YGWindowCloseFn) (void *closure);
 
 class YGDialog : public YDialog, public YGWidget
 {
+	friend class YGWindow;
 	GtkWidget *m_containee;
 	YGWindow *m_window;
 

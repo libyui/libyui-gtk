@@ -116,7 +116,7 @@ public:
         YGWindowCloseFn m_canClose;
         void *m_canCloseData;
 
-	YGWindow (bool _main_window)
+	YGWindow (bool _main_window, YGDialog *ydialog)
 	{
                 m_widget = GTK_WIDGET (g_object_new (ygtk_window_get_type(), NULL));
 		g_object_ref (G_OBJECT (m_widget));
@@ -127,9 +127,24 @@ public:
 		m_canClose = NULL;
 
 		{
-		    GtkWindow *parent = NULL;
-		    if (main_window)
-		    	parent = GTK_WINDOW (main_window->getWidget());
+			std::stack<YDialog *> &stack = YDialog::_dialogStack;
+			YDialog *ylast = stack.size() ? stack.top() : 0;
+			if (ylast == ydialog) {
+				if (stack.size() > 1) {
+					YDialog *t = ylast;
+					stack.pop();
+					ylast = stack.top();
+					stack.push (t);
+				}
+				else
+					ylast = NULL;
+			}
+
+			GtkWindow *parent = NULL;
+			if (ylast) {
+				YGDialog *yglast = static_cast <YGDialog *> (ylast);
+				parent = GTK_WINDOW (yglast->m_window->getWidget());
+			}
 		    GtkWindow *window = GTK_WINDOW (m_widget);
 
 		    if (parent) {
@@ -156,7 +171,7 @@ public:
 			}
 		    }
 
-		    gtk_window_set_role (window, "yast-gtk");
+		    gtk_window_set_role (window, "yast2-gtk");
 		    if (!YGUI::ui()->hasWM())
 		        g_signal_connect (G_OBJECT (m_widget), "expose-event",
 		                          G_CALLBACK (draw_border_cb), this);
@@ -377,9 +392,9 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
     setBorder (0);
     m_containee = gtk_event_box_new();
     if (dialogType == YMainDialog && main_window)
-        m_window = main_window;
+		m_window = main_window;
     else
-        m_window = new YGWindow (dialogType == YMainDialog);
+		m_window = new YGWindow (dialogType == YMainDialog, this);
     YGWindow::ref (m_window);
 
     if (colorMode != YDialogNormalColor) {
