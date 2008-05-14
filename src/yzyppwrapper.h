@@ -53,6 +53,8 @@ struct Ypp
 		std::string filelist();
 		std::string changelog();
 		std::string authors();
+		bool isRecommended() const;
+		bool isSuggested() const;
 
 		std::string provides() const;
 		std::string requires() const;
@@ -137,6 +139,8 @@ struct Ypp
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
 			void setIsModified (bool modified);
+			void setIsRecommended (bool recommended);
+			void setIsSuggested (bool suggested);
 
 			~Query();
 			struct Impl;

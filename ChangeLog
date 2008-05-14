@@ -3,6 +3,9 @@
 	* src/YGDialog.cc: bug fix 389635: make it transient to the last
 	open dialog (not necessarly the main dialog).
 
+	* src/YGPackageSelector.cc: added Recommended and Selected entries to
+	categories.
+
 2008-05-14  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.16.11

@@ -474,6 +474,16 @@ std::string Ypp::Package::authors()
 	return text;
 }
 
+bool Ypp::Package::isRecommended() const
+{
+	return zypp::PoolItem (impl->zyppSel->theObj()).status().isRecommended();
+}
+
+bool Ypp::Package::isSuggested() const
+{
+	return zypp::PoolItem (impl->zyppSel->theObj()).status().isSuggested();
+}
+
 std::string Ypp::Package::provides() const
 {
 	std::string text;
@@ -866,6 +876,8 @@ struct Ypp::QueryPool::Query::Impl
 	Key <bool> isInstalled;
 	Key <bool> hasUpgrade;
 	Key <bool> isModified;
+	Key <bool> isRecommended;
+	Key <bool> isSuggested;
 	Ypp::Package *highlight;
 
 	Impl()
@@ -889,6 +901,10 @@ struct Ypp::QueryPool::Query::Impl
 		}
 		if (match && isModified.defined)
 			match = isModified.is (package->isModified());
+		if (match && isRecommended.defined)
+			match = isRecommended.is (package->isRecommended());
+		if (match && isSuggested.defined)
+			match = isSuggested.is (package->isSuggested());
 		if (match && names.defined) {
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
@@ -983,6 +999,10 @@ void Ypp::QueryPool::Query::setHasUpgrade (bool value)
 { impl->hasUpgrade.set (value); }
 void Ypp::QueryPool::Query::setIsModified (bool value)
 { impl->isModified.set (value); }
+void Ypp::QueryPool::Query::setIsRecommended (bool value)
+{ impl->isRecommended.set (value); }
+void Ypp::QueryPool::Query::setIsSuggested (bool value)
+{ impl->isSuggested.set (value); }
 
 //** Pool
 

@@ -891,17 +891,19 @@ struct CategoriesIconMap {
 static const CategoriesIconMap catIconMap[] = {
 	{ "Amusements",    "package_games"           },
 	{ "Games",         "package_games"           },
-	{ "Development",   "package_development"     },
+	{ "Applications",  "package_system"          },
+	{ "Development",   "applications-development" },
 	{ "Libraries",     "package_development"     },
 	{ "Documentation", "package_documentation"   },
 	{ "Hardware",      "package_settings_peripherals" },
-	{ "Applications",  "package_applications"    },
 	{ "Productivity",  "package_applications"    },
-	{ "System",        "package_system"          },
-	{ "X11",           "package_system"          },
+	{ "System",        "package_settings"        },
 	{ "Multimedia",    "package_multimedia"      },
 	{ "Video",         "package_multimedia"      },
-	{ "Office",        "package_office_documentviewer" },
+	{ "Office",        "applications-office"     },
+	{ "Publishing",    "applications-office"     },
+	{ "X11",           "applications-other"      },
+	{ "Metapackages",  "package_network"         },
 };
 #define CAT_SIZE (sizeof (catIconMap)/sizeof (CategoriesIconMap))
 
@@ -1001,15 +1003,21 @@ private:
 								break;
 							}
 						if (icon) {
-							GtkIconTheme *icons = gtk_icon_theme_get_default();
-							GdkPixbuf *pixbuf;
-							pixbuf = gtk_icon_theme_load_icon (icons, icon, 22,
-								GtkIconLookupFlags (0), NULL);
+							GdkPixbuf *pixbuf = loadIcon (icon);
 							gtk_tree_store_set (store, &iter, 2, pixbuf, -1);
+							if (pixbuf)
+								g_object_unref (G_OBJECT (pixbuf));
 						}
 					}
 					populate (store, &iter, category->child());
 					populate (store, parent, category->next());
+				}
+				static GdkPixbuf *loadIcon (const char *icon)
+				{
+					GtkIconTheme *icons = gtk_icon_theme_get_default();
+					GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons, icon, 22,
+						GtkIconLookupFlags (0), NULL);
+					return pixbuf;
 				}
 			};
 
@@ -1027,23 +1035,19 @@ private:
 			gtk_tree_store_set (store, &iter, 0, _("All"), 1, NULL, -1);
 
 			inner::populate (store, NULL, Ypp::get()->getFirstCategory (type));
+			GdkPixbuf *pixbuf = inner::loadIcon (GTK_STOCK_ABOUT);
+			gtk_tree_store_append (store, &iter, NULL);
+			gtk_tree_store_set (store, &iter, 0, _("Recommended"), 1, GINT_TO_POINTER (1),
+			                    2, pixbuf, -1);
+			gtk_tree_store_append (store, &iter, NULL);
+			gtk_tree_store_set (store, &iter, 0, _("Suggested"), 1, GINT_TO_POINTER (2),
+			                    2, pixbuf, -1);
 
 			gtk_tree_view_set_model (view, model);
 			g_object_unref (G_OBJECT (model));
 			selectFirstItem();
 
 			g_signal_handlers_unblock_by_func (selection, (gpointer) selection_cb, this);
-		}
-
-		Ypp::Node *getActive()
-		{
-			GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (m_view));
-			GtkTreeModel *model;
-			GtkTreeIter iter;
-			Ypp::Node *category = 0;
-			if (gtk_tree_selection_get_selected (selection, &model, &iter))
-				gtk_tree_model_get (model, &iter, 1, &category, -1);
-			return category;
 		}
 
 		void selectFirstItem()
@@ -1074,7 +1078,20 @@ private:
 
 		virtual void writeQuery (Ypp::QueryPool::Query *query)
 		{
-			Ypp::Node *node = getActive();
+			Ypp::Node *node = 0;
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (m_view));
+			GtkTreeModel *model;
+			GtkTreeIter iter;
+			if (gtk_tree_selection_get_selected (selection, &model, &iter)) {
+				gpointer ptr;
+				gtk_tree_model_get (model, &iter, 1, &ptr, -1);
+				if (GPOINTER_TO_INT (ptr) == 1)
+					query->setIsRecommended (true);
+				else if (GPOINTER_TO_INT (ptr) == 2)
+					query->setIsSuggested (true);
+				else
+					node = (Ypp::Node *) ptr;
+			}
 			if (node)
 				query->addCategory (node);
 		}
