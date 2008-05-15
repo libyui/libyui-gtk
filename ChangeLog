@@ -1,3 +1,8 @@
+2008-05-15  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGFrame.cc (findFirstFocusable, frame_label_mnemonic_activate):
+	(YGFrame::YGFrame): implement mnemonics on frames - bug 390244.
+
 2008-05-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: bug fix 389635: make it transient to the last

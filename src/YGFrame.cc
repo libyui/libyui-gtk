@@ -33,6 +33,38 @@ public:
 
 #include "YFrame.h"
 
+static GtkWidget *findFirstFocusable (GtkContainer *container)
+{
+	g_return_val_if_fail (container != NULL, NULL);
+	
+	for (GList *l = gtk_container_get_children (container);
+	     l; l = l->next) {
+		if (GTK_WIDGET_CAN_FOCUS (l->data))
+			return GTK_WIDGET (l->data);
+		else if (GTK_IS_CONTAINER (l->data)) {
+			GtkWidget *ret = findFirstFocusable (GTK_CONTAINER (l->data));
+			if (ret)
+				return ret;
+		}
+	}
+	return NULL;
+}
+
+extern "C" {
+	static gboolean
+	frame_label_mnemonic_activate (GtkWidget    *widget,
+				       gboolean      group_cycling,
+				       GtkContainer *frame_container)
+	{
+		GtkWidget *focusable = findFirstFocusable (frame_container);
+		if (focusable == NULL) {
+			g_warning ("no focusable widgets for mnemonic");
+			return FALSE;
+		} else
+			return gtk_widget_mnemonic_activate (focusable, group_cycling);
+	}
+}
+
 class YGFrame : public YFrame, public YGBaseFrame
 {
 public:
@@ -40,7 +72,10 @@ public:
 	: YFrame (NULL, label),
 	  YGBaseFrame (this, parent)
 	{
-		GtkWidget *label_widget = gtk_label_new ("");
+		GtkWidget *label_widget = gtk_label_new_with_mnemonic ("");
+		g_signal_connect (G_OBJECT (label_widget), "mnemonic_activate",
+				  G_CALLBACK (frame_label_mnemonic_activate),
+				  getWidget());
 		YGUtils::setWidgetFont (GTK_WIDGET (label_widget), PANGO_WEIGHT_BOLD,
 		                        PANGO_SCALE_MEDIUM);
 		gtk_widget_show (label_widget);
@@ -51,12 +86,13 @@ public:
 	virtual ~YGFrame() {}
 
 	// YFrame
-	virtual void setLabel (const string &str)
+	virtual void setLabel (const string &_str)
 	{
 		IMPL
 		GtkWidget *label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-		gtk_label_set_text (GTK_LABEL (label), str.c_str());
-		YFrame::setLabel (str);
+		string str (YGUtils::mapKBAccel (_str));
+		gtk_label_set_text_with_mnemonic (GTK_LABEL (label), str.c_str());
+		YFrame::setLabel (_str);
 	}
 
 	// Debug
@@ -85,14 +121,14 @@ public:
 	  YGBaseFrame (this, parent)
 	{
 		IMPL
-        GtkWidget *button = gtk_check_button_new_with_mnemonic("");
+		GtkWidget *button = gtk_check_button_new_with_mnemonic("");
 		YGUtils::setWidgetFont (GTK_WIDGET (button), PANGO_WEIGHT_BOLD,
 		                        PANGO_SCALE_MEDIUM);
 		gtk_widget_show_all (button);
 		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
 
 		setLabel (label);
-        setValue (checked);
+		setValue (checked);
 		g_signal_connect (G_OBJECT (button), "toggled",
                           G_CALLBACK (toggled_cb), this);
 	}
@@ -101,8 +137,8 @@ public:
 	// YCheckBoxFrame
 	virtual void setLabel (const string &_str)
 	{
-        GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-        GtkLabel *label = GTK_LABEL (GTK_BIN (button)->child);
+		GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
+		GtkLabel *label = GTK_LABEL (GTK_BIN (button)->child);
 
 		string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (label, str.c_str());
@@ -121,7 +157,7 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
-	virtual void setEnabled (bool enabled)
+    virtual void setEnabled (bool enabled)
     {
 
         GtkWidget *frame = getWidget();
@@ -140,7 +176,7 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 
 private:
-	static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
+    static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
     {
         pThis->setEnabled (true);
         if (pThis->notify())
