@@ -1,3 +1,24 @@
+2008-05-19  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGProgressBar.cc (YGProgressBar::setValue): clamp the
+	value to calm warnings. 
+
+	* src/YGPackageSelector.cc (ChangesPane): add 'UpdateVisible'
+	method, and pass wizard through to update sensitivity on 'Apply'
+	only when we have a transaction.
+	(PackageSelector): pass wizard through to ChangesPane.
+	(YGPackageSelector): pass wizard through to PackageSelector &
+	disable Apply initially.
+
+2008-05-19  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector.cc (StatusButtons): tag un-translated
+	strings.
+
+	* src/YGPackageSelector.cc (setInstallButtonIcon): use
+	gtk_button_set_image - instead of groping in the widget
+	hierarchy. (createButton): do likewise.
+
 2008-05-15  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGFrame.cc (findFirstFocusable, frame_label_mnemonic_activate):

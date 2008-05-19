@@ -1,0 +1,10 @@
+{
+    UI::OpenDialog(
+	       `VBox( 
+		     `Label("Привет!"),
+		     `PushButton("Хоро&шо")
+		     )
+	       );
+    UI::UserInput();
+    UI::CloseDialog();
+}

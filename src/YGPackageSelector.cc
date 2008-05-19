@@ -771,13 +771,14 @@ class ChangesPane : public Ypp::Pool::Listener
 GtkWidget *m_box, *m_entries_box, *m_container;
 Ypp::Pool *m_pool;
 GList *m_entries;
+YGtkWizard *m_wizard;
 
 public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	ChangesPane (bool update_mode)
-	: m_container (NULL), m_entries (NULL)
+	ChangesPane (YGtkWizard *wizard, bool update_mode)
+	: m_container (NULL), m_entries (NULL), m_wizard (wizard)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
 		YGUtils::setWidgetFont (heading, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_LARGE);
@@ -831,11 +832,21 @@ public:
 		g_list_free (m_entries);
 	}
 
+	void UpdateVisible()
+	{
+		ygtk_wizard_enable_next_button (m_wizard, m_entries != NULL);
+		if (m_container) {
+			if (m_entries != NULL)
+				gtk_widget_show (m_container);
+			else
+				gtk_widget_hide (m_container);
+		}
+	}
+
 	void setContainer (GtkWidget *container)
 	{
 		m_container = container;
-		if (!m_entries)
-			gtk_widget_hide (m_container);
+		UpdateVisible();
 		// ugly: signal modified for all entries to allow them to hide undo buttons
 		GList *i;
 		Ypp::Pool::Iter it;
@@ -850,8 +861,7 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_entries_box), entry->getWidget(), FALSE, TRUE, 0);
 		int index = m_pool->toPath (iter).front();
 		m_entries = g_list_insert (m_entries, entry, index);
-		if (m_container)
-			gtk_widget_show (m_container);
+		UpdateVisible();
 	}
 
 	virtual void entryDeleted  (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -862,8 +872,7 @@ public:
 		gtk_container_remove (GTK_CONTAINER (m_entries_box), entry->getWidget());
 		delete entry;
 		m_entries = g_list_delete_link (m_entries, i);
-		if (!m_entries)
-			gtk_widget_hide (m_container);
+		UpdateVisible();
 	}
 
 	virtual void entryChanged  (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -1249,16 +1258,16 @@ class Filters : public Collections::Listener
 
 			GtkWidget *button;
 			GSList *group;
-			button = createButton ("Available", pkg_available_xpm, NULL);
+			button = createButton (_("Available"), pkg_available_xpm, NULL);
 			group = ygtk_toggle_button_get_group (YGTK_TOGGLE_BUTTON (button));
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			if (!updateMode) {
-				button = createButton ("Upgrades", pkg_installed_upgradable_xpm, group);
+				button = createButton (_("Upgrades"), pkg_installed_upgradable_xpm, group);
 				gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			}
-			button = createButton ("Installed", pkg_installed_xpm, group);
+			button = createButton (_("Installed"), pkg_installed_xpm, group);
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
-			button = createButton ("All", 0, group);
+			button = createButton (_("All"), 0, group);
 			gtk_box_pack_start (GTK_BOX (m_box), button, FALSE, TRUE, 0);
 		}
 
@@ -1538,7 +1547,8 @@ Filters *m_filters;  // used to filter repo versions...
 		gtk_box_pack_start (GTK_BOX (m_installed_box), box, FALSE, TRUE, 0);
 
 		// available
-		m_install_button = createButton (NULL, GTK_STOCK_SAVE);
+		const char *install_label = _("Install");
+		m_install_button = createButton (install_label, GTK_STOCK_SAVE);
 		g_signal_connect (G_OBJECT (m_install_button), "clicked",
 		                  G_CALLBACK (install_clicked_cb), this);
 		m_available_versions = gtk_combo_box_new();
@@ -1740,8 +1750,9 @@ private:
 
 	void setInstallButtonIcon (const char *stock_icon, const char *tooltip)
 	{
-		GtkWidget *icon = gtk_bin_get_child (GTK_BIN (m_install_button));
-		gtk_image_set_from_stock (GTK_IMAGE (icon), stock_icon, GTK_ICON_SIZE_BUTTON);
+		GtkWidget *image = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_BUTTON);
+		gtk_widget_show (image);
+		gtk_button_set_image (GTK_BUTTON (m_install_button), image);
 		gtk_widget_set_tooltip_text (m_install_button, tooltip);
 	}
 
@@ -1785,10 +1796,7 @@ private:
 			button = gtk_button_new();
 		if (stock_id) {
 			image = gtk_image_new_from_stock (stock_id, GTK_ICON_SIZE_BUTTON);
-			if (label_str)
-				gtk_button_set_image (GTK_BUTTON (button), image);
-			else
-				gtk_container_add (GTK_CONTAINER (button), image);
+			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 		return button;
 	}
@@ -2258,14 +2266,14 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	PackageSelector (bool updateMode, bool enableRepoMgr)
+	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr)
 	{
 		m_packages = new PackagesView (false);
 		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (updateMode);
 		m_disk = new DiskView();
-		m_changes = new ChangesPane (updateMode);
+		m_changes = new ChangesPane (wizard, updateMode);
 		m_packages->setListener (this);
 		m_filters->setListener (this);
 		m_details->setListener (this);
@@ -2386,6 +2394,7 @@ public:
 		ygtk_wizard_set_back_button_label (wizard, "");
 		ygtk_wizard_set_next_button_label (wizard, _("_Apply"));
 		ygtk_wizard_set_next_button_str_id (wizard, "accept");
+		ygtk_wizard_enable_next_button (wizard, FALSE);
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
 
@@ -2393,10 +2402,10 @@ public:
 		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? _(patch_help) : _(pkg_help));
 		createToolsButton();
 
-        YGDialog *dialog = YGDialog::currentDialog();
-        dialog->setCloseCallback (confirm_cb, this);
+		YGDialog *dialog = YGDialog::currentDialog();
+		dialog->setCloseCallback (confirm_cb, this);
 
-		m_package_selector = new PackageSelector (onlineUpdateMode(), repoMgrEnabled());
+		m_package_selector = new PackageSelector (wizard, onlineUpdateMode(), repoMgrEnabled());
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 
 		Ypp::get()->setInterface (this);
