@@ -1,3 +1,7 @@
+2008-05-19  Michael Meeks  <michael.meeks@novell.com>
+
+	* Version 2.16.12
+
 2008-05-19  Sanford Amstrong  <sanfordarmstrong@gmail.com>
 
 	* src/YGPackageSelector.cc (ChangesPane): add 'UpdateVisible'

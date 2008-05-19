@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Mon May 19 11:05:00 BST 2008 - mmichael@suse.de
+
+- Update to version 2.16.12
+* make PackageSelector more usable bnc #390471#
+* impl. mnemonics on frames bnc #390244#
+* fix window transience (hidden popups) bnc #389635#
+* add recommended/selected to categories
+* tag main package-selector buttons for translation
+* calm progress bar warnings (for stupid values eg. -5%)
+
+-------------------------------------------------------------------
 Wed May 14 12:17:00 BST 2008 - mmichael@suse.de
 
 - Update to version 2.16.11
