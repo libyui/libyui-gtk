@@ -713,11 +713,12 @@ class ChangesPane : public Ypp::Pool::Listener
 			m_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (m_box), m_label, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_box), m_button, FALSE, FALSE, 0);
-			gtk_widget_set_size_request (m_box, 140, -1);
 			gtk_widget_show_all (m_box);
 			modified (package);
 			g_signal_connect (G_OBJECT (m_label), "style-set",
-			                  G_CALLBACK (style_set_cb), NULL);
+			                  G_CALLBACK (label_style_set_cb), NULL);
+			g_signal_connect (G_OBJECT (m_box), "style-set",
+			                  G_CALLBACK (box_style_set_cb), NULL);
 			g_signal_connect (G_OBJECT (m_button), "clicked",
 			                  G_CALLBACK (undo_clicked_cb), package);
 		}
@@ -757,7 +758,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			package->undo();
 		}
 
-		static void style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
+		static void label_style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
 		{
 			static bool safeguard = false;
 			if (safeguard) return;
@@ -765,6 +766,11 @@ class ChangesPane : public Ypp::Pool::Listener
 			GdkColor *color = &widget->style->fg [GTK_STATE_SELECTED];
 			gtk_widget_modify_fg (widget, GTK_STATE_NORMAL, color);
 			safeguard = false;	
+		}
+		static void box_style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
+		{
+			int width = YGUtils::getCharsWidth (widget, 22);
+			gtk_widget_set_size_request (widget, width, -1);
 		}
 	};
 
@@ -784,7 +790,7 @@ public:
 		YGUtils::setWidgetFont (heading, PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_LARGE);
 		gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
 		g_signal_connect (G_OBJECT (heading), "style-set",
-		                  G_CALLBACK (Entry::style_set_cb), NULL);
+		                  G_CALLBACK (Entry::label_style_set_cb), NULL);
 		m_entries_box = gtk_vbox_new (FALSE, 4);
 
 		GtkWidget *port = gtk_viewport_new (NULL, NULL);
