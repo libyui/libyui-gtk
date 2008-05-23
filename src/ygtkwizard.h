@@ -122,11 +122,8 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
 // (commands that may fail return a sucess boolean.)
 void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text);
 
-// you may pass a window widget if you want the title/icon to be set on it as well
-void ygtk_wizard_set_header_text (YGtkWizard *wizard, GtkWindow *window,
-                                  const char *text);
-gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWindow *window,
-                                      const char *icon);
+void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text);
+gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon);
 
 void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text);
 void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text);

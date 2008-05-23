@@ -2356,9 +2356,9 @@ public:
 			MAX (enlarge_height, GTK_WIDGET (window)->allocation.height));
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
-		ygtk_wizard_set_header_icon (wizard, window,
+		ygtk_wizard_set_header_icon (wizard,
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
-		ygtk_wizard_set_header_text (wizard, window,
+		ygtk_wizard_set_header_text (wizard,
 			onlineUpdateMode() ? _("Patch Selection") : _("Package Selection"));
 
 		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));

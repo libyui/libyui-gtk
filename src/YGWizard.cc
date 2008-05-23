@@ -151,15 +151,13 @@ public:
 
 	virtual void setDialogIcon (const string &icon)
 	{
-		if (!ygtk_wizard_set_header_icon (getWizard(), YGDialog::currentWindow(),
-		        icon.c_str()))
+		if (!ygtk_wizard_set_header_icon (getWizard(), icon.c_str()))
 			yuiWarning() << "YGWizard: could not load image: " << icon << endl;
 	}
 
 	virtual void setDialogHeading (const string &heading)
 	{
-		ygtk_wizard_set_header_text (getWizard(), YGDialog::currentWindow(),
-		                             heading.c_str());
+		ygtk_wizard_set_header_text (getWizard(), heading.c_str());
 	}
 
     virtual void addStep (const string &text, const string &id)

@@ -13,6 +13,9 @@
 	The installed could have both Remove and Replace buttons I guess,
 	to avoid duplicating the entry...
 
+	* src/ygtkwizard.c: bug fix 385710: keep wizard and window title
+	sync-ed as wizard widgets can be added and removed at any point...
+
 2008-05-19  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.16.12

@@ -606,30 +606,47 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	return TRUE;
 }
 
-void ygtk_wizard_set_header_text (YGtkWizard *wizard, GtkWindow *window,
-                                  const char *text)
+static void sync_window_title (YGtkWizard *wizard)
 {
-	gtk_label_set_text (GTK_LABEL (wizard->m_title_label), text);
-	if (window) {
-		char *title = g_strdup_printf ("%s - YaST", text);
-		gtk_window_set_title (window, title);
+	GtkWidget *window = gtk_widget_get_toplevel (GTK_WIDGET (wizard));
+	if (GTK_WIDGET_TOPLEVEL (window)) {
+		const gchar *_title = gtk_label_get_text (GTK_LABEL (wizard->m_title_label));
+		char *title;
+		if (*_title == '\0')
+			title = g_strdup ("YaST");
+		else
+			title = g_strdup_printf ("%s - YaST", _title);
+		GdkPixbuf *pixbuf = gtk_image_get_pixbuf (GTK_IMAGE (wizard->m_title_image));
+
+		gtk_window_set_title (GTK_WINDOW (window), title);
+		gtk_window_set_icon (GTK_WINDOW (window), pixbuf);
+
 		g_free (title);
 	}
 }
 
-gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, GtkWindow *window,
-                                      const char *icon)
+void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text)
+{
+	gtk_label_set_text (GTK_LABEL (wizard->m_title_label), text);
+	sync_window_title (wizard);
+}
+
+gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 {
 	GError *error = 0;
 	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (icon, &error);
 	if (!pixbuf)
 		return FALSE;
-
 	gtk_image_set_from_pixbuf (GTK_IMAGE (wizard->m_title_image), pixbuf);
-	if (window)
-		gtk_window_set_icon (window, pixbuf);
 	g_object_unref (G_OBJECT (pixbuf));
+	sync_window_title (wizard);
 	return TRUE;
+}
+
+static void ygtk_wizard_map (GtkWidget *widget)
+{
+	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->map (widget);
+	sync_window_title (YGTK_WIZARD (widget));
 }
 
 void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text)
@@ -1283,6 +1300,7 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	widget_class->size_request  = ygtk_wizard_size_request;
 	widget_class->size_allocate = ygtk_wizard_size_allocate;
 	widget_class->get_accessible = ygtk_wizard_get_accessible;
+	widget_class->map = ygtk_wizard_map;
 
 	GtkContainerClass *container_class = GTK_CONTAINER_CLASS (klass);
 	container_class->forall = ygtk_wizard_forall;
