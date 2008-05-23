@@ -1523,11 +1523,8 @@ Filters *m_filters;  // used to filter repo versions...
 	PackageControl (Filters *filters)
 	: m_filters (filters)
 	{
-		GtkWidget *box;
-
 		// installed
-		m_remove_button = createButton (NULL, GTK_STOCK_DELETE);
-		gtk_widget_set_tooltip_text (m_remove_button, _("Remove"));
+		m_remove_button = createButton (_("_Remove"), GTK_STOCK_DELETE);
 		g_signal_connect (G_OBJECT (m_remove_button), "clicked",
 		                  G_CALLBACK (remove_clicked_cb), this);
 
@@ -1535,22 +1532,17 @@ Filters *m_filters;  // used to filter repo versions...
 		gtk_label_set_selectable (GTK_LABEL (m_installed_version), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (m_installed_version), 0, 0.5);
 
-		box = gtk_vbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (box), createBoldLabel (_("Installed:")),
+		m_installed_box = gtk_vbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (m_installed_box), createBoldLabel (_("Installed:")),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (box), m_installed_version, FALSE, TRUE, 0);
-
-		m_installed_box = gtk_hbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (m_installed_box), box, TRUE, TRUE, 0);
-		box = gtk_alignment_new (0, 1, 0, 0);
-		gtk_container_add (GTK_CONTAINER (box), m_remove_button);
-		gtk_box_pack_start (GTK_BOX (m_installed_box), box, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_installed_box), m_installed_version, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_installed_box), m_remove_button, FALSE, TRUE, 0);
 
 		// available
-		const char *install_label = _("Install");
-		m_install_button = createButton (install_label, GTK_STOCK_SAVE);
+		m_install_button = createButton ("", GTK_STOCK_SAVE);
 		g_signal_connect (G_OBJECT (m_install_button), "clicked",
 		                  G_CALLBACK (install_clicked_cb), this);
+
 		m_available_versions = gtk_combo_box_new();
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (m_available_versions),
@@ -1563,25 +1555,19 @@ Filters *m_filters;  // used to filter repo versions...
 		g_signal_connect (G_OBJECT (m_available_versions), "changed",
 		                  G_CALLBACK (version_changed_cb), this);
 
-		box = gtk_vbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (box), createBoldLabel (_("Available:")),
+		m_available_box = gtk_vbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (m_available_box), createBoldLabel (_("Available:")),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (box), m_available_versions, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_available_box), m_available_versions, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_available_box), m_install_button, FALSE, TRUE, 0);
 
-		m_available_box = gtk_hbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (m_available_box), box, TRUE, TRUE, 0);
-		box = gtk_alignment_new (0, 1, 0, 0);
-		gtk_container_add (GTK_CONTAINER (box), m_install_button);
-		gtk_box_pack_start (GTK_BOX (m_available_box), box, FALSE, TRUE, 0);
-
-		// final box
 		m_widget = gtk_vbox_new (FALSE, 12);
 		gtk_box_pack_start (GTK_BOX (m_widget), m_installed_box, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), m_available_box, FALSE, TRUE, 0);
 
 #ifdef SHOW_LOCK_UNDO_BUTTON
 		m_lock_button = gtk_toggle_button_new();
-		gtk_widget_set_tooltip_markup (m_lock_button, _(lock_tooltip));
+		gtk_widget_set_tooltip_markup (m_lock_button, lock_tooltip);
 		g_signal_connect (G_OBJECT (m_lock_button), "toggled",
 		                  G_CALLBACK (locked_toggled_cb), this);
 		m_locked_image = createImageFromXPM (pkg_locked_xpm);
@@ -1667,12 +1653,12 @@ Filters *m_filters;  // used to filter repo versions...
 			if (packages.upgradable()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(upgrades)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				setInstallButtonIcon (GTK_STOCK_GO_UP, _("Upgrade"));
+				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
 			}
 			else if (packages.notInstalled()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(several)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				setInstallButtonIcon (GTK_STOCK_SAVE, _("Install"));
+				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
 			}
 			else
 				gtk_widget_hide (m_available_box);
@@ -1748,14 +1734,6 @@ private:
 	}
 #endif
 
-	void setInstallButtonIcon (const char *stock_icon, const char *tooltip)
-	{
-		GtkWidget *image = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_BUTTON);
-		gtk_widget_show (image);
-		gtk_button_set_image (GTK_BUTTON (m_install_button), image);
-		gtk_widget_set_tooltip_text (m_install_button, tooltip);
-	}
-
 	static void version_changed_cb (GtkComboBox *combo, PackageControl *pThis)
 	{
 		if (pThis->m_packages.single()) {
@@ -1767,22 +1745,16 @@ private:
 			version = package->getAvailableVersion (nb);
 			assert (version != NULL);
 
-			const char *tooltip = _("Install"), *stock = GTK_STOCK_SAVE;
+			const char *installLabel = _("Install");
 			if (package->isInstalled()) {
-				if (version->cmp > 0) {
-					tooltip = _("Upgrade");
-					stock = GTK_STOCK_GO_UP;
-				}
-				else if (version->cmp == 0) {
-					tooltip = _("Re-install");
-					stock = GTK_STOCK_REFRESH;
-				}
-				else {  //if (version->cmp < 0)
-					tooltip = _("Downgrade");
-					stock = GTK_STOCK_GO_DOWN;
-				}
+				if (version->cmp > 0)
+					installLabel = _("Upgrade");
+				else if (version->cmp == 0)
+					installLabel = _("Re-install");
+				else //if (version->cmp < 0)
+					installLabel = _("Downgrade");
 			}
-			pThis->setInstallButtonIcon (stock, tooltip);
+			gtk_button_set_label (GTK_BUTTON (pThis->m_install_button), installLabel);
 		}
 	}
 

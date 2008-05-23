@@ -1,3 +1,18 @@
+2008-05-23  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGPackageSelector (PackageControl): regresses to the old
+	buttons code until r47296. This aligns them vertically: wether
+	we want to align them horizontally or not, it's better we use
+	again this tested code...
+	Something interesting would be to compact the versions if the
+	pane area was small... Recurring to a notebook or expanders that
+	contract...
+	I guess we could also consider putting all the versions on the
+	combo, with the default selected on depending on the view: if
+	available, select some to upgrade. If install, selected installed...
+	The installed could have both Remove and Replace buttons I guess,
+	to avoid duplicating the entry...
+
 2008-05-19  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.16.12
