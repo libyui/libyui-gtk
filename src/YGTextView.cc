@@ -89,7 +89,7 @@ public:
 	{
 		if (pThis->maxChars != -1 && pThis->getCharsNb() > pThis->maxChars) {
 			pThis->truncateText (pThis->maxChars);
-			gdk_beep();
+			gtk_widget_error_bell (pThis->getWidget());
 		}
 		pThis->emitEvent (YEvent::ValueChanged);
 	}

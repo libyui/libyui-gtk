@@ -1,4 +1,14 @@
-2008-05-23  Michael Meeks  <michael.meeks@novell.com>
+2008-05-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTextView.cc, src/YGUI.cc & src/ygtkwizard.c: changed
+	gdk_beep() to the new GTK gtk_widget_error_bell() call. This one
+	will use the visual bell if setup at the "Sound" module from the
+	Gnome control center.
+
+	* src/YGDialog.cc: don't re-use the cursor -- possible fix for
+	bug 393143?
+
+2008-05-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector (PackageControl): regresses to the old
 	buttons code until r47296. This aligns them vertically: wether

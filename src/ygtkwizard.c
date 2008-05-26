@@ -56,7 +56,7 @@ static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dia
 		         white = { 0, 255 << 8, 255 << 8, 255 << 8 };
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
 		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, &white);
-		gdk_beep();
+		gtk_widget_error_bell (GTK_WIDGET (dialog));
 	}
 	else {
 		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);

@@ -429,10 +429,13 @@ void YGApplication::makeScreenShot (string filename)
 
 void YGApplication::beep()
 {
-	gdk_beep();
 	GtkWindow *window = YGDialog::currentWindow();
-	if (window)
+	if (window) {
 		gtk_window_present (window);
+		gtk_widget_error_bell (GTK_WIDGET (window));
+	}
+	else
+		gdk_beep();
 }
 
 // File/directory dialogs
