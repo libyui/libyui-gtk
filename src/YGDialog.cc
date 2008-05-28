@@ -212,7 +212,6 @@ public:
 			GdkDisplay *display = gtk_widget_get_display (m_widget);
 			GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			gdk_window_set_cursor (m_widget->window, cursor);
-			gdk_cursor_unref (cursor);
 		}
 	}
 
