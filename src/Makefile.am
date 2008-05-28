@@ -54,6 +54,7 @@ libpy2gtk_la_SOURCES = \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \
+	yzypptags.cc \
 	ygtkzyppwrapper.cc
 # should only append ygtkrichtext.c if USE_GTKHTML is set
 

@@ -12,6 +12,7 @@
 #include <config.h>
 #include "YGi18n.h"
 #include "yzyppwrapper.h"
+#include "yzypptags.h"
 #include <string.h>
 #include <string>
 #include <sstream>
@@ -83,7 +84,7 @@ struct StringTree {
 		return (Ypp::Node *) root->children->data;
 	}
 
-	Ypp::Node *add (const std::string &tree_str)
+	Ypp::Node *add (const std::string &tree_str, const char *icon)
 	{
 		const std::list <std::string> nodes_str = YGUtils::splitString (tree_str, delim);
 		GNode *parent = root, *sibling = 0;
@@ -112,6 +113,7 @@ struct StringTree {
 			Ypp::Node *yNode = new Ypp::Node();
 			GNode *n = g_node_new ((void *) yNode);
 			yNode->name = *it;
+			yNode->icon = icon;
 			yNode->impl = (void *) n;
 			g_node_insert_before (parent, sibling, n);
 			parent = n;
@@ -161,13 +163,14 @@ private:
 	bool resolveProblems();
 	Node *addCategory (Ypp::Package::Type type, const std::string &str);
 	void polishCategories (Ypp::Package::Type type);
+	Node *addCategory2 (Ypp::Package::Type type, const std::string &str);
 
 	void startTransactions();
 	void finishTransactions();
 
 	friend class Ypp;
 	GSList *packages [Package::TOTAL_TYPES];  // primitive pools
-	StringTree *categories [Package::TOTAL_TYPES];
+	StringTree *categories [Package::TOTAL_TYPES], *categories2;
 	GSList *repos;
 	const Repository *favoriteRepo;
 	int favoriteRepoPriority;
@@ -182,8 +185,8 @@ private:
 
 struct Ypp::Package::Impl
 {
-	Impl (Type type, ZyppSelectable sel, Node *category)
-	: type (type), zyppSel (sel), category (category),
+	Impl (Type type, ZyppSelectable sel, Node *category, Node *category2)
+	: type (type), zyppSel (sel), category (category), category2 (category2),
 	  availableVersions (NULL), installedVersion (NULL)
 	{
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
@@ -228,7 +231,7 @@ struct Ypp::Package::Impl
 	std::string name, summary;
 	Type type;
 	ZyppSelectable zyppSel;
-	Ypp::Node *category;
+	Ypp::Node *category, *category2;
 	GSList *availableVersions;
 	Version *installedVersion;
 	bool hasUpgrade;
@@ -358,7 +361,7 @@ std::string Ypp::Package::filelist()
 		const std::list <std::string> &filesList = package->filenames();
 		for (std::list <std::string>::const_iterator it = filesList.begin();
 		     it != filesList.end(); it++)
-			tree.add (*it);
+			tree.add (*it, 0);
 
 		struct inner {
 			static std::string getPath (GNode *node)
@@ -513,9 +516,10 @@ std::string Ypp::Package::requires() const
 }
 
 Ypp::Node *Ypp::Package::category()
-{
-	return impl->category;
-}
+{ return impl->category; }
+
+Ypp::Node *Ypp::Package::category2()
+{ return impl->category2; }
 
 bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
 {
@@ -870,7 +874,7 @@ struct Ypp::QueryPool::Query::Impl
 
 	Keys <Ypp::Package::Type> types;
 	Keys <std::string> names;
-	Keys <Node *> categories;
+	Keys <Node *> categories, categories2;
 	Keys <const Package *> collections;
 	Keys <const Repository *> repositories;
 	Key <bool> isInstalled;
@@ -934,6 +938,17 @@ struct Ypp::QueryPool::Query::Impl
 			}
 			match = it != values.end();
 		}
+		if (match && categories2.defined) {
+			Ypp::Node *pkg_category = package->category2();
+			const std::list <Ypp::Node *> &values = categories2.values;
+			std::list <Ypp::Node *>::const_iterator it;
+			for (it = values.begin(); it != values.end(); it++) {
+				GNode *node = (GNode *) (*it)->impl;
+				if (g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
+					break;
+			}
+			match = it != values.end();
+		}
 		if (match && repositories.defined) {
 			const std::list <const Repository *> &values = repositories.values;
 			std::list <const Repository *>::const_iterator it;
@@ -989,6 +1004,8 @@ void Ypp::QueryPool::Query::addNames (std::string value, char separator)
 }
 void Ypp::QueryPool::Query::addCategory (Ypp::Node *value)
 { impl->categories.add (value); }
+void Ypp::QueryPool::Query::addCategory2 (Ypp::Node *value)
+{ impl->categories2.add (value); }
 void Ypp::QueryPool::Query::addCollection (const Ypp::Package *value)
 { impl->collections.add (value); }
 void Ypp::QueryPool::Query::addRepository (const Repository *value)
@@ -1345,6 +1362,13 @@ Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 	return impl->categories[type]->getFirst();
 }
 
+Ypp::Node *Ypp::getFirstCategory2 (Ypp::Package::Type type)
+{
+	if (!impl->getPackages (type))
+		return NULL;
+	return impl->categories2->getFirst();
+}
+
 Ypp::Node *Ypp::Node::next()
 {
 	GNode *ret = ((GNode *) impl)->next;
@@ -1375,8 +1399,58 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 
 	if (!categories[type])
 		categories[type] = new StringTree (inner::cmp, '/');
-	return categories[type]->add (category_str);
+	return categories[type]->add (category_str, 0);
 }
+
+Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, const std::string &category_str)
+{
+	struct inner {
+		static int cmp (const char *a, const char *b)
+		{
+			int r = strcmp (a, b);
+			if (r != 0) {
+				const char *unknown = zypp_tag_group_enum_to_localised_text
+					(PK_GROUP_ENUM_UNKNOWN);
+				if (!strcmp (a, unknown))
+					return 1;
+				if (!strcmp (b, unknown))
+					return -1;
+			}
+			return r;
+		}
+	};
+
+	YPkgGroupEnum group = zypp_tag_convert (category_str);
+	const char *group_name = zypp_tag_group_enum_to_localised_text (group);
+	const char *group_icon = zypp_tag_enum_to_icon (group);
+
+	if (!categories2)
+		categories2 = new StringTree (inner::cmp, '/');
+	return categories2->add (group_name, group_icon);
+}
+
+// Maps icons to top package groups
+struct CategoriesIconMap {
+	const char *category, *icon;
+};
+static const CategoriesIconMap catIconMap[] = {
+	{ "Amusements",    "package_games"           },
+	{ "Games",         "package_games"           },
+	{ "Applications",  "package_system"          },
+	{ "Development",   "applications-development" },
+	{ "Libraries",     "package_development"     },
+	{ "Documentation", "package_documentation"   },
+	{ "Hardware",      "package_settings_peripherals" },
+	{ "Productivity",  "package_applications"    },
+	{ "System",        "package_settings"        },
+	{ "Multimedia",    "package_multimedia"      },
+	{ "Video",         "package_multimedia"      },
+	{ "Office",        "applications-office"     },
+	{ "Publishing",    "applications-office"     },
+	{ "X11",           "applications-other"      },
+	{ "Metapackages",  "package_network"         },
+};
+#define CAT_SIZE (sizeof (catIconMap)/sizeof (CategoriesIconMap))
 
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 {
@@ -1397,11 +1471,21 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 					Ypp::Node *yN = new Ypp::Node();
 					GNode *n = g_node_new ((void *) yN);
 					yN->name = "Other";
+					yN->icon = NULL;
 					yN->impl = (void *) n;
 					g_node_insert_before (node, NULL, n);
 					pkg->impl->category = yN;
 				}
 			}
+		}
+
+		Node *first = categories [Package::PACKAGE_TYPE]->getFirst();
+		for (Node *n = first; n; n = n->next()) {
+			for (unsigned int i = 0; i < CAT_SIZE; i++)
+				if (n->name == catIconMap[i].category) {
+					n->icon = catIconMap[i].icon;
+					break;
+				}
 		}
 	}
 }
@@ -1415,6 +1499,7 @@ Ypp::Impl::Impl()
 	for (int i = 0; i < Package::TOTAL_TYPES; i++) {
 		packages[i] = NULL;
 		categories[i] = NULL;
+		categories2 = NULL;
 	}
 }
 
@@ -1432,6 +1517,7 @@ Ypp::Impl::~Impl()
 		g_slist_free (packages[t]);
 		delete categories[t];
 	}
+	delete categories2;
 
 	g_slist_foreach (repos, inner::free_repo, NULL);
 	g_slist_free (repos);
@@ -1665,7 +1751,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				break;
 		}
 		for (; it != end; it++) {
-			Ypp::Node *category = 0;
+			Ypp::Node *category = 0, *category2 = 0;
 			ZyppObject object = (*it)->theObj();
 			// add category and test visibility
 			switch (type) {
@@ -1675,6 +1761,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					if (!zpackage)
 						continue;
 					category = addCategory (type, zpackage->group());
+					category2 = addCategory2 (type, zpackage->group());
 					break;
 				}
 				case Package::PATTERN_TYPE:
@@ -1700,7 +1787,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					break;
 			}
 
-			Package *package = new Package (new Package::Impl (type, *it, category));
+			Package *package = new Package (new Package::Impl (type, *it, category, category2));
 			pool = g_slist_prepend (pool, package);
 		}
 		// its faster to prepend then reverse, as we avoid iterating for each append

@@ -32,6 +32,7 @@ struct Ypp
 	// Utilities
 	struct Node {
 		std::string name;
+		const char *icon;
 		Node *next();
 		Node *child();
 		void *impl;
@@ -47,6 +48,7 @@ struct Ypp
 		const std::string &name() const;
 		const std::string &summary();
 		Node *category();
+		Node *category2();
 		bool fromCollection (const Ypp::Package *collection) const;
 
 		std::string description();
@@ -134,6 +136,7 @@ struct Ypp
 			void addType (Package::Type type);
 			void addNames (std::string name, char separator = 0);
 			void addCategory (Ypp::Node *category);
+			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);
 			void addRepository (const Ypp::Repository *repositories);
 			void setIsInstalled (bool installed);
@@ -228,6 +231,7 @@ struct Ypp
 	Package *findPackage (Package::Type type, const std::string &name);
 
 	Node *getFirstCategory (Package::Type type);
+	Node *getFirstCategory2 (Package::Type type);
 
 	struct Disk
 	{

@@ -899,29 +899,6 @@ public:
 	}
 };
 
-// Maps icons to top package groups
-struct CategoriesIconMap {
-	const char *category, *icon;
-};
-static const CategoriesIconMap catIconMap[] = {
-	{ "Amusements",    "package_games"           },
-	{ "Games",         "package_games"           },
-	{ "Applications",  "package_system"          },
-	{ "Development",   "applications-development" },
-	{ "Libraries",     "package_development"     },
-	{ "Documentation", "package_documentation"   },
-	{ "Hardware",      "package_settings_peripherals" },
-	{ "Productivity",  "package_applications"    },
-	{ "System",        "package_settings"        },
-	{ "Multimedia",    "package_multimedia"      },
-	{ "Video",         "package_multimedia"      },
-	{ "Office",        "applications-office"     },
-	{ "Publishing",    "applications-office"     },
-	{ "X11",           "applications-other"      },
-	{ "Metapackages",  "package_network"         },
-};
-#define CAT_SIZE (sizeof (catIconMap)/sizeof (CategoriesIconMap))
-
 #include "icons/pkg-installed.xpm"
 #include "icons/pkg-installed-upgradable.xpm"
 #include "icons/pkg-available.xpm"
@@ -952,12 +929,13 @@ private:
 	struct Categories : public View
 	{
 		GtkWidget *m_scroll, *m_view;
+		bool m_alternative;  // use second categories...
 	public:
 		virtual GtkWidget *getWidget()
 		{ return m_scroll; }
 
-		Categories (Collections::Listener *listener, Ypp::Package::Type type)
-		: View (listener)
+		Categories (Collections::Listener *listener, Ypp::Package::Type type, bool alternative)
+		: View (listener), m_alternative (alternative)
 		{
 			GtkTreeViewColumn *column;
 			GtkCellRenderer *renderer;
@@ -1002,32 +980,25 @@ private:
 
 			struct inner {
 				static void populate (GtkTreeStore *store, GtkTreeIter *parent,
-							          Ypp::Node *category)
+							          Ypp::Node *category, Categories *pThis)
 				{
 					if (!category)
 						return;
 					GtkTreeIter iter;
 					gtk_tree_store_append (store, &iter, parent);
 					const std::string &name = category->name;
+					const char *icon = category->icon;
 					gtk_tree_store_set (store, &iter, 0, name.c_str(), 1, category, -1);
-					if (!parent) {
-						const gchar *icon = 0;
-						for (unsigned int i = 0; i < CAT_SIZE; i++)
-							if (name == catIconMap[i].category) {
-								icon = catIconMap[i].icon;
-								break;
-							}
-						if (icon) {
-							GdkPixbuf *pixbuf = loadIcon (icon);
-							gtk_tree_store_set (store, &iter, 2, pixbuf, -1);
-							if (pixbuf)
-								g_object_unref (G_OBJECT (pixbuf));
-						}
+					if (icon) {
+						GdkPixbuf *pixbuf = loadThemeIcon (icon);
+						gtk_tree_store_set (store, &iter, 2, pixbuf, -1);
+						if (pixbuf)
+							g_object_unref (G_OBJECT (pixbuf));
 					}
-					populate (store, &iter, category->child());
-					populate (store, parent, category->next());
+					populate (store, &iter, category->child(), pThis);
+					populate (store, parent, category->next(), pThis);
 				}
-				static GdkPixbuf *loadIcon (const char *icon)
+				static GdkPixbuf *loadThemeIcon (const char *icon)
 				{
 					GtkIconTheme *icons = gtk_icon_theme_get_default();
 					GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons, icon, 22,
@@ -1049,15 +1020,23 @@ private:
 			gtk_tree_store_append (store, &iter, NULL);
 			gtk_tree_store_set (store, &iter, 0, _("All"), 1, NULL, -1);
 
-			inner::populate (store, NULL, Ypp::get()->getFirstCategory (type));
-			GdkPixbuf *pixbuf = inner::loadIcon (GTK_STOCK_ABOUT);
-			gtk_tree_store_append (store, &iter, NULL);
-			gtk_tree_store_set (store, &iter, 0, _("Recommended"), 1, GINT_TO_POINTER (1),
-			                    2, pixbuf, -1);
-			gtk_tree_store_append (store, &iter, NULL);
-			gtk_tree_store_set (store, &iter, 0, _("Suggested"), 1, GINT_TO_POINTER (2),
-			                    2, pixbuf, -1);
-			g_object_unref (G_OBJECT (pixbuf));
+			Ypp::Node *first_category;
+			if (m_alternative)
+				first_category = Ypp::get()->getFirstCategory2 (type);
+			else
+				first_category = Ypp::get()->getFirstCategory (type);
+			inner::populate (store, NULL, first_category, this);
+			if (m_alternative) {
+				GdkPixbuf *pixbuf = inner::loadThemeIcon (GTK_STOCK_ABOUT);
+				gtk_tree_store_append (store, &iter, NULL);
+				gtk_tree_store_set (store, &iter, 0, _("Recommended"), 1, GINT_TO_POINTER (1),
+					                2, pixbuf, -1);
+				gtk_tree_store_append (store, &iter, NULL);
+				gtk_tree_store_set (store, &iter, 0, _("Suggested"), 1, GINT_TO_POINTER (2),
+					                2, pixbuf, -1);
+				g_object_unref (G_OBJECT (pixbuf));
+				gtk_tree_view_set_show_expanders (view, FALSE);
+			}
 
 			gtk_tree_view_set_model (view, model);
 			g_object_unref (G_OBJECT (model));
@@ -1108,8 +1087,12 @@ private:
 				else
 					node = (Ypp::Node *) ptr;
 			}
-			if (node)
-				query->addCategory (node);
+			if (node) {
+				if (m_alternative)
+					query->addCategory2 (node);
+				else
+					query->addCategory (node);
+			}
 		}
 	};
 
@@ -1206,7 +1189,7 @@ private:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	void setType (Ypp::Package::Type type)
+	void setType (Ypp::Package::Type type, bool alternative = false)
 	{
 		if (m_view)
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->getWidget());
@@ -1216,7 +1199,7 @@ private:
 		{
 			case Ypp::Package::PACKAGE_TYPE:
 			case Ypp::Package::PATCH_TYPE:
-				m_view = new Categories (m_listener, type);
+				m_view = new Categories (m_listener, type, alternative);
 				break;
 			case Ypp::Package::PATTERN_TYPE:
 			//case Ypp::Package::LANGUAGE_TYPE:
@@ -1319,8 +1302,10 @@ private:
 	GtkWidget *m_name, *m_repos, *m_type;
 	Listener *m_listener;
 	guint timeout_id;
-	int m_selectedType;
 	bool m_updateMode, m_enableRepoMgr;
+
+	enum PaneType { GROUPS_TYPE, CATEGORIES_TYPE, PATTERNS_TYPE };
+	int m_selectedType;
 
 public:
 	GtkWidget *getCollectionWidget() { return m_collection->getWidget(); }
@@ -1330,8 +1315,8 @@ public:
 	GtkWidget *getTypeWidget()       { return m_type; }
 
 	Filters (bool updateMode, bool enableRepoMgr)
-	: m_listener (NULL), timeout_id (0), m_selectedType (-1),
-	  m_updateMode (updateMode), m_enableRepoMgr (enableRepoMgr)
+	: m_listener (NULL), timeout_id (0), m_updateMode (updateMode),
+	  m_enableRepoMgr (enableRepoMgr), m_selectedType (-1)
 	{
 		m_collection = new Collections (this);
 		m_statuses = new StatusButtons (this, updateMode);
@@ -1384,6 +1369,7 @@ public:
 		if (updateMode)
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patches"));
 		else {
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Categories"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
 #if 0
@@ -1435,16 +1421,24 @@ private:
 	{
 		if (!m_listener) return;
 
+		PaneType t = (PaneType) gtk_combo_box_get_active (GTK_COMBO_BOX (m_type));
+		bool alternative = false;
 		Ypp::Package::Type type;
 		if (m_updateMode)
 			type = Ypp::Package::PATCH_TYPE;
-		else
-			type = (Ypp::Package::Type) gtk_combo_box_get_active (GTK_COMBO_BOX (m_type));
+		else {
+			if (t == PATTERNS_TYPE)
+				type = Ypp::Package::PATTERN_TYPE;
+			else {
+				type = Ypp::Package::PACKAGE_TYPE;
+				alternative = t == GROUPS_TYPE;
+			}
+		}
 
 		// adjust interface
-		if (type != m_selectedType) {
-			m_collection->setType (type);
-			m_selectedType = type;
+		if (t != m_selectedType) {
+			m_collection->setType (type, alternative);
+			m_selectedType = t;
 		}
 
 		// create query

@@ -4,6 +4,11 @@
 	cursor -- GdkWindow will do that for us. This was crashing
 	for bug 393143...
 
+	* src/yzyppwrapper.h/cc: some hacks to add a second categories tree
+	for the yast-qt groups.
+	* src/yzypptags.h/cc: copied yast-qt categories treatment.
+	* src/YGPackageSelector.cc: added Groups option to type combo.
+
 2008-05-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTextView.cc, src/YGUI.cc & src/ygtkwizard.c: changed
