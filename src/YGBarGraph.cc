@@ -15,7 +15,9 @@ public:
 	YGBarGraph (YWidget *parent)
 	: YBarGraph (NULL)
 	, YGWidget (this, parent, true, YGTK_TYPE_BAR_GRAPH, NULL)
-	{}
+	{
+		setMinSize (500, 0);
+	}
 
 	// YBarGraph
 	virtual void doUpdate()

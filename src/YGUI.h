@@ -89,11 +89,9 @@ private:
 
     // window-related arguments
     bool m_have_wm, m_no_border, m_fullscreen;
-    GtkRequisition m_default_size;
 
 public:
     // Helpers for internal use [ visibility hidden ]
-    int _getDefaultWidth(); int _getDefaultHeight();
     bool setFullscreen() const { return m_fullscreen; }
     bool hasWM() const         { return m_have_wm; }
     bool unsetBorder() const   { return m_no_border; }

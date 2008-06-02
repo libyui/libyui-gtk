@@ -29,8 +29,8 @@ public:
 
 	virtual void setSize (int width, int height);
 	virtual void setEnabled (bool enabled);
-	virtual int  preferredWidth()  { return 0; }
-	virtual int  preferredHeight() { return 0; }
+//	virtual int preferredWidth() { return 0; }
+//	virtual int preferredHeight() { return 0; }
 
 	virtual void openInternal();
 	virtual void activate();

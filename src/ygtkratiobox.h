@@ -2,33 +2,12 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-/* YGtkRatioBox is an improvement over the GtkBox container that
-   allows the programmer to set stretch weights to containees.
-
-   It is similar to GtkBox in usage but instead of feeding an
-   expand boolean, a weight is given instead. In fact, it should
-   behave just the same as a GtkBox if you give 0 for not expand
-   and 1 to.
-*/
-/*
-   Quirks (cause of yast-core):
-     if one of the children has certain special properties, then only widgets with
-     the same properties will be expanded. These are, by order:
-       both stretch and rubber-band
-       both stretch and weight
-       weight
-       stretch
-
-    We use different naming:
-      stretch = expand
-      rubber-band or layout-stretch = must expand
-      weight = ratio
+/* YGtkRatioBox uses weights instead of the single state expand boolean.
 */
 
 #ifndef YGTK_RATIO_BOX_H
 #define YGTK_RATIO_BOX_H
 
-#include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
 G_BEGIN_DECLS
 
@@ -50,9 +29,7 @@ typedef struct _YGtkRatioBox
 
 	// private (read-only):
 	GList *children;
-	gint16 spacing;
-	guint weight_length;  // min-length for weight widgets
-	guint has_must_expand : 1;  // cache
+	guint spacing;
 } YGtkRatioBox;
 
 typedef struct _YGtkRatioBoxClass
@@ -64,28 +41,15 @@ typedef struct _YGtkRatioBoxChild
 {
 	GtkWidget *widget;
 	// members
-	guint16 padding;
 	gfloat ratio;
-	guint xfill : 1;
-	guint yfill : 1;
-	guint expand : 1;  // twilight zone flag; use ratio
-	guint must_expand : 1;  // higher order expand
 } YGtkRatioBoxChild;
 
 GType ygtk_ratio_box_get_type (void) G_GNUC_CONST;
 
-void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, gint spacing);
+void ygtk_ratio_box_set_spacing (YGtkRatioBox *box, guint spacing);
 
-void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child, gfloat ratio,
-                          gboolean xfill, gboolean yfill, guint padding);
-
-// You can either use ratios or the expand boolean. If some child has a ratio set (to
-// a value other than 0), then expand flags will be ignored -- use must_expand in such
-// cases, when you want a child to expand like the child of the most ratio.
-// (rules based on those of libyui -- check top)
-void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child,
-	gboolean expand, gboolean must_expand, gfloat ratio, gboolean xfill, gboolean yfill,
-	guint padding);
+void ygtk_ratio_box_pack (YGtkRatioBox *box, GtkWidget *child, gfloat ratio);
+void ygtk_ratio_box_set_child_packing (YGtkRatioBox *box, GtkWidget *child, gfloat ratio);
 
 /* RatioHBox */
 

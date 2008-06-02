@@ -25,9 +25,6 @@ static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 static void ygtk_bar_graph_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	GTK_WIDGET_CLASS (ygtk_bar_graph_parent_class)->size_request (widget, requisition);
-	const int max_width = 250;
-	if (requisition->width > max_width)
-		requisition->width = max_width;
 	requisition->height += 6;
 }
 
@@ -95,8 +92,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 
 	// Set proportion
 	gtk_widget_set_size_request (box, 10, -1);  // for homogeneous...
-	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, TRUE, FALSE,
-		MAX (value, 1), TRUE, TRUE, 0);
+	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1));
 
 	// Set background color
 	// The Tango palette

@@ -27,11 +27,16 @@ public:
 
 	virtual void setText (const string &label)
 	{
-		gtk_label_set_label (GTK_LABEL (getWidget()), label.c_str());
+		if (isOutputField()) {
+			std::string l (label);
+			std::string::size_type i = l.find ('\n', 0);
+			if (i != std::string::npos)
+				l.erase (i);
+			gtk_label_set_label (GTK_LABEL (getWidget()), l.c_str());
+		}
+		else
+			gtk_label_set_label (GTK_LABEL (getWidget()), label.c_str());
 		YLabel::setText (label);
-
-		// Some YCP progs have no labeled labels cluttering the layout
-		label.empty() ? gtk_widget_hide (getWidget()) : gtk_widget_show (getWidget());
 	}
 
 	YGWIDGET_IMPL_COMMON

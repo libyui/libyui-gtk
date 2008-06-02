@@ -7,104 +7,53 @@
 #include "YGWidget.h"
 #include "YGUtils.h"
 
-#include "YLayoutBox.h"
-#include "ygtkratiobox.h"
-#include "YSpacing.h"
-#include "YPushButton.h"
-#include "YMenuButton.h"
+/* Our layout stuff is a hybrid between GTK and libyui. We use libyui
+   for YLayoutBox and a couple of other widgets, but we do things GTK
+   friendly, so for single-child containers like GtkNotebook we don't
+   have to do any work. */
 
-// GtkBox-like container (actually, more like our YGtkRatioBox)
+#include "ygtkfixed.h"
+
+static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
+{
+	GtkWidget *child = YGWidget::get (ychild)->getLayout();
+	ygtk_fixed_set_child_pos (YGTK_FIXED (fixed), child, x, y);
+}
+
+#define YGLAYOUT_INIT                                          \
+	ygtk_fixed_setup (YGTK_FIXED (getWidget()), preferred_size_cb, set_size_cb, this);
+#define YGLAYOUT_PREFERRED_SIZE_IMPL(ParentClass) \
+	static void preferred_size_cb (YGtkFixed *fixed, gint *width, gint *height, \
+	                               gpointer pThis) { \
+		*width = ((ParentClass *) pThis)->ParentClass::preferredWidth(); \
+		*height = ((ParentClass *) pThis)->ParentClass::preferredHeight(); \
+	}
+#define YGLAYOUT_SET_SIZE_IMPL(ParentClass) \
+	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, \
+	                         gpointer pThis) { \
+		((ParentClass *) pThis)->ParentClass::setSize (width, height); \
+	} \
+	virtual void setSize (int width, int height) { doSetSize (width, height); } \
+	virtual void moveChild (YWidget *ychild, int x, int y) \
+	{ doMoveChild (getWidget(), ychild, x, y); }
+
+#include "YLayoutBox.h"
+
 class YGLayoutBox : public YLayoutBox, public YGWidget
 {
-	// This group is meant to set all YGLabeledWidget with horizontal label
-	// to share the same width (if they belong to the same YSplit), so they
-	// look right
-	GtkSizeGroup *m_labels_group, *m_buttons_group;
-
 public:
 	YGLayoutBox (YWidget *parent, YUIDimension dim)
 	: YLayoutBox (NULL, dim),
-	  YGWidget (this, parent, true,
-	            dim == YD_HORIZ ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
+	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
-		m_labels_group = m_buttons_group = NULL;
-	}
-
-	~YGLayoutBox()
-	{
-		if (m_labels_group)
-			g_object_unref (G_OBJECT (m_labels_group));
-		if (m_buttons_group)
-			g_object_unref (G_OBJECT (m_buttons_group));
+		YGLAYOUT_INIT
 	}
 
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
-	virtual void moveChild (YWidget *child, int x, int y) {}
-
-	void addSizeGroup (YGLabeledWidget *labeledWidget)
-	{
-		GtkWidget *label = labeledWidget->getLabelWidget();
-		if (m_labels_group) {
-			GSList *labels = gtk_size_group_get_widgets (m_labels_group);
-			if (g_slist_find (labels, label))  // contains label already?
-				return;
-			// labels is not to be freed!
-		}
-		else
-			m_labels_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-		gtk_size_group_add_widget (m_labels_group, label);
-	}
-
-	virtual void syncStretchable (YWidget *ychild, YGWidget *child)
-	{
-		IMPL
-		YGtkRatioBox *box = YGTK_RATIO_BOX (getWidget());
-
-		YUIDimension dim = primary();
-		bool horiz_fill = ychild->stretchable (YD_HORIZ) || ychild->hasWeight (YD_HORIZ);
-		bool vert_fill  = ychild->stretchable (YD_VERT) || ychild->hasWeight (YD_VERT);
-
-		ygtk_ratio_box_set_child_packing (box, child->getLayout(), ychild->stretchable (dim),
-			isLayoutStretch (ychild, dim), ychild->weight (dim), horiz_fill, vert_fill, 0);
-
-		// set all buttons to same height -- cause of stock icons...
-		if (dim == YD_HORIZ) {
-			bool isButton = false;
-			if (dynamic_cast <YPushButton *> (ychild))
-				isButton = true;
-			else if (dynamic_cast <YMenuButton *> (ychild))
-				isButton = true;
-			if (isButton) {
-				if (!m_buttons_group)
-					m_buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
-				gtk_size_group_add_widget (m_buttons_group, child->getWidget());
-			}
-		}
-
-		// align horizontal widget labels to the same width
-		// we do some work here, since they may be placed inside a HBox or something...
-		if (dim == YD_HORIZ && !horiz_fill)
-			return;
-		YWidget *yLabeledWidget = ychild;
-		while (yLabeledWidget->hasChildren()) { // container
-			YWidget *container = yLabeledWidget;
-			for (YWidgetListConstIterator it = container->childrenBegin();
-				 it != container->childrenEnd(); it++) {
-				yLabeledWidget = *it;
-				if (!dynamic_cast <YSpacing *> (yLabeledWidget) /*ignore spacings*/)
-					break;
-			}
-		}
-		YGLabeledWidget *labeledWidget =
-			dynamic_cast <YGLabeledWidget *> (YGWidget::get (yLabeledWidget));
-		if (labeledWidget && labeledWidget->orientation() == YD_HORIZ) {
-/*			horiz_fill = yLabeledWidget->stretchable (YD_HORIZ) || yLabeledWidget->hasWeight (YD_HORIZ);
-			if (horiz_fill)*/
-				addSizeGroup (labeledWidget);
-		}
-	}
+	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
+	YGLAYOUT_SET_SIZE_IMPL (YLayoutBox)
 };
 
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
@@ -122,10 +71,11 @@ class YGAlignment : public YAlignment, public YGWidget
 public:
 	YGAlignment (YWidget *parent, YAlignmentType halign, YAlignmentType valign)
 	: YAlignment (NULL, halign, valign),
-	  YGWidget (this, parent, true, GTK_TYPE_ALIGNMENT, NULL)
+	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
 		m_background_pixbuf = 0;
+		YGLAYOUT_INIT
 	}
 
 	virtual ~YGAlignment()
@@ -134,61 +84,10 @@ public:
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 	}
 
-	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
-	{
-		YGWidget::doAddChild (ychild, container);
-
-		/* The padding is used for stuff like making YCP progs nicer for
-		   yast-qt wizard, so it hurts us -- it's disabled. */
-		//child->setPadding (topMargin(), bottomMargin(),
-		//                   leftMargin(), rightMargin());
-		setMinSize (minWidth(), minHeight());
-	}
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
-	virtual void moveChild (YWidget *child, int x, int y) {}
-
-	virtual void syncStretchable (YWidget *ychild, YGWidget *child)
-	{
-		IMPL
-		setAlignment (alignment (YD_HORIZ), alignment (YD_VERT));
-	}
-
-	void setAlignment (YAlignmentType halign, YAlignmentType valign)
-	{
-		struct inner {
-			// helper -- converts YWidget YAlignmentType to Gtk's align float
-			static float yToGtkAlign (YAlignmentType align)
-			{
-				switch (align) {
-					case YAlignBegin:  return 0.0;
-					default:
-					case YAlignCenter: return 0.5;
-					case YAlignEnd:    return 1.0;
-				}
-			}
-		};
-
-		float xalign, yalign, xscale, yscale;
-		xalign = inner::yToGtkAlign (halign);
-		yalign = inner::yToGtkAlign (valign);
-		xscale = (halign == YAlignUnchanged) ? 1 : 0;
-		yscale = (valign == YAlignUnchanged) ? 1 : 0;
-		if (hasChildren()) {
-			// special case: child has stretch opt
-			if (!xscale && firstChild()->stretchable (YD_HORIZ))
-				xscale = 1;
-			if (!yscale && firstChild()->stretchable (YD_VERT))
-				yscale = 1;
-		}
-		gtk_alignment_set (GTK_ALIGNMENT (getWidget()), xalign, yalign, xscale, yscale);
-	}
-
-	void setPadding (int top, int bottom, int left, int right)
-	{
-		gtk_alignment_set_padding (GTK_ALIGNMENT (getWidget()),
-		                           top, bottom, left, right);
-	}
+	YGLAYOUT_PREFERRED_SIZE_IMPL (YAlignment)
+	YGLAYOUT_SET_SIZE_IMPL (YAlignment)
 
 	virtual void setBackgroundPixmap (string filename)
 	{
@@ -234,32 +133,6 @@ public:
 		                                GTK_BIN (widget)->child, event);
 		return TRUE;
 	}
-
-	virtual string getDebugLabel() const
-	{
-		struct inner {
-			static const char *alignLabel (YAlignmentType align)
-			{
-				switch (align) {
-					case YAlignUnchanged:
-						return "unchanged";
-					case YAlignBegin:
-						return "begin";
-					case YAlignEnd:
-						return "end";
-					case YAlignCenter:
-						return "center";
-				}
-				return ""; /*not run*/
-			}
-		};
-
-		string str;
-		str += inner::alignLabel (alignment (YD_HORIZ));
-		str += " x ";
-		str += inner::alignLabel (alignment (YD_VERT));
-		return str;
-	}
 };
 
 YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType halign,
@@ -299,14 +172,16 @@ class YGSpacing : public YSpacing, public YGWidget
 public:
 	YGSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size)
 	: YSpacing (NULL, dim, stretchable, size),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
-		int width = YSpacing::size (YD_HORIZ), height = YSpacing::size (YD_VERT);
-		gtk_widget_set_size_request (getWidget(), width, height);
+		YGLAYOUT_INIT
 	}
 
 	YGWIDGET_IMPL_COMMON
+	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
+	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, 
+	                         gpointer pThis) {}
 };
 
 YSpacing *YGWidgetFactory::createSpacing (YWidget *parent, YUIDimension dim,
@@ -316,9 +191,6 @@ YSpacing *YGWidgetFactory::createSpacing (YWidget *parent, YUIDimension dim,
 }
 
 #include "YReplacePoint.h"
-
-//TEMP:
-#include "YPushButton.h"
 
 // an empty space that will get replaced
 class YGReplacePoint : public YReplacePoint, public YGWidget
@@ -331,6 +203,7 @@ public:
 		setBorder (0);
 	}
 
+	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };
@@ -355,6 +228,7 @@ public:
 		setBorder (0);
 	}
 
+	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 };

@@ -1,3 +1,14 @@
+2008-06-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.h/cc & src/YGLayout.h/cc: now using libyui for
+	the layout to avoid bugs and stuff. It's inter-laced with GTK,
+	so we can keep our simplified containers like the dumbtab.
+
+	* src/ygtkfixed.h/.c: added this container that makes life easier
+	for YGLayoutBox and others.
+
+	* src/ygtkratiobox.h/.c: simplified it.
+
 2008-05-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: bug fix: seems like we shouldn't unref the

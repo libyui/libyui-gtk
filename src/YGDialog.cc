@@ -7,90 +7,6 @@
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 
-/*
- * GtkWindow sub-class to ensure we can't get a size-allocation
- * that is larger than the screen.
- */
-typedef struct {
-  GtkWindow parent;
-  gboolean  fullscreen;
-} YGtkWindow;
-
-typedef struct {
-  GtkWindowClass parent_class;
-} YGtkWindowClass;
-
-G_DEFINE_TYPE (YGtkWindow, ygtk_window, GTK_TYPE_WINDOW)
-
-static void ygtk_window_set_fullscreen (YGtkWindow *window,
-					gboolean    fullscreen)
-{
-  window->fullscreen = fullscreen;
-}
-
-static void ygtk_window_size_request (GtkWidget      *widget,
-				      GtkRequisition *requisition)
-{
-  YGtkWindow *ywindow = (YGtkWindow *) widget;
-
-  GTK_WIDGET_CLASS (ygtk_window_parent_class)->size_request (widget, requisition);
-
-//  fprintf (stderr, "ygtk_window_size_request: %d %d\n",
-//	     requisition->width, requisition->height);
-
-  GdkScreen *screen = gtk_widget_get_screen (widget);
-  int max_screen_width = gdk_screen_get_width (screen);
-  int max_screen_height = gdk_screen_get_height (screen);
-
-  /*
-   * FIXME: do we want to call gdk_window_get_frame_extents
-   * on the root window ? - will that tell us about panels etc. ?
-   *
-   * FIXME: do we want to defer 'map' until we can get our
-   * frame size from the realized window to do better here ?
-   */
- 
-  // in the meantime shrink ourselves a little, to account for
-  // window decoration / panels etc.
-  if (!ywindow->fullscreen)
-    {
-      max_screen_height = 0.90 * max_screen_height;
-      max_screen_width = 0.90 * max_screen_width;
-    }
-
-  if (requisition->width > max_screen_width)
-    {
-//      fprintf (stderr, "cropping width from %d to %d\n",
-//	      requisition->width, max_screen_width);
-      requisition->width = max_screen_width;
-    }
-  if (requisition->height > max_screen_height)
-    {
-//      fprintf (stderr, "cropping height from %d to %d\n",
-//	requisition->height, max_screen_height);
-      requisition->height = max_screen_height;
-    }
-}
-
-static void ygtk_window_size_allocate (GtkWidget     *widget,
-				       GtkAllocation *allocation)
-{
-/*        fprintf (stderr, "YGDialog size alloc %d %d\n",
-	    allocation->width, allocation->height); */
-	GTK_WIDGET_CLASS (ygtk_window_parent_class)->size_allocate (widget, allocation);
-}
-
-static void ygtk_window_init (YGtkWindow *) {}
-static void ygtk_window_class_init (YGtkWindowClass *klass)
-{
-  GtkWidgetClass *wklass = (GtkWidgetClass *) klass;
-
-  ygtk_window_parent_class = g_type_class_peek_parent (klass);
-
-  wklass->size_request = ygtk_window_size_request;
-  wklass->size_allocate = ygtk_window_size_allocate;
-}
-
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
    there is already a main window, it should replace its content -- and when closed,
    the previous dialog restored.
@@ -100,6 +16,8 @@ static void ygtk_window_class_init (YGtkWindowClass *klass)
    be a YGDialog and is swap-able.
 */
 
+#define DEFAULT_WIDTH  650
+#define DEFAULT_HEIGHT 550
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -118,9 +36,9 @@ public:
 
 	YGWindow (bool _main_window, YGDialog *ydialog)
 	{
-                m_widget = GTK_WIDGET (g_object_new (ygtk_window_get_type(), NULL));
-		g_object_ref (G_OBJECT (m_widget));
-		gtk_object_sink (GTK_OBJECT (m_widget));
+		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		g_object_ref_sink (G_OBJECT (m_widget));
+		g_object_set (G_OBJECT (m_widget), "allow-shrink", TRUE, NULL);
 
 		m_refcount = 0;
 		m_child = NULL;
@@ -161,14 +79,9 @@ public:
 		    }
 
 		    if (_main_window) {
-		        int w = YGUI::ui()->_getDefaultWidth(),
-		            h = YGUI::ui()->_getDefaultHeight();
-		        gtk_window_set_default_size (window, w, h);
-
-			if (YGUI::ui()->setFullscreen()) {
-			  gtk_window_fullscreen (window);
-			  ygtk_window_set_fullscreen ((YGtkWindow *)window, TRUE);
-			}
+		        gtk_window_set_default_size (window, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+				if (YGUI::ui()->setFullscreen())
+					gtk_window_fullscreen (window);
 		    }
 
 		    gtk_window_set_role (window, "yast2-gtk");
@@ -202,8 +115,9 @@ public:
 
 	void normalCursor()
 	{
-		if (GTK_WIDGET_REALIZED (m_widget))
+		if (GTK_WIDGET_REALIZED (m_widget)) {
 			gdk_window_set_cursor (m_widget->window, NULL);
+		}
 	}
 
 	void busyCursor()
@@ -270,8 +184,7 @@ private:
 		IMPL
 		// if not main dialog, close it on escape
 		if (event->keyval == GDK_Escape &&
-		    /* not main window */ main_window != pThis)
-		{
+		    /* not main window */ main_window != pThis) {
 			pThis->close();
 		    return TRUE;
 		    
@@ -403,9 +316,6 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 
         gtk_box_pack_start (GTK_BOX (getWidget()), icon,    FALSE, FALSE, 12);
         gtk_box_pack_start (GTK_BOX (getWidget()), m_containee, TRUE, TRUE, 0);
-
-        GtkRequisition req;
-        gtk_widget_size_request (icon, &req);
     }
     else
         gtk_box_pack_start (GTK_BOX (getWidget()), m_containee, TRUE, TRUE, 0);
@@ -482,21 +392,12 @@ void YGDialog::setSize (int width, int height)
 {
 	// libyui calls YDialog::setSize() to force a geometry recalculation as a
 	// result of changed layout properties
-	struct inner {
-		static void syncStretchable (YWidget *ywidget, YGWidget *widget)
-		{
-			for (YWidgetListConstIterator it = ywidget->childrenBegin();
-				 it != ywidget->childrenEnd(); it++) {
-				YWidget *ychild = const_cast <YWidget *> (*it);
-				YGWidget *child = YGWidget::get (ychild);
-				if (child) {
-					widget->syncStretchable (ychild, child);
-					syncStretchable (ychild, child);
-				}
-			}
-		}
-	};
-	inner::syncStretchable (this, this);
+	GtkWidget *window = m_window->getWidget();
+	if (GTK_WIDGET_REALIZED (window)) {
+		gtk_widget_queue_resize (window);
+		if (!isMainDialog())
+			gtk_window_resize (GTK_WINDOW (window), width, height);
+	}
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)

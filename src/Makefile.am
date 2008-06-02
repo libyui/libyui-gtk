@@ -40,6 +40,7 @@ libpy2gtk_la_SOURCES = \
 	YGWizard.cc \
 	YGPackageSelector.cc \
 	ygtkratiobox.c \
+	ygtkfixed.c \
 	ygtkbargraph.c \
 	ygtksteps.c \
 	ygtkfieldentry.c \

@@ -37,7 +37,6 @@ YGUI::YGUI (bool with_threads)
 	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
-	m_default_size.width = m_default_size.height = 0;
 
     YGUI::setTextdomain( TEXTDOMAIN );
 
@@ -88,15 +87,6 @@ fprintf (stderr, "init()\n");
 			m_fullscreen = true;
 		else if (!strcmp (argp, "noborder"))
 			m_no_border = true;
-		else if (!strcmp (argp, "geometry")) {
-			argp = argv [++i];
-			if (i == argc)
-				printf ("Warning: no value passed to --geometry\n");
-			else if (sscanf (argp, "%dx%d", &m_default_size.width,
-			                 &m_default_size.height) == EOF) {
-				printf ("Warning: invalid --geometry value: %s\n", argp);
-			}
-		}
 		else if (!strcmp (argp, "help")) {
 			printf (
 				 "Command line options for the YaST2 Gtk UI:\n"
@@ -126,20 +116,6 @@ static int getDisplayWidth()
 { return gdk_screen_get_width (getScreen()); }
 static int getDisplayHeight()
 { return gdk_screen_get_height (getScreen()); }
-
-int YGUI::_getDefaultWidth()
-{ 
-	if (!m_default_size.width)
-		m_default_size.width = MIN (600, getDisplayWidth());
-	return m_default_size.width;
-}
-
-int YGUI::_getDefaultHeight()
-{ 
-	if (!m_default_size.height)
-		m_default_size.height = MIN (450, getDisplayHeight());
-	return m_default_size.height;
-}
 
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
                                gpointer data)

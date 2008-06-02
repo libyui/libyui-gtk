@@ -47,11 +47,12 @@ public:
 	void setMinSize (unsigned int min_width, unsigned int min_height);
 	void setMinSizeInChars (unsigned int min_width, unsigned int min_height);
 
-	// whenever the stretchable property may change (eg. when adding a child
-	// for a container), call this function to make sure it is honored.
-	virtual void syncStretchable (YWidget *ychild, YGWidget *child) {}
-
 protected:
+	// layout
+	virtual int getPreferredSize (YUIDimension dimension);
+	void doSetSize (int width, int height);
+	GtkRequisition m_sizeReq;  // cache
+
 	void show();
 
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
@@ -75,9 +76,9 @@ protected:
 		doSetEnabled (enabled);                                 \
 		YWidget::setEnabled (enabled);                          \
 	}                                                           \
-	virtual int  preferredWidth()  { return 0; }                \
-	virtual int  preferredHeight() { return 0; }                \
-	virtual void setSize (int width, int height) {}
+	virtual int  preferredWidth()  { return getPreferredSize (YD_HORIZ); } \
+	virtual int  preferredHeight() { return getPreferredSize (YD_VERT); }  \
+	virtual void setSize (int width, int height) { doSetSize (width, height); }
 
 #define YGWIDGET_IMPL_USE_BOLD(ParentClass)                     \
     virtual void setUseBoldFont (bool useBold) {                \

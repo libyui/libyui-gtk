@@ -48,14 +48,20 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 		ywidget->setParent (yparent);
 		yparent->addChild (ywidget);
 	}
+	m_sizeReq.width = 0;
 }
 
 YGWidget::~YGWidget()
 {
 	IMPL
+	// remove children if container?
+#if 0
+	if (GTK_IS_CONTAINER (m_widget))
+		gtk_container_foreach (GTK_CONTAINER (m_widget),
+			(GtkCallback) gtk_container_remove, NULL);
+#endif
 	gtk_widget_destroy (m_adj_size);
 	g_object_unref (G_OBJECT (m_adj_size));
-	// remove all children if container?
 }
 
 void YGWidget::show()
@@ -104,6 +110,26 @@ void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
 		GtkWidget *child = YGWidget::get (ychild)->getLayout();
 		gtk_container_remove (GTK_CONTAINER (container), child);
 	}
+}
+
+int YGWidget::getPreferredSize (YUIDimension dimension)
+{
+	if (!m_sizeReq.width)
+		gtk_widget_size_request (m_adj_size, &m_sizeReq);
+	return dimension == YD_HORIZ ? m_sizeReq.width : m_sizeReq.height;
+}
+
+#include "ygtkfixed.h"
+
+void YGWidget::doSetSize (int width, int height)
+{
+	GtkWidget *parent = 0;
+	if (m_ywidget->parent())
+		parent = YGWidget::get (m_ywidget->parent())->getWidget();
+
+	if (parent && YGTK_IS_FIXED (parent))
+		ygtk_fixed_set_child_size (YGTK_FIXED (parent), m_adj_size, width, height);
+	m_sizeReq.width = 0;
 }
 
 void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
@@ -161,7 +187,8 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
                                   bool show, GType type,
                                   const char *property_name, ...)
 	: YGWidget (ywidget, parent, show,
-	            label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
+//	            label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
+	            GTK_TYPE_VBOX,
 	            "spacing", LABEL_WIDGET_SPACING, NULL)
 {
 	// Create the field widget
