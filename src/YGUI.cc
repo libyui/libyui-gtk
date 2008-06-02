@@ -389,13 +389,15 @@ void YGApplication::makeScreenShot (string filename)
 	}
 
 	yuiDebug() << "Saving screen shot to " << filename << endl;
-	if (gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
-		yuiError() << "Couldn't save screen shot " << filename << endl;
-		if (interactive) {
-		  string msg = _("Couldn't save screenshot to file ") + filename
-			             + " - " + error->message;
-			errorMsg (msg.c_str());
+	if (!gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
+		string msg = _("Couldn't save screenshot to file ") + filename;
+		if (error) {
+			msg += "\n";
+			msg += std::string ("\n") + error->message;
 		}
+		yuiError() << msg << endl;
+		if (interactive)
+			errorMsg (msg.c_str());
 		goto makeScreenShot_ret;
 	}
 
