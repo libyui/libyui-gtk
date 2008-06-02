@@ -1,3 +1,10 @@
+2008-06-02  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGUI.cc (YGApplication::makeScreenShot),
+	* src/ygtkwizard.c (ygtk_help_dialog_init),
+	* src/ygtkwizard.c (sync_window_title): tag more missing
+	strings for translation in the next version bug #395803#
+
 2008-06-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.h/cc & src/YGLayout.h/cc: now using libyui for
