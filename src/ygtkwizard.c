@@ -490,7 +490,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 
 	GtkWidget *child = wizard->m_child, *pane;
 	pane = gtk_hpaned_new();
-	gtk_paned_pack1 (GTK_PANED (pane), wizard->m_tree, TRUE, FALSE);
+	gtk_paned_pack1 (GTK_PANED (pane), wizard->m_tree, TRUE, TRUE);
 	gtk_widget_show_all (pane);
 	ygtk_wizard_set_child (wizard, pane);
 	wizard->m_pane = pane;

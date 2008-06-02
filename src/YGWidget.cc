@@ -83,7 +83,7 @@ bool YGWidget::doSetKeyboardFocus()
 
 void YGWidget::doSetEnabled (bool enabled)
 {
-	gtk_widget_set_sensitive (getWidget(), enabled);
+	gtk_widget_set_sensitive (getLayout(), enabled);
 }
 
 void YGWidget::doSetUseBoldFont (bool useBold)

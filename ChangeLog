@@ -9,6 +9,14 @@
 
 	* src/ygtkratiobox.h/.c: simplified it.
 
+	* src/YGComboBox.cc: fixed bug 394309: GTK returning null for
+	active text.
+
+	* src/YGWidget.cc (doSetEnabled): also disable the label, to
+	give a better look.
+
+	* src/ygtkwizard.c: let the side pane shrink.
+
 2008-05-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: bug fix: seems like we shouldn't unref the

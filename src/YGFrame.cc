@@ -9,7 +9,7 @@
 
 // Instead of traditional looking frames, we use Gnome convention for the
 // frame's look. That is: don't draw a frame, use bold header and pad the child.
-#define CHILD_INDENTATION 15
+#define CHILD_INDENTATION 20
 
 class YGBaseFrame : public YGWidget
 {
@@ -24,7 +24,8 @@ public:
 	{
 		IMPL
 		m_containee = gtk_alignment_new (0, 0, 1, 1);
-		gtk_alignment_set_padding (GTK_ALIGNMENT (m_containee), 0, 0, 15, 0);
+		gtk_alignment_set_padding (GTK_ALIGNMENT (m_containee),
+			0, 0, CHILD_INDENTATION, 0);
 		gtk_widget_show (m_containee);
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_containee);
 	}
@@ -101,7 +102,7 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
 
 
@@ -122,7 +123,7 @@ public:
 	{
 		IMPL
 		GtkWidget *button = gtk_check_button_new_with_mnemonic("");
-		YGUtils::setWidgetFont (GTK_WIDGET (button), PANGO_WEIGHT_BOLD,
+		YGUtils::setWidgetFont (gtk_bin_get_child (GTK_BIN (button)), PANGO_WEIGHT_BOLD,
 		                        PANGO_SCALE_MEDIUM);
 		gtk_widget_show_all (button);
 		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
@@ -157,9 +158,8 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
-    virtual void setEnabled (bool enabled)
-    {
-
+	virtual void doSetEnabled (bool enabled)
+	{
         GtkWidget *frame = getWidget();
         if (enabled) {
             gtk_widget_set_sensitive (frame, TRUE);
@@ -172,8 +172,9 @@ public:
         YWidget::setEnabled (enabled);
     }
 
+	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 
 private:
     static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
