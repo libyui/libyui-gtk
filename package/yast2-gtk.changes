@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jun  3 07:46:59 CEST 2008 - coolo@suse.de
+
+- Update to version 2.16.13
+* tag more missing strings for translation (bnc#395803)
+* fixed bnc#395484
+* various fixes in the package selector by Ricardo
+
+-------------------------------------------------------------------
 Mon May 19 11:05:00 BST 2008 - mmichael@suse.de
 
 - Update to version 2.16.12

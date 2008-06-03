@@ -349,7 +349,7 @@ void YGApplication::makeScreenShot (string filename)
 	GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());
 	if (!widget) {
 		if (interactive)
-			errorMsg ("No dialog to take screenshot of.");
+			errorMsg (_("No dialog to take screenshot of."));
 		return;
 	}
 
@@ -361,7 +361,7 @@ void YGApplication::makeScreenShot (string filename)
 
 	if (!shot) {
 		if (interactive)
-			errorMsg ("Couldn't take a screenshot.");
+			errorMsg (_("Couldn't take a screenshot."));
 		return;
 	}
 
@@ -413,13 +413,15 @@ void YGApplication::makeScreenShot (string filename)
 	}
 
 	yuiDebug() << "Saving screen shot to " << filename << endl;
-	if (gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
-		yuiError() << "Couldn't save screen shot " << filename << endl;
-		if (interactive) {
-			string msg = "Couldn't save screenshot to file " + filename
-			             + " - " + error->message;
-			errorMsg (msg.c_str());
+	if (!gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
+		string msg = _("Couldn't save screenshot to file ") + filename;
+		if (error) {
+			msg += "\n";
+			msg += std::string ("\n") + error->message;
 		}
+		yuiError() << msg << endl;
+		if (interactive)
+			errorMsg (msg.c_str());
 		goto makeScreenShot_ret;
 	}
 

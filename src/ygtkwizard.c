@@ -14,6 +14,8 @@
 #include "ygtkhtmlwrap.h"
 #include "ygtksteps.h"
 #include "ygtkfindentry.h"
+#define YGI18N_C
+#include "YGi18n.h"
 
 #define BUTTONS_SPACING 12
 #define BORDER           4
@@ -75,7 +77,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_window_set_type_hint (GTK_WINDOW (dialog), GDK_WINDOW_TYPE_HINT_DIALOG);
 
 
-	gtk_window_set_title (GTK_WINDOW (dialog), "Help");
+	gtk_window_set_title (GTK_WINDOW (dialog), _("Help"));
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 350);
 
 	// title
@@ -86,7 +88,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_set_border_width (GTK_CONTAINER (dialog->title_box), 6);
 	dialog->title_image = gtk_image_new_from_stock (GTK_STOCK_HELP,
 	                                   GTK_ICON_SIZE_LARGE_TOOLBAR);
-	dialog->title_label = gtk_label_new ("Help");
+	dialog->title_label = gtk_label_new (_("Help"));
 	set_label_header (dialog->title_label, 0);
 	gtk_box_pack_start (GTK_BOX (dialog->title_box), dialog->title_image,
 	                    FALSE, FALSE, 0);
@@ -613,9 +615,9 @@ static void sync_window_title (YGtkWizard *wizard)
 		const gchar *_title = gtk_label_get_text (GTK_LABEL (wizard->m_title_label));
 		char *title;
 		if (*_title == '\0')
-			title = g_strdup ("YaST");
+			title = g_strdup (_("YaST"));
 		else
-			title = g_strdup_printf ("%s - YaST", _title);
+			title = g_strdup_printf (_("%s - YaST"), _title);
 		GdkPixbuf *pixbuf = gtk_image_get_pixbuf (GTK_IMAGE (wizard->m_title_image));
 
 		gtk_window_set_title (GTK_WINDOW (window), title);

@@ -25,15 +25,16 @@
 
 #define TEXTDOMAIN "yast2-gtk"
 
-inline const char * _( const char * msgid )
+static inline const char * _( const char * msgid )
 {
 	return ( !msgid || !*msgid ) ? "" : dgettext( TEXTDOMAIN, msgid );
 }
 
-inline const char * _( const char * msgid1, const char * msgid2, unsigned long int n )
+#ifndef YGI18N_C
+static inline const char * _( const char * msgid1, const char * msgid2, unsigned long int n )
 {
 	return dngettext( TEXTDOMAIN, msgid1, msgid2, n );
 }
-
+#endif
 
 #endif // YGi18n_h
