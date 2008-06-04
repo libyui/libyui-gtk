@@ -115,14 +115,22 @@ public:
 
 	void normalCursor()
 	{
-		if (GTK_WIDGET_REALIZED (m_widget)) {
+		if (GTK_WIDGET_REALIZED (m_widget)
+// trying to fix 393143
+&& GTK_WIDGET_MAPPED (m_widget)
+&& GTK_WIDGET_VISIBLE (m_widget)
+) {
 			gdk_window_set_cursor (m_widget->window, NULL);
 		}
 	}
 
 	void busyCursor()
 	{
-		if (GTK_WIDGET_REALIZED (m_widget)) {
+		if (GTK_WIDGET_REALIZED (m_widget)
+// trying to fix 393143
+&& GTK_WIDGET_MAPPED (m_widget)
+&& GTK_WIDGET_VISIBLE (m_widget)
+) {
 			GdkDisplay *display = gtk_widget_get_display (m_widget);
 			GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			gdk_window_set_cursor (m_widget->window, cursor);
@@ -372,11 +380,13 @@ void YGDialog::unsetCloseCallback()
 
 void YGDialog::normalCursor()
 {
+if (m_window)  // trying to fix bug 393143
 	m_window->normalCursor();
 }
 
 void YGDialog::busyCursor()
 {
+if (m_window)
 	m_window->busyCursor();
 }
 

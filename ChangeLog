@@ -14,6 +14,8 @@
 	the fact we are supposed to call parent's methods before running
 	our code... NOTE
 
+	* src/YGDialog.cc: some changes to see if we fix bug 393143...
+
 2008-06-02  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc (YGApplication::makeScreenShot),
