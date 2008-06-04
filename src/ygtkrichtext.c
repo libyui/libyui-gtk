@@ -21,7 +21,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
 
 G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
 
-static GdkCursor *hand_cursor, *regular_cursor;
+static GdkCursor *hand_cursor;
 static guint ref_cursor = 0;
 static guint link_clicked_signal;
 static GdkColor link_color = { 0, 0, 0, 0xeeee };
@@ -113,8 +113,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	// Init link support
 	if (!ref_cursor) {
 		GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
-		hand_cursor    = gdk_cursor_new_for_display (display, GDK_HAND2);
-		regular_cursor = gdk_cursor_new_for_display (display, GDK_XTERM);
+		hand_cursor    = gdk_cursor_new_for_display (display, GDK_HAND1);
 	}
 	ref_cursor++;
 
@@ -163,7 +162,6 @@ static void ygtk_rich_text_destroy (GtkObject *object)
 	// destroy can be called multiple times, and we must ref only once
 	if (ref_cursor > 0 && (--ref_cursor == 0)) {
 		gdk_cursor_unref (hand_cursor);
-		gdk_cursor_unref (regular_cursor);
 	}
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
@@ -183,7 +181,7 @@ static void set_cursor_if_appropriate (GtkTextView *text_view, gint x, gint y)
 					(text_view, GTK_TEXT_WINDOW_TEXT), hand_cursor);
 		else
 			gdk_window_set_cursor (gtk_text_view_get_window
-					(text_view, GTK_TEXT_WINDOW_TEXT), regular_cursor);
+					(text_view, GTK_TEXT_WINDOW_TEXT), NULL);
 		}
 }
 

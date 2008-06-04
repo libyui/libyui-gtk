@@ -70,11 +70,11 @@ protected:
  * for GTK+.
  */
 #define YGWIDGET_IMPL_COMMON                                    \
-	virtual bool setKeyboardFocus()                             \
-	    { return doSetKeyboardFocus(); }                        \
+	virtual bool setKeyboardFocus() {                           \
+		return doSetKeyboardFocus(); }                          \
 	virtual void setEnabled (bool enabled) {                    \
-		doSetEnabled (enabled);                                 \
 		YWidget::setEnabled (enabled);                          \
+		doSetEnabled (enabled);                                 \
 	}                                                           \
 	virtual int  preferredWidth()  { return getPreferredSize (YD_HORIZ); } \
 	virtual int  preferredHeight() { return getPreferredSize (YD_VERT); }  \
@@ -82,8 +82,8 @@ protected:
 
 #define YGWIDGET_IMPL_USE_BOLD(ParentClass)                     \
     virtual void setUseBoldFont (bool useBold) {                \
-    	doSetUseBoldFont (useBold);                             \
     	ParentClass::setUseBoldFont (useBold);                  \
+    	doSetUseBoldFont (useBold);                             \
     }
 
 // for containers

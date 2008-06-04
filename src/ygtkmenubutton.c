@@ -156,6 +156,12 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 	gdk_window_get_origin (widget->window, x, y);
 	*x += button_alloc->x - popup_width*button->xalign;
 	*y += (button_alloc->y-popup_height) + (button_alloc->height+popup_height)*button->yalign;
+
+	// GTK doesn't push up menus if they are near the bottom, but we will...
+	int screen_height;
+	screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
+	if (*y > screen_height - popup_height)
+		*y -= popup_height + button_alloc->height;
 }
 
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,

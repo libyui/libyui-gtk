@@ -44,19 +44,16 @@ public:
 
 	virtual void addItem (YItem *item)
 	{
+		YDumbTab::addItem (item);
+
 		GtkWidget *tab_label, *image = 0, *label;
-
-		string str = YGUtils::mapKBAccel (item->label());
-		label = gtk_label_new_with_mnemonic (str.c_str());
-		gtk_widget_show (label);
-
+		label = gtk_label_new (item->label().c_str());
 		if (item->hasIconName()) {
 			string path = iconFullPath (item->iconName());
 			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
 			if (pixbuf)
 				image = gtk_image_new_from_pixbuf (pixbuf);
 		}
-
 		if (image) {
 			tab_label = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (tab_label), image, FALSE, TRUE, 0);
@@ -78,16 +75,15 @@ public:
 		selectItem (item, item->selected() || !m_last_tab /*first tab*/);
 
 		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
-		YDumbTab::addItem (item);
 	}
 
 	virtual void deleteAllItems()
 	{
+		YDumbTab::deleteAllItems();
 		GList *children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
 		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (getWidget()), (GtkWidget *) i->data);
 		g_list_free (children);
-		YDumbTab::deleteAllItems();
 	}
 
 	// to re-use the same widget in all tabs (m_fixed), we will remove and
@@ -110,6 +106,7 @@ public:
 		IMPL
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		int nb = gtk_notebook_get_current_page (notebook);
+		if (nb < 0) return NULL;
 		GtkWidget *child = gtk_notebook_get_nth_page (notebook, nb);
 		return (YItem *) g_object_get_data (G_OBJECT (child), "yitem");
 	}
