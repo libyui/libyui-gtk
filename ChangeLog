@@ -3,6 +3,9 @@
 	* src/ygtkrichtext.h/c: bug fix 393143: cursor ownership was
 	not judged properly.
 
+	* src/YGPackageSelector.cc: bug fix 398272: enable scroll bar on
+	Filtered Repositories Dependencies dialog.
+
 2008-06-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkmenubutton.c: fixed bug 396731: popup menu from the button

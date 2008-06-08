@@ -793,14 +793,13 @@ public:
 		                  G_CALLBACK (Entry::label_style_set_cb), NULL);
 		m_entries_box = gtk_vbox_new (FALSE, 4);
 
-		GtkWidget *port = gtk_viewport_new (NULL, NULL);
-		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
-		gtk_container_add (GTK_CONTAINER (port), m_entries_box);
-
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-		gtk_container_add (GTK_CONTAINER (scroll), port);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll),
+		                                       m_entries_box);
+		GtkWidget *port = gtk_bin_get_child (GTK_BIN (scroll));
+		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
 
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
 		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
@@ -810,8 +809,6 @@ public:
 		m_box = gtk_event_box_new();
 		gtk_container_add (GTK_CONTAINER (m_box), vbox);
 		g_signal_connect_after (G_OBJECT (m_box), "style-set",
-		                        G_CALLBACK (style_set_cb), NULL);
-		g_signal_connect_after (G_OBJECT (scroll), "style-set",
 		                        G_CALLBACK (style_set_cb), NULL);
 		g_signal_connect_after (G_OBJECT (port), "style-set",
 		                        G_CALLBACK (style_set_cb), NULL);
@@ -2629,10 +2626,10 @@ protected:
 		gtk_label_set_selectable (GTK_LABEL (label), TRUE);
 		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 
-		GtkWidget *scroll = gtk_viewport_new (NULL, NULL);
-		gtk_viewport_set_shadow_type (GTK_VIEWPORT (scroll), GTK_SHADOW_IN);
-		gtk_container_add (GTK_CONTAINER (scroll), label);
-
+		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), label);
 		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll);
 
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
