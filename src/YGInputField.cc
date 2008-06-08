@@ -106,6 +106,7 @@ public:
 	virtual void setValue (const string &time)
 	{
 		IMPL
+		if (time.empty()) return;
 		char hours[3], mins[3];
 		sscanf (time.c_str(), "%2s:%2s", hours, mins);
 
@@ -190,6 +191,7 @@ public:
 	virtual void setValue (const string &date)
 	{
 		IMPL
+		if (date.empty()) return;
 		char year[5], month[3], day[3];
 		sscanf (date.c_str(), "%4s-%2s-%2s", year, month, day);
 
@@ -285,5 +287,70 @@ YDateField *YGOptionalWidgetFactory::createDateField (YWidget *parent, const str
 {
 	IMPL
 	return new YGDateField (parent, label);
+}
+
+#include "YTimezoneSelector.h"
+#include "ygtktimezonepicker.h"
+
+class YGTimezoneSelector : public YTimezoneSelector, public YGWidget
+{
+public:
+	YGTimezoneSelector (YWidget *parent, const std::string &pixmap,
+		const std::map <std::string, std::string> &timezones)
+	: YTimezoneSelector (NULL, pixmap, timezones),
+	  YGWidget (this, parent, true, YGTK_TYPE_TIME_ZONE_PICKER, NULL)
+	{
+		IMPL
+		setStretchable (YD_HORIZ, true);
+		setStretchable (YD_VERT,  true);
+		ygtk_time_zone_picker_set_map (YGTK_TIME_ZONE_PICKER (getWidget()),
+			pixmap.c_str(), convert_code_to_name, (gpointer) &timezones);
+
+		g_signal_connect (G_OBJECT (getWidget()), "zone-clicked",
+		                  G_CALLBACK (zone_clicked_cb), this);
+	}
+
+	// YTimezoneSelector
+	virtual std::string currentZone() const
+	{
+    	YGTimezoneSelector *pThis = const_cast <YGTimezoneSelector *> (this);
+		const gchar *zone = ygtk_time_zone_picker_get_current_zone (
+			YGTK_TIME_ZONE_PICKER (pThis->getWidget()));
+    	if (zone)
+    		return zone;
+    	return std::string();
+    }
+
+	virtual void setCurrentZone (const std::string &zone, bool zoom)
+	{
+		ygtk_time_zone_picker_set_current_zone (YGTK_TIME_ZONE_PICKER (getWidget()),
+		                                        zone.c_str(), zoom);
+	}
+
+	// YGtkTimeZonePicker
+	static const gchar *convert_code_to_name (YGtkTimeZonePicker *picker,
+	                                          const gchar *code, gpointer pData)
+	{
+		const std::map <std::string, std::string> *timezones =
+			(std::map <std::string, std::string> *) pData;
+        std::map <std::string, std::string>::const_iterator name =
+        	timezones->find (code);
+        if (name  == timezones->end())
+            return NULL;
+		return name->second.c_str();
+	}
+
+	// callbacks
+	static void zone_clicked_cb (YGtkTimeZonePicker *picker, const gchar *zone,
+	                             YGTimezoneSelector *pThis)
+	{ IMPL; pThis->emitEvent (YEvent::ValueChanged); }
+
+	YGWIDGET_IMPL_COMMON
+};
+
+YTimezoneSelector *YGOptionalWidgetFactory::createTimezoneSelector (YWidget *parent,
+	const std::string &pixmap, const std::map <std::string, std::string> &timezones)
+{
+	return new YGTimezoneSelector (parent, pixmap, timezones);
 }
 

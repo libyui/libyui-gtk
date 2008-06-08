@@ -54,6 +54,7 @@ libpy2gtk_la_SOURCES = \
 	ygtktogglebutton.c \
 	ygtkhtmlwrap.c \
 	ygtkrichtext.c \
+	ygtktimezonepicker.c \
 	yzyppwrapper.cc \
 	yzypptags.cc \
 	ygtkzyppwrapper.cc

@@ -6,6 +6,9 @@
 	* src/YGPackageSelector.cc: bug fix 398272: enable scroll bar on
 	Filtered Repositories Dependencies dialog.
 
+	* src/ygtktimezonepicker.h/c & YGInputField.cc: enhance fix 391729:
+	implemented YTimezoneSelector.
+
 2008-06-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkmenubutton.c: fixed bug 396731: popup menu from the button

@@ -169,6 +169,10 @@ public:
 	virtual bool hasTimeField() IMPL_RET (true)
 	virtual YTimeField *createTimeField (YWidget *parent, const string &label);
 
+    virtual bool hasTimezoneSelector() IMPL_RET (true)
+	virtual YTimezoneSelector *createTimezoneSelector (YWidget *parent, 
+		const string &pixmap,  const map <string, string> &timezones);
+
 	virtual bool hasBarGraph() IMPL_RET (true)
 	virtual YBarGraph *createBarGraph (YWidget *parent);
 
