@@ -422,6 +422,8 @@ static void ygtk_time_zone_picker_size_request (GtkWidget *widget,
 static void ygtk_time_zone_picker_size_allocate (GtkWidget     *widget,
                                                  GtkAllocation *allocation)
 {
+	if (!GTK_WIDGET_REALIZED (widget))
+		return;
 	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
 	int win_width = allocation->width, win_height = allocation->height;
 
