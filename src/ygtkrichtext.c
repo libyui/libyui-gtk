@@ -21,8 +21,6 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
 
 G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
 
-static GdkCursor *hand_cursor;
-static guint ref_cursor = 0;
 static guint link_clicked_signal;
 static GdkColor link_color = { 0, 0, 0, 0xeeee };
 
@@ -111,11 +109,9 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_view_set_left_margin (tview, 4);
 
 	// Init link support
-	if (!ref_cursor) {
-		GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
-		hand_cursor    = gdk_cursor_new_for_display (display, GDK_HAND1);
-	}
-	ref_cursor++;
+	GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
+	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND1);
+	gdk_cursor_ref (rtext->hand_cursor);
 
 #if GTK_CHECK_VERSION(2,10,0)
 	gtk_widget_style_get (GTK_WIDGET (rtext), "link_color", &link_color, NULL);
@@ -151,8 +147,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
-	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER,
-	                            NULL);
+	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER, NULL);
 	// helpers
 	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow", NULL);
 }
@@ -160,29 +155,25 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 static void ygtk_rich_text_destroy (GtkObject *object)
 {
 	// destroy can be called multiple times, and we must ref only once
-	if (ref_cursor > 0 && (--ref_cursor == 0)) {
-		gdk_cursor_unref (hand_cursor);
-	}
+	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
+	gdk_cursor_unref (rtext->hand_cursor);
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
 
 // Change the cursor to the "hands" cursor typically used by web browsers,
 // if there is a link in the given position.
-static void set_cursor_if_appropriate (GtkTextView *text_view, gint x, gint y)
+static void set_cursor_if_appropriate (GtkTextView *view, gint x, gint y)
 	{
 	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (text_view, x, y) != NULL;
+	gboolean hovering = get_link (view, x, y) != NULL;
 
 	if (hovering != hovering_over_link) {
 		hovering_over_link = hovering;
-
-		if (hovering_over_link)
-			gdk_window_set_cursor (gtk_text_view_get_window
-					(text_view, GTK_TEXT_WINDOW_TEXT), hand_cursor);
-		else
-			gdk_window_set_cursor (gtk_text_view_get_window
-					(text_view, GTK_TEXT_WINDOW_TEXT), NULL);
-		}
+		YGtkRichText *rtext = YGTK_RICH_TEXT (view);
+		GdkWindow *window = gtk_text_view_get_window (view, GTK_TEXT_WINDOW_TEXT);
+		GdkCursor *cursor = hovering ? rtext->hand_cursor : NULL;
+		gdk_window_set_cursor (window, cursor);
+	}
 }
 
 // Update the cursor image if the pointer moved.

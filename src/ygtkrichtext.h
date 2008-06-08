@@ -28,6 +28,8 @@ G_BEGIN_DECLS
 typedef struct _YGtkRichText
 {
 	GtkTextView parent;
+	// members:
+	GdkCursor *hand_cursor;
 } YGtkRichText;
 
 typedef struct _YGtkRichTextClass
