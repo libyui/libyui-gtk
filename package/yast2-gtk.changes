@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Sun Jun  8 10:34:15 CEST 2008 - coolo@suse.de
+
+- Update to 2.16.14
+* fixed bnc#395484: Wrong check that assumed error was set, crashing...
+* fixed bnc#396731: popup menu from the button up when near the bottom corner.
+* fixed bnc#396360: ignoring the alignment for the last column, so it aligns left
+* fixed bnc#396033: Some minor bug 
+* fixed bnc#393143: cursor ownership was not judged properly
+* fixed bnc#398272: enable scroll bar on Filtered Repositories 
+
+-------------------------------------------------------------------
 Tue Jun  3 07:46:59 CEST 2008 - coolo@suse.de
 
 - Update to version 2.16.13

@@ -111,6 +111,7 @@ class YGWindow
 	// we keep a pointer of the child just for debugging
 	// (ie. dump yast tree)
 	YWidget *m_child;
+	GdkCursor *m_busyCursor;
 
 public:
         YGWindowCloseFn m_canClose;
@@ -125,6 +126,7 @@ public:
 		m_refcount = 0;
 		m_child = NULL;
 		m_canClose = NULL;
+		m_busyCursor = NULL;
 
 		{
 			std::stack<YDialog *> &stack = YDialog::_dialogStack;
@@ -193,6 +195,8 @@ public:
 	{
 		IMPL
 		setChild (NULL);
+		if (m_busyCursor)
+			gdk_cursor_unref (m_busyCursor);
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
 	}
@@ -202,17 +206,17 @@ public:
 
 	void normalCursor()
 	{
-		if (GTK_WIDGET_REALIZED (m_widget))
-			gdk_window_set_cursor (m_widget->window, NULL);
+		gdk_window_set_cursor (m_widget->window, NULL);
 	}
 
 	void busyCursor()
 	{
-		if (GTK_WIDGET_REALIZED (m_widget)) {
-			GdkDisplay *display = gtk_widget_get_display (m_widget);
-			GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
-			gdk_window_set_cursor (m_widget->window, cursor);
+		GdkDisplay *display = gtk_widget_get_display (m_widget);
+		if (!m_busyCursor) {
+			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+			gdk_cursor_ref (m_busyCursor);
 		}
+		gdk_window_set_cursor (m_widget->window, m_busyCursor);
 	}
 
 	void setChild (YWidget *new_child)

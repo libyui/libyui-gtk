@@ -202,7 +202,13 @@ public:
 		createModel (types);
 		for (int i = 0; i < columns(); i++) {
 			int col = i*2;
-			appendIconTextColumn (header (i), alignment (i), col, col+1);
+
+			YAlignmentType align = alignment (i);
+			// last column is expandable, so don't let it be aligned to the right
+			if (i == columns()-1)
+				align = YAlignBegin;
+
+			appendIconTextColumn (header (i), align, col, col+1);
 		}
 		setModel();
 
@@ -210,17 +216,19 @@ public:
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
-		setSortable (true);
+		if (!keepSorting())
+			setSortable (true);
 	}
 
 	virtual void setKeepSorting (bool keepSorting)
 	{
-		setSortable (keepSorting);
 		YTable::setKeepSorting (keepSorting);
+		setSortable (!keepSorting);
 	}
 
 	virtual void addItem (YItem *_item)
 	{
+    	YTable::addItem (_item);
     	YTableItem *item = dynamic_cast <YTableItem *> (_item);
     	if (item) {
 			GtkTreeIter iter;
@@ -230,7 +238,6 @@ public:
     	}
     	else
 			yuiError() << "Can only add YTableItems to a YTable.\n";
-    	YTable::addItem (_item);
     }
 
 	virtual void cellChanged (const YTableCell *cell)
@@ -254,10 +261,14 @@ public:
 		GList *columns = gtk_tree_view_get_columns (getView());
 		for (GList *i = columns; i; i = i->next, n++) {
 			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
-			int index = (n*2)+1;
-			if (!sortable)
-				index = -1;
-			gtk_tree_view_column_set_sort_column_id (column, index);
+			if (sortable) {
+				int index = (n*2)+1;
+				if (!sortable)
+					index = -1;
+				gtk_tree_view_column_set_sort_column_id (column, index);
+			}
+			else
+				gtk_tree_view_column_set_clickable (column, FALSE);
 		}
 		g_list_free (columns);
 	}

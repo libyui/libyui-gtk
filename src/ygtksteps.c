@@ -160,6 +160,7 @@ static void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisit
 
 	requisition->width += BORDER * 2;
 	requisition->height += BORDER * 2;
+	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->size_request (widget, requisition);
 }
 
 static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
@@ -312,6 +313,8 @@ void ygtk_steps_clear (YGtkSteps *steps)
 
 static void ygtk_steps_class_init (YGtkStepsClass *klass)
 {
+	ygtk_steps_parent_class = g_type_class_peek_parent (klass);
+
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->expose_event = ygtk_steps_expose_event;
 	widget_class->size_request = ygtk_steps_size_request;

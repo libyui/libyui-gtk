@@ -1,3 +1,29 @@
+2008-06-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.h/c: bug fix 393143: cursor ownership was
+	not judged properly.
+
+	* src/YGPackageSelector.cc: bug fix 398272: enable scroll bar on
+	Filtered Repositories Dependencies dialog.
+
+2008-06-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkmenubutton.c: fixed bug 396731: popup menu from the button
+	up when near the bottom corner.
+
+	* src/YGTable.cc: fixed bug 396360 (more like a design flaw in libyui):
+	"last column in Table widget is too far right with option right".
+	Just ignoring the alignment for the last column, so it aligns left...
+
+	* src/YGTable.cc: fixed setKeepSorting(). Wasn't honoring when it
+	was set false.
+
+	* src/YGDumbTab.cc: fixed bug: 396033. Some minor bug resulted from
+	the fact we are supposed to call parent's methods before running
+	our code... NOTE
+
+	* src/YGDialog.cc: some changes to see if we fix bug 393143...
+
 2008-06-02  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc (YGApplication::makeScreenShot),
@@ -6,6 +32,9 @@
 	strings for translation in the next version bug #395803#
 
 2008-06-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.cc: fixed bug 395484. Wrong check that assumed error
+	was set, crashing...
 
 	* src/YGUI.cc: fixed bug 395484. Wrong check that assumed error
 	was set, crashing...
