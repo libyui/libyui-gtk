@@ -264,11 +264,8 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 
 	skipSpace (instr, i);
 
-	// We must add an outer tag to make GMarkup happy
-	gboolean addOuterTag = TRUE;
-//	gboolean addOuterTag = FALSE;
-//	if ((addOuterTag = (instr[i] != '<')))
-		g_string_append (outp, "<body>");
+	// we must add an outer tag to make GMarkup happy
+	g_string_append (outp, "<body>");
 
 	for (; instr[i] != '\0'; i++)
 	{
@@ -374,26 +371,13 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 			i += sizeof ("&nbsp;") - 2;
 		}
 
-#if 0
-		// removing new-lines chars sure isn't a xhtml conversion
-		// but it's still valid xhtml and GtkTextView appreciates it
-		else if (/*cut_breaklines &&*/ instr[i] == '\n') {
-			// In HTML a breakline should be treated as a white space when
-			// not in the start of a paragraph.
-			if (i > 0 && instr[i-1] != '>' && !g_ascii_isspace (instr[i-1]))
-				g_string_append_c (outp, ' ');
-		}
-#endif
-
 		else // Normal text
 			g_string_append_c (outp, instr[i]);
 	}
 
 	emit_unclosed_tags_for (outp, tag_queue, "", 0);
 	g_queue_free (tag_queue);
-
-	if (addOuterTag)
-		g_string_append (outp, "</body>");
+	g_string_append (outp, "</body>");
 
 	gchar *ret = g_string_free (outp, FALSE);
 	return ret;

@@ -1,3 +1,11 @@
+2008-06-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: bug fix 396692: glitches with breaklines
+	and spaces around inline tags.
+
+	* src/ygtktimezonepicker.c: found g_strstrip: use instead of
+	internal.
+
 2008-06-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.h/c: bug fix 393143: cursor ownership was

@@ -234,6 +234,7 @@ typedef struct GRTParseState {
 	gboolean default_color;
 	int left_margin;
 	GList *html_list;  // of HTMLList
+	gboolean closed_block_tag;
 } GRTParseState;
 
 static void GRTParseState_init (GRTParseState *state, GtkTextBuffer *buffer)
@@ -245,6 +246,7 @@ static void GRTParseState_init (GRTParseState *state, GtkTextBuffer *buffer)
 	state->tags = gtk_text_buffer_get_tag_table (buffer);
 	state->html_list = NULL;
 	state->htags = NULL;
+	state->closed_block_tag = FALSE;
 }
 
 static void free_list (GList *list)
@@ -262,7 +264,7 @@ static void GRTParseState_free (GRTParseState *state)
 	free_list (state->htags);
 }
 
-static char *elide_whitespace (const char *instr, int len);
+static gchar *elide_whitespace (const gchar *instr, gint len);
 
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
@@ -289,12 +291,12 @@ rt_start_element (GMarkupParseContext *context,
 	// Check if this is a block tag
 	if (isBlockTag (element_name)) {
 		// make sure this opens a new paragraph
-		if (!gtk_text_iter_starts_line (&iter))
-		{
+		if (!gtk_text_iter_starts_line (&iter)) {
 			gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
 			gtk_text_buffer_get_end_iter (state->buffer, &iter);
 		}
 	}
+	state->closed_block_tag = FALSE;
 
 	char *lower = g_ascii_strdown (element_name, -1);
 	tag->tag = gtk_text_tag_table_lookup (state->tags, lower);
@@ -430,27 +432,15 @@ rt_end_element (GMarkupParseContext *context,
 	else if (!g_ascii_strcasecmp (element_name, "font"))
 		state->default_color = TRUE;
 
-	else if (!g_ascii_strcasecmp (element_name, "pre")) {
+	else if (!g_ascii_strcasecmp (element_name, "pre"))
 		state->pre_mode = FALSE;
-/*
-		// \n must be inserted as <br>
-		char *txt = gtk_text_buffer_get_text (state->buffer,
-		                                      &start, &end, TRUE);
-		char endc = txt ? txt[strlen(txt) - 1] : '\0';
-		appendLines = (endc != '\r' && endc != '\n') ? 1 : 0;
-		g_free (txt);*/
-	}
 
-	else if (!g_ascii_strcasecmp (element_name, "br"))
+	if (isBlockTag (element_name) || !g_ascii_strcasecmp (element_name, "br")) {
 		appendLines = 1;
-
-	if (isBlockTag (element_name))
-	{
-//		appendLines = 2;
-//		if (!g_ascii_strcasecmp (element_name, "li"))
-			appendLines = 1;
+		state->closed_block_tag = TRUE;
 	}
-
+	else
+		state->closed_block_tag = FALSE;
 
 	if (appendLines) {
 		gtk_text_buffer_insert (state->buffer, &end,
@@ -480,9 +470,14 @@ rt_text (GMarkupParseContext *context,
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
 		                                  text, text_len, NULL, NULL);
 	else {
-		char *real = elide_whitespace (text, text_len);
-		gtk_text_buffer_insert_with_tags (state->buffer, &start,
-		                                  real, -1, NULL, NULL);
+		if (!state->closed_block_tag) {
+			if (g_ascii_isspace (text[0]))
+				gtk_text_buffer_insert (state->buffer, &start, " ", 1);
+		}
+		state->closed_block_tag = FALSE;
+
+		gchar *real = elide_whitespace (text, text_len);
+		gtk_text_buffer_insert (state->buffer, &start, real, -1);
 		g_free (real);
 	}
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
@@ -519,39 +514,27 @@ GtkWidget *ygtk_rich_text_new (void)
 }
 
 /* String preparation methods. */
-static char *elide_whitespace (const char *instr, int len)
+static gchar *elide_whitespace (const gchar *instr, gint len)
 {
 	GString *dest = g_string_new ("");
 	if (len < 0)
 		len = strlen (instr);
-	gboolean last_white = FALSE;
-	// transform breaklines in whitespace if in the middle of the text
-	gboolean special_white = FALSE, start_text = TRUE;
-	int i;
-	for (i = 0; i < len; i++)
-	{
-		char ch = instr[i];
-		if (ch == '\n') {
-			if (!start_text)
-				special_white = TRUE;
-			continue;
-		}
-		if (ch == '\t')
-			ch = ' ';
-		gboolean cur_white = ch == ' ';
-		if (!cur_white) {
-			start_text = FALSE;
-			if (special_white) {
+	// collapse more than one space in one
+	gboolean start_text = TRUE, is_white = FALSE;
+	gint i;
+	for (i = 0; i < len; i++) {
+		gchar ch = instr[i];
+		if (g_ascii_isspace (ch)) {
+			if (!is_white && !start_text)
 				g_string_append_c (dest, ' ');
-				special_white = FALSE;
-			}
+			is_white = TRUE;
 		}
-		if (!cur_white || !last_white)
+		else {
 			g_string_append_c (dest, ch);
-		
-		last_white = cur_white;
+			is_white = FALSE;
+			start_text = FALSE;
+		}
 	}
-
 	return g_string_free (dest, FALSE);
 }
 

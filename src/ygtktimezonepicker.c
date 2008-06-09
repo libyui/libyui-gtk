@@ -15,16 +15,6 @@ static guint zone_clicked_signal;
 
 // General utilities
 
-static char *trim_string (const char *str)
-{
-	char *ret;
-	int i, j;
-	for (i = 0; str[i] && g_ascii_isspace (str[i]); i++) ;
-	for (j = strlen (str)-1; j > 0 && g_ascii_isspace (str[j]); j--) ;
-	ret = g_strndup (str+i, j-i+1);
-	return ret;
-}
-
 static char *substring (const char *str, int start, int end)
 {
 	if (end == -1)
@@ -189,7 +179,7 @@ void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *file
 	while (fgets (buf, sizeof (buf), tzfile)) {
 		if (*buf == '#') continue;
 
-		char *trim = trim_string (buf);
+		gchar *trim = g_strstrip (buf);
 		gchar **arr = g_strsplit (trim, "\t", -1);
 		g_free (trim);
 
