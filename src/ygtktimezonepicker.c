@@ -181,7 +181,6 @@ void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *file
 
 		gchar *trim = g_strstrip (buf);
 		gchar **arr = g_strsplit (trim, "\t", -1);
-		g_free (trim);
 
 		int arr_length;
 		for (arr_length = 0; arr [arr_length]; arr_length++) ;
@@ -485,7 +484,7 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 		cairo_arc (cr, x-1, y-1, radius, 0, M_PI*2);
 		if (radius > 1) {
 			cairo_fill_preserve (cr);
-			cairo_set_source_rgb (cr, 0/255.0, 0/255.0, 0/255.0);
+			cairo_set_source_rgb (cr, 90/255.0, 90/255.0, 90/255.0);
 			cairo_set_line_width (cr, 1.0);
 			cairo_stroke (cr);
 		}
