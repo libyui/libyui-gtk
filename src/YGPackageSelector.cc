@@ -44,6 +44,15 @@ static void busyCursor()
 static void normalCursor()
 { YGUI::ui()->normalCursor(); }
 
+static gboolean is_tree_model_iter_separator_cb (GtkTreeModel *model, GtkTreeIter *iter,
+                                                 gpointer data)
+{
+	gint col = data ? GPOINTER_TO_INT (data) : 0;
+	gpointer ptr;
+	gtk_tree_model_get (model, iter, col, &ptr, -1);
+	return ptr == NULL;
+}
+
 const char *lock_tooltip =
 	"<b>Package lock:</b> prevents the package status from being modified by "
     "the solver (that is, it won't honour dependencies or collections ties.)";
@@ -783,7 +792,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	ChangesPane (YGtkWizard *wizard, bool update_mode)
+	ChangesPane (YGtkWizard *wizard, bool update_mode, bool summary_mode)
 	: m_container (NULL), m_entries (NULL), m_wizard (wizard)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
@@ -820,7 +829,7 @@ public:
 			m_pool = new Ypp::QueryPool (query);
 		}
 		else
-			m_pool = new Ypp::QueryPool (query, true);
+			m_pool = new Ypp::QueryPool (query, !summary_mode);
 		// initialize list -- there could already be packages modified
 		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it))
 			ChangesPane::entryInserted (it, m_pool->get (it));
@@ -1024,13 +1033,18 @@ private:
 				first_category = Ypp::get()->getFirstCategory (type);
 			inner::populate (store, NULL, first_category, this);
 			if (m_alternative) {
+				gtk_tree_store_append (store, &iter, NULL);
+				gtk_tree_store_set (store, &iter, 0, NULL, -1);
+				gtk_tree_view_set_row_separator_func (view,
+					is_tree_model_iter_separator_cb, NULL, NULL);
+
 				GdkPixbuf *pixbuf = inner::loadThemeIcon (GTK_STOCK_ABOUT);
 				gtk_tree_store_append (store, &iter, NULL);
-				gtk_tree_store_set (store, &iter, 0, _("Recommended"), 1, GINT_TO_POINTER (1),
-					                2, pixbuf, -1);
+				gtk_tree_store_set (store, &iter, 0, _("Recommended"),
+				                    1, GINT_TO_POINTER (1), 2, pixbuf, -1);
 				gtk_tree_store_append (store, &iter, NULL);
-				gtk_tree_store_set (store, &iter, 0, _("Suggested"), 1, GINT_TO_POINTER (2),
-					                2, pixbuf, -1);
+				gtk_tree_store_set (store, &iter, 0, _("Suggested"),
+				                    1, GINT_TO_POINTER (2), 2, pixbuf, -1);
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_tree_view_set_show_expanders (view, FALSE);
 			}
@@ -1332,33 +1346,33 @@ public:
 			_("<b>Package repositories:</b> Limits the query to one repository.\n"
 			"You can add or remove them  through the YaST control center or by "
 			"selecting the respective option."));
-		GtkListStore *store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_BOOLEAN);
+		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (m_repos), GTK_TREE_MODEL (store));
 		g_object_unref (G_OBJECT (store));
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
 		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (m_repos), renderer, TRUE);
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (m_repos), renderer,
-			"markup", 0, NULL);
+		                                "markup", 0, NULL);
 		g_object_set (G_OBJECT (renderer), "width-chars", 25,
 		              "ellipsize", PANGO_ELLIPSIZE_MIDDLE, NULL);
 		GtkTreeIter iter;
 		gtk_list_store_append (store, &iter);
-		gtk_list_store_set (store, &iter, 0, _("All Repositories"), 1, FALSE, -1);
+		gtk_list_store_set (store, &iter, 0, _("All Repositories"), -1);
 		for (int i = 0; Ypp::get()->getRepository (i); i++) {
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
 			gtk_list_store_append (store, &iter);
 			std::string str = "  " + repo->name;
-			gtk_list_store_set (store, &iter, 0, str.c_str(), 1, FALSE, -1);
+			gtk_list_store_set (store, &iter, 0, str.c_str(), -1);
 		}
 		if (enableRepoMgr) {
 			gtk_list_store_append (store, &iter);
-			gtk_list_store_set (store, &iter, 0, "-", 1, TRUE, -1);
+			gtk_list_store_set (store, &iter, 0, NULL, -1);
 			gtk_list_store_append (store, &iter);
-			gtk_list_store_set (store, &iter, 0, _("Add or Remove..."), 1, FALSE, -1);
+			gtk_list_store_set (store, &iter, 0, _("Add or Remove..."), -1);
 		}
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_repos), 0);
 		gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (m_repos),
-			is_combo_entry_separator_cb, this, NULL);
+			is_tree_model_iter_separator_cb, NULL, NULL);
 		g_signal_connect_after (G_OBJECT (m_repos), "changed",
 		                        G_CALLBACK (combo_changed_cb), this);
 
@@ -1489,15 +1503,6 @@ private:
 		};
 		if (timeout_id) g_source_remove (timeout_id);
 		timeout_id = g_timeout_add (250, inner::timeout_cb, this);
-	}
-
-	// callbacks
-	static gboolean is_combo_entry_separator_cb (GtkTreeModel *model, GtkTreeIter *iter,
-	                                             gpointer data)
-	{
-		gboolean ret;
-		gtk_tree_model_get (model, iter, 1, &ret, -1);
-		return ret;
 	}
 };
 
@@ -2235,14 +2240,15 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr)
+	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr,
+	                 bool summaryMode)
 	{
 		m_packages = new PackagesView (false);
 		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (updateMode);
 		m_disk = new DiskView();
-		m_changes = new ChangesPane (wizard, updateMode);
+		m_changes = new ChangesPane (wizard, updateMode, summaryMode);
 		m_packages->setListener (this);
 		m_filters->setListener (this);
 		m_details->setListener (this);
@@ -2374,7 +2380,8 @@ public:
 		YGDialog *dialog = YGDialog::currentDialog();
 		dialog->setCloseCallback (confirm_cb, this);
 
-		m_package_selector = new PackageSelector (wizard, onlineUpdateMode(), repoMgrEnabled());
+		m_package_selector = new PackageSelector (wizard, onlineUpdateMode(),
+			repoMgrEnabled(), summaryMode());
 		gtk_container_add (GTK_CONTAINER (wizard), m_package_selector->getWidget());
 
 		Ypp::get()->setInterface (this);

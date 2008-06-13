@@ -1597,7 +1597,6 @@ bool Ypp::Impl::resolveProblems()
 		zypp::ResolverProblemList zProblems = zResolver->problems();
 		if ((resolved = zProblems.empty()))
 			break;
-
 		if (!interface)
 			break;
 
