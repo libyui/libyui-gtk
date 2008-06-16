@@ -2478,7 +2478,7 @@ protected:
 		#define DETAILS_PAD  25
 		enum ColumnAlias {
 			SHOW_TOGGLE_COL, ACTIVE_TOGGLE_COL, TEXT_COL, WEIGHT_TEXT_COL,
-			TEXT_PAD_COL, APPLY_PTR_COL
+			TEXT_PAD_COL, APPLY_PTR_COL, TOTAL_COLS
 		};
 
 		struct inner {
@@ -2522,8 +2522,9 @@ protected:
 		};
 
 		// model
-		GtkTreeStore *store = gtk_tree_store_new (8, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
-			G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT, G_TYPE_POINTER);
+		GtkTreeStore *store = gtk_tree_store_new (TOTAL_COLS,
+			G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_STRING, G_TYPE_INT,
+			G_TYPE_INT, G_TYPE_POINTER);
 		for (std::list <Ypp::Problem *>::const_iterator it = problems.begin();
 		     it != problems.end(); it++) {
 			GtkTreeIter problem_iter;

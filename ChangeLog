@@ -1,3 +1,8 @@
+2008-06-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 399465: "for some package show
+	empty software dependence window".
+
 2008-06-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: added separator on the side pane, for
