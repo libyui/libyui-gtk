@@ -183,7 +183,7 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
+	YGLAYOUT_PREFERRED_SIZE_IMPL (YSpacing)
 	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, 
 	                         gpointer pThis) {}
 };

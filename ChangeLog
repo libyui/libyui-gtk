@@ -3,6 +3,8 @@
 	* src/YGLayout.cc: bug fix 401228: "Children widgets aren't disabled in
 	Gtk UI".
 
+	* src/YGLayout.cc (YGSpacing): bug fix 401285: "HSpacing broken in Gtk UI".
+
 2008-06-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: bug fix 399465: "for some package show
