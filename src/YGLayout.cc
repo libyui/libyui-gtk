@@ -34,8 +34,12 @@ static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 		((ParentClass *) pThis)->ParentClass::setSize (width, height); \
 	} \
 	virtual void setSize (int width, int height) { doSetSize (width, height); } \
-	virtual void moveChild (YWidget *ychild, int x, int y) \
-	{ doMoveChild (getWidget(), ychild, x, y); }
+	virtual void moveChild (YWidget *ychild, int x, int y)      \
+	{ doMoveChild (getWidget(), ychild, x, y); }                \
+	virtual void setEnabled (bool enabled) {                    \
+		ParentClass::setEnabled (enabled);                      \
+		doSetEnabled (enabled);                                 \
+	}
 
 #include "YLayoutBox.h"
 
