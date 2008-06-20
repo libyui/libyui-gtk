@@ -236,7 +236,7 @@ void YGLabeledWidget::doSetLabel (const std::string &label)
 		gtk_widget_hide (m_label);
 	else {
 		gtk_widget_show (m_label);
-
+/*
 		// add a ':' at the end
 		int last = str.length()-1;
 		if (str [last] != ':' && str [last] != '.' && str [last] != ' ')
@@ -246,7 +246,7 @@ void YGLabeledWidget::doSetLabel (const std::string &label)
 		unsigned int first = (str [0] == '_') ? 1 : 0;
 		if (str [first] >= 'a' && str [first] <= 'z')
 			str [first] += 'A' - 'a';
-
+*/
 		gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
 		gtk_label_set_use_underline (GTK_LABEL (m_label), TRUE);
 	}

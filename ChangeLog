@@ -1,3 +1,13 @@
+2008-06-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: bug fix 401336: unable to resize column in
+	sysconfig editor.
+
+	* src/YGWidget.cc: bug fix 386410: label widgets are set uppercase.
+
+	* src/YGPackageSelector.cc: don't resize auxiliary widgets with the
+	window.
+
 2008-06-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGRadioButton.cc: bug fix 401835: if radio buttons weren't set

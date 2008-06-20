@@ -492,7 +492,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 
 	GtkWidget *child = wizard->m_child, *pane;
 	pane = gtk_hpaned_new();
-	gtk_paned_pack1 (GTK_PANED (pane), wizard->m_tree, TRUE, TRUE);
+	gtk_paned_pack1 (GTK_PANED (pane), wizard->m_tree, FALSE, TRUE);
 	gtk_widget_show_all (pane);
 	ygtk_wizard_set_child (wizard, pane);
 	wizard->m_pane = pane;
@@ -506,7 +506,7 @@ static void ygtk_wizard_add_child (GtkContainer *container, GtkWidget *child)
 	YGtkWizard *wizard = YGTK_WIZARD (container);
 	wizard->m_child = child;
 	if (wizard->m_pane)
-		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, TRUE);
 	else
 		GTK_CONTAINER_CLASS (ygtk_wizard_parent_class)->add (container, child);
 }
