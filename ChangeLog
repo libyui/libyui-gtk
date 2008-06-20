@@ -1,3 +1,7 @@
+2008-06-20  JP Rosevear  <jpr@novell.com>
+
+	* Version 2.16.15
+
 2008-06-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: bug fix 401336: unable to resize column in

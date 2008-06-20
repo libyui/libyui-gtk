@@ -1,10 +1,45 @@
 -------------------------------------------------------------------
+Fri Jun 20 18:34:15 CEST 2008 - jpr@suse.de
+
+- Update to 2.16.15
+* fixed bnc#401336: unable to resize column in sysconfig editor
+* fixed bnc#386410: label widgets are set uppercase.
+* fixed bnc#401835: if radio buttons weren't set in a radio group, 
+                    then they'd crash when clicked
+* fixed bnc#401228: "Children widgets aren't disabled in gtk ui
+* fixed bnc#401285: HSpacing broken in gtk ui
+* fixed bnc#399465: for some package show empty software 
+                    dependence window
+* fixed bnc#396692: glitches with breaklines and spaces around
+                    inline tag: for some package show empty 
+                    software dependence window
+
+-------------------------------------------------------------------
+Sun Jun  8 10:34:15 CEST 2008 - coolo@suse.de
+
+- Update to 2.16.14
+* fixed bnc#395484: Wrong check that assumed error was set, crashing...
+* fixed bnc#396731: popup menu from the button up when near the bottom corner.
+* fixed bnc#396360: ignoring the alignment for the last column, so it aligns left
+* fixed bnc#396033: Some minor bug 
+* fixed bnc#393143: cursor ownership was not judged properly
+* fixed bnc#398272: enable scroll bar on Filtered Repositories 
+
+-------------------------------------------------------------------
+Tue Jun  3 07:46:59 CEST 2008 - coolo@suse.de
+
+- Update to version 2.16.13
+* tag more missing strings for translation (bnc#395803)
+* fixed bnc#395484
+* various fixes in the package selector by Ricardo
+
+-------------------------------------------------------------------
 Mon May 19 11:05:00 BST 2008 - mmichael@suse.de
 
 - Update to version 2.16.12
-* make PackageSelector more usable bnc #390471#
-* impl. mnemonics on frames bnc #390244#
-* fix window transience (hidden popups) bnc #389635#
+* make PackageSelector more usable bnc #390471
+* impl. mnemonics on frames bnc #390244
+* fix window transience (hidden popups) bnc #389635
 * add recommended/selected to categories
 * tag main package-selector buttons for translation
 * calm progress bar warnings (for stupid values eg. -5%)
