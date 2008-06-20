@@ -75,7 +75,8 @@ public:
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
 		if (checked) {
 			YRadioButton *yradio = static_cast <YRadioButton *> (m_ywidget);
-			buttonGroup()->uncheckOtherButtons (yradio);
+			if (buttonGroup())
+				buttonGroup()->uncheckOtherButtons (yradio);
 		}
 		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}

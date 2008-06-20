@@ -1,3 +1,9 @@
+2008-06-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGRadioButton.cc: bug fix 401835: if radio buttons weren't set
+	in a radio group, then they'd crash when clicked (nobody actually does
+	this, not really an issue.)
+
 2008-06-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGLayout.cc: bug fix 401228: "Children widgets aren't disabled in
