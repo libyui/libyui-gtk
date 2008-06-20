@@ -480,6 +480,7 @@ static const StockMap stockMap[] = {
 	{"No",        GTK_STOCK_NO          },
 	{"OK",        GTK_STOCK_OK          },
 	{"Quit",      GTK_STOCK_QUIT        },
+	{"Remove",    GTK_STOCK_REMOVE      },
 	{"Reset",     GTK_STOCK_REVERT_TO_SAVED },
 	{"Reset all", GTK_STOCK_REVERT_TO_SAVED },
 	{"Retry",     GTK_STOCK_REFRESH     },
