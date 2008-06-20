@@ -1,3 +1,9 @@
+2008-06-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGRadioButton.cc: made radio and check buttons horizontally
+	stretchable. (so that users can click on them in the empty space
+	at their right, as usual in GTK UIs).
+
 2008-06-20  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.15

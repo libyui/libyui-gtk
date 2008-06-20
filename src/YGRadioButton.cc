@@ -43,6 +43,7 @@ public:
 	{
 		IMPL
 		setBorder (0);
+		setStretchable (YD_HORIZ, true);
 		setLabel (label);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), FALSE);
@@ -140,9 +141,9 @@ public:
 	{
 		IMPL
 		setBorder (0);
-
-		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
+		setStretchable (YD_HORIZ, true);
 		setLabel (label);
+		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), isChecked);
 
 		g_signal_connect (G_OBJECT (getWidget ()), "toggled",
