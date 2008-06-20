@@ -4,6 +4,9 @@
 	stretchable. (so that users can click on them in the empty space
 	at their right, as usual in GTK UIs).
 
+	* src/ygtkwizard.c: bug fix 402262: "/usr/bin/y2tool check-textdomain"
+	error when packaging.
+
 2008-06-20  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.15

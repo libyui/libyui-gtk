@@ -5,6 +5,10 @@
 /* YGtkWizard widget */
 // check the header file for information about this widget
 
+/*
+  Textdomain "yast2-gtk"
+ */
+
 #include <config.h>
 #include "ygtkwizard.h"
 #include <atk/atk.h>
@@ -16,7 +20,6 @@
 #include "ygtkfindentry.h"
 #define YGI18N_C
 #include "YGi18n.h"
-
 #define BUTTONS_SPACING 12
 #define BORDER           4
 #define CHILD_BORDER     6
