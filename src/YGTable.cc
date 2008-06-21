@@ -224,6 +224,11 @@ public:
 	{
 		YTable::setKeepSorting (keepSorting);
 		setSortable (!keepSorting);
+		if (!keepSorting) {
+			GtkTreeViewColumn *column = gtk_tree_view_get_column (getView(), 0);
+			if (column)
+				gtk_tree_view_column_clicked (column);
+		}
 	}
 
 	virtual void addItem (YItem *_item)

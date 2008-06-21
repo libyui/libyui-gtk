@@ -42,11 +42,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	inline GtkComboBox *getComboBox()
 	{ return GTK_COMBO_BOX (getWidget()); }
 
-	void blockEvents()
-	{ g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
-	void unblockEvents()
-	{ g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
-
 	GtkEntry *getEntry ()
 	{
 		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
@@ -63,13 +58,28 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		return GTK_ENTRY (entry);
 	}
 
+	void blockEvents()
+	{ g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
+	void unblockEvents()
+	{ g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
+
 	virtual string text()
 	{
-		gchar *str = gtk_combo_box_get_active_text (getComboBox());
+		gchar *str = 0;
+		if (GTK_IS_COMBO_BOX_ENTRY (getWidget()))
+			str = gtk_combo_box_get_active_text (getComboBox());
+		else {
+			GtkTreeIter iter;
+			if (gtk_combo_box_get_active_iter (getComboBox(), &iter)) {
+				gchar *str = 0;
+				gtk_tree_model_get (getModel(), &iter, LABEL_COLUMN, &str, -1);
+			}
+		}
 		std::string ret;
-		if (str)
+		if (str) {
 			ret = str;
-		g_free (str);
+			g_free (str);
+		}
 		return ret;
 	}
 
@@ -77,7 +87,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	{
 		IMPL
 		blockEvents();
-
         GtkTreeIter iter;
         if (findByText (value, &iter))
             setFocusItem (&iter);
@@ -112,14 +121,14 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	// YComboBox
 	virtual void setInputMaxLength (int length)
 	{
-		gtk_entry_set_width_chars (getEntry(), length);
 		YComboBox::setInputMaxLength (length);
+		gtk_entry_set_width_chars (getEntry(), length);
 	}
 
 	virtual void setValidChars (const string &validChars)
 	{
-		YGUtils::setFilter (getEntry(), validChars);
 		YComboBox::setValidChars (validChars);
+		YGUtils::setFilter (getEntry(), validChars);
 	}
 
 	// Events notifications
@@ -129,7 +138,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		   typed some text on a writable ComboBox. text_changed is true for the later and
 		   false for the former. */
 		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget)
-		                    && pThis->selectedItem() == NULL;
+		                    && pThis->focusItem() == NULL;
 		if (text_changed)
 			pThis->emitEvent (YEvent::ValueChanged, true, true);
 		else

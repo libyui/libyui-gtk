@@ -66,19 +66,19 @@ private:
 
 #define YGSELECTION_WIDGET_IMPL_CLEAR(ParentClass)    \
 	virtual void deleteAllItems() {                   \
-		doDeleteAllItems();                           \
 		ParentClass::deleteAllItems();                \
+		doDeleteAllItems();                           \
 	}
 
 #define YGSELECTION_WIDGET_IMPL_SELECT(ParentClass)   \
 	virtual void selectItem (YItem *item, bool select) { \
+		ParentClass::selectItem (item, select);       \
 		if (select)                                   \
 			implFocusItem (item);                     \
-		ParentClass::selectItem (item, select);       \
 	}                                                 \
 	virtual void deselectAllItems() {                 \
-		unsetFocus();                                 \
 		ParentClass::deselectAllItems();              \
+		unsetFocus();                                 \
 	}                                                 \
 	virtual YItem *selectedItem() {                   \
 		return focusItem();                           \
