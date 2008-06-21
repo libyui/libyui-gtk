@@ -31,9 +31,10 @@ static GtkWidget *createImageFromXPM (const char **xpm)
 	return image;
 }
 
-#define FILEMANAGER_EXEC "/usr/bin/nautilus -n --no-desktop"
-inline void FILEMANAGER_LAUNCH (const char *path)
-{ system ((std::string (FILEMANAGER_EXEC) + " " + path + " &").c_str()); }
+inline bool CAN_OPEN_URIS()
+{ return g_file_test ("/usr/bin/gnome-open", G_FILE_TEST_IS_EXECUTABLE); }
+inline void OPEN_URI (const char *uri)
+{ system ((std::string ("/usr/bin/gnome-open ") + uri + " &").c_str()); }
 
 static void busyCursor()
 {
@@ -1887,8 +1888,9 @@ public:
 			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->expander, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_authors->expander, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->expander, FALSE, TRUE, 0);
-			ygtk_html_wrap_connect_link_clicked (m_filelist->text,
-				G_CALLBACK (path_pressed_cb), NULL);
+			if (CAN_OPEN_URIS())
+				ygtk_html_wrap_connect_link_clicked (m_filelist->text,
+					G_CALLBACK (path_pressed_cb), NULL);
 		}
 		else {
 			m_filelist = m_changelog = m_authors = NULL;
@@ -1948,7 +1950,7 @@ public:
 
 private:
 	static void path_pressed_cb (GtkWidget *text, const gchar *link)
-	{ FILEMANAGER_LAUNCH (link); }
+	{ OPEN_URI (link); }
 
 	static void description_pressed_cb (GtkWidget *text, const gchar *link,
 	                                    PackageDetails *pThis)
@@ -1968,8 +1970,7 @@ private:
 			}
 		}
 		else
-			yuiError() << "Protocol not supported - can't follow hyperlink \""
-			           << link << "\"" << endl;
+			OPEN_URI (link);
 	}
 
 	void scrollTop()

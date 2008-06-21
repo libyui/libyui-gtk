@@ -7,6 +7,14 @@
 	* src/ygtkwizard.c: bug fix 402262: "/usr/bin/y2tool check-textdomain"
 	error when packaging.
 
+	* src/yzyppwrapper.cc: bug fix 402316: looks like we should run the
+	dependency solver at the startup.
+
+	* src/YGPackageSelector.cc: use "gnome-open" instead of "nautilus"
+	directly for files and made the website link clickable as well
+	(though libzypp Package::url() seems broken at the moment; always
+	returning empty strings.)
+
 2008-06-20  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.15

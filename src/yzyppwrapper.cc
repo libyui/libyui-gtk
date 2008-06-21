@@ -317,10 +317,10 @@ std::string Ypp::Package::description()
 			ZyppPackage package = tryCastToZyppPkg (object);
 			std::string url = package->url(), license = package->license();
 			if (!url.empty())
-				text += br + "<b>" + _("Website:") + "</b> " + url;
+				text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
 			if (!license.empty())
 				text += br + "<b>" + _("License:") + "</b> " + license;
-			text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString() + "B";
+			text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 			break;
 		}
 		case PATCH_TYPE:
@@ -1843,7 +1843,11 @@ Ypp::Disk *Ypp::getDisk()
 { return impl->getDisk(); }
 
 void Ypp::setInterface (Ypp::Interface *interface)
-{ impl->interface = interface; }
+{
+	impl->interface = interface;
+	// run the solver at start to check for problems
+	impl->resolveProblems();
+}
 
 void Ypp::addPkgListener (PkgListener *listener)
 { impl->pkg_listeners = g_slist_append (impl->pkg_listeners, listener); }
