@@ -429,12 +429,13 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
 		GTK_RESPONSE_ACCEPT, NULL);
 	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
 
 	// filepath can be a dir or a file path, split that up
 	string dirname, filename;
 	if (!path.empty()) {
 		if (path[0] != '/')
-			yuiWarning() << "FileDialog: Relative paths are unsupported: '" << path << "'\n";
+			yuiWarning() << "FileDialog: Relative paths are not supported: '" << path << "'\n";
 		else if (!g_file_test (path.c_str(), G_FILE_TEST_EXISTS))
 			yuiWarning() << "FileDialog: Path doesn't exist: '" << path << "'\n";
 		else if (g_file_test (path.c_str(), G_FILE_TEST_IS_DIR))
