@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Sun Jun 22 18:34:15 CEST 2008 - jpr@suse.de
+
+- Update to 2.16.16
+* fixed bnc#402316: run the dependency solver at the startup.
+* fixed bnc#402262: fix textdomain error when packaging.
+* fixed bnc#401767: popup menu install entry was using the remove
+                    icon, while the remove entry was using the 
+		    install icon.
+
+-------------------------------------------------------------------
 Fri Jun 20 18:34:15 CEST 2008 - jpr@suse.de
 
 - Update to 2.16.15
