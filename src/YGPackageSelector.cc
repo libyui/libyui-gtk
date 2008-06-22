@@ -347,13 +347,13 @@ Listener *m_listener;
 			PkgList packages = getSelected();
 			bool empty = true, unlocked = packages.unlocked();
 			if (packages.notInstalled())
-				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_DELETE, 0,
+				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE, 0,
 				                   unlocked, inner::install_cb, this), empty = false;
 			if (packages.upgradable())
 				inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP, 0,
 				                   unlocked, inner::install_cb, this), empty = false;
 			if (packages.installed())
-				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_SAVE, 0,
+				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE, 0,
 				                   unlocked, inner::remove_cb, this), empty = false;
 			if (packages.modified())
 				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO, 0,
