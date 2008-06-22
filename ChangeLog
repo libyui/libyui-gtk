@@ -4,6 +4,9 @@
 	"setKeepSorting (false)". We probably should do this by default
 	but GTK isn't that nice at that.
 
+	* src/YGTextView.cc (YGLogView) & src/ygtkrichtext.c: set ordinary
+	cursor for these widgets as they are not editable.
+
 2008-06-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGRadioButton.cc: made radio and check buttons horizontally

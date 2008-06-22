@@ -27,7 +27,7 @@ static GdkColor link_color = { 0, 0, 0, 0xeeee };
 // utilities
 // Looks at all tags covering the position of iter in the text view,
 // and returns the link the text points to, in case that text is a link.
-static const char* get_link (GtkTextView *text_view, gint x, gint y)
+static const char *get_link (GtkTextView *text_view, gint x, gint y)
 {
 	GtkTextIter iter;
 	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
@@ -158,6 +158,14 @@ static void ygtk_rich_text_destroy (GtkObject *object)
 	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
 	gdk_cursor_unref (rtext->hand_cursor);
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
+}
+
+static void ygtk_rich_text_realize (GtkWidget *widget)
+{
+	GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->realize (widget);
+	GtkTextView *view = GTK_TEXT_VIEW (widget);
+	GdkWindow *window = gtk_text_view_get_window (view, GTK_TEXT_WINDOW_TEXT);
+	gdk_window_set_cursor (window, NULL);
 }
 
 // Change the cursor to the "hands" cursor typically used by web browsers,
@@ -667,6 +675,7 @@ gboolean ygtk_rich_text_forward_mark (YGtkRichText *rtext, const gchar *text)
 void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
+	gtkwidget_class->realize = ygtk_rich_text_realize;
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
 	gtkwidget_class->visibility_notify_event = ygtk_rich_text_visibility_notify_event;
 

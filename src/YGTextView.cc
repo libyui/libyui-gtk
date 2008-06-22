@@ -30,6 +30,9 @@ public:
 
 		g_signal_connect (G_OBJECT (getBuffer()), "changed",
 		                  G_CALLBACK (text_changed_cb), this);
+		if (!editable)
+			g_signal_connect (G_OBJECT (getWidget()), "realize",
+			                  G_CALLBACK (realize_cb), this);
 	}
 
 	GtkTextBuffer* getBuffer()
@@ -92,6 +95,14 @@ public:
 			gtk_widget_error_bell (pThis->getWidget());
 		}
 		pThis->emitEvent (YEvent::ValueChanged);
+	}
+
+	// change cursor to the cursor one if non-editable
+	static void realize_cb (GtkWidget *widget)
+	{
+		GtkTextView *view = GTK_TEXT_VIEW (widget);
+		GdkWindow *window = gtk_text_view_get_window (view, GTK_TEXT_WINDOW_TEXT);
+		gdk_window_set_cursor (window, NULL);
 	}
 };
 
@@ -167,7 +178,6 @@ public:
 		IMPL
 		if (!shrinkable())
 			setMinSizeInChars (20, 8);
-
 		ygtk_html_wrap_init (getWidget());
 		ygtk_html_wrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
 		setText (text, plainText);
