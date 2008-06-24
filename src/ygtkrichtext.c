@@ -170,10 +170,21 @@ static void ygtk_rich_text_realize (GtkWidget *widget)
 
 // Change the cursor to the "hands" cursor typically used by web browsers,
 // if there is a link in the given position.
-static void set_cursor_if_appropriate (GtkTextView *view, gint x, gint y)
-	{
+static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
+{
+	if (wx == -1) {
+		GtkWidget *widget = GTK_WIDGET (view);
+		gdk_window_get_pointer (widget->window, &wx, &wy, NULL);
+		if (wx < 0 || wy < 0 || wx >= widget->allocation.width ||
+		    wy >= widget->allocation.height)
+			return;
+	}
+	gint bx, by;
+	gtk_text_view_window_to_buffer_coords (view, GTK_TEXT_WINDOW_WIDGET,
+	                                       wx, wy, &bx, &by);
+
 	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (view, x, y) != NULL;
+	gboolean hovering = get_link (view, bx, by) != NULL;
 
 	if (hovering != hovering_over_link) {
 		hovering_over_link = hovering;
@@ -185,33 +196,19 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint x, gint y)
 }
 
 // Update the cursor image if the pointer moved.
-static gboolean ygtk_rich_text_motion_notify_event (GtkWidget *text_view,
+static gboolean ygtk_rich_text_motion_notify_event (GtkWidget *widget,
                                                     GdkEventMotion *event)
 {
-	gint x, y;
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-	                                       GTK_TEXT_WINDOW_WIDGET,
-	                                       (gint) event->x, (gint) event->y,
-	                                       &x, &y);
-	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), x, y);
-
-	gdk_window_get_pointer (text_view->window, NULL, NULL, NULL);
+	set_cursor_if_appropriate (GTK_TEXT_VIEW (widget), event->x, event->y);
 	return TRUE;
 }
 
-// Also update the cursor image if the window becomes visible
-// (e.g. when a window covering it got iconified).
-static gboolean ygtk_rich_text_visibility_notify_event (GtkWidget *text_view,
-                                                        GdkEventVisibility *event)
+static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
-	gint wx, wy, bx, by;
-
-	gdk_window_get_pointer (text_view->window, &wx, &wy, NULL);
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view), 
-	                                       GTK_TEXT_WINDOW_WIDGET,
-	                                       wx, wy, &bx, &by);
-	set_cursor_if_appropriate (GTK_TEXT_VIEW (text_view), bx, by);
-	return TRUE;
+	gboolean ret;
+	ret = GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->expose_event (widget, event);
+	set_cursor_if_appropriate (GTK_TEXT_VIEW (widget), -1, -1);
+	return ret;
 }
 
 /* Rich Text parsing methods. */
@@ -677,7 +674,7 @@ void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_rich_text_realize;
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
-	gtkwidget_class->visibility_notify_event = ygtk_rich_text_visibility_notify_event;
+	gtkwidget_class->expose_event = ygtk_rich_text_expose_event;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_rich_text_destroy;

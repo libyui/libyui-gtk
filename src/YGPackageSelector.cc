@@ -739,16 +739,14 @@ class ChangesPane : public Ypp::Pool::Listener
 			std::string text;
 			if (package->toInstall (&version)) {
 				if (package->isInstalled())
-					text = "upgrade";
-				else {
-					if (package->type() == Ypp::Package::PATCH_TYPE)
-						text = "patch";
-					else
-						text = "install";
-				}
+					text = _("upgrade");
+				else if (package->type() == Ypp::Package::PATCH_TYPE)
+					text = _("patch");
+				else
+					text = _("install");
 			}
 			else
-				text = "remove";
+				text = _("remove");
 			text += " " + package->name();
 			if (package->isAuto()) {
 				text = "\t" + text;
@@ -759,7 +757,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
 			std::string tooltip = package->summary();
 			if (version)
-				tooltip += "\nfrom <i>" + version->repo->name + "</i>";
+				tooltip += std::string (_("\nfrom")) + " <i>" + version->repo->name + "</i>";
 			gtk_widget_set_tooltip_markup (m_label, tooltip.c_str());
 		}
 

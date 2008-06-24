@@ -1,3 +1,12 @@
+2008-06-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: forgot to make some strings on the changes
+	bar translatable.
+
+	* src/ygtkrichtext.c: when scrolling, we want to change the cursor
+	if it is now on top of a link... There is no straight forward hook
+	for scrolling -- used expose.
+
 2008-06-22  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.16
