@@ -20,29 +20,6 @@ GtkWidget *ygtk_html_wrap_new (void)
 	return g_object_new (ygtk_html_wrap_get_type(), NULL);
 }
 
-// Utilities
-static void gdkwindow_set_background (GdkWindow *window, const char *image)
-{
-	if (image) {
-		GError *error = 0;
-		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (image, &error);
-		if (!pixbuf) {
-			g_warning ("ygtkrichtext: could not open background image: '%s'"
-				       " - %s", image, error->message);
-			return;
-		}
-
-		GdkPixmap *pixmap;
-		gdk_pixbuf_render_pixmap_and_mask_for_colormap (pixbuf,
-			gdk_drawable_get_colormap (GDK_DRAWABLE (window)), &pixmap, NULL, 0);
-		g_object_unref (G_OBJECT (pixbuf));
-
-		gdk_window_set_back_pixmap (window, pixmap, FALSE);		
-	}
-	else
-		gdk_window_clear (window);
-}
-
 // GtkHTML
 #ifdef USE_GTKHTML
 #include <libgtkhtml-3.14/gtkhtml/gtkhtml.h>
@@ -57,6 +34,10 @@ GType ygtk_html_wrap_get_type (void)
 static void gtkhtml_url_requested_cb (GtkHTML *html, const gchar *url, GtkHTMLStream *stream)
 {	// to load images (and possibly other external embed files)
 	FILE *file = fopen (url, "rb");
+	if (!file) {
+		g_warning ("Error: couldn't open file '%s'\n", url);
+		return;
+	}
 
 	fseek (file, 0, SEEK_END);
 	size_t file_size = ftell (file);
@@ -109,11 +90,6 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
-void ygtk_html_wrap_set_background (GtkWidget *widget, const char *image)
-{
-	// TODO
-}
-
 // YGtkRichText
 #else
 #include "ygtkrichtext.h"
@@ -152,14 +128,6 @@ gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
 void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
 {
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
-}
-
-void ygtk_html_wrap_set_background (GtkWidget *widget, const char *image)
-{
-	g_return_if_fail (GTK_WIDGET_REALIZED (widget));
-	GdkWindow *window = gtk_text_view_get_window
-		(GTK_TEXT_VIEW (widget), GTK_TEXT_WINDOW_TEXT);
-	gdkwindow_set_background (window, image);
 }
 
 #endif

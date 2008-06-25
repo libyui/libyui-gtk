@@ -128,7 +128,8 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 		size /= PANGO_SCALE;
 
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16, NULL);
+		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16,
+		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
 		"size", (int)(size * PANGO_SCALE_X_LARGE), "pixels-below-lines", 15, NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
@@ -143,7 +144,8 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_buffer_create_tag (buffer, "small",
 	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
 	gtk_text_buffer_create_tag (buffer, "tt", "family", "monospace", NULL);
-	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace", NULL);
+	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace",
+		"paragraph-background", "#f0f0f0", NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
