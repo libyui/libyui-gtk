@@ -3,6 +3,8 @@
 	* src/ygtkhtmlwrap.h/c: got rid of set_background and fixed a crash
 	if libgtkthml is used when an image can't be open.
 
+	* src/ygtkrichtext.c: added a background for <pre>.
+
 2008-06-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: forgot to make some strings on the changes
