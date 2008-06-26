@@ -131,13 +131,16 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16,
 		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-		"size", (int)(size * PANGO_SCALE_X_LARGE), "pixels-below-lines", 15, NULL);
+		"size", (int)(size * PANGO_SCALE_X_LARGE), "pixels-below-lines", 15,
+		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 14, NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 14,
+		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 13, NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 13,
+		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h5",
-		"size", (int)(size * PANGO_SCALE_LARGE), NULL);
+		"size", (int)(size * PANGO_SCALE_LARGE), "foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "p", "pixels-below-lines", 12, NULL);
 	gtk_text_buffer_create_tag (buffer, "big",
 	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
