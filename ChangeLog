@@ -1,3 +1,16 @@
+2008-06-27  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 404382: was using always the label
+	"upgrade" whether the changes were re-installs or downgrades.
+
+	* src/YGPackageSelector.cc: reporter 399256 asked for some keyboard
+	mnemonics: added a couple for the install / remove buttons
+
+	* src/yzyppwrapper.cc: bug fix: consider a pattern or a patch installed
+	or not using isSatisfied() like yast2-qt. Also made initial patterns
+	loading faster. And removed some checks on patches that were causing them
+	not to be displayed (bug 402855).
+
 2008-06-25  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkhtmlwrap.h/c: got rid of set_background and fixed a crash

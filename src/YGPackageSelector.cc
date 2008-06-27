@@ -738,8 +738,14 @@ class ChangesPane : public Ypp::Pool::Listener
 			const Ypp::Package::Version *version = 0;
 			std::string text;
 			if (package->toInstall (&version)) {
-				if (package->isInstalled())
-					text = _("upgrade");
+				if (package->isInstalled()) {
+					if (version->cmp > 0)
+						text = _("upgrade");
+					else if (version->cmp < 0)
+						text = _("downgrade");
+					else
+						text = _("re-install");
+				}
 				else if (package->type() == Ypp::Package::PATCH_TYPE)
 					text = _("patch");
 				else
@@ -777,7 +783,7 @@ class ChangesPane : public Ypp::Pool::Listener
 		}
 		static void box_style_set_cb (GtkWidget *widget, GtkStyle *prev_style)
 		{
-			int width = YGUtils::getCharsWidth (widget, 22);
+			int width = YGUtils::getCharsWidth (widget, 25);
 			gtk_widget_set_size_request (widget, width, -1);
 		}
 	};
@@ -1526,6 +1532,7 @@ Filters *m_filters;  // used to filter repo versions...
 	{
 		// installed
 		m_remove_button = createButton (_("_Remove"), GTK_STOCK_DELETE);
+		gtk_button_set_focus_on_click (GTK_BUTTON (m_remove_button), FALSE);
 		g_signal_connect (G_OBJECT (m_remove_button), "clicked",
 		                  G_CALLBACK (remove_clicked_cb), this);
 
@@ -1541,6 +1548,7 @@ Filters *m_filters;  // used to filter repo versions...
 
 		// available
 		m_install_button = createButton ("", GTK_STOCK_SAVE);
+		gtk_button_set_focus_on_click (GTK_BUTTON (m_install_button), FALSE);
 		g_signal_connect (G_OBJECT (m_install_button), "clicked",
 		                  G_CALLBACK (install_clicked_cb), this);
 
@@ -1654,12 +1662,10 @@ Filters *m_filters;  // used to filter repo versions...
 			if (packages.upgradable()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(upgrades)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Upgrade"));
 			}
 			else if (packages.notInstalled()) {
 				gtk_combo_box_append_text (GTK_COMBO_BOX (m_available_versions), "(several)");
 				gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
-				gtk_button_set_label (GTK_BUTTON (m_install_button), _("Install"));
 			}
 			else
 				gtk_widget_hide (m_available_box);
@@ -1746,14 +1752,14 @@ private:
 			version = package->getAvailableVersion (nb);
 			assert (version != NULL);
 
-			const char *installLabel = _("Install");
+			const char *installLabel = _("_Install");
 			if (package->isInstalled()) {
 				if (version->cmp > 0)
-					installLabel = _("Upgrade");
+					installLabel = _("_Upgrade");
 				else if (version->cmp == 0)
-					installLabel = _("Re-install");
+					installLabel = _("_Re-install");
 				else //if (version->cmp < 0)
-					installLabel = _("Downgrade");
+					installLabel = _("_Downgrade");
 			}
 			gtk_button_set_label (GTK_BUTTON (pThis->m_install_button), installLabel);
 		}

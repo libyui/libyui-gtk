@@ -187,7 +187,7 @@ struct Ypp::Package::Impl
 {
 	Impl (Type type, ZyppSelectable sel, Node *category, Node *category2)
 	: type (type), zyppSel (sel), category (category), category2 (category2),
-	  availableVersions (NULL), installedVersion (NULL)
+	  availableVersions (NULL), installedVersion (NULL), packagesCache (NULL)
 	{
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
@@ -196,20 +196,6 @@ struct Ypp::Package::Impl
 		ZyppObject installed = zyppSel->installedObj();
 		if (!!candidate && !!installed)
 			hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
-
-		packagesCache = NULL;
-		if (type == PATTERN_TYPE) {
-			isPatternInstalled = true;
-			ZyppObject object = sel->theObj();
-			ZyppPattern pattern = tryCastToZyppPattern (object);
-			zypp::Pattern::Contents contents (pattern->contents());
-			for (zypp::Pattern::Contents::Selectable_iterator it =
-				contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-				packagesCache = g_slist_append (packagesCache, get_pointer (*it));
-				if ((*it)->installedEmpty())
-					isPatternInstalled = false;
-			}
-		}
 
 		setUnmodified();
 	}
@@ -228,6 +214,22 @@ struct Ypp::Package::Impl
 	inline void setUnmodified()
 	{ curStatus = zyppSel->status(); }
 
+	GSList *getContainedPackages()
+	{
+		if (!packagesCache) {
+			if (type == PATTERN_TYPE) {
+				ZyppObject object = zyppSel->theObj();
+				ZyppPattern pattern = tryCastToZyppPattern (object);
+				zypp::Pattern::Contents contents (pattern->contents());
+				for (zypp::Pattern::Contents::Selectable_iterator it =
+					contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+					packagesCache = g_slist_append (packagesCache, get_pointer (*it));
+				}
+			}
+		}
+		return packagesCache;
+	}
+
 	std::string name, summary;
 	Type type;
 	ZyppSelectable zyppSel;
@@ -237,7 +239,6 @@ struct Ypp::Package::Impl
 	bool hasUpgrade;
 	zypp::ui::Status curStatus;  // so we know if resolver touched it
 	// for patterns only:
-	bool isPatternInstalled;
 	GSList *packagesCache;
 };
 
@@ -276,10 +277,8 @@ const std::string &Ypp::Package::name() const
 const std::string &Ypp::Package::summary()
 {
 	std::string &ret = impl->summary;
-	if (ret.empty()) {
-		if (impl->type == PACKAGE_TYPE || impl->type == PATCH_TYPE)
-			ret = impl->zyppSel->theObj()->summary();
-	}
+	if (ret.empty())
+		ret = impl->zyppSel->theObj()->summary();
 	return ret;
 }
 
@@ -333,7 +332,7 @@ std::string Ypp::Package::description()
 		case PATTERN_TYPE:
 		{
 			int installed = 0, total = 0;
-			for (GSList *i = impl->packagesCache; i; i = i->next) {
+			for (GSList *i = impl->getContainedPackages(); i; i = i->next) {
 				ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
 				if (!sel->installedEmpty())
 					installed++;
@@ -526,7 +525,7 @@ bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
 	switch (collection->type()) {
 		case Ypp::Package::PATTERN_TYPE:
 		{
-			for (GSList *i = collection->impl->packagesCache; i; i = i->next) {
+			for (GSList *i = collection->impl->getContainedPackages(); i; i = i->next) {
 				if (this->impl->zyppSel == i->data)
 					return true;
 			}
@@ -556,20 +555,12 @@ bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
 
 bool Ypp::Package::isInstalled()
 {
-	switch (impl->type) {
-		case Ypp::Package::PATCH_TYPE:
-			if (!impl->zyppSel->installedEmpty()) {
-				// broken? show as available
-				if (impl->zyppSel->installedObj().isBroken())
-					return false;
-			}
-			break;
-		case Ypp::Package::PATTERN_TYPE:
-			return impl->isPatternInstalled;
-		default:
-			break;
+	if (!impl->zyppSel->installedEmpty()) {
+		if (impl->zyppSel->installedObj().isBroken())
+			return false;
+		return true;
 	}
-	return !impl->zyppSel->installedEmpty();
+	return impl->zyppSel->candidateObj().isSatisfied();
 }
 
 bool Ypp::Package::hasUpgrade()
@@ -1776,9 +1767,6 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					ZyppPatch patch = tryCastToZyppPatch (object);
 					if (!patch)
 						continue;
-					if ((*it)->installedEmpty())
-						if (!(*it)->hasCandidateObj() || !(*it)->candidateObj().isBroken())
-							continue;
 					category = addCategory (type, patch->category());
 					break;
 				}
