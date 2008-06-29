@@ -1433,7 +1433,7 @@ static const CategoriesIconMap catIconMap[] = {
 	{ "Documentation", "package_documentation"   },
 	{ "Hardware",      "package_settings_peripherals" },
 	{ "Productivity",  "package_applications"    },
-	{ "System",        "package_settings"        },
+	{ "System",        "applications-system"     },
 	{ "Multimedia",    "package_multimedia"      },
 	{ "Video",         "package_multimedia"      },
 	{ "Office",        "applications-office"     },

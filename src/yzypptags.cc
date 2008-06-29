@@ -154,7 +154,7 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 		text = "package_network";
 		break;
 	case PK_GROUP_ENUM_OFFICE:
-		text = "package_office_addressbook";
+		text = "applications-office";
 		break;
 	case PK_GROUP_ENUM_OTHER:
 		text = "package_main";
@@ -166,7 +166,7 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 		text = "package_multimedia";
 		break;
 	case PK_GROUP_ENUM_SYSTEM:
-		text = "yast-system";
+		text = "applications-system";
 		break;
 	case PK_GROUP_ENUM_DESKTOP_GNOME:
 		text = "pattern-gnome";
@@ -175,10 +175,10 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 		text = "pattern-kde";
 		break;
 	case PK_GROUP_ENUM_DESKTOP_XFCE:
-      text = "package_utility_desktop";
+      text = "pattern-xfce";
 		break;
 	case PK_GROUP_ENUM_DESKTOP_OTHER:
-		text = "package_utility_desktop";
+		text = "user-desktop";
 		break;
 	case PK_GROUP_ENUM_PUBLISHING:
 		text = "package_main";
