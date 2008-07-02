@@ -277,8 +277,10 @@ const std::string &Ypp::Package::name() const
 const std::string &Ypp::Package::summary()
 {
 	std::string &ret = impl->summary;
-	if (ret.empty())
-		ret = impl->zyppSel->theObj()->summary();
+	if (ret.empty()) {
+		if (impl->type != PATTERN_TYPE)
+			ret = impl->zyppSel->theObj()->summary();
+	}
 	return ret;
 }
 
