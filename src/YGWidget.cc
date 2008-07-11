@@ -200,8 +200,8 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
 	// Create the label
 	m_label = gtk_label_new ("");
 	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
-	if (label_ori == YD_HORIZ)
-		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);
+/*	if (label_ori == YD_HORIZ)
+		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);*/
 	if(show) {
 		gtk_widget_show (m_label);
 		gtk_widget_show (m_field);
