@@ -21,7 +21,7 @@ public:
 		if (outputField)
 			gtk_label_set_selectable (GTK_LABEL (getWidget()), TRUE);
 		if (heading)
-			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_ULTRABOLD, PANGO_SCALE_XX_LARGE);
+			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_LARGE);
 		setLabel (text);
 	}
 
