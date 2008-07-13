@@ -1,3 +1,9 @@
+2008-07-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: aesthetic fix: remove the space for the expanders
+	if the side navegation bar is a plain list, as is the case for the
+	firewall tool.
+
 2008-06-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzypptags.cc: tweaked some icons as suggested by bug report

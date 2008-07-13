@@ -469,14 +469,15 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 
 	wizard->m_tree_view = gtk_tree_view_new_with_model
 		(GTK_TREE_MODEL (gtk_tree_store_new (1, G_TYPE_STRING)));
-	gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (wizard->m_tree_view),
+	GtkTreeView *view = GTK_TREE_VIEW (wizard->m_tree_view);
+	gtk_tree_view_insert_column_with_attributes (view,
 		0, "", gtk_cell_renderer_text_new(), "text", 0, NULL);
-	gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (wizard->m_tree_view), FALSE);
-	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (
-		GTK_TREE_VIEW (wizard->m_tree_view)), GTK_SELECTION_BROWSE);
-
+	gtk_tree_view_set_headers_visible (view, FALSE);
+	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (view), GTK_SELECTION_BROWSE);
 	g_signal_connect (G_OBJECT (wizard->m_tree_view), "cursor-changed",
 	                  G_CALLBACK (tree_item_selected_cb), wizard);
+	// start by assuming it will be list, and set expanders when a tree is built
+	gtk_tree_view_set_show_expanders (view, FALSE);
 
 	wizard->m_tree = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (wizard->m_tree),
@@ -546,8 +547,8 @@ void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
                                     const char *text, const char *id)
 {
-	GtkTreeModel *model = gtk_tree_view_get_model
-	                          (GTK_TREE_VIEW (wizard->m_tree_view));
+	GtkTreeView *view = GTK_TREE_VIEW (wizard->m_tree_view);
+	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	GtkTreeIter iter;
 
 	if (!parent_id || !*parent_id)
@@ -556,6 +557,7 @@ gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
 		GtkTreePath *path = g_hash_table_lookup (wizard->tree_ids, parent_id);
 		if (path == NULL)
 			return FALSE;
+		gtk_tree_view_set_show_expanders (view, TRUE);  // has children
 		GtkTreeIter parent_iter;
 		gtk_tree_model_get_iter (model, &parent_iter, path);
 		gtk_tree_store_append (GTK_TREE_STORE (model), &iter, &parent_iter);
