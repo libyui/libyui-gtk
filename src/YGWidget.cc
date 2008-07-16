@@ -259,13 +259,12 @@ YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
                                     bool show, GType type,
                                     const char *property_name, ...)
 	: YGLabeledWidget (ywidget, parent, string(), YD_VERT, show,
-	                   YGTK_TYPE_TUNED_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
+	                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
 	construct(type, property_name, args);
 	va_end (args);
-
 	setLabelVisible (false);
 }
 
@@ -274,7 +273,7 @@ YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
                                     bool show, GType type,
                                     const char *property_name, ...)
 	: YGLabeledWidget (ywidget, parent, label_text, label_ori, show,
-	                   YGTK_TYPE_TUNED_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
+	                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
 	va_start (args, property_name);
@@ -297,8 +296,5 @@ void YGScrolledWidget::setPolicy (GtkPolicyType hpolicy, GtkPolicyType vpolicy)
 {
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
 	                                hpolicy, vpolicy);
-	ygtk_tuned_scrolled_window_set_auto_policy (
-		YGTK_TUNED_SCROLLED_WINDOW (YGLabeledWidget::getWidget()),
-		hpolicy == GTK_POLICY_AUTOMATIC ? MAX_SCROLL_WIDTH : 0, 0);
 }
 

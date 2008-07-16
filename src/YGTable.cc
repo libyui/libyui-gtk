@@ -24,6 +24,7 @@ public:
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
+		blockSelected = false;
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -34,14 +35,15 @@ public:
 		/* Yast tools expect the user to be unable to un-select the row. They
 		   generally don't check to see if the returned value is -1. So, just
 		   disallow un-selection. */
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
-		gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);
+		gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_BROWSE);
 
 		// let the derivates do the event hooks. They have subtile differences.
 	}
 
 	inline GtkTreeView *getView()
 	{ return GTK_TREE_VIEW (getWidget()); }
+	inline GtkTreeSelection *getSelection()
+	{ return gtk_tree_view_get_selection (getView()); }
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
@@ -102,12 +104,9 @@ public:
 	{
 		blockEvents();
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
-
 		gtk_tree_view_expand_to_path (getView(), path);
 
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
-		gtk_tree_selection_select_path (selection, path);
-		gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
+		gtk_tree_selection_select_path (getSelection(), path);
 		gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
 		gtk_tree_path_free (path);
 		unblockEvents();
@@ -116,29 +115,30 @@ public:
 	virtual void unsetFocus()
 	{
 		blockEvents();
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
-		gtk_tree_selection_unselect_all (selection);
+		gtk_tree_selection_unselect_all (getSelection());
 		unblockEvents();
 	}
 
 	virtual YItem *focusItem()
 	{
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (getView());
 		GtkTreeIter iter;
-		if (gtk_tree_selection_get_selected (selection, NULL, &iter))
+		if (gtk_tree_selection_get_selected (getSelection(), NULL, &iter))
 			return getItem (&iter);
 		return NULL;
 	}
 
+	// peculiarities
+	virtual bool toggleMode() const
+	{ return false; }  // YMultiSelectionBox
+
+private:
+	bool blockSelected;
+
 protected:
 	void blockEvents()
-	{
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_cb, this);
-	}
+	{ blockSelected = true; }
 	void unblockEvents()
-	{
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_cb, this);
-	}
+	{ blockSelected = false; }
 
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
@@ -159,8 +159,20 @@ protected:
 	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
 	{
 		IMPL
+		if (pThis->blockSelected)
+			return;
 		if (pThis->immediateEvent())
 			pThis->emitEvent (YEvent::SelectionChanged, true, true);
+		if (!pThis->toggleMode()) {
+			GtkTreeSelection *selection = pThis->getSelection();
+			for (YItemConstIterator it = pThis->itemsBegin(); it != pThis->itemsEnd(); it++) {
+				GtkTreeIter iter;
+				if (pThis->getIter (*it, &iter)) {
+					bool sel = gtk_tree_selection_iter_is_selected (selection, &iter);
+					(*it)->setSelected (sel);
+				}
+			}
+		}
 	}
 
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
@@ -198,7 +210,10 @@ public:
 		IMPL
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
-
+#if YAST2_VERSION >= 2017005
+		if (multiSelection)
+			gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_MULTIPLE);
+#endif
 		vector <GType> types;
 		for (int i = 0; i < columns(); i++) {
 			types.push_back (GDK_TYPE_PIXBUF);
@@ -219,7 +234,7 @@ public:
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		g_signal_connect_after (G_OBJECT (getSelection()), "changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 		if (!keepSorting())
 			setSortable (true);
@@ -390,6 +405,10 @@ public:
 	virtual void setCurrentItem (YItem *item)
 	{ implFocusItem (item); }
 
+	// YGTableView
+	virtual bool toggleMode() const
+	{ return true; }
+
 	// Events
 	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                                GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
@@ -434,7 +453,7 @@ public:
 	virtual void rebuildTree()
 	{
 		doDeleteAllItems();
-		for (YItemConstIterator it = itemsBegin(); it != itemsEnd(); it++)
+		for (YItemConstIterator it = YTree::itemsBegin(); it != YTree::itemsEnd(); it++)
 			doAddItem (*it);
 	}
 

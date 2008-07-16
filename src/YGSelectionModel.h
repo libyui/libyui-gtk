@@ -33,6 +33,9 @@ struct YGSelectionModel
 	virtual void setFocusItem (GtkTreeIter *iter) = 0;
 	virtual void unsetFocus() = 0;
 
+	YItemConstIterator itemsBegin() { return ywidget->itemsBegin(); }
+	YItemConstIterator itemsEnd()   { return ywidget->itemsEnd(); }
+
 	// to be implemented by trees
 	virtual void expand (GtkTreeIter *iter) {}
 
