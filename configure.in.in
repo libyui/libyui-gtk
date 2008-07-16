@@ -48,24 +48,12 @@ AC_SUBST(GTK_LIBS)
 PKG_CHECK_MODULES( ZYPP, libzypp )
 AC_SUBST(ZYPP_LIBS)
 
-verstxt=`pkg-config --modversion yast2-core`
+verstxt=`pkg-config --modversion yast2-libyui`
 yast_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
 AC_DEFINE_UNQUOTED(YAST2_VERSION, $yast_vers, [yast version for compile conditionals])
 
 PYUI_LIBS='-lpy2UI'
 AC_SUBST(PYUI_LIBS)
-
-dnl Checking for new libyui API...
-if ! test -f /usr/include/YaST2/yui/YApplication.h; then
-	AC_MSG_ERROR([
-*** Version of libyui >= 2.15.12 needed (your version: $verstxt)
-*** You can find it on: svn checkout http://svn.opensuse.org/svn/yast/trunk/core/
-*** Do "make -f Makefile.cvs" on root
-*** Then you just need to compile stuff under libyui,
-***     "cd libyui && make && sudo make install"
-*** libyui broke compatibility in order to get away from YCP structures,
-*** to make it easier for binding.])
-fi
 
 AC_OUTPUT([Makefile src/Makefile])
 
