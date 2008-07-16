@@ -186,8 +186,13 @@ protected:
 class YGTable : public YTable, public YGTableView
 {
 public:
-	YGTable (YWidget *parent, YTableHeader *_header)
-	: YTable (NULL, _header)
+#if YAST2_VERSION >= 2017005
+	YGTable (YWidget *parent, YTableHeader *headers, bool multiSelection)
+	: YTable (NULL, headers, multiSelection)
+#else
+	YGTable (YWidget *parent, YTableHeader *headers)
+	: YTable (NULL, headers)
+#endif
 	, YGTableView (this, parent, string(), false, false)
 	{
 		IMPL
@@ -286,10 +291,18 @@ public:
 	YGSELECTION_WIDGET_IMPL_SELECT (YTable)
 };
 
-YTable *YGWidgetFactory::createTable (YWidget *parent, YTableHeader *header)
+#if YAST2_VERSION >= 2017005
+YTable *YGWidgetFactory::createTable (YWidget *parent, YTableHeader *headers,
+                                      bool multiSelection)
 {
-	return new YGTable (parent, header);	
+	return new YGTable (parent, headers, multiSelection);	
 }
+#else
+YTable *YGWidgetFactory::createTable (YWidget *parent, YTableHeader *headers)
+{
+	return new YGTable (parent, headers);	
+}
+#endif
 
 #include "YSelectionBox.h"
 

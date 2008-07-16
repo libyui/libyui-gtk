@@ -24,21 +24,6 @@
 #endif
 #define IMPL_RET(a) { IMPL; return (a); }
 
-/* Compatibility */
-/*
-#if YAST2_VERSION > 2014004
-#  define YAST2_YGUI_CHECKBOX_FRAME 1
-#elif YAST2_VERSION >= 2014000
-#  define YAST2_YGUI_CHECKBOX_FRAME 0
-#elif YAST2_VERSION > 2013032
-#  define YAST2_YGUI_CHECKBOX_FRAME 1
-#else
-#  define YAST2_YGUI_CHECKBOX_FRAME 0
-#endif
-*/
-
-class YGDialog;
-
 #include <YUI.h>
 
 class YGUI: public YUI
@@ -113,10 +98,14 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YInputField *createInputField (YWidget *parent, const string &label, bool passwordMode);
 	virtual YCheckBox *createCheckBox (YWidget *parent, const string &label, bool isChecked);
 	virtual YRadioButton *createRadioButton (YWidget *parent, const string &label, bool isChecked);
-    virtual YComboBox *createComboBox (YWidget * parent, const string & label, bool editable);
+    virtual YComboBox *createComboBox (YWidget *parent, const string & label, bool editable);
 	virtual YSelectionBox *createSelectionBox (YWidget *parent, const string &label);
 	virtual YTree *createTree (YWidget *parent, const string &label);
-	virtual YTable *createTable (YWidget * parent, YTableHeader *header);
+#if YAST2_VERSION >= 2017005
+	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
+#else
+	virtual YTable *createTable (YWidget *parent, YTableHeader *headers);
+#endif
 	virtual YProgressBar *createProgressBar	(YWidget *parent, const string &label, int maxValue);
 	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const string &label, int timeout);
 	virtual YRichText *createRichText (YWidget *parent, const string &text, bool plainTextMode);

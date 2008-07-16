@@ -10,15 +10,12 @@
 
 class YGPushButton : public YPushButton, public YGWidget
 {
-GtkWidget *m_image;
-
 public:
 	YGPushButton (YWidget *parent, const string &label)
 	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL
-		m_image = NULL;
 		setMinSizeInChars (10, 0);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
@@ -39,9 +36,13 @@ public:
 	virtual void setIcon (const string &icon)
 	{
 		IMPL
-		if (icon.empty())
-			// no need to worry about freeing m_image, let it live with button
-			gtk_widget_hide (m_image);
+		GtkButton *button = GTK_BUTTON (getWidget());
+		if (icon.empty()) {
+			// no need to worry about freeing the image, let it live with button
+			GtkWidget *image = gtk_button_get_image (button);
+			if (image)
+				gtk_widget_hide (image);
+		}
 		else {
 			string path (icon);
 			if (path[0] != '/')
@@ -50,8 +51,8 @@ public:
 			GError *error = 0;
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
 			if (pixbuf) {
-				m_image = gtk_image_new_from_pixbuf (pixbuf);
-				gtk_button_set_image (GTK_BUTTON (getWidget()), m_image);
+				GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
+				gtk_button_set_image (button, image);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
@@ -73,6 +74,15 @@ public:
 				                  G_CALLBACK (realize_cb), this);
 		}
 		YPushButton::setDefaultButton (isDefault);
+	}
+
+	virtual void setHelpButton (bool helpButton)
+	{
+		if (helpButton) {
+			GtkWidget *image;
+			image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
+			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
+		}
 	}
 
 	// Events

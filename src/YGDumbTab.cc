@@ -127,6 +127,20 @@ public:
 		}
 	}
 
+	virtual void shortcutChanged()
+	{
+		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
+		for (YItemConstIterator it = itemsBegin(); it != itemsEnd(); it++) {
+			YItem *item = *it;
+			GtkWidget *child = gtk_notebook_get_nth_page (notebook, item->index());
+			std::string label = YGUtils::mapKBAccel (item->label());
+			gtk_notebook_set_tab_label_text (notebook, child, label.c_str());
+			gtk_label_set_use_underline (
+				GTK_LABEL (gtk_notebook_get_tab_label (notebook, child)), TRUE);
+		}
+	}
+
+	// callbacks
 	static void changed_tab_cb (GtkNotebook *notebook, GtkNotebookPage *page,
 	                            gint tab_nb, YGDumbTab *pThis)
 	{
