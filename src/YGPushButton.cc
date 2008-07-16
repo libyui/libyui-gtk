@@ -63,6 +63,7 @@ public:
 
 	virtual void setDefaultButton (bool isDefault)
 	{
+		YPushButton::setDefaultButton (isDefault);
 		if (isDefault) {
 			GtkWidget *button = getWidget();
 			GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
@@ -73,11 +74,11 @@ public:
 				g_signal_connect (G_OBJECT (button), "realize",
 				                  G_CALLBACK (realize_cb), this);
 		}
-		YPushButton::setDefaultButton (isDefault);
 	}
 
 	virtual void setHelpButton (bool helpButton)
 	{
+		YPushButton::setHelpButton (helpButton);
 		if (helpButton) {
 			GtkWidget *image;
 			image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
