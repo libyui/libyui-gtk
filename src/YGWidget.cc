@@ -48,7 +48,6 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 		ywidget->setParent (yparent);
 		yparent->addChild (ywidget);
 	}
-	m_sizeReq.width = 0;
 }
 
 YGWidget::~YGWidget()
@@ -114,9 +113,10 @@ void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
 
 int YGWidget::getPreferredSize (YUIDimension dimension)
 {
-	if (!m_sizeReq.width)
-		gtk_widget_size_request (m_adj_size, &m_sizeReq);
-	return dimension == YD_HORIZ ? m_sizeReq.width : m_sizeReq.height;
+	// We might want to try to do some caching here..
+	GtkRequisition req;
+	gtk_widget_size_request (m_adj_size, &req);
+	return dimension == YD_HORIZ ? req.width : req.height;
 }
 
 #include "ygtkfixed.h"
@@ -129,7 +129,6 @@ void YGWidget::doSetSize (int width, int height)
 
 	if (parent && YGTK_IS_FIXED (parent))
 		ygtk_fixed_set_child_size (YGTK_FIXED (parent), m_adj_size, width, height);
-	m_sizeReq.width = 0;
 }
 
 void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,

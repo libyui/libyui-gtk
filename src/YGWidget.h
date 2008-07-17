@@ -51,7 +51,6 @@ protected:
 	// layout
 	virtual int getPreferredSize (YUIDimension dimension);
 	void doSetSize (int width, int height);
-	GtkRequisition m_sizeReq;  // cache
 
 	void show();
 

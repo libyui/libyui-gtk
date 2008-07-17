@@ -1,3 +1,11 @@
+2008-07-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.cc: got rid of the size calculation cache. Should fix
+	some issues when using replace points.
+
+	* src/YGPackageSelector.cc: let the wrapper do an initial check on
+	changes. Should fix bug 400635.
+
 2008-07-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: implemented YTable's multiSelection flag.

@@ -393,7 +393,6 @@ void YGDialog::setEnabled (bool enabled)
 
 void YGDialog::setSize (int width, int height)
 {
-//fprintf (stderr, "dialog: set size: %d x %d\n", width, height);
 	// libyui calls YDialog::setSize() to force a geometry recalculation as a
 	// result of changed layout properties
 	GtkWidget *window = m_window->getWidget();
