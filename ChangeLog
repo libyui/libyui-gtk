@@ -1,3 +1,8 @@
+2008-07-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 383897: extra whitespace typo
+	in a string.
+
 2008-07-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.cc: got rid of the size calculation cache. Should fix
