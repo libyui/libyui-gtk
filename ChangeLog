@@ -3,6 +3,9 @@
 	* src/YGPackageSelector.cc: bug fix 383897: extra whitespace typo
 	in a string.
 
+	* src/YGTable.cc: bug fix 410341: request to regress fix for 396360.
+	Honor flag for last column.
+
 2008-07-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.cc: got rid of the size calculation cache. Should fix

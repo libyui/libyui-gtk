@@ -222,13 +222,7 @@ public:
 		createModel (types);
 		for (int i = 0; i < columns(); i++) {
 			int col = i*2;
-
-			YAlignmentType align = alignment (i);
-			// last column is expandable, so don't let it be aligned to the right
-			if (i == columns()-1)
-				align = YAlignBegin;
-
-			appendIconTextColumn (header (i), align, col, col+1);
+			appendIconTextColumn (header (i), alignment (i), col, col+1);
 		}
 		setModel();
 
