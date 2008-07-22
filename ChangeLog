@@ -1,3 +1,9 @@
+2008-07-21  JP Rosevear  <jpr@novell.com>
+
+	* Version 2.16.17
+	
+	* src/yzyppwrapper.cc: Don't include removed header
+
 2008-07-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: bug fix 383897: extra whitespace typo

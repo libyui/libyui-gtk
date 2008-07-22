@@ -1,4 +1,26 @@
 -------------------------------------------------------------------
+Mon Jul 21 20:36:09 EDT 2008 - jpr@novell.com
+
+- Update to 2.16.17
+* extra whitespace typo in a string (bnc#383897)
+* honor flag for last column (bnc#410341)
+* let the wrapper do an initial check on changes (bnc#400635)
+* implement YTable's multiSelection flag
+* implement shortcutChanged() to set tab labels shortcuts
+* implement setHelpButton() set the help stock icon
+* remove the space for the expanders if the side navegation bar 
+  is a plain list, as is the case for the firewall tool
+* tweaked some icons as suggested (bnc#404818)
+* don't always iuse the label "upgrade" if re-installs or 
+  downgrades (bnc#404382)
+* keyboard mnemonics for install/remove buttons (bnc#399256)
+* consider a pattern or a patch installed or not using 
+  isSatisfied() like yast2-qt. Also made initial patterns loading
+  faster. And removed some checks on patches that were causing them
+  not to be displayed (bnc#402855)
+* added a background for <pre>.
+
+-------------------------------------------------------------------
 Sun Jun 22 18:34:15 CEST 2008 - jpr@suse.de
 
 - Update to 2.16.16

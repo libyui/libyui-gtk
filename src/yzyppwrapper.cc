@@ -26,7 +26,6 @@
 #include <zypp/Patch.h>
 #include <zypp/Package.h>
 #include <zypp/Pattern.h>
-#include <zypp/ui/PatternContents.h>
 #include <zypp/Product.h>
 #include <zypp/Repository.h>
 #include <zypp/RepoManager.h>
