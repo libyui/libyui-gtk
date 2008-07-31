@@ -816,6 +816,9 @@ public:
 		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), scroll, TRUE, TRUE, 0);
 
+		ygtk_wizard_set_information_expose_hook (vbox, &vbox->allocation);
+		ygtk_wizard_set_information_expose_hook (m_entries_box, &m_entries_box->allocation);
+
 		int width = YGUtils::getCharsWidth (vbox, 25);
 		gtk_widget_set_size_request (vbox, width, -1);
 		gtk_widget_show_all (vbox);
@@ -1075,15 +1078,17 @@ private:
 		Categories (Collections::Listener *listener, bool patch_mode)
 		: StoreView (listener), m_patchMode (patch_mode), m_rpmGroups (false)
 		{
-			GtkWidget *check = gtk_check_button_new_with_label (_("Detailed"));
-			YGUtils::setWidgetFont (GTK_BIN (check)->child,
-				PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-			gtk_widget_set_tooltip_text (check,
-				_("Group by the PackageKit-based filter or straight from the actual "
-				"RPM information."));
-			g_signal_connect (G_OBJECT (check), "toggled",
-			                  G_CALLBACK (rpm_groups_toggled_cb), this);
-			gtk_box_pack_start (GTK_BOX (m_box), check, FALSE, TRUE, 0);
+			if (!m_patchMode) {
+				GtkWidget *check = gtk_check_button_new_with_label (_("Detailed"));
+				YGUtils::setWidgetFont (GTK_BIN (check)->child,
+					PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+				gtk_widget_set_tooltip_text (check,
+					_("Group by the PackageKit-based filter or straight from the actual "
+					"RPM information."));
+				g_signal_connect (G_OBJECT (check), "toggled",
+					              G_CALLBACK (rpm_groups_toggled_cb), this);
+				gtk_box_pack_start (GTK_BOX (m_box), check, FALSE, TRUE, 0);
+			}
 			build (m_rpmGroups, !m_rpmGroups, false);
 		}
 
@@ -1107,12 +1112,12 @@ private:
 			Ypp::Node *first_category;
 			Ypp::Package::Type type =
 				m_patchMode ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
-			if (!m_rpmGroups)
+			if (!m_rpmGroups && !m_patchMode)
 				first_category = Ypp::get()->getFirstCategory2 (type);
 			else
 				first_category = Ypp::get()->getFirstCategory (type);
 			inner::populate (store, NULL, first_category, this);
-			if (!m_rpmGroups) {
+			if (!m_rpmGroups && !m_patchMode) {
 				GtkTreeView *view = GTK_TREE_VIEW (m_view);
 				GtkTreeIter iter;
 				gtk_tree_store_append (store, &iter, NULL);
@@ -1142,7 +1147,7 @@ private:
 				query->setIsSuggested (true);
 			else {
 				Ypp::Node *node = (Ypp::Node *) ptr;
-				if (m_rpmGroups)
+				if (m_rpmGroups || m_patchMode)
 					query->addCategory (node);
 				else
 					query->addCategory2 (node);
@@ -1474,8 +1479,8 @@ public:
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
-			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Repositories"));
 		}
+		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Repositories"));
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), 0);
 		g_signal_connect_after (G_OBJECT (m_type), "changed",
 		                        G_CALLBACK (type_changed_cb), this);

@@ -80,7 +80,9 @@ struct StringTree {
 
 	Ypp::Node *getFirst()
 	{
-		return (Ypp::Node *) root->children->data;
+		if (root->children)
+			return (Ypp::Node *) root->children->data;
+		return NULL;
 	}
 
 	Ypp::Node *add (const std::string &tree_str, const char *icon)
@@ -1767,6 +1769,8 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				{
 					ZyppPatch patch = tryCastToZyppPatch (object);
 					if (!patch)
+						continue;
+					if ((*it)->candidateObj() && !(*it)->candidateObj().isRelevant())
 						continue;
 					category = addCategory (type, patch->category());
 					break;

@@ -167,25 +167,8 @@ static void ygtk_steps_size_request (GtkWidget *widget, GtkRequisition *requisit
 static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
 	GtkStyle *style = gtk_widget_get_style (widget);
-
-	// background
-	cairo_t *cr = gdk_cairo_create (widget->window);
-
-	int x, y, w, h;
-	x = widget->allocation.x; y = widget->allocation.y;
-	w = widget->allocation.width; h = widget->allocation.height;
-
-	cairo_pattern_t *pattern = cairo_pattern_create_linear (x, y, x, y+h);
-	cairo_pattern_add_color_stop_rgba (pattern, 0, 1, 1, 1, 1);
-	cairo_pattern_add_color_stop_rgba (pattern, 1, 1, 1, 1, 0);
-	cairo_set_source (cr, pattern);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_fill (cr);
-	cairo_pattern_destroy (pattern);
-	cairo_destroy (cr);
-
 	// content
-	x = widget->allocation.x + BORDER; y = widget->allocation.y + BORDER;
+	int x = widget->allocation.x + BORDER, y = widget->allocation.y + BORDER;
 	YGtkSteps *steps = YGTK_STEPS (widget);
 	int i;
 	for (i = 0; i < ygtk_steps_total (steps); i++) {

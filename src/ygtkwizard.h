@@ -115,6 +115,7 @@ void ygtk_wizard_enable_tree  (YGtkWizard *wizard);
 // the given one (you may pass NULL to just remove current child)
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
 void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget);
+void ygtk_wizard_set_information_expose_hook (GtkWidget *widget, GtkAllocation *alloc);
 void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget);
 
 // commands

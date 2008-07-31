@@ -549,6 +549,28 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget)
 	gtk_paned_pack2 (GTK_PANED (wizard->m_pane), widget, TRUE, TRUE);
 }
 
+static gboolean ygtk_wizard_set_information_expose_cb (GtkWidget *widget, GdkEventExpose *event,
+                                                        GtkAllocation *alloc)
+{
+	cairo_t *cr = gdk_cairo_create (widget->window);
+	int x = alloc->x, y = alloc->y, w = alloc->width, h = alloc->height;
+	cairo_pattern_t *pattern = cairo_pattern_create_linear (x, y, x, y+h);
+	cairo_pattern_add_color_stop_rgba (pattern, 0, 1, 1, 1, 1);
+	cairo_pattern_add_color_stop_rgba (pattern, 1, 1, 1, 1, 0);
+	cairo_set_source (cr, pattern);
+	cairo_rectangle (cr, x, y, w, h);
+	cairo_fill (cr);
+	cairo_pattern_destroy (pattern);
+	cairo_destroy (cr);
+	return FALSE;
+}
+
+void ygtk_wizard_set_information_expose_hook (GtkWidget *widget, GtkAllocation *alloc)
+{
+	g_signal_connect (G_OBJECT (widget), "expose-event",
+	                  G_CALLBACK (ygtk_wizard_set_information_expose_cb), alloc);
+}
+
 void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget)
 {
 	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), widget, FALSE, TRUE, 0);
@@ -565,6 +587,7 @@ void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 	wizard->m_steps = ygtk_steps_new();
 	gtk_widget_show (wizard->m_steps);
 	ygtk_wizard_set_information_widget (wizard, wizard->m_steps);
+	ygtk_wizard_set_information_expose_hook (wizard->m_steps, &wizard->m_steps->allocation);
 }
 
 void ygtk_wizard_enable_tree (YGtkWizard *wizard)
