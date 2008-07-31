@@ -18,8 +18,10 @@ public:
 	{
 		IMPL
 		gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
-		if (outputField)
+		if (outputField) {
 			gtk_label_set_selectable (GTK_LABEL (getWidget()), TRUE);
+			gtk_label_set_single_line_mode (GTK_LABEL (getWidget()), TRUE);
+		}
 		if (heading)
 			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_LARGE);
 		setLabel (text);
@@ -27,16 +29,8 @@ public:
 
 	virtual void setText (const string &label)
 	{
-		if (isOutputField()) {
-			std::string l (label);
-			std::string::size_type i = l.find ('\n', 0);
-			if (i != std::string::npos)
-				l.erase (i);
-			gtk_label_set_label (GTK_LABEL (getWidget()), l.c_str());
-		}
-		else
-			gtk_label_set_label (GTK_LABEL (getWidget()), label.c_str());
 		YLabel::setText (label);
+		gtk_label_set_label (GTK_LABEL (getWidget()), label.c_str());
 	}
 
 	YGWIDGET_IMPL_COMMON

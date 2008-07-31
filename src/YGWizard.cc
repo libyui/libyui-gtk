@@ -271,11 +271,11 @@ public:
 			YGUI::ui()->sendEvent (new YWidgetEvent ((YWidget *) id, YEvent::Activated));
 	}
 
+	// YGWidget
 	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
-		if (ychild->widgetRep())
-			// don't actually add the button wrappers
-			YGWidget::doAddChild (ychild, container);
+		if (ychild->widgetRep())  // don't actually add the button wrappers
+			ygtk_wizard_set_child (getWizard(), YGWidget::get (ychild)->getLayout());
 	}
 
 	YGWIDGET_IMPL_COMMON

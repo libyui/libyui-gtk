@@ -11,8 +11,8 @@
 #define YGTK_WIZARD_H
 
 #include <gdk/gdk.h>
-#include <gtk/gtkbin.h>
 #include <gtk/gtkwindow.h>
+#include <gtk/gtkvbox.h>
 G_BEGIN_DECLS
 
 // YGtkHelpDialog (for showing help text)
@@ -72,7 +72,7 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
 
 typedef struct _YGtkWizard
 {
-	GtkBin bin;
+	GtkVBox box;
 
 	// private:
 	/* Hash tables to assign Yast Ids to Gtk entries. */
@@ -80,26 +80,23 @@ typedef struct _YGtkWizard
 	GHashTable *tree_ids;   /* gchar* -> GtkTreePath*  */
 	GHashTable *steps_ids;  /* gchar* -> guint         */
 
-	/* Widgets for layout. */
-	GtkWidget *m_menu, *m_title, *m_steps, *m_tree, *m_buttons;
-	GtkWidget *m_child, *m_pane;
-	// containee can be accessed via GTK_BIN (wizard)->child
+	/* For layout */
+	GtkWidget *m_menu_box, *m_title, *m_contents_box, *m_control_bar,
+	          *m_child, *m_pane, *m_buttons;
 
-	/* Widgets we need to have access to. */
-	GtkWidget *m_title_label, *m_title_image, *m_tree_view,
+	/* Widgets we need to access. */
+	GtkWidget *m_tree_view, *m_steps, *m_menu,
 	          *m_back_button, *m_abort_button, *m_next_button, *m_help_button,
 	          *m_release_notes_button;
 
 	/* The help text. */
 	gchar     *m_help;
 	GtkWidget *m_help_dialog;
-
-	guint child_border_width;
 } YGtkWizard;
 
 typedef struct _YGtkWizardClass
 {
-	GtkBinClass parent_class;
+	GtkVBoxClass parent_class;
 
 	// signals:
 	void (*action_triggered) (YGtkWizard *wizard, gpointer id, gint id_type);
@@ -117,6 +114,8 @@ void ygtk_wizard_enable_tree  (YGtkWizard *wizard);
 // convinience method that removes the current child, if set, and swaps it by
 // the given one (you may pass NULL to just remove current child)
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
+void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget);
+void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget);
 
 // commands
 // (commands that may fail return a sucess boolean.)

@@ -4,7 +4,7 @@
 
 static const char *pkg_help =
 "<h1>Purpose</h1>"
-"<p>This tool lets you manage software, as in 'install, remove, update applications'.</p>"
+"<p>This tool lets you install, remove, and update applications.</p>"
 "<p>openSUSE's software management is also called 'package management'. A package is "
 "generally an application bundle, but multiple packages that extend the application "
 "may be offered in order to avoid clutter (e.g. games tend to de-couple the music "

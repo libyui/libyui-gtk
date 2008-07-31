@@ -427,21 +427,6 @@ int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb)
 void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
 { YGUtils::setWidgetFont (widget, weight, scale); }
 
-std::list <string> YGUtils::splitString (const string &str, char separator)
-{
-	std::list <string> parts;
-	std::string::size_type i, j;
-	// ignore first character, if separator
-	i = j = (str[0] == separator) ? 1 : 0;
-	for (; i < str.length(); i++)
-		if (str[i] == separator) {
-			parts.push_back (str.substr (j, i - j));
-			j = ++i;
-		}
-	parts.push_back (str.substr (j));
-	return parts;
-}
-
 GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 {
 	GdkPixbuf *pixbuf = NULL;

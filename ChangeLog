@@ -1,3 +1,25 @@
+2008-07-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.h/.cc: add attributes arch to Version and url to
+	Repository. Added extra options to names query.
+
+	* src/YGPackageSelector.cc: some re-design of the layout.
+
+	* src/ygtkwizard.h/.c: re-worked the layout. Instead of a customer container,
+	it now uses gtk ordinary layouting.
+
+	* src/ygtklinklabel.h/.c: new widget: a label with a clickable link at its
+	end.
+
+	* src/ygtkhandlebox.h/.c: new widget: extends GtkHandleBox, supporting
+	resizing of the deatached window.
+
+	* src/YGUtils.h/.cc: got rid of splitString(). Replaced its usage by
+	g_strsplit().
+
+	* src/YGDumbTab.cc: bug fix 411890: it looks like tabs can now have
+	shortcuts: honor them.
+
 2008-07-21  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.17

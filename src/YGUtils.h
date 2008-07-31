@@ -42,10 +42,6 @@ namespace YGUtils
 	/* Sets some widget font proprities. */
 	void setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
-	/* Splits a string into parts as separated by the separator characters.
-	   eg: splitString ("Office/Writer", '/') => { "Office", "Writer" } */
-	std::list <std::string> splitString (const std::string &str, char separator);
-
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */

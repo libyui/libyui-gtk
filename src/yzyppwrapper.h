@@ -55,6 +55,7 @@ struct Ypp
 		std::string filelist();
 		std::string changelog();
 		std::string authors();
+		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
 
@@ -62,7 +63,7 @@ struct Ypp
 		std::string requires() const;
 
 		struct Version {
-			std::string number;
+			std::string number, arch;
 			const Repository *repo;
 			int cmp /* relatively to installed -- ignore if not installed */;
 			void *impl;
@@ -134,11 +135,12 @@ struct Ypp
 		struct Query {
 			Query();
 			void addType (Package::Type type);
-			void addNames (std::string name, char separator = 0);
+			void addNames (std::string name, char separator = 0, bool use_name = true,
+			                bool use_summary = true, bool use_description = false);
 			void addCategory (Ypp::Node *category);
 			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);
-			void addRepository (const Ypp::Repository *repositories);
+			void addRepository (const Ypp::Repository *repository);
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
 			void setIsModified (bool modified);
@@ -221,10 +223,11 @@ struct Ypp
 
 	// Repositories
 	struct Repository {
-		std::string name, alias /*internal use*/;
+		std::string name, url, alias /*internal use*/;
+		bool enabled;
 	};
 	const Repository *getRepository (int nb);
-	void setFavoriteRepository (const Repository *repo);  /* -1 to disable restrictions */
+	void setFavoriteRepository (const Repository *repo);  /* 0 to disable restrictions */
 	const Repository *favoriteRepository();
 
 	// Misc
@@ -233,8 +236,7 @@ struct Ypp
 	Node *getFirstCategory (Package::Type type);
 	Node *getFirstCategory2 (Package::Type type);
 
-	struct Disk
-	{
+	struct Disk {
 		struct Partition {
 			std::string path, used_str, total_str;
 			long long used, total;

@@ -85,16 +85,19 @@ struct StringTree {
 
 	Ypp::Node *add (const std::string &tree_str, const char *icon)
 	{
-		const std::list <std::string> nodes_str = YGUtils::splitString (tree_str, delim);
+		const gchar delimiter[2] = { delim, '\0' };
+		gchar **nodes_str = g_strsplit (tree_str.c_str(), delimiter, -1);
+
 		GNode *parent = root, *sibling = 0;
 		Ypp::Node *ret = 0;
-
-		std::list <std::string>::const_iterator it;
-		for (it = nodes_str.begin(); it != nodes_str.end(); it++) {
+		gchar **i;
+		for (i = nodes_str; *i; i++) {
+			if (!**i)
+				continue;
 			bool found = false;
 			for (sibling = parent->children; sibling; sibling = sibling->next) {
 				Ypp::Node *yNode = (Ypp::Node *) sibling->data;
-				int cmp = (*compare) (it->c_str(), yNode->name.c_str());
+				int cmp = (*compare) (*i, yNode->name.c_str());
 				if (cmp == 0) {
 					found = true;
 					ret = yNode;
@@ -108,10 +111,10 @@ struct StringTree {
 			parent = sibling;
 		}
 
-		for (; it != nodes_str.end(); it++) {
+		for (; *i; i++) {
 			Ypp::Node *yNode = new Ypp::Node();
 			GNode *n = g_node_new ((void *) yNode);
-			yNode->name = *it;
+			yNode->name = *i;
 			yNode->icon = icon;
 			yNode->impl = (void *) n;
 			g_node_insert_before (parent, sibling, n);
@@ -119,6 +122,7 @@ struct StringTree {
 			sibling = NULL;
 			ret = yNode;
 		}
+		g_strfreev (nodes_str);
 		return ret;
 	}
 };
@@ -340,7 +344,7 @@ std::string Ypp::Package::description()
 				total++;
 			}
 			std::ostringstream stream;
-			stream << "\n\n" << installed << " / " << total;
+			stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
 			text += stream.str();
 			break;
 		}
@@ -475,6 +479,23 @@ std::string Ypp::Package::authors()
 			text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
 	}
 	return text;
+}
+
+std::string Ypp::Package::icon()
+{
+	if (impl->type == PATTERN_TYPE) {
+		ZyppObject object = impl->zyppSel->theObj();
+		ZyppPattern pattern = tryCastToZyppPattern (object);
+		std::string icon = pattern->icon().asString().c_str();
+		// from yast2-qt: HACK most patterns have wrong default icon
+		if ((icon == zypp::Pathname("yast-system").asString()) || icon.empty())
+			icon = "pattern-generic";
+		// mine: remove start "./"
+		else if (icon.compare (0, 2, "./", 2) == 0)
+			icon.erase (0, 2);
+		return icon;
+	}
+	return "";
 }
 
 bool Ypp::Package::isRecommended() const
@@ -749,7 +770,7 @@ static Ypp::Package::Version *constructVersion (ZyppObject object)
 {
 	Ypp::Package::Version *version = new Ypp::Package::Version();
 	version->number = object->edition().asString();
-	version->number += "  (" + object->arch().asString() + ")";
+	version->arch = object->arch().asString();
 	version->repo = ypp->impl->getRepository (object->repoInfo().alias());
 	version->cmp = 0;
 	version->impl = (void *) get_pointer (object);
@@ -774,7 +795,7 @@ const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
 
 		version = new Ypp::Package::Version();
 		version->number = "5.0.6";
-		version->number += "  (i586)";
+		version->arch = "i586";
 		version->repo = 0;
 		version->cmp = 1;
 		version->impl = NULL;
@@ -782,7 +803,7 @@ const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
 
 		version = new Ypp::Package::Version();
 		version->number = "4.1.2";
-		version->number += "  (i586)";
+		version->arch = "i586";
 		version->repo = 1;
 		version->cmp = -1;
 		version->impl = NULL;
@@ -866,6 +887,7 @@ struct Ypp::QueryPool::Query::Impl
 
 	Keys <Ypp::Package::Type> types;
 	Keys <std::string> names;
+	bool use_name, use_summary, use_description;
 	Keys <Node *> categories, categories2;
 	Keys <const Package *> collections;
 	Keys <const Repository *> repositories;
@@ -906,14 +928,18 @@ struct Ypp::QueryPool::Query::Impl
 			std::list <std::string>::const_iterator it;
 			for (it = values.begin(); it != values.end(); it++) {
 				const char *key = it->c_str();
-				if (!strcasestr (package->name().c_str(), key) &&
-				    !strcasestr (package->summary().c_str(), key) &&
-				    !strcasestr (package->provides().c_str(), key)) {
+				bool str_match = false;
+				if (use_name)
+					str_match = strcasestr (package->name().c_str(), key);
+				if (!str_match && use_summary)
+					str_match = strcasestr (package->summary().c_str(), key);
+				if (!str_match && use_description)
+					str_match = strcasestr (package->description().c_str(), key);
+				if (!str_match) {
 					match = false;
 					break;
 				}
 			}
-
 			if (match && !highlight) {
 				if (values.size() == 1 && values.front() == package->name())
 					highlight = package;
@@ -983,16 +1009,21 @@ Ypp::QueryPool::Query::~Query()
 
 void Ypp::QueryPool::Query::addType (Ypp::Package::Type value)
 { impl->types.add (value); }
-void Ypp::QueryPool::Query::addNames (std::string value, char separator)
+void Ypp::QueryPool::Query::addNames (std::string value, char separator, bool use_name,
+                                       bool use_summary, bool use_description)
 {
 	if (separator) {
-		std::list <std::string> values = YGUtils::splitString (value, separator);
-		for (std::list <std::string>::const_iterator it = values.begin();
-		     it != values.end(); it++)
-			impl->names.add (*it);
+		const gchar delimiter[2] = { separator, '\0' };
+		gchar **names = g_strsplit (value.c_str(), delimiter, -1);
+		for (gchar **i = names; *i; i++)
+			impl->names.add (*i);
+		g_strfreev (names);
 	}
 	else
 		impl->names.add (value);
+	impl->use_name = use_name;
+	impl->use_summary = use_summary;
+	impl->use_description = use_description;
 }
 void Ypp::QueryPool::Query::addCategory (Ypp::Node *value)
 { impl->categories.add (value); }
@@ -1421,29 +1452,6 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, const std::string &
 	return categories2->add (group_name, group_icon);
 }
 
-// Maps icons to top package groups
-struct CategoriesIconMap {
-	const char *category, *icon;
-};
-static const CategoriesIconMap catIconMap[] = {
-	{ "Amusements",    "package_games"           },
-	{ "Games",         "package_games"           },
-	{ "Applications",  "package_system"          },
-	{ "Development",   "applications-development" },
-	{ "Libraries",     "package_development"     },
-	{ "Documentation", "package_documentation"   },
-	{ "Hardware",      "package_settings_peripherals" },
-	{ "Productivity",  "package_applications"    },
-	{ "System",        "applications-system"     },
-	{ "Multimedia",    "package_multimedia"      },
-	{ "Video",         "package_multimedia"      },
-	{ "Office",        "applications-office"     },
-	{ "Publishing",    "applications-office"     },
-	{ "X11",           "applications-other"      },
-	{ "Metapackages",  "package_network"         },
-};
-#define CAT_SIZE (sizeof (catIconMap)/sizeof (CategoriesIconMap))
-
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 {
 	// some treatment on categories
@@ -1469,15 +1477,6 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 					pkg->impl->category = yN;
 				}
 			}
-		}
-
-		Node *first = categories [Package::PACKAGE_TYPE]->getFirst();
-		for (Node *n = first; n; n = n->next()) {
-			for (unsigned int i = 0; i < CAT_SIZE; i++)
-				if (n->name == catIconMap[i].category) {
-					n->icon = catIconMap[i].icon;
-					break;
-				}
 		}
 	}
 }
@@ -1526,12 +1525,13 @@ const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 		std::list <zypp::RepoInfo> zrepos = manager.knownRepositories();
 		for (std::list <zypp::RepoInfo>::const_iterator it = zrepos.begin();
 			 it != zrepos.end(); it++) {
-			if (it->enabled()) {
-				Repository *repo = new Repository();
-				repo->name = it->name();
-				repo->alias = it->alias();
-				repos = g_slist_append (repos, repo);
-			}
+			Repository *repo = new Repository();
+			repo->name = it->name();
+			if (!it->baseUrlsEmpty())
+				repo->url = it->baseUrlsBegin()->asString();
+			repo->alias = it->alias();
+			repo->enabled = it->enabled();
+			repos = g_slist_append (repos, repo);
 		}
 	}
 	return (Repository *) g_slist_nth_data (repos, nb);

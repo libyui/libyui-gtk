@@ -38,6 +38,12 @@ YGUI::YGUI (bool with_threads)
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
 
+	// debug:
+#if 0
+	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
+		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
+#endif
+
     YGUI::setTextdomain( TEXTDOMAIN );
 
 	// without this none of the (default) threading action works ...

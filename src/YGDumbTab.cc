@@ -45,9 +45,9 @@ public:
 	virtual void addItem (YItem *item)
 	{
 		YDumbTab::addItem (item);
-
 		GtkWidget *tab_label, *image = 0, *label;
-		label = gtk_label_new (item->label().c_str());
+		label = gtk_label_new (YGUtils::mapKBAccel (item->label()).c_str());
+		gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 		if (item->hasIconName()) {
 			string path = iconFullPath (item->iconName());
 			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
@@ -135,8 +135,6 @@ public:
 			GtkWidget *child = gtk_notebook_get_nth_page (notebook, item->index());
 			std::string label = YGUtils::mapKBAccel (item->label());
 			gtk_notebook_set_tab_label_text (notebook, child, label.c_str());
-			gtk_label_set_use_underline (
-				GTK_LABEL (gtk_notebook_get_tab_label (notebook, child)), TRUE);
 		}
 	}
 
