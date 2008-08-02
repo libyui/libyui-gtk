@@ -148,7 +148,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
 	gtk_text_buffer_create_tag (buffer, "tt", "family", "monospace", NULL);
 	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace",
-		"paragraph-background", "#f0f0f0", NULL);
+		"paragraph-background", "#f0f0f0", "left-margin", 16, "right-margin", 20, NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
