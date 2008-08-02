@@ -262,7 +262,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 	GQueue *tag_queue = g_queue_new();
 	int i = 0;
 
-	gboolean was_space = TRUE;
+	gboolean was_space = TRUE, pre_mode = FALSE;
 	skipSpace (instr, i);
 
 	// we must add an outer tag to make GMarkup happy
@@ -317,6 +317,9 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 			      !g_ascii_strncasecmp (tag->str, "br", 2)) &&
 			      tag->str[tag->len - 1] != '/')
 				g_string_append_c (tag, '/');
+
+			if (!g_ascii_strncasecmp (tag->str, "pre", 3))
+				pre_mode = !is_close;
 
 			// Add quoting for un-quoted attributes
 			for (int j = 0; j < (signed) tag->len; j++) {
@@ -374,7 +377,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 		}
 
 		else {  // Normal text
-			if (g_ascii_isspace (instr[i])) {
+			if (!pre_mode && g_ascii_isspace (instr[i])) {
 				if (!was_space)
 					g_string_append_c (outp, ' ');
 				was_space = TRUE;
