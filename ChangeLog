@@ -1,3 +1,8 @@
+2008-08-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc & src/ygtkrichtext.c: fixed some glitches left from
+	bug 396692, and fixed bug 404817 glitch.
+
 2008-07-31  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: online update was broken.

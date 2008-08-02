@@ -274,8 +274,6 @@ static void GRTParseState_free (GRTParseState *state)
 	free_list (state->htags);
 }
 
-static gchar *elide_whitespace (const gchar *instr, gint len);
-
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
 static void
@@ -301,7 +299,9 @@ rt_start_element (GMarkupParseContext *context,
 	// Check if this is a block tag
 	if (isBlockTag (element_name)) {
 		// make sure this opens a new paragraph
-		if (!gtk_text_iter_starts_line (&iter)) {
+		if (state->html_list && gtk_text_iter_get_line_offset (&iter) < 6)
+			;  // on a list, there is the "1. " in the buffer so we have to do this
+		else if (!gtk_text_iter_starts_line (&iter)) {
 			gtk_text_buffer_insert (state->buffer, &iter, "\n", -1);
 			gtk_text_buffer_get_end_iter (state->buffer, &iter);
 		}
@@ -447,6 +447,8 @@ rt_end_element (GMarkupParseContext *context,
 
 	if (isBlockTag (element_name) || !g_ascii_strcasecmp (element_name, "br")) {
 		appendLines = 1;
+		if (isBlockTag (element_name) && gtk_text_iter_starts_line (&end))
+			appendLines = 0;
 		state->closed_block_tag = TRUE;
 	}
 	else
@@ -480,15 +482,13 @@ rt_text (GMarkupParseContext *context,
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
 		                                  text, text_len, NULL, NULL);
 	else {
-		if (!state->closed_block_tag) {
-			if (g_ascii_isspace (text[0]))
-				gtk_text_buffer_insert (state->buffer, &start, " ", 1);
+		int i = 0;
+		if (state->closed_block_tag) {
+			for (; i < text_len; i++)
+				if (!g_ascii_isspace (text[i]))
+					break;
 		}
-		state->closed_block_tag = FALSE;
-
-		gchar *real = elide_whitespace (text, text_len);
-		gtk_text_buffer_insert (state->buffer, &start, real, -1);
-		g_free (real);
+		gtk_text_buffer_insert (state->buffer, &start, text+i, text_len-i);
 	}
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
 }
@@ -521,31 +521,6 @@ static GMarkupParser rt_parser = {
 GtkWidget *ygtk_rich_text_new (void)
 {
 	return g_object_new (YGTK_TYPE_RICH_TEXT, NULL);
-}
-
-/* String preparation methods. */
-static gchar *elide_whitespace (const gchar *instr, gint len)
-{
-	GString *dest = g_string_new ("");
-	if (len < 0)
-		len = strlen (instr);
-	// collapse more than one space in one
-	gboolean start_text = TRUE, is_white = FALSE;
-	gint i;
-	for (i = 0; i < len; i++) {
-		gchar ch = instr[i];
-		if (g_ascii_isspace (ch)) {
-			if (!is_white && !start_text)
-				g_string_append_c (dest, ' ');
-			is_white = TRUE;
-		}
-		else {
-			g_string_append_c (dest, ch);
-			is_white = FALSE;
-			start_text = FALSE;
-		}
-	}
-	return g_string_free (dest, FALSE);
 }
 
 void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)

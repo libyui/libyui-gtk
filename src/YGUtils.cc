@@ -262,6 +262,7 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 	GQueue *tag_queue = g_queue_new();
 	int i = 0;
 
+	gboolean was_space = TRUE;
 	skipSpace (instr, i);
 
 	// we must add an outer tag to make GMarkup happy
@@ -311,10 +312,10 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 			}
 
 			// Unmatched tags
-			if ( !is_close && tag_len == 2 &&
-			     (!g_ascii_strncasecmp (tag->str, "hr", 2) ||
+			if (!is_close && tag_len == 2 &&
+			      (!g_ascii_strncasecmp (tag->str, "hr", 2) ||
 			      !g_ascii_strncasecmp (tag->str, "br", 2)) &&
-			     tag->str[tag->len - 1] != '/')
+			      tag->str[tag->len - 1] != '/')
 				g_string_append_c (tag, '/');
 
 			// Add quoting for un-quoted attributes
@@ -369,10 +370,20 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 			// Replace this by a white-space
 			g_string_append (outp, " ");
 			i += sizeof ("&nbsp;") - 2;
+			was_space = FALSE;
 		}
 
-		else // Normal text
-			g_string_append_c (outp, instr[i]);
+		else {  // Normal text
+			if (g_ascii_isspace (instr[i])) {
+				if (!was_space)
+					g_string_append_c (outp, ' ');
+				was_space = TRUE;
+			}
+			else {
+				was_space = FALSE;
+				g_string_append_c (outp, instr[i]);
+			}
+		}
 	}
 
 	emit_unclosed_tags_for (outp, tag_queue, "", 0);
