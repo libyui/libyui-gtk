@@ -404,6 +404,8 @@ rt_start_element (GMarkupParseContext *context,
 	state->htags = g_list_append (state->htags, tag);
 }
 
+#include "icons/hr.xpm"
+
 static void
 rt_end_element (GMarkupParseContext *context,
                 const gchar         *element_name,
@@ -444,6 +446,16 @@ rt_end_element (GMarkupParseContext *context,
 
 	else if (!g_ascii_strcasecmp (element_name, "pre"))
 		state->pre_mode = FALSE;
+
+	else if (!g_ascii_strcasecmp (element_name, "hr")) {
+		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_xpm_data (hr_xpm);
+		gtk_text_buffer_insert_pixbuf (state->buffer, &end, pixbuf);
+		g_object_unref (pixbuf);
+		gtk_text_buffer_get_iter_at_mark (state->buffer, &start, tag->mark);
+		gtk_text_buffer_get_end_iter (state->buffer, &end);
+		gtk_text_buffer_apply_tag_by_name (state->buffer, "center", &start, &end);
+		appendLines = 1;
+	}
 
 	if (isBlockTag (element_name) || !g_ascii_strcasecmp (element_name, "br")) {
 		appendLines = 1;
