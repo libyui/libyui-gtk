@@ -55,9 +55,13 @@ YGWidget::~YGWidget()
 	IMPL
 	// remove children if container?
 #if 0
+	struct inner {
+		static void foreach_child_cb (GtkWidget *child, GtkContainer *container)
+		{ gtk_container_remove (container, child); }
+	};
 	if (GTK_IS_CONTAINER (m_widget))
 		gtk_container_foreach (GTK_CONTAINER (m_widget),
-			(GtkCallback) gtk_container_remove, NULL);
+			(GtkCallback) inner::foreach_child_cb, m_widget);
 #endif
 	gtk_widget_destroy (m_adj_size);
 	g_object_unref (G_OBJECT (m_adj_size));
