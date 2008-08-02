@@ -617,9 +617,9 @@ public:
 
 		if (!isTree) {
 			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-			button = create_toggle_button (pkg_list_mode_xpm, "List view", NULL);
+			button = create_toggle_button (pkg_list_mode_xpm, "View as list", NULL);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-			button = create_toggle_button (pkg_tiles_mode_xpm, "Tiles view", button);
+			button = create_toggle_button (pkg_tiles_mode_xpm, "View as grid", button);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
 			gtk_widget_show_all (buttons);
 
