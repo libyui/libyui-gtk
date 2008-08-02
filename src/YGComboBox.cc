@@ -134,21 +134,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	// Events notifications
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{
-		/* selected_changed_cb() is called when a new item was selected or the user has
-		   typed some text on a writable ComboBox. text_changed is true for the later and
-		   false for the former. */
-#if 0
-		bool text_changed = GTK_IS_COMBO_BOX_ENTRY (widget)
-		                    && pThis->focusItem() == NULL;
-		if (text_changed)
-			pThis->emitEvent (YEvent::ValueChanged, true, true);
-		else
-			pThis->emitEvent (YEvent::SelectionChanged, true, true);
-#else
-		// yast2-qt seems to effectively do this: (and the printer tool depends on it.)
-		pThis->emitEvent (YEvent::SelectionChanged, true, true);
 		pThis->emitEvent (YEvent::ValueChanged);
-#endif
 	}
 
 	YGWIDGET_IMPL_COMMON
