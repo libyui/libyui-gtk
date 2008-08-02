@@ -5,6 +5,10 @@
 
 	* src/ygtkrichtext.c: added support for the "hr" tag. Image at src/hr.xpm
 
+	* src/YGTable.cc: fixed random crash on the "printer" tool. Looks like
+	it was Introduced when added the multiSelection flag.
+	GtkTreeSelection::changed signal works funny; use GtkTreeView::cursor_changed.
+
 2008-07-31  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: online update was broken.

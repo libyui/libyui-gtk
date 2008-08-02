@@ -106,7 +106,7 @@ public:
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 		gtk_tree_view_expand_to_path (getView(), path);
 
-		gtk_tree_selection_select_path (getSelection(), path);
+		gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
 		gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
 		gtk_tree_path_free (path);
 		unblockEvents();
@@ -156,7 +156,7 @@ protected:
 		emitEvent (YEvent::ValueChanged);
 	}
 
-	static void selected_cb (GtkTreeView *tree_view, YGTableView* pThis)
+	static void selected_cb (GtkTreeView *view, YGTableView* pThis)
 	{
 		IMPL
 		if (pThis->blockSelected)
@@ -228,7 +228,7 @@ public:
 
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect_after (G_OBJECT (getSelection()), "changed",
+		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 		if (!keepSorting())
 			setSortable (true);
