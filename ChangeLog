@@ -9,6 +9,9 @@
 	it was Introduced when added the multiSelection flag.
 	GtkTreeSelection::changed signal works funny; use GtkTreeView::cursor_changed.
 
+	* src/YGTable.cc: looks like yast2-qt sends two signals when a combo box
+	item is selected. Replicate the behavior as the printer tool depends on it.
+
 2008-07-31  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: online update was broken.
