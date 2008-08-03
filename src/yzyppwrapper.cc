@@ -1422,9 +1422,23 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 		}
 	};
 
+	std::string category = category_str;
+	if (type == Package::PATCH_TYPE) {
+		if (category_str == "security")
+			category = _("Security");
+		else if (category_str == "recommended")
+			category = _("Recommended");
+		else if (category_str == "optional")
+			category = _("Optional");
+		else if (category_str == "yast")
+			category = "YaST";
+		else if (category_str == "document")
+			category = _("Documentation");
+	}
+
 	if (!categories[type])
 		categories[type] = new StringTree (inner::cmp, '/');
-	return categories[type]->add (category_str, 0);
+	return categories[type]->add (category, 0);
 }
 
 Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, const std::string &category_str)

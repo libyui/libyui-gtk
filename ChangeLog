@@ -1,3 +1,7 @@
+2008-08-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: translate patch severities.
+
 2008-08-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc & src/ygtkrichtext.c: fixed some glitches left from
