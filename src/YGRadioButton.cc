@@ -31,6 +31,16 @@ static GType getCheckRadioButtonType()
 	return type;
 }
 
+#include "YLayoutBox.h"
+
+static bool is_horizontal_box (YWidget *widget)
+{
+	YLayoutBox *box = dynamic_cast <YLayoutBox *> (widget);
+	if (box)
+		return box->primary() == YD_HORIZ;
+	return false;
+}
+
 #include "YRadioButton.h"
 #include "YRadioButtonGroup.h"
 
@@ -43,7 +53,8 @@ public:
 	{
 		IMPL
 		setBorder (0);
-		setStretchable (YD_HORIZ, true);
+		if (!is_horizontal_box (parent))
+			setStretchable (YD_HORIZ, true);
 		setLabel (label);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), FALSE);
@@ -141,7 +152,8 @@ public:
 	{
 		IMPL
 		setBorder (0);
-		setStretchable (YD_HORIZ, true);
+		if (!is_horizontal_box (parent))
+			setStretchable (YD_HORIZ, true);
 		setLabel (label);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), isChecked);
