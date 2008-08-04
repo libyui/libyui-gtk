@@ -334,6 +334,13 @@ std::string Ypp::Package::description()
 			ZyppPatch patch = tryCastToZyppPatch (object);
 			if (patch->rebootSuggested())
 				text += br + br + "<b>" + _("Reboot needed!") + "</b>";
+			if (patch->referencesBegin() != patch->referencesEnd()) {
+				text += br + br + "<b>Bugzilla:</b><ul>";
+				for (zypp::Patch::ReferenceIterator it = patch->referencesBegin();
+					 it != patch->referencesEnd(); it++)
+					text += "<li><a href=\"" + it.href() + "\">" + it.title() + "</a></li>";
+				text += "</ul>";
+			}
 			break;
 		}
 		case PATTERN_TYPE:
@@ -579,12 +586,9 @@ bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
 
 bool Ypp::Package::isInstalled()
 {
-	if (!impl->zyppSel->installedEmpty()) {
-		if (impl->zyppSel->installedObj().isBroken())
-			return false;
-		return true;
-	}
-	return impl->zyppSel->candidateObj().isSatisfied();
+	if (!impl->zyppSel->installedEmpty())
+		return !impl->zyppSel->installedObj().isBroken();
+	return false;
 }
 
 bool Ypp::Package::hasUpgrade()
@@ -783,8 +787,8 @@ const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
 {
 	if (!impl->installedVersion) {
 		const ZyppObject installedObj = impl->zyppSel->installedObj();
-		if (installedObj)
-			impl->installedVersion = constructVersion (installedObj);
+		assert (installedObj != NULL);
+		impl->installedVersion = constructVersion (installedObj);
 	}
 	return impl->installedVersion;
 }
@@ -1759,7 +1763,17 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 		}
 		for (; it != end; it++) {
 			Ypp::Node *category = 0, *category2 = 0;
-			ZyppObject object = (*it)->theObj();
+			ZyppSelectable sel = *it;
+			ZyppObject object = sel->theObj();
+
+			// don't show if installed broken and there is no available
+			if (!sel->candidateObj()) {
+				if (!sel->installedEmpty() && sel->installedObj().isBroken())
+					continue;
+			}
+			else if (sel->installedEmpty() && sel->candidateObj().isSatisfied())
+				continue;
+
 			// add category and test visibility
 			switch (type) {
 				case Package::PACKAGE_TYPE:
@@ -1784,7 +1798,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					ZyppPatch patch = tryCastToZyppPatch (object);
 					if (!patch)
 						continue;
-					if ((*it)->candidateObj() && !(*it)->candidateObj().isRelevant())
+					if (sel->candidateObj() && !sel->candidateObj().isRelevant())
 						continue;
 					category = addCategory (type, patch->category());
 					break;
@@ -1793,7 +1807,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					break;
 			}
 
-			Package *package = new Package (new Package::Impl (type, *it, category, category2));
+			Package *package = new Package (new Package::Impl (type, sel, category, category2));
 			pool = g_slist_prepend (pool, package);
 		}
 		// its faster to prepend then reverse, as we avoid iterating for each append

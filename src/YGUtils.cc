@@ -256,7 +256,7 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 // We have to:
 //   + rewrite <br> and <hr> tags
 //   + deal with <a attrib=noquotes>
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
+gchar *ygutils_convert_to_xhtml (const char *instr)
 {
 	GString *outp = g_string_new ("");
 	GQueue *tag_queue = g_queue_new();
@@ -324,11 +324,19 @@ gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr)
 			// Add quoting for un-quoted attributes
 			for (int j = 0; j < (signed) tag->len; j++) {
 				if (tag->str[j] == '=') {
-					if (tag->str[j+1] != '"') {
+					gboolean unquote = tag->str[j+1] != '"';
+					if (unquote)
 						g_string_insert_c (tag, j+1, '"');
-						for (j++; !g_ascii_isspace (tag->str[j]) && tag->str[j]; j++) ;
-						g_string_insert_c (tag, j, '"');
+					else
+						j++;
+					for (j++; tag->str[j]; j++) {
+						if (unquote && g_ascii_isspace (tag->str[j]))
+							break;
+						else if (!unquote && tag->str[j] == '"')
+							break;
 					}
+					if (unquote)
+						g_string_insert_c (tag, j, '"');
 				}
 			}
 

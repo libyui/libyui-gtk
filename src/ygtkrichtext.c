@@ -17,7 +17,7 @@
 
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
-gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
+gchar *ygutils_convert_to_xhtml (const char *instr);
 
 G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
 
@@ -554,7 +554,7 @@ void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean p
 	GMarkupParseContext *ctx;
 	ctx = g_markup_parse_context_new (&rt_parser, (GMarkupParseFlags)0, &state, NULL);
 
-	char *xml = ygutils_convert_to_xhmlt_and_subst (text);
+	char *xml = ygutils_convert_to_xhtml (text);
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error)) {
 #ifdef PRINT_WARNINGS

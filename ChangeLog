@@ -1,3 +1,14 @@
+2008-08-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: convert_to_xhtml() bug fix: allow '=' to be used
+	inside quoted tag arguments.
+
+	* src/yzyppwrapper.cc: show bugzilla entries in patch description.
+
+	* src/yzyppwrapper.cc: don't show satisfied candidates if the package
+	is not installed. And don't show broken installed packages if there is
+	no candidate to be found.
+
 2008-08-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: translate patch severities.

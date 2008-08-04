@@ -59,7 +59,7 @@ extern "C" {
 	void ygutils_scrollView (GtkTextView *view, gboolean top);
 
 	/* Convert html to xhtml (or at least try) */
-	gchar *ygutils_convert_to_xhmlt_and_subst (const char *instr);
+	gchar *ygutils_convert_to_xhtml (const char *instr);
 	void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
 };
 
