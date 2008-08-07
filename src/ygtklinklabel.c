@@ -114,6 +114,8 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 	requisition->height = PANGO_PIXELS (ascent + descent);
 }
 
+#define SPACING 4
+
 static void ygtk_link_label_size_allocate (GtkWidget      *widget,
                                             GtkAllocation  *allocation)
 {
@@ -130,9 +132,9 @@ static void ygtk_link_label_size_allocate (GtkWidget      *widget,
 			pango_layout_get_extents (label->link_layout, NULL, &link_logical);
 			gint link_width = link_logical.width / PANGO_SCALE;
 			gint x;
-			width = width - link_logical.width + 4*PANGO_SCALE;
+			width = width - link_logical.width - SPACING*PANGO_SCALE;
 			if (logical.width < width && label->link_always_visible)
-				x = allocation->x + logical.width/PANGO_SCALE + 4;
+				x = allocation->x + logical.width/PANGO_SCALE + SPACING;
 			else
 				x = allocation->x + (allocation->width - link_width);
 			gdk_window_move_resize (label->link_window, x,
