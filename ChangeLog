@@ -1,3 +1,9 @@
+2008-08-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrenderertextpixbuf.h/c: bug fix 416544: we must add the
+	ATK hooks so the screen reader does its job. Just made it derive from
+	GtkCellRendererText.
+
 2008-08-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtklinklabel.c: small cosmetic fix.

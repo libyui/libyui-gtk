@@ -5,12 +5,14 @@
 /* YGtkCellRendererTextPixbuf is a combination of GtkCellRendererText and
    GtkCellRendererPixbuf. It allows text and icons to be mixed on the same
    column.
+   We derive from GtkCellRendererText, so we don't have to implement the
+   ATK hooks.
 */
 
 #ifndef YGTK_CELL_RENDERER_TEXT_PIXBUF_H
 #define YGTK_CELL_RENDERER_TEXT_PIXBUF_H
 
-#include <gtk/gtkcellrenderer.h>
+#include <gtk/gtkcellrenderertext.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF  (ygtk_cell_renderer_text_pixbuf_get_type ())
@@ -27,16 +29,15 @@ G_BEGIN_DECLS
 
 typedef struct _YGtkCellRendererTextPixbuf
 {
-	GtkCellRenderer parent;
+	GtkCellRendererText parent;
 
 	// private:
-	gchar *text;
 	GdkPixbuf *pixbuf;
 } YGtkCellRendererTextPixbuf;
 
 typedef struct _YGtkCellRendererTextPixbufClass
 {
-	GtkCellRendererClass parent_class;
+	GtkCellRendererTextClass parent_class;
 } YGtkCellRendererTextPixbufClass;
 
 GtkCellRenderer *ygtk_cell_renderer_text_pixbuf_new (void);

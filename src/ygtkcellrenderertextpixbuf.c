@@ -11,12 +11,11 @@
 #define PIXBUF_TEXT_SPACING 4
 
 enum {
-  PROP_0,
-  PROP_TEXT,
-  PROP_PIXBUF
+	PROP_0,
+	PROP_PIXBUF
 };
 
-G_DEFINE_TYPE (YGtkCellRendererTextPixbuf, ygtk_cell_renderer_text_pixbuf, GTK_TYPE_CELL_RENDERER)
+G_DEFINE_TYPE (YGtkCellRendererTextPixbuf, ygtk_cell_renderer_text_pixbuf, GTK_TYPE_CELL_RENDERER_TEXT)
 
 static void ygtk_cell_renderer_text_pixbuf_init (YGtkCellRendererTextPixbuf *tpcell)
 {
@@ -26,17 +25,11 @@ static void ygtk_cell_renderer_text_pixbuf_init (YGtkCellRendererTextPixbuf *tpc
 	cell->yalign = 0.5;
 	cell->xpad = 0;
 	cell->ypad = 0;
-	tpcell->text = NULL;
-	tpcell->pixbuf = NULL;
 }
 
 static void ygtk_cell_renderer_text_pixbuf_finalize (GObject *object)
 {
 	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
-	if (tpcell->text) {
-		g_free (tpcell->text);
-		tpcell->text = NULL;
-	}
 	if (tpcell->pixbuf) {
 		g_object_unref (G_OBJECT (tpcell->pixbuf));
 		tpcell->pixbuf = NULL;
@@ -47,45 +40,42 @@ static void ygtk_cell_renderer_text_pixbuf_finalize (GObject *object)
 static void ygtk_cell_renderer_text_pixbuf_get_property (GObject *object,
 	guint param_id, GValue *value, GParamSpec *pspec)
 {
-	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
-	switch (param_id) {
-		case PROP_TEXT:
-			g_value_set_string (value, tpcell->text);
-			break;
-		case PROP_PIXBUF:
-			g_value_set_object (value, G_OBJECT (tpcell->pixbuf));
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
-			break;
+	if (pspec->owner_type == YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF) {
+		YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
+		switch (param_id) {
+			case PROP_PIXBUF:
+				g_value_set_object (value, G_OBJECT (tpcell->pixbuf));
+				break;
+		}
 	}
+	else
+		G_OBJECT_CLASS (ygtk_cell_renderer_text_pixbuf_parent_class)->get_property (
+			object, param_id, value, pspec);
 }
 
 static void ygtk_cell_renderer_text_pixbuf_set_property (GObject *object,
 	guint param_id, const GValue *value, GParamSpec *pspec)
 {
-	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
-	switch (param_id) {
-		case PROP_TEXT:
-			if (tpcell->text)
-				g_free (tpcell->text);
-			tpcell->text = g_strdup (g_value_get_string (value));
-			break;
-		case PROP_PIXBUF:
-			if (tpcell->pixbuf)
-				g_object_unref (G_OBJECT (tpcell->pixbuf));
-			tpcell->pixbuf = (GdkPixbuf *) g_value_dup_object (value);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, param_id, pspec);
-			break;
+	if (pspec->owner_type == YGTK_TYPE_CELL_RENDERER_TEXT_PIXBUF) {
+		YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
+		switch (param_id) {
+			case PROP_PIXBUF:
+				if (tpcell->pixbuf)
+					g_object_unref (G_OBJECT (tpcell->pixbuf));
+				tpcell->pixbuf = (GdkPixbuf *) g_value_dup_object (value);
+				break;
+		}
 	}
+	else
+		G_OBJECT_CLASS (ygtk_cell_renderer_text_pixbuf_parent_class)->set_property (
+			object, param_id, value, pspec);
 }
 
 static PangoLayout *create_layout (YGtkCellRendererTextPixbuf *tpcell, GtkWidget *widget)
 {
-	if (tpcell->text)
-		return gtk_widget_create_pango_layout (widget, tpcell->text);
+	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (tpcell);
+	if (tcell->text)
+		return gtk_widget_create_pango_layout (widget, tcell->text);
 	return NULL;
 }
 
@@ -93,6 +83,7 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 	GtkWidget *widget, GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
 	gint *width, gint *height)
 {
+	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (cell);
 	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (cell);
 
 	// will be calculated at expose, as both pixbuf and text have their offsets...
@@ -107,7 +98,7 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 		*width += gdk_pixbuf_get_width (tpcell->pixbuf);
 		*height = MAX (*height, gdk_pixbuf_get_height (tpcell->pixbuf));
 	}
-	if (tpcell->text) {
+	if (tcell->text) {
 		if (tpcell->pixbuf)
 			*width += PIXBUF_TEXT_SPACING;
 
@@ -127,6 +118,7 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 	GdkDrawable *window, GtkWidget *widget, GdkRectangle *background_area,
 	GdkRectangle *cell_area, GdkRectangle *expose_area, GtkCellRendererState flags)
 {
+	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (cell);
 	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (cell);
 
 	GtkStateType state;
@@ -173,7 +165,7 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 		x += w + PIXBUF_TEXT_SPACING;
 	}
 
-	if (tpcell->text) {
+	if (tcell->text) {
 		PangoLayout *layout = create_layout (tpcell, widget);
 
 		PangoRectangle rect;
@@ -207,9 +199,6 @@ static void ygtk_cell_renderer_text_pixbuf_class_init (YGtkCellRendererTextPixbu
 	cell_class->get_size = ygtk_cell_renderer_text_pixbuf_get_size;
 	cell_class->render   = ygtk_cell_renderer_text_pixbuf_render;
 
-	g_object_class_install_property (object_class, PROP_TEXT,
-		g_param_spec_string ("text", "Text", "The text", NULL,
-		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 	g_object_class_install_property (object_class, PROP_PIXBUF,
 		g_param_spec_object ("pixbuf", "Image", "Side image", GDK_TYPE_PIXBUF,
 		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
