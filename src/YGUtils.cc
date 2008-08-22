@@ -79,7 +79,7 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	}
 }
 
-std::string YGUtils::truncate (const std::string &str, unsigned int length, int pos)
+std::string YGUtils::truncate (const std::string &str, std::string::size_type length, int pos)
 {
 	std::string ret (str);
 	if (ret.size() > length) {
@@ -92,7 +92,7 @@ std::string YGUtils::truncate (const std::string &str, unsigned int length, int 
 			ret.insert (0, "...");
 		}
 		else /* (pos == 0) */ {
-			int delta = ret.size()-(length-3);
+			std::string::size_type delta = ret.size()-(length-3);
 			ret.erase ((ret.size()/2)-(delta/2), delta);
 			ret.insert (ret.size()/2, "...");
 		}

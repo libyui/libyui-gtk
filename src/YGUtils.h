@@ -26,7 +26,7 @@ namespace YGUtils
 
 	/* Truncates the text with "..." past the given length.
 	   pos: -1 = start, 0 = middle, 1 = end */
-	std::string truncate (const std::string &str, unsigned int length, int pos);
+	std::string truncate (const std::string &str, std::string::size_type length, int pos);
 
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	void escapeMarkup (std::string &str);

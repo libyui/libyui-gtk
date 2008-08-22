@@ -69,16 +69,13 @@ bool testXHtmlConvert()
 		  "<body><ul><li>foo</li><li>baa</li></ul></body>" },
 		{ "no outer<p>unclosed<p>several<b>unclosed bold",
 		  "<body>no outer<p>unclosed</p><p>several<b>unclosed bold</b></p></body>" },
-		// multiple white spacing -- proper HTML would had collapsed those multiple
-		// spaces -- not important anyway
-		{ "one   day  I  will do", "<body>one   day  I  will do</body>" },
 		// comment
 		{ "we need <b>to <!-- really need to? --> do something</b> about it.",
-		  "<body>we need <b>to  do something</b> about it.</body>" },
+		  "<body>we need <b>to do something</b> about it.</body>" },
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		gchar *out = ygutils_convert_to_xhmlt_and_subst (aTests[i].in);
+		gchar *out = ygutils_convert_to_xhtml (aTests[i].in);
 		if (strcmp (out, aTests[i].out)) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);
@@ -117,6 +114,38 @@ bool testMarkupEscape()
 	return true;
 }
 
+bool testTruncate()
+{
+	fprintf (stderr, "Test truncate\t");
+	struct {
+		const char *in;
+		const char *out;
+		int length, pos;
+	} aTests[] = {
+		{ "this-is-a-very-long-and-tedious-string", "this-is-a-very-lo...", 20, 1 },
+		{ "this-is-a-very-long-and-tedious-string", "...nd-tedious-string", 20, -1 },
+		{ "this-is-a-very-long-and-tedious-string", "this-is-...as-string", 20, 0 },
+		{ "this-is-a-very-long-and-tedious-string2", "this-is-...s-string2", 20, 0 },
+		{ "abc", "abc", 3, 1 },
+		{ "abcd", "...", 3, 1 },
+		{ "abcd", "...", 3, -1 },
+		{ "abcd", "...", 3, 0 },
+		{ "abcdef", "...a", 4, 0 },
+		{ NULL, NULL }
+	};
+	for (int i = 0; aTests[i].in; i++) {
+		string out = YGUtils::truncate (aTests[i].in, aTests[i].length, aTests[i].pos);
+		if (out != aTests[i].out) {
+			fprintf (stderr, "Mis-converted entry %d truncate '%s' should be '%s'\n",
+				 i, out.c_str(), aTests[i].out);
+			return false;
+		}
+		fprintf (stderr, "%d ", i);
+	}
+	fprintf (stderr, "\n");
+	return true;
+}
+
 int main (int argc, char **argv)
 {
 	bool bSuccess = true;
@@ -124,6 +153,7 @@ int main (int argc, char **argv)
 	bSuccess &= testMapKBAccel();
 	bSuccess &= testXHtmlConvert();
 	bSuccess &= testMarkupEscape();
+	bSuccess &= testTruncate();
 
 	return !bSuccess;
 }
