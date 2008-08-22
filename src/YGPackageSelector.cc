@@ -1709,7 +1709,7 @@ Filters *m_filters;  // used to filter repo versions...
 				const Ypp::Repository *favoriteRepo = Ypp::get()->favoriteRepository();
 				for (int i = 0; single_package->getAvailableVersion (i); i++) {
 					const Ypp::Package::Version *version = single_package->getAvailableVersion (i);
-					string text = version->number + "  <small>(" + version->arch + "</small>)\n";
+					string text = version->number + "  <small>(" + version->arch + ")</small>\n";
 					string repo = YGUtils::truncate (version->repo->name,
 						MAX (20, version->number.length() + version->arch.length() + 4), 0);
 					text += "<small>" + repo + "</small>";

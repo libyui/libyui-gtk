@@ -124,13 +124,13 @@ bool testTruncate()
 	} aTests[] = {
 		{ "this-is-a-very-long-and-tedious-string", "this-is-a-very-lo...", 20, 1 },
 		{ "this-is-a-very-long-and-tedious-string", "...nd-tedious-string", 20, -1 },
-		{ "this-is-a-very-long-and-tedious-string", "this-is-...as-string", 20, 0 },
+		{ "this-is-a-very-long-and-tedious-string", "this-is-...us-string", 20, 0 },
 		{ "this-is-a-very-long-and-tedious-string2", "this-is-...s-string2", 20, 0 },
 		{ "abc", "abc", 3, 1 },
 		{ "abcd", "...", 3, 1 },
 		{ "abcd", "...", 3, -1 },
 		{ "abcd", "...", 3, 0 },
-		{ "abcdef", "...a", 4, 0 },
+		{ "abcdef", "...f", 4, 0 },
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {

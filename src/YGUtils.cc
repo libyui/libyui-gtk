@@ -93,7 +93,7 @@ std::string YGUtils::truncate (const std::string &str, std::string::size_type le
 		}
 		else /* (pos == 0) */ {
 			std::string::size_type delta = ret.size()-(length-3);
-			ret.erase ((ret.size()/2)-(delta/2), delta);
+			ret.erase ((ret.size()-delta)/2, delta);
 			ret.insert (ret.size()/2, "...");
 		}
 	}
