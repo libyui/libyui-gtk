@@ -51,10 +51,10 @@ struct Ypp
 		Node *category2();
 		bool fromCollection (const Ypp::Package *collection) const;
 
-		std::string description();
-		std::string filelist();
+		std::string description (bool rich);
+		std::string filelist (bool rich);
 		std::string changelog();
-		std::string authors();
+		std::string authors (bool rich);
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
@@ -136,7 +136,8 @@ struct Ypp
 			Query();
 			void addType (Package::Type type);
 			void addNames (std::string name, char separator = 0, bool use_name = true,
-			                bool use_summary = true, bool use_description = false);
+				bool use_summary = true, bool use_description = false,
+				bool use_filelist = false, bool use_authors = false);
 			void addCategory (Ypp::Node *category);
 			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);

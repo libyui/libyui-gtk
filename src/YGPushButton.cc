@@ -29,7 +29,7 @@ public:
 		IMPL
 		string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
-		YGUtils::setStockIcon (getWidget(), str);
+		YGUtils::setStockIcon (str, getWidget());
 		YPushButton::setLabel (label);
 	}
 

@@ -25,8 +25,8 @@ namespace YGUtils
 	void replace (std::string &str, const char *mouth, int mouth_len, const char *food);
 
 	/* Truncates the text with "..." past the given length.
-	   pos: -1 = start, 0 = middle, 1 = end */
-	std::string truncate (const std::string &str, std::string::size_type length, int pos);
+	   pos: -1 = start, 0 = middle, 1 = end. Honors utf-8 characters. */
+	std::string truncate (const std::string &str, int length, int pos);
 
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	void escapeMarkup (std::string &str);
@@ -45,7 +45,7 @@ namespace YGUtils
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
-	void setStockIcon (GtkWidget *button, std::string ycp_str);
+	void setStockIcon (const std::string &label, GtkWidget *button);
 };
 
 extern "C" {
@@ -60,7 +60,7 @@ extern "C" {
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhtml (const char *instr);
-	void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str);
+	void ygutils_setStockIcon (const char *label, GtkWidget *button);
 };
 
 #endif // YGUTILS_H

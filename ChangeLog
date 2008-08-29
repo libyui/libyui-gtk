@@ -1,3 +1,25 @@
+2008-08-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGLayout.cc: implemented new libyui widget YButtonBox, making
+	buttons order comply with Gnome's guideline.
+	Also made sure all buttons in a hbox have the same height as some may
+	have an icon.
+
+	* src/yzyppwrapper.h/cc: added filelist and authors filter options, also
+	improving the overall support.
+
+	* src/YGPackageSelector.cc: added search options: file list and authors.
+
+	* src/YGPackageSelector.cc: bug fix 418896: when filtering a repository,
+	the most appropriate version wasn't the one selected.
+
+	* src/YGUtils.cc: fixed truncate() to cope with utf-8 characters. (maybe
+	related to bug 418781)
+	* src/test.cc: added tests for the purpose.
+
+	* src/YGUtils.cc: replaced the old button icon approach based on English
+	strings by one that tests button labels to stock ones.
+
 2008-08-22  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzypptags.cc: bug request 418676: use title capitalization for

@@ -522,7 +522,7 @@ Listener *m_listener;
 				gtk_tree_view_set_tooltip_row (GTK_TREE_VIEW (view), tooltip, path);
 				gtk_tree_path_free (path);
 				if (package) {
-					gtk_tooltip_set_text (tooltip, package->description().c_str());
+					gtk_tooltip_set_text (tooltip, package->description (true).c_str());
 					const std::string &icon = package->icon();
 					if (!icon.empty()) {
 						GdkPixbuf *pixbuf = loadThemeIcon (icon.c_str(), 32);
@@ -1470,6 +1470,8 @@ public:
 		inner::appendCheckItem (name_menu, _("Name"), true, this);
 		inner::appendCheckItem (name_menu, _("Summary"), true, this);
 		inner::appendCheckItem (name_menu, _("Description"), false, this);
+		inner::appendCheckItem (name_menu, _("File list"), false, this);
+		inner::appendCheckItem (name_menu, _("Authors"), false, this);
 		gtk_widget_show_all (name_menu);
 		ygtk_find_entry_attach_menu (YGTK_FIND_ENTRY (m_name), GTK_MENU (name_menu));
 
@@ -1524,7 +1526,7 @@ private:
 
 		const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
 		if (*name) {
-			bool use_name, use_summary, use_description;
+			bool use_name, use_summary, use_description, use_filelist, use_authors;
 			GtkMenu *name_menu = YGTK_FIND_ENTRY (m_name)->context_menu;
 			GList *items = gtk_container_get_children (GTK_CONTAINER (name_menu));
 			use_name = gtk_check_menu_item_get_active (
@@ -1533,8 +1535,13 @@ private:
 				(GtkCheckMenuItem *) g_list_nth_data (items, 1));
 			use_description = gtk_check_menu_item_get_active (
 				(GtkCheckMenuItem *) g_list_nth_data (items, 2));
+			use_filelist = gtk_check_menu_item_get_active (
+				(GtkCheckMenuItem *) g_list_nth_data (items, 3));
+			use_authors = gtk_check_menu_item_get_active (
+				(GtkCheckMenuItem *) g_list_nth_data (items, 4));
 			g_list_free (items);
-			query->addNames (name, ' ', use_name, use_summary, use_description);
+			query->addNames (name, ' ', use_name, use_summary, use_description,
+			                 use_filelist, use_authors);
 		}
 
 		switch (m_statuses->getActive())
@@ -1716,8 +1723,10 @@ Filters *m_filters;  // used to filter repo versions...
 					GtkTreeIter iter;
 					gtk_list_store_append (GTK_LIST_STORE (model), &iter);
 					gtk_list_store_set (GTK_LIST_STORE (model), &iter, 0, text.c_str(), -1);
-					if (version->repo == favoriteRepo)
+					if (version->repo == favoriteRepo) {
 						gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), i);
+						favoriteRepo = 0;  // select only the 1st hit
+					}
 					else if (i == 0)
 						gtk_combo_box_set_active (GTK_COMBO_BOX (m_available_versions), 0);
 				}
@@ -1985,11 +1994,11 @@ public:
 		gtk_widget_hide (m_icon_frame);
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
-			description += package->description();
+			description += package->description (true);
 			ygtk_html_wrap_set_text (m_description, description.c_str(), FALSE);
-			if (m_filelist)  m_filelist->setText (package->filelist());
+			if (m_filelist)  m_filelist->setText (package->filelist (true));
 			if (m_changelog) m_changelog->setText (package->changelog());
-			if (m_authors)   m_authors->setText (package->authors());
+			if (m_authors)   m_authors->setText (package->authors (true));
 			if (m_dependencies) m_dependencies->setPackage (package);
 
 			gtk_image_clear (GTK_IMAGE (m_icon));

@@ -122,6 +122,9 @@ class YGWidgetFactory : public YWidgetFactory
 		IMPL_RET (NULL)  // for ncurses
 
 	virtual YLayoutBox *createLayoutBox (YWidget *parent, YUIDimension dimension);
+#if YAST2_VERSION >= 2017006
+    virtual YButtonBox *createButtonBox (YWidget *parent);
+#endif
 
 	virtual YSpacing *createSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size);
 	virtual YEmpty *createEmpty (YWidget *parent);

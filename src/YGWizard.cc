@@ -45,7 +45,7 @@ class YGWizard : public YWizard, public YGWidget
 			string str = YGUtils::mapKBAccel (label.c_str());
 			gtk_button_set_label (GTK_BUTTON (m_widget), str.c_str());
 			str.empty() ? gtk_widget_hide (m_widget) : gtk_widget_show (m_widget);
-			YGUtils::setStockIcon (m_widget, str);
+			YGUtils::setStockIcon (str, m_widget);
 			YPushButton::setLabel (label);
 		}
 

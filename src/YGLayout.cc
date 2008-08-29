@@ -41,10 +41,36 @@ static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 		doSetEnabled (enabled);                                 \
 	}
 
+#include "YPushButton.h"
+
+class ButtonHeightGroup
+{
+GtkSizeGroup *group;
+
+public:
+	ButtonHeightGroup() { group = NULL; }
+
+	void addWidget (YWidget *ywidget)
+	{
+		YPushButton *button = dynamic_cast <YPushButton *> (ywidget);
+		if (button) {
+			bool create_group = !group;
+			if (create_group)
+				group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
+			gtk_size_group_add_widget (group, YGWidget::get (ywidget)->getLayout());
+			if (create_group)
+				g_object_unref (G_OBJECT (group));
+		}
+	}
+};
+
 #include "YLayoutBox.h"
 
 class YGLayoutBox : public YLayoutBox, public YGWidget
 {
+// set all buttons in a HBox the same height (some may have icons)
+ButtonHeightGroup group;
+
 public:
 	YGLayoutBox (YWidget *parent, YUIDimension dim)
 	: YLayoutBox (NULL, dim),
@@ -54,7 +80,13 @@ public:
 		YGLAYOUT_INIT
 	}
 
-	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
+	virtual void addChild (YWidget *ychild)
+	{
+		YWidget::addChild (ychild);
+		doAddChild (ychild, getWidget());
+		if (primary() == YD_HORIZ)
+			group.addWidget (ychild);
+	}
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
 	YGLAYOUT_SET_SIZE_IMPL (YLayoutBox)
@@ -65,6 +97,42 @@ YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dime
 	IMPL
 	return new YGLayoutBox (parent, dimension);
 }
+
+#if YAST2_VERSION >= 2017006
+#include "YButtonBox.h"
+
+class YGButtonBox : public YButtonBox, public YGWidget
+{
+ButtonHeightGroup group;
+
+public:
+	YGButtonBox (YWidget *parent)
+	: YButtonBox (NULL),
+	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
+	{
+		setBorder (0);
+		setLayoutPolicy (gnomeLayoutPolicy());
+		YGLAYOUT_INIT
+	}
+
+	virtual void addChild (YWidget *ychild)
+	{
+		YWidget::addChild (ychild);
+		doAddChild (ychild, getWidget());
+		group.addWidget (ychild);
+	}
+	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGLAYOUT_PREFERRED_SIZE_IMPL (YButtonBox)
+	YGLAYOUT_SET_SIZE_IMPL (YButtonBox)
+};
+
+YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)
+{
+	IMPL
+	return new YGButtonBox (parent);
+}
+
+#endif
 
 #include "YAlignment.h"
 

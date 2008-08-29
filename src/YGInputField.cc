@@ -333,10 +333,10 @@ public:
 	{
 		const std::map <std::string, std::string> *timezones =
 			(std::map <std::string, std::string> *) pData;
-        std::map <std::string, std::string>::const_iterator name =
-        	timezones->find (code);
-        if (name  == timezones->end())
-            return NULL;
+		std::map <std::string, std::string>::const_iterator name =
+			timezones->find (code);
+		if (name  == timezones->end())
+			return NULL;
 		return name->second.c_str();
 	}
 

@@ -289,10 +289,12 @@ const std::string &Ypp::Package::summary()
 	return ret;
 }
 
-std::string Ypp::Package::description()
+std::string Ypp::Package::description (bool rich)
 {
 	ZyppObject object = impl->zyppSel->theObj();
 	std::string text = object->description(), br = "<br>";
+	if (!rich)
+		return text;
 
 	switch (impl->type) {
 		case PACKAGE_TYPE:
@@ -363,65 +365,73 @@ std::string Ypp::Package::description()
 	return text;
 }
 
-std::string Ypp::Package::filelist()
+std::string Ypp::Package::filelist (bool rich)
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->installedObj();
 	ZyppPackage package = tryCastToZyppPkg (object);
 	if (package) {
-		StringTree tree (strcmp, '/');
+		if (rich) {
+			StringTree tree (strcmp, '/');
 
-		const std::list <std::string> &filesList = package->filenames();
-		for (std::list <std::string>::const_iterator it = filesList.begin();
-		     it != filesList.end(); it++)
-			tree.add (*it, 0);
+			const std::list <std::string> &filesList = package->filenames();
+			for (std::list <std::string>::const_iterator it = filesList.begin();
+				 it != filesList.end(); it++)
+				tree.add (*it, 0);
 
-		struct inner {
-			static std::string getPath (GNode *node)
-			{
-				Node *yNode  = (Node *) node->data;
-				if (!yNode)
-					return std::string();
-				return getPath (node->parent) + "/" + yNode->name;
-			}
-			static bool hasNextLeaf (GNode *node)
-			{
-				GNode *i;
-				for (i = node->next; i; i = i->next)
-					if (!i->children)
-						return true;
-				return false;
-			}
-			static bool hasPrevLeaf (GNode *node)
-			{
-				GNode *i;
-				for (i = node->prev; i; i = i->prev)
-					if (!i->children)
-						return true;
-				return false;
-			}
-			static gboolean traverse (GNode *node, void *_data)
-			{
-				Node *yNode  = (Node *) node->data;
-				if (yNode) {
-					std::string *str = (std::string *) _data;
-					if (!hasPrevLeaf (node)) {
-						std::string path = getPath (node->parent);
-						*str += "<a href=" + path + ">" + path + "</a>";
-						*str += "<blockquote>";
-					}
-					else
-						*str += ", ";
-					*str += yNode->name;
-
-					if (!hasNextLeaf (node))
-						*str += "</blockquote>";
+			struct inner {
+				static std::string getPath (GNode *node)
+				{
+					Node *yNode  = (Node *) node->data;
+					if (!yNode)
+						return std::string();
+					return getPath (node->parent) + "/" + yNode->name;
 				}
-				return FALSE;
-			}
-		};
-		g_node_traverse (tree.root, G_LEVEL_ORDER, G_TRAVERSE_LEAFS, -1,
-		                 inner::traverse, (void *) &text);
+				static bool hasNextLeaf (GNode *node)
+				{
+					GNode *i;
+					for (i = node->next; i; i = i->next)
+						if (!i->children)
+							return true;
+					return false;
+				}
+				static bool hasPrevLeaf (GNode *node)
+				{
+					GNode *i;
+					for (i = node->prev; i; i = i->prev)
+						if (!i->children)
+							return true;
+					return false;
+				}
+				static gboolean traverse (GNode *node, void *_data)
+				{
+					Node *yNode  = (Node *) node->data;
+					if (yNode) {
+						std::string *str = (std::string *) _data;
+						if (!hasPrevLeaf (node)) {
+							std::string path = getPath (node->parent);
+							*str += "<a href=" + path + ">" + path + "</a>";
+							*str += "<blockquote>";
+						}
+						else
+							*str += ", ";
+						*str += yNode->name;
+
+						if (!hasNextLeaf (node))
+							*str += "</blockquote>";
+					}
+					return FALSE;
+				}
+			};
+			g_node_traverse (tree.root, G_LEVEL_ORDER, G_TRAVERSE_LEAFS, -1,
+				             inner::traverse, (void *) &text);
+		}
+		else {
+			const std::list <std::string> &filesList = package->filenames();
+			for (std::list <std::string>::const_iterator it = filesList.begin();
+				 it != filesList.end(); it++)
+				text += *it + " ";
+		}
 	}
 	return text;
 }
@@ -448,7 +458,7 @@ std::string Ypp::Package::changelog()
 	return text;
 }
 
-std::string Ypp::Package::authors()
+std::string Ypp::Package::authors (bool rich)
 {
 	std::string text;
 	ZyppObject object = impl->zyppSel->theObj();
@@ -459,10 +469,15 @@ std::string Ypp::Package::authors()
 		const std::list <std::string> &authorsList = package->authors();
 		for (std::list <std::string>::const_iterator it = authorsList.begin();
 		     it != authorsList.end(); it++) {
-			std::string author = *it;
-			YGUtils::escapeMarkup (author);
-			if (!authors.empty())
-				authors += "<br>";
+			std::string author (*it);
+			if (rich)
+				YGUtils::escapeMarkup (author);
+			if (!authors.empty()) {
+				if (rich)
+					authors += "<br>";
+				else
+					authors += "\n";
+			}
 			authors += author;
 		}
 		// look for Authors line in description
@@ -474,18 +489,23 @@ std::string Ypp::Package::authors()
 				i = description.find ("\n", i+1);
 				if (i != std::string::npos) {
 					std::string str = description.substr (i+1);
-					YGUtils::escapeMarkup (str);
-					YGUtils::replace (str, "\n", 1, "<br>");
+					if (rich) {
+						YGUtils::escapeMarkup (str);
+						YGUtils::replace (str, "\n", 1, "<br>");
+					}
 					authors += str;
-					
 				}
 			}
 		}
 
-		if (!authors.empty())
-			text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
-		if (!packager.empty())
-			text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
+		if (rich) {
+			if (!authors.empty())
+				text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
+			if (!packager.empty())
+				text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
+		}
+		else
+			return authors;
 	}
 	return text;
 }
@@ -893,7 +913,8 @@ struct Ypp::QueryPool::Query::Impl
 
 	Keys <Ypp::Package::Type> types;
 	Keys <std::string> names;
-	bool use_name, use_summary, use_description;
+	unsigned int use_name : 1, use_summary : 1, use_description : 1, use_filelist : 1,
+		use_authors : 1;
 	Keys <Node *> categories, categories2;
 	Keys <const Package *> collections;
 	Keys <const Repository *> repositories;
@@ -940,14 +961,18 @@ struct Ypp::QueryPool::Query::Impl
 				if (!str_match && use_summary)
 					str_match = strcasestr (package->summary().c_str(), key);
 				if (!str_match && use_description)
-					str_match = strcasestr (package->description().c_str(), key);
+					str_match = strcasestr (package->description (false).c_str(), key);
+				if (!str_match && use_filelist)
+					str_match = strcasestr (package->filelist (false).c_str(), key);
+				if (!str_match && use_authors)
+					str_match = strcasestr (package->authors (false).c_str(), key);
 				if (!str_match) {
 					match = false;
 					break;
 				}
 			}
 			if (match && !highlight) {
-				if (values.size() == 1 && values.front() == package->name())
+				if (values.size() == 1 && !strcasecmp (values.front().c_str(), package->name().c_str()))
 					highlight = package;
 			}
 		}
@@ -1016,7 +1041,7 @@ Ypp::QueryPool::Query::~Query()
 void Ypp::QueryPool::Query::addType (Ypp::Package::Type value)
 { impl->types.add (value); }
 void Ypp::QueryPool::Query::addNames (std::string value, char separator, bool use_name,
-                                       bool use_summary, bool use_description)
+	bool use_summary, bool use_description, bool use_filelist, bool use_authors)
 {
 	if (separator) {
 		const gchar delimiter[2] = { separator, '\0' };
@@ -1030,6 +1055,8 @@ void Ypp::QueryPool::Query::addNames (std::string value, char separator, bool us
 	impl->use_name = use_name;
 	impl->use_summary = use_summary;
 	impl->use_description = use_description;
+	impl->use_filelist = use_filelist;
+	impl->use_authors = use_authors;
 }
 void Ypp::QueryPool::Query::addCategory (Ypp::Node *value)
 { impl->categories.add (value); }

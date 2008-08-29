@@ -79,22 +79,36 @@ void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char
 	}
 }
 
-std::string YGUtils::truncate (const std::string &str, std::string::size_type length, int pos)
+std::string YGUtils::truncate (const std::string &str, int length, int pos)
 {
 	std::string ret (str);
-	if (ret.size() > length) {
+	const char *pstr = ret.c_str(); char *pi;
+	int size = g_utf8_strlen (pstr, -1);
+	if (size > length) {
 		if (pos > 0) {
-			ret.erase (length-3);
+			pi = g_utf8_offset_to_pointer (pstr, length-3);
+			ret.erase (pi-pstr);
 			ret.append ("...");
 		}
 		else if (pos < 0) {
-			ret.erase (0, ret.size()-(length-3));
+			pi = g_utf8_offset_to_pointer (pstr, size-(length-3));
+			ret.erase (0, pi-pstr);
 			ret.insert (0, "...");
 		}
 		else /* (pos == 0) */ {
-			std::string::size_type delta = ret.size()-(length-3);
-			ret.erase ((ret.size()-delta)/2, delta);
-			ret.insert (ret.size()/2, "...");
+			pi = g_utf8_offset_to_pointer (pstr, size/2);
+			int delta = size - (length-3);
+			gchar *pn = pi, *pp = pi;
+			for (int i = 0;;) {
+				if (i++ == delta) break;
+				pn = g_utf8_next_char (pn);
+				if (i++ == delta) break;
+				pp = g_utf8_prev_char (pp);
+			}
+			g_assert (pp != NULL && pn != NULL);
+
+			ret.erase (pp-pstr, pn-pp);
+			ret.insert (pp-pstr, "...");
 		}
 	}
 	return ret;
@@ -462,85 +476,68 @@ GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 	return pixbuf;
 }
 
-#define ENGLISH_STOCK_ITEMS
-
-#ifdef ENGLISH_STOCK_ITEMS
-struct StockMap { const char *ycp_label, *gtk_stock; };
-static const StockMap stockMap[] = {
-	// keep them sorted!
-	{"Abort",     GTK_STOCK_CANCEL      },
-	{"Accept",    GTK_STOCK_APPLY       },
-	{"Add",       GTK_STOCK_ADD         },
-	{"Apply",     GTK_STOCK_APPLY       },
-	{"Back",      GTK_STOCK_GO_BACK     },
-	{"Cancel",    GTK_STOCK_CANCEL      },
-	{"Close",     GTK_STOCK_CLOSE       },
-	{"Configure", GTK_STOCK_PREFERENCES },
-	{"Continue",  GTK_STOCK_OK          },
-	{"Delete",    GTK_STOCK_DELETE      },
-	{"Down",      GTK_STOCK_GO_DOWN     },
-	{"Edit",      GTK_STOCK_EDIT        },
-	{"Finish",    GTK_STOCK_APPLY       },
-	{"Install",   GTK_STOCK_SAVE        },
-	{"Launch",    GTK_STOCK_EXECUTE     },
-	{"Next",      GTK_STOCK_GO_FORWARD  },
-	{"No",        GTK_STOCK_NO          },
-	{"OK",        GTK_STOCK_OK          },
-	{"Quit",      GTK_STOCK_QUIT        },
-	{"Remove",    GTK_STOCK_REMOVE      },
-	{"Reset",     GTK_STOCK_REVERT_TO_SAVED },
-	{"Reset all", GTK_STOCK_REVERT_TO_SAVED },
-	{"Retry",     GTK_STOCK_REFRESH     },
-	{"Search",    GTK_STOCK_FIND        },
-	{"Up",        GTK_STOCK_GO_UP       },
-	{"Yes",       GTK_STOCK_YES         },
-};
-#define STOCKMAP_SIZE (sizeof (stockMap)/sizeof(StockMap))
-static int strcmp_cb (const void *a, const void *b)
-{ return strcmp ((char *) a, ((StockMap *) b)->ycp_label); }
-
-void YGUtils::setStockIcon (GtkWidget *button, std::string ycp_str)
+static std::string cutUnderline (const std::string &str)
 {
-	// is English the current locale?
-	static bool firstTime = true, isEnglish;
+	std::string ret (str);
+	std::string::size_type i = 0;
+	if ((i = ret.find ('_', i)) != std::string::npos)
+		ret.erase (i, 1);
+	return ret;
+}
+
+static void stripStart (std::string &str, char ch)
+{
+	while (!str.empty() && str[0] == ch)
+		str.erase (0, 1);
+}
+static void stripEnd (std::string &str, char ch)
+{
+	while (!str.empty() && str[str.size()-1] == ch)
+		str.erase (str.size()-1, 1);
+}
+
+void YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
+{
+	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
-		char *lang = getenv ("LANG");
-		isEnglish = !lang || (!*lang) || !strcmp (lang, "C") ||
-		            (lang[0] == 'e' && lang[1] == 'n') ||
-		            !strcmp (lang, "POSIX");
+		GSList *list = gtk_stock_list_ids();
+		for (GSList *i = list; i; i = i->next) {
+			gchar *id = (gchar *) i->data;
+			GtkStockItem item;
+			if (gtk_stock_lookup (id, &item))
+				stockMap[cutUnderline (item.label)] = id;
+			// some may not have a stock item because they can't be set on a label
+			// e.g.: gtk-directory, gtk-missing-image, gtk-dnd
+			g_free (id);
+		}
+		g_slist_free (list);
 		firstTime = false;
 	}
-	if (!isEnglish)
-		return;
 
-	std::string::size_type i = 0;
-	while ((i = ycp_str.find ('_', i)) != string::npos)
-		ycp_str.erase (i, 1);
+	std::string id = cutUnderline (label);
+	stripStart (id, ' ');
+	stripEnd (id, ' ');
+	stripEnd (id, '.');
 
-	bool failed = true;
-	void *ptr;
-	ptr = bsearch (ycp_str.c_str(), stockMap, STOCKMAP_SIZE,
-	               sizeof(stockMap[0]), strcmp_cb);
-	if (ptr) {
-		const char *stock = ((StockMap *) ptr)->gtk_stock;
+	std::map <std::string, std::string>::const_iterator it;
+	it = stockMap.find (id);
+	if (it != stockMap.end()) {
+		const std::string &stock_id = it->second;
 		GdkPixbuf *pixbuf;
-		pixbuf = gtk_widget_render_icon (button, stock,
-		                                 GTK_ICON_SIZE_BUTTON, NULL);
+		pixbuf = gtk_widget_render_icon (button, stock_id.c_str(), GTK_ICON_SIZE_BUTTON, NULL);
 		if (pixbuf) {
 			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
 			gtk_button_set_image (GTK_BUTTON (button), image);
 			g_object_unref (G_OBJECT (pixbuf));
-			failed = false;
 		}
+		else
+			g_warning ("yast2-gtk: setStockIcon(): id '%s' exists, but has no pixbuf",
+			           stock_id.c_str());
 	}
-	if (failed)
+	else
 		gtk_button_set_image (GTK_BUTTON (button), NULL);
 }
 
-void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str)
-{ YGUtils::setStockIcon (button, ycp_str); }
-
-#else
-void ygutils_setStockIcon (GtkWidget *button, const char *ycp_str) {}
-#endif
+void ygutils_setStockIcon (const char *label, GtkWidget *button)
+{ YGUtils::setStockIcon (label, button); }
 
