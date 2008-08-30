@@ -4,7 +4,7 @@
 
 	* src/YGDumbTab.cc: fixed tab shortcuts.
 
-	* src/YGRadioButton.cc & src/YGPackageSelector.cc: set border.
+	* src/YGRadioButton.cc: set border.
 
 2008-08-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

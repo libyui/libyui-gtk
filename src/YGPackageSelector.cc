@@ -2432,6 +2432,7 @@ public:
 		: YPackageSelector (NULL, mode),
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
+		setBorder (0);
 		GtkWindow *window = YGDialog::currentWindow();
 		int enlarge_width = MIN (0.95 * YUI::app()->displayWidth(), 650);
 		int enlarge_height = MIN (0.95 * YUI::app()->displayHeight(), 600);
