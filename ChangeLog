@@ -13,8 +13,7 @@
 	* src/YGPackageSelector.cc: bug fix 418896: when filtering a repository,
 	the most appropriate version wasn't the one selected.
 
-	* src/YGUtils.cc: fixed truncate() to cope with utf-8 characters. (maybe
-	related to bug 418781)
+	* src/YGUtils.cc: fixed truncate() to cope with utf-8 characters.
 	* src/test.cc: added tests for the purpose.
 
 	* src/YGUtils.cc: replaced the old button icon approach based on English
