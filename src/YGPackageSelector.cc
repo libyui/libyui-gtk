@@ -1717,8 +1717,13 @@ Filters *m_filters;  // used to filter repo versions...
 				for (int i = 0; single_package->getAvailableVersion (i); i++) {
 					const Ypp::Package::Version *version = single_package->getAvailableVersion (i);
 					string text = version->number + "  <small>(" + version->arch + ")</small>\n";
-					string repo = YGUtils::truncate (version->repo->name,
-						MAX (20, version->number.length() + version->arch.length() + 4), 0);
+					string repo;
+					if (version->repo)
+						repo = YGUtils::truncate (version->repo->name,
+							MAX (20, version->number.length() + version->arch.length() + 4), 0);
+					else
+						yuiError() << "Repository of package '" << single_package->name()
+						           << "' unknown\n";
 					text += "<small>" + repo + "</small>";
 					GtkTreeIter iter;
 					gtk_list_store_append (GTK_LIST_STORE (model), &iter);

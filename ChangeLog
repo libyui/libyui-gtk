@@ -20,6 +20,10 @@
 	* src/YGUtils.cc: replaced the old button icon approach based on English
 	strings by one that tests button labels to stock ones.
 
+	* src/YGPackageSelector.cc: bug fix 418781: it can happen that zypp doesn't
+	have information on a package repository and we end up with a null pointer.
+	This happens for the (new?) add-on tool, for the added repository.
+
 2008-08-22  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzypptags.cc: bug request 418676: use title capitalization for
