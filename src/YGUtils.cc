@@ -504,8 +504,14 @@ void YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
 		for (GSList *i = list; i; i = i->next) {
 			gchar *id = (gchar *) i->data;
 			GtkStockItem item;
-			if (gtk_stock_lookup (id, &item))
-				stockMap[cutUnderline (item.label)] = id;
+			if (gtk_stock_lookup (id, &item)) {
+				const gchar *_id = id;
+				if (!strcmp (id, GTK_STOCK_MEDIA_NEXT) || !strcmp (id, GTK_STOCK_MEDIA_FORWARD))
+					_id = GTK_STOCK_GO_FORWARD;
+				else if (!strcmp (id, GTK_STOCK_MEDIA_PREVIOUS) || !strcmp (id, GTK_STOCK_MEDIA_REWIND))
+					_id = GTK_STOCK_GO_BACK;
+				stockMap[cutUnderline (item.label)] = _id;
+			}
 			// some may not have a stock item because they can't be set on a label
 			// e.g.: gtk-directory, gtk-missing-image, gtk-dnd
 			g_free (id);
