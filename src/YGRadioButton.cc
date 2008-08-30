@@ -52,7 +52,6 @@ public:
 	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
-		setBorder (0);
 		if (!is_horizontal_box (parent))
 			setStretchable (YD_HORIZ, true);
 		setLabel (label);
@@ -127,7 +126,9 @@ public:
 	YGRadioButtonGroup(YWidget *parent)
 	: YRadioButtonGroup (NULL),
 	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
-	{}
+	{
+		setBorder (0);
+	}
 
 	YGWIDGET_IMPL_COMMON
 	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
@@ -151,7 +152,6 @@ public:
 	   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
 		IMPL
-		setBorder (0);
 		if (!is_horizontal_box (parent))
 			setStretchable (YD_HORIZ, true);
 		setLabel (label);

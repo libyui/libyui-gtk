@@ -47,7 +47,6 @@ public:
 		YDumbTab::addItem (item);
 		GtkWidget *tab_label, *image = 0, *label;
 		label = gtk_label_new (YGUtils::mapKBAccel (item->label()).c_str());
-		gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 		if (item->hasIconName()) {
 			string path = iconFullPath (item->iconName());
 			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
@@ -61,6 +60,9 @@ public:
 		}
 		else
 			tab_label = label;
+		gchar *label_id = g_strdup_printf ("label-%d", item->index());
+		g_object_set_data (G_OBJECT (getWidget()), label_id, label);
+		g_free (label_id);
 		gtk_widget_show_all (tab_label);
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
@@ -129,12 +131,16 @@ public:
 
 	virtual void shortcutChanged()
 	{
-		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		for (YItemConstIterator it = itemsBegin(); it != itemsEnd(); it++) {
 			YItem *item = *it;
-			GtkWidget *child = gtk_notebook_get_nth_page (notebook, item->index());
-			std::string label = YGUtils::mapKBAccel (item->label());
-			gtk_notebook_set_tab_label_text (notebook, child, label.c_str());
+			gchar *label_id = g_strdup_printf ("label-%d", item->index());
+			GtkWidget *label;
+			label = (GtkWidget *) g_object_get_data (G_OBJECT (getWidget()), label_id);
+			g_free (label_id);
+
+			std::string text = YGUtils::mapKBAccel (item->label());
+			gtk_label_set_text (GTK_LABEL (label), text.c_str());
+			gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 		}
 	}
 

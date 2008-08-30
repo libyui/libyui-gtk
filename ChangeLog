@@ -2,6 +2,10 @@
 
 	* src/YGUtils.cc: stock exceptions for the media labels.
 
+	* src/YGDumbTab.cc: fixed tab shortcuts.
+
+	* src/YGRadioButton.cc & src/YGPackageSelector.cc: set border.
+
 2008-08-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGLayout.cc: implemented new libyui widget YButtonBox, making
