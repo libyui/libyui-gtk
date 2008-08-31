@@ -529,16 +529,8 @@ void YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
 	it = stockMap.find (id);
 	if (it != stockMap.end()) {
 		const std::string &stock_id = it->second;
-		GdkPixbuf *pixbuf;
-		pixbuf = gtk_widget_render_icon (button, stock_id.c_str(), GTK_ICON_SIZE_BUTTON, NULL);
-		if (pixbuf) {
-			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-			gtk_button_set_image (GTK_BUTTON (button), image);
-			g_object_unref (G_OBJECT (pixbuf));
-		}
-		else
-			g_warning ("yast2-gtk: setStockIcon(): id '%s' exists, but has no pixbuf",
-			           stock_id.c_str());
+		GtkWidget *image = gtk_image_new_from_stock (stock_id.c_str(), GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (button), image);
 	}
 	else
 		gtk_button_set_image (GTK_BUTTON (button), NULL);

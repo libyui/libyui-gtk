@@ -373,15 +373,12 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 
 static GtkWidget *create_help_button()
 {
-	GtkWidget *button, *box, *image;
-	box = gtk_hbox_new (FALSE, 6);
+	GtkWidget *button, *image;
 	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
-	gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (box), gtk_label_new (_("Help")), TRUE, TRUE, 0);
-	gtk_widget_show_all (box);
 	button = gtk_toggle_button_new();
+	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
+	gtk_button_set_image (GTK_BUTTON (button), image);
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-	gtk_container_add (GTK_CONTAINER (button), box);
 	return button;
 }
 
