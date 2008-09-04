@@ -1,3 +1,8 @@
+2008-09-04  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 418781: use "Software Manager"
+	instead of "Package Selector" for consistency.
+
 2008-08-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: stock exceptions for the media labels.
