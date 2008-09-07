@@ -749,24 +749,24 @@ class ChangesPane : public Ypp::Pool::Listener
 		void modified (Ypp::Package *package)
 		{
 			const Ypp::Package::Version *version = 0;
-			std::string text;
+			std::string text, action;
 			if (package->toInstall (&version)) {
 				if (package->isInstalled()) {
 					if (version->cmp > 0)
-						text = _("upgrade");
+						action = _("upgrade");
 					else if (version->cmp < 0)
-						text = _("downgrade");
+						action = _("downgrade");
 					else
-						text = _("re-install");
+						action = _("re-install");
 				}
 				else if (package->type() == Ypp::Package::PATCH_TYPE)
-					text = _("patch");
+					action = _("patch");
 				else
-					text = _("install");
+					action = _("install");
 			}
 			else
-				text = _("remove");
-			text += " " + package->name();
+				action = _("remove");
+			text = action + " " + package->name();
 			if (package->isAuto()) {
 				text = "\t" + text;
 				gtk_widget_hide (m_button);
@@ -774,7 +774,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			else
 				gtk_widget_show (m_button);
 			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
-			std::string tooltip = package->summary();
+			std::string tooltip = action + " " + package->summary();
 			if (version)
 				tooltip += std::string (_("\nfrom")) + " <i>" + version->repo->name + "</i>";
 			gtk_widget_set_tooltip_markup (m_label, tooltip.c_str());
