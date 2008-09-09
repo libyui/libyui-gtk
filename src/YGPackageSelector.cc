@@ -1465,7 +1465,7 @@ public:
 				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), active);
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 				g_signal_connect (G_OBJECT (item), "toggled",
-						          G_CALLBACK (field_changed_cb), pThis);
+						          G_CALLBACK (name_changed_cb), pThis);
 			}
 		};
 
