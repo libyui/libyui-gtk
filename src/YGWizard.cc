@@ -22,7 +22,6 @@
 
 class YGWizard : public YWizard, public YGWidget
 {
-	bool m_verboseCommands;
 	YReplacePoint *m_replacePoint;
 
 	/* YCP requires us to allow people to use YPushButton API on the wizard buttons.
@@ -37,24 +36,37 @@ class YGWizard : public YWizard, public YGWidget
 	struct YGWButton : public YPushButton {
 		/* Thin class; just changes the associated button label and keeps track
 		   of id change. */
-		YGWButton (YWidget *parent, GtkWidget *widget, const std::string &label)
+		YGWButton (YGWizard *parent, GtkWidget *widget, const std::string &label)
 		: YPushButton (parent, label)
-		{ setWidgetRep (NULL); m_widget = widget; setLabel (label); }
+		{ setWidgetRep (NULL); m_wizard = parent; m_widget = widget; setLabel (label); }
 
 		void setLabel (const string &label) {
-			string str = YGUtils::mapKBAccel (label.c_str());
-			gtk_button_set_label (GTK_BUTTON (m_widget), str.c_str());
-			str.empty() ? gtk_widget_hide (m_widget) : gtk_widget_show (m_widget);
-			YGUtils::setStockIcon (str, m_widget);
 			YPushButton::setLabel (label);
+			std::string _label = YGUtils::mapKBAccel (label);
+			YGtkWizard *wizard = YGTK_WIZARD (m_wizard->getWidget());
+			if (m_widget == wizard->m_back_button)
+				ygtk_wizard_set_back_button_label (wizard, _label.c_str());
+			else if (m_widget == wizard->m_abort_button)
+				ygtk_wizard_set_abort_button_label (wizard, _label.c_str());
+			else if (m_widget == wizard->m_next_button)
+				ygtk_wizard_set_next_button_label (wizard, _label.c_str());
+			else if (m_widget == wizard->m_release_notes_button)
+				ygtk_wizard_set_release_notes_button_label (wizard, _label.c_str());
+			else
+				yuiError() << "Setting label to unknown button " << label;
 		}
 
 		void setEnabled (bool enable) {
-			if (isEnabled() != enable) {
-				gtk_widget_set_sensitive (m_widget, enable);
-				YWidget::setEnabled (enable);
-				setLabel (label());  // re-load stock icon for new state
-			}
+			YWidget::setEnabled (enable);
+			YGtkWizard *wizard = YGTK_WIZARD (m_wizard->getWidget());
+			if (m_widget == wizard->m_back_button)
+				ygtk_wizard_enable_back_button (wizard, enable);
+			else if (m_widget == wizard->m_abort_button)
+				ygtk_wizard_enable_abort_button (wizard, enable);
+			else if (m_widget == wizard->m_next_button)
+				ygtk_wizard_enable_next_button (wizard, enable);
+			else if (m_widget == wizard->m_release_notes_button)
+				ygtk_wizard_enable_release_notes_button (wizard, enable);
 		}
 
 		int preferredWidth() { return 0; }
@@ -63,6 +75,7 @@ class YGWizard : public YWizard, public YGWidget
 
 		private:
 			GtkWidget *m_widget;
+			YGWizard *m_wizard;
 	};
 
 	YGWButton *m_back_button, *m_abort_button, *m_next_button, *m_notes_button;
@@ -78,7 +91,6 @@ public:
 	{
 		IMPL
 		setBorder (0);
-		m_verboseCommands = false;
 
 		//** Application area
 		{

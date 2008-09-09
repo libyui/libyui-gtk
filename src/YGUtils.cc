@@ -496,7 +496,7 @@ static void stripEnd (std::string &str, char ch)
 		str.erase (str.size()-1, 1);
 }
 
-void YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
+bool YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
@@ -531,11 +531,14 @@ void YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
 		const std::string &stock_id = it->second;
 		GtkWidget *image = gtk_image_new_from_stock (stock_id.c_str(), GTK_ICON_SIZE_BUTTON);
 		gtk_button_set_image (GTK_BUTTON (button), image);
+		return true;
 	}
-	else
+	else {
 		gtk_button_set_image (GTK_BUTTON (button), NULL);
+		return false;
+	}
 }
 
-void ygutils_setStockIcon (const char *label, GtkWidget *button)
-{ YGUtils::setStockIcon (label, button); }
+gboolean ygutils_setStockIcon (const char *label, GtkWidget *button)
+{ return YGUtils::setStockIcon (label, button); }
 

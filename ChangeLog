@@ -3,6 +3,14 @@
 	* src/YGPackageSelector.cc: fixed context menu for objects like Language
 	that can't be locked.
 
+	* src/YGUtils.h/.cc: setStockIcon() returns true if set.
+
+	* src/YGPushButton.cc: use Role as a fallback to derive the stock icon.
+
+	* src/YGWizard.cc & src/ygtkwizard.c: made the wizard button wrappers to
+	change the button label & etc through the YGtkWizard API. Also added
+	fallback stock icons for the Abort and Next buttons.
+
 2008-09-09  Stanislav Visnovsky  <visnov@novell.com>
 
 	* Version 2.17.0

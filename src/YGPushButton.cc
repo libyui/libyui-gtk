@@ -10,12 +10,15 @@
 
 class YGPushButton : public YPushButton, public YGWidget
 {
+bool m_customIcon, m_labelIcon;
+
 public:
 	YGPushButton (YWidget *parent, const string &label)
 	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL
+		m_customIcon = m_labelIcon = false;
 		setMinSizeInChars (10, 0);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
@@ -23,14 +26,48 @@ public:
 		                  G_CALLBACK (clicked_cb), this);
 	}
 
+	void setStockIcon (const std::string &label)
+	{
+		if (!m_customIcon) {
+			if (YGUtils::setStockIcon (label, getWidget()))
+				m_labelIcon = true;
+			else {
+				m_labelIcon = false;
+				const char *stock = NULL;
+				switch (role()) {
+					case YOKButton:
+						stock = GTK_STOCK_OK;
+						break;
+					case YApplyButton:
+						stock = GTK_STOCK_APPLY;
+						break;
+					case YCancelButton:
+						stock = GTK_STOCK_CANCEL;
+						break;
+					default:
+						break;
+				}
+				GtkWidget *image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
+				gtk_button_set_image (GTK_BUTTON (getWidget()), image);
+			}
+		}
+	}
+
 	// YPushButton
 	virtual void setLabel (const string &label)
 	{
 		IMPL
+		YPushButton::setLabel (label);
 		string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
-		YGUtils::setStockIcon (str, getWidget());
-		YPushButton::setLabel (label);
+		setStockIcon (str);
+	}
+
+	virtual void setRole (YButtonRole role)
+	{
+		YPushButton::setRole (role);
+		if (!m_labelIcon && role != YCustomButton)  // to avoid duplications
+			setStockIcon (label());
 	}
 
 	virtual void setIcon (const string &icon)
@@ -38,12 +75,14 @@ public:
 		IMPL
 		GtkButton *button = GTK_BUTTON (getWidget());
 		if (icon.empty()) {
+			m_customIcon = false;
 			// no need to worry about freeing the image, let it live with button
 			GtkWidget *image = gtk_button_get_image (button);
 			if (image)
 				gtk_widget_hide (image);
 		}
 		else {
+			m_customIcon = true;
 			string path (icon);
 			if (path[0] != '/')
 				path = ICON_DIR + path;
