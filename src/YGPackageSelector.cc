@@ -1198,14 +1198,17 @@ private:
 			for (int i = 0; Ypp::get()->getRepository (i); i++) {
 				const Ypp::Repository *repo = Ypp::get()->getRepository (i);
 				gtk_tree_store_append (store, &iter, NULL);
-				std::string text = repo->name + "\n<small>" + repo->url + "</small>";
+				std::string text = repo->name, url (repo->url);
+				YGUtils::escapeMarkup (url);
+				text += "\n<small>" + url + "</small>";
 				const gchar *icon;
 				if (repo->url.empty())
 					icon = GTK_STOCK_MISSING_IMAGE;
 				else if (repo->url.compare (0, 2, "cd", 2) == 0 ||
-				          repo->url.compare (0, 3, "dvd", 3) == 0 ||
-				          repo->url.compare (0, 3, "iso", 3) == 0)
+				         repo->url.compare (0, 3, "dvd", 3) == 0)
 					icon = GTK_STOCK_CDROM;
+				else if (repo->url.compare (0, 3, "iso", 3) == 0)
+					icon = GTK_STOCK_FILE;
 				else
 					icon = GTK_STOCK_NETWORK;
 				gtk_tree_store_set (store, &iter, TEXT_COL, text.c_str(),
@@ -1214,7 +1217,7 @@ private:
 		}
 
 		virtual void writeQuery (Ypp::QueryPool::Query *query,
-		                           const std::list <gpointer> &ptrs)
+		                         const std::list <gpointer> &ptrs)
 		{
 			for (std::list <gpointer>::const_iterator it = ptrs.begin();
 			     it != ptrs.end(); it++) {

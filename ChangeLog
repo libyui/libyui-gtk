@@ -17,6 +17,8 @@
 
 	* src/yzyppwrapper.cc: fixed repositories query (related to bug 418781).
 	Was using some duplicated zypp API that is dysfunctional it seems.
+	* src/YGPackageSelector.cc: escaping the URL as some characters (like &)
+	were confusing the Pango parser. Use the FILE stock icon for the ISO.
 
 2008-09-08  JP Rosevear  <jpr@novell.com>
 
