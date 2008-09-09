@@ -469,7 +469,7 @@ static void ygtk_find_entry_insert_text (GtkEditable *editable,
 	parent_editable_iface->insert_text (editable, new_text, new_text_len, pos);
 
 	GdkWindow *clear_win = YGTK_EXT_ENTRY (fentry)->right_window;
-	if (empty && clear_win) {
+	if (empty && *new_text && clear_win) {
 		gdk_window_show (clear_win);
 		gtk_widget_queue_resize (GTK_WIDGET (editable));
 	}

@@ -13,8 +13,6 @@
 #define IDENT_MARGIN      20
 #define PARAGRAPH_SPACING 12
 
-//#define PRINT_WARNINGS
-
 // Sucky - but we mix C & C++ so ...
 /* Convert html to xhtml (or at least try) */
 gchar *ygutils_convert_to_xhtml (const char *instr);
@@ -321,10 +319,8 @@ rt_start_element (GMarkupParseContext *context,
 				                                       NULL);
 				state->default_color = FALSE;
 			}
-#ifdef PRINT_WARNINGS
 			else
 				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
-#endif
 		}
 		else if (!g_ascii_strcasecmp (element_name, "a")) {
 			if (attribute_names[0] &&
@@ -336,10 +332,8 @@ rt_start_element (GMarkupParseContext *context,
 					g_object_set (tag->tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag->tag), "link", g_strdup (attribute_values[0]));
 			}
-#ifdef PRINT_WARNINGS
 			else
 				g_warning ("Unknown a attribute: '%s'", attribute_names[0]);
-#endif
 		}
 		else if (!g_ascii_strcasecmp (element_name, "li")) {
 			HTMLList *front_list;
@@ -372,10 +366,8 @@ rt_start_element (GMarkupParseContext *context,
 					g_object_unref (G_OBJECT (pixbuf));
 				}
 			}
-#ifdef PRINT_WARNINGS
 			else
 				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
-#endif
 		}
 
 		// for tags like <br/>, GMarkup will pass them through the end
@@ -385,12 +377,10 @@ rt_start_element (GMarkupParseContext *context,
 
 		else
 		{
-#ifdef PRINT_WARNINGS
 			if (isBlockTag (element_name))
 				;
 			else
 				g_warning ("Unknown tag '%s'", element_name);
-#endif
 		}
 	}
 
@@ -557,9 +547,7 @@ void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean p
 	char *xml = ygutils_convert_to_xhtml (text);
 	GError *error = NULL;
 	if (!g_markup_parse_context_parse (ctx, xml, -1, &error)) {
-#ifdef PRINT_WARNINGS
 		g_warning ("Markup parse error '%s'", error ? error->message : "Unknown");
-#endif
 	}
 	g_free (xml);
 

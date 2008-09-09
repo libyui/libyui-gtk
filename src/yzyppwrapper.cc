@@ -29,6 +29,7 @@
 #include <zypp/Product.h>
 #include <zypp/Repository.h>
 #include <zypp/RepoManager.h>
+#include <zypp/sat/LocaleSupport.h>
 
 #include <glib/gslist.h>
 #include "YGUtils.h"
@@ -190,681 +191,939 @@ private:
 
 struct Ypp::Package::Impl
 {
-	Impl (Type type, ZyppSelectable sel, Node *category, Node *category2)
-	: type (type), zyppSel (sel), category (category), category2 (category2),
-	  availableVersions (NULL), installedVersion (NULL), packagesCache (NULL)
-	{
-		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
-		// let's just cache candidate() at start, which should point to the newest version.
-		hasUpgrade = false;
-		ZyppObject candidate = zyppSel->candidateObj();
-		ZyppObject installed = zyppSel->installedObj();
-		if (!!candidate && !!installed)
-			hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
+	/* Ypp::Package serves as a proxy to this class which is derived into
+	   PackageSel for packages, patterns and patches, and PackageLang for locales. */
 
-		setUnmodified();
-	}
+Type type;
+Package *m_parent;
+std::string m_name, m_summary;	
 
-	~Impl()
-	{
-		delete installedVersion;
-		for (GSList *i = availableVersions; i; i = i->next)
-			delete ((Version *) i->data);
-		g_slist_free (availableVersions);
-		g_slist_free (packagesCache);
-	}
+	Impl (Type type) : type (type) {}
 
-	inline bool isModified()
-	{ return curStatus != zyppSel->status(); }
-	inline void setUnmodified()
-	{ curStatus = zyppSel->status(); }
+	virtual std::string name() = 0;
+	virtual std::string summary() = 0;
+	virtual Node *category() { return NULL; }
+	virtual Node *category2() { return NULL; }
+	virtual bool containsPackage (const Ypp::Package *package) = 0;
 
-	GSList *getContainedPackages()
-	{
-		if (!packagesCache) {
-			if (type == PATTERN_TYPE) {
-				ZyppObject object = zyppSel->theObj();
-				ZyppPattern pattern = tryCastToZyppPattern (object);
-				zypp::Pattern::Contents contents (pattern->contents());
-				for (zypp::Pattern::Contents::Selectable_iterator it =
-					contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-					packagesCache = g_slist_append (packagesCache, get_pointer (*it));
-				}
-			}
-		}
-		return packagesCache;
-	}
+	virtual std::string description (bool rich) = 0;
+	virtual std::string filelist (bool rich) { return ""; }
+	virtual std::string changelog()          { return ""; }
+	virtual std::string authors (bool rich)  { return ""; }
+	virtual std::string icon()               { return ""; }
+	virtual bool isRecommended() const       { return false; }
+	virtual bool isSuggested() const         { return false; }
 
-	std::string name, summary;
-	Type type;
-	ZyppSelectable zyppSel;
-	Ypp::Node *category, *category2;
-	GSList *availableVersions;
-	Version *installedVersion;
-	bool hasUpgrade;
-	zypp::ui::Status curStatus;  // so we know if resolver touched it
-	// for patterns only:
-	GSList *packagesCache;
+	virtual std::string provides() const { return ""; }
+	virtual std::string requires() const { return ""; }
+
+	virtual const Ypp::Package::Version *getInstalledVersion() { return false; }
+	virtual const Ypp::Package::Version *getAvailableVersion (int nb) { return false; }
+
+	virtual bool isInstalled() = 0;
+	virtual bool hasUpgrade() = 0;
+	virtual bool isLocked() = 0;
+
+	virtual bool toInstall (const Ypp::Package::Version **repo = 0) = 0;
+	virtual bool toRemove() = 0;
+	virtual bool toModify() = 0;
+	virtual bool isAuto() = 0;
+
+	virtual void install (const Ypp::Package::Version *repo) = 0;
+	virtual void remove() = 0;
+	virtual void undo() = 0;
+	virtual bool canLock() = 0;
+	virtual void lock (bool lock) = 0;
 };
 
-Ypp::Package::Package (Ypp::Package::Impl *impl)
-: impl (impl)
-{}
-Ypp::Package::~Package()
-{ delete impl; }
+Ypp::Package::Package (Impl *impl) : impl (impl) { impl->m_parent = this; }
+Ypp::Package::~Package() { delete impl; }
 
-Ypp::Package::Type Ypp::Package::type() const
-{ return impl->type; }
+Ypp::Package::Type Ypp::Package::type() const { return impl->type; }
 
 const std::string &Ypp::Package::name() const
 {
-	std::string &ret = const_cast <Package *> (this)->impl->name;
-	if (ret.empty()) {
-		ZyppSelectable sel = impl->zyppSel;
-		ZyppObject obj = sel->theObj();
-		switch (impl->type) {
-			case PATTERN_TYPE:
-				ret = obj->summary();
-				break;
-#if 0
-			case LANGUAGE_TYPE:
-				ret = obj->description();
-				break;
-#endif
-			default:
-				ret = sel->name();
-				break;
-		}
-	}
-	return ret;
+	if (impl->m_name.empty())
+		impl->m_name = const_cast <Impl *> (impl)->name();
+	return impl->m_name;
 }
 
 const std::string &Ypp::Package::summary()
 {
-	std::string &ret = impl->summary;
-	if (ret.empty()) {
-		if (impl->type != PATTERN_TYPE)
-			ret = impl->zyppSel->theObj()->summary();
+	if (impl->m_summary.empty())
+		impl->m_summary = const_cast <Impl *> (impl)->summary();
+	return impl->m_summary;
+}
+
+Ypp::Node *Ypp::Package::category()                { return impl->category(); }
+Ypp::Node *Ypp::Package::category2()               { return impl->category2(); }
+bool Ypp::Package::containsPackage (const Ypp::Package *package) const
+{ return const_cast <Impl *> (impl)->containsPackage (package); }
+
+std::string Ypp::Package::description (bool rich) { return impl->description (rich); }
+std::string Ypp::Package::filelist (bool rich)    { return impl->filelist (rich); }
+std::string Ypp::Package::changelog()             { return impl->changelog(); }
+std::string Ypp::Package::authors (bool rich)     { return impl->authors (rich); }
+std::string Ypp::Package::icon()                  { return impl->icon(); }
+bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
+bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
+
+std::string Ypp::Package::provides() const        { return impl->provides(); }
+std::string Ypp::Package::requires() const        { return impl->requires(); }
+
+const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
+{ return impl->getInstalledVersion(); }
+const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
+{ return impl->getAvailableVersion (nb); }
+const Ypp::Package::Version *Ypp::Package::fromRepository (const Repository *repo)
+{
+	for (int i = 0; getAvailableVersion (i); i++) {
+		const Version *version = getAvailableVersion (i);
+		if (version->repo == repo)
+			return version;
 	}
-	return ret;
+	return NULL;
 }
 
-std::string Ypp::Package::description (bool rich)
+bool Ypp::Package::isInstalled() { return impl->isInstalled(); }
+bool Ypp::Package::hasUpgrade()  { return impl->hasUpgrade(); }
+bool Ypp::Package::isLocked()    { return impl->isLocked(); }
+
+bool Ypp::Package::toInstall (const Ypp::Package::Version **version)
+{ return impl->toInstall (version); }
+bool Ypp::Package::toRemove()   { return impl->toRemove(); }
+bool Ypp::Package::toModify()   { return impl->toModify(); }
+bool Ypp::Package::isAuto()     { return impl->isAuto(); }
+
+void Ypp::Package::install (const Version *version)
 {
-	ZyppObject object = impl->zyppSel->theObj();
-	std::string text = object->description(), br = "<br>";
-	if (!rich)
-		return text;
-
-	switch (impl->type) {
-		case PACKAGE_TYPE:
-		{
-			// if it has this header, then it is HTML
-			const char *header = "<!-- DT:Rich -->", header_len = 16;
-
-			if (!text.compare (0, header_len, header, header_len))
-				;
-			else {
-				// cut authors block
-				std::string::size_type i = text.find ("\nAuthors:", 0);
-				if (i != std::string::npos) {
-					int j = i + sizeof ("\nAuthors:\n");
-					if (text.compare (j, sizeof ("-----"), "-----")) {
-						text.erase (i);
-					}
-				}
-				while (text.length() > 0 && text [text.length()-1] == '\n')
-					text.erase (text.length()-1);
-
-				YGUtils::escapeMarkup (text);
-				YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
-				text += "<br>";
-			}
-
-			// specific
-			ZyppPackage package = tryCastToZyppPkg (object);
-			std::string url = package->url(), license = package->license();
-			if (!url.empty())
-				text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
-			if (!license.empty())
-				text += br + "<b>" + _("License:") + "</b> " + license;
-			text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
-			break;
-		}
-		case PATCH_TYPE:
-		{
-			ZyppPatch patch = tryCastToZyppPatch (object);
-			if (patch->rebootSuggested())
-				text += br + br + "<b>" + _("Reboot needed!") + "</b>";
-			if (patch->referencesBegin() != patch->referencesEnd()) {
-				text += br + br + "<b>Bugzilla:</b><ul>";
-				for (zypp::Patch::ReferenceIterator it = patch->referencesBegin();
-					 it != patch->referencesEnd(); it++)
-					text += "<li><a href=\"" + it.href() + "\">" + it.title() + "</a></li>";
-				text += "</ul>";
-			}
-			break;
-		}
-		case PATTERN_TYPE:
-		{
-			int installed = 0, total = 0;
-			for (GSList *i = impl->getContainedPackages(); i; i = i->next) {
-				ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
-				if (!sel->installedEmpty())
-					installed++;
-				total++;
-			}
-			std::ostringstream stream;
-			stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
-			text += stream.str();
-			break;
-		}
-		default:
-			break;
-	}
-	return text;
-}
-
-std::string Ypp::Package::filelist (bool rich)
-{
-	std::string text;
-	ZyppObject object = impl->zyppSel->installedObj();
-	ZyppPackage package = tryCastToZyppPkg (object);
-	if (package) {
-		if (rich) {
-			StringTree tree (strcmp, '/');
-
-			const std::list <std::string> &filesList = package->filenames();
-			for (std::list <std::string>::const_iterator it = filesList.begin();
-				 it != filesList.end(); it++)
-				tree.add (*it, 0);
-
-			struct inner {
-				static std::string getPath (GNode *node)
-				{
-					Node *yNode  = (Node *) node->data;
-					if (!yNode)
-						return std::string();
-					return getPath (node->parent) + "/" + yNode->name;
-				}
-				static bool hasNextLeaf (GNode *node)
-				{
-					GNode *i;
-					for (i = node->next; i; i = i->next)
-						if (!i->children)
-							return true;
-					return false;
-				}
-				static bool hasPrevLeaf (GNode *node)
-				{
-					GNode *i;
-					for (i = node->prev; i; i = i->prev)
-						if (!i->children)
-							return true;
-					return false;
-				}
-				static gboolean traverse (GNode *node, void *_data)
-				{
-					Node *yNode  = (Node *) node->data;
-					if (yNode) {
-						std::string *str = (std::string *) _data;
-						if (!hasPrevLeaf (node)) {
-							std::string path = getPath (node->parent);
-							*str += "<a href=" + path + ">" + path + "</a>";
-							*str += "<blockquote>";
-						}
-						else
-							*str += ", ";
-						*str += yNode->name;
-
-						if (!hasNextLeaf (node))
-							*str += "</blockquote>";
-					}
-					return FALSE;
-				}
-			};
-			g_node_traverse (tree.root, G_LEVEL_ORDER, G_TRAVERSE_LEAFS, -1,
-				             inner::traverse, (void *) &text);
-		}
-		else {
-			const std::list <std::string> &filesList = package->filenames();
-			for (std::list <std::string>::const_iterator it = filesList.begin();
-				 it != filesList.end(); it++)
-				text += *it + " ";
-		}
-	}
-	return text;
-}
-
-std::string Ypp::Package::changelog()
-{
-	std::string text;
-	ZyppObject object = impl->zyppSel->installedObj();
-	ZyppPackage package = tryCastToZyppPkg (object);
-	if (package) {
-		const std::list <zypp::ChangelogEntry> &changelogList = package->changelog();
-		for (std::list <zypp::ChangelogEntry>::const_iterator it = changelogList.begin();
-			 it != changelogList.end(); it++) {
-			std::string date (it->date().form ("%d %B %Y")), author (it->author()),
-			            changes (it->text());
-			YGUtils::escapeMarkup (author);
-			YGUtils::escapeMarkup (changes);
-			YGUtils::replace (changes, "\n", 1, "<br>");
-			if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
-				author.erase (0, 2);                  // "- author". wtf?
-			text += date + " (" + author + "):<br><blockquote>" + changes + "</blockquote>";
-		}
-	}
-	return text;
-}
-
-std::string Ypp::Package::authors (bool rich)
-{
-	std::string text;
-	ZyppObject object = impl->zyppSel->theObj();
-	ZyppPackage package = tryCastToZyppPkg (object);
-	if (package) {
-		std::string packager = package->packager(), authors;
-		YGUtils::escapeMarkup (packager);
-		const std::list <std::string> &authorsList = package->authors();
-		for (std::list <std::string>::const_iterator it = authorsList.begin();
-		     it != authorsList.end(); it++) {
-			std::string author (*it);
-			if (rich)
-				YGUtils::escapeMarkup (author);
-			if (!authors.empty()) {
-				if (rich)
-					authors += "<br>";
-				else
-					authors += "\n";
-			}
-			authors += author;
-		}
-		// look for Authors line in description
-		std::string description = package->description();
-		std::string::size_type i = description.find ("\nAuthors:", 0);
-		if (i != std::string::npos) {
-			i += sizeof ("\nAuthors:\n");
-			if (description.compare (i, sizeof ("-----"), "-----")) {
-				i = description.find ("\n", i+1);
-				if (i != std::string::npos) {
-					std::string str = description.substr (i+1);
-					if (rich) {
-						YGUtils::escapeMarkup (str);
-						YGUtils::replace (str, "\n", 1, "<br>");
-					}
-					authors += str;
-				}
-			}
-		}
-
-		if (rich) {
-			if (!authors.empty())
-				text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
-			if (!packager.empty())
-				text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
-		}
-		else
-			return authors;
-	}
-	return text;
-}
-
-std::string Ypp::Package::icon()
-{
-	if (impl->type == PATTERN_TYPE) {
-		ZyppObject object = impl->zyppSel->theObj();
-		ZyppPattern pattern = tryCastToZyppPattern (object);
-		std::string icon = pattern->icon().asString().c_str();
-		// from yast2-qt: HACK most patterns have wrong default icon
-		if ((icon == zypp::Pathname("yast-system").asString()) || icon.empty())
-			icon = "pattern-generic";
-		// mine: remove start "./"
-		else if (icon.compare (0, 2, "./", 2) == 0)
-			icon.erase (0, 2);
-		return icon;
-	}
-	return "";
-}
-
-bool Ypp::Package::isRecommended() const
-{
-	return zypp::PoolItem (impl->zyppSel->theObj()).status().isRecommended();
-}
-
-bool Ypp::Package::isSuggested() const
-{
-	return zypp::PoolItem (impl->zyppSel->theObj()).status().isSuggested();
-}
-
-std::string Ypp::Package::provides() const
-{
-	std::string text;
-	ZyppObject object = impl->zyppSel->theObj();
-    const zypp::Capabilities &capSet = object->dep (zypp::Dep::PROVIDES);
-    for (zypp::Capabilities::const_iterator it = capSet.begin();
-         it != capSet.end(); it++) {
-		if (!text.empty())
-			text += "\n";
-		text += it->asString();
-	}
-	return text;
-}
-
-std::string Ypp::Package::requires() const
-{
-	std::string text;
-	ZyppObject object = impl->zyppSel->theObj();
-    const zypp::Capabilities &capSet = object->dep (zypp::Dep::REQUIRES);
-    for (zypp::Capabilities::const_iterator it = capSet.begin();
-         it != capSet.end(); it++) {
-		if (!text.empty())
-			text += "\n";
-		text += it->asString();
-	}
-	return text;
-}
-
-Ypp::Node *Ypp::Package::category()
-{ return impl->category; }
-
-Ypp::Node *Ypp::Package::category2()
-{ return impl->category2; }
-
-bool Ypp::Package::fromCollection (const Ypp::Package *collection) const
-{
-	switch (collection->type()) {
-		case Ypp::Package::PATTERN_TYPE:
-		{
-			for (GSList *i = collection->impl->getContainedPackages(); i; i = i->next) {
-				if (this->impl->zyppSel == i->data)
-					return true;
-			}
-			return false;
-		}
-#if 0
-		case Ypp::Package::LANGUAGE_TYPE:
-		{
-			ZyppSelectable selectable = collection->impl->zyppSel;
-			ZyppObject object = selectable->theObj();
-			ZyppLanguage language = tryCastToZyppLanguage (object);
-
-			ZyppObject pkgobj = this->impl->zyppSel->theObj();
-			const zypp::Capabilities &capSet = pkgobj->dep (zypp::Dep::FRESHENS);
-			for (zypp::Capabilities::const_iterator it = capSet.begin();
-			     it != capSet.end(); it++) {
-				if (it->index() == language->name())
-					return true;
-			}
-		}
-#endif
-		default:
-			break;
-	}
-	return false;
-}
-
-bool Ypp::Package::isInstalled()
-{
-	if (!impl->zyppSel->installedEmpty())
-		return !impl->zyppSel->installedObj().isBroken();
-	return false;
-}
-
-bool Ypp::Package::hasUpgrade()
-{
-	return impl->hasUpgrade;
-}
-
-bool Ypp::Package::isLocked()
-{
-	zypp::ui::Status status = impl->zyppSel->status();
-	return status == zypp::ui::S_Taboo || status == zypp::ui::S_Protected;
-}
-
-bool Ypp::Package::toInstall (const Version **version)
-{
-	if (version) {
-		ZyppObject candidate = impl->zyppSel->candidateObj();
-		for (int i = 0; getAvailableVersion (i); i++) {
-			const Version *v = getAvailableVersion (i);
-			ZyppObject obj = (ZyppObjectPtr) v->impl;
-			if (obj == candidate) {
-				*version = v;
-				break;
-			}
-		}
-	}
-	return impl->zyppSel->toInstall();
-}
-
-bool Ypp::Package::toRemove()
-{
-	return impl->zyppSel->toDelete();
-}
-
-bool Ypp::Package::isModified()
-{
-	return impl->zyppSel->toModify();
-}
-
-bool Ypp::Package::isAuto()
-{
-	zypp::ui::Status status = impl->zyppSel->status();
-	return status == zypp::ui::S_AutoInstall || status == zypp::ui::S_AutoUpdate ||
-	       status == zypp::ui::S_AutoDel;
-}
-
-void Ypp::Package::install (const Ypp::Package::Version *version)
-{
-	if (isLocked())
-		return;
-	if (!impl->zyppSel->hasLicenceConfirmed())
-	{
-		const std::string &license = impl->zyppSel->candidateObj()->licenseToConfirm();
-		if (!license.empty())
-			if (!ypp->impl->acceptLicense (this, license))
-				return;
-		impl->zyppSel->setLicenceConfirmed();
-	}
-
-	zypp::ui::Status status = impl->zyppSel->status();
-	switch (status) {
-		// not applicable
-		case zypp::ui::S_Protected:
-		case zypp::ui::S_Taboo:
-		case zypp::ui::S_Install:
-		case zypp::ui::S_Update:
-			break;
-		// undo
-		case zypp::ui::S_Del:
-			status = zypp::ui::S_KeepInstalled;
-			break;
-		// nothing to do about it
-		case zypp::ui::S_AutoDel:
-			break;
-		// action
-		case zypp::ui::S_NoInst:
-		case zypp::ui::S_AutoInstall:
-			status = zypp::ui::S_Install;
-			break;
-		case zypp::ui::S_KeepInstalled:
-		case zypp::ui::S_AutoUpdate:
-			status = zypp::ui::S_Update;
-			break;
-	}
-
-	impl->zyppSel->setStatus (status);
-	if (toInstall()) {
-		if (!version) {
-			version = getAvailableVersion (0);
-			const Repository *repo = ypp->favoriteRepository();
-			if (repo && fromRepository (repo))
-				version = fromRepository (repo);
-		}
-		ZyppObject candidate = (ZyppObjectPtr) version->impl;
-		if (!impl->zyppSel->setCandidate (candidate)) {
-			yuiWarning () << "Error: Could not set package '" << name() << "' candidate to '" << version->number << "'\n";
-			return;
-		}
-	}
-
+	impl->install (version);
 	ypp->impl->packageModified (this);
 }
 
 void Ypp::Package::remove()
 {
-	zypp::ui::Status status = impl->zyppSel->status();
-	switch (status) {
-		// not applicable
-		case zypp::ui::S_Protected:
-		case zypp::ui::S_Taboo:
-		case zypp::ui::S_NoInst:
-		case zypp::ui::S_Del:
-			break;
-		// undo
-		case zypp::ui::S_Install:
-			status = zypp::ui::S_NoInst;
-			break;
-		// nothing to do about it
-		case zypp::ui::S_AutoInstall:
-		case zypp::ui::S_AutoUpdate:
-			break;
-		case zypp::ui::S_Update:
-			status = zypp::ui::S_KeepInstalled;
-			break;
-		// action
-		case zypp::ui::S_KeepInstalled:
-		case zypp::ui::S_AutoDel:
-			status = zypp::ui::S_Del;
-			break;
-	}
-
-	impl->zyppSel->setStatus (status);
+	impl->remove();
 	ypp->impl->packageModified (this);
 }
 
 void Ypp::Package::undo()
 {
-	zypp::ui::Status status = impl->zyppSel->status();
-	switch (status) {
-		// not applicable
-		case zypp::ui::S_Protected:
-		case zypp::ui::S_Taboo:
-		case zypp::ui::S_NoInst:
-		case zypp::ui::S_KeepInstalled:
-			break;
-
-		// undo
-		case zypp::ui::S_Install:
-			status = zypp::ui::S_NoInst;
-			break;
-		case zypp::ui::S_Update:
-		case zypp::ui::S_Del:
-			status = zypp::ui::S_KeepInstalled;
-			break;
-
-		// for auto status, undo them by locking them
-		case zypp::ui::S_AutoInstall:
-			status = zypp::ui::S_Taboo;
-			break;
-		case zypp::ui::S_AutoUpdate:
-		case zypp::ui::S_AutoDel:
-			status = zypp::ui::S_Protected;
-			break;
-	}
-
-	impl->zyppSel->setStatus (status);
+	impl->undo();
 	ypp->impl->packageModified (this);
 }
+
+bool Ypp::Package::canLock() { return impl->canLock(); }
 
 void Ypp::Package::lock (bool lock)
 {
-	undo();
-
-	zypp::ui::Status status;
-	if (lock)
-		status = isInstalled() ? zypp::ui::S_Protected : zypp::ui::S_Taboo;
-	else
-		status = isInstalled() ? zypp::ui::S_KeepInstalled : zypp::ui::S_NoInst;
-
-	impl->zyppSel->setStatus (status);
+	impl->lock (lock);
 	ypp->impl->packageModified (this);
 }
 
-static Ypp::Package::Version *constructVersion (ZyppObject object)
+struct PackageSel : public Ypp::Package::Impl
 {
-	Ypp::Package::Version *version = new Ypp::Package::Version();
-	version->number = object->edition().asString();
-	version->arch = object->arch().asString();
-	version->repo = ypp->impl->getRepository (object->repoInfo().alias());
-	version->cmp = 0;
-	version->impl = (void *) get_pointer (object);
-	return version;
-}
+ZyppSelectable m_sel;
+Ypp::Node *m_category, *m_category2;
+GSList *m_availableVersions;
+Ypp::Package::Version *m_installedVersion;
+bool m_hasUpgrade;
+zypp::ui::Status m_curStatus;  // so we know if resolver touched it
+// for Patterns
+GSList *m_containsPackages;
 
-const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
-{
-	if (!impl->installedVersion) {
-		const ZyppObject installedObj = impl->zyppSel->installedObj();
-		assert (installedObj != NULL);
-		impl->installedVersion = constructVersion (installedObj);
+	PackageSel (Ypp::Package::Type type, ZyppSelectable sel, Ypp::Node *category, Ypp::Node *category2)
+	: Impl (type), m_sel (sel), m_category (category), m_category2 (category2),
+	  m_availableVersions (NULL), m_installedVersion (NULL), m_containsPackages (NULL)
+	{
+		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
+		// let's just cache candidate() at start, which should point to the newest version.
+		m_hasUpgrade = false;
+		ZyppObject candidate = sel->candidateObj();
+		ZyppObject installed = sel->installedObj();
+		if (!!candidate && !!installed)
+			m_hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
+
+		setUnmodified();
 	}
-	return impl->installedVersion;
-}
 
-const Ypp::Package::Version *Ypp::Package::getAvailableVersion (int nb)
-{
-	if (!impl->availableVersions) {
-#if 0  // for debug purposes, when not online
-		Ypp::Package::Version *version;
+	virtual ~PackageSel()
+	{
+		delete m_installedVersion;
+		for (GSList *i = m_availableVersions; i; i = i->next)
+			delete ((Ypp::Package::Version *) i->data);
+		g_slist_free (m_availableVersions);
+		g_slist_free (m_containsPackages);
+	}
 
-		version = new Ypp::Package::Version();
-		version->number = "5.0.6";
-		version->arch = "i586";
-		version->repo = 0;
-		version->cmp = 1;
-		version->impl = NULL;
-		impl->availableVersions = g_slist_append (impl->availableVersions, version);
+	inline bool isModified()
+	{ return m_curStatus != m_sel->status(); }
+	inline void setUnmodified()
+	{ m_curStatus = m_sel->status(); }
 
-		version = new Ypp::Package::Version();
-		version->number = "4.1.2";
-		version->arch = "i586";
-		version->repo = 1;
-		version->cmp = -1;
-		version->impl = NULL;
-		impl->availableVersions = g_slist_append (impl->availableVersions, version);
-#else
-		const ZyppObject installedObj = impl->zyppSel->installedObj();
-		for (zypp::ui::Selectable::available_iterator it = impl->zyppSel->availableBegin();
-			 it != impl->zyppSel->availableEnd(); it++) {
-			Version *version = constructVersion (*it);
-			if (installedObj)
-				version->cmp = zypp::Edition::compare ((*it)->edition(), installedObj->edition());
-			impl->availableVersions = g_slist_append (impl->availableVersions, version);
+	GSList *getContainedPackages()
+	{
+		if (!m_containsPackages) {
+			if (type == Ypp::Package::PATTERN_TYPE) {
+				ZyppObject object = m_sel->theObj();
+				ZyppPattern pattern = tryCastToZyppPattern (object);
+				zypp::Pattern::Contents contents (pattern->contents());
+				for (zypp::Pattern::Contents::Selectable_iterator it =
+					contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+					m_containsPackages = g_slist_append (m_containsPackages, get_pointer (*it));
+				}
+			}
 		}
-		struct inner {
-			static gint version_compare (gconstpointer pa, gconstpointer pb)
+		return m_containsPackages;
+	}
+
+	virtual std::string name()
+	{
+		if (type == Ypp::Package::PATTERN_TYPE)
+			return m_sel->theObj()->summary();
+		return m_sel->name();
+	}
+
+	virtual std::string summary()
+	{
+		if (type == Ypp::Package::PATTERN_TYPE)
+			return "";
+		return m_sel->theObj()->summary();
+	}
+
+	virtual std::string description (bool rich)
+	{
+		ZyppObject object = m_sel->theObj();
+		std::string text = object->description(), br = "<br>";
+		if (!rich)
+			return text;
+
+		switch (type) {
+			case Ypp::Package::PACKAGE_TYPE:
 			{
-				ZyppObjectPtr a = (ZyppObjectPtr) ((Version *) pa)->impl;
-				ZyppObjectPtr b = (ZyppObjectPtr) ((Version *) pb)->impl;
-				// swapped arguments, as we want them sorted from newer to older
-				return zypp::Edition::compare (b->edition(), a->edition());
+				// if it has this header, then it is HTML
+				const char *header = "<!-- DT:Rich -->", header_len = 16;
+
+				if (!text.compare (0, header_len, header, header_len))
+					;
+				else {
+					// cut authors block
+					std::string::size_type i = text.find ("\nAuthors:", 0);
+					if (i != std::string::npos) {
+						int j = i + sizeof ("\nAuthors:\n");
+						if (text.compare (j, sizeof ("-----"), "-----")) {
+							text.erase (i);
+						}
+					}
+					while (text.length() > 0 && text [text.length()-1] == '\n')
+						text.erase (text.length()-1);
+
+					YGUtils::escapeMarkup (text);
+					YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
+					text += "<br>";
+				}
+
+				// specific
+				ZyppPackage package = tryCastToZyppPkg (object);
+				std::string url = package->url(), license = package->license();
+				if (!url.empty())
+					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
+				if (!license.empty())
+					text += br + "<b>" + _("License:") + "</b> " + license;
+				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
+				break;
+			}
+			case Ypp::Package::PATCH_TYPE:
+			{
+				ZyppPatch patch = tryCastToZyppPatch (object);
+				if (patch->rebootSuggested())
+					text += br + br + "<b>" + _("Reboot needed!") + "</b>";
+				if (patch->referencesBegin() != patch->referencesEnd()) {
+					text += br + br + "<b>Bugzilla:</b><ul>";
+					for (zypp::Patch::ReferenceIterator it = patch->referencesBegin();
+						 it != patch->referencesEnd(); it++)
+						text += "<li><a href=\"" + it.href() + "\">" + it.title() + "</a></li>";
+					text += "</ul>";
+				}
+				break;
+			}
+			case Ypp::Package::PATTERN_TYPE:
+			{
+				int installed = 0, total = 0;
+				for (GSList *i = getContainedPackages(); i; i = i->next) {
+					ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
+					if (!sel->installedEmpty())
+						installed++;
+					total++;
+				}
+				std::ostringstream stream;
+				stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
+				text += stream.str();
+				break;
+			}
+			default:
+				break;
+		}
+		return text;
+	}
+
+	virtual std::string filelist (bool rich)
+	{
+		std::string text;
+		ZyppObject object = m_sel->installedObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (package) {
+			if (rich) {
+				StringTree tree (strcmp, '/');
+
+				const std::list <std::string> &filesList = package->filenames();
+				for (std::list <std::string>::const_iterator it = filesList.begin();
+					 it != filesList.end(); it++)
+					tree.add (*it, 0);
+
+				struct inner {
+					static std::string getPath (GNode *node)
+					{
+						Ypp::Node *yNode  = (Ypp::Node *) node->data;
+						if (!yNode)
+							return std::string();
+						return getPath (node->parent) + "/" + yNode->name;
+					}
+					static bool hasNextLeaf (GNode *node)
+					{
+						GNode *i;
+						for (i = node->next; i; i = i->next)
+							if (!i->children)
+								return true;
+						return false;
+					}
+					static bool hasPrevLeaf (GNode *node)
+					{
+						GNode *i;
+						for (i = node->prev; i; i = i->prev)
+							if (!i->children)
+								return true;
+						return false;
+					}
+					static gboolean traverse (GNode *node, void *_data)
+					{
+						Ypp::Node *yNode  = (Ypp::Node *) node->data;
+						if (yNode) {
+							std::string *str = (std::string *) _data;
+							if (!hasPrevLeaf (node)) {
+								std::string path = getPath (node->parent);
+								*str += "<a href=" + path + ">" + path + "</a>";
+								*str += "<blockquote>";
+							}
+							else
+								*str += ", ";
+							*str += yNode->name;
+
+							if (!hasNextLeaf (node))
+								*str += "</blockquote>";
+						}
+						return FALSE;
+					}
+				};
+				g_node_traverse (tree.root, G_LEVEL_ORDER, G_TRAVERSE_LEAFS, -1,
+						         inner::traverse, (void *) &text);
+			}
+			else {
+				const std::list <std::string> &filesList = package->filenames();
+				for (std::list <std::string>::const_iterator it = filesList.begin();
+					 it != filesList.end(); it++)
+					text += *it + " ";
+			}
+		}
+		return text;
+	}
+
+	virtual std::string changelog()
+	{
+		std::string text;
+		ZyppObject object = m_sel->installedObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (package) {
+			const std::list <zypp::ChangelogEntry> &changelogList = package->changelog();
+			for (std::list <zypp::ChangelogEntry>::const_iterator it = changelogList.begin();
+				 it != changelogList.end(); it++) {
+				std::string date (it->date().form ("%d %B %Y")), author (it->author()),
+					        changes (it->text());
+				YGUtils::escapeMarkup (author);
+				YGUtils::escapeMarkup (changes);
+				YGUtils::replace (changes, "\n", 1, "<br>");
+				if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
+					author.erase (0, 2);                  // "- author". wtf?
+				text += date + " (" + author + "):<br><blockquote>" + changes + "</blockquote>";
+			}
+		}
+		return text;
+	}
+
+	virtual std::string authors (bool rich)
+	{
+		std::string text;
+		ZyppObject object = m_sel->theObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (package) {
+			std::string packager = package->packager(), authors;
+			YGUtils::escapeMarkup (packager);
+			const std::list <std::string> &authorsList = package->authors();
+			for (std::list <std::string>::const_iterator it = authorsList.begin();
+				 it != authorsList.end(); it++) {
+				std::string author (*it);
+				if (rich)
+					YGUtils::escapeMarkup (author);
+				if (!authors.empty()) {
+					if (rich)
+						authors += "<br>";
+					else
+						authors += "\n";
+				}
+				authors += author;
+			}
+			// look for Authors line in description
+			std::string description = package->description();
+			std::string::size_type i = description.find ("\nAuthors:", 0);
+			if (i != std::string::npos) {
+				i += sizeof ("\nAuthors:\n");
+				if (description.compare (i, sizeof ("-----"), "-----")) {
+					i = description.find ("\n", i+1);
+					if (i != std::string::npos) {
+						std::string str = description.substr (i+1);
+						if (rich) {
+							YGUtils::escapeMarkup (str);
+							YGUtils::replace (str, "\n", 1, "<br>");
+						}
+						authors += str;
+					}
+				}
+			}
+
+			if (rich) {
+				if (!authors.empty())
+					text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
+				if (!packager.empty())
+					text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
+			}
+			else
+				return authors;
+		}
+		return text;
+	}
+
+	virtual std::string icon()
+	{
+		if (type == Ypp::Package::PATTERN_TYPE) {
+			ZyppObject object = m_sel->theObj();
+			ZyppPattern pattern = tryCastToZyppPattern (object);
+			std::string icon = pattern->icon().asString().c_str();
+			// from yast2-qt: HACK most patterns have wrong default icon
+			if ((icon == zypp::Pathname("yast-system").asString()) || icon.empty())
+				icon = "pattern-generic";
+			// mine: remove start "./"
+			else if (icon.compare (0, 2, "./", 2) == 0)
+				icon.erase (0, 2);
+			return icon;
+		}
+		return "";
+	}
+
+	virtual bool isRecommended() const
+	{
+		return zypp::PoolItem (m_sel->theObj()).status().isRecommended();
+	}
+
+	virtual bool isSuggested() const
+	{
+		return zypp::PoolItem (m_sel->theObj()).status().isSuggested();
+	}
+
+	virtual std::string provides() const
+	{
+		std::string text;
+		ZyppObject object = m_sel->theObj();
+		const zypp::Capabilities &capSet = object->dep (zypp::Dep::PROVIDES);
+		for (zypp::Capabilities::const_iterator it = capSet.begin();
+		     it != capSet.end(); it++) {
+			if (!text.empty())
+				text += "\n";
+			text += it->asString();
+		}
+		return text;
+	}
+
+	virtual std::string requires() const
+	{
+		std::string text;
+		ZyppObject object = m_sel->theObj();
+		const zypp::Capabilities &capSet = object->dep (zypp::Dep::REQUIRES);
+		for (zypp::Capabilities::const_iterator it = capSet.begin();
+		     it != capSet.end(); it++) {
+			if (!text.empty())
+				text += "\n";
+			text += it->asString();
+		}
+		return text;
+	}
+
+	virtual bool containsPackage (const Ypp::Package *package)
+	{
+		if (type == Ypp::Package::PATTERN_TYPE) {
+			PackageSel *sel = (PackageSel *) package->impl;
+			return g_slist_find (getContainedPackages(), get_pointer (sel->m_sel)) != NULL;
+		}
+		return NULL;
+	}
+
+	virtual Ypp::Node *category()
+	{ return m_category; }
+
+	virtual Ypp::Node *category2()
+	{ return m_category2; }
+
+	virtual bool isInstalled()
+	{
+		if (type == Ypp::Package::PATTERN_TYPE)
+			return m_sel->candidateObj().isSatisfied();
+		if (!m_sel->installedEmpty())
+			return !m_sel->installedObj().isBroken();
+		return false;
+	}
+
+	virtual bool hasUpgrade()
+	{
+		return m_hasUpgrade;
+	}
+
+	virtual bool isLocked()
+	{
+		zypp::ui::Status status = m_sel->status();
+		return status == zypp::ui::S_Taboo || status == zypp::ui::S_Protected;
+	}
+
+	virtual bool toInstall (const Ypp::Package::Version **version)
+	{
+		if (version) {
+			ZyppObject candidate = m_sel->candidateObj();
+			for (int i = 0; getAvailableVersion (i); i++) {
+				const Ypp::Package::Version *v = getAvailableVersion (i);
+				ZyppObject obj = (ZyppObjectPtr) v->impl;
+				if (obj == candidate) {
+					*version = v;
+					break;
+				}
+			}
+		}
+		return m_sel->toInstall();
+	}
+
+	virtual bool toRemove()
+	{
+		return m_sel->toDelete();
+	}
+
+	virtual bool toModify()
+	{
+		return m_sel->toModify();
+	}
+
+	virtual bool isAuto()
+	{
+		zypp::ui::Status status = m_sel->status();
+		return status == zypp::ui::S_AutoInstall || status == zypp::ui::S_AutoUpdate ||
+			   status == zypp::ui::S_AutoDel;
+	}
+
+	virtual void install (const Ypp::Package::Version *version)
+	{
+		if (isLocked())
+			return;
+		if (!m_sel->hasLicenceConfirmed())
+		{
+			const std::string &license = m_sel->candidateObj()->licenseToConfirm();
+			if (!license.empty())
+				if (!ypp->impl->acceptLicense (m_parent, license))
+					return;
+			m_sel->setLicenceConfirmed();
+		}
+
+		zypp::ui::Status status = m_sel->status();
+		switch (status) {
+			// not applicable
+			case zypp::ui::S_Protected:
+			case zypp::ui::S_Taboo:
+			case zypp::ui::S_Install:
+			case zypp::ui::S_Update:
+				break;
+			// undo
+			case zypp::ui::S_Del:
+				status = zypp::ui::S_KeepInstalled;
+				break;
+			// nothing to do about it
+			case zypp::ui::S_AutoDel:
+				break;
+			// action
+			case zypp::ui::S_NoInst:
+			case zypp::ui::S_AutoInstall:
+				status = zypp::ui::S_Install;
+				break;
+			case zypp::ui::S_KeepInstalled:
+			case zypp::ui::S_AutoUpdate:
+				status = zypp::ui::S_Update;
+				break;
+		}
+
+		m_sel->setStatus (status);
+		if (toInstall (NULL)) {
+			if (!version) {
+				version = getAvailableVersion (0);
+				const Ypp::Repository *repo = ypp->favoriteRepository();
+				if (repo && fromRepository (repo))
+					version = fromRepository (repo);
+			}
+			ZyppObject candidate = (ZyppObjectPtr) version->impl;
+			if (!m_sel->setCandidate (candidate)) {
+				yuiWarning () << "Error: Could not set package '" << name() << "' candidate to '" << version->number << "'\n";
+				return;
+			}
+		}
+	}
+
+	virtual void remove()
+	{
+		zypp::ui::Status status = m_sel->status();
+		switch (status) {
+			// not applicable
+			case zypp::ui::S_Protected:
+			case zypp::ui::S_Taboo:
+			case zypp::ui::S_NoInst:
+			case zypp::ui::S_Del:
+				break;
+			// undo
+			case zypp::ui::S_Install:
+				status = zypp::ui::S_NoInst;
+				break;
+			// nothing to do about it
+			case zypp::ui::S_AutoInstall:
+			case zypp::ui::S_AutoUpdate:
+				break;
+			case zypp::ui::S_Update:
+				status = zypp::ui::S_KeepInstalled;
+				break;
+			// action
+			case zypp::ui::S_KeepInstalled:
+			case zypp::ui::S_AutoDel:
+				status = zypp::ui::S_Del;
+				break;
+		}
+
+		m_sel->setStatus (status);
+	}
+
+	virtual void undo()
+	{
+		zypp::ui::Status status = m_sel->status();
+		switch (status) {
+			// not applicable
+			case zypp::ui::S_Protected:
+			case zypp::ui::S_Taboo:
+			case zypp::ui::S_NoInst:
+			case zypp::ui::S_KeepInstalled:
+				break;
+
+			// undo
+			case zypp::ui::S_Install:
+				status = zypp::ui::S_NoInst;
+				break;
+			case zypp::ui::S_Update:
+			case zypp::ui::S_Del:
+				status = zypp::ui::S_KeepInstalled;
+				break;
+
+			// for auto status, undo them by locking them
+			case zypp::ui::S_AutoInstall:
+				status = zypp::ui::S_Taboo;
+				break;
+			case zypp::ui::S_AutoUpdate:
+			case zypp::ui::S_AutoDel:
+				status = zypp::ui::S_Protected;
+				break;
+		}
+
+		m_sel->setStatus (status);
+	}
+
+	virtual bool canLock() { return true; }
+
+	virtual void lock (bool lock)
+	{
+		undo();
+
+		zypp::ui::Status status;
+		if (lock)
+			status = isInstalled() ? zypp::ui::S_Protected : zypp::ui::S_Taboo;
+		else
+			status = isInstalled() ? zypp::ui::S_KeepInstalled : zypp::ui::S_NoInst;
+
+		m_sel->setStatus (status);
+	}
+
+	static Ypp::Package::Version *constructVersion (ZyppObject object)
+	{
+		Ypp::Package::Version *version = new Ypp::Package::Version();
+		version->number = object->edition().asString();
+		version->arch = object->arch().asString();
+		version->repo = ypp->impl->getRepository (object->repoInfo().alias());
+		version->cmp = 0;
+		version->impl = (void *) get_pointer (object);
+		return version;
+	}
+
+	virtual const Ypp::Package::Version *getInstalledVersion()
+	{
+		if (!m_installedVersion) {
+			const ZyppObject installedObj = m_sel->installedObj();
+			assert (installedObj != NULL);
+			m_installedVersion = constructVersion (installedObj);
+		}
+		return m_installedVersion;
+	}
+
+	virtual const Ypp::Package::Version *getAvailableVersion (int nb)
+	{
+		if (!m_availableVersions) {
+			const ZyppObject installedObj = m_sel->installedObj();
+			for (zypp::ui::Selectable::available_iterator it = m_sel->availableBegin();
+				 it != m_sel->availableEnd(); it++) {
+				Ypp::Package::Version *version = constructVersion (*it);
+				if (installedObj)
+					version->cmp = zypp::Edition::compare ((*it)->edition(), installedObj->edition());
+				m_availableVersions = g_slist_append (m_availableVersions, version);
+			}
+			struct inner {
+				static gint version_compare (gconstpointer pa, gconstpointer pb)
+				{
+					ZyppObjectPtr a = (ZyppObjectPtr) ((Ypp::Package::Version *) pa)->impl;
+					ZyppObjectPtr b = (ZyppObjectPtr) ((Ypp::Package::Version *) pb)->impl;
+					// swapped arguments, as we want them sorted from newer to older
+					return zypp::Edition::compare (b->edition(), a->edition());
+				}
+			};
+			m_availableVersions = g_slist_sort (m_availableVersions, inner::version_compare);
+		}
+		return (Ypp::Package::Version *) g_slist_nth_data (m_availableVersions, nb);
+	}
+
+	virtual const Ypp::Package::Version *fromRepository (const Ypp::Repository *repo)
+	{
+		for (int i = 0; getAvailableVersion (i); i++)
+			if (getAvailableVersion (i)->repo == repo)
+				return getAvailableVersion (i);
+		return NULL;
+	}
+};
+
+struct PackageLang : public Ypp::Package::Impl
+{
+zypp::Locale m_locale;
+GSList *m_containsPackages;
+bool m_installed;
+
+	PackageLang (Ypp::Package::Type type, const zypp::Locale &zyppLang)
+	: Impl (type), m_locale (zyppLang), m_containsPackages (NULL)
+	{
+		m_installed = isSetInstalled();
+	}
+
+	~PackageLang()
+	{
+		g_slist_free (m_containsPackages);
+	}
+
+	virtual std::string name()
+	{ return m_locale.name(); }
+	virtual std::string summary()
+	{ return ""; }
+
+	GSList *getContainedPackages()
+	{
+		if (!m_containsPackages) {
+			zypp::sat::LocaleSupport myLocale (m_locale);
+			for_( it, myLocale.selectableBegin(), myLocale.selectableEnd() ) {
+				m_containsPackages = g_slist_append (m_containsPackages, get_pointer (*it));
+			}
+        }
+        return m_containsPackages;
+	}
+
+	virtual bool containsPackage (const Ypp::Package *package)
+	{
+		PackageSel *sel = (PackageSel *) package->impl;
+		return g_slist_find (getContainedPackages(), get_pointer (sel->m_sel)) != NULL;
+	}
+
+	virtual std::string description (bool rich)
+	{
+		std::string text = m_locale.name() + " - " + m_locale.code();
+		int installed = 0, total = 0;
+		for (GSList *i = getContainedPackages(); i; i = i->next) {
+			ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
+			if (!sel->installedEmpty())
+				installed++;
+			total++;
+		}
+		std::ostringstream stream;
+		stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
+		text += stream.str();
+		return text;
+	}
+
+	bool isSetInstalled()
+	{ return zypp::getZYpp()->pool().isRequestedLocale (m_locale); }
+
+	virtual bool isInstalled()
+	{ return m_installed; }
+	virtual bool hasUpgrade()
+	{ return false; }
+	virtual bool isLocked()
+	{ return false; }
+
+	virtual bool toInstall (const Ypp::Package::Version **repo)
+	{ return !m_installed && isSetInstalled(); }
+	virtual bool toRemove()
+	{ return m_installed && !isSetInstalled(); }
+	virtual bool toModify()
+	{ return m_installed != isSetInstalled(); }
+	virtual bool isAuto()
+	{ return false; }
+
+	virtual void install (const Ypp::Package::Version *repo)
+	{
+		if (!isSetInstalled())
+			zypp::getZYpp()->pool().addRequestedLocale (m_locale);
+	}
+
+	virtual void remove()
+	{
+		if (isSetInstalled())
+			zypp::getZYpp()->pool().eraseRequestedLocale (m_locale);
+	}
+
+	virtual void undo()
+	{
+		if (isSetInstalled())
+			remove();
+		else if (m_installed)
+			install (0);
+	}
+
+	virtual bool canLock() { return false; }
+	virtual void lock (bool lock) {}
+};
+
+// Packages Factory
+GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
+{
+	if (!packages[type]) {
+		GSList *pool = NULL;
+		struct inner {
+			static gint compare (gconstpointer _a, gconstpointer _b)
+			{
+				Package *a = (Package *) _a;
+				Package *b = (Package *) _b;
+				return strcasecmp (a->name().c_str(), b->name().c_str());
 			}
 		};
-		impl->availableVersions = g_slist_sort (impl->availableVersions,
-		                                        inner::version_compare);
-#endif
-	}
-	return (Version *) g_slist_nth_data (impl->availableVersions, nb);
-}
 
-const Ypp::Package::Version *Ypp::Package::fromRepository (const Ypp::Repository *repo)
-{
-	for (int i = 0; getAvailableVersion (i); i++)
-		if (getAvailableVersion (i)->repo == repo)
-			return getAvailableVersion (i);
-	return NULL;
+		if (type == Package::LANGUAGE_TYPE) {
+			zypp::LocaleSet locales = zypp::getZYpp()->pool().getAvailableLocales();
+			for (zypp::LocaleSet::const_iterator it = locales.begin();
+			     it != locales.end(); it++) {
+				Package *package = new Package (new PackageLang (type, *it));
+				pool = g_slist_prepend (pool, package);
+			}
+		}
+		else {  // Pool Selectables
+			ZyppPool::const_iterator it, end;
+			switch (type) {
+				case Package::PACKAGE_TYPE:
+					it = zyppPool().byKindBegin <zypp::Package>();
+					end = zyppPool().byKindEnd <zypp::Package>();
+					break;
+				case Package::PATTERN_TYPE:
+					it = zyppPool().byKindBegin <zypp::Pattern>();
+					end = zyppPool().byKindEnd <zypp::Pattern>();
+					break;
+				case Package::PATCH_TYPE:
+					it = zyppPool().byKindBegin <zypp::Patch>();
+					end = zyppPool().byKindEnd <zypp::Patch>();
+					break;
+				default:
+					break;
+			}
+			for (; it != end; it++) {
+				Ypp::Node *category = 0, *category2 = 0;
+				ZyppSelectable sel = *it;
+				ZyppObject object = sel->theObj();
+
+				// don't show if installed broken and there is no available
+				if (!sel->candidateObj()) {
+					if (!sel->installedEmpty() && sel->installedObj().isBroken())
+						continue;
+				}
+
+				// add category and test visibility
+				switch (type) {
+					case Package::PACKAGE_TYPE:
+					{
+						ZyppPackage zpackage = tryCastToZyppPkg (object);
+						if (!zpackage)
+							continue;
+						category = addCategory (type, zpackage->group());
+						category2 = addCategory2 (type, zpackage->group());
+						break;
+					}
+					case Package::PATTERN_TYPE:
+					{
+						ZyppPattern pattern = tryCastToZyppPattern (object);
+						if (!pattern || !pattern->userVisible())
+							continue;
+						category = addCategory (type, pattern->category());
+						break;
+					}
+					case Package::PATCH_TYPE:
+					{
+						ZyppPatch patch = tryCastToZyppPatch (object);
+						if (!patch)
+							continue;
+						if (sel->candidateObj()) {
+							if (!sel->candidateObj().isRelevant())
+								continue;
+							if (sel->installedEmpty() && sel->candidateObj().isSatisfied())
+								continue;
+						}
+					continue;
+						category = addCategory (type, patch->category());
+						break;
+					}
+					default:
+						break;
+				}
+
+				Package *package = new Package (new PackageSel (type, sel, category, category2));
+				pool = g_slist_prepend (pool, package);
+			}
+		}
+		// its faster to prepend then reverse, as we avoid iterating for each append
+		// lets reverse before sorting, as they are somewhat sorted already
+		pool = g_slist_reverse (pool);
+		// a sort merge. Don't use g_slist_insert_sorted() -- its linear
+		pool = g_slist_sort (pool, inner::compare);
+		packages[type] = pool;
+		polishCategories (type);
+	}
+	return packages[type];
 }
 
 //** Query
@@ -920,7 +1179,7 @@ struct Ypp::QueryPool::Query::Impl
 	Keys <const Repository *> repositories;
 	Key <bool> isInstalled;
 	Key <bool> hasUpgrade;
-	Key <bool> isModified;
+	Key <bool> toModify;
 	Key <bool> isRecommended;
 	Key <bool> isSuggested;
 	Ypp::Package *highlight;
@@ -944,8 +1203,8 @@ struct Ypp::QueryPool::Query::Impl
 				status_match = hasUpgrade.is (package->hasUpgrade());
 			match = status_match;
 		}
-		if (match && isModified.defined)
-			match = isModified.is (package->isModified());
+		if (match && toModify.defined)
+			match = toModify.is (package->toModify());
 		if (match && isRecommended.defined)
 			match = isRecommended.is (package->isRecommended());
 		if (match && isSuggested.defined)
@@ -1070,8 +1329,8 @@ void Ypp::QueryPool::Query::setIsInstalled (bool value)
 { impl->isInstalled.set (value); }
 void Ypp::QueryPool::Query::setHasUpgrade (bool value)
 { impl->hasUpgrade.set (value); }
-void Ypp::QueryPool::Query::setIsModified (bool value)
-{ impl->isModified.set (value); }
+void Ypp::QueryPool::Query::setToModify (bool value)
+{ impl->toModify.set (value); }
 void Ypp::QueryPool::Query::setIsRecommended (bool value)
 { impl->isRecommended.set (value); }
 void Ypp::QueryPool::Query::setIsSuggested (bool value)
@@ -1218,6 +1477,8 @@ private:
 		for (int t = 0; t < Ypp::Package::TOTAL_TYPES; t++) {
 			if (!query->impl->types.is ((Ypp::Package::Type) t))
 				continue;
+			if (!query->impl->types.defined && t != Ypp::Package::PACKAGE_TYPE)
+				continue;
 			GSList *entire_pool = ypp->impl->getPackages ((Ypp::Package::Type) t);
 			for (GSList *i = entire_pool; i; i = i->next) {
 				Package *pkg = (Package *) i->data;
@@ -1280,15 +1541,21 @@ private:
 	void buildPool (GNode *root)  // at construction
 	{
 		GSList *packages = ypp->impl->getPackages (type);
-		for (Ypp::Node *i = ypp->getFirstCategory (type); i; i = i->next()) {
-			GNode *cat = g_node_append_data (root, i);
+		Ypp::Node *node = NULL;  // null for first round
+		GNode *cat = root;
+		do {
 			for (GSList *p = packages; p; p = p->next) {
 				Ypp::Package *pkg = (Ypp::Package *) p->data;
-				if (pkg->category() == i) {
+				if (pkg->category() == node)
 					g_node_append_data (cat, pkg);
-				}
 			}
-		}
+			if (node)
+				node = node->next();
+			else
+				node = ypp->getFirstCategory (type);
+			if (node)
+				cat = g_node_append_data (root, node);
+		} while (node);
 	}
 };
 
@@ -1413,15 +1680,15 @@ Ypp::Package *Ypp::findPackage (Ypp::Package::Type type, const std::string &name
 
 Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 {
-	if (!impl->getPackages (type))
-		return NULL;
-	return impl->categories[type]->getFirst();
+	impl->getPackages (type);
+	if (impl->categories[type] != 0)
+		return impl->categories[type]->getFirst();
+	return NULL;
 }
 
 Ypp::Node *Ypp::getFirstCategory2 (Ypp::Package::Type type)
 {
-	if (!impl->getPackages (type))
-		return NULL;
+	impl->getPackages (type);
 	return impl->categories2->getFirst();
 }
 
@@ -1507,12 +1774,13 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 		GSList *pool = ypp->impl->getPackages (type);
 		for (GSList *i = pool; i; i = i->next) {
 			Package *pkg = (Package *) i->data;
+			PackageSel *sel = (PackageSel *) pkg->impl;
 			Ypp::Node *ynode = pkg->category();
 			if (ynode->child()) {
 				GNode *node = (GNode *) ynode->impl;
 				GNode *last = g_node_last_child (node);
 				if (((Ypp::Node *) last->data)->name == "Other")
-					pkg->impl->category = (Ypp::Node *) last->data;
+					sel->m_category = (Ypp::Node *) last->data;
 				else {
 					// must create a "Other" node
 					Ypp::Node *yN = new Ypp::Node();
@@ -1521,7 +1789,7 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 					yN->icon = NULL;
 					yN->impl = (void *) n;
 					g_node_insert_before (node, NULL, n);
-					pkg->impl->category = yN;
+					sel->m_category = yN;
 				}
 			}
 		}
@@ -1714,7 +1982,8 @@ void Ypp::Impl::finishTransactions()
 		std::list <std::pair <const Package *, const Repository *> > confirmPkgs;
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
-			if (pkg->impl->isModified()) {
+			PackageSel *sel = (PackageSel *) pkg->impl;
+			if (sel->isModified()) {
 				const Ypp::Package::Version *version = 0;
 				if (pkg->toInstall (&version)) {
 					if (version->repo != repo) {
@@ -1737,10 +2006,11 @@ void Ypp::Impl::finishTransactions()
 		// resolver won't tell us what changed -- tell pools about Auto packages
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
-			if (pkg->impl->isModified()) {
+			PackageSel *sel = (PackageSel *) pkg->impl;
+			if (sel->isModified()) {
 				for (GSList *i = pkg_listeners; i; i = i->next)
 					((PkgListener *) i->data)->packageModified (pkg);
-				pkg->impl->setUnmodified();
+				sel->setUnmodified();
 			}
 		}
 	}
@@ -1752,110 +2022,12 @@ void Ypp::Impl::finishTransactions()
 		disk->impl->packageModified();
 }
 
-GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
-{
-	if (!packages[type]) {
-		GSList *pool = NULL;
-		struct inner {
-			static gint compare (gconstpointer _a, gconstpointer _b)
-			{
-				Package *a = (Package *) _a;
-				Package *b = (Package *) _b;
-				return strcasecmp (a->name().c_str(), b->name().c_str());
-			}
-		};
-
-		ZyppPool::const_iterator it, end;
-		switch (type) {
-			case Package::PACKAGE_TYPE:
-				it = zyppPool().byKindBegin <zypp::Package>();
-				end = zyppPool().byKindEnd <zypp::Package>();
-				break;
-			case Package::PATTERN_TYPE:
-				it = zyppPool().byKindBegin <zypp::Pattern>();
-				end = zyppPool().byKindEnd <zypp::Pattern>();
-				break;
-#if 0
-			case Package::LANGUAGE_TYPE:
-				it = zyppPool().byKindBegin <zypp::Language>();
-				end = zyppPool().byKindEnd <zypp::Language>();
-				break;
-#endif
-			case Package::PATCH_TYPE:
-				it = zyppPool().byKindBegin <zypp::Patch>();
-				end = zyppPool().byKindEnd <zypp::Patch>();
-				break;
-			default:
-				break;
-		}
-		for (; it != end; it++) {
-			Ypp::Node *category = 0, *category2 = 0;
-			ZyppSelectable sel = *it;
-			ZyppObject object = sel->theObj();
-
-			// don't show if installed broken and there is no available
-			if (!sel->candidateObj()) {
-				if (!sel->installedEmpty() && sel->installedObj().isBroken())
-					continue;
-			}
-			else if (sel->installedEmpty() && sel->candidateObj().isSatisfied())
-				continue;
-
-			// add category and test visibility
-			switch (type) {
-				case Package::PACKAGE_TYPE:
-				{
-					ZyppPackage zpackage = tryCastToZyppPkg (object);
-					if (!zpackage)
-						continue;
-					category = addCategory (type, zpackage->group());
-					category2 = addCategory2 (type, zpackage->group());
-					break;
-				}
-				case Package::PATTERN_TYPE:
-				{
-					ZyppPattern pattern = tryCastToZyppPattern (object);
-					if (!pattern || !pattern->userVisible())
-						continue;
-					category = addCategory (type, pattern->category());
-					break;
-				}
-				case Package::PATCH_TYPE:
-				{
-					ZyppPatch patch = tryCastToZyppPatch (object);
-					if (!patch)
-						continue;
-					if (sel->candidateObj() && !sel->candidateObj().isRelevant())
-						continue;
-					category = addCategory (type, patch->category());
-					break;
-				}
-				default:
-					break;
-			}
-
-			Package *package = new Package (new Package::Impl (type, sel, category, category2));
-			pool = g_slist_prepend (pool, package);
-		}
-		// its faster to prepend then reverse, as we avoid iterating for each append
-		// lets reverse before sorting, as they are somewhat sorted already
-		pool = g_slist_reverse (pool);
-		// a sort merge. Don't use g_slist_insert_sorted() -- its linear
-		pool = g_slist_sort (pool, inner::compare);
-		packages[type] = pool;
-
-		polishCategories (type);
-	}
-	return packages[type];
-}
-
 Ypp::Ypp()
 {
 	impl = new Impl();
 
     zyppPool().saveState<zypp::Package  >();
     zyppPool().saveState<zypp::Pattern  >();
-   // zyppPool().saveState<zypp::Language >();
     zyppPool().saveState<zypp::Patch    >();
 }
 
@@ -1906,7 +2078,6 @@ bool Ypp::isModified()
 {
 	return zyppPool().diffState<zypp::Package  >() ||
 	       zyppPool().diffState<zypp::Pattern  >() ||
-	     //  zyppPool().diffState<zypp::Language >() ||
 	       zyppPool().diffState<zypp::Patch    >();
 }
 

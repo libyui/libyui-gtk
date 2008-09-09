@@ -1,3 +1,20 @@
+2008-09-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc/.h: added support for Languages. Made Ypp::Package a
+	proxy class for Ypp::Package::Impl which is now subclassed into PackageSel,
+	for Selectable objects, and PackageLang for locales.
+	* src/YGPackageSelector.cc: added Language option.
+
+	* src/yzyppwrapper.cc: fixed Pattern installed status.
+	* src/YGPackageSelector.cc: got rid of patterns remove button.
+
+	* src/YGPackageSelector.cc: clear search entry on UI change.
+	* src/ygtkfindentry.c: bug fix: not syncing icon properly when entry
+	text was deleted by instruction as an insert is triggered.
+
+	* src/YGUI.cc: redirect GTK log messages to libyui system.
+	* src/ygtkrichtext.c: enable html parsing warnings that go to libyui.
+
 2008-09-08  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.18

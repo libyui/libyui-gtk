@@ -29,7 +29,6 @@ static void errorMsg (const char *msg)
 
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
-//#define PRINT_EVENTS
 
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
@@ -37,12 +36,6 @@ YGUI::YGUI (bool with_threads)
 	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
-
-	// debug:
-#if 0
-	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
-		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
-#endif
 
     YGUI::setTextdomain( TEXTDOMAIN );
 
@@ -63,13 +56,32 @@ void YGUI::setTextdomain( const char * domain )
     }
 }
 
+static void print_log (const gchar *domain, GLogLevelFlags level, const gchar *message, void *pData)
+{
+	YUILogLevel_t ylevel = YUI_LOG_MILESTONE;
+	switch (level) {
+		case G_LOG_LEVEL_ERROR:
+		case G_LOG_LEVEL_CRITICAL:
+			ylevel = YUI_LOG_ERROR;
+			break;
+		case G_LOG_LEVEL_WARNING:
+			ylevel = YUI_LOG_WARNING;
+			break;
+		case G_LOG_LEVEL_DEBUG:
+			ylevel = YUI_LOG_DEBUG;
+			break;
+		case G_LOG_LEVEL_MESSAGE:
+		case G_LOG_LEVEL_INFO:
+		default:
+			break;
+	}
+	YUILog::instance()->log (ylevel, domain ? domain : "yast2-gtk", "", 0, "") << message;
+}
+
 void YGUI::checkInit()
 {
 	if (m_done_init)
 		return;
-#ifdef PRINT_EVENTS
-fprintf (stderr, "init()\n");
-#endif
 	m_done_init = true;
 
 	// retrieve command line args from /proc/<pid>/cmdline
@@ -114,6 +126,15 @@ fprintf (stderr, "init()\n");
 	}
 
 	gtk_init (&argc, &argv);
+
+	// send logs to libyui logs
+	g_log_set_handler ("Gtk", G_LOG_LEVEL_MASK, print_log, NULL);
+	g_log_set_handler ("Pango", G_LOG_LEVEL_MASK, print_log, NULL);
+	g_log_set_handler (NULL, G_LOG_LEVEL_MASK, print_log, NULL);
+#if 0  // to crash right away to get a stack trace
+	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
+		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
+#endif
 }
 
 static inline GdkScreen *getScreen ()
@@ -133,9 +154,6 @@ static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
 void YGUI::idleLoop (int fd_ycp)
 {
 	IMPL
-#ifdef PRINT_EVENTS
-fprintf (stderr, "idleLoop()\n");
-#endif
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -154,9 +172,6 @@ fprintf (stderr, "idleLoop()\n");
 
 	g_source_remove (watch_tag);
 	g_io_channel_unref (wakeup);
-#ifdef PRINT_EVENTS
-fprintf (stderr, "no more idle\n");
-#endif
 }
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
@@ -171,9 +186,6 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
 	IMPL
-#ifdef PRINT_EVENTS
-fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
-#endif
 	checkInit();
 	if (!YDialog::currentDialog (false))
 		return NULL;
@@ -203,10 +215,6 @@ fprintf (stderr, "%s()\n", block ? "userInput" : "pollInput");
 
 	if (block)  // if YCP keeps working for more than X time, set busy cursor
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
-
-#ifdef PRINT_EVENTS
-fprintf (stderr, "returning event: %s\n", !event ? "(none)" : YEvent::toString (event->eventType()));
-#endif
 	return event;
 }
 

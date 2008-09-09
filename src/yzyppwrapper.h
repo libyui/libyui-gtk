@@ -41,7 +41,7 @@ struct Ypp
 	// Entries
 	struct Package {
 		enum Type {
-			PACKAGE_TYPE, PATTERN_TYPE, PATCH_TYPE, TOTAL_TYPES
+			PACKAGE_TYPE, PATTERN_TYPE, LANGUAGE_TYPE, PATCH_TYPE, TOTAL_TYPES
 		};
 
 		Type type() const;
@@ -49,7 +49,9 @@ struct Ypp
 		const std::string &summary();
 		Node *category();
 		Node *category2();
-		bool fromCollection (const Ypp::Package *collection) const;
+		bool containsPackage (const Ypp::Package *package) const;
+		bool fromCollection (const Ypp::Package *collection) const
+		{ return collection->containsPackage (this); }
 
 		std::string description (bool rich);
 		std::string filelist (bool rich);
@@ -70,7 +72,7 @@ struct Ypp
 		};
 		const Version *getInstalledVersion();
 		const Version *getAvailableVersion (int nb);
-		  // convinience -- null if not:
+		  // convenience -- null if not:
 		const Version *fromRepository (const Repository *repo);
 
 		bool isInstalled();
@@ -79,13 +81,14 @@ struct Ypp
 
 		bool toInstall (const Version **repo = 0);
 		bool toRemove();
-		bool isModified();
+		bool toModify();
 		bool isAuto(); /* installing/removing cause of dependency */
 
-		void install (const Version *repo);  // if installed, will re-install
-		                                     // null for most recent version
+		void install (const Version *version);  // if installed, will re-install
+		                                        // null for most recent version
 		void remove();
 		void undo();
+		bool canLock();
 		void lock (bool lock);
 
 		struct Impl;
@@ -144,7 +147,7 @@ struct Ypp
 			void addRepository (const Ypp::Repository *repository);
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
-			void setIsModified (bool modified);
+			void setToModify (bool modify);
 			void setIsRecommended (bool recommended);
 			void setIsSuggested (bool suggested);
 

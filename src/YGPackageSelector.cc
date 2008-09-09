@@ -181,7 +181,7 @@ private:
 				 	if (!version || version->cmp <= 0)
 				 		_allUpgradable = false;
 				 }
-				if ((*it)->isModified()) {
+				if ((*it)->toModify()) {
 					// if modified, can't be locked or unlocked
 					_allLocked = _allUnlocked = false;
 				}
@@ -191,6 +191,8 @@ private:
 					_allUnlocked = false;
 				else
 					_allLocked = false;
+				if (!(*it)->canLock())
+					_allLocked = (_allUnlocked = false);
 			}
 		}
 	}
@@ -829,7 +831,7 @@ public:
 		gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_box), GTK_POS_RIGHT);
 
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-		query->setIsModified (true);
+		query->setToModify (true);
 		if (update_mode)
 			query->addType (Ypp::Package::PATCH_TYPE);
 		m_pool = new Ypp::QueryPool (query);
@@ -1244,20 +1246,14 @@ private:
 			m_view->setListener (this);
 
 			// control buttons
-			m_buttons_box = gtk_hbox_new (TRUE, 2);
+			m_buttons_box = gtk_alignment_new (0, 0, 0, 0);
 			GtkWidget *image, *button;
 			button = gtk_button_new_with_label (_("Install All"));
 			image = gtk_image_new_from_stock (GTK_STOCK_SAVE, GTK_ICON_SIZE_BUTTON);
 			gtk_button_set_image (GTK_BUTTON (button), image);
 			g_signal_connect (G_OBJECT (button), "clicked",
 			                  G_CALLBACK (install_cb), this);
-			gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
-			button = gtk_button_new_with_label (_("Remove All"));
-			image = gtk_image_new_from_stock (GTK_STOCK_DELETE, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (button), image);
-			g_signal_connect (G_OBJECT (button), "clicked",
-			                  G_CALLBACK (remove_cb), this);
-			gtk_box_pack_start (GTK_BOX (m_buttons_box), button, TRUE, TRUE, 0);
+			gtk_container_add (GTK_CONTAINER (m_buttons_box), button);
 			gtk_widget_set_sensitive (m_buttons_box, FALSE);
 
 			// layout
@@ -1302,7 +1298,7 @@ private:
 	Collections::Listener *m_listener;
 
 public:
-	enum Type { GROUPS_TYPE, PATTERNS_TYPE, REPOS_TYPE };
+	enum Type { GROUPS_TYPE, PATTERNS_TYPE, LANGUAGES_TYPE, REPOS_TYPE };
 
 	Collections (Collections::Listener *listener)
 	: m_view (NULL), m_listener (listener)
@@ -1331,6 +1327,9 @@ public:
 				break;
 			case PATTERNS_TYPE:
 				m_view = new Pool (m_listener, Ypp::Package::PATTERN_TYPE);
+				break;
+			case LANGUAGES_TYPE:
+				m_view = new Pool (m_listener, Ypp::Package::LANGUAGE_TYPE);
 				break;
 			default:
 				m_view = new Repositories (m_listener);
@@ -1432,6 +1431,7 @@ private:
 	Listener *m_listener;
 	guint timeout_id;
 	bool m_updateMode, m_enableRepoMgr;
+	bool m_nameChanged;  // clear name field if some other changes
 
 public:
 	GtkWidget *getCollectionWidget() { return m_collection->getWidget(); }
@@ -1441,7 +1441,7 @@ public:
 
 	Filters (bool updateMode, bool enableRepoMgr)
 	: m_listener (NULL), timeout_id (0), m_updateMode (updateMode),
-	  m_enableRepoMgr (enableRepoMgr)
+	  m_enableRepoMgr (enableRepoMgr), 	m_nameChanged (false)
 	{
 		m_statuses = new StatusButtons (this, updateMode);
 
@@ -1452,7 +1452,7 @@ public:
 			"Further attributes can be included in the criteria by pressing the search icon.\n"
 			"(usage example: \"yast dhcp\" will return yast's dhcpd tool)"));
 		g_signal_connect (G_OBJECT (m_name), "changed",
-		                  G_CALLBACK (field_changed_cb), this);
+		                  G_CALLBACK (name_changed_cb), this);
 
 		struct inner {
 			static void appendCheckItem (GtkWidget *menu, const char *str, bool active,
@@ -1481,6 +1481,7 @@ public:
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
 		}
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Repositories"));
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), 0);
@@ -1507,8 +1508,11 @@ private:
 		pThis->signalChangedDelay();
 	}
 
+	static void name_changed_cb (gpointer widget, Filters *pThis)
+	{ pThis->m_nameChanged = true; pThis->signalChangedDelay(); }
 	static void field_changed_cb (gpointer widget, Filters *pThis)
 	{ pThis->signalChangedDelay(); }
+
 	virtual void collectionChanged()
 	{ signalChanged(); }
 
@@ -1516,6 +1520,15 @@ private:
 	{
 		if (!m_listener) return;
 		busyCursor();
+
+		if (!m_nameChanged && *gtk_entry_get_text (GTK_ENTRY (m_name))) {
+			g_signal_handlers_block_by_func (m_name,
+				(gpointer) name_changed_cb, this);
+			gtk_entry_set_text (GTK_ENTRY (m_name), "");
+			g_signal_handlers_unblock_by_func (m_name,
+				(gpointer) name_changed_cb, this);
+		}
+		m_nameChanged = false;
 
 		// create query
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
