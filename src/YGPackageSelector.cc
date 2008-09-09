@@ -88,6 +88,8 @@ struct PkgList
 	{ init(); return _allLocked;     }
 	bool unlocked() const
 	{ init(); return _allUnlocked;   }
+	bool canLock() const
+	{ init(); return _allCanLock;   }
 
 	void install()  // or upgrade
 	{
@@ -165,10 +167,10 @@ private:
 		if (inited) return; inited = 1;
 		if (packages.empty())
 			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
-				_allLocked = _allUnlocked = false;
+				_allLocked = _allUnlocked = _allCanLock = false;
 		else {
 			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
-				_allLocked = _allUnlocked = true;
+				_allLocked = _allUnlocked = _allCanLock = true;
 			for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
 				 it != packages.end(); it++) {
 				if (!(*it)->isInstalled()) {
@@ -192,14 +194,14 @@ private:
 				else
 					_allLocked = false;
 				if (!(*it)->canLock())
-					_allLocked = (_allUnlocked = false);
+					_allCanLock = false;
 			}
 		}
 	}
 
 	std::list <Ypp::Package *> packages;
 	guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
-	      _allModified : 2, _allLocked : 2, _allUnlocked : 2;
+	      _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2;
 };
 
 #include "icons/pkg-list-mode.xpm"
@@ -356,25 +358,28 @@ Listener *m_listener;
 			};
 
 			PkgList packages = getSelected();
-			bool empty = true, unlocked = packages.unlocked();
+			bool empty = true, canLock = packages.canLock(), unlocked = packages.unlocked();
+			bool locked = !unlocked && canLock;
 			if (packages.notInstalled())
 				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE, 0,
-				                   unlocked, inner::install_cb, this), empty = false;
+				                   !locked, inner::install_cb, this), empty = false;
 			if (packages.upgradable())
 				inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP, 0,
-				                   unlocked, inner::install_cb, this), empty = false;
+				                   !locked, inner::install_cb, this), empty = false;
 			if (packages.installed())
 				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE, 0,
-				                   unlocked, inner::remove_cb, this), empty = false;
+				                   !locked, inner::remove_cb, this), empty = false;
 			if (packages.modified())
 				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO, 0,
 				                   true, inner::undo_cb, this), empty = false;
-			if (packages.locked())
-				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), 0, pkg_unlocked_xpm,
-				                   true, inner::unlock_cb, this), empty = false;
-			if (unlocked)
-				inner::appendItem (menu, _("_Lock"), _(lock_tooltip), 0, pkg_locked_xpm,
-				                   true, inner::lock_cb, this), empty = false;
+			if (canLock) {
+				if (packages.locked())
+					inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), 0, pkg_unlocked_xpm,
+						               true, inner::unlock_cb, this), empty = false;
+				if (unlocked)
+					inner::appendItem (menu, _("_Lock"), _(lock_tooltip), 0, pkg_locked_xpm,
+						               true, inner::lock_cb, this), empty = false;
+			}
 			if (!empty)
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL, 0,

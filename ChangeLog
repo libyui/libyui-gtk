@@ -1,3 +1,8 @@
+2008-09-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: fixed context menu for objects like Language
+	that can't be locked.
+
 2008-09-09  Stanislav Visnovsky  <visnov@novell.com>
 
 	* Version 2.17.0
