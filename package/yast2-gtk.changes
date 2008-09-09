@@ -1,4 +1,20 @@
 -------------------------------------------------------------------
+Tue Sep  9 13:36:25 CEST 2008 - visnov@suse.cz
+
+- Update to 2.17.0
+* added support for Languages in package selector
+* fixed Pattern installed status.
+* got rid of patterns remove button.
+* clear search entry on UI change.
+* bug fix: not syncing icon properly when entry text was deleted by 
+  instruction as an insert is triggered.
+* redirect GTK log messages to libyui system.
+* enable html parsing warnings that go to libyui.
+* fixed repositories query (related to bnc #418781).
+* scaping the URL as some characters (like &) were confusing the Pango parser. 
+  Use the FILE stock icon for the ISO.
+
+-------------------------------------------------------------------
 Mon Sep  8 22:32:59 EDT 2008 - jpr@novell.com
 
 - Update to 2.16.18
