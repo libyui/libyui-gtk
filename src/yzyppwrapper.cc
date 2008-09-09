@@ -1836,16 +1836,18 @@ Ypp::Impl::~Impl()
 const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 {
 	if (!repos) {
-		zypp::RepoManager manager;
-		std::list <zypp::RepoInfo> zrepos = manager.knownRepositories();
-		for (std::list <zypp::RepoInfo>::const_iterator it = zrepos.begin();
-			 it != zrepos.end(); it++) {
+		for (zypp::ResPoolProxy::repository_iterator it = zyppPool().knownRepositoriesBegin();
+		     it != zyppPool().knownRepositoriesEnd(); it++) {
+			const zypp::Repository &zrepo = *it;
+			if (zrepo.isSystemRepo())
+				continue;
+			const zypp::RepoInfo info = zrepo.info();
 			Repository *repo = new Repository();
-			repo->name = it->name();
-			if (!it->baseUrlsEmpty())
-				repo->url = it->baseUrlsBegin()->asString();
-			repo->alias = it->alias();
-			repo->enabled = it->enabled();
+			repo->name = info.name();
+			if (!info.baseUrlsEmpty())
+				repo->url = info.baseUrlsBegin()->asString();
+			repo->alias = info.alias();
+			repo->enabled = info.enabled();
 			repos = g_slist_append (repos, repo);
 		}
 	}

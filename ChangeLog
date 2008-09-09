@@ -15,6 +15,9 @@
 	* src/YGUI.cc: redirect GTK log messages to libyui system.
 	* src/ygtkrichtext.c: enable html parsing warnings that go to libyui.
 
+	* src/yzyppwrapper.cc: fixed repositories query (related to bug 418781).
+	Was using some duplicated zypp API that is dysfunctional it seems.
+
 2008-09-08  JP Rosevear  <jpr@novell.com>
 
 	* Version 2.16.18
