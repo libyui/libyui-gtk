@@ -1,4 +1,24 @@
 -------------------------------------------------------------------
+Mon Sep  8 22:32:59 EDT 2008 - jpr@novell.com
+
+- Update to 2.16.18
+* use "Software Manager" instead of "Package Selector" for 
+  consistency (bnc #418781)
+* follow GNOME HIG for button layout
+* when filtering a repository, the most appropriate version wasn't 
+  the one selected (bnc #418896)
+* catch null package repo (bnc #418781)
+* use title capitalization for group names (bnc #418676)
+* add ATK hooks so the screen reader does its job in pixbuf cell 
+  renderer (bnc #416554)
+* show bugzilla entries in patch description
+* ygtkrichtext glitches (bnc #396692, bnc #404817)
+* fix occasional crash in printer tool
+* show arch for Version and url for Repository
+* new widgets: handlebox, linklabel
+* tabs can now have shortcuts: honor them (bnc #411890)
+
+-------------------------------------------------------------------
 Mon Jul 21 20:36:09 EDT 2008 - jpr@novell.com
 
 - Update to 2.16.17
