@@ -124,6 +124,17 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YButtonBox)
 	YGLAYOUT_SET_SIZE_IMPL (YButtonBox)
+
+    virtual void doLayout (int width, int height)
+    {
+    	YButtonBox::doLayout (width, height);
+    	// align the Help button to the left
+		YPushButton *helpButton = findButton (YHelpButton);
+		if (helpButton) {
+			YButtonBoxMargins m = margins();
+			moveChild (helpButton, m.left, m.top);
+		}
+    }
 };
 
 YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)

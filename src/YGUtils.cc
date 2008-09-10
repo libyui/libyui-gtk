@@ -496,7 +496,8 @@ static void stripEnd (std::string &str, char ch)
 		str.erase (str.size()-1, 1);
 }
 
-bool YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
+bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
+                            const char *fallbackIcon)
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
@@ -527,18 +528,25 @@ bool YGUtils::setStockIcon (const std::string &label, GtkWidget *button)
 
 	std::map <std::string, std::string>::const_iterator it;
 	it = stockMap.find (id);
-	if (it != stockMap.end()) {
-		const std::string &stock_id = it->second;
-		GtkWidget *image = gtk_image_new_from_stock (stock_id.c_str(), GTK_ICON_SIZE_BUTTON);
+	bool foundIcon = it != stockMap.end();
+	const char *icon = NULL;
+	if (foundIcon)
+		icon = it->second.c_str();
+	else if (id.size() < 22)
+		icon = fallbackIcon;
+	if (icon) {
+		GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
 		gtk_button_set_image (GTK_BUTTON (button), image);
-		return true;
 	}
 	else {
-		gtk_button_set_image (GTK_BUTTON (button), NULL);
-		return false;
+		GtkWidget *image = gtk_button_get_image (GTK_BUTTON (button));
+		if (image)
+			gtk_widget_hide (image);
 	}
+	return foundIcon;
 }
 
-gboolean ygutils_setStockIcon (const char *label, GtkWidget *button)
-{ return YGUtils::setStockIcon (label, button); }
+gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
+                               const char *fallbackIcon)
+{ return YGUtils::setStockIcon (button, label, fallbackIcon); }
 

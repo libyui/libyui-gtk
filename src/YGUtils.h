@@ -45,7 +45,8 @@ namespace YGUtils
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
-	bool setStockIcon (const std::string &label, GtkWidget *button);
+	bool setStockIcon (GtkWidget *button, const std::string &label,
+	                   const char *fallbackIcon);
 };
 
 extern "C" {
@@ -60,7 +61,8 @@ extern "C" {
 
 	/* Convert html to xhtml (or at least try) */
 	gchar *ygutils_convert_to_xhtml (const char *instr);
-	gboolean ygutils_setStockIcon (const char *label, GtkWidget *button);
+	gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
+	                               const char *fallbackIcon);
 };
 
 #endif // YGUTILS_H

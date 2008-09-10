@@ -25,7 +25,8 @@
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                     double scale);
-extern gboolean ygutils_setStockIcon (const char *label, GtkWidget *button);
+extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
+                                      const char *fallbackIcon);
 
 //** YGtkHelpDialog
 
@@ -735,34 +736,25 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 	return TRUE;
 }
 
-static void set_stock_icon (GtkWidget *button, const gchar *label,
-                             const gchar *stock_fallback)
-{
-	if (!ygutils_setStockIcon (label, button) && stock_fallback) {
-		GtkWidget *image = gtk_image_new_from_stock (stock_fallback, GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (button), image);
-	}
-}
-
 void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_abort_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_abort_button);
-	set_stock_icon (wizard->m_abort_button, text, GTK_STOCK_CANCEL);
+	ygutils_setStockIcon (wizard->m_abort_button, text, GTK_STOCK_CANCEL);
 }
 
 void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_back_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_back_button);
-	set_stock_icon (wizard->m_back_button, text, NULL);
+	ygutils_setStockIcon (wizard->m_back_button, text, NULL);
 }
 
 void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text)
 {
 	gtk_button_set_label (GTK_BUTTON (wizard->m_next_button), text);
 	ENABLE_WIDGET_STR (text, wizard->m_next_button);
-	set_stock_icon (wizard->m_next_button, text, GTK_STOCK_APPLY);
+	ygutils_setStockIcon (wizard->m_next_button, text, GTK_STOCK_APPLY);
 }
 
 void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard, const gchar *text)

@@ -29,27 +29,21 @@ public:
 	void setStockIcon (const std::string &label)
 	{
 		if (!m_customIcon) {
-			if (YGUtils::setStockIcon (label, getWidget()))
-				m_labelIcon = true;
-			else {
-				m_labelIcon = false;
-				const char *stock = NULL;
-				switch (role()) {
-					case YOKButton:
-						stock = GTK_STOCK_OK;
-						break;
-					case YApplyButton:
-						stock = GTK_STOCK_APPLY;
-						break;
-					case YCancelButton:
-						stock = GTK_STOCK_CANCEL;
-						break;
-					default:
-						break;
-				}
-				GtkWidget *image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
-				gtk_button_set_image (GTK_BUTTON (getWidget()), image);
+			const char *stock = NULL;
+			switch (role()) {
+				case YOKButton:
+					stock = GTK_STOCK_OK;
+					break;
+				case YApplyButton:
+					stock = GTK_STOCK_APPLY;
+					break;
+				case YCancelButton:
+					stock = GTK_STOCK_CANCEL;
+					break;
+				default:
+					break;
 			}
+			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, stock);
 		}
 	}
 
