@@ -14,6 +14,8 @@
 	* src/YGLayout.cc: libyui Gnome rules align the Help button to the right.
 	Make it align to the left.
 
+	* src/YGLayout.cc: digress last change. Stefan is doing that in libyui now.
+
 2008-09-09  Stanislav Visnovsky  <visnov@novell.com>
 
 	* Version 2.17.0
