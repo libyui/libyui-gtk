@@ -772,7 +772,7 @@ class ChangesPane : public Ypp::Pool::Listener
 					action = _("install");
 			}
 			else
-				action = _("remove");
+				action = _("Remove");
 			text = action + " " + package->name();
 			if (package->isAuto()) {
 				text = "\t" + text;
@@ -2728,7 +2728,7 @@ protected:
 			GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE, "%s",
 			_("Dependencies from Filtered Repositories"));
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
-			_("The following packages are necessary dependencies that are not provided "
+			_("The following packages have necessary dependencies that are not provided "
 			  "by the filtered repository. Install them?"));
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog),
 			GTK_STOCK_NO, GTK_RESPONSE_NO,
@@ -2854,7 +2854,7 @@ protected:
 							YGUI::ui()->askSaveLogs();
 				    }
 				    else {
-				    	msg = _( "Failed to create dependency resolver test case.\n"
+				    	msg = _("Failed to create dependency resolver test case.\n"
 							"Please check disk space and permissions for");
 						msg += " <tt>";
 						msg += dirname;
