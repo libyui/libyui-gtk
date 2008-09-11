@@ -1,9 +1,11 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
+
 #include <config.h>
 #include "YGUI.h"
 #include "YGDialog.h"
+#include <YDialogSpy.h>
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 
@@ -223,8 +225,7 @@ private:
 				    system ("/usr/bin/xterm &");
 				    return TRUE;
 				case GDK_T:
-				    dumpYastTree (pThis->getChild());
-				    dumpGtkTree (pThis->m_widget);
+				    dumpTree (pThis->getChild());
 				    return TRUE;
 				case GDK_H:
 				    dumpYastHtml (pThis->getChild());
@@ -239,6 +240,11 @@ private:
 				        explode_timeout = 0;
 				    }
 				    return TRUE;
+				case GDK_Y:
+					yuiMilestone() << "Opening dialog spy" << endl;
+					YDialogSpy::showDialogSpy();
+					//normalCursor();
+					break;
 				default:
 					break;
 		    }
@@ -401,6 +407,76 @@ void YGDialog::setSize (int width, int height)
 		if (!isMainDialog())
 			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
+}
+
+void YGDialog::highlight (YWidget *ywidget)
+{
+	struct inner {
+		static gboolean expose_highlight_cb (GtkWidget *widget,
+		                                      GdkEventExpose *event)
+		{
+			GtkAllocation *alloc = &widget->allocation;
+			int x = alloc->x, y = alloc->y, w = alloc->width, h = alloc->height;
+
+			cairo_t *cr = gdk_cairo_create (widget->window);
+			cairo_rectangle (cr, x, y, w, h);
+			cairo_set_source_rgb (cr, (0xff/255.0), (0x88)/255.0, 0);
+			cairo_fill (cr);
+			cairo_destroy (cr);
+			return FALSE;
+		}
+
+		static bool hasWindow (GtkWidget *widget)
+		{
+			if (!GTK_WIDGET_NO_WINDOW (widget))
+				return true;
+			// widgets like GtkButton add their windows to parent's
+			for (GList *children = gdk_window_peek_children (widget->window);
+				 children; children = children->next) {
+				GdkWindow *child = (GdkWindow *) children->data;
+				gpointer data;
+				gdk_window_get_user_data (child, &data);
+				if ((GtkWidget *) data == widget)
+					return true;
+			}
+			return false;
+		}
+
+	};
+	static YWidget *previousWidget = NULL;
+	if (previousWidget && previousWidget->isValid()) {
+		YGWidget *prev = YGWidget::get (previousWidget);
+		if (prev) {
+			GtkWidget *widget = prev->getWidget();
+			if (inner::hasWindow (widget)) {
+				gtk_widget_modify_bg (widget, GTK_STATE_NORMAL, NULL);
+				gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
+			}
+			else {
+				g_signal_handlers_disconnect_by_func (widget,
+					(gpointer) inner::expose_highlight_cb, NULL);
+				gtk_widget_queue_draw (widget);
+			}
+		}
+	}
+	if (ywidget) {
+		YGWidget *ygwidget = YGWidget::get (ywidget);
+		if (ygwidget) {
+			GtkWidget *widget = ygwidget->getWidget();
+			if (inner::hasWindow (widget)) {
+				GdkColor bg_color = { 0, 0xffff, 0xaaaa, 0 };
+				GdkColor base_color = { 0, 0xffff, 0xeeee, 0 };
+				gtk_widget_modify_bg (widget, GTK_STATE_NORMAL, &bg_color);
+				gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &base_color);
+			}
+			else {
+				g_signal_connect (G_OBJECT (widget), "expose-event",
+				                  G_CALLBACK (inner::expose_highlight_cb), NULL);
+				gtk_widget_queue_draw (widget);
+			}
+		}
+	}
+	previousWidget = ywidget;
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)

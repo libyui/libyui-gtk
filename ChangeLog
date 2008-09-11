@@ -1,3 +1,19 @@
+2008-09-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.h/cc: added support for YDialog::highlight() which
+	coupled with the new Spy debugger allows one to nicely travel through
+	the widgets tree. (checkout with Ctrl+Alt+Shift+Y)
+
+	* src/YGUI.cc: coupled dumpGtk and dumpYast trees into the same
+	dialog. (ctrl+alt+shift+T) Will eventually be obsolete by the new spy
+	tool.
+
+2008-09-11  jsrain
+
+	* src/YGPackageSelector.cc: fixed a typo.
+
+	* release.
+
 2008-09-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed context menu for objects like Language

@@ -83,9 +83,8 @@ public:
 };
 
 // debug helpers.
-void dumpYastTree (YWidget *widget);
+void dumpTree (YWidget *widget);
 void dumpYastHtml (YWidget *widget);
-void dumpGtkTree  (GtkWidget *widget);
 
 #include <YWidgetFactory.h>
 

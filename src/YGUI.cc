@@ -580,40 +580,56 @@ YApplication *YGUI::createApplication()
 
 //** debug dialogs
 
-static GtkTreeView *debug_dialog_create (const char *title, GtkTreeStore *store,
-					 GCallback response_cb, void *response_data)
+//#define SHOW_YAST_VALID_COL
+
+void dumpTree (YWidget *ywidget)
 {
-	GtkWidget *dialog = gtk_dialog_new_with_buttons (title, NULL,
-		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_REFRESH, 1,
-			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 400);
-	g_signal_connect (G_OBJECT (dialog), "response", response_cb, response_data);
-
-	GtkWidget *view = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
-	gtk_tree_view_set_enable_tree_lines (GTK_TREE_VIEW (view), TRUE);
-
-	GtkWidget *scroll_win = gtk_scrolled_window_new (NULL, NULL);
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_win),
-	                                     GTK_SHADOW_IN);
-	gtk_scrolled_window_set_policy  (GTK_SCROLLED_WINDOW (scroll_win),
-	                                 GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-
-	gtk_container_add (GTK_CONTAINER (scroll_win), view);
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll_win);
-
-	g_object_set_data (G_OBJECT (dialog), "view", view);
-	g_object_set_data (G_OBJECT (dialog), "store", store);
-
-	gtk_widget_show_all (dialog);
-
-	return GTK_TREE_VIEW (view);
-}
-
-//#define IS_VALID_COL
-void dumpYastTree (YWidget *widget)
-{
-	IMPL
 	struct inner {
+		static GtkWidget *createYastView (GtkWidget *dialog, YWidget *ywidget)
+		{
+			int cols = 4;
+			#ifdef SHOW_YAST_VALID_COL
+				cols++;
+			#endif
+
+			GtkTreeStore *store;
+			store = gtk_tree_store_new (cols,
+				G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING
+				#ifdef SHOW_VALID_COL
+					, G_TYPE_BOOLEAN
+				#endif
+				);
+			GtkWidget *widget = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
+			GtkTreeView *view = GTK_TREE_VIEW (widget);
+			gtk_tree_view_set_enable_tree_lines (view, TRUE);
+			g_object_unref (G_OBJECT (store));
+
+			g_object_set_data (G_OBJECT (dialog), "yast-view", view);
+			g_object_set_data (G_OBJECT (dialog), "yast-store", store);
+
+			gtk_tree_view_append_column (view,
+				gtk_tree_view_column_new_with_attributes ("Type",
+				gtk_cell_renderer_text_new(), "text", 0, NULL));
+			gtk_tree_view_append_column (view,
+				gtk_tree_view_column_new_with_attributes ("Label",
+				gtk_cell_renderer_text_new(), "text", 1, NULL));
+			gtk_tree_view_column_set_expand (gtk_tree_view_get_column (
+				GTK_TREE_VIEW (view), 1), TRUE);
+			gtk_tree_view_append_column (view,
+				gtk_tree_view_column_new_with_attributes ("Stretch",
+				gtk_cell_renderer_text_new(), "text", 2, NULL));
+			gtk_tree_view_append_column (view,
+				gtk_tree_view_column_new_with_attributes ("Weight",
+				gtk_cell_renderer_text_new(), "text", 3, NULL));
+			#ifdef SHOW_VALID_COL
+				gtk_tree_view_append_column (view,
+					gtk_tree_view_column_new_with_attributes ("Valid",
+					gtk_cell_renderer_toggle_new(), "active", 4, NULL));
+			#endif
+			inner::dumpYastTree (ywidget, store, NULL);
+			gtk_tree_view_expand_all (view);
+			return widget;
+		}
 		static void dumpYastTree (YWidget *widget, GtkTreeStore *store,
 				                  GtkTreeIter *parent_node)
 		{
@@ -641,66 +657,26 @@ void dumpYastTree (YWidget *widget)
 			     it != widget->childrenEnd(); it++)
 				dumpYastTree (*it, store, &iter);
 		}
-		static void dialog_response_cb (GtkDialog *dialog, gint response, YWidget *ywidget)
+		static GtkWidget *createGtkView (GtkWidget *dialog, YWidget *ywidget)
 		{
-			if (response == 1) {
-				GtkTreeStore *store;
-				GtkTreeView *view;
-				store = (GtkTreeStore *) g_object_get_data (G_OBJECT (dialog), "store");
-				view = (GtkTreeView *) g_object_get_data (G_OBJECT (dialog), "view");
-				gtk_tree_store_clear (store);
-				dumpYastTree (ywidget, store, NULL);
-				gtk_tree_view_expand_all (view);
-			}
-			else
-				gtk_widget_destroy (GTK_WIDGET (dialog));
+			GtkTreeStore *store;
+			store = gtk_tree_store_new (1, G_TYPE_STRING);
+
+			GtkWidget *widget = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
+			GtkTreeView *view = GTK_TREE_VIEW (widget);
+			gtk_tree_view_set_enable_tree_lines (view, TRUE);
+			g_object_unref (G_OBJECT (store));
+
+			g_object_set_data (G_OBJECT (dialog), "gtk-view", view);
+			g_object_set_data (G_OBJECT (dialog), "gtk-store", store);
+
+			gtk_tree_view_append_column (view,
+				gtk_tree_view_column_new_with_attributes ("Type",
+				gtk_cell_renderer_text_new(), "text", 0, NULL));
+			inner::dumpGtkTree (YGWidget::get (ywidget)->getLayout(), store, NULL);
+			gtk_tree_view_expand_all (view);
+			return widget;
 		}
-	};
-
-	int cols = 4;
-#ifdef IS_VALID_COL
-	cols++;
-#endif
-	GtkTreeStore *store = gtk_tree_store_new (cols,
-		G_TYPE_STRING, G_TYPE_STRING,
-		G_TYPE_STRING, G_TYPE_STRING
-#ifdef IS_VALID_COL
-		, G_TYPE_BOOLEAN
-#endif
-		);
-
-	GtkTreeView *view;
-	view = debug_dialog_create ("YWidget tree", store,
-				    G_CALLBACK (inner::dialog_response_cb), widget);
-
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Type",
-		gtk_cell_renderer_text_new(), "text", 0, NULL));
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Label",
-		gtk_cell_renderer_text_new(), "text", 1, NULL));
-	gtk_tree_view_column_set_expand (gtk_tree_view_get_column (
-		GTK_TREE_VIEW (view), 1), TRUE);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Stretch",
-		gtk_cell_renderer_text_new(), "text", 2, NULL));
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Weight",
-		gtk_cell_renderer_text_new(), "text", 3, NULL));
-#ifdef IS_VALID_COL
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Valid",
-		gtk_cell_renderer_toggle_new(), "active", 4, NULL));
-#endif
-
-	inner::dumpYastTree (widget, store, NULL);
-	gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
-}
-
-void dumpGtkTree (GtkWidget *widget)
-{
-	IMPL
-	struct inner {
 		static void dumpGtkTree (GtkWidget *widget, GtkTreeStore *store,
 					 GtkTreeIter *parent_node)
 		{
@@ -719,36 +695,56 @@ void dumpGtkTree (GtkWidget *widget)
 				  dumpGtkTree (GTK_WIDGET (l->data), store, &iter);
 			}
 		}
-		/* FIXME: re-factor this & share code [!] */
-		static void dialog_response_cb (GtkDialog *dialog, gint response, GtkWidget *widget)
+		static void dialog_response_cb (GtkDialog *dialog, gint response,
+		                                 YWidget *ywidget)
 		{
 			if (response == 1) {
-				GtkTreeStore *store;
-				GtkTreeView *view;
-				store = (GtkTreeStore *) g_object_get_data (G_OBJECT (dialog), "store");
-				view = (GtkTreeView *) g_object_get_data (G_OBJECT (dialog), "view");
-				gtk_tree_store_clear (store);
-				dumpGtkTree (widget, store, NULL);
-				gtk_tree_view_expand_all (view);
+				GtkTreeStore *yast_store, *gtk_store;
+				GtkTreeView *yast_view, *gtk_view;
+				yast_store = (GtkTreeStore *)
+					g_object_get_data (G_OBJECT (dialog), "yast-store");
+				yast_view = (GtkTreeView *)
+					g_object_get_data (G_OBJECT (dialog), "yast-view");
+				gtk_store = (GtkTreeStore *)
+					g_object_get_data (G_OBJECT (dialog), "gtk-store");
+				gtk_view = (GtkTreeView *)
+					g_object_get_data (G_OBJECT (dialog), "gtk-view");
+				gtk_tree_store_clear (yast_store);
+				gtk_tree_store_clear (gtk_store);
+				dumpYastTree (ywidget, yast_store, NULL);
+				dumpGtkTree (YGWidget::get (ywidget)->getLayout(), gtk_store, NULL);
+				gtk_tree_view_expand_all (yast_view);
+				gtk_tree_view_expand_all (gtk_view);
 			}
 			else
 				gtk_widget_destroy (GTK_WIDGET (dialog));
 		}
+		static void add_page (GtkWidget *notebook, const char *title,
+		                       GtkWidget *view)
+		{
+			GtkWidget *scroll_win = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_win),
+					                             GTK_SHADOW_IN);
+			gtk_scrolled_window_set_policy  (GTK_SCROLLED_WINDOW (scroll_win),
+					                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+			gtk_container_add (GTK_CONTAINER (scroll_win), view);
+			gtk_notebook_append_page (GTK_NOTEBOOK (notebook), scroll_win,
+			                          gtk_label_new (title));
+		}
 	};
 
-	int cols = 1;
-	GtkTreeView *view;
-	GtkTreeStore *store;
+	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Widget Tree", NULL,
+		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_REFRESH, 1,
+			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 400);
+	g_signal_connect (G_OBJECT (dialog), "response",
+	                  G_CALLBACK (inner::dialog_response_cb), ywidget);
 
-	store = gtk_tree_store_new (cols, G_TYPE_STRING);
-	view = debug_dialog_create ("gtk widget tree", store,
-				    G_CALLBACK (inner::dialog_response_cb), widget);
-	gtk_tree_view_append_column (GTK_TREE_VIEW (view),
-		gtk_tree_view_column_new_with_attributes ("Type",
-		gtk_cell_renderer_text_new(), "text", 0, NULL));
-
-	inner::dumpGtkTree (widget, store, NULL);
-	gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
+	GtkWidget *notebook = gtk_notebook_new();
+	inner::add_page (notebook, "Yast", inner::createYastView (dialog, ywidget));
+	inner::add_page (notebook, "GTK", inner::createGtkView (dialog, ywidget));
+	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), notebook);
+	gtk_widget_show_all (dialog);
 }
 
 #include <YRichText.h>

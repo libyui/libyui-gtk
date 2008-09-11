@@ -38,6 +38,8 @@ public:
 	virtual YEvent *waitForEventInternal (int timeout_millisec);
 	virtual YEvent *pollEventInternal();
 
+    virtual void highlight (YWidget * child);
+
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
 };
