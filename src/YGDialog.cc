@@ -5,7 +5,9 @@
 #include <config.h>
 #include "YGUI.h"
 #include "YGDialog.h"
+#if YAST2_VERSION >= 2017006
 #include <YDialogSpy.h>
+#endif
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 
@@ -240,11 +242,13 @@ private:
 				        explode_timeout = 0;
 				    }
 				    return TRUE;
+#if YAST2_VERSION >= 2017006
 				case GDK_Y:
 					yuiMilestone() << "Opening dialog spy" << endl;
 					YDialogSpy::showDialogSpy();
 					//normalCursor();
 					break;
+#endif
 				default:
 					break;
 		    }
