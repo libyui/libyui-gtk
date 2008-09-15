@@ -5,6 +5,9 @@
 	* src/YGTable.cc: expand tree's row when selected, like Qt and as
 	done by FileRoller. Feels much nicer.
 
+	* src/YGPushButton.cc: only enable role code for recent libyuis.
+	Also moved helpButton support to set icon code.
+
 2008-09-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.h/cc: added support for YDialog::highlight() which

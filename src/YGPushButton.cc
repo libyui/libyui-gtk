@@ -30,6 +30,7 @@ public:
 	{
 		if (!m_customIcon) {
 			const char *stock = NULL;
+#if YAST2_VERSION >= 2017006
 			switch (role()) {
 				case YOKButton:
 					stock = GTK_STOCK_OK;
@@ -43,6 +44,9 @@ public:
 				default:
 					break;
 			}
+#endif
+			if (isHelpButton())
+				stock = GTK_STOCK_HELP;
 			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, stock);
 		}
 	}
@@ -57,10 +61,19 @@ public:
 		setStockIcon (str);
 	}
 
+#if YAST2_VERSION >= 2017006
 	virtual void setRole (YButtonRole role)
 	{
 		YPushButton::setRole (role);
 		if (!m_labelIcon && role != YCustomButton)  // to avoid duplications
+			setStockIcon (label());
+	}
+#endif
+
+	virtual void setHelpButton (bool helpButton)
+	{
+		YPushButton::setHelpButton (helpButton);
+		if (!m_labelIcon && helpButton)
 			setStockIcon (label());
 	}
 
@@ -106,16 +119,6 @@ public:
 			else
 				g_signal_connect (G_OBJECT (button), "realize",
 				                  G_CALLBACK (realize_cb), this);
-		}
-	}
-
-	virtual void setHelpButton (bool helpButton)
-	{
-		YPushButton::setHelpButton (helpButton);
-		if (helpButton) {
-			GtkWidget *image;
-			image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (getWidget()), image);
 		}
 	}
 
