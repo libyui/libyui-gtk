@@ -436,7 +436,7 @@ public:
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		                  G_CALLBACK (row_selected_cb), this);
 		g_signal_connect (G_OBJECT (getWidget()), "row-collapsed",
 		                  G_CALLBACK (row_collapsed_cb), this);
 		g_signal_connect (G_OBJECT (getWidget()), "row-expanded",
@@ -497,6 +497,17 @@ public:
 					pThis->expand (&iter);
 			}
 		}
+	}
+	static void row_selected_cb (GtkTreeView *view, YGTree *pThis)
+	{
+		// expand selected row
+		GtkTreeIter iter;
+		if (gtk_tree_selection_get_selected (pThis->getSelection(), NULL, &iter)) {
+			GtkTreePath *path = gtk_tree_model_get_path (pThis->getModel(), &iter);
+			gtk_tree_view_expand_to_path (view, path);
+			gtk_tree_path_free (path);
+		}
+		YGTable::selected_cb (view, pThis);
 	}
 
 	YGWIDGET_IMPL_COMMON

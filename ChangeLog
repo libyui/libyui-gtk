@@ -2,6 +2,9 @@
 
 	* src/YGDialog.cc: only enable spy code for recent libyuis.
 
+	* src/YGTable.cc: expand tree's row when selected, like Qt and as
+	done by FileRoller. Feels much nicer.
+
 2008-09-11  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.h/cc: added support for YDialog::highlight() which
