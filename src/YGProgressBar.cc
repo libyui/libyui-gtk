@@ -24,10 +24,15 @@ public:
 	virtual void setValue (int value)
 	{
 		IMPL
-		float fraction = MIN (((float) value) / maxValue(), 1);
-		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (getWidget()),
-					       CLAMP (fraction, 0.0, 1.0));
 		YProgressBar::setValue (value);
+		GtkProgressBar *bar = GTK_PROGRESS_BAR (getWidget());
+		float fraction = CLAMP ((float) value / maxValue(), 0, 1);
+		gtk_progress_bar_set_fraction (bar, fraction);
+/*
+		char *text = g_strdup_printf ("%d%%", (int) (fraction*100));
+		gtk_progress_bar_set_text (bar, text);
+		g_free (text);
+*/
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -197,8 +202,8 @@ public:
 	// YBusyIndicator
     virtual void setAlive (bool alive)
     {
-    	alive ? pulse() : stop();
     	YBusyIndicator::setAlive (alive);
+    	alive ? pulse() : stop();
     }
 
 	// callbacks
