@@ -1,0 +1,33 @@
+// wait for event (sleep)
+// strangely, the Qt UI doesn't show the buttons being pressed, though
+// they obviously are since the event gets caught
+
+{
+	UI::OpenDialog (
+		`VBox (
+			`Label ("Press the Button"),
+			`CheckBox ("Check this"),
+			`PushButton (`id (`one), "One"),
+			`PushButton (`id (`two), "Two")
+		)
+	);
+	sleep (4000);
+
+	any widget = nil;
+	widget = UI::PollInput();
+	UI::CloseDialog();
+
+	string text = "none";
+	if (widget == `one)
+		text = "One";
+	if (widget == `two)
+		text = "Two";
+
+	UI::OpenDialog (
+		`VBox (
+			`Label ("You pressed " + text)
+		)
+	);
+	sleep (4000);
+}
+
