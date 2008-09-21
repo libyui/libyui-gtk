@@ -502,11 +502,8 @@ public:
 	{
 		// expand selected row
 		GtkTreeIter iter;
-		if (gtk_tree_selection_get_selected (pThis->getSelection(), NULL, &iter)) {
-			GtkTreePath *path = gtk_tree_model_get_path (pThis->getModel(), &iter);
-			gtk_tree_view_expand_to_path (view, path);
-			gtk_tree_path_free (path);
-		}
+		if (gtk_tree_selection_get_selected (pThis->getSelection(), NULL, &iter))
+			pThis->expand (&iter);
 		YGTable::selected_cb (view, pThis);
 	}
 
