@@ -1,3 +1,9 @@
+2008-09-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGText.cc: set MultiLineEdit wrap mode as WORD_CHAR.
+
+	* src/YGTable.cc: wrt last commit, re-use function.
+
 2008-09-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: only enable spy code for recent libyuis.

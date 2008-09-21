@@ -15,15 +15,14 @@ int maxChars;
 public:
 	YGTextView (YWidget *ywidget, YWidget *parent, const string &label, bool editable)
 		: YGScrolledWidget (ywidget, parent, label, YD_VERT, true,
-		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD, NULL)
+		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR, NULL)
 	{
 		IMPL
-		setMinSizeInChars (20, 10);
+		setMinSizeInChars (25, 10);
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
 		maxChars = -1;
-		if (!editable)
-		{
+		if (!editable) {
 			gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
 			gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
 		}
