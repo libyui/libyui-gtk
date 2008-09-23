@@ -1,3 +1,9 @@
+2008-09-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.cc: bug fix 421794: clean any emitted event when
+	destroyed. The new libyui crashes when doing YWidget::isValid()
+	for a destroyed widget due to memory overwrite.
+
 2008-09-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGText.cc: set MultiLineEdit wrap mode as WORD_CHAR.

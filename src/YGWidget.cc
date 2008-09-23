@@ -53,6 +53,8 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 YGWidget::~YGWidget()
 {
 	IMPL
+	if (YGUI::ui()->eventPendingFor (m_ywidget))
+		YGUI::ui()->m_event_handler.consumePendingEvent();
 	// remove children if container?
 #if 0
 	struct inner {

@@ -198,7 +198,6 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 		normalCursor();  // waiting for input, so no more busy
 
 	guint timeout = 0;
-	YEvent *event = NULL;
 
 	if (timeout_ms > 0)
 		timeout = g_timeout_add (timeout_ms,
@@ -211,6 +210,7 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	else
 		while (g_main_context_iteration (NULL, FALSE)) ;
 
+	YEvent *event = NULL;
 	if (pendingEvent())
 		event = m_event_handler.consumePendingEvent();
 

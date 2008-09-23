@@ -111,6 +111,7 @@ public:
 	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
+		// YUI system variable test for layout policy doesn't work flawlessly
 		setLayoutPolicy (gnomeLayoutPolicy());
 		YGLAYOUT_INIT
 	}

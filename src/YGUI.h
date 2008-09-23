@@ -46,7 +46,7 @@ public:
 	// called by YDialog::waitInput() / pollEvent()...
     YEvent *waitInput (unsigned long timeout_ms, bool block);
 
-	virtual YEvent * runPkgSelection (YWidget *packageSelector);
+	virtual YEvent *runPkgSelection (YWidget *packageSelector);
 
 	// used internally: for public use, see YApplication
 	void busyCursor();
