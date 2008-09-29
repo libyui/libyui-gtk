@@ -1230,7 +1230,7 @@ struct Ypp::QueryPool::Query::Impl
 					break;
 				}
 			}
-			if (match && !highlight) {
+			if (match && !highlight && use_name) {
 				if (values.size() == 1 && !strcasecmp (values.front().c_str(), package->name().c_str()))
 					highlight = package;
 			}

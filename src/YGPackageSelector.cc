@@ -1457,31 +1457,20 @@ public:
 		gtk_widget_set_tooltip_markup (m_name,
 			_("<b>Package search:</b> Use spaces to separate your keywords. They "
 			"will be matched against RPM <i>name</i> and <i>summary</i> attributes. "
-			"Further attributes can be included in the criteria by pressing the search icon.\n"
+			"Other criteria attributes are available by pressing the search icon.\n"
 			"(usage example: \"yast dhcp\" will return yast's dhcpd tool)"));
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (name_changed_cb), this);
-
-		struct inner {
-			static void appendCheckItem (GtkWidget *menu, const char *str, bool active,
-			                               Filters *pThis)
-			{
-				GtkWidget *item = gtk_check_menu_item_new_with_label (str);
-				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), active);
-				gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-				g_signal_connect (G_OBJECT (item), "toggled",
-						          G_CALLBACK (name_changed_cb), pThis);
-			}
-		};
-
-		GtkWidget *name_menu = gtk_menu_new();
-		inner::appendCheckItem (name_menu, _("Name"), true, this);
-		inner::appendCheckItem (name_menu, _("Summary"), true, this);
-		inner::appendCheckItem (name_menu, _("Description"), false, this);
-		inner::appendCheckItem (name_menu, _("File list"), false, this);
-		inner::appendCheckItem (name_menu, _("Authors"), false, this);
-		gtk_widget_show_all (name_menu);
-		ygtk_find_entry_attach_menu (YGTK_FIND_ENTRY (m_name), GTK_MENU (name_menu));
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by name & summary"),
+		                             GTK_STOCK_FIND);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by description"),
+		                             GTK_STOCK_EDIT);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by file"),
+		                             GTK_STOCK_OPEN);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by author"),
+		                             GTK_STOCK_ABOUT);
+		g_signal_connect (G_OBJECT (m_name), "menu-item-selected",
+		                  G_CALLBACK (name_item_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
 		if (updateMode)
@@ -1516,7 +1505,9 @@ private:
 		pThis->signalChangedDelay();
 	}
 
-	static void name_changed_cb (gpointer widget, Filters *pThis)
+	static void name_changed_cb (YGtkFindEntry *entry, Filters *pThis)
+	{ pThis->m_nameChanged = true; pThis->signalChangedDelay(); }
+	static void name_item_changed_cb (gpointer widget, gint nb, Filters *pThis)
 	{ pThis->m_nameChanged = true; pThis->signalChangedDelay(); }
 	static void field_changed_cb (gpointer widget, Filters *pThis)
 	{ pThis->signalChangedDelay(); }
@@ -1547,20 +1538,24 @@ private:
 
 		const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
 		if (*name) {
+			gint item = ygtk_find_entry_get_selected_item (YGTK_FIND_ENTRY (m_name));
 			bool use_name, use_summary, use_description, use_filelist, use_authors;
-			GtkMenu *name_menu = YGTK_FIND_ENTRY (m_name)->context_menu;
-			GList *items = gtk_container_get_children (GTK_CONTAINER (name_menu));
-			use_name = gtk_check_menu_item_get_active (
-				(GtkCheckMenuItem *) g_list_nth_data (items, 0));
-			use_summary = gtk_check_menu_item_get_active (
-				(GtkCheckMenuItem *) g_list_nth_data (items, 1));
-			use_description = gtk_check_menu_item_get_active (
-				(GtkCheckMenuItem *) g_list_nth_data (items, 2));
-			use_filelist = gtk_check_menu_item_get_active (
-				(GtkCheckMenuItem *) g_list_nth_data (items, 3));
-			use_authors = gtk_check_menu_item_get_active (
-				(GtkCheckMenuItem *) g_list_nth_data (items, 4));
-			g_list_free (items);
+			use_name = use_summary = use_description = use_filelist = use_authors = false;
+			switch (item) {
+				case 0:  // name & summary
+				default:
+					use_name = use_summary = true;
+					break;
+				case 1:  // description
+					use_name = use_summary = use_description = true;
+					break;
+				case 2:  // file
+					use_filelist = true;
+					break;
+				case 3:  // author
+					use_authors = true;
+					break;
+			}
 			query->addNames (name, ' ', use_name, use_summary, use_description,
 			                 use_filelist, use_authors);
 		}

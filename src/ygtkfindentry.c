@@ -9,6 +9,8 @@
 #include "ygtkfindentry.h"
 #include <gtk/gtk.h>
 
+static guint menu_item_selected_signal = 0;
+
 G_DEFINE_TYPE (YGtkExtEntry, ygtk_ext_entry, GTK_TYPE_ENTRY)
 
 static void ygtk_ext_entry_init (YGtkExtEntry *entry)
@@ -247,34 +249,6 @@ static void ygtk_ext_entry_class_init (YGtkExtEntryClass *klass)
 /* YGtkFindEntry widget */
 // check the header file for information about this widget
 
-#include <string.h>
-#define ARROW_SIZE 7
-
-static void ygtk_find_entry_editable_init (GtkEditableClass *iface);
-
-G_DEFINE_TYPE_WITH_CODE (YGtkFindEntry, ygtk_find_entry, YGTK_TYPE_EXT_ENTRY,
-	G_IMPLEMENT_INTERFACE (GTK_TYPE_EDITABLE, ygtk_find_entry_editable_init))
-
-static void ygtk_find_entry_init (YGtkFindEntry *entry)
-{
-}
-
-static void ygtk_find_entry_destroy (GtkObject *object)
-{
-	GTK_OBJECT_CLASS (ygtk_find_entry_parent_class)->destroy (object);
-
-	YGtkFindEntry *entry = YGTK_FIND_ENTRY (object);
-
-#define DESTROY_ICON(icon) \
-	if (icon) { g_object_unref (G_OBJECT (icon)); icon = NULL; }
-
-	DESTROY_ICON (entry->find_icon)
-	DESTROY_ICON (entry->find_hover_icon)
-	DESTROY_ICON (entry->clear_icon)
-	DESTROY_ICON (entry->clear_hover_icon)
-#undef DESTROY_ICON
-}
-
 // Code from Banshee: shades a pixbuf a bit, used to provide the hover effect
 static inline guchar pixel_clamp (int val)
 { return MAX (0, MIN (255, val)); }
@@ -309,6 +283,50 @@ static GdkPixbuf *pixbuf_color_shift (const GdkPixbuf *src, int shift)
 	return dest;
 }
 
+static void generate_icon (GtkWidget *widget, const char *stock_icon,
+                           GdkPixbuf **normal_icon, GdkPixbuf **hover_icon)
+{
+	if (*normal_icon) {
+		g_object_unref (G_OBJECT (*normal_icon));
+		*normal_icon = NULL;
+	}
+	if (*hover_icon) {
+		g_object_unref (G_OBJECT (*hover_icon));
+		*hover_icon = NULL;
+	}
+	if (stock_icon) {
+		*normal_icon = gtk_widget_render_icon (widget, stock_icon, GTK_ICON_SIZE_MENU, NULL);
+		*hover_icon = pixbuf_color_shift (*normal_icon, 30);
+	}
+}
+
+#include <string.h>
+#define ARROW_SIZE 7
+
+static void ygtk_find_entry_editable_init (GtkEditableClass *iface);
+
+G_DEFINE_TYPE_WITH_CODE (YGtkFindEntry, ygtk_find_entry, YGTK_TYPE_EXT_ENTRY,
+	G_IMPLEMENT_INTERFACE (GTK_TYPE_EDITABLE, ygtk_find_entry_editable_init))
+
+static void ygtk_find_entry_init (YGtkFindEntry *entry)
+{
+	entry->selected_item = -1;
+}
+
+static void ygtk_find_entry_destroy (GtkObject *object)
+{
+	GTK_OBJECT_CLASS (ygtk_find_entry_parent_class)->destroy (object);
+
+	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (object);
+	generate_icon (NULL, NULL, &fentry->find_icon, &fentry->find_hover_icon);
+	generate_icon (NULL, NULL, &fentry->clear_icon, &fentry->clear_hover_icon);
+
+	if (fentry->completion_timer_id) {
+		g_source_remove (fentry->completion_timer_id);
+		fentry->completion_timer_id = 0;
+	}
+}
+
 static void ygtk_find_entry_set_borders (YGtkFindEntry *entry)
 {
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (entry);
@@ -328,24 +346,32 @@ static void ygtk_find_entry_set_borders (YGtkFindEntry *entry)
 	gtk_widget_queue_resize (GTK_WIDGET (entry));
 }
 
+static void generate_find_icon (YGtkFindEntry *entry)
+{
+	char *stock = GTK_STOCK_FIND;
+	if (entry->context_menu && entry->selected_item >= 0) {
+		GtkImageMenuItem *item;
+		GList *items = gtk_container_get_children (GTK_CONTAINER (entry->context_menu));
+		item = (GtkImageMenuItem *) g_list_nth_data (items, entry->selected_item);
+		g_list_free (items);
+		gtk_image_get_stock (GTK_IMAGE (gtk_image_menu_item_get_image (item)), &stock, NULL);
+	}
+	generate_icon (GTK_WIDGET (entry), stock, &entry->find_icon, &entry->find_hover_icon);
+}
+
 static void ygtk_find_entry_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->realize (widget);
 
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
 	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (widget);
-	fentry->find_icon = gtk_widget_render_icon (widget, GTK_STOCK_FIND,
-	                                            GTK_ICON_SIZE_MENU, NULL);
-	fentry->clear_icon = gtk_widget_render_icon (widget, GTK_STOCK_CLEAR,
-	                                             GTK_ICON_SIZE_MENU, NULL);
 
-	fentry->find_hover_icon = pixbuf_color_shift (fentry->find_icon, 30);
-	fentry->clear_hover_icon = pixbuf_color_shift (fentry->clear_icon, 30);
-
+	generate_find_icon (fentry);
+	generate_icon (widget, GTK_STOCK_CLEAR, &fentry->clear_icon, &fentry->clear_hover_icon);
 	ygtk_find_entry_set_borders (fentry);
 
 	GdkDisplay *display = gtk_widget_get_display (widget);
-	GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_HAND1);
+	GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
 
 	gdk_window_set_cursor (eentry->left_window, cursor);
 	gdk_window_set_cursor (eentry->right_window, cursor);
@@ -413,11 +439,25 @@ static gboolean ygtk_find_entry_enter_leave_notify_event (GtkWidget *widget,
 	return FALSE;
 }
 
+static void popup_menu_position (GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer pdata)
+{
+	GtkWidget *widget = (GtkWidget *) pdata;
+	GtkAllocation *alloc = &widget->allocation;
+	gdk_window_get_origin (widget->window, x, y);
+	*y += alloc->height;
+	*push_in = TRUE;
+
+	GtkRequisition req;
+	gtk_widget_size_request (GTK_WIDGET (menu), &req);
+	if (alloc->width > req.width)
+		gtk_widget_set_size_request (GTK_WIDGET (menu), alloc->width, -1);
+}
+
 static void ygtk_find_entry_actual_popup_menu (GtkWidget *widget, guint button,
                                                guint32 time)
 {
 	GtkMenu *menu = YGTK_FIND_ENTRY (widget)->context_menu;
-	gtk_menu_popup (menu, NULL, NULL, NULL, NULL, button, time);
+	gtk_menu_popup (menu, NULL, NULL, popup_menu_position, widget, button, time);
 }
 
 static gboolean ygtk_find_entry_popup_menu (GtkWidget *widget)
@@ -458,6 +498,55 @@ static gboolean ygtk_find_entry_is_empty (YGtkFindEntry *entry)
 	return *gtk_entry_get_text (GTK_ENTRY (entry)) == '\0';
 }
 
+static void ygtk_find_entry_insert_completion (YGtkFindEntry *fentry, const char *text)
+{
+	if (strlen (text) < 5)
+		return;
+	GtkEntry *entry = GTK_ENTRY (fentry);
+	GtkEntryCompletion *completion = gtk_entry_get_completion (entry);
+	if (!completion) {
+		completion = gtk_entry_completion_new();
+		gtk_entry_set_completion (entry, completion);
+		g_object_unref (completion);
+
+		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
+		gtk_entry_completion_set_model (completion, GTK_TREE_MODEL (store));
+		g_object_unref (G_OBJECT (store));
+		gtk_entry_completion_set_text_column (completion, 0);
+	}
+
+	GtkTreeModel *model = gtk_entry_completion_get_model (completion);
+	GtkTreeIter iter;
+	gboolean already_there = FALSE;
+	if (gtk_tree_model_get_iter_first (model, &iter)) {
+		do {
+			gchar *i;
+			gtk_tree_model_get (model, &iter, 0, &i, -1);
+			if (!g_ascii_strcasecmp (text, i))
+				already_there = TRUE;
+			g_free (i);
+		} while (gtk_tree_model_iter_next (model, &iter) && !already_there);
+	}
+	if (!already_there) {
+		GtkListStore *store = GTK_LIST_STORE (model);
+		gtk_list_store_append (store, &iter);
+		gtk_list_store_set (store, &iter, 0, text, -1);
+	}
+}
+
+#define INSERT_COMPLETION_TIMOUT 500
+
+static gboolean completion_timeout_cb (void *pdata)
+{
+	YGtkFindEntry *fentry = (YGtkFindEntry *) pdata;
+	GtkEntry *entry = GTK_ENTRY (fentry);
+	const char *text = gtk_entry_get_text (entry);
+	if (*text)
+		ygtk_find_entry_insert_completion (fentry, text);
+	fentry->completion_timer_id = 0;
+	return FALSE;
+}
+
 static void ygtk_find_entry_insert_text (GtkEditable *editable,
 	const gchar *new_text, gint new_text_len, gint *pos)
 {
@@ -473,6 +562,10 @@ static void ygtk_find_entry_insert_text (GtkEditable *editable,
 		gdk_window_show (clear_win);
 		gtk_widget_queue_resize (GTK_WIDGET (editable));
 	}
+	if (fentry->completion_timer_id)
+		g_source_remove (fentry->completion_timer_id);
+	fentry->completion_timer_id = g_timeout_add (INSERT_COMPLETION_TIMOUT,
+	                                             completion_timeout_cb, fentry);
 }
 
 static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
@@ -489,6 +582,9 @@ static void ygtk_find_entry_delete_text (GtkEditable *editable, gint start_pos,
 		gdk_window_hide (clear_win);
 		gtk_widget_queue_resize (GTK_WIDGET (editable));
 	}
+	if (fentry->completion_timer_id)
+		g_source_remove (fentry->completion_timer_id);
+	fentry->completion_timer_id = 0;
 }
 
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
@@ -499,6 +595,38 @@ void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *menu)
 	if (menu)
 		gtk_menu_attach_to_widget (menu, GTK_WIDGET (entry), NULL);
 	ygtk_find_entry_set_borders (entry);
+}
+
+static void menu_item_activate_cb (GtkMenuItem *item, YGtkFindEntry *entry)
+{
+	GtkWidget *menu = gtk_widget_get_parent (GTK_WIDGET (item));
+	GList *items = gtk_container_get_children (GTK_CONTAINER (menu));
+	entry->selected_item = g_list_index (items, item);
+	g_signal_emit (entry, menu_item_selected_signal, 0, entry->selected_item);
+	g_list_free (items);
+	generate_find_icon (entry);
+}
+
+guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const char *stock)
+{
+	if (!entry->context_menu)
+		ygtk_find_entry_attach_menu (entry, GTK_MENU (gtk_menu_new()));
+	GtkWidget *item = gtk_image_menu_item_new_with_label (text);
+	GtkWidget *image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (entry->context_menu), item);
+	gtk_widget_show_all (GTK_WIDGET (entry->context_menu));
+	g_signal_connect (G_OBJECT (item), "activate",
+		              G_CALLBACK (menu_item_activate_cb), entry);
+	GList *items = gtk_container_get_children (GTK_CONTAINER (entry->context_menu));
+	guint nb = g_list_length (items)-1;
+	g_list_free (items);
+	return nb;
+}
+
+gint ygtk_find_entry_get_selected_item (YGtkFindEntry *entry)
+{
+	return entry->selected_item;
 }
 
 GtkWidget *ygtk_find_entry_new (void /*gboolean will_use_find_icon */)
@@ -519,6 +647,11 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_find_entry_destroy;
+
+	menu_item_selected_signal = g_signal_new ("menu_item_selected",
+		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
+		G_STRUCT_OFFSET (YGtkFindEntryClass, menu_item_selected),
+		NULL, NULL, gtk_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT);
 }
 
 static void ygtk_find_entry_editable_init (GtkEditableClass *iface)
@@ -526,3 +659,4 @@ static void ygtk_find_entry_editable_init (GtkEditableClass *iface)
   iface->insert_text = ygtk_find_entry_insert_text;
   iface->delete_text = ygtk_find_entry_delete_text;
 }
+

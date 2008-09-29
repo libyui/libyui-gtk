@@ -2,9 +2,15 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
+/*
+  Textdomain "yast2-gtk"
+ */
+
 #include <config.h>
 #include <YGUI.h>
 #include "YGWidget.h"
+#include "YGi18n.h"
+#include "ygtkprogressbar.h"
 
 #include "YProgressBar.h"
 
@@ -17,7 +23,7 @@ public:
 		// may change often and so will its size, which will look odd (we may want
 		// to make the label widget to only grow).
 	, YGLabeledWidget (this, parent, label, YD_VERT, true,
-	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	                   YGTK_TYPE_PROGRESS_BAR, NULL)
 	{}
 
 	// YProgressBar
@@ -25,11 +31,11 @@ public:
 	{
 		IMPL
 		YProgressBar::setValue (value);
-		GtkProgressBar *bar = GTK_PROGRESS_BAR (getWidget());
+		YGtkProgressBar *bar = YGTK_PROGRESS_BAR (getWidget());
 		float fraction = CLAMP ((float) value / maxValue(), 0, 1);
-		gtk_progress_bar_set_fraction (bar, fraction);
+		ygtk_progress_bar_set_fraction (bar, fraction);
 /*
-		char *text = g_strdup_printf ("%d%%", (int) (fraction*100));
+		char *text = g_strdup_printf ("%d %%", (int) (fraction*100));
 		gtk_progress_bar_set_text (bar, text);
 		g_free (text);
 */
@@ -76,9 +82,44 @@ public:
 	static gboolean timeout_cb (void *pData)
 	{
 		YGDownloadProgress *pThis = (YGDownloadProgress*) pData;
-		float fraction = ((float) pThis->currentFileSize()) / pThis->expectedSize();
-		if (fraction > 1) fraction = 1;
-		gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (pThis->getWidget()), fraction);
+		GtkProgressBar *bar = GTK_PROGRESS_BAR (pThis->getWidget());
+
+		double current, total;
+		int unit = 0;
+		for (current = pThis->currentFileSize(), total = pThis->expectedSize(); total/1024>1; unit++) {
+			current /= 1024;
+			total /= 1024;
+		}
+		float fraction = 0;
+		if (total)
+			fraction = MIN ((float) current / total, 1);
+		
+		gtk_progress_bar_set_fraction (bar, fraction);
+		const char *unit_str;
+		switch (unit) {
+			case 0:
+				unit_str = "B";
+				break;
+			case 1:
+				unit_str = "KB";
+				break;
+			case 2:
+				unit_str = "MB";
+				break;
+			case 3:
+				unit_str = "GB";
+				break;
+			default:
+				unit_str = "";
+				break;
+		}
+		char *text;
+		if (total)
+			text = g_strdup_printf ("%.1f %s %s %.1f %s", current, unit_str, _("of"), total, unit_str);
+		else
+			text = g_strdup_printf ("%.1f %s", current, unit_str);
+		gtk_progress_bar_set_text (GTK_PROGRESS_BAR (bar), text);
+		g_free (text);
 		return TRUE;
 	}
 
@@ -99,14 +140,16 @@ YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *par
 class YGMultiProgressMeter : public YMultiProgressMeter, public YGWidget
 {
 public:
-	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector<float> &maxValues)
+	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector <float> &maxValues)
 	: YMultiProgressMeter (NULL, dim, maxValues)
 	, YGWidget (this, parent, true,
 	            horizontal() ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 		for (int s = 0; s < segments(); s++) {
-			GtkWidget* bar = gtk_progress_bar_new();
+			GtkWidget* bar = ygtk_progress_bar_new();
+			if (segments() > 1)
+				ygtk_progress_bar_disable_continuous (YGTK_PROGRESS_BAR (bar));
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
 				horizontal() ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
 			// Progress bars would ask for too much size with weight...
@@ -128,8 +171,8 @@ public:
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
 		int s = 0;
 		for (GList *i = children; i && s < segments(); i = i->next, s++) {
-			GtkProgressBar *bar = GTK_PROGRESS_BAR (i->data);
-			gtk_progress_bar_set_fraction (bar, getSegmentValue (s));
+			YGtkProgressBar *bar = YGTK_PROGRESS_BAR (i->data);
+			ygtk_progress_bar_set_fraction (bar, getSegmentValue (s));
 		}
 		g_list_free (children);
 	}
@@ -164,7 +207,8 @@ YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget 
    until timeout is reached. The application will ping setAlive(true) calls -- and we
    reset the timeout -- as an indication that the program hasn't hang in some operation. */
 
-#define PULSE_INTERVAL 150
+#define PULSE_INTERVAL 80
+#define PULSE_STEP  0.040
 
 class YGBusyIndicator : public YBusyIndicator, public YGLabeledWidget
 {
@@ -174,7 +218,8 @@ int alive_timeout;
 public:
 	YGBusyIndicator (YWidget *parent, const string &label, int timeout)
 	: YBusyIndicator (NULL, label, timeout)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	                   GTK_TYPE_PROGRESS_BAR, "pulse-step", PULSE_STEP, NULL)
 	{
 		pulse_timeout_id = 0;
 		pulse();

@@ -33,7 +33,7 @@ static void ygtk_link_label_realize (GtkWidget *widget)
 		GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK;
 	gint attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_CURSOR;
 	attributes.cursor = gdk_cursor_new_for_display (
-		gtk_widget_get_display (widget), GDK_HAND1);
+		gtk_widget_get_display (widget), GDK_HAND2);
 
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	label->link_window = gdk_window_new (widget->window, &attributes, attributes_mask);

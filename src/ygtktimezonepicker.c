@@ -370,8 +370,7 @@ static gboolean ygtk_time_zone_picker_button_press_event (GtkWidget *widget,
 				loc = find_location_closer_to (picker, event->x, event->y);
 				if (loc && loc != picker->selected_loc) {
 					picker->selected_loc = loc;
-					g_signal_emit (picker, zone_clicked_signal,
-					               0, picker->selected_loc->zone);
+					g_signal_emit (picker, zone_clicked_signal, 0, picker->selected_loc->zone);
 				}
 				picker->last_mouse_x = event->x;
 				picker->last_mouse_y = event->y;
@@ -550,7 +549,7 @@ static void ygtk_time_zone_picker_class_init (YGtkTimeZonePickerClass *klass)
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_time_zone_picker_destroy;
 
-	zone_clicked_signal = g_signal_new ("zone-clicked",
+	zone_clicked_signal = g_signal_new ("zone_clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (YGtkTimeZonePickerClass, zone_clicked), NULL, NULL,
 		g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING);

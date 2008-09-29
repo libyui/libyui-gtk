@@ -23,7 +23,7 @@ G_BEGIN_DECLS
 #define YGTK_IS_HANDLE_BOX_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                     YGTK_TYPE_HANDLE_BOX))
 #define YGTK_HANDLE_BOX_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-                                    YGTK_TYPE_HANDLE_BOX, YGtkHandleboxClass))
+                                    YGTK_TYPE_HANDLE_BOX, YGtkHandleBoxClass))
 
 typedef struct _YGtkHandleBox
 {

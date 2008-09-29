@@ -198,3 +198,4 @@ gboolean ygtk_field_entry_set_focus (YGtkFieldEntry *fields)
 	gtk_widget_grab_focus (widget);
 	return gtk_widget_is_focus (widget);
 }
+

@@ -550,3 +550,38 @@ gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                const char *fallbackIcon)
 { return YGUtils::setStockIcon (button, label, fallbackIcon); }
 
+/* interactive busy cursor */
+// half cursor, half clock cursor is not a Xlib theme icon, but there is
+// a hack to load it like: (if we ever want to use it...)
+#if 0
+__LEFT_PTR_WATCH = None
+def set_busy_cursor (window):
+    global __LEFT_PTR_WATCH
+    if __LEFT_PTR_WATCH is None:
+        os.environ['XCURSOR_DISCOVER'] = '1' #Turn on logging in Xlib
+        # Busy cursor code from Padraig Brady <P@draigBrady.com>
+        # cursor_data hash is 08e8e1c95fe2fc01f976f1e063a24ccd
+        cursor_data = "\
+\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\
+\x0c\x00\x00\x00\x1c\x00\x00\x00\x3c\x00\x00\x00\
+\x7c\x00\x00\x00\xfc\x00\x00\x00\xfc\x01\x00\x00\
+\xfc\x3b\x00\x00\x7c\x38\x00\x00\x6c\x54\x00\x00\
+\xc4\xdc\x00\x00\xc0\x44\x00\x00\x80\x39\x00\x00\
+\x80\x39\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\
+\x00\x00\x00\x00\x00\x00\x00\x00"
+
+        try:
+            pix = gtk.gdk.bitmap_create_from_data(None, cursor_data, 32, 32)
+            color = gtk.gdk.Color()
+            __LEFT_PTR_WATCH = gtk.gdk.Cursor(pix, pix, color, color, 2, 2)
+        except TypeError:
+            # old bug http://bugzilla.gnome.org/show_bug.cgi?id=103616
+            # default "WATCH" cursor
+            __LEFT_PTR_WATCH = gtk.gdk.Cursor(gtk.gdk.WATCH)
+    window.set_cursor (__LEFT_PTR_WATCH)
+#endif
+

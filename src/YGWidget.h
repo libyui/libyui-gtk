@@ -125,8 +125,8 @@ class YGLabeledWidget : public YGWidget
 #define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)   \
 	virtual void setLabel (const std::string &label) {     \
 		IMPL                                               \
-		doSetLabel (label);                                \
 		ParentClass::setLabel (label);                     \
+		doSetLabel (label);                                \
 	}
 
 /* This is a convenience class for widgets that need scrollbars. */

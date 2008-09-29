@@ -194,3 +194,4 @@ static void ygtk_colored_label_class_init (YGtkColoredLabelClass *klass)
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->expose_event  = ygtk_colored_label_expose_event;
 }
+

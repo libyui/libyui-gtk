@@ -108,7 +108,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 
 	// Init link support
 	GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
-	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND1);
+	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
 	gdk_cursor_ref (rtext->hand_cursor);
 
 #if GTK_CHECK_VERSION(2,10,0)

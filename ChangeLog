@@ -1,3 +1,22 @@
+2008-09-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.h/c: added support embed context menu which pairs
+	the find icon to the menu item.
+
+	* src/YGPackageSelector.cc: changed find entry check-based menu popup
+	to a criteria choice one.
+
+	* src/ygtkfindentry.c: added auto-completion support.
+
+	* src/ygtkprogressbar.h/c: makes progress bar a bit smoother. Just
+	using the last change as guide with some liberal tweaks.
+
+	* src/YGProgressBar.cc (YGProgressBar): use ygtkprogressbar
+	* src/YGProgressBar.cc (YGBusyIndicator): use pulse-step to make it
+	smoother.
+	* src/YGProgressBar.cc (YGDownloadProgress): show download size in
+	the progress bar.
+
 2008-09-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.cc: bug fix 421794: clean any emitted event when

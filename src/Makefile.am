@@ -56,10 +56,11 @@ libpy2gtk_la_SOURCES = \
 	ygtktimezonepicker.c \
 	ygtkhandlebox.c \
 	ygtklinklabel.c \
+	ygtkprogressbar.c \
+	ygtkrichtext.c \
 	yzyppwrapper.cc \
 	yzypptags.cc \
-	ygtkzyppwrapper.cc \
-	ygtkrichtext.c
+	ygtkzyppwrapper.cc
 # should only append ygtkrichtext.c if USE_GTKHTML is set
 
 dummy_SOURCES = dummy.cc

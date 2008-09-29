@@ -12,7 +12,8 @@
    is set). If you don't want that, use gtk_widget_set_direction().
 
    YGtkFindEntry is a convinience widget that has a find icon, with an
-   optional menu, at the left, and an erase icon at the right.
+   optional menu, at the left, and an erase icon at the right. It can
+   interact with an option image menu, and does auto-completion.
 */
 
 #ifndef YGTK_FIND_ENTRY_H
@@ -83,17 +84,28 @@ typedef struct _YGtkFindEntry
 	// members
 	GdkPixbuf *find_icon, *clear_icon, *find_hover_icon, *clear_hover_icon;
 	GtkMenu *context_menu;
+	gint selected_item;
+	guint completion_timer_id;
 } YGtkFindEntry;
 
 typedef struct _YGtkFindEntryClass
 {
 	YGtkExtEntryClass parent_class;
+
+	// signals:
+	void (*menu_item_selected) (YGtkFindEntry *entry, gint nb);
 } YGtkFindEntryClass;
 
 GtkWidget* ygtk_find_entry_new (void);
 GType ygtk_find_entry_get_type (void) G_GNUC_CONST;
 
+// add an external menu
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *popup_menu);
+
+// add an internal menu
+guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const char *stock);
+gint ygtk_find_entry_get_selected_item (YGtkFindEntry *entry);
 
 G_END_DECLS
 #endif /*YGTK_FIND_ENTRY_H*/
+
