@@ -1,3 +1,10 @@
+2008-09-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.h/c & src/YGDialog.h/cc: use dialog directly
+	to set title/icon.
+
+	* src/YGWizard.cc: support for setDialogTitle().
+
 2008-09-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.h/c: added support embed context menu which pairs

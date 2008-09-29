@@ -308,11 +308,6 @@ static void ygtk_wizard_header_set_description (YGtkWizardHeader *header, const 
 static void ygtk_wizard_header_set_icon (YGtkWizardHeader *header, GdkPixbuf *pixbuf)
 { gtk_image_set_from_pixbuf (GTK_IMAGE (header->icon), pixbuf); }
 
-static const gchar *ygtk_wizard_header_get_title (YGtkWizardHeader *header)
-{ return gtk_label_get_text (GTK_LABEL (header->title)); }
-static GdkPixbuf *ygtk_wizard_header_get_icon (YGtkWizardHeader *header)
-{ return gtk_image_get_pixbuf (GTK_IMAGE (header->icon)); }
-
 //** YGtkWizard
 
 // callbacks
@@ -698,30 +693,9 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	return TRUE;
 }
 
-static void sync_window_title (YGtkWizard *wizard)
-{
-	GtkWidget *window = gtk_widget_get_toplevel (GTK_WIDGET (wizard));
-	if (GTK_WIDGET_TOPLEVEL (window)) {
-		const gchar *_title = ygtk_wizard_header_get_title (
-			YGTK_WIZARD_HEADER (wizard->m_title));
-		char *title;
-		if (*_title == '\0')
-			title = g_strdup ("YaST");
-		else
-			title = g_strdup_printf ("%s - YaST", _title);
-		GdkPixbuf *pixbuf = ygtk_wizard_header_get_icon (
-			YGTK_WIZARD_HEADER (wizard->m_title));
-
-		gtk_window_set_title (GTK_WINDOW (window), title);
-		gtk_window_set_icon (GTK_WINDOW (window), pixbuf);
-		g_free (title);
-	}
-}
-
 void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text)
 {
 	ygtk_wizard_header_set_title (YGTK_WIZARD_HEADER (wizard->m_title), text);
-	sync_window_title (wizard);
 }
 
 gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
@@ -732,7 +706,6 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 		return FALSE;
 	ygtk_wizard_header_set_icon (YGTK_WIZARD_HEADER (wizard->m_title), pixbuf);
 	g_object_unref (G_OBJECT (pixbuf));
-	sync_window_title (wizard);
 	return TRUE;
 }
 

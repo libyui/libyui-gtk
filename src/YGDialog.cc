@@ -5,6 +5,7 @@
 #include <config.h>
 #include "YGUI.h"
 #include "YGDialog.h"
+#include "YGUtils.h"
 #if YAST2_VERSION >= 2017006
 #include <YDialogSpy.h>
 #endif
@@ -36,8 +37,8 @@ class YGWindow
 	GdkCursor *m_busyCursor;
 
 public:
-        YGWindowCloseFn m_canClose;
-        void *m_canCloseData;
+	YGWindowCloseFn m_canClose;
+	void *m_canCloseData;
 
 	YGWindow (bool _main_window, YGDialog *ydialog)
 	{
@@ -312,6 +313,7 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 	   YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)
 {
     setBorder (0);
+    m_stickyTitle = false;
     m_containee = gtk_event_box_new();
     if (dialogType == YMainDialog && main_window)
 		m_window = main_window;
@@ -481,6 +483,31 @@ void YGDialog::highlight (YWidget *ywidget)
 		}
 	}
 	previousWidget = ywidget;
+}
+
+void YGDialog::setTitle (const std::string &title, bool sticky)
+{
+	if (!m_stickyTitle || sticky) {
+		GtkWindow *window = GTK_WINDOW (m_window->getWidget());
+		gchar *str;
+		if (title.empty())
+			str = g_strdup ("YaST");
+		else
+			str = g_strdup_printf ("%s - YaST", title.c_str());
+		gtk_window_set_title (window, str);
+		g_free (str);
+		m_stickyTitle = sticky;
+	}
+}
+
+void YGDialog::setIcon (const std::string &icon)
+{
+	GtkWindow *window = GTK_WINDOW (m_window->getWidget());
+	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (icon);
+	if (pixbuf) {
+		gtk_window_set_icon (window, pixbuf);
+		g_object_unref (G_OBJECT (pixbuf));
+	}
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)

@@ -38,8 +38,10 @@ public:
 
 			if ((*it)->hasIconName()) {
 				GdkPixbuf *pixbuf = YGUtils::loadPixbuf ((*it)->iconName());
-				if (pixbuf)
+				if (pixbuf) {
 					image = gtk_image_new_from_pixbuf (pixbuf);
+					g_object_unref (G_OBJECT (pixbuf));
+				}
 			}
 
 			if (image) {

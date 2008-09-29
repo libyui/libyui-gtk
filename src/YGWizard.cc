@@ -13,13 +13,6 @@
 #include "YReplacePoint.h"
 #include "YGDialog.h"
 
-
-// FIXME: wizard events need to be ported
-// We'll probably want to also make YGtkWizard buttons actual YGPushButtons...
-// (let's just create them and pass button->getWidget() to the wizard...)
-// (or let's just improve on the wrapper and id.)
-
-
 class YGWizard : public YWizard, public YGWidget
 {
 	YReplacePoint *m_replacePoint;
@@ -135,7 +128,8 @@ public:
 
 	virtual ~YGWizard()
 	{
-		// m_back/abort/next_button are added as children and will be freed by ~YContainerWidget
+		// m_back/abort/next_button are added as children and
+		// so will be freed by ~YContainerWidget
 	}
 
 	inline YGtkWizard *getWizard()
@@ -165,11 +159,18 @@ public:
 	{
 		if (!ygtk_wizard_set_header_icon (getWizard(), icon.c_str()))
 			yuiWarning() << "YGWizard: could not load image: " << icon << endl;
+		YGDialog::currentDialog()->setIcon (icon);
 	}
 
 	virtual void setDialogHeading (const string &heading)
 	{
 		ygtk_wizard_set_header_text (getWizard(), heading.c_str());
+		YGDialog::currentDialog()->setTitle (heading, false);
+	}
+
+	virtual void setDialogTitle (const string &title)
+	{
+		YGDialog::currentDialog()->setTitle (title, true);
 	}
 
     virtual void addStep (const string &text, const string &id)

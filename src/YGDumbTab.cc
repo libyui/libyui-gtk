@@ -51,8 +51,10 @@ public:
 		if (item->hasIconName()) {
 			string path = iconFullPath (item->iconName());
 			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
-			if (pixbuf)
+			if (pixbuf) {
 				image = gtk_image_new_from_pixbuf (pixbuf);
+				g_object_unref (G_OBJECT (pixbuf));
+			}
 		}
 		if (image) {
 			tab_label = gtk_hbox_new (FALSE, 6);

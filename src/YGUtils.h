@@ -42,6 +42,8 @@ namespace YGUtils
 	/* Sets some widget font proprities. */
 	void setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
+	/* Saves some code and standardizes the error. Returns NULL if failed.
+	   Don't forget to g_object_unref it! */
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */

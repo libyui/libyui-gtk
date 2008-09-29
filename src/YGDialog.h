@@ -12,6 +12,7 @@ class YGDialog : public YDialog, public YGWidget
 	friend class YGWindow;
 	GtkWidget *m_containee;
 	YGWindow *m_window;
+	bool m_stickyTitle;
 
 public:
 	YGDialog (YDialogType dialogType, YDialogColorMode colorMode);
@@ -39,6 +40,9 @@ public:
 	virtual YEvent *pollEventInternal();
 
     virtual void highlight (YWidget * child);
+
+	void setTitle (const std::string &title, bool sticky = false);
+	void setIcon (const std::string &icon);
 
 	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
 	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
