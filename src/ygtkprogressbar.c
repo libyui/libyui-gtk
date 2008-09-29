@@ -82,9 +82,13 @@ void ygtk_progress_bar_set_fraction (YGtkProgressBar *ybar, gdouble fraction)
 			ybar->dist = 0.10;
 			ybar->vel = 0.02;
 #endif
-			gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (ybar), 0);
+			gtk_progress_bar_set_fraction (bar, 0);
 		}
 		else {
+			if (ybar->fraction == 0 && fraction == 1) {
+				gtk_progress_bar_set_fraction (bar, 1);
+				return;
+			}
 			gdouble delta_t = delta_time (&ybar->time_i);
 			if (delta_t > 10 || fraction < ybar->fraction || !GTK_WIDGET_REALIZED (bar)) {
 				ybar->fraction = fraction;
