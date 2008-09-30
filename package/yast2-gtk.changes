@@ -25,7 +25,6 @@ Tue Sep 30 13:56:07 CEST 2008 - kmachalkova@suse.cz
   * YGPushButton: use Role as a fallback to derive the stock icon.
   * YGWizard: made the wizard button wrappers to change the button 
     label & etc through the YGtkWizard API
-    Make it align to the left.
   
 -------------------------------------------------------------------
 Thu Sep 11 08:35:23 CEST 2008 - jsrain@suse.cz
