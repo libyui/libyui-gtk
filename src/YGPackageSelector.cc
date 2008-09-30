@@ -20,6 +20,7 @@
 #include "ygtktogglebutton.h"
 #include "ygtkhtmlwrap.h"
 #include "ygtkhandlebox.h"
+#include "ygtktooltip.h"
 #include "ygtkzyppwrapper.h"
 
 // utilities
@@ -1558,6 +1559,41 @@ private:
 			}
 			query->addNames (name, ' ', use_name, use_summary, use_description,
 			                 use_filelist, use_authors);
+
+			// tip: the user may be searching for patterns
+			static bool shown_pattern_tip = false;
+			if (!m_updateMode && !shown_pattern_tip &&
+			    gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
+			    (m_statuses->getActive() == StatusButtons::AVAILABLE ||
+			     m_statuses->getActive() == StatusButtons::ALL)) {
+				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+				query->addType (Ypp::Package::PATTERN_TYPE);
+				query->addNames (name, ' ', true, false, false, false, false, true);
+				query->setIsInstalled (false);
+				Ypp::QueryPool pool (query);
+				if (!pool.empty()) {
+					shown_pattern_tip = true;
+					//std::string first = pool.getName (pool.getFirst());
+					std::string text =
+						_("Patterns are available that can\n"
+						"assist you in the installment\nof");
+					text += " <i>" + std::string (name) + "</i> ";
+					text += _("related packages.");
+					GtkWidget *tooltip, *box, *label, *image;
+					tooltip = ygtk_tooltip_new();
+					label = gtk_label_new (text.c_str());
+					gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+					image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO,
+					                                  GTK_ICON_SIZE_BUTTON);
+					box = gtk_hbox_new (FALSE, 6);
+					gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
+					gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+					gtk_widget_show_all (box);
+					gtk_container_add (GTK_CONTAINER (tooltip), box);
+					ygtk_tooltip_show_at_widget (YGTK_TOOLTIP (tooltip), m_type,
+							                     YGTK_POINTER_UP_LEFT);
+				}
+			}
 		}
 
 		switch (m_statuses->getActive())

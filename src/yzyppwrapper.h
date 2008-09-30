@@ -110,6 +110,8 @@ struct Ypp
 		virtual Iter getParent (Iter it) = 0;
 		virtual Iter getChild (Iter it) = 0;
 		virtual bool isPlainList() const = 0;
+		bool empty() { return !getFirst(); }
+		int size();
 
 		typedef std::list <int> Path;
 		Iter fromPath (const Path &path);
@@ -140,7 +142,8 @@ struct Ypp
 			void addType (Package::Type type);
 			void addNames (std::string name, char separator = 0, bool use_name = true,
 				bool use_summary = true, bool use_description = false,
-				bool use_filelist = false, bool use_authors = false);
+				bool use_filelist = false, bool use_authors = false,
+				bool full_word_match = false);
 			void addCategory (Ypp::Node *category);
 			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);

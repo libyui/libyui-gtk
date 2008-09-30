@@ -7,17 +7,13 @@
 
 #include <config.h>
 #include "ygtkbargraph.h"
-#include <gtk/gtklabel.h>
-#include <gtk/gtkframe.h>
-#include <gtk/gtkeventbox.h>
+#include <gtk/gtk.h>
 
 G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, YGTK_TYPE_RATIO_HBOX)
 
 static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
 //	ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (bar), TRUE);
-
-	bar->m_tooltips = gtk_tooltips_new();
 	gtk_container_set_border_width (GTK_CONTAINER (bar), 12);
 }
 
@@ -86,8 +82,8 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 			}
 		gtk_label_set_label (GTK_LABEL (label), label_text->str);
 
-		// Tooltip with the label -- useful if the bar entry gets too small
-		gtk_tooltips_set_tip (bar->m_tooltips, box, label_text->str, NULL);
+		// tooltip for the labels -- useful if the bar entry gets too small
+		gtk_widget_set_tooltip_text (box, label_text->str);
 	}
 
 	// Set proportion

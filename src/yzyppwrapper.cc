@@ -1172,8 +1172,8 @@ struct Ypp::QueryPool::Query::Impl
 
 	Keys <Ypp::Package::Type> types;
 	Keys <std::string> names;
-	unsigned int use_name : 1, use_summary : 1, use_description : 1, use_filelist : 1,
-		use_authors : 1;
+	int use_name : 1, use_summary : 1, use_description : 1, use_filelist : 1,
+	    use_authors : 1, full_word_match : 1;
 	Keys <Node *> categories, categories2;
 	Keys <const Package *> collections;
 	Keys <const Repository *> repositories;
@@ -1191,6 +1191,27 @@ struct Ypp::QueryPool::Query::Impl
 
 	bool match (Package *package)
 	{
+		struct inner {
+			static bool strstr (const char *str1, const char *str2,
+			                    bool case_sensitive, bool full_word_match)
+			{
+				const char *i;
+				if (case_sensitive)
+					i = ::strstr (str1, str2);
+				else
+					i = ::strcasestr (str1, str2);
+				if (full_word_match && i) {  // check boundries
+					if (i != str1 && isalpha (i[-1]))
+						return false;
+					int len = strlen (str2);
+					if (i [len] && isalpha (i [len]))
+						return false;
+					return true;
+				}
+				return i;
+			}
+		};
+
 		bool match = true;
 		if (match && types.defined)
 			match = types.is (package->type());
@@ -1216,15 +1237,20 @@ struct Ypp::QueryPool::Query::Impl
 				const char *key = it->c_str();
 				bool str_match = false;
 				if (use_name)
-					str_match = strcasestr (package->name().c_str(), key);
+					str_match = inner::strstr (package->name().c_str(), key,
+					                           false, full_word_match);
 				if (!str_match && use_summary)
-					str_match = strcasestr (package->summary().c_str(), key);
+					str_match = inner::strstr (package->summary().c_str(), key,
+					                           false, full_word_match);
 				if (!str_match && use_description)
-					str_match = strcasestr (package->description (false).c_str(), key);
+					str_match = inner::strstr (package->description (false).c_str(), key,
+					                           false, full_word_match);
 				if (!str_match && use_filelist)
-					str_match = strcasestr (package->filelist (false).c_str(), key);
+					str_match = inner::strstr (package->filelist (false).c_str(), key,
+					                           false, full_word_match);
 				if (!str_match && use_authors)
-					str_match = strcasestr (package->authors (false).c_str(), key);
+					str_match = inner::strstr (package->authors (false).c_str(), key,
+					                           false, full_word_match);
 				if (!str_match) {
 					match = false;
 					break;
@@ -1300,7 +1326,8 @@ Ypp::QueryPool::Query::~Query()
 void Ypp::QueryPool::Query::addType (Ypp::Package::Type value)
 { impl->types.add (value); }
 void Ypp::QueryPool::Query::addNames (std::string value, char separator, bool use_name,
-	bool use_summary, bool use_description, bool use_filelist, bool use_authors)
+	bool use_summary, bool use_description, bool use_filelist, bool use_authors,
+	bool full_word_match)
 {
 	if (separator) {
 		const gchar delimiter[2] = { separator, '\0' };
@@ -1316,6 +1343,7 @@ void Ypp::QueryPool::Query::addNames (std::string value, char separator, bool us
 	impl->use_description = use_description;
 	impl->use_filelist = use_filelist;
 	impl->use_authors = use_authors;
+	impl->full_word_match = full_word_match;
 }
 void Ypp::QueryPool::Query::addCategory (Ypp::Node *value)
 { impl->categories.add (value); }
@@ -1386,6 +1414,14 @@ Ypp::Pool::~Pool()
 
 void Ypp::Pool::setListener (Ypp::Pool::Listener *listener)
 { impl->listener = listener; }
+
+int Ypp::Pool::size()
+{
+	int size = 0;
+	for (Iter iter = getFirst(); iter; iter = getNext (iter))
+		size++;
+	return size;
+}
 
 Ypp::Pool::Iter Ypp::Pool::fromPath (const Ypp::Pool::Path &path)
 {

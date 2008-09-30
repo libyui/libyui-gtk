@@ -57,6 +57,7 @@ libpy2gtk_la_SOURCES = \
 	ygtkhandlebox.c \
 	ygtklinklabel.c \
 	ygtkprogressbar.c \
+	ygtktooltip.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \
 	yzypptags.cc \

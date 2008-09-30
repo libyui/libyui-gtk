@@ -10,7 +10,6 @@
 #define YGTK_BAR_GRAPH_H
 
 #include "ygtkratiobox.h"
-#include <gtk/gtktooltips.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_BAR_GRAPH            (ygtk_bar_graph_get_type ())
@@ -31,9 +30,6 @@ typedef struct _YGtkBarGraphClass  YGtkBarGraphClass;
 struct _YGtkBarGraph
 {
 	YGtkRatioHBox parent;
-
-	// private
-	GtkTooltips *m_tooltips;
 };
 
 struct _YGtkBarGraphClass
