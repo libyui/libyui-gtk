@@ -322,7 +322,7 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 					else
 						tag_len++;
 				}
-				g_string_append_c (tag, instr[i]);
+				g_string_append_c (tag, g_ascii_tolower (instr[i]));
 			}
 
 			// Unmatched tags
