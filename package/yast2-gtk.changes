@@ -1,4 +1,33 @@
 -------------------------------------------------------------------
+Tue Sep 30 13:56:07 CEST 2008 - kmachalkova@suse.cz
+
+- Update to 2.17.1
+  * YGDialog: support for setDialogTitle().
+  * ygtkfindentry: added support embed context menu which pairs the find icon to 
+    the menu item.
+  * YGPackageSelector: changed find entry check-based menu popup to 
+    a criteria choice one.
+  * ygtkfindentry: added auto-completion support.
+  * makes progress bar a bit smoother. 
+  * show download size in the progress bar.
+  * bnc #421794: clean any emitted event when destroyed. The new 
+    libyui crashes when doing YWidget::isValid()
+  * YGText: set MultiLineEdit wrap mode as WORD_CHAR.
+  * YGDialog: only enable spy code for recent libyuis.
+  * YGTable: expand tree's row when selected
+  * YGPushButton: only enable role code for recent libyuis.
+    Also moved helpButton support to set icon code.
+  * added support for YDialog::highlight() 
+  * coupled dumpGtk and dumpYast trees into the same dialog
+  * YGPackageSelector: fixed context menu for objects like Language
+    that can't be locked.
+  * YGUtils: added fallback to setStockIcon().
+  * YGPushButton: use Role as a fallback to derive the stock icon.
+  * YGWizard: made the wizard button wrappers to change the button 
+    label & etc through the YGtkWizard API
+    Make it align to the left.
+  
+-------------------------------------------------------------------
 Thu Sep 11 08:35:23 CEST 2008 - jsrain@suse.cz
 
 - merged texts from proofread
