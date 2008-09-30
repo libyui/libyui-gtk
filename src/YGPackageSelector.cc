@@ -1480,6 +1480,14 @@ public:
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Patterns"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Languages"));
+			gtk_widget_set_tooltip_markup (m_type,
+				_("Packages can be organized in:\n"
+				"<b>Groups:</b> simple categorization of packages by purpose.\n"
+				"<b>Patterns:</b> assists in installing all packages necessary "
+				"for several working environments.\n"
+				"<b>Languages:</b> adds another language to the system.\n"
+				"<b>Repositories:</b> catalogues what the several configured "
+				"repositories have available."));
 		}
 		gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Repositories"));
 		gtk_combo_box_set_active (GTK_COMBO_BOX (m_type), 0);
