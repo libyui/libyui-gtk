@@ -450,8 +450,8 @@ public:
 			doAddItem (*it);
 		int depth, rows;
 		depth = getMaxDepth (&rows);
-		gtk_tree_view_set_show_expanders (getView(), depth > 1);
-		gtk_tree_view_set_enable_tree_lines (getView(), depth > 4 && rows > 100);
+		gtk_tree_view_set_show_expanders (getView(), depth > 0);
+		gtk_tree_view_set_enable_tree_lines (getView(), depth > 3 && rows > 100);
 	}
 
 	virtual const YTreeItem *getCurrentItem() const
