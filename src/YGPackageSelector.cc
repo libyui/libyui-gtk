@@ -2493,7 +2493,7 @@ public:
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
 		setBorder (0);
-		YGDialog::currentDialog()->setSize (650, 600);  // enlarge
+		YGDialog::currentDialog()->setMinSize (650, 600);  // enlarge
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,

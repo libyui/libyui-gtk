@@ -566,11 +566,10 @@ int YGApplication::displayDepth()
 long YGApplication::displayColors()
 { return 1L << displayDepth(); /*from yast-qt*/ }
 
-// YCP writers use getDefaultWidth/Height() to do space saving if needed,
-// so just tell me the displayWidth/Height(). If that size is decent, let's
-// us deal with it.
-int YGApplication::defaultWidth()   { return getDisplayWidth(); }
-int YGApplication::defaultHeight()  { return getDisplayHeight(); }
+// YCP uses defaultWidth/Height() to use their smaller YWizard impl, so we fool
+// them since we want to use a smaller default size than qt
+int YGApplication::defaultWidth() { return 1000; }
+int YGApplication::defaultHeight() { return 1000; }
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }

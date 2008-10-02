@@ -22,7 +22,7 @@
 */
 
 #define DEFAULT_WIDTH  650
-#define DEFAULT_HEIGHT 550
+#define DEFAULT_HEIGHT 600
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -410,21 +410,37 @@ void YGDialog::setSize (int width, int height)
 	GtkWidget *window = m_window->getWidget();
 	if (GTK_WIDGET_REALIZED (window)) {
 		gtk_widget_queue_resize (window);
+#if 0
 		bool resize = false;
 		if (isMainDialog()) {
 			width = MIN (0.95 * YUI::app()->displayWidth(), width);
 			height = MIN (0.95 * YUI::app()->displayWidth(), width);
 			if (window->allocation.width < width || window->allocation.height < height) {
-				width = MAX (width, window->allocation.width),
-				height = MAX (height, window->allocation.height);
+				width = MAX (width-100, window->allocation.width),
+				height = MAX (height-60, window->allocation.height);
 				resize = true;
 			}
 		}
 		else
 			resize = true;
 		if (resize)
+#else
+		if (!isMainDialog())
+#endif
 			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
+}
+
+void YGDialog::setMinSize (int width, int height)
+{
+	GtkWidget *window = m_window->getWidget();
+	width = MIN (0.95 * YUI::app()->displayWidth(), width);
+	height = MIN (0.95 * YUI::app()->displayWidth(), width);
+	if (window->allocation.width < width || window->allocation.height < height) {
+		width = MAX (width, window->allocation.width),
+		height = MAX (height, window->allocation.height);
+	}
+	gtk_window_resize (GTK_WINDOW (window), width, height);
 }
 
 void YGDialog::highlight (YWidget *ywidget)

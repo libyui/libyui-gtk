@@ -12,6 +12,9 @@
 	* src/YGUtils.cc: bug fix 428193: set stock icon only if it exists.
 	* src/ygtkwizard.c: bug fix 428193: idem.
 
+	* src/YGDialog.cc: for bug 428965, set instead a higher default
+	height. Already has big as qt: ycp progs should cope.
+
 2008-09-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkbargraph.h/.c: replaced usage of deprecated GtkTooltips API
