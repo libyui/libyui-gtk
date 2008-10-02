@@ -410,7 +410,19 @@ void YGDialog::setSize (int width, int height)
 	GtkWidget *window = m_window->getWidget();
 	if (GTK_WIDGET_REALIZED (window)) {
 		gtk_widget_queue_resize (window);
-		if (!isMainDialog())
+		bool resize = false;
+		if (isMainDialog()) {
+			width = MIN (0.95 * YUI::app()->displayWidth(), width);
+			height = MIN (0.95 * YUI::app()->displayWidth(), width);
+			if (window->allocation.width < width || window->allocation.height < height) {
+				width = MAX (width, window->allocation.width),
+				height = MAX (height, window->allocation.height);
+				resize = true;
+			}
+		}
+		else
+			resize = true;
+		if (resize)
 			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
 }

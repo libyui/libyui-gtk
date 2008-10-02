@@ -451,7 +451,6 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale
 	PangoFontDescription* font = pango_font_description_new();
 	pango_font_description_set_weight (font, weight);
 	pango_font_description_set_size   (font, (int)(size * scale));
-
 	gtk_widget_modify_font (widget, font);
 	pango_font_description_free (font);
 }
@@ -535,8 +534,12 @@ bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 	else if (id.size() < 22)
 		icon = fallbackIcon;
 	if (icon) {
-		GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (button), image);
+		GdkPixbuf *pixbuf = gtk_widget_render_icon (button, icon, GTK_ICON_SIZE_BUTTON, NULL);
+		if (pixbuf) {
+			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
+			g_object_unref (G_OBJECT (pixbuf));
+			gtk_button_set_image (GTK_BUTTON (button), image);
+		}
 	}
 	else {
 		GtkWidget *image = gtk_button_get_image (GTK_BUTTON (button));

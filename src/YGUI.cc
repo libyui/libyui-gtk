@@ -79,7 +79,7 @@ static void print_log (const gchar *domain, GLogLevelFlags level, const gchar *m
 		default:
 			break;
 	}
-	YUILog::instance()->log (ylevel, domain ? domain : "yast2-gtk", "", 0, "") << message;
+	YUILog::instance()->log (ylevel, domain ? domain : "yast2-gtk", "yast2-gtk", 0, "") << message;
 }
 
 void YGUI::checkInit()
@@ -131,11 +131,8 @@ void YGUI::checkInit()
 
 	gtk_init (&argc, &argv);
 
-	// send logs to libyui logs
-	g_log_set_handler ("Gtk", G_LOG_LEVEL_MASK, print_log, NULL);
-	g_log_set_handler ("Pango", G_LOG_LEVEL_MASK, print_log, NULL);
-	g_log_set_handler (NULL, G_LOG_LEVEL_MASK, print_log, NULL);
-#if 0  // to crash right away to get a stack trace
+	g_log_set_default_handler (print_log, NULL);  // send gtk logs to libyui system
+#if 0  // to crash right away in order to get a stack trace
 	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
 		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
 #endif

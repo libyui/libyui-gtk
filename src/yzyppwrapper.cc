@@ -1994,10 +1994,6 @@ bool Ypp::Impl::resolveProblems()
 
 void Ypp::Impl::packageModified (Ypp::Package *package)
 {
-	// notify listeners of package change
-	for (GSList *i = pkg_listeners; i; i = i->next)
-		((Pool::Impl *) i->data)->packageModified (package);
-
 	if (!g_slist_find (transactions, package)) /* could be a result of undo */
 		transactions = g_slist_append (transactions, package);
 	if (!inTransaction)
@@ -2013,7 +2009,6 @@ void Ypp::Impl::finishTransactions()
 {
 	inTransaction = true;
 	bool cancel = (resolveProblems() == false);
-
 	// check if any package was modified from a restricted repo
 	if (!cancel && ypp->favoriteRepository()) {
 		const Repository *repo = ypp->favoriteRepository();

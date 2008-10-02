@@ -2493,12 +2493,7 @@ public:
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
 		setBorder (0);
-		GtkWindow *window = YGDialog::currentWindow();
-		int enlarge_width = MIN (0.95 * YUI::app()->displayWidth(), 650);
-		int enlarge_height = MIN (0.95 * YUI::app()->displayHeight(), 600);
-		gtk_window_resize (window,
-			MAX (enlarge_width, GTK_WIDGET (window)->allocation.width),
-			MAX (enlarge_height, GTK_WIDGET (window)->allocation.height));
+		YGDialog::currentDialog()->setSize (650, 600);  // enlarge
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,

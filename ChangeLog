@@ -1,3 +1,17 @@
+2008-10-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: must update pools only after running the solver,
+	on finishTransactions().
+
+	* src/YGUI.cc: use libyui log system for all logs from gtk.
+
+	* src/ygtkwizard.c: reduced the size of the header font.
+
+	* src/YGDialog.cc: bug fix 428965: resize the window if too small.
+
+	* src/YGUtils.cc: bug fix 428193: set stock icon only if it exists.
+	* src/ygtkwizard.c: bug fix 428193: idem.
+
 2008-09-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkbargraph.h/.c: replaced usage of deprecated GtkTooltips API

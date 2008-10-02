@@ -207,7 +207,7 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	header->title = gtk_label_new (NULL);
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
-	ygutils_setWidgetFont (header->title, PANGO_WEIGHT_BOLD, PANGO_SCALE_XX_LARGE);
+	ygutils_setWidgetFont (header->title, PANGO_WEIGHT_BOLD, PANGO_SCALE_X_LARGE);
 
 	header->description = ygtk_link_label_new ("", _("more"));
 	g_signal_connect (G_OBJECT (header->description), "link-clicked",
@@ -215,7 +215,7 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 
 	header->icon = gtk_image_new();
 
-	GtkWidget *text_box = gtk_vbox_new (FALSE, 1);
+	GtkWidget *text_box = gtk_vbox_new (FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (text_box), header->title, TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (text_box), header->description, FALSE, TRUE, 0);
 
@@ -369,12 +369,16 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 
 static GtkWidget *create_help_button()
 {
-	GtkWidget *button, *image;
-	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
+	GtkWidget *button, *image = 0;
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
-	gtk_button_set_image (GTK_BUTTON (button), image);
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
+	GdkPixbuf *pixbuf = gtk_widget_render_icon (button, GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON, NULL);
+	if (pixbuf) {
+		image = gtk_image_new_from_pixbuf (pixbuf);
+		g_object_unref (G_OBJECT (pixbuf));
+		gtk_button_set_image (GTK_BUTTON (button), image);
+	}
 	return button;
 }
 
