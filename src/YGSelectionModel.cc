@@ -184,6 +184,34 @@ void YGSelectionModel::setCellToggle (GtkTreeIter *iter, int col, bool select)
 		gtk_list_store_set (getListStore(), iter, col, select, -1);
 }
 
+static int getChildrenDepth (GtkTreeModel *model, GtkTreeIter *parent, int *rows)
+{
+	int depth = 0;
+	GtkTreeIter iter;
+	if (gtk_tree_model_iter_children (model, &iter, parent)) {
+		do {
+			depth = MAX (depth, getChildrenDepth (model, &iter, rows));
+			*rows++;
+		} while (gtk_tree_model_iter_next (model, &iter));
+	}
+	return depth+1;
+}
+
+int YGSelectionModel::getMaxDepth (int *rows)
+{
+	if (!isTree) return 0;
+	GtkTreeModel *model = getModel();
+	int depth = 0;
+	GtkTreeIter iter;
+	if (gtk_tree_model_get_iter_first (model, &iter)) {
+		do {
+			depth = MAX (depth, getChildrenDepth (model, &iter, rows));
+			*rows++;
+		} while (gtk_tree_model_iter_next (model, &iter));
+	}
+	return depth;
+}
+
 extern "C" {
     struct FindClosure {
         const string &text;
@@ -218,3 +246,4 @@ bool YGSelectionModel::findByText (const string &text, GtkTreeIter *iter)
     gtk_tree_model_foreach (getModel(), find_text, (gpointer) &cl);
     return cl.found;
 }
+

@@ -50,6 +50,8 @@ struct YGSelectionModel
 
 	int getPtrCol();
 
+	int getMaxDepth (int *rows);  // not cached
+
 protected:
 	void implFocusItem (YItem *item);
 private:

@@ -432,7 +432,6 @@ public:
 	: YTree (NULL, label)
 	, YGTableView (this, parent, label, true, true)
 	{
-		gtk_tree_view_set_enable_tree_lines (getView(), TRUE);
 		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
 		                  G_CALLBACK (activated_cb), (YGTableView*) this);
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
@@ -449,6 +448,10 @@ public:
 		doDeleteAllItems();
 		for (YItemConstIterator it = YTree::itemsBegin(); it != YTree::itemsEnd(); it++)
 			doAddItem (*it);
+		int depth, rows;
+		depth = getMaxDepth (&rows);
+		gtk_tree_view_set_show_expanders (getView(), depth > 1);
+		gtk_tree_view_set_enable_tree_lines (getView(), depth > 4 && rows > 100);
 	}
 
 	virtual const YTreeItem *getCurrentItem() const
