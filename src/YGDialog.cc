@@ -78,6 +78,9 @@ public:
 		        gtk_window_set_modal (window, TRUE);
 		        gtk_window_set_transient_for (window, parent);
 		        gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
+				AtkObject *peer = gtk_widget_get_accessible (GTK_WIDGET (window));
+				if (peer != NULL)
+						atk_object_set_role (peer, ATK_ROLE_DIALOG);
 		    }
 		    else {
 		        gtk_window_set_title (window, "YaST");
