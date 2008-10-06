@@ -710,8 +710,9 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 	return TRUE;
 }
 
-void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button, const char *label)
+void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button, const char *_label)
 {
+	const char *label = _label ? _label : "";
 	gtk_button_set_label (GTK_BUTTON (button), label);
 	ENABLE_WIDGET_STR (label, button);
 	const char *stock = 0;
