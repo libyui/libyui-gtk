@@ -79,7 +79,12 @@ static void print_log (const gchar *domain, GLogLevelFlags level, const gchar *m
 		default:
 			break;
 	}
-	YUILog::instance()->log (ylevel, domain ? domain : "yast2-gtk", "yast2-gtk", 0, "") << message;
+	// YUILog.cc assumes 'logComponent' (etc.) are static strings, that it
+	// can just keep lying around for ever, and use later, so we have to
+	// intern the domain - that can be allocated (or belong to a transient
+	// plugin's address space).
+	const char *component = domain ? g_intern_string (domain) : "yast2-gtk";
+	YUILog::instance()->log (ylevel, component, "yast2-gtk", 0, "") << message;
 }
 
 void YGUI::checkInit()

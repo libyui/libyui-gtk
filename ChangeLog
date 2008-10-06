@@ -1,5 +1,8 @@
 2008-10-06  Michael Meeks  <michael.meeks@novell.com>
 
+	* src/YGUI.cc (print_log): wow - YUILog::log assumes that it has
+	a static / const string.
+
 	* src/YGDialog.cc: set dialog a11y role on dialogs.
 
 2008-10-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
