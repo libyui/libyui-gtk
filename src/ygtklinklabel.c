@@ -100,18 +100,19 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 {
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	ygtk_link_label_ensure_layout (label);
-	requisition->width = 0;
-
-	PangoContext *context;
-	PangoFontMetrics *metrics;
-	gint ascent, descent;
-	context = pango_layout_get_context (label->layout);
-	metrics = pango_context_get_metrics (context, widget->style->font_desc,
-	                                     pango_context_get_language (context));
-	ascent = pango_font_metrics_get_ascent (metrics);
-	descent = pango_font_metrics_get_descent (metrics);
-	pango_font_metrics_unref (metrics);
-	requisition->height = PANGO_PIXELS (ascent + descent);
+	requisition->width = requisition->height = 0;
+	if (label->text && *label->text) {
+		PangoContext *context;
+		PangoFontMetrics *metrics;
+		gint ascent, descent;
+		context = pango_layout_get_context (label->layout);
+		metrics = pango_context_get_metrics (context, widget->style->font_desc,
+			                                 pango_context_get_language (context));
+		ascent = pango_font_metrics_get_ascent (metrics);
+		descent = pango_font_metrics_get_descent (metrics);
+		pango_font_metrics_unref (metrics);
+		requisition->height = PANGO_PIXELS (ascent + descent);
+	}
 }
 
 #define SPACING 4

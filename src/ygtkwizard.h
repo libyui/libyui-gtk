@@ -85,9 +85,9 @@ typedef struct _YGtkWizard
 	          *m_child, *m_pane, *m_buttons;
 
 	/* Widgets we need to access. */
-	GtkWidget *m_tree_view, *m_steps, *m_menu,
-	          *m_back_button, *m_abort_button, *m_next_button, *m_help_button,
-	          *m_release_notes_button;
+	GtkWidget *tree_view, *steps, *menu,
+	          *back_button, *abort_button, *next_button, *help_button,
+	          *release_notes_button;
 
 	/* The help text. */
 	gchar     *m_help;
@@ -125,27 +125,14 @@ void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text);
 void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text);
 gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon);
 
-void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text);
-void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text);
-void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text);
-void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard, const gchar *text);
-void ygtk_wizard_show_release_notes_button (YGtkWizard *wizard, gboolean enable);
-void ygtk_wizard_set_back_button_str_id (YGtkWizard *wizard, const char *id);
-void ygtk_wizard_set_next_button_str_id (YGtkWizard *wizard, const char *id);
-void ygtk_wizard_set_abort_button_str_id (YGtkWizard *wizard, const char *id);
-void ygtk_wizard_set_release_notes_button_str_id (YGtkWizard *wizard, const char *id);
-void ygtk_wizard_set_back_button_ptr_id (YGtkWizard *wizard, gpointer id);
-void ygtk_wizard_set_next_button_ptr_id (YGtkWizard *wizard, gpointer id);
-void ygtk_wizard_set_abort_button_ptr_id (YGtkWizard *wizard, gpointer id);
-void ygtk_wizard_set_release_notes_button_ptr_id (YGtkWizard *wizard, gpointer id);
-void ygtk_wizard_enable_back_button (YGtkWizard *wizard, gboolean enable);
-void ygtk_wizard_enable_next_button (YGtkWizard *wizard, gboolean enable);
-void ygtk_wizard_enable_abort_button (YGtkWizard *wizard, gboolean enable);
-void ygtk_wizard_enable_release_notes_button (YGtkWizard *wizard, gboolean enable);
-gboolean ygtk_wizard_is_next_button_protected (YGtkWizard *wizard);
-void ygtk_wizard_protect_next_button (YGtkWizard *wizard, gboolean protect);
-void ygtk_wizard_focus_next_button (YGtkWizard *wizard);
-void ygtk_wizard_focus_back_button (YGtkWizard *wizard);
+void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button,
+                                   const char *text);
+void ygtk_wizard_enable_button (YGtkWizard *wizard, GtkWidget *button,
+                                 gboolean enable);
+void ygtk_wizard_set_button_str_id (YGtkWizard *wizard, GtkWidget *button,
+                                    const char *id);
+void ygtk_wizard_set_button_ptr_id (YGtkWizard *wizard, GtkWidget *button,
+                                     gpointer id);
 
 void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget);
 
@@ -168,10 +155,6 @@ gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
 void ygtk_wizard_clear_tree (YGtkWizard *wizard);
 gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id);
 const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
-
-// You should call this method rather than GtkWidget's if you want
-// to honor next_button protect flag
-void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive);
 
 G_END_DECLS
 #endif /* YGTK_WIZARD_H */

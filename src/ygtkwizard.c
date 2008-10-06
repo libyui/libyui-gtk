@@ -204,7 +204,7 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
 	gtk_widget_modify_bg (GTK_WIDGET (header), GTK_STATE_NORMAL, &white);
 
-	header->title = gtk_label_new (NULL);
+	header->title = gtk_label_new ("YaST");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
 	ygutils_setWidgetFont (header->title, PANGO_WEIGHT_BOLD, PANGO_SCALE_X_LARGE);
@@ -392,7 +392,7 @@ static void help_button_toggled_cb (GtkToggleButton *button, YGtkWizard *wizard)
 }
 static void help_button_silent_set_active (YGtkWizard *wizard, gboolean active)
 {
-	GtkToggleButton *button = GTK_TOGGLE_BUTTON (wizard->m_help_button);
+	GtkToggleButton *button = GTK_TOGGLE_BUTTON (wizard->help_button);
 	g_signal_handlers_block_by_func (button,
 		(gpointer) help_button_toggled_cb, wizard);
 	gtk_toggle_button_set_active (button, active);
@@ -438,35 +438,31 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_widget_show_all (wizard->m_title);
 
 	//** Adding the bottom buttons
-	wizard->m_next_button  = button_new (wizard);
-	wizard->m_back_button  = button_new (wizard);
-	wizard->m_abort_button = button_new (wizard);
-	wizard->m_release_notes_button = button_new (wizard);
-	wizard->m_help_button = create_help_button();
-	g_signal_connect (G_OBJECT (wizard->m_help_button), "toggled",
+	wizard->next_button  = button_new (wizard);
+	wizard->back_button  = button_new (wizard);
+	wizard->abort_button = button_new (wizard);
+	wizard->release_notes_button = button_new (wizard);
+	wizard->help_button = create_help_button();
+	g_signal_connect (G_OBJECT (wizard->help_button), "toggled",
 	                  G_CALLBACK (help_button_toggled_cb), wizard);
-
-	// we need to protect this button against insensitive in some cases
-	// this is a flag to enable that
-	ygtk_wizard_protect_next_button (wizard, FALSE);
 
 	wizard->m_buttons = gtk_hbox_new (FALSE, 12);
 	gtk_widget_show (wizard->m_buttons);
-	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->m_help_button, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->m_release_notes_button,
+	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->help_button, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->release_notes_button,
 	                    FALSE, TRUE, 0);
 
-	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->m_next_button, FALSE, TRUE, 0);
-	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->m_back_button, FALSE, TRUE, 0);
-	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->m_abort_button, FALSE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->next_button, FALSE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->back_button, FALSE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->abort_button, FALSE, TRUE, 0);
 
 	// make buttons all having the same size
 	GtkSizeGroup *buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);
-	gtk_size_group_add_widget (buttons_group, wizard->m_help_button);
-	gtk_size_group_add_widget (buttons_group, wizard->m_release_notes_button);
-	gtk_size_group_add_widget (buttons_group, wizard->m_next_button);
-	gtk_size_group_add_widget (buttons_group, wizard->m_back_button);
-	gtk_size_group_add_widget (buttons_group, wizard->m_abort_button);
+	gtk_size_group_add_widget (buttons_group, wizard->help_button);
+	gtk_size_group_add_widget (buttons_group, wizard->release_notes_button);
+	gtk_size_group_add_widget (buttons_group, wizard->next_button);
+	gtk_size_group_add_widget (buttons_group, wizard->back_button);
+	gtk_size_group_add_widget (buttons_group, wizard->abort_button);
 	g_object_unref (G_OBJECT (buttons_group)); 
 
 
@@ -494,8 +490,8 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->realize (widget);
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
-	gtk_widget_grab_default (wizard->m_next_button);
-	gtk_widget_grab_focus (wizard->m_next_button);
+	gtk_widget_grab_default (wizard->next_button);
+	gtk_widget_grab_focus (wizard->next_button);
 }
 
 static void destroy_hash (GHashTable **hash)
@@ -580,25 +576,25 @@ void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget)
 
 void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 {
-	g_return_if_fail (wizard->m_steps == NULL);
-	wizard->m_steps = ygtk_steps_new();
-	gtk_widget_show (wizard->m_steps);
-	ygtk_wizard_set_information_widget (wizard, wizard->m_steps);
-	ygtk_wizard_set_information_expose_hook (wizard->m_steps, &wizard->m_steps->allocation);
+	g_return_if_fail (wizard->steps == NULL);
+	wizard->steps = ygtk_steps_new();
+	gtk_widget_show (wizard->steps);
+	ygtk_wizard_set_information_widget (wizard, wizard->steps);
+	ygtk_wizard_set_information_expose_hook (wizard->steps, &wizard->steps->allocation);
 }
 
 void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 {
-	g_return_if_fail (wizard->m_tree_view == NULL);
+	g_return_if_fail (wizard->tree_view == NULL);
 
-	wizard->m_tree_view = gtk_tree_view_new_with_model
+	wizard->tree_view = gtk_tree_view_new_with_model
 		(GTK_TREE_MODEL (gtk_tree_store_new (1, G_TYPE_STRING)));
-	GtkTreeView *view = GTK_TREE_VIEW (wizard->m_tree_view);
+	GtkTreeView *view = GTK_TREE_VIEW (wizard->tree_view);
 	gtk_tree_view_insert_column_with_attributes (view,
 		0, "", gtk_cell_renderer_text_new(), "text", 0, NULL);
 	gtk_tree_view_set_headers_visible (view, FALSE);
 	gtk_tree_selection_set_mode (gtk_tree_view_get_selection (view), GTK_SELECTION_BROWSE);
-	g_signal_connect (G_OBJECT (wizard->m_tree_view), "cursor-changed",
+	g_signal_connect (G_OBJECT (wizard->tree_view), "cursor-changed",
 	                  G_CALLBACK (tree_item_selected_cb), wizard);
 	// start by assuming it will be list, and set expanders when a tree is built
 	gtk_tree_view_set_show_expanders (view, FALSE);
@@ -609,7 +605,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
 	                                     GTK_SHADOW_IN);
 
-	gtk_container_add (GTK_CONTAINER (scroll), wizard->m_tree_view);
+	gtk_container_add (GTK_CONTAINER (scroll), wizard->tree_view);
 	gtk_widget_show_all (scroll);
 
 	ygtk_wizard_set_control_widget (wizard, scroll);
@@ -631,13 +627,13 @@ void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 	if (wizard->m_help_dialog)
 		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog), text);
 	ygtk_wizard_header_set_description (YGTK_WIZARD_HEADER (wizard->m_title), text);
-	ENABLE_WIDGET_STR (text, wizard->m_help_button);
+	ENABLE_WIDGET_STR (text, wizard->help_button);
 }
 
 gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
                                     const char *text, const char *id)
 {
-	GtkTreeView *view = GTK_TREE_VIEW (wizard->m_tree_view);
+	GtkTreeView *view = GTK_TREE_VIEW (wizard->tree_view);
 	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	GtkTreeIter iter;
 
@@ -671,7 +667,7 @@ static void yg_hash_table_remove_all (GHashTable *hash_table)
 
 void ygtk_wizard_clear_tree (YGtkWizard *wizard)
 {
-	GtkTreeView *tree = GTK_TREE_VIEW (wizard->m_tree_view);
+	GtkTreeView *tree = GTK_TREE_VIEW (wizard->tree_view);
 	gtk_tree_store_clear (GTK_TREE_STORE (gtk_tree_view_get_model (tree)));
 	yg_hash_table_remove_all (wizard->tree_ids);
 }
@@ -682,24 +678,25 @@ gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
 	if (path == NULL)
 		return FALSE;
 
-	g_signal_handlers_block_by_func (wizard->m_tree_view,
+	g_signal_handlers_block_by_func (wizard->tree_view,
 	                                 (gpointer) tree_item_selected_cb, wizard);
 
-	GtkWidget *widget = wizard->m_tree_view;
+	GtkWidget *widget = wizard->tree_view;
 	gtk_tree_view_expand_to_path (GTK_TREE_VIEW (widget), path);
 	gtk_tree_view_set_cursor (GTK_TREE_VIEW (widget), path,
 	                          NULL, FALSE);
 	gtk_tree_view_scroll_to_cell (GTK_TREE_VIEW (widget), path, NULL,
 	                              TRUE, 0.5, 0.5);
 
-	g_signal_handlers_unblock_by_func (wizard->m_tree_view,
+	g_signal_handlers_unblock_by_func (wizard->tree_view,
 	                                   (gpointer) tree_item_selected_cb, wizard);
 	return TRUE;
 }
 
 void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text)
 {
-	ygtk_wizard_header_set_title (YGTK_WIZARD_HEADER (wizard->m_title), text);
+	if (*text)
+		ygtk_wizard_header_set_title (YGTK_WIZARD_HEADER (wizard->m_title), text);
 }
 
 gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
@@ -713,123 +710,31 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 	return TRUE;
 }
 
-void ygtk_wizard_set_abort_button_label (YGtkWizard *wizard, const char *text)
+void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button, const char *label)
 {
-	gtk_button_set_label (GTK_BUTTON (wizard->m_abort_button), text);
-	ENABLE_WIDGET_STR (text, wizard->m_abort_button);
-	ygutils_setStockIcon (wizard->m_abort_button, text, GTK_STOCK_CANCEL);
+	gtk_button_set_label (GTK_BUTTON (button), label);
+	ENABLE_WIDGET_STR (label, button);
+	const char *stock = 0;
+	if (button == wizard->abort_button)
+		stock = GTK_STOCK_CANCEL;
+	else if (button == wizard->next_button)
+		stock = GTK_STOCK_APPLY;
+	ygutils_setStockIcon (button, label, stock);
 }
 
-void ygtk_wizard_set_back_button_label (YGtkWizard *wizard, const char *text)
+void ygtk_wizard_set_button_str_id (YGtkWizard *wizard, GtkWidget *button, const char *id)
 {
-	gtk_button_set_label (GTK_BUTTON (wizard->m_back_button), text);
-	ENABLE_WIDGET_STR (text, wizard->m_back_button);
-	ygutils_setStockIcon (wizard->m_back_button, text, NULL);
+	g_object_set_data_full (G_OBJECT (button), "str-id", g_strdup (id), g_free);
 }
 
-void ygtk_wizard_set_next_button_label (YGtkWizard *wizard, const char *text)
+void ygtk_wizard_set_button_ptr_id (YGtkWizard *wizard, GtkWidget *button, gpointer id)
 {
-	gtk_button_set_label (GTK_BUTTON (wizard->m_next_button), text);
-	ENABLE_WIDGET_STR (text, wizard->m_next_button);
-	ygutils_setStockIcon (wizard->m_next_button, text, GTK_STOCK_APPLY);
+	g_object_set_data (G_OBJECT (button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_release_notes_button_label (YGtkWizard *wizard, const gchar *text)
+void ygtk_wizard_enable_button (YGtkWizard *wizard, GtkWidget *button, gboolean enable)
 {
-	gtk_button_set_label (GTK_BUTTON (wizard->m_release_notes_button), text);
-	ENABLE_WIDGET_STR (text, wizard->m_release_notes_button);
-}
-
-void ygtk_wizard_set_back_button_ptr_id (YGtkWizard *wizard, gpointer id)
-{
-	g_object_set_data (G_OBJECT (wizard->m_back_button), "ptr-id", id);
-}
-
-void ygtk_wizard_set_next_button_ptr_id (YGtkWizard *wizard, gpointer id)
-{
-	g_object_set_data (G_OBJECT (wizard->m_next_button), "ptr-id", id);
-}
-
-void ygtk_wizard_set_abort_button_ptr_id (YGtkWizard *wizard, gpointer id)
-{
-	g_object_set_data (G_OBJECT (wizard->m_abort_button), "ptr-id", id);
-}
-
-void ygtk_wizard_set_release_notes_button_ptr_id (YGtkWizard *wizard, gpointer id)
-{
-	g_object_set_data (G_OBJECT (wizard->m_release_notes_button), "ptr-id", id);
-}
-
-void ygtk_wizard_set_back_button_str_id (YGtkWizard *wizard, const char *id)
-{
-	g_object_set_data_full (G_OBJECT (wizard->m_back_button), "str-id",
-	                        g_strdup (id), g_free);
-}
-
-void ygtk_wizard_set_next_button_str_id (YGtkWizard *wizard, const char *id)
-{
-	g_object_set_data_full (G_OBJECT (wizard->m_next_button), "str-id",
-	                        g_strdup (id), g_free);
-}
-
-void ygtk_wizard_set_abort_button_str_id (YGtkWizard *wizard, const char *id)
-{
-	g_object_set_data_full (G_OBJECT (wizard->m_abort_button), "str-id",
-	                        g_strdup (id), g_free);
-}
-
-void ygtk_wizard_set_release_notes_button_str_id (YGtkWizard *wizard, const char *id)
-{
-	g_object_set_data_full (G_OBJECT (wizard->m_release_notes_button), "str-id",
-	                        g_strdup (id), g_free);
-}
-
-void ygtk_wizard_show_release_notes_button (YGtkWizard *wizard, gboolean enable)
-{
-	ENABLE_WIDGET (enable, wizard->m_release_notes_button);
-}
-
-void ygtk_wizard_enable_back_button (YGtkWizard *wizard, gboolean enable)
-{
-	gtk_widget_set_sensitive (GTK_WIDGET (wizard->m_back_button), enable);
-}
-
-void ygtk_wizard_enable_next_button (YGtkWizard *wizard, gboolean enable)
-{
-	if (enable || !ygtk_wizard_is_next_button_protected (wizard))
-		gtk_widget_set_sensitive (GTK_WIDGET (wizard->m_next_button), enable);
-}
-
-void ygtk_wizard_enable_abort_button (YGtkWizard *wizard, gboolean enable)
-{
-	gtk_widget_set_sensitive (GTK_WIDGET (wizard->m_abort_button), enable);
-}
-
-void ygtk_wizard_enable_release_notes_button (YGtkWizard *wizard, gboolean enable)
-{
-	gtk_widget_set_sensitive (GTK_WIDGET (wizard->m_release_notes_button), enable);
-}
-
-gboolean ygtk_wizard_is_next_button_protected (YGtkWizard *wizard)
-{
-	return GPOINTER_TO_INT (g_object_get_data (
-	           G_OBJECT (wizard->m_next_button), "protect"));
-}
-
-void ygtk_wizard_protect_next_button (YGtkWizard *wizard, gboolean protect)
-{
-	g_object_set_data (G_OBJECT (wizard->m_abort_button), "protect",
-	                   GINT_TO_POINTER (protect));
-}
-
-void ygtk_wizard_focus_next_button (YGtkWizard *wizard)
-{
-	gtk_widget_grab_focus (wizard->m_next_button);
-}
-
-void ygtk_wizard_focus_back_button (YGtkWizard *wizard)
-{
-	gtk_widget_grab_focus (wizard->m_back_button);
+	gtk_widget_set_sensitive (button, enable);
 }
 
 void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget)
@@ -840,15 +745,15 @@ void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget)
 void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
                            const char *id)
 {
-	if (!wizard->m_menu) {
-		wizard->m_menu = gtk_menu_bar_new();
-		gtk_container_add (GTK_CONTAINER (wizard->m_menu_box), wizard->m_menu);
+	if (!wizard->menu) {
+		wizard->menu = gtk_menu_bar_new();
+		gtk_container_add (GTK_CONTAINER (wizard->m_menu_box), wizard->menu);
 		// we probably want to hide the title, so the menu is more visible
 		gtk_widget_hide (wizard->m_title);
 	}
 
 	GtkWidget *entry = gtk_menu_item_new_with_mnemonic (text);
-	gtk_menu_shell_append (GTK_MENU_SHELL (wizard->m_menu), entry);
+	gtk_menu_shell_append (GTK_MENU_SHELL (wizard->menu), entry);
 
 	GtkWidget *submenu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (entry), submenu);
@@ -908,27 +813,27 @@ gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_
 
 void ygtk_wizard_clear_menu (YGtkWizard *wizard)
 {
-	if (!wizard->m_menu)
+	if (!wizard->menu)
 		return;
 	yg_hash_table_remove_all (wizard->menu_ids);
-	GList *children = gtk_container_get_children (GTK_CONTAINER (wizard->m_menu)), *i;
+	GList *children = gtk_container_get_children (GTK_CONTAINER (wizard->menu)), *i;
 	for (i = children; i; i = i->next) {
 		GtkWidget *child = (GtkWidget *) i->data;
-		gtk_container_remove (GTK_CONTAINER (wizard->m_menu), child);
+		gtk_container_remove (GTK_CONTAINER (wizard->menu), child);
 	}
 }
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 {
-	g_return_if_fail (wizard->m_steps != NULL);
-	ygtk_steps_append_heading (YGTK_STEPS (wizard->m_steps), text);
+	g_return_if_fail (wizard->steps != NULL);
+	ygtk_steps_append_heading (YGTK_STEPS (wizard->steps), text);
 }
 
 void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 {
 	guint step_nb;
-	g_return_if_fail (wizard->m_steps != NULL);
-	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->m_steps), text);
+	g_return_if_fail (wizard->steps != NULL);
+	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->steps), text);
 	g_hash_table_insert (wizard->steps_ids, g_strdup (id), GINT_TO_POINTER (step_nb));
 }
 
@@ -937,13 +842,13 @@ gboolean ygtk_wizard_set_current_step (YGtkWizard *wizard, const char *id)
 	gpointer step_nb = g_hash_table_lookup (wizard->steps_ids, id);
 	if (!step_nb)
 		return FALSE;
-	ygtk_steps_set_current (YGTK_STEPS (wizard->m_steps), GPOINTER_TO_INT (step_nb));
+	ygtk_steps_set_current (YGTK_STEPS (wizard->steps), GPOINTER_TO_INT (step_nb));
 	return TRUE;
 }
 
 void ygtk_wizard_clear_steps (YGtkWizard *wizard)
 {
-	ygtk_steps_clear (YGTK_STEPS (wizard->m_steps));
+	ygtk_steps_clear (YGTK_STEPS (wizard->steps));
 	yg_hash_table_remove_all (wizard->steps_ids);
 }
 
@@ -962,10 +867,8 @@ static void hash_lookup_tree_path_value (gpointer _key, gpointer _value,
 const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard)
 {
 	GtkTreePath *path;
-	gtk_tree_view_get_cursor (GTK_TREE_VIEW (wizard->m_tree_view),
-	                          &path, NULL);
-	if (path == NULL)
-		return NULL;
+	gtk_tree_view_get_cursor (GTK_TREE_VIEW (wizard->tree_view), &path, NULL);
+	if (path == NULL) return NULL;
 
 	/* A more elegant solution would be using a crossed hash table, but there
 	   is none out of box, so we'll just iterate the hash table. */
@@ -974,15 +877,6 @@ const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard)
 
 	gtk_tree_path_free (path);
 	return found_key;
-}
-
-void ygtk_wizard_set_sensitive (YGtkWizard *wizard, gboolean sensitive)
-{
-	// TODO: check if this chains through
-	gtk_widget_set_sensitive (GTK_WIDGET (wizard), sensitive);
-
-	if (ygtk_wizard_is_next_button_protected (wizard))
-		gtk_widget_set_sensitive (wizard->m_next_button, TRUE);
 }
 
 static void ygtk_wizard_class_init (YGtkWizardClass *klass)

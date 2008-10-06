@@ -30,41 +30,39 @@ class YGWizard : public YWizard, public YGWidget
 		/* Thin class; just changes the associated button label and keeps track
 		   of id change. */
 		YGWButton (YGWizard *parent, GtkWidget *widget, const std::string &label)
-		: YPushButton (parent, label)
-		{ setWidgetRep (NULL); m_wizard = parent; m_widget = widget; setLabel (label); }
+		: YPushButton (parent, label), m_widget (widget), m_wizard (parent)
+		{
+			setWidgetRep (NULL);
+			setLabel (label);
+			ygtk_wizard_set_button_ptr_id (getWizard(), widget, this);
+		}
 
-		void setLabel (const string &label) {
+		virtual void setLabel (const string &label)
+		{
 			YPushButton::setLabel (label);
 			std::string _label = YGUtils::mapKBAccel (label);
-			YGtkWizard *wizard = YGTK_WIZARD (m_wizard->getWidget());
-			if (m_widget == wizard->m_back_button)
-				ygtk_wizard_set_back_button_label (wizard, _label.c_str());
-			else if (m_widget == wizard->m_abort_button)
-				ygtk_wizard_set_abort_button_label (wizard, _label.c_str());
-			else if (m_widget == wizard->m_next_button)
-				ygtk_wizard_set_next_button_label (wizard, _label.c_str());
-			else if (m_widget == wizard->m_release_notes_button)
-				ygtk_wizard_set_release_notes_button_label (wizard, _label.c_str());
-			else
-				yuiError() << "Setting label to unknown button " << label;
+			ygtk_wizard_set_button_label (getWizard(), getWidget(), _label.c_str());
 		}
 
-		void setEnabled (bool enable) {
+		virtual void setEnabled (bool enable)
+		{
 			YWidget::setEnabled (enable);
-			YGtkWizard *wizard = YGTK_WIZARD (m_wizard->getWidget());
-			if (m_widget == wizard->m_back_button)
-				ygtk_wizard_enable_back_button (wizard, enable);
-			else if (m_widget == wizard->m_abort_button)
-				ygtk_wizard_enable_abort_button (wizard, enable);
-			else if (m_widget == wizard->m_next_button)
-				ygtk_wizard_enable_next_button (wizard, enable);
-			else if (m_widget == wizard->m_release_notes_button)
-				ygtk_wizard_enable_release_notes_button (wizard, enable);
+			ygtk_wizard_enable_button (getWizard(), getWidget(), enable);
 		}
 
-		int preferredWidth() { return 0; }
-		int preferredHeight() { return 0; }
-		void setSize (int w, int h) {}
+		virtual bool setKeyboardFocus()
+		{
+			YWidget::setKeyboardFocus();
+			gtk_widget_grab_focus (getWidget());
+			return gtk_widget_is_focus (getWidget());
+		}
+
+		virtual int preferredWidth() { return 0; }
+		virtual int preferredHeight() { return 0; }
+		virtual void setSize (int w, int h) {}
+
+		GtkWidget *getWidget() { return m_widget; }
+		YGtkWizard *getWizard() { return YGTK_WIZARD (m_wizard->getWidget()); }
 
 		private:
 			GtkWidget *m_widget;
@@ -84,6 +82,7 @@ public:
 	{
 		IMPL
 		setBorder (0);
+		YGtkWizard *wizard = getWizard();
 
 		//** Application area
 		{
@@ -106,20 +105,15 @@ public:
 			steps_enabled = false;
 		}
 		if (steps_enabled)
-			ygtk_wizard_enable_steps (getWizard());
+			ygtk_wizard_enable_steps (wizard);
 		if (tree_enabled)
-			ygtk_wizard_enable_tree (getWizard());
+			ygtk_wizard_enable_tree (wizard);
 
 		//** Setting the bottom buttons
-		m_back_button  = new YGWButton (this, getWizard()->m_back_button, backButtonLabel);
-		m_abort_button = new YGWButton (this, getWizard()->m_abort_button, abortButtonLabel);
-		m_next_button  = new YGWButton (this, getWizard()->m_next_button, nextButtonLabel);
-		m_notes_button = new YGWButton (this, getWizard()->m_release_notes_button, string());
-
-		ygtk_wizard_set_back_button_ptr_id (getWizard(), (gpointer) m_back_button);
-		ygtk_wizard_set_next_button_ptr_id (getWizard(), (gpointer) m_next_button);
-		ygtk_wizard_set_abort_button_ptr_id (getWizard(), (gpointer) m_abort_button);
-		ygtk_wizard_set_release_notes_button_ptr_id (getWizard(), (gpointer) m_notes_button);
+		m_back_button  = new YGWButton (this, wizard->back_button, backButtonLabel);
+		m_abort_button = new YGWButton (this, wizard->abort_button, abortButtonLabel);
+		m_next_button  = new YGWButton (this, wizard->next_button, nextButtonLabel);
+		m_notes_button = new YGWButton (this, wizard->release_notes_button, string());
 
 		//** All event are sent through this signal together with an id
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
@@ -262,13 +256,13 @@ public:
 	virtual void showReleaseNotesButton (const string &label, const string &id)
 	{
 		string str = YGUtils::mapKBAccel (label.c_str());
-		ygtk_wizard_set_release_notes_button_label (getWizard(), str.c_str());
-		ygtk_wizard_set_release_notes_button_str_id (getWizard(), id.c_str());
+		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), str.c_str());
+		ygtk_wizard_set_button_str_id (getWizard(), m_notes_button->getWidget(), id.c_str());
 	}
 
 	virtual void hideReleaseNotesButton()
 	{
-		ygtk_wizard_show_release_notes_button (getWizard(), FALSE);
+		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), NULL);
 	}
 
 	virtual void retranslateInternalButtons()

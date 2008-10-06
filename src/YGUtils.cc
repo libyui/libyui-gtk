@@ -534,10 +534,9 @@ bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 	else if (id.size() < 22)
 		icon = fallbackIcon;
 	if (icon) {
-		GdkPixbuf *pixbuf = gtk_widget_render_icon (button, icon, GTK_ICON_SIZE_BUTTON, NULL);
-		if (pixbuf) {
-			GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-			g_object_unref (G_OBJECT (pixbuf));
+		if (gtk_style_lookup_icon_set (button->style, icon)) {
+			// we want to use GtkImage stock mode so it honors sensitive
+			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
 			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 	}

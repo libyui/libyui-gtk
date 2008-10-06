@@ -868,11 +868,8 @@ public:
 
 	void UpdateVisible()
 	{
-		ygtk_wizard_enable_next_button (m_wizard, m_entries != NULL);
-		if (m_entries != NULL)
-			gtk_widget_show (m_box);
-		else
-			gtk_widget_hide (m_box);
+		ygtk_wizard_enable_button (m_wizard, m_wizard->next_button, m_entries != NULL);
+		m_entries != NULL ? gtk_widget_show (m_box) : gtk_widget_hide (m_box);
 	}
 
 	virtual void entryInserted (Ypp::Pool::Iter iter, Ypp::Package *package)
@@ -2502,12 +2499,12 @@ public:
 			onlineUpdateMode() ? _("Online Update") : _("Software Manager"));
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-		ygtk_wizard_set_abort_button_label (wizard, _("_Cancel"));
-		ygtk_wizard_set_abort_button_str_id (wizard, "cancel");
-		ygtk_wizard_set_back_button_label (wizard, "");
-		ygtk_wizard_set_next_button_label (wizard, _("A_pply"));
-		ygtk_wizard_set_next_button_str_id (wizard, "accept");
-		ygtk_wizard_enable_next_button (wizard, FALSE);
+		ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"));
+		ygtk_wizard_set_button_str_id (wizard, wizard->abort_button, "cancel");
+		ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL);
+		ygtk_wizard_set_button_label (wizard,  wizard->next_button, _("A_pply"));
+		ygtk_wizard_set_button_str_id (wizard, wizard->next_button, "accept");
+		ygtk_wizard_enable_button (wizard, wizard->next_button, FALSE);
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
 

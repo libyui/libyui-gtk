@@ -82,8 +82,8 @@ YGWidget *YGWidget::get (YWidget *ywidget)
 
 bool YGWidget::doSetKeyboardFocus()
 {
-	gtk_widget_grab_focus (GTK_WIDGET (getWidget()));
-	return gtk_widget_is_focus (GTK_WIDGET (getWidget()));
+	gtk_widget_grab_focus (getWidget());
+	return gtk_widget_is_focus (getWidget());
 }
 
 void YGWidget::doSetEnabled (bool enabled)

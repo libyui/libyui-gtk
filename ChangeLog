@@ -1,3 +1,16 @@
+2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.h/.c: collapse all button functions and accept button
+	pointers as argument.
+
+	* src/YGUtils.cc: use stock on image -- just test it before -- to
+	track status like sensitive.
+
+	* src/ygtkwizard.c: some tools don't set a header, either use "YaST" or
+	retain last one set.
+
+	* src/linklabel.c: hide in effect if text empty.
+
 2008-10-06  Michael Meeks  <michael.meeks@novell.com>
 
 	* src/YGUI.cc (print_log): wow - YUILog::log assumes that it has
