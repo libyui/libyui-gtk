@@ -14,7 +14,7 @@ plugin_LTLIBRARIES = libpy2gtk.la
 
 libpy2gtk_la_LDFLAGS = -version-info 2:0 -Wl,--no-undefined
 libpy2gtk_la_LIBADD = -L$(plugindir) -L$(libdir) -lycp -ly2 -lyui -lm \
-                      $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS) -ly2util
+                      $(GTK_LIBS) $(ZYPP_LIBS) $(GTKHTML_LIBS) $(WEBKIT_LIBS) -ly2util
 libpy2gtk_la_SOURCES = \
 	Y2CCGtk.cc \
 	YGUtils.cc \
@@ -73,7 +73,7 @@ TESTS = $(check_PROGRAMS)
 test_SOURCES = test.cc
 test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
-INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS)
+INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS) $(GTKHTML_CFLAGS) $(WEBKIT_CFLAGS)
 
 EXTRA_DIST = \
 	icons/pkg-available-locked.xpm \

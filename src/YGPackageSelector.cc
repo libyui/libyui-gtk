@@ -2418,20 +2418,20 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_details_box), m_details->getWidget(), TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_details_box), m_control->getWidget(), FALSE, TRUE, 0);
 
-		GtkWidget *packages_pane = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (packages_pane), packages_box, TRUE, FALSE);
-		gtk_paned_pack2 (GTK_PANED (packages_pane), m_details_box, FALSE, FALSE);
-		gtk_paned_set_position (GTK_PANED (packages_pane), 30000 /* minimal size */);
+		GtkWidget *categories_pane = gtk_hpaned_new();
+		gtk_paned_pack1 (GTK_PANED (categories_pane), categories_box, FALSE, TRUE);
+		gtk_paned_pack2 (GTK_PANED (categories_pane), packages_box, TRUE, FALSE);
+		gtk_paned_set_position (GTK_PANED (categories_pane), 180);
 
-		GtkWidget *pane = gtk_hpaned_new();
-		gtk_paned_pack1 (GTK_PANED (pane), categories_box, FALSE, TRUE);
-		gtk_paned_pack2 (GTK_PANED (pane), packages_pane, TRUE, FALSE);
-		gtk_paned_set_position (GTK_PANED (pane), 180);
+		GtkWidget *details_pane = gtk_vpaned_new();
+		gtk_paned_pack1 (GTK_PANED (details_pane), categories_pane, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (details_pane), m_details_box, FALSE, FALSE);
+		gtk_paned_set_position (GTK_PANED (details_pane), 30000 /* minimal size */);
 
 		m_box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_box), m_filters->getStatusesWidget(),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_box), pane, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), details_pane, TRUE, TRUE, 0);
 
 		gtk_widget_show_all (m_box);
 		m_changes->startHack();

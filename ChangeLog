@@ -1,3 +1,11 @@
+2008-10-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: moved details pane back to fit the
+	all bottom side.
+
+	* src/ygtkhtmlwrap.c: added support for WebKit. (compilation seems to
+	break due to some -l missing.)
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button
