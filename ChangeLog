@@ -11,6 +11,11 @@
 
 	* src/ygtkwizard.c: set anchor background.
 
+	* src/ygtkimage.h/c: add method to accept a pixbuf.
+
+	* src/YGImage.cc: bug fix 428974: whatever the current theme, use GTK
+	stock icons for warning, error, question and info icons.
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button

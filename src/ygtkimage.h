@@ -65,6 +65,7 @@ GType ygtk_image_get_type (void) G_GNUC_CONST;
 
 void ygtk_image_set_from_file (YGtkImage *image, const char *filename, gboolean anim);
 void ygtk_image_set_from_data (YGtkImage *image, const guint8 *data, long size, gboolean anim);
+void ygtk_image_set_from_pixbuf (YGtkImage *image, GdkPixbuf *pixbuf);
 void ygtk_image_set_props (YGtkImage *image, YGtkImageAlign align, const gchar *alt_text);
 
 // as we don't have a window, 

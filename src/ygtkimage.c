@@ -90,8 +90,8 @@ static void ygtk_image_set_animation (YGtkImage *image, GdkPixbufAnimation *pixb
 		image->loaded = TRUE;
 		ygtk_image_advance_frame_cb (image);
 	}
-/*	else
-		g_warning ("Couldn't load image - %s", error_msg);*/
+	else if (error_msg)
+		g_warning ("Couldn't load image - %s", error_msg);
 }
 
 void ygtk_image_set_from_file (YGtkImage *image, const char *filename, gboolean anim)
@@ -109,6 +109,11 @@ void ygtk_image_set_from_file (YGtkImage *image, const char *filename, gboolean 
 		GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (filename, &error);
 		ygtk_image_set_pixbuf (image, pixbuf, error ? error->message : "(undefined)");
 	}
+}
+
+void ygtk_image_set_from_pixbuf (YGtkImage *image, GdkPixbuf *pixbuf)
+{
+	ygtk_image_set_pixbuf (image, pixbuf, NULL);
 }
 
 static void ygtk_image_loaded_cb (GdkPixbufLoader *loader, YGtkImage *image)
