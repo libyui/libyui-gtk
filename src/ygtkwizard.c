@@ -21,6 +21,7 @@
 #include "ygtklinklabel.h"
 #define YGI18N_C
 #include "YGi18n.h"
+#include "icons/help-bg.xpm"
 
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
@@ -79,6 +80,10 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	                                     GTK_SHADOW_IN);
 	dialog->help_text = ygtk_html_wrap_new();
 	gtk_container_add (GTK_CONTAINER (dialog->help_box), dialog->help_text);
+
+	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_xpm_data (help_bg_xpm);
+	ygtk_html_wrap_set_background (dialog->help_text, pixbuf);
+	g_object_unref (pixbuf);
 
 	// bottom part (search entry + close button)
 	GtkWidget *bottom_box;

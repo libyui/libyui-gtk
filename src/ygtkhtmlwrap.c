@@ -183,6 +183,11 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
+{
+	ygtk_rich_text_set_background (YGTK_RICH_TEXT (widget), pixbuf);
+}
+
 #endif
 #endif
 

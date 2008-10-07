@@ -160,6 +160,7 @@ static void ygtk_rich_text_destroy (GtkObject *object)
 	// destroy can be called multiple times, and we must ref only once
 	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
 	gdk_cursor_unref (rtext->hand_cursor);
+	ygtk_rich_text_set_background (rtext, NULL);
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
 
@@ -208,9 +209,23 @@ static gboolean ygtk_rich_text_motion_notify_event (GtkWidget *widget,
 
 static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
+	GtkTextView *text = GTK_TEXT_VIEW (widget);
+	YGtkRichText *rtext = YGTK_RICH_TEXT (widget);
+	if (rtext->background_pixbuf) {
+		GdkWindow *window = gtk_text_view_get_window (text, GTK_TEXT_WINDOW_TEXT);
+		if (event->window == window) {
+			int x, y;
+			int width = gdk_pixbuf_get_width (rtext->background_pixbuf);
+			gtk_text_view_buffer_to_window_coords (text, GTK_TEXT_WINDOW_TEXT,
+				widget->allocation.width-width, 0, &x, &y);
+			gdk_draw_pixbuf (GDK_DRAWABLE (window), *widget->style->fg_gc, rtext->background_pixbuf,
+				0, 0, x, y, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
+		}
+	}
+
 	gboolean ret;
 	ret = GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->expose_event (widget, event);
-	set_cursor_if_appropriate (GTK_TEXT_VIEW (widget), -1, -1);
+	set_cursor_if_appropriate (text, -1, -1);
 	return ret;
 }
 
@@ -647,6 +662,15 @@ gboolean ygtk_rich_text_forward_mark (YGtkRichText *rtext, const gchar *text)
 		return TRUE;
 	}
 	return FALSE;
+}
+
+void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
+{
+	if (rtext->background_pixbuf)
+		g_object_unref (G_OBJECT (rtext->background_pixbuf));
+	rtext->background_pixbuf = pixbuf;
+	if (pixbuf)
+		g_object_ref (G_OBJECT (pixbuf));
 }
 
 void ygtk_rich_text_class_init (YGtkRichTextClass *klass)

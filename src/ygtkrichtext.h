@@ -30,6 +30,7 @@ typedef struct _YGtkRichText
 	GtkTextView parent;
 	// members:
 	GdkCursor *hand_cursor;
+	GdkPixbuf *background_pixbuf;
 } YGtkRichText;
 
 typedef struct _YGtkRichTextClass
@@ -50,6 +51,8 @@ void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean p
 // To be used together with an entry box to search for text
 gboolean ygtk_rich_text_mark_text (YGtkRichText *rtext, const gchar *text);
 gboolean ygtk_rich_text_forward_mark (YGtkRichText *rtext, const gchar *text);  // F3
+
+void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf);
 
 G_END_DECLS
 #endif /* YGTK_RICH_TEXT_H */
