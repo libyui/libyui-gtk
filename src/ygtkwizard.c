@@ -584,7 +584,10 @@ void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 	g_return_if_fail (wizard->steps == NULL);
 	wizard->steps = ygtk_steps_new();
 	gtk_widget_show (wizard->steps);
-	ygtk_wizard_set_information_widget (wizard, wizard->steps);
+	GtkWidget *box = gtk_event_box_new();  // so that expose affects only this window
+	gtk_container_add (GTK_CONTAINER (box), wizard->steps);
+	gtk_widget_show (box);
+	ygtk_wizard_set_information_widget (wizard, box);
 	ygtk_wizard_set_information_expose_hook (wizard->steps, &wizard->steps->allocation);
 }
 

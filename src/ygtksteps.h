@@ -19,10 +19,7 @@
 
 #ifndef YGTK_STEPS_H
 #define YGTK_STEPS_H
-
-#include <gdk/gdk.h>
-#include <gtk/gtkwidget.h>
-
+#include <gtk/gtkvbox.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_STEPS            (ygtk_steps_get_type ())
@@ -39,10 +36,9 @@ G_BEGIN_DECLS
 
 typedef struct _YGtkSteps
 {
-	GtkWidget parent;
+	GtkVBox parent;
 
 	// private:
-	GList *steps;  // of YGtkSingleStep
 	guint current_step;
 	PangoLayout *check_mark_layout, *current_mark_layout;
 	// for current_mark little animation
@@ -52,18 +48,8 @@ typedef struct _YGtkSteps
 
 typedef struct _YGtkStepsClass
 {
-	GtkWidgetClass parent_class;
+	GtkVBoxClass parent_class;
 } YGtkStepsClass;
-
-typedef struct _YGtkSingleStep
-{
-	gboolean is_heading;
-	gchar *text;
-	guint strength;  // check the text at top
-
-	// private -- don't access it, call ygtk_step_get_layout() instead
-	PangoLayout *layout, *layout_bold;  // cache
-} YGtkSingleStep;
 
 GtkWidget* ygtk_steps_new (void);
 GType ygtk_steps_get_type (void) G_GNUC_CONST;

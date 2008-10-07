@@ -16,6 +16,8 @@
 	* src/YGImage.cc: bug fix 428974: whatever the current theme, use GTK
 	stock icons for warning, error, question and info icons.
 
+	* src/ygtksteps.c: bug fix 432705: first work: use a GtkVBox and labels.
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button
