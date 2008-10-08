@@ -23,6 +23,8 @@
 	* src/YGPackageSelector.cc: bug fix: ensure problem solver text is set as
 	normal or it may look grayed out.
 
+	* src/YGDialog.cc: bug fix 428965: enable setSize() code.
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button

@@ -121,7 +121,7 @@ void YGUI::checkInit()
 				 "--no-wm       assume no window manager is running\n"
 				 "--noborder    no window manager border for main dialogs\n"
 				 "--fullscreen  use full screen for main dialogs\n"
-				 "--geomtry WxH sets a default size of W per H to main dialogs\n"
+//				 "--geomtry WxH sets a default size of W per H to main dialogs\n"
 				 "--nothreads   run without additional UI threads\n"
 				 "--help        prints this help text\n"
 				 "\n"
@@ -573,8 +573,8 @@ long YGApplication::displayColors()
 
 // YCP uses defaultWidth/Height() to use their smaller YWizard impl, so we fool
 // them since we want to use a smaller default size than qt
-int YGApplication::defaultWidth() { return 1000; }
-int YGApplication::defaultHeight() { return 1000; }
+int YGApplication::defaultWidth() { return 800; }
+int YGApplication::defaultHeight() { return 600; }
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }

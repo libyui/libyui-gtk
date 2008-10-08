@@ -21,7 +21,7 @@
    be a YGDialog and is swap-able.
 */
 
-#define DEFAULT_WIDTH  650
+#define DEFAULT_WIDTH  600
 #define DEFAULT_HEIGHT 600
 
 class YGWindow;
@@ -413,14 +413,12 @@ void YGDialog::setSize (int width, int height)
 	GtkWidget *window = m_window->getWidget();
 	if (GTK_WIDGET_REALIZED (window)) {
 		gtk_widget_queue_resize (window);
-#if 0
+#if 1
 		bool resize = false;
 		if (isMainDialog()) {
-			width = MIN (0.95 * YUI::app()->displayWidth(), width);
-			height = MIN (0.95 * YUI::app()->displayWidth(), width);
 			if (window->allocation.width < width || window->allocation.height < height) {
-				width = MAX (width-100, window->allocation.width),
-				height = MAX (height-60, window->allocation.height);
+				width = MAX (width, window->allocation.width),
+				height = MAX (height, window->allocation.height);
 				resize = true;
 			}
 		}
