@@ -425,6 +425,29 @@ static void ygtk_wizard_popup_help (YGtkWizard *wizard)
 static void more_clicked_cb (YGtkWizardHeader *header, YGtkWizard *wizard)
 { ygtk_wizard_popup_help (wizard); }
 
+/* We must dishonor the size group if the space doesn't afford it. */
+
+static void buttons_size_allocate_cb (GtkWidget *box, GtkAllocation *alloc,
+                                       GtkSizeGroup *group)
+{
+	GSList *buttons = gtk_size_group_get_widgets (group), *i;
+	int max_width = 0, total = 0;
+	for (i = buttons; i; i = i->next) {
+		if (!GTK_WIDGET_VISIBLE (i->data))
+			continue;
+		GtkRequisition req;
+		gtk_widget_get_child_requisition ((GtkWidget *) i->data, &req);
+		max_width = MAX (max_width, req.width);
+		total++;
+	}
+	int spacing = gtk_box_get_spacing (GTK_BOX (box));
+	int width = max_width*total + (total ? spacing*(total-1) : 0);
+	GtkSizeGroupMode new_mode = width > alloc->width ?
+		GTK_SIZE_GROUP_VERTICAL : GTK_SIZE_GROUP_BOTH;
+	if (gtk_size_group_get_mode (group) != new_mode)
+		gtk_size_group_set_mode (group, new_mode);
+}
+
 G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_VBOX)
 
 static void ygtk_wizard_init (YGtkWizard *wizard)
@@ -468,8 +491,9 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_size_group_add_widget (buttons_group, wizard->next_button);
 	gtk_size_group_add_widget (buttons_group, wizard->back_button);
 	gtk_size_group_add_widget (buttons_group, wizard->abort_button);
-	g_object_unref (G_OBJECT (buttons_group)); 
-
+	g_object_unref (G_OBJECT (buttons_group));
+	g_signal_connect_after (G_OBJECT (wizard->m_buttons), "size-allocate",
+	                  G_CALLBACK (buttons_size_allocate_cb), buttons_group);
 
 	//** The menu and the navigation widgets will be created when requested.
 	// space for them
