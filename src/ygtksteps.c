@@ -126,12 +126,6 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	gtk_box_pack_start (GTK_BOX (steps), label, FALSE, TRUE, 6);
 }
 
-void ygtk_steps_advance (YGtkSteps *steps)
-{
-	if (steps->current_step + 1 < ygtk_steps_total (steps))
-		ygtk_steps_set_current (steps, steps->current_step + 1);
-}
-
 static gboolean current_mark_animation_cb (void *steps_ptr)
 {
 	YGtkSteps *steps = steps_ptr;

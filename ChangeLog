@@ -28,6 +28,8 @@
 	* src/ygtkwizard.c: bug fix 432399: dismiss horizontal SizeGroup when
 	not enough width is available.
 
+	* src/ygtksteps.h/c: removed unused and unfunctional advance method.
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button
