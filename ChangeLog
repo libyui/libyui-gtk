@@ -1,3 +1,8 @@
+2008-10-08  Michael Meeks  <michael.meeks@novell.com>
+
+	* configure.in.in, src/Makefile.am: massage the webkit /
+	gtkhtml pieces, add configure flag and AM conditionals etc.
+
 2008-10-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtksteps.c: added "current step" description for Orca.
@@ -9,7 +14,7 @@
 	* src/YGPackageSelector.cc: moved details pane back to fit the
 	all bottom side.
 
-	* src/ygtkhtmlwrap.c: added support for WebKit. (compilation seems to
+	* src/ygtkhtmlwrap.c: added support for WebKit. (compilation seems too
 	break due to some -l missing.)
 
 	* src/ygtkhtmlwrap.h/c & src/ygtkrichtext.h/c: added support for
@@ -99,6 +104,7 @@
 	sensitive.
 
 2008-09-30 Katarina Machalkova <kmachalkova@suse.cz>
+
 	* version 2.17.1
 
 2008-09-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>

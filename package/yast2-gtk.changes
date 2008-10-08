@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Wed Oct 08 13:56:07 CEST 2008 - michael.meeks@novell.com
+
+- Update to 2.17.2
+  * tons of bug fixes: 428974, 432705, 428965, 428965,
+    428193, 428162, 388172 including:
+  * improved accessibility support: dialog roles, wizard overview
+  * improved tooltip support, and new tooltips
+  * use WebKit for better html rendering
+  * fix g_log redirection crasher
+  * support background image with html
+  * use gtk+ stock icons for stock dialogs
+
+-------------------------------------------------------------------
 Tue Sep 30 13:56:07 CEST 2008 - kmachalkova@suse.cz
 
 - Update to 2.17.1
