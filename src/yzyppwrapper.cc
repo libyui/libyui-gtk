@@ -430,7 +430,11 @@ GSList *m_containsPackages;
 					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
 				if (!license.empty())
 					text += br + "<b>" + _("License:") + "</b> " + license;
+#if ZYPP_VERSION >= 50130050
+				text += br + "<b>" + _("Size:") + "</b> " + object->installSize().asString();
+#else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
+#endif
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:

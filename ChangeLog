@@ -18,6 +18,8 @@
 
 	* src/ygtksteps.c: bug fix 432705: first work: use a GtkVBox and labels.
 
+	* src/yzyppwrapper.cc: fixed libzypp deprecated call.
+
 2008-10-06  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/.c: collapse all button functions and accept button

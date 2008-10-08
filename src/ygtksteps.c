@@ -31,7 +31,6 @@ static void ygtk_steps_init (YGtkSteps *steps)
 static void ygtk_steps_destroy (GtkObject *object)
 {
 	YGtkSteps *steps = YGTK_STEPS (object);
-
 	if (steps->current_mark_timeout_id) {
 		g_source_remove (steps->current_mark_timeout_id);
 		steps->current_mark_timeout_id = 0;
@@ -42,8 +41,6 @@ static void ygtk_steps_destroy (GtkObject *object)
 	if (steps->current_mark_layout)
 		g_object_unref (steps->current_mark_layout);
 	steps->current_mark_layout = NULL;
-	
-	ygtk_steps_clear (steps);
 	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
 }
 
@@ -52,6 +49,8 @@ static void ygtk_step_update_layout (YGtkSteps *steps, guint step)
 	gboolean bold = steps->current_step == step;
 	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	GtkWidget *label = (GtkWidget *) g_list_nth_data (children, step);
+	if (g_object_get_data (G_OBJECT (label), "header"))
+		return;
 	if (bold) {
 		PangoAttrList *attrbs = pango_attr_list_new();
 		pango_attr_list_insert (attrbs, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
@@ -73,9 +72,11 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 	int n = 0;
 	for (i = children; i; i = i->next, n++) {
 		if (n <= steps->current_step) {
+			GtkWidget *label = i->data;
+			if (g_object_get_data (G_OBJECT (label), "header"))
+				continue;
 			PangoLayout *mark = (n == steps->current_step) ?
 				steps->current_mark_layout : steps->check_mark_layout;
-			GtkWidget *label = i->data;
 			int x = label->allocation.x, y = label->allocation.y;
 			x += 4;
 			if (n == steps->current_step) {
@@ -111,8 +112,8 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
-fprintf (stderr, "add header: %s\n", heading);
 	GtkWidget *label = gtk_label_new (heading);
+	g_object_set_data (G_OBJECT (label), "header", GINT_TO_POINTER (1));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 
 	PangoAttrList *attrbs = pango_attr_list_new();

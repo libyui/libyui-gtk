@@ -52,6 +52,9 @@ AC_SUBST(GTK_LIBS)
 
 PKG_CHECK_MODULES( ZYPP, libzypp )
 AC_SUBST(ZYPP_LIBS)
+verstxt=`pkg-config --modversion libzypp`
+zypp_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
+AC_DEFINE_UNQUOTED(ZYPP_VERSION, $zypp_vers, [libzypp version for compile conditionals])
 
 verstxt=`pkg-config --modversion yast2-libyui`
 yast_vers=`echo "$verstxt" | awk -F. '{ printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
