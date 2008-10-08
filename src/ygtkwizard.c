@@ -493,7 +493,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_size_group_add_widget (buttons_group, wizard->abort_button);
 	g_object_unref (G_OBJECT (buttons_group));
 	g_signal_connect_after (G_OBJECT (wizard->m_buttons), "size-allocate",
-	                  G_CALLBACK (buttons_size_allocate_cb), buttons_group);
+	                        G_CALLBACK (buttons_size_allocate_cb), buttons_group);
 
 	//** The menu and the navigation widgets will be created when requested.
 	// space for them
