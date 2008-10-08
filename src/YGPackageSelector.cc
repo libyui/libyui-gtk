@@ -2680,11 +2680,13 @@ protected:
 				GtkTreeIter solution_iter;
 				gtk_tree_store_append (store, &solution_iter, &problem_iter);
 				gtk_tree_store_set (store, &solution_iter, SHOW_TOGGLE_COL, TRUE,
+					WEIGHT_TEXT_COL, PANGO_WEIGHT_NORMAL,
 					ACTIVE_TOGGLE_COL, FALSE, TEXT_COL, solution->description.c_str(),
 					APPLY_PTR_COL, &solution->apply, -1);
 				if (!solution->details.empty()) {
 					gtk_tree_store_append (store, &solution_iter, &problem_iter);
 					gtk_tree_store_set (store, &solution_iter, SHOW_TOGGLE_COL, FALSE,
+						WEIGHT_TEXT_COL, PANGO_WEIGHT_NORMAL,
 						TEXT_COL, solution->details.c_str(), TEXT_PAD_COL, DETAILS_PAD, -1);
 				}
 			}
