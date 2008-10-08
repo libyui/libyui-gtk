@@ -14,7 +14,7 @@ static bool endsWith (const std::string &str1, const char *str2)
 {
 	size_t len = strlen (str2);
 	if (str1.size() < len) return false;
-	return str1.compare (str1.size()-len, len, str2, len);
+	return str1.compare (str1.size()-len, len, str2, len) == 0;
 }
 
 class YGImage : public YImage, public YGWidget
