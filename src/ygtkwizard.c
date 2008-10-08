@@ -752,6 +752,8 @@ void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button, const 
 		stock = GTK_STOCK_CANCEL;
 	else if (button == wizard->next_button)
 		stock = GTK_STOCK_APPLY;
+	else if (button == wizard->release_notes_button)
+		stock = GTK_STOCK_EDIT;
 	ygutils_setStockIcon (button, label, stock);
 }
 

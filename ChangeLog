@@ -1,3 +1,9 @@
+2008-10-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtksteps.c: added "current step" description for Orca.
+
+	* src/ygtkwizard.c: added stock icon for release notes button.
+
 2008-10-07  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: moved details pane back to fit the

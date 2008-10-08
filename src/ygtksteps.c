@@ -5,9 +5,15 @@
 /* YGtkSteps widget */
 // check the header file for information about this widget
 
+/*
+  Textdomain "yast2-gtk"
+ */
+
 #include <config.h>
 #include "ygtksteps.h"
 #include <gtk/gtk.h>
+#define YGI18N_C
+#include "YGi18n.h"
 
 #define CURRENT_MARK_ANIMATION_TIME  250
 #define CURRENT_MARK_ANIMATION_OFFSET  3
@@ -56,9 +62,12 @@ static void ygtk_step_update_layout (YGtkSteps *steps, guint step)
 		pango_attr_list_insert (attrbs, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
 		gtk_label_set_attributes (GTK_LABEL (label), attrbs);
 		pango_attr_list_unref (attrbs);
+		atk_object_set_description (gtk_widget_get_accessible (label), _("Current step"));
 	}
-	else
+	else {
 		gtk_label_set_attributes (GTK_LABEL (label), NULL);
+		atk_object_set_description (gtk_widget_get_accessible (label), "");
+	}
 	g_list_free (children);
 }
 
