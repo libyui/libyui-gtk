@@ -10,10 +10,6 @@
 #include <string.h>
 #include "ygtkhtmlwrap.h"
 
-//#define USE_YGTKRICHTEXT
-//#define USE_GTKHTML
-//#define USE_WEBKIT
-
 // ygutils
 #include <gtk/gtktextview.h>
 void ygutils_scrollView (GtkTextView *view, gboolean top);
@@ -21,6 +17,66 @@ void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
 GtkWidget *ygtk_html_wrap_new (void)
 { return g_object_new (ygtk_html_wrap_get_type(), NULL); }
 
+//** WebKit
+#ifdef USE_WEBKIT
+#include <webkit/webkit.h>
+
+GType ygtk_html_wrap_get_type()
+{
+	return WEBKIT_TYPE_WEB_VIEW;
+}
+
+void ygtk_html_wrap_init (GtkWidget *widget)
+{
+}
+
+void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
+{
+	// TODO: implement plain_mode
+	webkit_web_view_load_html_string (WEBKIT_WEB_VIEW (widget), text, ".");
+}
+
+void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
+{
+	// TODO
+}
+
+gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
+{
+	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
+	gboolean found = webkit_web_view_mark_text_matches (view, text, FALSE, -1);
+	webkit_web_view_set_highlight_text_matches (view, TRUE);
+	return found;
+}
+
+gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
+{
+	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
+	return webkit_web_view_search_text (view, text, FALSE, TRUE, TRUE);
+}
+
+static WebKitNavigationResponse ygtk_webkit_navigation_requested_cb (
+	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, void (*callback) (gpointer d))
+{
+	gpointer data = g_object_get_data (G_OBJECT (view), "pointer");
+	(*callback) (data);
+	return WEBKIT_NAVIGATION_RESPONSE_IGNORE;
+}
+
+void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
+{
+	g_object_set_data (G_OBJECT (widget), "pointer", data);
+	g_signal_connect (G_OBJECT (widget), "navigation-requested",
+	                  G_CALLBACK (ygtk_webkit_navigation_requested_cb), callback);
+}
+
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
+{
+	// TODO
+}
+
+#else
+//** GtkHTML
 #ifdef USE_GTKHTML
 #include <gtkhtml/gtkhtml.h>
 #include <gtkhtml/gtkhtml-stream.h>
@@ -90,61 +146,13 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
-//** WebKit
-#else
-#if USE_WEBKIT
-#include <webkit/webkit.h>
-
-GType ygtk_html_wrap_get_type()
-{
-	return WEBKIT_TYPE_WEB_VIEW;
-}
-
-void ygtk_html_wrap_init (GtkWidget *widget)
-{
-}
-
-void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
-{
-	webkit_web_view_load_html_string (WEBKIT_WEB_VIEW (widget), text, ".");
-}
-
-void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
 {
 	// TODO
 }
 
-gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
-{
-	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
-	gboolean found = webkit_web_view_mark_text_matches (view, text, FALSE, -1);
-	webkit_web_view_set_highlight_text_matches (view, TRUE);
-	return found;
-}
-
-gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
-{
-	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
-	return webkit_web_view_search_text (view, text, FALSE, TRUE, TRUE);
-}
-
-static gpointer data2;
-static WebKitNavigationResponse ygtk_webkit_navigation_requested_cb (
-	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, void (*callback) (gpointer d))
-{
-	(*callback) (data2);
-	return WEBKIT_NAVIGATION_RESPONSE_IGNORE;
-}
-
-void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
-{
-	data2 = data;
-	g_signal_connect (G_OBJECT (widget), "navigation-requested",
-	                  G_CALLBACK (ygtk_webkit_navigation_requested_cb), callback);
-}
-
-//** YGtkRichText
 #else
+//** YGtkRichText (internal)
 #include "ygtkrichtext.h"
 
 GType ygtk_html_wrap_get_type()

@@ -69,7 +69,7 @@ libpy2gtk_la_SOURCES = \
 	yzyppwrapper.cc \
 	yzypptags.cc \
 	ygtkzyppwrapper.cc
-# should only append ygtkrichtext.c if USE_GTKHTML is set
+# should only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la

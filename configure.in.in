@@ -43,28 +43,31 @@ PKG_CHECK_MODULES( GTK, gtk+-2.0 glib-2.0 gthread-2.0 gobject-2.0 )
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
 
-AC_MSG_CHECKING([for gtkhtml])
-PKG_CHECK_MODULES( GTKHTML, libgtkhtml-3.14 )
-AC_SUBST(GTKHTML_CFLAGS)
-AC_SUBST(GTKHTML_LIBS)
-AC_MSG_CHECKING([for webkit])
-PKG_CHECK_MODULES( WEBKIT, webkit-1.0 )
-AC_SUBST(WEBKIT_CFLAGS)
-AC_SUBST(WEBKIT_LIBS)
-
 use_webkit=false
 use_gtkhtml=false
 if test "z$with_html_engine" = "zwebkit"; then
-   use_webkit=true
-   AC_DEFINE(USE_GTKHTML, $use_gtkhtml, [will use GtkHtml as the HTML renderer])
+	use_webkit=true
+
+	AC_MSG_CHECKING([for webkit])
+	PKG_CHECK_MODULES( WEBKIT, webkit-1.0 )
+	AC_SUBST(WEBKIT_CFLAGS)
+	AC_SUBST(WEBKIT_LIBS)
+
+	AC_DEFINE(USE_WEBKIT, $use_webkit, [will use WebKit as the HTML renderer])
 fi
 if test "z$with_html_engine" = "zgtkhtml"; then
-   use_gtkhtml=true
-   AC_DEFINE(USE_WEBKIT, $use_webkit, [will use WebKit as the HTML renderer])
+	use_gtkhtml=true
+
+	AC_MSG_CHECKING([for gtkhtml])
+	PKG_CHECK_MODULES( GTKHTML, libgtkhtml-3.14 )
+	AC_SUBST(GTKHTML_CFLAGS)
+	AC_SUBST(GTKHTML_LIBS)
+
+	AC_DEFINE(USE_GTKHTML, $use_gtkhtml, [will use GtkHtml as the HTML renderer])
 fi
 
 AM_CONDITIONAL(WITH_GTKHTML, $use_gtkhtml)
-AM_CONDITIONAL(WITH_WEBKIT, $use_gtkhtml)
+AM_CONDITIONAL(WITH_WEBKIT, $use_webkit)
 
 PKG_CHECK_MODULES( ZYPP, libzypp )
 AC_SUBST(ZYPP_LIBS)

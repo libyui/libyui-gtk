@@ -1,3 +1,14 @@
+2008-10-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: version 5.13.1 already deprecated
+	installsize().
+
+	* src/ygtkhtmlwrapper.c: a couple of missing impls and fixes.
+
+	* configure.in.in: fixed typo: was enabling webkit for gtkhtml
+	and vice-versa. Also, moved GTKHTML and WEBKIT_CLAGS and LIBS
+	to inside their respective use_html_engine condition.
+
 2008-10-08  Michael Meeks  <michael.meeks@novell.com>
 
 	* configure.in.in, src/Makefile.am: massage the webkit /
