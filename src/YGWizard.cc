@@ -167,25 +167,25 @@ public:
 		YGDialog::currentDialog()->setTitle (title, true);
 	}
 
-    virtual void addStep (const string &text, const string &id)
-	{
-		ygtk_wizard_add_step (getWizard(), text.c_str(), id.c_str());
-	}
-
 	virtual void addStepHeading (const string &text)
 	{
 		ygtk_wizard_add_step_header (getWizard(), text.c_str());
 	}
 
-	virtual void deleteSteps()
+    virtual void addStep (const string &text, const string &id)
 	{
-		ygtk_wizard_clear_steps (getWizard());
+		ygtk_wizard_add_step (getWizard(), text.c_str(), id.c_str());
 	}
 
 	virtual void setCurrentStep (const string &id)
 	{
 		if (!ygtk_wizard_set_current_step (getWizard(), id.c_str()))
 			yuiError() << "YGWizard: there is no step with id " << id << endl;
+	}
+
+	virtual void deleteSteps()
+	{
+		ygtk_wizard_clear_steps (getWizard());
 	}
 
 	virtual void updateSteps()

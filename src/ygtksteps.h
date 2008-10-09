@@ -39,7 +39,7 @@ typedef struct _YGtkSteps
 	GtkVBox parent;
 
 	// private:
-	guint current_step;
+	gint current_step;
 	PangoLayout *check_mark_layout, *current_mark_layout;
 	// for current_mark little animation
 	guint current_mark_timeout_id, current_mark_frame;
@@ -54,11 +54,12 @@ typedef struct _YGtkStepsClass
 GtkWidget* ygtk_steps_new (void);
 GType ygtk_steps_get_type (void) G_GNUC_CONST;
 
-guint ygtk_steps_append (YGtkSteps *steps, const gchar *label);
+gint ygtk_steps_append (YGtkSteps *steps, const gchar *label);
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading);
 
-void ygtk_steps_set_current (YGtkSteps *steps, guint step);
-guint ygtk_steps_total (YGtkSteps *steps);
+void ygtk_steps_set_current (YGtkSteps *steps, gint step);
+gint ygtk_steps_total (YGtkSteps *steps);
+const gchar *ygtk_steps_get_nth_label (YGtkSteps *steps, gint n);
 
 void ygtk_steps_clear (YGtkSteps *steps);
 

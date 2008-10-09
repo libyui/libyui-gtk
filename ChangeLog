@@ -9,6 +9,11 @@
 	and vice-versa. Also, moved GTKHTML and WEBKIT_CLAGS and LIBS
 	to inside their respective use_html_engine condition.
 
+	* src/ygtksteps.h/.c: added get_nth_label() method.
+
+	* src/ygtkwizard.c: using the previous method, don't add
+	repeated steps -- use those ids only for internal purposes.
+
 2008-10-08  Michael Meeks  <michael.meeks@novell.com>
 
 	* configure.in.in, src/Makefile.am: massage the webkit /

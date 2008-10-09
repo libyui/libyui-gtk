@@ -55,7 +55,7 @@ static void ygtk_step_update_layout (YGtkSteps *steps, guint step)
 	gboolean bold = steps->current_step == step;
 	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	GtkWidget *label = (GtkWidget *) g_list_nth_data (children, step);
-	if (g_object_get_data (G_OBJECT (label), "header"))
+	if (g_object_get_data (G_OBJECT (label), "is-header"))
 		return;
 	if (bold) {
 		PangoAttrList *attrbs = pango_attr_list_new();
@@ -82,7 +82,7 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 	for (i = children; i; i = i->next, n++) {
 		if (n <= steps->current_step) {
 			GtkWidget *label = i->data;
-			if (g_object_get_data (G_OBJECT (label), "header"))
+			if (g_object_get_data (G_OBJECT (label), "is-header"))
 				continue;
 			PangoLayout *mark = (n == steps->current_step) ?
 				steps->current_mark_layout : steps->check_mark_layout;
@@ -109,7 +109,7 @@ GtkWidget* ygtk_steps_new (void)
 	return g_object_new (YGTK_TYPE_STEPS, NULL);
 }
 
-guint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
+gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 {
 	GtkWidget *label = gtk_label_new (text);
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
@@ -122,7 +122,7 @@ guint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
 	GtkWidget *label = gtk_label_new (heading);
-	g_object_set_data (G_OBJECT (label), "header", GINT_TO_POINTER (1));
+	g_object_set_data (G_OBJECT (label), "is-header", GINT_TO_POINTER (1));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 
 	PangoAttrList *attrbs = pango_attr_list_new();
@@ -139,9 +139,7 @@ static gboolean current_mark_animation_cb (void *steps_ptr)
 {
 	YGtkSteps *steps = steps_ptr;
 
-	// ugly -- should use gtk_widget_queue_draw_area (widget, x, y, w, h)
-	// but we need to iterate through all steps to get current location and
-	// all, so...
+	// should use gtk_widget_queue_draw_area (widget, x, y, w, h)...
 	gtk_widget_queue_draw (GTK_WIDGET (steps));
 
 	if (++steps->current_mark_frame == CURRENT_MARK_FRAMES_NB) {
@@ -151,7 +149,7 @@ static gboolean current_mark_animation_cb (void *steps_ptr)
 	return TRUE;
 }
 
-void ygtk_steps_set_current (YGtkSteps *steps, guint step)
+void ygtk_steps_set_current (YGtkSteps *steps, gint step)
 {
 	guint old_step = steps->current_step;
 	steps->current_step = step;
@@ -166,12 +164,24 @@ void ygtk_steps_set_current (YGtkSteps *steps, guint step)
 		current_mark_animation_cb, steps);
 }
 
-guint ygtk_steps_total (YGtkSteps *steps)
+gint ygtk_steps_total (YGtkSteps *steps)
 {
 	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	int steps_nb = g_list_length (children);
 	g_list_free (children);
 	return steps_nb;
+}
+
+const gchar *ygtk_steps_get_nth_label (YGtkSteps *steps, gint n)
+{
+	if (n < 0) return NULL;
+	GtkWidget *step;
+	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
+	step = g_list_nth_data (children, n);
+	g_list_free (children);
+	if (step)
+		return gtk_label_get_text (GTK_LABEL (step));
+	return NULL;
 }
 
 void ygtk_steps_clear (YGtkSteps *steps)

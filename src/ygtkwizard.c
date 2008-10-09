@@ -523,7 +523,13 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 	gtk_widget_grab_focus (wizard->next_button);
 }
 
-static void destroy_hash (GHashTable **hash)
+static gboolean clear_hash_cb (gpointer key, gpointer value, gpointer data)
+{ return TRUE; }
+static void clear_hash (GHashTable *hash_table)
+{
+	g_hash_table_foreach_remove (hash_table, clear_hash_cb, NULL);
+}
+static void destroy_hash (GHashTable **hash, gboolean is_tree)
 {
 	if (*hash)
 		g_hash_table_destroy (*hash);
@@ -535,9 +541,9 @@ static void ygtk_wizard_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
 
 	YGtkWizard *wizard = YGTK_WIZARD (object);
-	destroy_hash (&wizard->menu_ids);
-	destroy_hash (&wizard->tree_ids);
-	destroy_hash (&wizard->steps_ids);
+	destroy_hash (&wizard->menu_ids, FALSE);
+	destroy_hash (&wizard->tree_ids, TRUE);
+	destroy_hash (&wizard->steps_ids, FALSE);
 
 	if (wizard->m_help) {
 		g_free (wizard->m_help);
@@ -687,21 +693,11 @@ gboolean ygtk_wizard_add_tree_item (YGtkWizard *wizard, const char *parent_id,
 	return TRUE;
 }
 
-/* this is g_hash_table_remove_all in new glib */
-static gboolean hash_table_clear_cb (gpointer key, gpointer value, gpointer data)
-{
-	return TRUE;
-}
-static void yg_hash_table_remove_all (GHashTable *hash_table)
-{
-	g_hash_table_foreach_remove (hash_table, hash_table_clear_cb, NULL);
-}
-
 void ygtk_wizard_clear_tree (YGtkWizard *wizard)
 {
 	GtkTreeView *tree = GTK_TREE_VIEW (wizard->tree_view);
 	gtk_tree_store_clear (GTK_TREE_STORE (gtk_tree_view_get_model (tree)));
-	yg_hash_table_remove_all (wizard->tree_ids);
+	clear_hash (wizard->tree_ids);
 }
 
 gboolean ygtk_wizard_select_tree_item (YGtkWizard *wizard, const char *id)
@@ -850,7 +846,7 @@ void ygtk_wizard_clear_menu (YGtkWizard *wizard)
 {
 	if (!wizard->menu)
 		return;
-	yg_hash_table_remove_all (wizard->menu_ids);
+	clear_hash (wizard->menu_ids);
 	GList *children = gtk_container_get_children (GTK_CONTAINER (wizard->menu)), *i;
 	for (i = children; i; i = i->next) {
 		GtkWidget *child = (GtkWidget *) i->data;
@@ -866,9 +862,18 @@ void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 
 void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 {
-	guint step_nb;
 	g_return_if_fail (wizard->steps != NULL);
-	step_nb = ygtk_steps_append (YGTK_STEPS (wizard->steps), text);
+	YGtkSteps *steps = YGTK_STEPS (wizard->steps);
+
+	// append may be called for the same step a few times to mean that we
+	// should consider it several steps, but present it only once
+	guint step_nb;
+	gint last_n = ygtk_steps_total (steps)-1;
+	const gchar *last = ygtk_steps_get_nth_label (steps, last_n);
+	if (last && !strcmp (last, text))
+		step_nb = last_n;
+	else
+		step_nb = ygtk_steps_append (steps, text);
 	g_hash_table_insert (wizard->steps_ids, g_strdup (id), GINT_TO_POINTER (step_nb));
 }
 
@@ -884,7 +889,7 @@ gboolean ygtk_wizard_set_current_step (YGtkWizard *wizard, const char *id)
 void ygtk_wizard_clear_steps (YGtkWizard *wizard)
 {
 	ygtk_steps_clear (YGTK_STEPS (wizard->steps));
-	yg_hash_table_remove_all (wizard->steps_ids);
+	clear_hash (wizard->steps_ids);
 }
 
 static const gchar *found_key;
