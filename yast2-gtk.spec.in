@@ -1,6 +1,32 @@
-@HEADER-COMMENT@
+#
+# spec file for package yast2-gtk (Version 2.17.1)
+#
+# Copyright (c) 2008 SUSE LINUX Products GmbH, Nuernberg, Germany.
+#
+# All modifications and additions to the file contributed by third parties
+# remain the property of their copyright owners, unless otherwise agreed
+# upon. The license for this file, and modifications and additions to the
+# file, is the same license as for the pristine package itself (unless the
+# license for the pristine package is not an Open Source License, in which
+# case the license is the MIT License). An "Open Source License" is a
+# license that conforms to the Open Source Definition (Version 1.9)
+# published by the Open Source Initiative.
 
-@HEADER@
+# Please submit bugfixes or comments via http://bugs.opensuse.org/
+#
+
+# norootforbuild
+
+Url:            http://en.opensuse.org/YaST2-GTK
+
+Name:		yast2-gtk
+Version:	@VERSION@
+Release:	0
+License:        LGPL v2.1 or later
+Group:		System/YaST
+BuildRoot:	%{_tmppath}/%{name}-%{version}-build
+Source0:	yast2-gtk-@VERSION@.tar.bz2
+prefix:		/usr
 Source2:        yast2-gtk-rpmlintrc
 BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-devtools gtk2-devel
 BuildRequires:  yast2-core-devel >= 2.16.27
