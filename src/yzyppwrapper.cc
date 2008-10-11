@@ -2041,15 +2041,20 @@ void Ypp::Impl::finishTransactions()
 	}
 	else {
 		// resolver won't tell us what changed -- tell pools about Auto packages
-		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
-			Ypp::Package *pkg = (Ypp::Package *) p->data;
-			PackageSel *sel = (PackageSel *) pkg->impl;
-			if (sel->isModified()) {
-				for (GSList *i = pkg_listeners; i; i = i->next)
-					((PkgListener *) i->data)->packageModified (pkg);
-				sel->setUnmodified();
+		// notify pools by the following order: 1st user selected, then autos (dependencies)
+		for (int order = 0; order < 2; order++)
+			for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
+				Ypp::Package *pkg = (Ypp::Package *) p->data;
+				PackageSel *sel = (PackageSel *) pkg->impl;
+				if (sel->isModified()) {
+					bool isAuto = pkg->isAuto();
+					if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
+						for (GSList *i = pkg_listeners; i; i = i->next)
+							((PkgListener *) i->data)->packageModified (pkg);
+						sel->setUnmodified();
+					}
+				}
 			}
-		}
 	}
 	g_slist_free (transactions);
 	transactions = NULL;
