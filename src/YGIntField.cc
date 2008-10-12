@@ -7,8 +7,6 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 
-#define SLIDER_NICESIZE_IN_CHARS 15
-
 class YGSpinBox : public YGLabeledWidget
 {
 	YIntField *m_yfield;
@@ -29,8 +27,7 @@ public:
 				gtk_range_set_increments (GTK_RANGE (m_slider), 1, 2);
 			gtk_scale_set_draw_value (GTK_SCALE (m_slider), FALSE);
 			YGLabeledWidget::setBuddy (m_slider);
-			gtk_widget_set_size_request (m_slider,
-				YGUtils::getCharsWidth (m_slider, SLIDER_NICESIZE_IN_CHARS), -1);
+			gtk_widget_set_size_request (m_slider, 100, -1);
 
 			gtk_box_pack_start (GTK_BOX (getWidget()), m_slider, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (getWidget()), m_spiner, FALSE, FALSE, 5);
@@ -140,6 +137,9 @@ public:
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YSlider)
 	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{ return dim == YD_HORIZ ? 200 : 0; }
 };
 
 YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const string &label,

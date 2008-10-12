@@ -127,12 +127,16 @@ G_BEGIN_DECLS
 #define YGTK_ADJ_SIZE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
                                        YGTK_TYPE_ADJ_SIZE, YGtkAdjSizeClass))
 
+typedef void (*LimitSizeCb) (guint *width, guint *height, gpointer data);
+
 typedef struct _YGtkAdjSize
 {
 	GtkBin parent;
 	// members
 	guint min_width, min_height, max_width, max_height;
-	gboolean only_expand;
+	LimitSizeCb min_size_cb;
+	gpointer min_size_data;
+	gint only_expand : 2;
 } YGtkAdjSize;
 
 typedef struct _YGtkAdjSizeClass
@@ -145,6 +149,8 @@ GtkWidget* ygtk_adj_size_new (void);
 
 void ygtk_adj_size_set_min (YGtkAdjSize *adj_size, guint min_width, guint min_height);
 void ygtk_adj_size_set_max (YGtkAdjSize *adj_size, guint max_width, guint max_height);
+
+void ygtk_adj_size_set_min_cb (YGtkAdjSize *adj_size, LimitSizeCb min_size_cb, gpointer data);
 
 /* Only allow the child to grow (ie. to ask for bigger sizes). */
 void ygtk_adj_size_set_only_expand (YGtkAdjSize *adj_size, gboolean only_expand);

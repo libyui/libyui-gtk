@@ -19,7 +19,6 @@ public:
 	{
 		IMPL
 		m_customIcon = m_labelIcon = false;
-		setMinSizeInChars (10, 0);
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		g_signal_connect (G_OBJECT (getWidget ()), "clicked",

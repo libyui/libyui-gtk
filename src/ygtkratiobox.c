@@ -304,6 +304,12 @@ static void ygtk_adj_size_size_request (GtkWidget *widget,
 		requisition->height += border * 2;
 
 		YGtkAdjSize *adj_size = YGTK_ADJ_SIZE (widget);
+		if (adj_size->min_size_cb) {
+			guint min_width, min_height;
+			adj_size->min_size_cb (&min_width, &min_height, adj_size->min_size_data);
+			requisition->width = MAX (requisition->width, min_width);
+			requisition->height = MAX (requisition->height, min_height);
+		}
 		requisition->width = MAX (requisition->width, adj_size->min_width);
 		requisition->height = MAX (requisition->height, adj_size->min_height);
 
@@ -350,6 +356,12 @@ void ygtk_adj_size_set_max (YGtkAdjSize *adj_size, guint max_width, guint max_he
 {
 	adj_size->max_width = max_width;
 	adj_size->max_height = max_height;
+}
+
+void ygtk_adj_size_set_min_cb (YGtkAdjSize *adj_size, LimitSizeCb min_size_cb, gpointer data)
+{
+	adj_size->min_size_cb = min_size_cb;
+	adj_size->min_size_data = data;
 }
 
 void ygtk_adj_size_set_only_expand (YGtkAdjSize *adj_size, gboolean only_expand)

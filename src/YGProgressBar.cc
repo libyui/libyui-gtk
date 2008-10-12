@@ -43,6 +43,9 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YProgressBar)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{ return dim == YD_HORIZ ? 200 : 0; }
 };
 
 YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const string &label,

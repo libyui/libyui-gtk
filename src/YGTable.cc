@@ -131,6 +131,17 @@ public:
 	virtual bool toggleMode() const
 	{ return false; }  // YMultiSelectionBox
 
+	virtual bool isShrinkable() { return false; }
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{
+		if (dim == YD_VERT) {
+			int height = YGUtils::getCharsHeight (getWidget(), isShrinkable() ? 2 : 5);
+			return MAX (80, height);
+		}
+		return 80;
+	}
+
 private:
 	bool blockSelected;
 
@@ -298,6 +309,9 @@ public:
 	YGWIDGET_IMPL_COMMON
 	YGSELECTION_WIDGET_IMPL_CLEAR (YTable)
 	YGSELECTION_WIDGET_IMPL_SELECT (YTable)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{ return 30; }
 };
 
 #if YAST2_VERSION >= 2017005
@@ -327,6 +341,8 @@ public:
 		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 	}
+
+	virtual bool isShrinkable() { return shrinkable(); }
 
 	YGWIDGET_IMPL_COMMON
 	YGSELECTION_WIDGET_IMPL_ALL (YSelectionBox)
@@ -410,6 +426,8 @@ public:
 		IMPL
 		pThis->toggle (path, 0);
 	}
+
+	virtual bool isShrinkable() { return shrinkable(); }
 
 	YGWIDGET_IMPL_COMMON
 	YGSELECTION_WIDGET_IMPL_CLEAR (YMultiSelectionBox)
@@ -514,6 +532,9 @@ public:
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTree)
 	YGSELECTION_WIDGET_IMPL_CLEAR (YTree)
 	YGSELECTION_WIDGET_IMPL_SELECT (YTree)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{ return 80; }
 };
 
 YTree *YGWidgetFactory::createTree (YWidget *parent, const string &label)

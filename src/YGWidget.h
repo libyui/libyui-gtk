@@ -44,8 +44,7 @@ public:
 
 	// Aesthetics
 	void setBorder (unsigned int border);  // in pixels
-	void setMinSize (unsigned int min_width, unsigned int min_height);
-	void setMinSizeInChars (unsigned int min_width, unsigned int min_height);
+	virtual unsigned int getMinSize (YUIDimension dim) { return 0; }
 
 protected:
 	// layout

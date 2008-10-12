@@ -2505,7 +2505,7 @@ public:
 		ygtk_wizard_set_button_label (wizard,  wizard->next_button, _("A_pply"));
 		ygtk_wizard_set_button_str_id (wizard, wizard->next_button, "accept");
 		ygtk_wizard_enable_button (wizard, wizard->next_button, FALSE);
-		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
+		g_signal_connect (G_OBJECT (wizard), "action-triggered",
 		                  G_CALLBACK (wizard_action_cb), this);
 
 		busyCursor();

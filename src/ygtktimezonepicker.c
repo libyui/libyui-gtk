@@ -161,7 +161,7 @@ static gint compare_locations (gconstpointer pa, gconstpointer pb)
 }
 
 void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *filename,
-	YGtkTimeZoneName converter_cb, gpointer converter_cb_data)
+	TimeZoneToName converter_cb, gpointer converter_data)
 {
 	GError *error = 0;
 	picker->map_pixbuf = gdk_pixbuf_new_from_file (filename, &error);
@@ -190,7 +190,7 @@ void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *file
 		loc->zone = g_strdup (arr[2]);
 		if (arr_length > 3)
 			loc->comment = g_strdup (arr[3]);
-		const gchar *tooltip = converter_cb (picker, loc->zone, converter_cb_data);
+		const gchar *tooltip = converter_cb (loc->zone, converter_data);
 		if (tooltip)
 			loc->tooltip = g_strdup (tooltip);
 

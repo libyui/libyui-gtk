@@ -1,3 +1,13 @@
+2008-10-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkratiobox.h/c & src/YGWidget.h/cc: ask for widgets
+	their minimum size while running (so we can query properties like
+	stretchable()).
+
+	* src/YGBarGraph.cc, YGDumbTab.cc, YGInputField.cc, YGIntField.cc,
+	YGProgressBar.cc, YGTable.cc, YGText.cc: changed as a result;
+	used values from yast2-qt.
+
 2008-10-11  Michael Meeks  <michael.meeks@novell.com>
 
 	* yast2-gtk.spec.in: attempts to de-uglify .spec file by

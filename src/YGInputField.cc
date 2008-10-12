@@ -4,10 +4,11 @@
 
 #include <config.h>
 #include <YGUI.h>
-#include "YInputField.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "ygtkfieldentry.h"
+
+#include "YInputField.h"
 
 class YGInputField : public YInputField, public YGLabeledWidget
 {
@@ -73,6 +74,11 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YInputField)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{
+		return dim == YD_HORIZ ? (shrinkable() ? 30 : 200) : 0;
+	}
 };
 
 YInputField *YGWidgetFactory::createInputField (YWidget *parent, const string &label,
@@ -328,8 +334,7 @@ public:
 	}
 
 	// YGtkTimeZonePicker
-	static const gchar *convert_code_to_name (YGtkTimeZonePicker *picker,
-	                                          const gchar *code, gpointer pData)
+	static const gchar *convert_code_to_name (const gchar *code, gpointer pData)
 	{
 		const std::map <std::string, std::string> *timezones =
 			(std::map <std::string, std::string> *) pData;

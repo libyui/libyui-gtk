@@ -52,8 +52,6 @@ namespace YGUtils
 };
 
 extern "C" {
-	int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb);
-	int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb);
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale);
 
 	void ygutils_setFilter (GtkEntry *entry, const char *validChars);

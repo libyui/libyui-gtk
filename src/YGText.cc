@@ -18,7 +18,6 @@ public:
 		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR, NULL)
 	{
 		IMPL
-		setMinSizeInChars (25, 10);
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 
 		maxChars = -1;
@@ -130,6 +129,15 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YMultiLineEdit)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{
+		if (dim == YD_VERT) {
+			int height = YGUtils::getCharsHeight (getWidget(), defaultVisibleLines());
+			return MAX (10, height);
+		}
+		return 30;
+	}
 };
 
 YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const string &label)
@@ -156,6 +164,15 @@ public:
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YLogView)
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{
+		if (dim == YD_VERT) {
+			int height = YGUtils::getCharsHeight (getWidget(), visibleLines());
+			return MAX (80, height);
+		}
+		return 50;
+	}
 };
 
 YLogView *YGWidgetFactory::createLogView (YWidget *parent, const string &label,
@@ -175,8 +192,6 @@ public:
 	, YGScrolledWidget (this, parent, true, ygtk_html_wrap_get_type(), NULL)
 	{
 		IMPL
-		if (!shrinkable())
-			setMinSizeInChars (20, 8);
 		ygtk_html_wrap_init (getWidget());
 		ygtk_html_wrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
 		setText (text, plainText);
@@ -235,6 +250,9 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{ return shrinkable() ? 10 : 100; }
 };
 
 

@@ -14,6 +14,8 @@
 
 /* YGWidget follows */
 
+static void min_size_cb (guint *min_width, guint *min_height, gpointer pData);
+
 YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent, bool show,
                    GtkType type, const char *property_name, ...)
 	: m_ywidget (ywidget)
@@ -40,6 +42,7 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
+	ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
 	if (_show)
 		show();
 
@@ -119,10 +122,17 @@ void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
 
 int YGWidget::getPreferredSize (YUIDimension dimension)
 {
-	// We might want to try to do some caching here..
+	// We might want to do some caching here..
 	GtkRequisition req;
 	gtk_widget_size_request (m_adj_size, &req);
 	return dimension == YD_HORIZ ? req.width : req.height;
+}
+
+void min_size_cb (guint *min_width, guint *min_height, gpointer pData)
+{
+	YGWidget *pThis = (YGWidget *) pData;
+	*min_width = pThis->getMinSize (YD_HORIZ);
+	*min_height = pThis->getMinSize (YD_VERT);
 }
 
 #include "ygtkfixed.h"
@@ -167,22 +177,6 @@ void YGWidget::setBorder (unsigned int border)
 {
 	IMPL
 	gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border);
-}
-
-void YGWidget::setMinSize (unsigned int width, unsigned int height)
-{
-	IMPL
-	ygtk_adj_size_set_min (YGTK_ADJ_SIZE (m_adj_size), width, height);
-}
-
-void YGWidget::setMinSizeInChars (unsigned int width, unsigned int height)
-{
-	IMPL
-	if (width)
-		width = YGUtils::getCharsWidth (getWidget(), width);
-	if (height)
-		height = YGUtils::getCharsHeight (getWidget(), height);
-	setMinSize (width, height);
 }
 
 /* YGLabeledWidget follows */

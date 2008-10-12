@@ -31,7 +31,7 @@ typedef struct _YGtkTimeZonePickerClass YGtkTimeZonePickerClass;
 typedef struct _YGtkTimeZoneLocation YGtkTimeZoneLocation;
 
 // converts time zone code to human-readable name
-typedef const gchar *(*YGtkTimeZoneName) (YGtkTimeZonePicker *, const gchar *code, gpointer data);
+typedef const gchar *(*TimeZoneToName) (const gchar *code, gpointer data);
 
 struct _YGtkTimeZonePicker
 {
@@ -69,7 +69,7 @@ struct _YGtkTimeZoneLocation
 GType ygtk_time_zone_picker_get_type (void) G_GNUC_CONST;
 
 void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *filename,
-	YGtkTimeZoneName converter, gpointer converter_user_data);
+	TimeZoneToName converter, gpointer converter_user_data);
 
 const gchar *ygtk_time_zone_picker_get_current_zone (YGtkTimeZonePicker *picker);
 void ygtk_time_zone_picker_set_current_zone (YGtkTimeZonePicker *picker, const gchar *zone,

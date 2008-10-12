@@ -27,8 +27,8 @@ public:
 
 		m_last_tab = 0;
 		// GTK+ keeps the notebook size set to the biggset page. We can't
-		// do this since this is dynamic, but at least don't let the notebook
-		// reduce its size.
+		// do this since pages are set dynamically, but at least don't let
+		// the notebook reduce its size.
 		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
 		g_signal_connect_after (G_OBJECT (getWidget()), "switch-page",

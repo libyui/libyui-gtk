@@ -455,10 +455,6 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale
 	pango_font_description_free (font);
 }
 
-int ygutils_getCharsWidth (GtkWidget *widget, int chars_nb)
-{ return YGUtils::getCharsWidth (widget, chars_nb); }
-int ygutils_getCharsHeight (GtkWidget *widget, int chars_nb)
-{ return YGUtils::getCharsHeight (widget, chars_nb); }
 void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
 { YGUtils::setWidgetFont (widget, weight, scale); }
 

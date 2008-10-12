@@ -15,9 +15,7 @@ public:
 	YGBarGraph (YWidget *parent)
 	: YBarGraph (NULL)
 	, YGWidget (this, parent, true, YGTK_TYPE_BAR_GRAPH, NULL)
-	{
-		setMinSize (500, 0);
-	}
+	{}
 
 	// YBarGraph
 	virtual void doUpdate()
@@ -41,6 +39,11 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
+
+	virtual unsigned int getMinSize (YUIDimension dim)
+	{
+		return dim == YD_HORIZ ? 80 : 30;
+	}
 };
 
 YBarGraph *YGOptionalWidgetFactory::createBarGraph (YWidget *parent)
