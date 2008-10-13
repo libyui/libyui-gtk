@@ -1937,24 +1937,33 @@ private:
 	struct TextExpander {
 		GtkWidget *expander, *text;
 
+		GtkWidget *getWidget() { return expander ? expander : text; }
+
 		TextExpander (const char *name)
 		{
 			text = ygtk_html_wrap_new();
 
-			string str = string ("<b>") + name + "</b>";
-			expander = gtk_expander_new (str.c_str());
-			gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
-			gtk_container_add (GTK_CONTAINER (expander), text);
+			if (name) {
+				string str = string ("<b>") + name + "</b>";
+				expander = gtk_expander_new (str.c_str());
+				gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
+				gtk_container_add (GTK_CONTAINER (expander), text);
+			}
+			else
+				expander = NULL;
 		}
 
 		void setText (const std::string &str)
 		{
 			ygtk_html_wrap_set_text (text, str.c_str(), FALSE);
-			str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
+			if (expander)
+				str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
 		}
 	};
 	struct DepExpander {
 		GtkWidget *expander, *table, *requires, *provides;
+
+		GtkWidget *getWidget() { return expander; }
 
 		DepExpander (const char *name)
 		{
@@ -1993,8 +2002,8 @@ private:
 		}
 	};
 
-GtkWidget *m_widget, *m_description, *m_icon, *m_icon_frame;
-TextExpander *m_filelist, *m_changelog, *m_authors;
+GtkWidget *m_widget, *m_icon, *m_icon_frame;
+TextExpander *m_description, *m_filelist, *m_changelog, *m_authors;
 DepExpander *m_dependencies;
 Listener *m_listener;
 
@@ -2012,10 +2021,10 @@ public:
 		m_widget = createWhiteViewPort (&vbox);
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
-		m_description = ygtk_html_wrap_new();
-		ygtk_html_wrap_connect_link_clicked (m_description,
+		m_description = new TextExpander (NULL);
+		ygtk_html_wrap_connect_link_clicked (m_description->text,
 			G_CALLBACK (description_pressed_cb), this);
-		gtk_box_pack_start (GTK_BOX (hbox), m_description, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), m_description->getWidget(), TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), createIconWidget (&m_icon, &m_icon_frame),
 		                    FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE /* debug */, TRUE, 0);
@@ -2029,10 +2038,10 @@ public:
 			m_changelog = new TextExpander (_("Changelog"));
 			m_authors = new TextExpander (_("Authors"));
 			m_dependencies = new DepExpander (_("Dependencies"));
-			gtk_box_pack_start (GTK_BOX (vbox), m_filelist->expander, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->expander, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (vbox), m_authors->expander, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->expander, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_filelist->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_authors->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->getWidget(), FALSE, TRUE, 0);
 			if (CAN_OPEN_URIS())
 				ygtk_html_wrap_connect_link_clicked (m_filelist->text,
 					G_CALLBACK (path_pressed_cb), NULL);
@@ -2061,7 +2070,26 @@ public:
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
 			description += package->description (true);
-			ygtk_html_wrap_set_text (m_description, description.c_str(), FALSE);
+			m_description->setText (description);
+
+
+/*
+// TODO: WebKit doesn't implement size_request or many others (like gtkhtml)
+// what we want to do is to use set_scroll_adjustment like GtkScrolledWindow and
+//set our own (copy from scorlled window) to it, so we can read its values. Then
+// set_size_request() from there.
+
+
+GtkAdjustment hadj, vadj;
+WEBKIT_WEB_VIEW_CLASS (m_description->text)->set_scroll_adjustments (WEBKIT_WEB_VIEW, &hadj, &vadj);
+
+*/
+
+
+GtkRequisition req;
+gtk_widget_size_request (m_description->text, &req);
+fprintf (stderr, "description size: %d x %d\n", req.width, req.height);
+
 			if (m_filelist)  m_filelist->setText (package->filelist (true));
 			if (m_changelog) m_changelog->setText (package->changelog());
 			if (m_authors)   m_authors->setText (package->authors (true));
@@ -2086,7 +2114,7 @@ public:
 			     it != packages.end(); it++)
 				description += "<li><b>" + (*it)->name() + "</b></li>";
 			description += "</ul>";
-			ygtk_html_wrap_set_text (m_description, description.c_str(), FALSE);
+			m_description->setText (description);
 			if (m_filelist)  m_filelist->setText ("");
 			if (m_changelog) m_changelog->setText ("");
 			if (m_authors)   m_authors->setText ("");

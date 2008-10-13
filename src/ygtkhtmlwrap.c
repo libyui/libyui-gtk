@@ -27,6 +27,18 @@ GType ygtk_html_wrap_get_type()
 
 void ygtk_html_wrap_init (GtkWidget *widget)
 {
+// TODO: capture populate menu to get rid of "search web" entry
+#if 0
+    webkit_web_view_signals[POPULATE_POPUP] = g_signal_new("populate-popup",
+            G_TYPE_FROM_CLASS(webViewClass),
+            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            0,
+            NULL,
+            NULL,
+            g_cclosure_marshal_VOID__OBJECT,
+            G_TYPE_NONE, 1,
+            GTK_TYPE_MENU);
+#endif
 }
 
 // CSS based on properties from YGtkRichText
