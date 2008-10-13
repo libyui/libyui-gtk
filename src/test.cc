@@ -51,10 +51,12 @@ bool testXHtmlConvert()
 		// outer tag
 		{ "some text", "<body>some text</body>" },
 		// unquoted attributes
-		{ "<foo baa=Foo></foo>", "<body><foo baa=\"Foo\"></foo></body>" },
+		{ "<foo baa=Baz></foo>", "<body><foo baa=\"Baz\"></foo></body>" },
 		// break tags
 		{ "<br>", "<body><br/></body>" },
 		{ "<hr>", "<body><hr/></body>" },
+		// close with different case ...
+		{ "<p>Foo</P>", "<body><p>Foo</p></body>" },
 		// unclosed tags
 		{ "<p>", "<body><p></p></body>" },
 		{ "<b>unclosed", "<body><b>unclosed</b></body>" },

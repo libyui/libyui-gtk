@@ -322,7 +322,7 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 					else
 						tag_len++;
 				}
-				g_string_append_c (tag, g_ascii_tolower (instr[i]));
+				g_string_append_c (tag, instr[i]);
 			}
 
 			// Unmatched tags
@@ -351,7 +351,8 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 					}
 					if (unquote)
 						g_string_insert_c (tag, j, '"');
-				}
+				} else
+					tag->str[j] = g_ascii_tolower (tag->str[j]);
 			}
 
 			// Is it an open or close ?
