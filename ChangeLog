@@ -1,4 +1,15 @@
-2008-10-11  Michael Meeks  <michael.meeks@novell.com>
+2008-10-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.h/cc & src/ygtkrichtext.h/c: moved convert_to_xhmtl
+	from YGUtils to YGtkRichText.
+
+	* src/YGUtils.cc: made scrollWidget with GtkAdjustment more robust
+	and got rid of the GtkTextView specific.
+
+	* src/ygtkhtmlwrap.c: fixed link click, injected some nicer CSS to text,
+	implemented scroll.
+
+2008-10-13  Michael Meeks  <michael.meeks@novell.com>
 
 	* Version 2.17.3
 

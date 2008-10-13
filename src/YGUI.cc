@@ -766,14 +766,13 @@ void dumpYastHtml (YWidget *widget)
 			YRichText *rtext = dynamic_cast <YRichText *> (widget);
 			if (rtext) {
 				std::string text = rtext->text();
-				char *xml = ygutils_convert_to_xhtml (text.c_str());
 
 				GtkWidget *view = gtk_text_view_new();
 				gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (view), GTK_WRAP_WORD);
 				gtk_text_view_set_editable (GTK_TEXT_VIEW (view), FALSE);
 				gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (view), FALSE);
 				GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (view));
-				gtk_text_buffer_set_text (buffer, xml, -1);
+				gtk_text_buffer_set_text (buffer, text.c_str(), -1);
 
 				GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 				gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
@@ -782,8 +781,6 @@ void dumpYastHtml (YWidget *widget)
 					GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 				gtk_container_add (GTK_CONTAINER (scroll), view);
 				gtk_box_pack_start (box, scroll, TRUE, TRUE, 6);
-
-				g_free (xml);
 			}
 
 			for (YWidgetListConstIterator it = widget->childrenBegin();

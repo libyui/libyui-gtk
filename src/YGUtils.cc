@@ -114,33 +114,25 @@ std::string YGUtils::truncate (const std::string &str, int length, int pos)
 	return ret;
 }
 
+static gboolean scroll_down_cb (void *pData)
+{
+	GtkAdjustment *vadj = (GtkAdjustment *) pData;
+	gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
+	return FALSE;
+}
 void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
-	if (top)
-		gtk_adjustment_set_value (vadj, vadj->lower);	
-	else  /* bottom */
-		gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
-}
-
-void YGUtils::scrollWidget (GtkTextView *view, bool top)
-{
-	GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
-	GtkTextIter iter;
-	gtk_text_buffer_get_end_iter (buffer, &iter);
-	GtkTextMark *mark = gtk_text_buffer_get_mark (buffer, "scroll");
-	if (mark)
-		gtk_text_buffer_move_mark (buffer, mark, &iter);
-	else
-		mark = gtk_text_buffer_create_mark (buffer, "scroll", &iter, FALSE);
-	gtk_text_view_scroll_mark_onscreen (view, mark);
-	// GTK 2.12.9 suffers from glitches otherwise:
-	gtk_widget_queue_draw (GTK_WIDGET (view));
+	// for some widgets, we need to change adjustment before moving down...
+	gtk_adjustment_set_value (vadj, vadj->lower);
+	if (!top) {
+		// since we usually want to call this together with a text change, we
+		// must wait till that gets in effect
+		g_timeout_add_full (G_PRIORITY_LOW, 25, scroll_down_cb, vadj, NULL);
+	}
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)
 { YGUtils::scrollWidget (vadj, top); }
-void ygutils_scrollView (GtkTextView *view, gboolean top)
-{ YGUtils::scrollWidget (view, top); }
 
 void YGUtils::escapeMarkup (std::string &str)
 {
@@ -178,246 +170,6 @@ void YGUtils::escapeMarkup (std::string &str)
 			}
 		}
 	}
-}
-
-inline void skipSpace(const char *instr, int &i)
-{
-	while (g_ascii_isspace (instr[i])) i++;
-}
-
-typedef struct {
-	GString     *tag;
-	int          tag_len : 31;
-	unsigned int early_closer : 1;
-} TagEntry;
-
-static TagEntry *
-tag_entry_new (GString *tag, int tag_len)
-{
-	static const char *early_closers[] = { "p", "li" };
-	TagEntry *entry = g_new (TagEntry, 1);
-	entry->tag = tag;
-	entry->tag_len = tag_len;
-	entry->early_closer = FALSE;
-
-	for (unsigned int i = 0; i < G_N_ELEMENTS (early_closers); i++)
-		if (!g_ascii_strncasecmp (tag->str, early_closers[i], tag_len))
-			entry->early_closer = TRUE;
-	return entry;
-}
-
-static void
-tag_entry_free (TagEntry *entry)
-{
-	if (entry && entry->tag)
-		g_string_free (entry->tag, TRUE);
-	g_free (entry);
-}
-
-static void
-emit_unclosed_tags_for (GString *outp, GQueue *tag_queue, const char *tag_str, int tag_len)
-{
-	gboolean matched = FALSE;
-
-	// top-level tag ...
-	if (g_queue_is_empty (tag_queue))
-		return;
-
-	do {
-		TagEntry *last_entry = (TagEntry *)g_queue_pop_tail (tag_queue);
-		if (!last_entry)
-			break;
-
-		if (last_entry->tag_len != tag_len ||
-		    g_ascii_strncasecmp (last_entry->tag->str, tag_str, tag_len)) {
-			/* different tag - emit a close ... */
-			g_string_append (outp, "</");
-			g_string_append_len (outp, last_entry->tag->str, last_entry->tag_len);
-			g_string_append_c (outp, '>');
-		} else
-			matched = TRUE;
-
-		tag_entry_free (last_entry);
-	} while (!matched);
-}
-
-static gboolean
-check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
-{
-	TagEntry *last_tag;
-
-        // Early closers:
-	if (!entry->early_closer)
-		return FALSE;
-
-	last_tag = (TagEntry *) g_queue_peek_tail (tag_queue);
-	if (!last_tag || !last_tag->early_closer)
-		return FALSE;
-
-	if (entry->tag_len != last_tag->tag_len ||
-	    g_ascii_strncasecmp (last_tag->tag->str, entry->tag->str, entry->tag_len))
-		return FALSE;
-
-	// Emit close & leave last tag on the stack
-
-	g_string_append (outp, "</");
-	g_string_append_len (outp, entry->tag->str, entry->tag_len);
-	g_string_append_c (outp, '>');
-
-	return TRUE;
-}
-
-// We have to:
-//   + rewrite <br> and <hr> tags
-//   + deal with <a attrib=noquotes>
-gchar *ygutils_convert_to_xhtml (const char *instr)
-{
-	GString *outp = g_string_new ("");
-	GQueue *tag_queue = g_queue_new();
-	int i = 0;
-
-	gboolean was_space = TRUE, pre_mode = FALSE;
-	skipSpace (instr, i);
-
-	// we must add an outer tag to make GMarkup happy
-	g_string_append (outp, "<body>");
-
-	for (; instr[i] != '\0'; i++)
-	{
-		// Tag foo
-		if (instr[i] == '<') {
-			// ignore comments
-			if (strncmp (&instr[i], "<!--", 4) == 0) {
-				for (i += 3; instr[i] != '\0'; i++)
-					if (strncmp (&instr[i], "-->", 3) == 0) {
-						i += 2;
-						break;
-					}
-				continue;
-			}
-
-			gint j;
-			gboolean is_close = FALSE;
-			gboolean in_tag;
-			int tag_len;
-			GString *tag = g_string_sized_new (20);
-
-			i++;
-			skipSpace (instr, i);
-
-			if (instr[i] == '/') {
-			    i++;
-			    is_close = TRUE;
-			}
-
-			skipSpace (instr, i);
-
-			// find the tag name piece
-			in_tag = TRUE;
-			tag_len = 0;
-			for (; instr[i] != '>' && instr[i]; i++) {
-				if (in_tag) {
-					if (!g_ascii_isalnum(instr[i]))
-						in_tag = FALSE;
-					else
-						tag_len++;
-				}
-				g_string_append_c (tag, instr[i]);
-			}
-
-			// Unmatched tags
-			if (!is_close && tag_len == 2 &&
-			      (!g_ascii_strncasecmp (tag->str, "hr", 2) ||
-			      !g_ascii_strncasecmp (tag->str, "br", 2)) &&
-			      tag->str[tag->len - 1] != '/')
-				g_string_append_c (tag, '/');
-
-			if (!g_ascii_strncasecmp (tag->str, "pre", 3))
-				pre_mode = !is_close;
-
-			// Add quoting for un-quoted attributes
-			for (int j = 0; j < (signed) tag->len; j++) {
-				if (tag->str[j] == '=') {
-					gboolean unquote = tag->str[j+1] != '"';
-					if (unquote)
-						g_string_insert_c (tag, j+1, '"');
-					else
-						j++;
-					for (j++; tag->str[j]; j++) {
-						if (unquote && g_ascii_isspace (tag->str[j]))
-							break;
-						else if (!unquote && tag->str[j] == '"')
-							break;
-					}
-					if (unquote)
-						g_string_insert_c (tag, j, '"');
-				} else
-					tag->str[j] = g_ascii_tolower (tag->str[j]);
-			}
-
-			// Is it an open or close ?
-			j = tag->len - 1;
-
-			while (j > 0 && g_ascii_isspace (tag->str[j])) j--;
-
-			gboolean is_open_close = (tag->str[j] == '/');
-			if (is_open_close)
-				; // ignore it
-			else if (is_close)
-				emit_unclosed_tags_for (outp, tag_queue, tag->str, tag_len);
-			else {
-				TagEntry *entry = tag_entry_new (tag, tag_len);
-
-				entry->tag = tag;
-				entry->tag_len = tag_len;
-
-				if (!check_early_close (outp, tag_queue, entry))
-					g_queue_push_tail (tag_queue, entry);
-				else {
-					entry->tag = NULL;
-					tag_entry_free (entry);
-				}
-			}
-
-			g_string_append_c (outp, '<');
-			if (is_close)
-			    g_string_append_c (outp, '/');
-			g_string_append_len (outp, tag->str, tag->len);
-			g_string_append_c (outp, '>');
-
-			if (is_close || is_open_close)
-				g_string_free (tag, TRUE);
-		}
-
-		// non-break space entity
-		else if (instr[i] == '&' &&
-			 !g_ascii_strncasecmp (instr + i, "&nbsp;",
-					       sizeof ("&nbsp;") - 1)) {
-			// Replace this by a white-space
-			g_string_append (outp, " ");
-			i += sizeof ("&nbsp;") - 2;
-			was_space = FALSE;
-		}
-
-		else {  // Normal text
-			if (!pre_mode && g_ascii_isspace (instr[i])) {
-				if (!was_space)
-					g_string_append_c (outp, ' ');
-				was_space = TRUE;
-			}
-			else {
-				was_space = FALSE;
-				g_string_append_c (outp, instr[i]);
-			}
-		}
-	}
-
-	emit_unclosed_tags_for (outp, tag_queue, "", 0);
-	g_queue_free (tag_queue);
-	g_string_append (outp, "</body>");
-
-	gchar *ret = g_string_free (outp, FALSE);
-	return ret;
 }
 
 int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)

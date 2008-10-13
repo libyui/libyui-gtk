@@ -54,6 +54,9 @@ gboolean ygtk_rich_text_forward_mark (YGtkRichText *rtext, const gchar *text);  
 
 void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf);
 
+// convert liberal html to xhtml
+gchar *convert_to_xhtml (const char *instr);
+
 G_END_DECLS
 #endif /* YGTK_RICH_TEXT_H */
 

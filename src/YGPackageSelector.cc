@@ -2018,7 +2018,11 @@ public:
 		gtk_box_pack_start (GTK_BOX (hbox), m_description, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), createIconWidget (&m_icon, &m_icon_frame),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE /* debug */, TRUE, 0);
+// it looks like webkit and gtkhtml have no size_request ?!
+// they must have -- I guess it's just transmited somewhere else...
+
+// CHECK!!
 
 		if (!update_mode) {
 			m_filelist = new TextExpander (_("File List"));
@@ -2053,7 +2057,7 @@ public:
 			return;
 		Ypp::Package *package = packages.front();
 
-		gtk_widget_hide (m_icon_frame);
+//		gtk_widget_hide (m_icon_frame);
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
 			description += package->description (true);
@@ -2062,7 +2066,7 @@ public:
 			if (m_changelog) m_changelog->setText (package->changelog());
 			if (m_authors)   m_authors->setText (package->authors (true));
 			if (m_dependencies) m_dependencies->setPackage (package);
-
+#if 0
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons,
@@ -2072,6 +2076,7 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
 			}
+#endif
 			scrollTop();
 		}
 		else {
@@ -2121,24 +2126,6 @@ private:
 	}
 
 	// utilities:
-	static GtkWidget *createHtmlWidget (const char *name, GtkWidget **html_widget,
-	                                    bool visible)
-	{
-		*html_widget = ygtk_html_wrap_new();
-
-		GtkWidget *box = gtk_event_box_new();
-		gtk_container_add (GTK_CONTAINER (box), *html_widget);
-		gtk_container_set_border_width (GTK_CONTAINER (box), 4);
-
-		string str = string ("<b>") + name + "</b>";
-		GtkWidget *expander = gtk_expander_new (str.c_str());
-		gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
-		gtk_container_add (GTK_CONTAINER (expander), box);
-		if (visible)
-			gtk_expander_set_expanded (GTK_EXPANDER (expander), TRUE);
-		return expander;
-	}
-
 	static GtkWidget *createIconWidget (GtkWidget **icon_widget, GtkWidget **icon_frame)
 	{
 		*icon_widget = gtk_image_new();
@@ -2157,7 +2144,6 @@ private:
 		*icon_frame = align;
 		return align;
 	}
-
 	static GtkWidget *createWhiteViewPort (GtkWidget **vbox)
 	{
 		struct inner {

@@ -82,7 +82,7 @@ public:
 
 	void scrollToBottom()
 	{
-		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget()), false);
+		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
 	}
 
 	// Event callbacks
@@ -225,22 +225,21 @@ public:
 	// YRichText
 	virtual void setValue (const string &text)
 	{
-		IMPL
-		setText (text, plainTextMode());
 		YRichText::setValue (text);
+		setText (text, plainTextMode());
 	}
 
     virtual void setAutoScrollDown (bool on)
     {
-    	if (on) scrollToBottom();
     	YRichText::setAutoScrollDown (on);
+    	if (on) scrollToBottom();
     }
 
     virtual void setPlainTextMode (bool plain_mode)
     {
+    	YRichText::setPlainTextMode (plain_mode);
     	if (plain_mode != plainTextMode())
 	    	setText (value(), plain_mode);
-    	YRichText::setPlainTextMode (plain_mode);
     }
 
 	// events

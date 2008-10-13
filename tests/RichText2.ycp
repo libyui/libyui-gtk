@@ -28,7 +28,7 @@
 		"<table cellspacing=\"10\" cellpadding=\"5\">"
 		+ "<tr>"
 		+ "<td width =\"*\">"
-		+ "<img src=\"/opt/gnome/share/icons/hicolor/32x32/apps/gnome-media-player.png\""
+		+ "<img src=\"/usr/share/icons/hicolor/32x32/apps/gnome-web-browser.png\""
 		+ "width=\"100\" align=\"left\">"
 		+ "</td>"
 		+ "<td width=\"*\">"
@@ -50,11 +50,18 @@
 
 	UI::OpenDialog (
 		`VBox (
-			`RichText (`id (`rtext), texts[0]:nil),
-			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", texts[0]:nil),
+			`ReplacePoint (`id (`replace_text),
+				`RichText (`id (`text), texts[0]:nil)
+			),
+			`MultiLineEdit (`id (`source), `opt (`notify), "Source code", texts[0]:nil),
 			`Label (`id(`link), `opt(`hstretch), ""),
 			`Slider (`id (`slider), `opt(`notify), "Test text case:", 0, size (texts)-1, 0),
-			`PushButton (`id (`close), `opt(`icon ("close")), "&Close")
+			`HBox (
+				`CheckBox (`id (`scroll), `opt (`notify), "&Auto-scroll", false),
+				`CheckBox (`id (`plain), `opt (`notify), "&Plain", false),
+				`HStretch(),
+				`PushButton (`id (`close), `opt (`default), "&Close")
+			)
 		)
 	);
 
@@ -65,16 +72,32 @@
 
 		if (ret == `slider)
 		{
-			integer cur_text = (integer) UI::QueryWidget(`id(`slider), `Value );
+			integer cur_text = (integer) UI::QueryWidget (`id(`slider), `Value);
 			UI::ChangeWidget (`id (`source), `Value, texts[cur_text]:nil);
-			UI::ChangeWidget (`id (`rtext),  `Value, texts[cur_text]:nil);
+			UI::ChangeWidget (`id (`text),  `Value, texts[cur_text]:nil);
 			UI::ChangeWidget (`id(`link), `Value, "");
 		}
 
 		else if (ret == `source)
 		{
-			UI::ChangeWidget (`id (`rtext), `Value,
+			UI::ChangeWidget (`id (`text), `Value,
 			                  (string) UI::QueryWidget(`id(`source), `Value));
+			UI::ChangeWidget (`id(`link), `Value, "");
+		}
+
+		else if (ret == `scroll || ret == `plain)
+		{
+			any scroll_opt = nil;
+			if ((boolean) UI::QueryWidget (`scroll, `Value))
+				scroll_opt = `autoScrollDown;
+			any plain_opt = nil;
+			if ((boolean) UI::QueryWidget (`plain, `Value))
+				plain_opt = `plainText;
+			UI::ReplaceWidget (`replace_text,
+				`RichText (`id (`text), `opt (scroll_opt, plain_opt), ""));
+
+			integer cur_text = (integer) UI::QueryWidget (`id(`slider), `Value);
+			UI::ChangeWidget (`id (`text),  `Value, texts[cur_text]:nil);
 		}
 
 		else

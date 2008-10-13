@@ -7,7 +7,7 @@
 #include <string.h>
 #include <YUI.h>
 #include <gtk/gtk.h>
-#include <YGUtils.h>
+#include "YGUtils.h"
 
 bool testMapKBAccel()
 {
@@ -38,6 +38,8 @@ bool testMapKBAccel()
 	fprintf (stderr, "\n");
 	return true;
 }
+
+#include "ygtkrichtext.h"
 
 bool testXHtmlConvert()
 {
@@ -77,7 +79,7 @@ bool testXHtmlConvert()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		gchar *out = ygutils_convert_to_xhtml (aTests[i].in);
+		gchar *out = convert_to_xhtml (aTests[i].in);
 		if (strcmp (out, aTests[i].out)) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);

@@ -12,7 +12,6 @@
 
 // ygutils
 #include <gtk/gtktextview.h>
-void ygutils_scrollView (GtkTextView *view, gboolean top);
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
 GtkWidget *ygtk_html_wrap_new (void)
 { return g_object_new (ygtk_html_wrap_get_type(), NULL); }
@@ -30,23 +29,76 @@ void ygtk_html_wrap_init (GtkWidget *widget)
 {
 }
 
-void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
+// CSS based on properties from YGtkRichText
+const char *CSS = "<style type=\"text/css\">"
+"body { }"
+"h1 { color: #5c5c5c; font-size: xx-large; font-weight: 900; }"
+"h2 { color: #5c5c5c; font-size: x-large; font-weight: 800; }"
+"h3 { color: #5c5c5c; font-size: large; font-weight: 700; }"
+"h4 { color: #5c5c5c; font-size: large; font-weight: 600; }"
+"h5 { color: #5c5c5c; font-size: large; }"
+"pre { background-color: #f0f0f0; }"
+"</style>";
+
+void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean plain_mode)
 {
-	// TODO: implement plain_mode
-	webkit_web_view_load_html_string (WEBKIT_WEB_VIEW (widget), text, ".");
+	// webkit prepends base-uri to non-uri hrefs
+	if (plain_mode)
+			webkit_web_view_load_string (WEBKIT_WEB_VIEW (widget), text,
+			                             "text/plain", "UTF-8", "/");
+	else {
+		GString *str = NULL;
+		int i, last_i = 0;
+		for (i = 0; text[i]; i++) {
+			if (!strncmp (text+i, "href=", 5)) {
+				i += 5;
+				if (text[i] == '"')
+					i++;
+				int j;
+				for (j = i; text[j] && text[j] != ':'; j++)
+					if (text[j] == '"' || g_ascii_isspace (text[j])) {
+						if (!str)
+							str = g_string_new ("");
+						str = g_string_append_len (str, text+last_i, i);
+						last_i = i;
+						str = g_string_append (str, "label:/");
+						break;
+					}
+			}
+		}
+		if (str) {
+			str = g_string_append_len (str, text+last_i, i);
+			text = g_string_free (str, FALSE);
+		}
+		gchar *html = g_strdup_printf ("%s\n%s", CSS, text);
+		if (str)
+			g_free ((gchar *) text);
+		webkit_web_view_load_string (WEBKIT_WEB_VIEW (widget), html,
+		                             "text/html", "UTF-8", "/");
+		g_free (html);
+	}
 }
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-	// TODO
+	GtkWidget *scroll_win = gtk_widget_get_parent (widget);
+	ygutils_scrollAdj (gtk_scrolled_window_get_vadjustment (
+		GTK_SCROLLED_WINDOW (scroll_win)), top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
 {
 	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
-	gboolean found = webkit_web_view_mark_text_matches (view, text, FALSE, -1);
-	webkit_web_view_set_highlight_text_matches (view, TRUE);
-	return found;
+	webkit_web_view_unmark_text_matches (view);
+	if (*text) {
+		gboolean found = webkit_web_view_mark_text_matches (view, text, FALSE, -1);
+		webkit_web_view_set_highlight_text_matches (view, TRUE);
+		if (found)
+			ygtk_html_wrap_search_next (widget, text);
+		return found;
+	}
+	// we want to un-select previous search (no such api though)
+	return TRUE;
 }
 
 gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
@@ -56,10 +108,15 @@ gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
 }
 
 static WebKitNavigationResponse ygtk_webkit_navigation_requested_cb (
-	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, void (*callback) (gpointer d))
+	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, void (*callback) (GtkWidget *widget, const gchar *uri, gpointer d))
 {
+	const gchar *uri = webkit_network_request_get_uri (request);
+	// look for set_text to see why we need to cut the uri in some cases
+	// (hint: not an uri)
+	if (!strncmp (uri, "label:/", sizeof ("label:/")-1))
+		uri = uri + sizeof ("label:/")-1;
 	gpointer data = g_object_get_data (G_OBJECT (view), "pointer");
-	(*callback) (data);
+	(*callback) (GTK_WIDGET (view), uri, data);
 	return WEBKIT_NAVIGATION_RESPONSE_IGNORE;
 }
 
@@ -73,6 +130,8 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
 {
 	// TODO
+// to implement this, we could add the background as data into CSS, like:
+//"	background:url(data:image/gif;base64,R0lGODlhEAAOALMAAOazToeHh0tLS/7LZv/0jvb29t/f3//Ub//ge8WSLf/rhf/3kdbW1mxsbP//mf///yH5BAAAAAAALAAAAAAQAA4AAARe8L1Ekyky67QZ1hLnjM5UUde0ECwLJoExKcppV0aCcGCmTIHEIUEqjgaORCMxIC6e0CcguWw6aFjsVMkkIr7g77ZKPJjPZqIyd7sJAgVGoEGv2xsBxqNgYPj/gAwXEQA7) top left no-repeat; )"
 }
 
 #else
@@ -171,7 +230,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean pla
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-	ygutils_scrollView (GTK_TEXT_VIEW (widget), top);
+	ygutils_scrollAdj (GTK_TEXT_VIEW (widget)->vadjustment, top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
