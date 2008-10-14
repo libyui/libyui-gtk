@@ -9,6 +9,8 @@
 #include "ygtkfindentry.h"
 #include <gtk/gtk.h>
 
+extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
+
 static guint menu_item_selected_signal = 0;
 
 G_DEFINE_TYPE (YGtkExtEntry, ygtk_ext_entry, GTK_TYPE_ENTRY)
@@ -249,40 +251,6 @@ static void ygtk_ext_entry_class_init (YGtkExtEntryClass *klass)
 /* YGtkFindEntry widget */
 // check the header file for information about this widget
 
-// Code from Banshee: shades a pixbuf a bit, used to provide the hover effect
-static inline guchar pixel_clamp (int val)
-{ return MAX (0, MIN (255, val)); }
-static GdkPixbuf *pixbuf_color_shift (const GdkPixbuf *src, int shift)
-{
-	if (!src)
-		return NULL;
-
-	int width = gdk_pixbuf_get_width (src), height = gdk_pixbuf_get_height (src);
-	gboolean has_alpha = gdk_pixbuf_get_has_alpha (src);
-
-	GdkPixbuf *dest = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (src),
-		has_alpha, gdk_pixbuf_get_bits_per_sample (src), width, height);
-
-	guchar *src_pixels_orig = gdk_pixbuf_get_pixels (src);
-	guchar *dest_pixels_orig = gdk_pixbuf_get_pixels (dest);
-
-	int src_rowstride = gdk_pixbuf_get_rowstride (src);
-	int dest_rowstride = gdk_pixbuf_get_rowstride (dest);
-	int i, j;
-	for (i = 0; i < height; i++) {
-		guchar *src_pixels = src_pixels_orig + (i * src_rowstride);
-		guchar *dest_pixels = dest_pixels_orig + (i * dest_rowstride);
-		for (j = 0; j < width; j++) {
-			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
-			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
-			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
-			if (has_alpha)
-				*(dest_pixels++) = *(src_pixels++);
-		}
-	}
-	return dest;
-}
-
 static void generate_icon (GtkWidget *widget, const char *stock_icon,
                            GdkPixbuf **normal_icon, GdkPixbuf **hover_icon)
 {
@@ -296,7 +264,7 @@ static void generate_icon (GtkWidget *widget, const char *stock_icon,
 	}
 	if (stock_icon) {
 		*normal_icon = gtk_widget_render_icon (widget, stock_icon, GTK_ICON_SIZE_MENU, NULL);
-		*hover_icon = pixbuf_color_shift (*normal_icon, 30);
+		*hover_icon = ygutils_setOpacity (*normal_icon, 12);  // or 11?
 	}
 }
 

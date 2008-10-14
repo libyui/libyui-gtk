@@ -1,7 +1,7 @@
 // RichText test
 
 {
-	UI::OpenDialog (
+	UI::OpenDialog (`opt (`defaultsize),
 		`VBox (
 			`RichText (`id (`rtext), ""),
 			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", ""),

@@ -29,7 +29,7 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text);
 gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text);  // F3
 
-void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf);
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename);
 
 G_END_DECLS
 #endif /* YGTK_HTML_WRAP_H */

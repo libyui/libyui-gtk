@@ -99,15 +99,16 @@ void ygtk_html_wrap_init (GtkWidget *widget)
 	                  G_CALLBACK (button_release_event_cb), widget);
 }
 
-// CSS based on properties from YGtkRichText (from Yelp)
+// CSS roughly based on Yelp style
 const char *CSS = "<style type=\"text/css\">"
-"body { }"
-"h1 { color: #5c5c5c; font-size: xx-large; font-weight: 900; }"
-"h2 { color: #5c5c5c; font-size: x-large; font-weight: 800; }"
-"h3 { color: #5c5c5c; font-size: large; font-weight: 700; }"
+"h1 { color: #5c5c5c; font-size: xx-large; font-weight: 900; border-bottom: thin solid cdcfd1; }"
+"h2 { color: #5c5c5c; font-size: x-large; font-weight: 800; border-bottom: thin solid cdcfd1; }"
+"h3 { color: #5c5c5c; font-size: large; font-weight: 700; border-bottom: thin solid cdcfd1; }"
 "h4 { color: #5c5c5c; font-size: large; font-weight: 600; }"
 "h5 { color: #5c5c5c; font-size: large; }"
-"pre { background-color: #f0f0f0; }"
+"pre { background-color: #f0f0f0; border: thin solid #bfbfbf; padding: 2px; }"
+"a { text-decoration: none; }"
+"a:hover { text-decoration: underline; }"
 "</style>";
 
 void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean plain_mode)
@@ -140,7 +141,11 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean pla
 			str = g_string_append_len (str, text+last_i, i);
 			text = g_string_free (str, FALSE);
 		}
-		gchar *html = g_strdup_printf ("%s\n%s", CSS, text);
+
+		const gchar *extra_css = g_object_get_data (G_OBJECT (widget), "extra-css");
+		if (!extra_css) extra_css = "";
+
+		gchar *html = g_strdup_printf ("%s\n%s\n%s", CSS, extra_css, text);
 		if (str)
 			g_free ((gchar *) text);
 		webkit_web_view_load_string (view, html, "text/html", "UTF-8", "/");
@@ -196,11 +201,15 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	                  G_CALLBACK (ygtk_webkit_navigation_requested_cb), callback);
 }
 
-void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename)
 {
-	// TODO
-// to implement this, we could add the background as data into CSS, like:
-//"	background:url(data:image/gif;base64,R0lGODlhEAAOALMAAOazToeHh0tLS/7LZv/0jvb29t/f3//Ub//ge8WSLf/rhf/3kdbW1mxsbP//mf///yH5BAAAAAAALAAAAAAQAA4AAARe8L1Ekyky67QZ1hLnjM5UUde0ECwLJoExKcppV0aCcGCmTIHEIUEqjgaORCMxIC6e0CcguWw6aFjsVMkkIr7g77ZKPJjPZqIyd7sJAgVGoEGv2xsBxqNgYPj/gAwXEQA7) top left no-repeat; )"
+	int width = gdk_pixbuf_get_width (pixbuf);
+	gchar *bg_css = g_strdup_printf (
+		"<style type=\"text/css\">"
+		"body { background-image: url('%s'); background-repeat: no-repeat;"
+		"background-position: %dpx 100%%; background-attachment: fixed; }"
+		"</style>", filename, -width+40);
+	g_object_set_data_full (G_OBJECT (widget), "extra-css", bg_css, g_free);
 }
 
 #else
@@ -275,7 +284,7 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
-void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename)
 {
 	// TODO
 }
@@ -320,7 +329,7 @@ void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback,
 	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
-void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
+void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename)
 {
 	ygtk_rich_text_set_background (YGTK_RICH_TEXT (widget), pixbuf);
 }

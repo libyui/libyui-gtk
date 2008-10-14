@@ -16,6 +16,12 @@
 	* configure.in.in: it seems there are both the "WebKitGtk" and "webkit-1.0"
 	from OSS and Gnome-Community repos. Check for both.
 
+	* src/ygtkfindentry.c & src/YGUtils.h/.cc: moved setOpacity() to YGUtils.
+
+	* src/ygtkhtmlwrap.h/.c: added support for background image to WebKit.
+	(there is no opacity in CSS, so I just placed the img in the side...)
+	Improved CSS style a bit as well.
+
 2008-10-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.h/cc & src/ygtkrichtext.h/c: moved convert_to_xhmtl

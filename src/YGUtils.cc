@@ -224,6 +224,43 @@ GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 	return pixbuf;
 }
 
+// Code from Banshee: shades a pixbuf a bit, used e.g. for hover effects
+static inline guchar pixel_clamp (int val)
+{ return MAX (0, MIN (255, val)); }
+GdkPixbuf *YGUtils::setOpacity (const GdkPixbuf *src, int opacity)
+{
+	if (!src) return NULL;
+	int shift = (opacity * 255) / 100;
+
+	int width = gdk_pixbuf_get_width (src), height = gdk_pixbuf_get_height (src);
+	gboolean has_alpha = gdk_pixbuf_get_has_alpha (src);
+
+	GdkPixbuf *dest = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (src),
+		has_alpha, gdk_pixbuf_get_bits_per_sample (src), width, height);
+
+	guchar *src_pixels_orig = gdk_pixbuf_get_pixels (src);
+	guchar *dest_pixels_orig = gdk_pixbuf_get_pixels (dest);
+
+	int src_rowstride = gdk_pixbuf_get_rowstride (src);
+	int dest_rowstride = gdk_pixbuf_get_rowstride (dest);
+	int i, j;
+	for (i = 0; i < height; i++) {
+		guchar *src_pixels = src_pixels_orig + (i * src_rowstride);
+		guchar *dest_pixels = dest_pixels_orig + (i * dest_rowstride);
+		for (j = 0; j < width; j++) {
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + shift);
+			if (has_alpha)
+				*(dest_pixels++) = *(src_pixels++);
+		}
+	}
+	return dest;
+}
+
+GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity)
+{ return YGUtils::setOpacity (src, opacity); }
+
 static std::string cutUnderline (const std::string &str)
 {
 	std::string ret (str);

@@ -21,13 +21,15 @@
 #include "ygtklinklabel.h"
 #define YGI18N_C
 #include "YGi18n.h"
-#include "icons/help-bg.xpm"
+
+#define HELP_IMG_BG "yelp-icon-big"
 
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
                                     double scale);
 extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
+extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
 
 //** YGtkHelpDialog
 
@@ -81,9 +83,19 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	dialog->help_text = ygtk_html_wrap_new();
 	gtk_container_add (GTK_CONTAINER (dialog->help_box), dialog->help_text);
 
-	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_xpm_data (help_bg_xpm);
-	ygtk_html_wrap_set_background (dialog->help_text, pixbuf);
-	g_object_unref (pixbuf);
+	GtkIconTheme *theme = gtk_icon_theme_get_default();
+	GtkIconInfo *info = gtk_icon_theme_lookup_icon (theme, HELP_IMG_BG, 192, 0);
+	if (info) {
+		GdkPixbuf *pixbuf = gtk_icon_info_load_icon (info, NULL);
+		if (pixbuf) {
+			const gchar *filename = gtk_icon_info_get_filename (info);
+			GdkPixbuf *transparent = ygutils_setOpacity (pixbuf, 30);
+			ygtk_html_wrap_set_background (dialog->help_text, transparent, filename);
+			g_object_unref (pixbuf);
+			g_object_unref (transparent);
+		}
+		gtk_icon_info_free (info);
+	}
 
 	// bottom part (search entry + close button)
 	GtkWidget *bottom_box;
