@@ -19,6 +19,7 @@
 #include "ygtkscrolledwindow.h"
 #include "ygtktogglebutton.h"
 #include "ygtkhtmlwrap.h"
+#include "ygtkrichtext.h"
 #include "ygtkhandlebox.h"
 #include "ygtktooltip.h"
 #include "ygtkzyppwrapper.h"
@@ -386,8 +387,9 @@ Listener *m_listener;
 			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL, 0,
 			                   true, inner::select_all_cb, this);
 
-			gtk_widget_show_all (menu);
+			gtk_menu_attach_to_widget (GTK_MENU (menu), m_widget, NULL);
 			gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
+			gtk_widget_show_all (menu);
 		}
 
 		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
@@ -1941,25 +1943,26 @@ private:
 
 		TextExpander (const char *name)
 		{
-			text = ygtk_html_wrap_new();
-
+			text = ygtk_rich_text_new();
 			if (name) {
 				string str = string ("<b>") + name + "</b>";
 				expander = gtk_expander_new (str.c_str());
 				gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
 				gtk_container_add (GTK_CONTAINER (expander), text);
-			}
+				}
 			else
 				expander = NULL;
 		}
 
 		void setText (const std::string &str)
 		{
-			ygtk_html_wrap_set_text (text, str.c_str(), FALSE);
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
 			if (expander)
 				str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
 		}
 	};
+
+
 	struct DepExpander {
 		GtkWidget *expander, *table, *requires, *provides;
 
@@ -1967,8 +1970,8 @@ private:
 
 		DepExpander (const char *name)
 		{
-			requires = ygtk_html_wrap_new();
-			provides = ygtk_html_wrap_new();
+			requires = ygtk_rich_text_new();
+			provides = ygtk_rich_text_new();
 
 			table = gtk_hbox_new (FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (table), requires, TRUE, TRUE, 0);
@@ -1986,15 +1989,15 @@ private:
 				std::string requires_str = _("Requires:");
 				std::string provides_str = _("Provides:");
 				requires_str += "<br><blockquote>";
-				requires_str += package->requires();
+				requires_str += package->requires (true);
 				YGUtils::replace (provides_str, "\n", 1, "<br>");
 				requires_str += "</blockquote>";
 				provides_str += "<br><blockquote>";
-				provides_str += package->provides();
+				provides_str += package->provides (true);
 				YGUtils::replace (requires_str, "\n", 1, "<br>");
 				provides_str += "</blockquote>";
-				ygtk_html_wrap_set_text (requires, requires_str.c_str(), FALSE);
-				ygtk_html_wrap_set_text (provides, provides_str.c_str(), FALSE);
+				ygtk_rich_text_set_text (YGTK_RICH_TEXT (requires), requires_str.c_str(), FALSE);
+				ygtk_rich_text_set_text (YGTK_RICH_TEXT (provides), provides_str.c_str(), FALSE);
 				gtk_widget_show (expander);
 			}
 			else
@@ -2022,16 +2025,12 @@ public:
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		m_description = new TextExpander (NULL);
-		ygtk_html_wrap_connect_link_clicked (m_description->text,
-			G_CALLBACK (description_pressed_cb), this);
+		g_signal_connect (G_OBJECT (m_description->text), "link-clicked",
+		                  G_CALLBACK (link_pressed_cb), this);
 		gtk_box_pack_start (GTK_BOX (hbox), m_description->getWidget(), TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), createIconWidget (&m_icon, &m_icon_frame),
 		                    FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE /* debug */, TRUE, 0);
-// it looks like webkit and gtkhtml have no size_request ?!
-// they must have -- I guess it's just transmited somewhere else...
-
-// CHECK!!
+		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
 
 		if (!update_mode) {
 			m_filelist = new TextExpander (_("File List"));
@@ -2043,8 +2042,8 @@ public:
 			gtk_box_pack_start (GTK_BOX (vbox), m_authors->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->getWidget(), FALSE, TRUE, 0);
 			if (CAN_OPEN_URIS())
-				ygtk_html_wrap_connect_link_clicked (m_filelist->text,
-					G_CALLBACK (path_pressed_cb), NULL);
+				g_signal_connect (G_OBJECT (m_filelist->text), "link-clicked",
+						          G_CALLBACK (link_pressed_cb), this);
 		}
 		else {
 			m_filelist = m_changelog = m_authors = NULL;
@@ -2066,35 +2065,17 @@ public:
 			return;
 		Ypp::Package *package = packages.front();
 
-//		gtk_widget_hide (m_icon_frame);
+		gtk_widget_hide (m_icon_frame);
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
 			description += package->description (true);
 			m_description->setText (description);
 
-
-/*
-// TODO: WebKit doesn't implement size_request or many others (like gtkhtml)
-// what we want to do is to use set_scroll_adjustment like GtkScrolledWindow and
-//set our own (copy from scorlled window) to it, so we can read its values. Then
-// set_size_request() from there.
-
-
-GtkAdjustment hadj, vadj;
-WEBKIT_WEB_VIEW_CLASS (m_description->text)->set_scroll_adjustments (WEBKIT_WEB_VIEW, &hadj, &vadj);
-
-*/
-
-
-GtkRequisition req;
-gtk_widget_size_request (m_description->text, &req);
-fprintf (stderr, "description size: %d x %d\n", req.width, req.height);
-
 			if (m_filelist)  m_filelist->setText (package->filelist (true));
 			if (m_changelog) m_changelog->setText (package->changelog());
 			if (m_authors)   m_authors->setText (package->authors (true));
 			if (m_dependencies) m_dependencies->setPackage (package);
-#if 0
+
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons,
@@ -2104,7 +2085,7 @@ fprintf (stderr, "description size: %d x %d\n", req.width, req.height);
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
 			}
-#endif
+
 			scrollTop();
 		}
 		else {
@@ -2123,11 +2104,7 @@ fprintf (stderr, "description size: %d x %d\n", req.width, req.height);
 	}
 
 private:
-	static void path_pressed_cb (GtkWidget *text, const gchar *link)
-	{ OPEN_URI (link); }
-
-	static void description_pressed_cb (GtkWidget *text, const gchar *link,
-	                                    PackageDetails *pThis)
+	static void link_pressed_cb (GtkWidget *text, const gchar *link, PackageDetails *pThis)
 	{
 		if (!strncmp (link, "pkg://", 6)) {
 			const gchar *pkg_name = link + 6;

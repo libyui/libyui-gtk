@@ -229,7 +229,11 @@ public:
 	virtual bool hasAnimationSupport()   IMPL_RET (true)
 	virtual bool hasIconSupport()        IMPL_RET (true)
 	virtual bool hasFullUtf8Support()    IMPL_RET (true)
+#ifdef USE_WEBKIT
+	virtual bool richTextSupportsTable() IMPL_RET (true)
+#else
 	virtual bool richTextSupportsTable() IMPL_RET (false)
+#endif
 
 private:
     // for screenshots:

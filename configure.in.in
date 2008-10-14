@@ -48,8 +48,15 @@ use_gtkhtml=false
 if test "z$with_html_engine" = "zwebkit"; then
 	use_webkit=true
 
+	AC_MSG_CHECKING([pkg-config])
+	AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+
 	AC_MSG_CHECKING([for webkit])
-	PKG_CHECK_MODULES( WEBKIT, webkit-1.0 )
+	if $PKG_CONFIG --exists webkit-1.0 ; then
+		PKG_CHECK_MODULES( WEBKIT, webkit-1.0 )
+	else
+		PKG_CHECK_MODULES( WEBKIT, WebKitGtk )
+	fi
 	AC_SUBST(WEBKIT_CFLAGS)
 	AC_SUBST(WEBKIT_LIBS)
 

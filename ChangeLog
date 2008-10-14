@@ -1,3 +1,21 @@
+2008-10-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.h: enable rich text tables for webkit.
+
+	* src/ygtkhtmlwrap.c: replace it's popup which has entries like "go back" and
+	"reload" for one with only "copy" and "select all".
+
+	* src/YGPackageSelector.cc: use YGtkRichText for descriptions. WebKit
+	doesn't implement size_request and hacking it through seems futile. We'll
+	have to patch it up if we want that in the future.
+
+	* src/yzyppwrapper.h/.cc: added "rich" argument to requires() and provides(),
+	in order to escape html characters, responsible for the small size of those
+	lists ;) (they were being truncated).
+
+	* configure.in.in: it seems there are both the "WebKitGtk" and "webkit-1.0"
+	from OSS and Gnome-Community repos. Check for both.
+
 2008-10-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.h/cc & src/ygtkrichtext.h/c: moved convert_to_xhmtl

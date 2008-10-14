@@ -13,35 +13,93 @@
 // ygutils
 #include <gtk/gtktextview.h>
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
+
 GtkWidget *ygtk_html_wrap_new (void)
-{ return g_object_new (ygtk_html_wrap_get_type(), NULL); }
+{
+	GtkWidget *widget = g_object_new (ygtk_html_wrap_get_type(), NULL);
+	ygtk_html_wrap_init (widget);
+	return widget;
+}
 
 //** WebKit
 #ifdef USE_WEBKIT
-#include <webkit/webkit.h>
+#include <webkit.h>
 
 GType ygtk_html_wrap_get_type()
 {
 	return WEBKIT_TYPE_WEB_VIEW;
 }
 
-void ygtk_html_wrap_init (GtkWidget *widget)
+static void copy_activate_cb (GtkMenuItem *item, WebKitWebView *view)
+{ webkit_web_view_copy_clipboard (view); }
+static void select_all_activate_cb (GtkMenuItem *item, WebKitWebView *view)
+{ webkit_web_view_select_all (view); }
+
+static gboolean button_press_event_cb (GtkWidget *widget, GdkEventButton *event,
+                                       WebKitWebView *view)
 {
-// TODO: capture populate menu to get rid of "search web" entry
-#if 0
-    webkit_web_view_signals[POPULATE_POPUP] = g_signal_new("populate-popup",
-            G_TYPE_FROM_CLASS(webViewClass),
-            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
-            0,
-            NULL,
-            NULL,
-            g_cclosure_marshal_VOID__OBJECT,
-            G_TYPE_NONE, 1,
-            GTK_TYPE_MENU);
-#endif
+	if (event && event->button != 3)
+		return FALSE;
+	// GtkMenu API is horrible for non-persistant menus. Make it persistant.
+	static GtkWidget *menu = 0;
+	if (menu)
+		gtk_widget_destroy (menu);
+	menu = gtk_menu_new();
+	// add a couple of items (based on GtkTextView)
+	GtkWidget *item;
+	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_COPY, NULL);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	if (webkit_web_view_can_copy_clipboard (view))
+		g_signal_connect (item, "activate", G_CALLBACK (copy_activate_cb), widget);
+	else
+		gtk_widget_set_sensitive (item, FALSE);
+	item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_SELECT_ALL, NULL);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	g_signal_connect (item, "activate", G_CALLBACK (select_all_activate_cb), widget);
+
+	int button, event_time;
+	if (event) {
+		button = event->button;
+		event_time = event->time;
+	}
+	else {
+		button = 0;
+		event_time = gtk_get_current_event_time();
+	}
+	gtk_menu_attach_to_widget (GTK_MENU (menu), widget, NULL);
+	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL, button, event_time);
+	gtk_widget_show_all (menu);
+	return TRUE;
 }
 
-// CSS based on properties from YGtkRichText
+static gboolean popup_menu_cb (GtkWidget *widget, WebKitWebView *view)
+{
+	button_press_event_cb (widget, NULL, view);
+	return TRUE;
+}
+
+static gboolean button_release_event_cb (GtkWidget *widget, GdkEventButton *event)
+{
+	if (event->button != 3) return FALSE;
+	return TRUE;
+}
+
+void ygtk_html_wrap_init (GtkWidget *widget)
+{
+	/* WebKit popup menu has entries such as "reload", "go back" and "search web"
+	   that we rather not show. "popup-menu" isn't working, use gtkwidget stuff... */
+	g_signal_connect (G_OBJECT (widget), "popup-menu",
+	                  G_CALLBACK (popup_menu_cb), widget);
+	g_signal_connect (G_OBJECT (widget), "button-press-event",
+	                  G_CALLBACK (button_press_event_cb), widget);
+	// webkit crashes if we don't overload the release event as well
+	g_signal_connect (G_OBJECT (widget), "button-release-event",
+	                  G_CALLBACK (button_release_event_cb), widget);
+}
+
+// CSS based on properties from YGtkRichText (from Yelp)
 const char *CSS = "<style type=\"text/css\">"
 "body { }"
 "h1 { color: #5c5c5c; font-size: xx-large; font-weight: 900; }"
@@ -54,10 +112,10 @@ const char *CSS = "<style type=\"text/css\">"
 
 void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean plain_mode)
 {
+	WebKitWebView *view = WEBKIT_WEB_VIEW (widget);
 	// webkit prepends base-uri to non-uri hrefs
 	if (plain_mode)
-			webkit_web_view_load_string (WEBKIT_WEB_VIEW (widget), text,
-			                             "text/plain", "UTF-8", "/");
+			webkit_web_view_load_string (view, text, "text/plain", "UTF-8", "/");
 	else {
 		GString *str = NULL;
 		int i, last_i = 0;
@@ -85,8 +143,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean pla
 		gchar *html = g_strdup_printf ("%s\n%s", CSS, text);
 		if (str)
 			g_free ((gchar *) text);
-		webkit_web_view_load_string (WEBKIT_WEB_VIEW (widget), html,
-		                             "text/html", "UTF-8", "/");
+		webkit_web_view_load_string (view, html, "text/html", "UTF-8", "/");
 		g_free (html);
 	}
 }
@@ -147,6 +204,7 @@ void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf)
 }
 
 #else
+
 //** GtkHTML
 #ifdef USE_GTKHTML
 #include <gtkhtml/gtkhtml.h>

@@ -214,8 +214,8 @@ std::string m_name, m_summary;
 	virtual bool isRecommended() const       { return false; }
 	virtual bool isSuggested() const         { return false; }
 
-	virtual std::string provides() const { return ""; }
-	virtual std::string requires() const { return ""; }
+	virtual std::string provides (bool rich) const { return ""; }
+	virtual std::string requires (bool rich) const { return ""; }
 
 	virtual const Ypp::Package::Version *getInstalledVersion() { return false; }
 	virtual const Ypp::Package::Version *getAvailableVersion (int nb) { return false; }
@@ -268,8 +268,8 @@ std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
 
-std::string Ypp::Package::provides() const        { return impl->provides(); }
-std::string Ypp::Package::requires() const        { return impl->requires(); }
+std::string Ypp::Package::provides (bool rich) const        { return impl->provides (rich); }
+std::string Ypp::Package::requires (bool rich) const        { return impl->requires (rich); }
 
 const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
 { return impl->getInstalledVersion(); }
@@ -643,7 +643,7 @@ GSList *m_containsPackages;
 		return zypp::PoolItem (m_sel->theObj()).status().isSuggested();
 	}
 
-	virtual std::string provides() const
+	virtual std::string provides (bool rich) const
 	{
 		std::string text;
 		ZyppObject object = m_sel->theObj();
@@ -654,10 +654,12 @@ GSList *m_containsPackages;
 				text += "\n";
 			text += it->asString();
 		}
+		if (rich)
+			YGUtils::escapeMarkup (text);
 		return text;
 	}
 
-	virtual std::string requires() const
+	virtual std::string requires (bool rich) const
 	{
 		std::string text;
 		ZyppObject object = m_sel->theObj();
@@ -668,6 +670,8 @@ GSList *m_containsPackages;
 				text += "\n";
 			text += it->asString();
 		}
+		if (rich)
+			YGUtils::escapeMarkup (text);
 		return text;
 	}
 

@@ -61,8 +61,8 @@ struct Ypp
 		bool isRecommended() const;
 		bool isSuggested() const;
 
-		std::string provides() const;
-		std::string requires() const;
+		std::string provides (bool rich) const;
+		std::string requires (bool rich) const;
 
 		struct Version {
 			std::string number, arch;
