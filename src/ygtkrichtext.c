@@ -7,7 +7,7 @@
 
 #include <config.h>
 #include "ygtkrichtext.h"
-#include <gtk/gtkversion.h>
+#include <gtk/gtk.h>
 #include <string.h>
 
 #define IDENT_MARGIN      20
@@ -469,6 +469,41 @@ static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *
 	return ret;
 }
 
+// get rid of editable popup items
+
+static void copy_activate_cb (GtkMenuItem *item, GtkTextBuffer *buffer)
+{ gtk_text_buffer_copy_clipboard (buffer, gtk_clipboard_get (GDK_SELECTION_CLIPBOARD)); }
+static void select_all_activate_cb (GtkMenuItem *item, GtkTextBuffer *buffer)
+{
+	GtkTextIter start, end;
+	gtk_text_buffer_get_bounds (buffer, &start, &end);
+	gtk_text_buffer_select_range (buffer, &start, &end);
+}
+
+static void ygtk_rich_text_populate_popup (GtkTextView *view, GtkMenu *menu)
+{
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+
+	GList *items = gtk_container_get_children (GTK_CONTAINER (menu)), *i;
+	for (i = items; i; i = i->next)
+		gtk_container_remove (GTK_CONTAINER (menu), i->data);
+	g_list_free (items);
+
+	GtkWidget *item;
+	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_COPY, NULL);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	if (gtk_text_buffer_get_has_selection (buffer))
+		g_signal_connect (item, "activate", G_CALLBACK (copy_activate_cb), buffer);
+	else
+		gtk_widget_set_sensitive (item, FALSE);
+	item = gtk_separator_menu_item_new();
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_SELECT_ALL, NULL);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	g_signal_connect (item, "activate", G_CALLBACK (select_all_activate_cb), buffer);
+	gtk_widget_show_all (menu);
+}
+
 /* Rich Text parsing methods. */
 
 typedef struct _HTMLList
@@ -915,6 +950,9 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 
 void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
+	GtkTextViewClass *gtktextview_class = GTK_TEXT_VIEW_CLASS (klass);
+	gtktextview_class->populate_popup = ygtk_rich_text_populate_popup;
+
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_rich_text_realize;
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;

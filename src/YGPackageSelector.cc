@@ -2486,8 +2486,9 @@ public:
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
-		ygtk_wizard_set_header_text (wizard,
-			onlineUpdateMode() ? _("Online Update") : _("Software Manager"));
+		const char *title = onlineUpdateMode() ? _("Online Update") : _("Software Manager");
+		ygtk_wizard_set_header_text (wizard, title);
+		YGDialog::currentDialog()->setTitle (title);
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
 		ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"));
