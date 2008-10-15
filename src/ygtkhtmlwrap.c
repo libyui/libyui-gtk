@@ -23,7 +23,7 @@ GtkWidget *ygtk_html_wrap_new (void)
 
 //** WebKit
 #ifdef USE_WEBKIT
-#include <webkit.h>
+#include <webkit/webkit.h>
 
 GType ygtk_html_wrap_get_type()
 {
@@ -130,7 +130,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean pla
 					if (text[j] == '"' || g_ascii_isspace (text[j])) {
 						if (!str)
 							str = g_string_new ("");
-						str = g_string_append_len (str, text+last_i, i);
+						str = g_string_append_len (str, text+last_i, i-last_i);
 						last_i = i;
 						str = g_string_append (str, "label:/");
 						break;
@@ -138,7 +138,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar *text, gboolean pla
 			}
 		}
 		if (str) {
-			str = g_string_append_len (str, text+last_i, i);
+			str = g_string_append (str, text+last_i);
 			text = g_string_free (str, FALSE);
 		}
 
