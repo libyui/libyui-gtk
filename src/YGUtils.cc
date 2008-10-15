@@ -230,7 +230,7 @@ static inline guchar pixel_clamp (int val)
 GdkPixbuf *YGUtils::setOpacity (const GdkPixbuf *src, int opacity)
 {
 	if (!src) return NULL;
-	int shift = (opacity * 255) / 100;
+	int shift = 255 - ((opacity * 255) / 100);
 
 	int width = gdk_pixbuf_get_width (src), height = gdk_pixbuf_get_height (src);
 	gboolean has_alpha = gdk_pixbuf_get_has_alpha (src);

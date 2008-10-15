@@ -455,8 +455,9 @@ static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *
 		if (event->window == window) {
 			int x, y;
 			int width = gdk_pixbuf_get_width (rtext->background_pixbuf);
+			int height = gdk_pixbuf_get_height (rtext->background_pixbuf);
 			gtk_text_view_buffer_to_window_coords (text, GTK_TEXT_WINDOW_TEXT,
-				widget->allocation.width-width, 0, &x, &y);
+				widget->allocation.width-((2*width)/5), -height/3, &x, &y);
 			gdk_draw_pixbuf (GDK_DRAWABLE (window), *widget->style->fg_gc, rtext->background_pixbuf,
 				0, 0, x, y, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
 		}

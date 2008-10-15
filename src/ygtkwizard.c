@@ -89,7 +89,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 		GdkPixbuf *pixbuf = gtk_icon_info_load_icon (info, NULL);
 		if (pixbuf) {
 			const gchar *filename = gtk_icon_info_get_filename (info);
-			GdkPixbuf *transparent = ygutils_setOpacity (pixbuf, 30);
+			GdkPixbuf *transparent = ygutils_setOpacity (pixbuf, 60);
 			ygtk_html_wrap_set_background (dialog->help_text, transparent, filename);
 			g_object_unref (pixbuf);
 			g_object_unref (transparent);

@@ -264,7 +264,7 @@ static void generate_icon (GtkWidget *widget, const char *stock_icon,
 	}
 	if (stock_icon) {
 		*normal_icon = gtk_widget_render_icon (widget, stock_icon, GTK_ICON_SIZE_MENU, NULL);
-		*hover_icon = ygutils_setOpacity (*normal_icon, 12);  // or 11?
+		*hover_icon = ygutils_setOpacity (*normal_icon, 88);
 	}
 }
 
