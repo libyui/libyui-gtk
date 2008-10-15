@@ -100,6 +100,5 @@ EXTRA_DIST = \
 	icons/harddisk.xpm \
 	icons/harddisk-full.xpm \
 	icons/hr.xpm \
-	icons/help-bg.xpm \
 	pkg-selector-help.h
 
