@@ -60,6 +60,7 @@ struct Ypp
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
+		bool isUnsupported() const;
 
 		std::string provides (bool rich) const;
 		std::string requires (bool rich) const;
@@ -153,6 +154,7 @@ struct Ypp
 			void setToModify (bool modify);
 			void setIsRecommended (bool recommended);
 			void setIsSuggested (bool suggested);
+			void setIsUnsupported (bool unsupported);
 
 			~Query();
 			struct Impl;

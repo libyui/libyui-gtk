@@ -211,8 +211,9 @@ std::string m_name, m_summary;
 	virtual std::string changelog()          { return ""; }
 	virtual std::string authors (bool rich)  { return ""; }
 	virtual std::string icon()               { return ""; }
-	virtual bool isRecommended() const       { return false; }
-	virtual bool isSuggested() const         { return false; }
+	virtual bool isRecommended() const      { return false; }
+	virtual bool isSuggested() const        { return false; }
+	virtual bool isUnsupported() const      { return false; }
 
 	virtual std::string provides (bool rich) const { return ""; }
 	virtual std::string requires (bool rich) const { return ""; }
@@ -267,6 +268,7 @@ std::string Ypp::Package::authors (bool rich)     { return impl->authors (rich);
 std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
+bool Ypp::Package::isUnsupported() const            { return impl->isUnsupported(); }
 
 std::string Ypp::Package::provides (bool rich) const        { return impl->provides (rich); }
 std::string Ypp::Package::requires (bool rich) const        { return impl->requires (rich); }
@@ -435,6 +437,12 @@ GSList *m_containsPackages;
 #else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 #endif
+				if (!isInstalled()) {
+					if (isRecommended() || isSuggested())
+						text += br + "<b><font color=\"orange\">" + (isRecommended() ? _("Recommended") : _("Suggested")) + " " + _("for install") + "</font></b>";
+				}
+				if (isUnsupported())
+					text += br + "<b><font color=\"red\">" + _("Not covered by the default support contract.") + "</font></b>";
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:
@@ -641,6 +649,19 @@ GSList *m_containsPackages;
 	virtual bool isSuggested() const
 	{
 		return zypp::PoolItem (m_sel->theObj()).status().isSuggested();
+	}
+
+	virtual bool isUnsupported() const
+	{
+#if ZYPP_VERSION >= 5013001
+		if (type != Ypp::Package::PACKAGE_TYPE)
+			return false;
+		ZyppObject object = m_sel->theObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		return package->maybeUnsupported();
+#else
+		return false;
+#endif
 	}
 
 	virtual std::string provides (bool rich) const
@@ -1190,6 +1211,7 @@ struct Ypp::QueryPool::Query::Impl
 	Key <bool> toModify;
 	Key <bool> isRecommended;
 	Key <bool> isSuggested;
+	Key <bool> isUnsupported;
 	Ypp::Package *highlight;
 
 	Impl()
@@ -1238,6 +1260,8 @@ struct Ypp::QueryPool::Query::Impl
 			match = isRecommended.is (package->isRecommended());
 		if (match && isSuggested.defined)
 			match = isSuggested.is (package->isSuggested());
+		if (match && isUnsupported.defined)
+			match = isUnsupported.is (package->isUnsupported());
 		if (match && names.defined) {
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
@@ -1371,6 +1395,8 @@ void Ypp::QueryPool::Query::setIsRecommended (bool value)
 { impl->isRecommended.set (value); }
 void Ypp::QueryPool::Query::setIsSuggested (bool value)
 { impl->isSuggested.set (value); }
+void Ypp::QueryPool::Query::setIsUnsupported (bool value)
+{ impl->isUnsupported.set (value); }
 
 //** Pool
 

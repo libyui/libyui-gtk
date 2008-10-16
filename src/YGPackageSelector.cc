@@ -407,7 +407,7 @@ Listener *m_listener;
 	struct ListView : public View
 	{
 		bool m_isTree;
-		ListView (bool isTree, bool showTooltips, PackagesView *parent)
+		ListView (bool isTree, bool showTooltips, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
@@ -441,10 +441,12 @@ Listener *m_listener;
 			                                        this, NULL);
 			gtk_widget_show (m_widget);
 
-			g_signal_connect (G_OBJECT (m_widget), "popup-menu",
-			                  G_CALLBACK (popup_key_cb), this);
-			g_signal_connect (G_OBJECT (m_widget), "button-press-event",
-			                  G_CALLBACK (popup_button_cb), this);
+			if (editable) {
+				g_signal_connect (G_OBJECT (m_widget), "popup-menu",
+					              G_CALLBACK (popup_key_cb), this);
+				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
+					              G_CALLBACK (popup_button_cb), this);
+			}
 			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
 			                        G_CALLBACK (size_allocated_cb), this);
 			if (showTooltips) {
@@ -549,7 +551,7 @@ Listener *m_listener;
 	};
 	struct IconView : public View
 	{
-		IconView (PackagesView *parent)
+		IconView (bool editable, PackagesView *parent)
 		: View (parent)
 		{
 			GtkIconView *view = GTK_ICON_VIEW (m_widget = gtk_icon_view_new());
@@ -560,10 +562,12 @@ Listener *m_listener;
 				                    G_CALLBACK (packages_selected_cb), this);
 			gtk_widget_show (m_widget);
 
-			g_signal_connect (G_OBJECT (m_widget), "popup-menu",
-			                  G_CALLBACK (popup_key_cb), this);
-			g_signal_connect_after (G_OBJECT (m_widget), "button-press-event",
-			                        G_CALLBACK (popup_button_after_cb), this);
+			if (editable) {
+				g_signal_connect (G_OBJECT (m_widget), "popup-menu",
+					              G_CALLBACK (popup_key_cb), this);
+				g_signal_connect_after (G_OBJECT (m_widget), "button-press-event",
+					                    G_CALLBACK (popup_button_after_cb), this);
+			}
 			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
 			                        G_CALLBACK (size_allocated_cb), this);
 		}
@@ -620,7 +624,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	PackagesView (bool isTree)
+	PackagesView (bool isTree, bool editable)
 	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree)
 	{
 		m_bin = ygtk_scrolled_window_new();
@@ -636,7 +640,7 @@ public:
 			ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
 		}
 
-		setMode (LIST_MODE);
+		setMode (LIST_MODE, editable);
 	}
 
 	~PackagesView()
@@ -649,7 +653,7 @@ public:
 	enum ViewMode {
 		LIST_MODE, ICON_MODE
 	};
-	void setMode (ViewMode mode)
+	void setMode (ViewMode mode, bool editable)
 	{
 		if (inited())
 			busyCursor();
@@ -658,15 +662,16 @@ public:
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
 		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, m_isTree, this);
+			m_view = new ListView (m_isTree, m_isTree, editable, this);
 		else
-			m_view = new IconView (this);
+			m_view = new IconView (editable, this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
 		if (m_model)
 			m_view->setModel (m_model);
 
 		packagesSelected (PkgList());
 		normalCursor();
+		gtk_widget_show_all (m_bin);
 	}
 
 	void setPool (Ypp::Pool *pool)
@@ -728,7 +733,7 @@ private:
 	static void mode_toggled_cb (GtkToggleButton *toggle, gint nb, PackagesView *pThis)
 	{
 		ViewMode mode = (nb == 0) ? LIST_MODE : ICON_MODE;
-		pThis->setMode (mode);
+		pThis->setMode (mode, true);
 	}
 };
 
@@ -1249,7 +1254,7 @@ private:
 		Pool (Collections::Listener *listener, Ypp::Package::Type type)
 		: View (listener)
 		{
-			m_view = new PackagesView (true);
+			m_view = new PackagesView (true, true);
 			m_view->setPool (new Ypp::TreePool (type));
 			m_view->setListener (this);
 
@@ -2377,7 +2382,7 @@ public:
 	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr,
 	                 bool summaryMode)
 	{
-		m_packages = new PackagesView (false);
+		m_packages = new PackagesView (false, true);
 		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (updateMode);
@@ -2532,6 +2537,38 @@ protected:
 
 		if (!strcmp (action, "accept")) {
 			yuiMilestone() << "Closing PackageSelector with 'accept'" << endl;
+			if (pThis->confirmUnsupported()) {
+				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+				query->addType (Ypp::Package::PACKAGE_TYPE);
+				query->setIsInstalled (false);
+				query->setToModify (true);
+				query->setIsUnsupported (true);
+
+				Ypp::QueryPool *pool = new Ypp::QueryPool (query);
+				if (!pool->empty()) {
+					// show which packages are unsupported
+					GtkWidget *dialog;
+					dialog = gtk_message_dialog_new
+						(YGDialog::currentWindow(),
+						 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+						 GTK_BUTTONS_NONE, "%s", _("Unsupported Packages"));
+					gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
+						_("Please realize that the following software is either unsupported or "
+						"requires an additional customer contract for support."));
+					gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
+									        GTK_STOCK_OK, GTK_RESPONSE_YES, NULL);
+
+					PackagesView *view = new PackagesView (false, false);
+					view->setPool (pool);
+					gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
+
+					bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
+					gtk_widget_destroy (dialog);
+					if (!ok) return;
+				}
+				else
+					delete pool;
+			}
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}
 		else if (!strcmp (action, "cancel")) {
