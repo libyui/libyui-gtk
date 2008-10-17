@@ -2537,6 +2537,7 @@ protected:
 
 		if (!strcmp (action, "accept")) {
 			yuiMilestone() << "Closing PackageSelector with 'accept'" << endl;
+#if YAST2_VERSION >= 2017013
 			if (pThis->confirmUnsupported()) {
 				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 				query->addType (Ypp::Package::PACKAGE_TYPE);
@@ -2569,6 +2570,7 @@ protected:
 				else
 					delete pool;
 			}
+#endif
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}
 		else if (!strcmp (action, "cancel")) {
