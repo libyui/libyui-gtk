@@ -422,7 +422,20 @@ GSList *m_containsPackages;
 
 					YGUtils::escapeMarkup (text);
 					YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
-					text += "<br>";
+					text += br;
+				}
+
+				if (isUnsupported()) {
+					text += "<b><font color=\"red\">";
+					text += _("This package is not covered by the default support contract.");
+					text += "</font>";
+				}
+				if (!isInstalled()) {
+					if (isRecommended())
+						text += br + _("(As this package is an extension to an already installed package, it is <b>recommended</b> it be installed.)");
+					if (isSuggested())
+						text += br + _("(As this package complements some installed packages, it is <b>suggested</b> it be installed.)");
+					text += br;
 				}
 
 				// specific
@@ -437,12 +450,6 @@ GSList *m_containsPackages;
 #else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 #endif
-				if (!isInstalled()) {
-					if (isRecommended() || isSuggested())
-						text += br + "<b><font color=\"orange\">" + (isRecommended() ? _("Recommended") : _("Suggested")) + " " + _("for install") + "</font></b>";
-				}
-				if (isUnsupported())
-					text += br + "<b><font color=\"red\">" + _("Not covered by the default support contract.") + "</font></b>";
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:
