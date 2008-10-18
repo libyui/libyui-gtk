@@ -814,7 +814,7 @@ public:
 	: m_entries (NULL), m_wizard (wizard)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
-		YGUtils::setWidgetFont (heading, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
 		m_entries_box = gtk_vbox_new (FALSE, 4);
 
@@ -1093,7 +1093,7 @@ private:
 			if (!m_patchMode) {
 				GtkWidget *check = gtk_check_button_new_with_label (_("Detailed"));
 				YGUtils::setWidgetFont (GTK_BIN (check)->child,
-					PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
 				gtk_widget_set_tooltip_text (check,
 					_("Group by the PackageKit-based filter or straight from the actual "
 					"RPM information."));
@@ -1183,7 +1183,7 @@ private:
 			GtkWidget *align, *button, *box, *image, *label;
 			image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
 			label = gtk_label_new (_("Edit..."));
-			YGUtils::setWidgetFont (label, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+			YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
 			box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
@@ -1927,7 +1927,7 @@ private:
 	static GtkWidget *createBoldLabel (const char *text)
 	{
 		GtkWidget *label = gtk_label_new (text);
-		YGUtils::setWidgetFont (label, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		gtk_misc_set_alignment (GTK_MISC (label), 0, 0.5);
 		return label;
 	}

@@ -21,9 +21,12 @@ public:
 		if (outputField) {
 			gtk_label_set_selectable (GTK_LABEL (getWidget()), TRUE);
 			gtk_label_set_single_line_mode (GTK_LABEL (getWidget()), TRUE);
+			YGUtils::setWidgetFont (getWidget(), PANGO_STYLE_ITALIC, PANGO_WEIGHT_NORMAL,
+			                        PANGO_SCALE_MEDIUM);
 		}
 		if (heading)
-			YGUtils::setWidgetFont (getWidget(), PANGO_WEIGHT_BOLD, PANGO_SCALE_LARGE);
+			YGUtils::setWidgetFont (getWidget(), PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
+			                        PANGO_SCALE_LARGE);
 		setLabel (text);
 	}
 
@@ -31,6 +34,15 @@ public:
 	{
 		YLabel::setText (label);
 		gtk_label_set_label (GTK_LABEL (getWidget()), label.c_str());
+		std::string::size_type i = label.find ('\n', 0);
+		if (isOutputField()) {  // must not have a breakline
+			if (i != std::string::npos) {
+				std::string l (label, 0, i);
+				gtk_label_set_label (GTK_LABEL (getWidget()), l.c_str());
+			}
+		}
+		else
+			gtk_label_set_selectable (GTK_LABEL (getWidget()), i != std::string::npos);
 	}
 
 	YGWIDGET_IMPL_COMMON

@@ -197,19 +197,21 @@ int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 	return PANGO_PIXELS (height) * chars_nb;
 }
 
-void YGUtils::setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
+void YGUtils::setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight,
+                             double scale)
 {
 	PangoFontDescription *font_desc = widget->style->font_desc;
 	int size = pango_font_description_get_size (font_desc);
 	PangoFontDescription* font = pango_font_description_new();
 	pango_font_description_set_weight (font, weight);
 	pango_font_description_set_size   (font, (int)(size * scale));
+	pango_font_description_set_style (font, style);
 	gtk_widget_modify_font (widget, font);
 	pango_font_description_free (font);
 }
 
-void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight, double scale)
-{ YGUtils::setWidgetFont (widget, weight, scale); }
+void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale)
+{ YGUtils::setWidgetFont (widget, style, weight, scale); }
 
 GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 {

@@ -25,8 +25,8 @@
 #define HELP_IMG_BG "yelp-icon-big"
 
 // YGUtils bridge
-extern void ygutils_setWidgetFont (GtkWidget *widget, PangoWeight weight,
-                                    double scale);
+extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
+                                   PangoWeight weight, double scale);
 extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
@@ -224,7 +224,8 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	header->title = gtk_label_new ("YaST");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
-	ygutils_setWidgetFont (header->title, PANGO_WEIGHT_BOLD, PANGO_SCALE_X_LARGE);
+	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
+	                       PANGO_SCALE_X_LARGE);
 
 	header->description = ygtk_link_label_new ("", _("more"));
 	g_signal_connect (G_OBJECT (header->description), "link-clicked",

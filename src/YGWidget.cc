@@ -97,7 +97,7 @@ void YGWidget::doSetEnabled (bool enabled)
 void YGWidget::doSetUseBoldFont (bool useBold)
 {
    	PangoWeight weight = useBold ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
-	YGUtils::setWidgetFont (getWidget(), weight, PANGO_SCALE_MEDIUM);
+	YGUtils::setWidgetFont (getWidget(), PANGO_STYLE_NORMAL, weight, PANGO_SCALE_MEDIUM);
 }
 
 void YGWidget::doAddChild (YWidget *ychild, GtkWidget *container)

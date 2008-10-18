@@ -1,3 +1,15 @@
+2008-10-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.h/cc: added PangoStyle (for italic) option to
+	setWidgetFont() utility.
+
+	* src/YGLabel.cc: do italic for outputField. And set selectable for
+	multi-line labels.
+
+	* src/YGUI.cc: enhancement fix for bug 335492: the person found
+	difficult to nagivate to / from the GTK file selector dialog.
+	Adding / to the side pane, in case it's not there.
+
 2008-10-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (PackagesView): support non-edit mode.

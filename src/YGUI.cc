@@ -448,8 +448,9 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
 		GTK_RESPONSE_ACCEPT, NULL);
-	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
+	GtkFileChooser *fileChooser = GTK_FILE_CHOOSER (dialog);
+	gtk_file_chooser_set_local_only (fileChooser, TRUE);
+	gtk_file_chooser_set_do_overwrite_confirmation (fileChooser, TRUE);
 
 	// filepath can be a dir or a file path, split that up
 	string dirname, filename;
@@ -470,9 +471,9 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	}
 
 	if (!dirname.empty())
-		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), dirname.c_str());
+		gtk_file_chooser_set_current_folder (fileChooser, dirname.c_str());
 	if (!filename.empty())
-		gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), filename.c_str());
+		gtk_file_chooser_set_current_name (fileChooser, filename.c_str());
 
 	if (!filter.empty() && filter != "*") {
 		GtkFileFilter *gtk_filter = gtk_file_filter_new();
@@ -486,12 +487,16 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 				str.erase (str.size()-1);
 			gtk_file_filter_add_pattern (gtk_filter, str.c_str());
 		}
-		gtk_file_chooser_add_filter (GTK_FILE_CHOOSER (dialog), gtk_filter);
+		gtk_file_chooser_add_filter (fileChooser, gtk_filter);
 	}
+
+	// bug 335492: because "/" gets hidden as a an arrow at the top, make sure
+	// there is a root shortcut at the side pane (will not add if already exists)
+	gtk_file_chooser_add_shortcut_folder (fileChooser, "/", NULL);
 
 	std::string ret;
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char* filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		gchar *filename = gtk_file_chooser_get_filename (fileChooser);
 		ret = filename;
 		g_free (filename);
 	}

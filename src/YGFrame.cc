@@ -77,8 +77,8 @@ public:
 		g_signal_connect (G_OBJECT (label_widget), "mnemonic_activate",
 				  G_CALLBACK (frame_label_mnemonic_activate),
 				  getWidget());
-		YGUtils::setWidgetFont (GTK_WIDGET (label_widget), PANGO_WEIGHT_BOLD,
-		                        PANGO_SCALE_MEDIUM);
+		YGUtils::setWidgetFont (GTK_WIDGET (label_widget), PANGO_STYLE_NORMAL,
+		                        PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		gtk_widget_show (label_widget);
 		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), label_widget);
 		setLabel (label);
@@ -123,8 +123,8 @@ public:
 	{
 		IMPL
 		GtkWidget *button = gtk_check_button_new_with_mnemonic("");
-		YGUtils::setWidgetFont (gtk_bin_get_child (GTK_BIN (button)), PANGO_WEIGHT_BOLD,
-		                        PANGO_SCALE_MEDIUM);
+		YGUtils::setWidgetFont (gtk_bin_get_child (GTK_BIN (button)), PANGO_STYLE_NORMAL,
+		                        PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		gtk_widget_show_all (button);
 		gtk_frame_set_label_widget (GTK_FRAME (getWidget()), button);
 
