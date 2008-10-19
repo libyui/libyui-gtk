@@ -271,6 +271,8 @@ void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *te
 	}
 	help->history = g_list_prepend (help->history, pair);
 #else
+	if (help->text)
+		g_free (help->text);
 	help->text = g_strdup (text);	
 #endif
 	if (help->dialog)
