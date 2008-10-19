@@ -1,3 +1,16 @@
+2008-10-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkbargraph.h/cc: moved color customization out of setup routine.
+	* src/YGBarGraph.cc (YGBarGraph): honor textColor().
+
+	* src/ygtkratiobox.cc (used by YGtkBarGraph): was allocating the widget
+	at the window position x=0.
+
+	* src/YGBarGraph.cc (YGPartitionSplitter): bug fix: the widget was
+	broken. Aligned labels correctly as well.
+
+	* src/ygtkwizard.h/cc: added history combo box to the help dialog.
+
 2008-10-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.h/cc: added PangoStyle (for italic) option to

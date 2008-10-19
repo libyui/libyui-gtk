@@ -15,6 +15,17 @@
 #include <gtk/gtkvbox.h>
 G_BEGIN_DECLS
 
+typedef struct YGtkHelpText {
+	GList *history;
+	GtkWidget *dialog;
+} YGtkHelpText;
+
+YGtkHelpText *ygtk_help_text_new (void);
+void ygtk_help_text_destroy (YGtkHelpText *help);
+void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *text);
+const gchar *ygtk_help_text_get (YGtkHelpText *help, gint n);
+void ygtk_help_text_sync (YGtkHelpText *help, GtkWidget *dialog);
+
 // YGtkHelpDialog (for showing help text)
 /* Shows help text. It is GtkWindow-inherited, rather than GtkDialog, because
    we want to place a search entry next to the buttons. */
@@ -35,10 +46,10 @@ typedef struct _YGtkHelpDialog
 {
 	GtkWindow parent;
 
-	// parent:
+	// members:
 	GtkWidget *title_box, *title_label, *title_image;
 	GtkWidget *help_box, *help_text;
-	GtkWidget *search_entry, *close_button;
+	GtkWidget *search_entry, *close_button, *history_combo;
 	GtkWidget *vbox;
 } YGtkHelpDialog;
 
@@ -54,7 +65,7 @@ typedef struct _YGtkHelpDialogClass
 GtkWidget *ygtk_help_dialog_new (GtkWindow *parent);
 GType ygtk_help_dialog_get_type (void) G_GNUC_CONST;
 
-void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const char *text);
+void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text);
 
 // YGtkWizard
 
@@ -90,8 +101,7 @@ typedef struct _YGtkWizard
 	          *release_notes_button;
 
 	/* The help text. */
-	gchar     *m_help;
-	GtkWidget *m_help_dialog;
+	YGtkHelpText *m_help;
 } YGtkWizard;
 
 typedef struct _YGtkWizardClass
@@ -158,3 +168,4 @@ const gchar *ygtk_wizard_get_tree_selection (YGtkWizard *wizard);
 
 G_END_DECLS
 #endif /* YGTK_WIZARD_H */
+

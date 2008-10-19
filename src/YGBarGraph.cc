@@ -20,22 +20,26 @@ public:
 	// YBarGraph
 	virtual void doUpdate()
 	{
-		GdkColor clr;
-		ygtk_bar_graph_create_entries (YGTK_BAR_GRAPH (getWidget()), segments());
+		YGtkBarGraph *graph = YGTK_BAR_GRAPH (getWidget());
+		ygtk_bar_graph_create_entries (graph, segments());
 		for (int i = 0; i < segments(); i++) {
 			const YBarGraphSegment &s = segment (i);
-			GdkColor *c = 0;
+			ygtk_bar_graph_setup_entry (graph, i, s.label().c_str(), s.value());
 			if (s.hasSegmentColor()) {
-				const YColor &color = s.segmentColor();
-				clr.red   = color.red();
-				clr.green = color.green();
-				clr.blue  = color.blue();
-				c = &clr;
+				GdkColor color = ycolorToGdk (s.segmentColor());
+				ygtk_bar_graph_customize_bg (graph, i, &color);
 			}
-			ygtk_bar_graph_setup_entry (YGTK_BAR_GRAPH (getWidget()), i,
-				s.label().c_str(), s.value(), c);
+			if (s.hasTextColor()) {
+				GdkColor color = ycolorToGdk (s.textColor());
+				ygtk_bar_graph_customize_fg (graph, i, &color);
+			}
 		}
-		// FIXME: new libyui colors segments ... We probably should honor that
+	}
+
+	static GdkColor ycolorToGdk (const YColor &ycolor)
+	{
+		GdkColor color = { 0, ycolor.red() << 8, ycolor.green() << 8, ycolor.blue() << 8 };
+		return color;
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -70,15 +74,15 @@ public:
 		GtkWidget *graph = ygtk_bar_graph_new();
 		m_barGraph = YGTK_BAR_GRAPH (graph);
 		ygtk_bar_graph_create_entries (m_barGraph, 3);
-		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize, NULL);
+		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize);
 
 		/* Labels over the slider */
-		GtkWidget *labels_box, *free_label, *new_part_label;
-		labels_box = gtk_hbox_new (FALSE, 0);
-		free_label = gtk_label_new (freeFieldLabel.c_str());
-		new_part_label = gtk_label_new (newPartFieldLabel.c_str());
-		gtk_box_pack_start (GTK_BOX (labels_box), free_label, FALSE, FALSE, 0);
-		gtk_box_pack_start (GTK_BOX (labels_box), new_part_label, FALSE, FALSE, 0);
+		GtkWidget *labels_box = gtk_hbox_new (FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (labels_box),
+			gtk_label_new (freeFieldLabel.c_str()), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (labels_box), gtk_label_new (NULL), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (labels_box),
+			gtk_label_new (newPartFieldLabel.c_str()), FALSE, TRUE, 0);
 
 		/* Slider and the spinners */
 		GtkWidget *slider_box = gtk_hbox_new (FALSE, 0);
@@ -101,7 +105,7 @@ public:
 		                  G_CALLBACK (new_spin_changed_cb), this);
 
 		/* Main layout */
-		gtk_box_pack_start (GTK_BOX (getWidget()), graph, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (getWidget()), graph, TRUE, TRUE, 6);
 		gtk_box_pack_start (GTK_BOX (getWidget()), labels_box, FALSE, TRUE, 2);
 		gtk_box_pack_start (GTK_BOX (getWidget()), slider_box, FALSE, TRUE, 2);
 
@@ -118,10 +122,8 @@ public:
 	virtual void setValue (int newValue)
 	{
 		IMPL
-		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(),
-		                            freeSize(), NULL);
-		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(),
-		                            newPartSize(), NULL);
+		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(), freeSize());
+		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(), newPartSize());
 
 		// block connections
 		g_signal_handlers_block_by_func (m_scale,
@@ -131,9 +133,13 @@ public:
 		g_signal_handlers_block_by_func (m_new_spin,
 		                                 (gpointer) new_spin_changed_cb, this);
 
-		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin), freeSize());
-		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin), newPartSize());
-		gtk_range_set_value (GTK_RANGE (m_scale), freeSize());
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin), newValue);
+		int freeSize = totalFreeSize() - newValue;
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin), freeSize);
+		gtk_range_set_value (GTK_RANGE (m_scale), freeSize);
+
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin), freeSize);
+		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin), newValue);
 
 		// unblock connections
 		g_signal_handlers_unblock_by_func (m_scale,

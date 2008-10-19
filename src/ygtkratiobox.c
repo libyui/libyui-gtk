@@ -163,14 +163,14 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 		GtkAllocation child_alloc;
 		if (orientation == GTK_ORIENTATION_HORIZONTAL) {
-			child_alloc.x = child_pos;
+			child_alloc.x = allocation->x + child_pos;
 			child_alloc.y = allocation->y;
 			child_alloc.width = child_length;
 			child_alloc.height = allocation->height;
 		}
 		else { // GTK_ORIENTATION_VERTICAL
 			child_alloc.x = allocation->x;
-			child_alloc.y = child_pos;
+			child_alloc.y = allocation->y + child_pos;
 			child_alloc.width = allocation->width;
 			child_alloc.height = child_length;
 		}
@@ -215,20 +215,15 @@ static void ygtk_ratio_box_class_init (YGtkRatioBoxClass *klass)
 G_DEFINE_TYPE (YGtkRatioHBox, ygtk_ratio_hbox, YGTK_TYPE_RATIO_BOX)
 
 static void ygtk_ratio_hbox_init (YGtkRatioHBox *box)
-{
-}
+{ }
 
 static void ygtk_ratio_hbox_size_request (GtkWidget      *widget,
                                          GtkRequisition *requisition)
-{
-	ygtk_ratio_box_size_request (widget, requisition, GTK_ORIENTATION_HORIZONTAL);
-}
+{ ygtk_ratio_box_size_request (widget, requisition, GTK_ORIENTATION_HORIZONTAL); }
 
 static void ygtk_ratio_hbox_size_allocate (GtkWidget     *widget,
                                           GtkAllocation *allocation)
-{
-	ygtk_ratio_box_size_allocate (widget, allocation, GTK_ORIENTATION_HORIZONTAL);
-}
+{ ygtk_ratio_box_size_allocate (widget, allocation, GTK_ORIENTATION_HORIZONTAL); }
 
 GtkWidget* ygtk_ratio_hbox_new (gint spacing)
 {
@@ -251,20 +246,15 @@ static void ygtk_ratio_hbox_class_init (YGtkRatioHBoxClass *klass)
 G_DEFINE_TYPE (YGtkRatioVBox, ygtk_ratio_vbox, YGTK_TYPE_RATIO_BOX)
 
 static void ygtk_ratio_vbox_init (YGtkRatioVBox *box)
-{
-}
+{ }
 
 static void ygtk_ratio_vbox_size_request (GtkWidget      *widget,
                                          GtkRequisition *requisition)
-{
-	ygtk_ratio_box_size_request (widget, requisition, GTK_ORIENTATION_VERTICAL);
-}
+{ ygtk_ratio_box_size_request (widget, requisition, GTK_ORIENTATION_VERTICAL); }
 
 static void ygtk_ratio_vbox_size_allocate (GtkWidget     *widget,
                                           GtkAllocation *allocation)
-{
-	ygtk_ratio_box_size_allocate (widget, allocation, GTK_ORIENTATION_VERTICAL);
-}
+{ ygtk_ratio_box_size_allocate (widget, allocation, GTK_ORIENTATION_VERTICAL); }
 
 GtkWidget* ygtk_ratio_vbox_new (gint spacing)
 {

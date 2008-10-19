@@ -24,6 +24,9 @@
 
 #define HELP_IMG_BG "yelp-icon-big"
 
+// test feature: history on help dialog
+#define SET_HELP_HISTORY
+
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
@@ -60,6 +63,7 @@ static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dia
 }
 static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
 { ygtk_help_dialog_find_next (dialog); }
+
 static void close_button_clicked_cb (GtkButton *button, YGtkHelpDialog *dialog)
 { gtk_widget_hide (GTK_WIDGET (dialog)); }
 
@@ -113,10 +117,20 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
+#ifdef SET_HELP_HISTORY
+	dialog->history_combo = gtk_combo_box_new_text();
+#endif
+
 	// glue it
 	dialog->vbox = gtk_vbox_new (FALSE, 12);
+#ifdef SET_HELP_HISTORY
+	GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (hbox), gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON), FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (hbox), dialog->history_combo, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (dialog->vbox), hbox, FALSE, TRUE, 0);
+#endif
 	gtk_box_pack_start (GTK_BOX (dialog->vbox), dialog->help_box, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (dialog->vbox), bottom_box, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (dialog->vbox), bottom_box, FALSE, TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (dialog), dialog->vbox);
 	gtk_widget_show_all (dialog->vbox);
 
@@ -151,6 +165,7 @@ void ygtk_help_dialog_set_text (YGtkHelpDialog *dialog, const gchar *text)
 {
 	gtk_editable_delete_text (GTK_EDITABLE (dialog->search_entry), 0, -1);
 	ygtk_html_wrap_set_text (dialog->help_text, text, FALSE);
+	ygtk_html_wrap_scroll (dialog->help_text, TRUE);
 }
 
 static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
@@ -174,6 +189,125 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
 	gtk_binding_entry_add_signal (binding_set, GDK_F3, 0, "find_next", 0);
 	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
+}
+
+typedef struct TitleTextPair {
+	gchar *title, *text;
+} TitleTextPair;
+
+YGtkHelpText *ygtk_help_text_new (void)
+{ return g_new0 (YGtkHelpText, 1); }
+
+void ygtk_help_text_destroy (YGtkHelpText *help)
+{
+	if (help->history) {
+		GList *i;
+		for (i = help->history; i; i = i->next) {
+			TitleTextPair *pair = i->data;
+			g_free (pair->title);
+			g_free (pair->text);
+			g_free (pair);
+		}
+		g_list_free (help->history);
+		help->history = 0;
+	}
+	if (help->dialog) {
+		gtk_widget_destroy (help->dialog);
+		help->dialog = 0;
+	}
+}
+
+static gint compare_links (gconstpointer pa, gconstpointer pb)
+{
+	const TitleTextPair *a = pa, *b = pb;
+	return strcmp (a->text, b->text);
+}
+
+void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *text)
+{
+	if (!*text) return;
+	TitleTextPair *pair = g_new (TitleTextPair, 1);
+	if (title)
+		pair->title = g_strdup (title);
+	else {
+		gboolean in_tag = FALSE;
+		GString *str = g_string_new ("");
+		const gchar *i;
+		for (i = text; *i; i++) {
+			if (*i == '<')
+				in_tag = TRUE;
+			else if (*i == '>')
+				in_tag = FALSE;
+			else if (*i == '\n') {
+				if (str->len)
+					break;
+			}
+			else if (!in_tag)
+				str = g_string_append_c (str, *i);
+		}
+		pair->title = g_string_free (str, FALSE);
+	}
+	pair->text = g_strdup (text);
+
+	GList *i = g_list_find_custom (help->history, pair, (GCompareFunc) compare_links);
+	if (i) {
+		TitleTextPair *p = i->data;
+		g_free (p->text);
+		g_free (p->title);
+		g_free (p);
+		help->history = g_list_delete_link (help->history, i);
+	}
+	help->history = g_list_prepend (help->history, pair);
+	if (help->dialog)
+		ygtk_help_text_sync (help, NULL);
+}
+
+const gchar *ygtk_help_text_get (YGtkHelpText *help, gint n)
+{
+	TitleTextPair *pair = g_list_nth_data (help->history, n);
+	if (pair)
+		return pair->text;
+	return NULL;
+}
+
+#ifdef SET_HELP_HISTORY
+static void history_changed_cb (GtkComboBox *combo, YGtkHelpText *text)
+{
+	YGtkHelpDialog *dialog = YGTK_HELP_DIALOG (text->dialog);
+	gint active = gtk_combo_box_get_active (GTK_COMBO_BOX (dialog->history_combo));
+	ygtk_help_dialog_set_text (dialog, ygtk_help_text_get (text, active));
+}
+#endif
+
+void ygtk_help_text_sync (YGtkHelpText *help, GtkWidget *widget)
+{
+	YGtkHelpDialog *dialog;
+	if (!help->dialog) {
+		if (!widget)
+			return;
+#ifdef SET_HELP_HISTORY
+		dialog = YGTK_HELP_DIALOG (widget);
+		g_signal_connect (G_OBJECT (dialog->history_combo), "changed",
+		                  G_CALLBACK (history_changed_cb), help);
+#endif
+		help->dialog = widget;
+	}
+	dialog = YGTK_HELP_DIALOG (help->dialog);
+	ygtk_help_dialog_set_text (dialog, ygtk_help_text_get (help, 0));
+
+#ifdef SET_HELP_HISTORY
+	g_signal_handlers_block_by_func (dialog->history_combo, history_changed_cb, help);
+	GtkListStore *store = GTK_LIST_STORE (gtk_combo_box_get_model (
+		GTK_COMBO_BOX (dialog->history_combo)));
+	gtk_list_store_clear (store);
+	GList *i;
+	for (i = help->history; i; i = i->next) {
+		TitleTextPair *pair = i->data;
+		gtk_combo_box_append_text (GTK_COMBO_BOX (dialog->history_combo), pair->title);
+	}
+	gtk_combo_box_set_active (GTK_COMBO_BOX (dialog->history_combo), 0);
+	g_signal_handlers_unblock_by_func (dialog->history_combo, history_changed_cb, help);
+#endif
 }
 
 //** Header
@@ -262,6 +396,9 @@ static void ygtk_wizard_header_class_init (YGtkWizardHeaderClass *klass)
 
 static void ygtk_wizard_header_set_title (YGtkWizardHeader *header, const gchar *text)
 { gtk_label_set_text (GTK_LABEL (header->title), text); }
+
+static const gchar *ygtk_wizard_header_get_title (YGtkWizardHeader *header)
+{ return gtk_label_get_text (GTK_LABEL (header->title)); }
 
 static void ygtk_wizard_header_set_description (YGtkWizardHeader *header, const gchar *text)
 {
@@ -405,11 +542,12 @@ static void help_button_toggled_cb (GtkToggleButton *button, YGtkWizard *wizard)
 {
 	if (gtk_toggle_button_get_active (button))
 		ygtk_wizard_popup_help (wizard);
-	else if (wizard->m_help_dialog)
-		gtk_widget_hide (wizard->m_help_dialog);
+	else if (wizard->m_help->dialog)
+		gtk_widget_hide (wizard->m_help->dialog);
 }
 static void help_button_silent_set_active (YGtkWizard *wizard, gboolean active)
 {
+	if (!wizard->help_button) return;  // unmap may be issued at destroy
 	GtkToggleButton *button = GTK_TOGGLE_BUTTON (wizard->help_button);
 	g_signal_handlers_block_by_func (button,
 		(gpointer) help_button_toggled_cb, wizard);
@@ -422,17 +560,16 @@ static void help_dialog_unmap_cb (GtkWidget *dialog, YGtkWizard *wizard)
 
 static void ygtk_wizard_popup_help (YGtkWizard *wizard)
 {
-	if (!wizard->m_help_dialog) {
+	if (!wizard->m_help->dialog) {
 		GtkWindow *window = (GtkWindow *) gtk_widget_get_ancestor (
 		                        GTK_WIDGET (wizard), GTK_TYPE_WINDOW);
-		wizard->m_help_dialog = ygtk_help_dialog_new (window);
-		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog),
-		                           wizard->m_help);
-		g_signal_connect (G_OBJECT (wizard->m_help_dialog), "unmap",
+		GtkWidget *dialog = ygtk_help_dialog_new (window);
+		g_signal_connect (G_OBJECT (dialog), "unmap",
 		                  G_CALLBACK (help_dialog_unmap_cb), wizard);
+		ygtk_help_text_sync (wizard->m_help, dialog);
 	}
 	help_button_silent_set_active (wizard, TRUE);
-	gtk_window_present (GTK_WINDOW (wizard->m_help_dialog));
+	gtk_window_present (GTK_WINDOW (wizard->m_help->dialog));
 }
 
 static void more_clicked_cb (YGtkWizardHeader *header, YGtkWizard *wizard)
@@ -554,17 +691,13 @@ static void ygtk_wizard_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
 
 	YGtkWizard *wizard = YGTK_WIZARD (object);
+	wizard->help_button = NULL;  // dialog unmap will try to access this
 	destroy_hash (&wizard->menu_ids, FALSE);
 	destroy_hash (&wizard->tree_ids, TRUE);
 	destroy_hash (&wizard->steps_ids, FALSE);
-
 	if (wizard->m_help) {
-		g_free (wizard->m_help);
+		ygtk_help_text_destroy (wizard->m_help);
 		wizard->m_help = NULL;
-	}
-	if (wizard->m_help_dialog) {
-		gtk_widget_destroy (wizard->m_help_dialog);
-		wizard->m_help_dialog = NULL;
 	}
 }
 
@@ -672,11 +805,12 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 
 void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 {
-	if (wizard->m_help)
-		g_free (wizard->m_help);
-	wizard->m_help = g_strdup (text);
-	if (wizard->m_help_dialog)
-		ygtk_help_dialog_set_text (YGTK_HELP_DIALOG (wizard->m_help_dialog), text);
+	if (!wizard->m_help)
+		wizard->m_help = ygtk_help_text_new();
+	const gchar *title = ygtk_wizard_header_get_title (YGTK_WIZARD_HEADER (wizard->m_title));
+	if (!strcmp (title, "YaST"))
+		title = 0;
+	ygtk_help_text_set (wizard->m_help, title, text);
 	ygtk_wizard_header_set_description (YGTK_WIZARD_HEADER (wizard->m_title), text);
 	ENABLE_WIDGET_STR (text, wizard->help_button);
 }

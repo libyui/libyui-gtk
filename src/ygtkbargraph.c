@@ -54,15 +54,18 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 	}
 }
 
-void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *label_entry,
-                                 int value, GdkColor *color)
+static GtkWidget *ygtk_bar_graph_get_label (YGtkBarGraph *bar, int index, GtkWidget **b)
 {
-	YGtkRatioBoxChild *box_child = (YGtkRatioBoxChild *)
-		g_list_nth_data (YGTK_RATIO_BOX (bar)->children, index);
+	GtkWidget *box = ((YGtkRatioBoxChild *) g_list_nth_data (
+		YGTK_RATIO_BOX (bar)->children, index))->widget;
+	if (b) *b = box;
+	return gtk_bin_get_child (GTK_BIN (box));
+}
 
-	g_return_if_fail (box_child);
-	GtkWidget *box = box_child->widget;
-	GtkWidget *label = gtk_bin_get_child (GTK_BIN (box));
+void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *label_entry, int value)
+{
+	GtkWidget *box, *label;
+	label = ygtk_bar_graph_get_label (bar, index, &box);
 
 	if (value < 0)
 		value = 0;
@@ -84,10 +87,11 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 
 		// tooltip for the labels -- useful if the bar entry gets too small
 		gtk_widget_set_tooltip_text (box, label_text->str);
+		g_string_free (label_text, TRUE);
 	}
 
 	// Set proportion
-	gtk_widget_set_size_request (box, 10, -1);  // for homogeneous...
+	gtk_widget_set_size_request (box, 0, -1);
 	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1));
 
 	// Set background color
@@ -123,13 +127,21 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 	};
 
 	YGtkColoredLabel *color_label = YGTK_COLORED_LABEL (label);
+	const guint *color = palette [index % G_N_ELEMENTS (palette)];
+	GdkColor gcolor = { 0, color[0] << 8, color[1] << 8, color[2] << 8 };
+	ygtk_colored_label_set_background (color_label, &gcolor);
+}
 
-	if (color)
-		ygtk_colored_label_set_background (color_label, color->red, color->green, color->blue);
-	else { 
-		const guint *color = palette [index % G_N_ELEMENTS (palette)];
-		ygtk_colored_label_set_background (color_label, color[0], color[1], color[2]);
-	}
+void ygtk_bar_graph_customize_bg (YGtkBarGraph *bar, int index, GdkColor *color)
+{
+	GtkWidget *label = ygtk_bar_graph_get_label (bar, index, NULL);
+	ygtk_colored_label_set_background (YGTK_COLORED_LABEL (label), color);
+}
+
+void ygtk_bar_graph_customize_fg (YGtkBarGraph *bar, int index, GdkColor *color)
+{
+	GtkWidget *label = ygtk_bar_graph_get_label (bar, index, NULL);
+	ygtk_colored_label_set_foreground (YGTK_COLORED_LABEL (label), color);
 }
 
 static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
@@ -164,19 +176,11 @@ static gboolean ygtk_colored_label_expose_event (GtkWidget *widget, GdkEventExpo
 GtkWidget *ygtk_colored_label_new (void)
 { return g_object_new (YGTK_TYPE_COLORED_LABEL, NULL); }
 
-void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, guint red,
-                                        guint green, guint blue)
-{
-	GdkColor color = { 0, red << 8, green << 8, blue << 8 };
-	gtk_widget_modify_fg (GTK_WIDGET (label), GTK_STATE_NORMAL, &color);
-}
+void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkColor *color)
+{ gtk_widget_modify_bg (GTK_WIDGET (label), GTK_STATE_NORMAL, color); }
 
-void ygtk_colored_label_set_background (YGtkColoredLabel *label, guint red,
-                                        guint green, guint blue)
-{
-	GdkColor color = { 0, red << 8, green << 8, blue << 8 };
-	gtk_widget_modify_bg (GTK_WIDGET (label), GTK_STATE_NORMAL, &color);
-}
+void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkColor *color)
+{ gtk_widget_modify_fg (GTK_WIDGET (label), GTK_STATE_NORMAL, color); }
 
 void ygtk_colored_label_set_shadow_type (YGtkColoredLabel *label, GtkShadowType type)
 {
