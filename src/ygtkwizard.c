@@ -24,9 +24,6 @@
 
 #define HELP_IMG_BG "yelp-icon-big"
 
-// test feature: history on help dialog
-#define SET_HELP_HISTORY
-
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
@@ -119,6 +116,9 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 
 #ifdef SET_HELP_HISTORY
 	dialog->history_combo = gtk_combo_box_new_text();
+	GList *cells = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (dialog->history_combo));
+	g_object_set (G_OBJECT (cells->data), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+	g_list_free (cells);
 #endif
 
 	// glue it
@@ -191,15 +191,18 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
 }
 
+#ifdef SET_HELP_HISTORY
 typedef struct TitleTextPair {
 	gchar *title, *text;
 } TitleTextPair;
+#endif
 
 YGtkHelpText *ygtk_help_text_new (void)
 { return g_new0 (YGtkHelpText, 1); }
 
 void ygtk_help_text_destroy (YGtkHelpText *help)
 {
+#ifdef SET_HELP_HISTORY
 	if (help->history) {
 		GList *i;
 		for (i = help->history; i; i = i->next) {
@@ -211,21 +214,30 @@ void ygtk_help_text_destroy (YGtkHelpText *help)
 		g_list_free (help->history);
 		help->history = 0;
 	}
+#else
+	if (help->text) {
+		g_free (help->text);
+		help->text = 0;
+	}
+#endif
 	if (help->dialog) {
 		gtk_widget_destroy (help->dialog);
 		help->dialog = 0;
 	}
 }
 
+#ifdef SET_HELP_HISTORY
 static gint compare_links (gconstpointer pa, gconstpointer pb)
 {
 	const TitleTextPair *a = pa, *b = pb;
 	return strcmp (a->text, b->text);
 }
+#endif
 
 void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *text)
 {
 	if (!*text) return;
+#ifdef SET_HELP_HISTORY
 	TitleTextPair *pair = g_new (TitleTextPair, 1);
 	if (title)
 		pair->title = g_strdup (title);
@@ -258,16 +270,23 @@ void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *te
 		help->history = g_list_delete_link (help->history, i);
 	}
 	help->history = g_list_prepend (help->history, pair);
+#else
+	help->text = g_strdup (text);	
+#endif
 	if (help->dialog)
 		ygtk_help_text_sync (help, NULL);
 }
 
 const gchar *ygtk_help_text_get (YGtkHelpText *help, gint n)
 {
+#ifdef SET_HELP_HISTORY
 	TitleTextPair *pair = g_list_nth_data (help->history, n);
 	if (pair)
 		return pair->text;
 	return NULL;
+#else
+	return help->text;
+#endif
 }
 
 #ifdef SET_HELP_HISTORY

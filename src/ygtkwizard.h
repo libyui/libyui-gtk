@@ -15,8 +15,15 @@
 #include <gtk/gtkvbox.h>
 G_BEGIN_DECLS
 
+// test feature: history on help dialog
+//#define SET_HELP_HISTORY
+
 typedef struct YGtkHelpText {
+#ifdef SET_HELP_HISTORY
 	GList *history;
+#else
+	gchar *text;
+#endif
 	GtkWidget *dialog;
 } YGtkHelpText;
 
