@@ -2538,38 +2538,9 @@ protected:
 		if (!strcmp (action, "accept")) {
 			yuiMilestone() << "Closing PackageSelector with 'accept'" << endl;
 #if YAST2_VERSION >= 2017013
-			if (pThis->confirmUnsupported()) {
-				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-				query->addType (Ypp::Package::PACKAGE_TYPE);
-				query->setIsInstalled (false);
-				query->setToModify (true);
-				query->setIsUnsupported (true);
-
-				Ypp::QueryPool *pool = new Ypp::QueryPool (query);
-				if (!pool->empty()) {
-					// show which packages are unsupported
-					GtkWidget *dialog;
-					dialog = gtk_message_dialog_new
-						(YGDialog::currentWindow(),
-						 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-						 GTK_BUTTONS_NONE, "%s", _("Unsupported Packages"));
-					gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
-						_("Please realize that the following software is either unsupported or "
-						"requires an additional customer contract for support."));
-					gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
-									        GTK_STOCK_OK, GTK_RESPONSE_YES, NULL);
-
-					PackagesView *view = new PackagesView (false, false);
-					view->setPool (pool);
-					gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
-
-					bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
-					gtk_widget_destroy (dialog);
-					if (!ok) return;
-				}
-				else
-					delete pool;
-			}
+			if (pThis->confirmUnsupported())
+				if (!pThis->askConfirmUnsupported())
+					return;
 #endif
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}
@@ -2603,6 +2574,42 @@ protected:
     }
     static bool confirm_cb (void *pThis)
     { return ((YGPackageSelector *)pThis)->confirmExit(); }
+
+	bool askConfirmUnsupported()
+	{
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+		query->addType (Ypp::Package::PACKAGE_TYPE);
+		query->setIsInstalled (false);
+		query->setToModify (true);
+		query->setIsUnsupported (true);
+
+		Ypp::QueryPool *pool = new Ypp::QueryPool (query);
+		if (!pool->empty()) {
+			// show which packages are unsupported
+			GtkWidget *dialog;
+			dialog = gtk_message_dialog_new
+				(YGDialog::currentWindow(),
+				 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+				 GTK_BUTTONS_NONE, "%s", _("Unsupported Packages"));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
+				_("Please realize that the following software is either unsupported or "
+				"requires an additional customer contract for support."));
+			gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
+							        GTK_STOCK_OK, GTK_RESPONSE_YES, NULL);
+
+			PackagesView *view = new PackagesView (false, true);
+			view->setPool (pool);
+			gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
+
+			bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
+			gtk_widget_destroy (dialog);
+			return ok;
+		}
+		else {
+			delete pool;
+			return true;
+		}
+	}
 
 	virtual bool acceptLicense (Ypp::Package *package, const std::string &license)
 	{
