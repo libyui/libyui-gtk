@@ -663,6 +663,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_size_group_add_widget (buttons_group, wizard->back_button);
 	gtk_size_group_add_widget (buttons_group, wizard->abort_button);
 	g_object_unref (G_OBJECT (buttons_group));
+	gtk_widget_set_size_request (wizard->m_buttons, 0, -1);
 	g_signal_connect_after (G_OBJECT (wizard->m_buttons), "size-allocate",
 	                        G_CALLBACK (buttons_size_allocate_cb), buttons_group);
 
@@ -671,19 +672,29 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_menu_box = gtk_event_box_new();
 
 	wizard->m_pane = gtk_hpaned_new();
-	gtk_widget_show (wizard->m_pane);
-	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
 	GtkWidget *contents_align = gtk_alignment_new (0, 0, 1, 1);
 	gtk_alignment_set_padding (GTK_ALIGNMENT (contents_align), 6, 12, 0, 0);
 	gtk_container_add (GTK_CONTAINER (contents_align), wizard->m_pane);
 	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), contents_align, TRUE, TRUE, 0);
-	gtk_widget_show_all (wizard->m_contents_box);
+	gtk_widget_show_all (contents_align);
 
-//	gtk_box_set_spacing (GTK_BOX (wizard), 6);
-	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_menu_box, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_contents_box, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_buttons, FALSE, TRUE, 6);
+	GtkWidget *vbox;
+	vbox = gtk_vbox_new (FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), contents_align, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 6);
+	gtk_widget_show (vbox);
+
+	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), vbox, TRUE, TRUE, 0);
+	gtk_widget_show (wizard->m_contents_box);
+
+	vbox = gtk_vbox_new (FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_menu_box, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_title, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
+	gtk_widget_show (vbox);
+
+	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)

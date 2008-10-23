@@ -1749,11 +1749,8 @@ Filters *m_filters;  // used to filter repo versions...
 	void setPackages (const PkgList &packages)
 	{
 		m_packages = packages;
-		if (packages.empty())
-			return;
 
 		Ypp::Package *single_package = packages.single() ? packages.front() : NULL;
-
 		if (packages.installed()) {
 			gtk_widget_show (m_installed_box);
 			if (single_package) {
@@ -2066,8 +2063,6 @@ public:
 
 	void setPackages (const PkgList &packages)
 	{
-		if (packages.empty())
-			return;
 		Ypp::Package *package = packages.front();
 
 		gtk_widget_hide (m_icon_frame);
@@ -2094,12 +2089,15 @@ public:
 			scrollTop();
 		}
 		else {
-			string description = "Selected:";
-			description += "<ul>";
-			for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
-			     it != packages.end(); it++)
-				description += "<li><b>" + (*it)->name() + "</b></li>";
-			description += "</ul>";
+			string description;
+			if (!packages.empty()) {
+				description = "Selected:";
+				description += "<ul>";
+				for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
+				     it != packages.end(); it++)
+					description += "<li><b>" + (*it)->name() + "</b></li>";
+				description += "</ul>";
+			}
 			m_description->setText (description);
 			if (m_filelist)  m_filelist->setText ("");
 			if (m_changelog) m_changelog->setText ("");

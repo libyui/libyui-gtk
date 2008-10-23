@@ -169,7 +169,7 @@ private:
 	bool resolveProblems();
 	Node *addCategory (Ypp::Package::Type type, const std::string &str);
 	void polishCategories (Ypp::Package::Type type);
-	Node *addCategory2 (Ypp::Package::Type type, const std::string &str);
+	Node *addCategory2 (Ypp::Package::Type type, ZyppSelectable sel);
 
 	void startTransactions();
 	void finishTransactions();
@@ -650,12 +650,33 @@ GSList *m_containsPackages;
 
 	virtual bool isRecommended() const
 	{
-		return zypp::PoolItem (m_sel->theObj()).status().isRecommended();
+		// like yast2-qt: different instances may be assigned different groups
+		if (m_sel->hasCandidateObj())
+			for (int i = 0; i < 2; i++) {
+				ZyppObject obj;
+				if (i == 0)
+					obj = m_sel->candidateObj();
+				else
+					obj = m_sel->installedObj();
+				if (obj && zypp::PoolItem (obj).status().isRecommended())
+					return true;
+			}
+		return false;
 	}
 
 	virtual bool isSuggested() const
 	{
-		return zypp::PoolItem (m_sel->theObj()).status().isSuggested();
+		if (m_sel->hasCandidateObj())
+			for (int i = 0; i < 2; i++) {
+				ZyppObject obj;
+				if (i == 0)
+					obj = m_sel->candidateObj();
+				else
+					obj = m_sel->installedObj();
+				if (obj && zypp::PoolItem (obj).status().isSuggested())
+					return true;
+			}
+		return false;
 	}
 
 	virtual bool isUnsupported() const
@@ -1117,7 +1138,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 						if (!zpackage)
 							continue;
 						category = addCategory (type, zpackage->group());
-						category2 = addCategory2 (type, zpackage->group());
+						category2 = addCategory2 (type, sel);
 						break;
 					}
 					case Package::PATTERN_TYPE:
@@ -1816,7 +1837,7 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 	return categories[type]->add (category, 0);
 }
 
-Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, const std::string &category_str)
+Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
 {
 	struct inner {
 		static int cmp (const char *a, const char *b)
@@ -1834,7 +1855,21 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, const std::string &
 		}
 	};
 
-	YPkgGroupEnum group = zypp_tag_convert (category_str);
+	// different instances may be assigned different groups
+	YPkgGroupEnum group = PK_GROUP_ENUM_UNKNOWN;
+	for (int i = 0; i < 2; i++) {
+		ZyppObject obj;
+		if (i == 0)
+			obj = sel->candidateObj();
+		else
+			obj = sel->installedObj();
+		ZyppPackage pkg = tryCastToZyppPkg (obj);
+		if (pkg) {
+			group = zypp_tag_convert (pkg->group());
+			if (group != PK_GROUP_ENUM_UNKNOWN)
+				break;
+		}
+	}
 	const char *group_name = zypp_tag_group_enum_to_localised_text (group);
 	const char *group_icon = zypp_tag_enum_to_icon (group);
 
