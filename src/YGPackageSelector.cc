@@ -442,6 +442,8 @@ Listener *m_listener;
 			gtk_widget_show (m_widget);
 
 			if (editable) {
+				g_signal_connect (G_OBJECT (m_widget), "row-activated",
+				                  G_CALLBACK (package_activated_cb), this);
 				g_signal_connect (G_OBJECT (m_widget), "popup-menu",
 					              G_CALLBACK (popup_key_cb), this);
 				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
@@ -483,6 +485,14 @@ Listener *m_listener;
 
 		static void packages_selected_cb (GtkTreeSelection *selection, View *pThis)
 		{ pThis->signalSelected(); }
+
+		static void package_activated_cb (GtkTreeView *view, GtkTreePath *path,
+		                                  GtkTreeViewColumn *column, View *pThis)
+		{
+			PkgList packages = pThis->getSelected();
+			if (packages.notInstalled() || packages.upgradable())
+				packages.install();
+		}
 
 		static gboolean popup_button_cb (GtkWidget *widget, GdkEventButton *event, View *pThis)
 		{

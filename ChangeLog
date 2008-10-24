@@ -1,3 +1,8 @@
+2008-10-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector (ListView): shortcut: when row activated
+	(double-click or space) install the package.
+
 2008-10-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix 436948: recommended & suggested in
