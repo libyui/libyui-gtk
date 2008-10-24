@@ -12,6 +12,12 @@
 	from the steps area to the contents area.
 	Also, set bottom buttons width request to 0, since they adjust.
 
+	* src/yzyppwrapper.cc: worked description authors code a bit better;
+	added support for "author:" and "authors:" sequential lines.
+
+	* src/yzyppwrapper.cc: bug fix: was adding an extra double space
+	on the description text for available packages.
+
 2008-10-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkbargraph.h/cc: moved color customization out of setup routine.
