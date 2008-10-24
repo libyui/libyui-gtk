@@ -436,7 +436,7 @@ void YGDialog::setMinSize (int width, int height)
 {
 	GtkWidget *window = m_window->getWidget();
 	width = MIN (YUI::app()->displayWidth(), width);
-	height = MIN (YUI::app()->displayHeight(), width);
+	height = MIN (YUI::app()->displayHeight(), height);
 	if (window->allocation.width < width || window->allocation.height < height) {
 		width = MAX (width, window->allocation.width),
 		height = MAX (height, window->allocation.height);

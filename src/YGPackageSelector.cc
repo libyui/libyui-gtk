@@ -2015,7 +2015,7 @@ private:
 	};
 
 GtkWidget *m_widget, *m_icon, *m_icon_frame;
-TextExpander *m_description, *m_filelist, *m_changelog, *m_authors;
+TextExpander *m_description, *m_filelist, *m_changelog, *m_authors, *m_support;
 DepExpander *m_dependencies;
 Listener *m_listener;
 
@@ -2045,17 +2045,19 @@ public:
 			m_filelist = new TextExpander (_("File List"));
 			m_changelog = new TextExpander (_("Changelog"));
 			m_authors = new TextExpander (_("Authors"));
+			m_support = new TextExpander (_("Support"));
 			m_dependencies = new DepExpander (_("Dependencies"));
 			gtk_box_pack_start (GTK_BOX (vbox), m_filelist->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_authors->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_dependencies->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_support->getWidget(), FALSE, TRUE, 0);
 			if (CAN_OPEN_URIS())
 				g_signal_connect (G_OBJECT (m_filelist->text), "link-clicked",
 						          G_CALLBACK (link_pressed_cb), this);
 		}
 		else {
-			m_filelist = m_changelog = m_authors = NULL;
+			m_filelist = m_changelog = m_authors = m_support = NULL;
 			m_dependencies = NULL;
 		}
 	}
@@ -2065,6 +2067,7 @@ public:
 		delete m_filelist;
 		delete m_changelog;
 		delete m_authors;
+		delete m_support;
 		delete m_dependencies;
 	}
 
@@ -2081,6 +2084,7 @@ public:
 			if (m_filelist)  m_filelist->setText (package->filelist (true));
 			if (m_changelog) m_changelog->setText (package->changelog());
 			if (m_authors)   m_authors->setText (package->authors (true));
+			if (m_support)   m_support->setText (package->support (true));
 			if (m_dependencies) m_dependencies->setPackage (package);
 
 			gtk_image_clear (GTK_IMAGE (m_icon));
@@ -2109,6 +2113,7 @@ public:
 			if (m_filelist)  m_filelist->setText ("");
 			if (m_changelog) m_changelog->setText ("");
 			if (m_authors)   m_authors->setText ("");
+			if (m_support)   m_support->setText ("");
 			if (m_dependencies) m_dependencies->setPackage (NULL);
 		}
 	}
@@ -2491,7 +2496,7 @@ public:
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
 		setBorder (0);
-		YGDialog::currentDialog()->setMinSize (650, 800);  // enlarge
+		YGDialog::currentDialog()->setMinSize (650, 750);  // enlarge
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
@@ -2616,28 +2621,30 @@ protected:
 		}
 	}
 
-	virtual bool acceptLicense (Ypp::Package *package, const std::string &license)
+	bool acceptText (Ypp::Package *package, const std::string &title,
+		const std::string &open, const std::string &text, bool question)
 	{
-		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-			(GtkDialogFlags) 0, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
-			"%s %s", package->name().c_str(), _("License Agreement"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-			"%s", _("Do you accept the terms of this license?"));
+		GtkWidget *dialog = gtk_message_dialog_new_with_markup (YGDialog::currentWindow(),
+			(GtkDialogFlags) 0, question ? GTK_MESSAGE_QUESTION : GTK_MESSAGE_INFO,
+			question ? GTK_BUTTONS_YES_NO : GTK_BUTTONS_OK,
+			"<b>%s</b> %s", package->name().c_str(), title.c_str());
+		if (!open.empty())
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+				"%s", open.c_str());
         gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
 
-		GtkWidget *license_view, *license_window;
-		license_view = ygtk_html_wrap_new();
-		ygtk_html_wrap_set_text (license_view, license.c_str(), FALSE);
+		GtkWidget *view = ygtk_html_wrap_new(), *scroll;
+		ygtk_html_wrap_set_text (view, text.c_str(), FALSE);
 
-		license_window = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (license_window),
+		scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			                            GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_scrolled_window_set_shadow_type
-			(GTK_SCROLLED_WINDOW (license_window), GTK_SHADOW_IN);
-		gtk_container_add (GTK_CONTAINER (license_window), license_view);
+			(GTK_SCROLLED_WINDOW (scroll), GTK_SHADOW_IN);
+		gtk_container_add (GTK_CONTAINER (scroll), view);
 
 		GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
-		gtk_box_pack_start (vbox, license_window, TRUE, TRUE, 6);
+		gtk_box_pack_start (vbox, scroll, TRUE, TRUE, 6);
 
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 450);
@@ -2645,9 +2652,19 @@ protected:
 
 		gint ret = gtk_dialog_run (GTK_DIALOG (dialog));
 		bool confirmed = (ret == GTK_RESPONSE_YES);
-
 		gtk_widget_destroy (dialog);
 		return confirmed;
+	}
+
+	virtual bool acceptLicense (Ypp::Package *package, const std::string &license)
+	{
+		return acceptText (package, _("License Agreement"),
+			_("Do you accept the terms of this license?"), license, true);
+	}
+
+	virtual void notifyMessage (Ypp::Package *package, const std::string &msg)
+	{
+		acceptText (package, _("Notification"), "", msg, false);
 	}
 
 	virtual bool resolveProblems (const std::list <Ypp::Problem *> &problems)

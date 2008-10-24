@@ -160,6 +160,7 @@ public:
 
 	// for Packages
 	bool acceptLicense (Ypp::Package *package, const std::string &license);
+	void notifyMessage (Ypp::Package *package, const std::string &message);
 	void packageModified (Ypp::Package *package);
 
 	// for the Primitive Pools
@@ -210,6 +211,7 @@ std::string m_name, m_summary;
 	virtual std::string filelist (bool rich) { return ""; }
 	virtual std::string changelog()          { return ""; }
 	virtual std::string authors (bool rich)  { return ""; }
+	virtual std::string support (bool rich)  { return ""; }
 	virtual std::string icon()               { return ""; }
 	virtual bool isRecommended() const      { return false; }
 	virtual bool isSuggested() const        { return false; }
@@ -265,6 +267,7 @@ std::string Ypp::Package::description (bool rich) { return impl->description (ri
 std::string Ypp::Package::filelist (bool rich)    { return impl->filelist (rich); }
 std::string Ypp::Package::changelog()             { return impl->changelog(); }
 std::string Ypp::Package::authors (bool rich)     { return impl->authors (rich); }
+std::string Ypp::Package::support (bool rich)     { return impl->support (rich); }
 std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
@@ -424,28 +427,17 @@ GSList *m_containsPackages;
 					text += br;
 				}
 
-				if (!isInstalled()) {
+				if (!isInstalled() && (isRecommended() || isSuggested())) {
+					text += "<font color=\"#5a5a5a\">";
 					if (isRecommended())
-						text += br + _("(As this package is an extension to an already installed package, it is <b>recommended</b> it be installed.)") + br;
+						text += _("(As this package is an extension to an already installed package, it is <b>recommended</b> it be installed.)");
 					if (isSuggested())
-						text += br + _("(As this package complements some installed packages, it is <b>suggested</b> it be installed.)") + br;
+						text += _("(As this package complements some installed packages, it is <b>suggested</b> it be installed.)");
+					text += "</font>" + br;
 				}
 
 				// specific
 				ZyppPackage package = tryCastToZyppPkg (object);
-#if ZYPP_VERSION >= 5013001
-				bool unsupported = isUnsupported();
-				if (unsupported)
-					text += "<font color=\"red\">";
-				text += br + "<b>" + _("Support:") + "</b> " +
-					zypp::asUserStringDescription (package->vendorSupport().c_str();
-//					zypp::asUserStringName (package->vendorSupport().c_str();
-/*					text += "<b><font color=\"red\">";
-					text += _("This package is not covered by the default support contract.");
-					text += "</font>";*/
-				if (unsupported)
-					text += "</font>";
-#endif
 				std::string url = package->url(), license = package->license();
 				if (!url.empty())
 					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
@@ -591,8 +583,9 @@ GSList *m_containsPackages;
 		ZyppObject object = m_sel->theObj();
 		ZyppPackage package = tryCastToZyppPkg (object);
 		if (package) {
-			std::string packager = package->packager(), authors;
+			std::string packager = package->packager(), vendor = package->vendor(), authors;
 			YGUtils::escapeMarkup (packager);
+			YGUtils::escapeMarkup (vendor);
 			const std::list <std::string> &authorsList = package->authors();
 			for (std::list <std::string>::const_iterator it = authorsList.begin();
 				 it != authorsList.end(); it++) {
@@ -636,6 +629,8 @@ GSList *m_containsPackages;
 			}
 
 			if (rich) {
+				if (!vendor.empty())
+					text += _("Vendor:") + ("<blockquote>" + vendor) + "</blockquote>";
 				if (!authors.empty())
 					text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
 				if (!packager.empty())
@@ -644,6 +639,24 @@ GSList *m_containsPackages;
 			else
 				return authors;
 		}
+		return text;
+	}
+
+	virtual std::string support (bool rich)
+	{
+		std::string text;
+#if ZYPP_VERSION >= 5013001
+		ZyppObject object = m_sel->theObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (package) {
+			zypp::VendorSupportOption opt = package->vendorSupport();
+			text = zypp::asUserString (opt) + ": ";
+			std::string str (zypp::asUserStringDescription (opt));
+			if (rich)
+				YGUtils::escapeMarkup (str);
+			text += str;
+		}
+#endif
 		return text;
 	}
 
@@ -814,11 +827,16 @@ GSList *m_containsPackages;
 			return;
 		if (!m_sel->hasLicenceConfirmed())
 		{
-			const std::string &license = m_sel->candidateObj()->licenseToConfirm();
+			ZyppObject obj = m_sel->candidateObj();
+			const std::string &license = obj->licenseToConfirm();
 			if (!license.empty())
 				if (!ypp->impl->acceptLicense (m_parent, license))
 					return;
 			m_sel->setLicenceConfirmed();
+
+			const std::string &msg = obj->insnotify();
+			if (!msg.empty())
+				ypp->impl->notifyMessage (m_parent, msg);
 		}
 
 		zypp::ui::Status status = m_sel->status();
@@ -865,6 +883,12 @@ GSList *m_containsPackages;
 
 	virtual void remove()
 	{
+		if (m_sel->hasCandidateObj()) {
+			const std::string &msg = m_sel->candidateObj()->delnotify();
+			if (!msg.empty())
+				ypp->impl->notifyMessage (m_parent, msg);
+		}
+
 		zypp::ui::Status status = m_sel->status();
 		switch (status) {
 			// not applicable
@@ -2014,7 +2038,13 @@ bool Ypp::Impl::acceptLicense (Ypp::Package *package, const std::string &license
 {
 	if (interface)
 		return interface->acceptLicense (package, license);
-	return false;
+	return true;
+}
+
+void Ypp::Impl::notifyMessage (Ypp::Package *package, const std::string &message)
+{
+	if (interface)
+		interface->notifyMessage (package, message);
 }
 
 Ypp::Problem::Solution *Ypp::Problem::getSolution (int nb)

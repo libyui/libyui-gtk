@@ -3,6 +3,14 @@
 	* src/YGPackageSelector (ListView): shortcut: when row activated
 	(double-click or space) install the package.
 
+	* src/YGDialog (setMinSize): fixed height.
+
+	* src/yzyppwrapper.h/cc: added Package::support() and notifyMesage()
+	interface in order to support ResObject::insnotify() and delnotify().
+
+	* src/YGPackageSelector: added Support expander and honor
+	notifyMessage().
+
 2008-10-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix 436948: recommended & suggested in

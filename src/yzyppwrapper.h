@@ -57,6 +57,7 @@ struct Ypp
 		std::string filelist (bool rich);
 		std::string changelog();
 		std::string authors (bool rich);
+		std::string support (bool rich);
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
@@ -218,6 +219,7 @@ struct Ypp
 
 	struct Interface {
 		virtual bool acceptLicense (Package *package, const std::string &license) = 0;
+		virtual void notifyMessage (Package *package, const std::string &message) = 0;
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
 		virtual bool allowRestrictedRepo (const std::list <std::pair <const Package *, const Repository *> > &pkgs) = 0;
