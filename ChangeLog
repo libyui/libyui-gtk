@@ -8,8 +8,10 @@
 	* src/yzyppwrapper.h/cc: added Package::support() and notifyMesage()
 	interface in order to support ResObject::insnotify() and delnotify().
 
-	* src/YGPackageSelector: added Support expander and honor
+	* src/YGPackageSelector.cc: added Support expander and honor
 	notifyMessage().
+
+	* src/yzypptags.h/cc: sync groups with yast2-qt.
 
 2008-10-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

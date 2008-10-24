@@ -22,269 +22,111 @@
 const char *
 zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 {
-  const char *text = 0;
 	switch (group)
   {
-	case PK_GROUP_ENUM_ACCESSIBILITY:
-		text = _("Accessibility");
-		break;
-	case PK_GROUP_ENUM_ACCESSORIES:
-		text = _("Accessories");
-		break;
-	case PK_GROUP_ENUM_EDUCATION:
-		text = _("Education");
-		break;
-	case PK_GROUP_ENUM_GAMES:
-		text = _("Games");
-		break;
-	case PK_GROUP_ENUM_GRAPHICS:
-		text = _("Graphics");
-		break;
-	case PK_GROUP_ENUM_INTERNET:
-		text = _("Internet");
-		break;
-	case PK_GROUP_ENUM_OFFICE:
-		text = _("Office");
-		break;
-	case PK_GROUP_ENUM_OTHER:
-		text = _("Other");
-		break;
-	case PK_GROUP_ENUM_PROGRAMMING:
-		text = _("Programming");
-		break;
-	case PK_GROUP_ENUM_MULTIMEDIA:
-		text = _("Multimedia");
-		break;
-	case PK_GROUP_ENUM_SYSTEM:
-		text = _("System");
-		break;
-	case PK_GROUP_ENUM_DESKTOP_GNOME:
-		text = _("GNOME Desktop");
-		break;
-	case PK_GROUP_ENUM_DESKTOP_KDE:
-		text = _("KDE Desktop");
-		break;
-	case PK_GROUP_ENUM_DESKTOP_XFCE:
-		text = _("XFCE Desktop");
-		break;
-	case PK_GROUP_ENUM_DESKTOP_OTHER:
-		text = _("Other Desktops");
-		break;
-	case PK_GROUP_ENUM_PUBLISHING:
-		text = _("Publishing");
-		break;
-	case PK_GROUP_ENUM_SERVERS:
-		text = _("Servers");
-		break;
-	case PK_GROUP_ENUM_FONTS:
-		text = _("Fonts");
-		break;
-	case PK_GROUP_ENUM_ADMIN_TOOLS:
-		text = _("Admin Tools");
-		break;
-	case PK_GROUP_ENUM_LEGACY:
-		text = _("Legacy");
-		break;
-	case PK_GROUP_ENUM_LOCALIZATION:
-		text = _("Localization");
-		break;
-	case PK_GROUP_ENUM_VIRTUALIZATION:
-		text = _("Virtualization");
-		break;
-	case PK_GROUP_ENUM_SECURITY:
-		text = _("Security");
-		break;
-	case PK_GROUP_ENUM_POWER_MANAGEMENT:
-		text = _("Power Management");
-		break;
-	case PK_GROUP_ENUM_COMMUNICATION:
-		text = _("Communication");
-		break;
-	case PK_GROUP_ENUM_NETWORK:
-		text = _("Network");
-		break;
-	case PK_GROUP_ENUM_MAPS:
-		text = _("Maps");
-		break;
-	case PK_GROUP_ENUM_REPOS:
-		text = _("Software Sources");
-		break;
-      case YPKG_GROUP_ALL:
-          text = _("All Packages");
-          break;
-          
-      case YPKG_GROUP_SUGGESTED:
-          text = _("Suggested Packages");
-          break;
-          
-      case YPKG_GROUP_RECOMMENDED:
-          text = _("Recommended Packages");
-          break;
-          
-	case PK_GROUP_ENUM_UNKNOWN:
-		text = _("Unknown Group");
-		break;
-      
+	case PK_GROUP_ENUM_ACCESSIBILITY:	return _( "Accessibility"	);
+	case PK_GROUP_ENUM_ACCESSORIES:		return _( "Accessories"		);
+	case PK_GROUP_ENUM_EDUCATION:		return _( "Education"		);
+	case PK_GROUP_ENUM_GAMES:		return _( "Games"		);
+	case PK_GROUP_ENUM_GRAPHICS:		return _( "Graphics"		);
+	case PK_GROUP_ENUM_INTERNET:		return _( "Internet"		);
+	case PK_GROUP_ENUM_OFFICE:		return _( "Office"		);
+	case PK_GROUP_ENUM_OTHER:		return _( "Other"		);
+	case PK_GROUP_ENUM_PROGRAMMING:		return _( "Programming"		);
+	case PK_GROUP_ENUM_MULTIMEDIA:		return _( "Multimedia"		);
+	case PK_GROUP_ENUM_SYSTEM:		return _( "System"		);
+	case PK_GROUP_ENUM_DESKTOP_GNOME:	return _( "GNOME Desktop"	);
+	case PK_GROUP_ENUM_DESKTOP_KDE:		return _( "KDE Desktop"		);
+	case PK_GROUP_ENUM_DESKTOP_XFCE:	return _( "XFCE Desktop"	);
+	case PK_GROUP_ENUM_DESKTOP_OTHER:	return _( "Other Desktops"	);
+	case PK_GROUP_ENUM_PUBLISHING:		return _( "Publishing"		);
+	case PK_GROUP_ENUM_SERVERS:		return _( "Servers"		);
+	case PK_GROUP_ENUM_FONTS:		return _( "Fonts"		);
+	case PK_GROUP_ENUM_ADMIN_TOOLS:		return _( "Admin Tools"		);
+	case PK_GROUP_ENUM_LEGACY:		return _( "Legacy"		);
+	case PK_GROUP_ENUM_LOCALIZATION:	return _( "Localization"	);
+	case PK_GROUP_ENUM_VIRTUALIZATION:	return _( "Virtualization"	);
+	case PK_GROUP_ENUM_SECURITY:		return _( "Security"		);
+	case PK_GROUP_ENUM_POWER_MANAGEMENT:	return _( "Power Management"	);
+	case PK_GROUP_ENUM_COMMUNICATION:	return _( "Communication"	);
+	case PK_GROUP_ENUM_NETWORK:		return _( "Network"		);
+	case PK_GROUP_ENUM_MAPS:		return _( "Maps"		);
+	case PK_GROUP_ENUM_REPOS:		return _( "Software Sources"	);
+	case PK_GROUP_ENUM_UNKNOWN:		return _( "Unknown Group"	);
 	}
-	return text;
+	return _("Unknown Group");
 }
 
 const char *
 zypp_tag_enum_to_icon (YPkgGroupEnum group)
 {
-  const char *text;
 	switch (group)
   {
-	case PK_GROUP_ENUM_ACCESSIBILITY:
-		text = "package_main";
-		break;
-	case PK_GROUP_ENUM_ACCESSORIES:
-		text = "package_applications";
-		break;
-	case PK_GROUP_ENUM_EDUCATION:
-		text = "package_edutainment";
-		break;
-	case PK_GROUP_ENUM_GAMES:
-		text = "package_games";
-		break;
-	case PK_GROUP_ENUM_GRAPHICS:
-		text = "package_graphics";
-		break;
-	case PK_GROUP_ENUM_INTERNET:
-		text = "package_network";
-		break;
-	case PK_GROUP_ENUM_OFFICE:
-		text = "applications-office";
-		break;
-	case PK_GROUP_ENUM_OTHER:
-		text = "package_main";
-		break;
-	case PK_GROUP_ENUM_PROGRAMMING:
-		text = "package_development";
-		break;
-	case PK_GROUP_ENUM_MULTIMEDIA:
-		text = "package_multimedia";
-		break;
-	case PK_GROUP_ENUM_SYSTEM:
-		text = "applications-system";
-		break;
-	case PK_GROUP_ENUM_DESKTOP_GNOME:
-		text = "pattern-gnome";
-		break;
-	case PK_GROUP_ENUM_DESKTOP_KDE:
-		text = "pattern-kde";
-		break;
-	case PK_GROUP_ENUM_DESKTOP_XFCE:
-      text = "pattern-xfce";
-		break;
-	case PK_GROUP_ENUM_DESKTOP_OTHER:
-		text = "user-desktop";
-		break;
-	case PK_GROUP_ENUM_PUBLISHING:
-		text = "package_main";
-		break;
-	case PK_GROUP_ENUM_SERVERS:
-		text = "package_editors";
-		break;
-	case PK_GROUP_ENUM_FONTS:
-		text = "package_main";
-		break;
-	case PK_GROUP_ENUM_ADMIN_TOOLS:
-		text = "yast-sysconfig";
-		break;
-	case PK_GROUP_ENUM_LEGACY:
-      text = "package_main";
-		break;
-	case PK_GROUP_ENUM_LOCALIZATION:
-		text = "yast-language";
-		break;
-	case PK_GROUP_ENUM_VIRTUALIZATION:
-		text = "yast-create-new-vm";
-		break;
-	case PK_GROUP_ENUM_SECURITY:
-		text = "yast-security";
-		break;
-	case PK_GROUP_ENUM_POWER_MANAGEMENT:
-		text = "package_settings_power";
-		break;
-	case PK_GROUP_ENUM_COMMUNICATION:
-		text = "yast-modem";
-		break;
-	case PK_GROUP_ENUM_NETWORK:
-		text = "package_network";
-		break;
-	case PK_GROUP_ENUM_MAPS:
-		text = "package_main";
-		break;
-	case PK_GROUP_ENUM_REPOS:
-		text = "package_main";
-		break;
-  case YPKG_GROUP_SUGGESTED:
-      case YPKG_GROUP_RECOMMENDED:
-          text = "package_edutainment_languages";
-          
-    break;         
-	case PK_GROUP_ENUM_UNKNOWN:
-  case YPKG_GROUP_ALL:
-		text = "package_main";
-		break;
-      
+	case PK_GROUP_ENUM_ACCESSIBILITY:	return( "package_main"			);
+	case PK_GROUP_ENUM_ACCESSORIES:		return( "package_applications"		);
+	case PK_GROUP_ENUM_EDUCATION:		return( "package_edutainment"		);
+	case PK_GROUP_ENUM_GAMES:		return( "package_games"			);
+	case PK_GROUP_ENUM_GRAPHICS:		return( "package_graphics"		);
+	case PK_GROUP_ENUM_INTERNET:		return( "package_network"		);
+	case PK_GROUP_ENUM_OFFICE:		return( "package_office_addressbook"	);
+	case PK_GROUP_ENUM_OTHER:		return( "package_main"			);
+	case PK_GROUP_ENUM_PROGRAMMING:		return( "package_development"		);
+	case PK_GROUP_ENUM_MULTIMEDIA:		return( "package_multimedia"		);
+	case PK_GROUP_ENUM_SYSTEM:		return( "yast-system"			);
+	case PK_GROUP_ENUM_DESKTOP_GNOME:	return( "pattern-gnome"			);
+	case PK_GROUP_ENUM_DESKTOP_KDE:		return( "pattern-kde"			);
+	case PK_GROUP_ENUM_DESKTOP_XFCE:	return( "package_utility_desktop"	);
+	case PK_GROUP_ENUM_DESKTOP_OTHER:	return( "package_utility_desktop"	);
+	case PK_GROUP_ENUM_PUBLISHING:		return( "package_main"			);
+	case PK_GROUP_ENUM_SERVERS:		return( "package_editors"		);
+	case PK_GROUP_ENUM_FONTS:		return( "package_main"			);
+	case PK_GROUP_ENUM_ADMIN_TOOLS:		return( "yast-sysconfig"		);
+	case PK_GROUP_ENUM_LEGACY:		return( "package_main"			);
+	case PK_GROUP_ENUM_LOCALIZATION:	return( "yast-language"			);
+	case PK_GROUP_ENUM_VIRTUALIZATION:	return( "yast-create-new-vm"		);
+	case PK_GROUP_ENUM_SECURITY:		return( "yast-security"			);
+	case PK_GROUP_ENUM_POWER_MANAGEMENT:	return( "package_settings_power"	);
+	case PK_GROUP_ENUM_COMMUNICATION:	return( "yast-modem"			);
+	case PK_GROUP_ENUM_NETWORK:		return( "package_network"		);
+	case PK_GROUP_ENUM_MAPS:		return( "package_main"			);
+	case PK_GROUP_ENUM_REPOS:		return( "package_main"			);
+	case PK_GROUP_ENUM_UNKNOWN:		return( "package_main"			);
 	}
-	return text;
+	return "";
 }
 
 
 YPkgGroupEnum
 zypp_tag_convert (const std::string &groupu)
 {
-    // TODO Look for a faster and nice way to do this conversion
-
     std::string group = zypp::str::toLower(groupu);
 
-    if (group.find ("amusements") != std::string::npos) {
-        return PK_GROUP_ENUM_GAMES;
-    } else if (group.find ("development") != std::string::npos) {
-        return PK_GROUP_ENUM_PROGRAMMING;
-    } else if (group.find ("hardware") != std::string::npos) {
-        return PK_GROUP_ENUM_SYSTEM;
-    } else if (group.find ("archiving") != std::string::npos 
-               || group.find("clustering") != std::string::npos
-               || group.find("system/monitoring") != std::string::npos
-               || group.find("databases") != std::string::npos
-               || group.find("system/management") != std::string::npos) {
-        return PK_GROUP_ENUM_ADMIN_TOOLS;
-    } else if (group.find ("graphics") != std::string::npos) {
-        return PK_GROUP_ENUM_GRAPHICS;
-    } else if (group.find ("multimedia") != std::string::npos) {
-        return PK_GROUP_ENUM_MULTIMEDIA;
-    } else if (group.find ("network") != std::string::npos) {
-        return PK_GROUP_ENUM_NETWORK;
-    } else if (group.find ("office") != std::string::npos 
-               || group.find("text") != std::string::npos
-               || group.find("editors") != std::string::npos) {
-        return PK_GROUP_ENUM_OFFICE;
-    } else if (group.find ("publishing") != std::string::npos) {
-        return PK_GROUP_ENUM_PUBLISHING;
-    } else if (group.find ("security") != std::string::npos) {
-        return PK_GROUP_ENUM_SECURITY;
-    } else if (group.find ("telephony") != std::string::npos) {
-        return PK_GROUP_ENUM_COMMUNICATION;
-    } else if (group.find ("gnome") != std::string::npos) {
-        return PK_GROUP_ENUM_DESKTOP_GNOME;
-    } else if (group.find ("kde") != std::string::npos) {
-        return PK_GROUP_ENUM_DESKTOP_KDE;
-    } else if (group.find ("xfce") != std::string::npos) {
-        return PK_GROUP_ENUM_DESKTOP_XFCE;
-    } else if (group.find ("gui/other") != std::string::npos) {
-        return PK_GROUP_ENUM_DESKTOP_OTHER;
-    } else if (group.find ("localization") != std::string::npos) {
-        return PK_GROUP_ENUM_LOCALIZATION;
-    } else if (group.find ("system") != std::string::npos) {
-        return PK_GROUP_ENUM_SYSTEM;
-    } else if (group.find ("scientific") != std::string::npos) {
-        return PK_GROUP_ENUM_EDUCATION;
-    }
-    
+    if ( group.find( "amusements/teaching"	) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
+    if ( group.find( "amusements"		) != string::npos ) return PK_GROUP_ENUM_GAMES;
+    if ( group.find( "development"		) != string::npos ) return PK_GROUP_ENUM_PROGRAMMING;
+    if ( group.find( "hardware"			) != string::npos ) return PK_GROUP_ENUM_SYSTEM;
+    if ( group.find( "archiving"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if ( group.find( "clustering"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if ( group.find( "system/monitoring"	) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if ( group.find( "databases"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if ( group.find( "system/management"	) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if ( group.find( "graphics"			) != string::npos ) return PK_GROUP_ENUM_GRAPHICS;
+    if ( group.find( "multimedia"		) != string::npos ) return PK_GROUP_ENUM_MULTIMEDIA;
+    if ( group.find( "network"			) != string::npos ) return PK_GROUP_ENUM_NETWORK;
+    if ( group.find( "office"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
+    if ( group.find( "text"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
+    if ( group.find( "editors"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
+    if ( group.find( "publishing"		) != string::npos ) return PK_GROUP_ENUM_PUBLISHING;
+    if ( group.find( "security"			) != string::npos ) return PK_GROUP_ENUM_SECURITY;
+    if ( group.find( "telephony"		) != string::npos ) return PK_GROUP_ENUM_COMMUNICATION;
+    if ( group.find( "gnome"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_GNOME;
+    if ( group.find( "kde"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_KDE;
+    if ( group.find( "xfce"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_XFCE;
+    if ( group.find( "gui/other"		) != string::npos ) return PK_GROUP_ENUM_DESKTOP_OTHER;
+    if ( group.find( "localization"		) != string::npos ) return PK_GROUP_ENUM_LOCALIZATION;
+    if ( group.find( "system"			) != string::npos ) return PK_GROUP_ENUM_SYSTEM;
+    if ( group.find( "scientific"		) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
+
     return PK_GROUP_ENUM_UNKNOWN;
 }
 

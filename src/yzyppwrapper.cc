@@ -428,7 +428,7 @@ GSList *m_containsPackages;
 				}
 
 				if (!isInstalled() && (isRecommended() || isSuggested())) {
-					text += "<font color=\"#5a5a5a\">";
+					text += "<font color=\"#715300\">";
 					if (isRecommended())
 						text += _("(As this package is an extension to an already installed package, it is <b>recommended</b> it be installed.)");
 					if (isSuggested())
@@ -629,12 +629,12 @@ GSList *m_containsPackages;
 			}
 
 			if (rich) {
-				if (!vendor.empty())
-					text += _("Vendor:") + ("<blockquote>" + vendor) + "</blockquote>";
 				if (!authors.empty())
 					text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
 				if (!packager.empty())
 					text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
+				if (!vendor.empty() && !text.empty() /*doesn't make much sense alone*/)
+					text += _("Vendor:") + ("<blockquote>" + vendor) + "</blockquote>";
 			}
 			else
 				return authors;
