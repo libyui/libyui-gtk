@@ -424,11 +424,6 @@ GSList *m_containsPackages;
 					text += br;
 				}
 
-				if (isUnsupported()) {
-					text += "<b><font color=\"red\">";
-					text += _("This package is not covered by the default support contract.");
-					text += "</font>";
-				}
 				if (!isInstalled()) {
 					if (isRecommended())
 						text += br + _("(As this package is an extension to an already installed package, it is <b>recommended</b> it be installed.)") + br;
@@ -438,6 +433,19 @@ GSList *m_containsPackages;
 
 				// specific
 				ZyppPackage package = tryCastToZyppPkg (object);
+#if ZYPP_VERSION >= 5013001
+				bool unsupported = isUnsupported();
+				if (unsupported)
+					text += "<font color=\"red\">";
+				text += br + "<b>" + _("Support:") + "</b> " +
+					zypp::asUserStringDescription (package->vendorSupport().c_str();
+//					zypp::asUserStringName (package->vendorSupport().c_str();
+/*					text += "<b><font color=\"red\">";
+					text += _("This package is not covered by the default support contract.");
+					text += "</font>";*/
+				if (unsupported)
+					text += "</font>";
+#endif
 				std::string url = package->url(), license = package->license();
 				if (!url.empty())
 					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";

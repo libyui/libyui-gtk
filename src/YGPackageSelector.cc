@@ -641,9 +641,9 @@ public:
 
 		if (!isTree) {
 			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-			button = create_toggle_button (pkg_list_mode_xpm, "View as list", NULL);
+			button = create_toggle_button (pkg_list_mode_xpm, _("View as list"), NULL);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-			button = create_toggle_button (pkg_tiles_mode_xpm, "View as grid", button);
+			button = create_toggle_button (pkg_tiles_mode_xpm, _("View as grid"), button);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
 			gtk_widget_show_all (buttons);
 
@@ -673,7 +673,7 @@ public:
 		delete m_view;
 		if (mode == LIST_MODE)
 			m_view = new ListView (m_isTree, m_isTree, editable, this);
-		else
+		else // if (mode == ICON_MODE)
 			m_view = new IconView (editable, this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
 		if (m_model)
@@ -741,10 +741,7 @@ private:
 	}
 
 	static void mode_toggled_cb (GtkToggleButton *toggle, gint nb, PackagesView *pThis)
-	{
-		ViewMode mode = (nb == 0) ? LIST_MODE : ICON_MODE;
-		pThis->setMode (mode, true);
-	}
+	{ pThis->setMode ((ViewMode) nb, true); }
 };
 
 class ChangesPane : public Ypp::Pool::Listener
@@ -2494,7 +2491,7 @@ public:
 		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
 	{
 		setBorder (0);
-		YGDialog::currentDialog()->setMinSize (650, 600);  // enlarge
+		YGDialog::currentDialog()->setMinSize (650, 800);  // enlarge
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
@@ -2523,7 +2520,7 @@ public:
 
 		createToolsButton();
 		ygtk_wizard_set_information_widget (YGTK_WIZARD (wizard),
-			m_package_selector->m_changes->getWidget());
+			m_package_selector->m_changes->getWidget(), FALSE);
 
 		Ypp::get()->setInterface (this);
 		Ypp::get()->addPkgListener (this);

@@ -675,26 +675,25 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	GtkWidget *contents_align = gtk_alignment_new (0, 0, 1, 1);
 	gtk_alignment_set_padding (GTK_ALIGNMENT (contents_align), 6, 12, 0, 0);
 	gtk_container_add (GTK_CONTAINER (contents_align), wizard->m_pane);
-	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), contents_align, TRUE, TRUE, 0);
 	gtk_widget_show_all (contents_align);
+
+	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), contents_align, TRUE, TRUE, 0);
+	gtk_widget_show (wizard->m_contents_box);
 
 	GtkWidget *vbox;
 	vbox = gtk_vbox_new (FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), contents_align, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 6);
 	gtk_widget_show (vbox);
 
-	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
-	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), vbox, TRUE, TRUE, 0);
-	gtk_widget_show (wizard->m_contents_box);
+	wizard->m_contents_buttons_box = gtk_hbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (wizard->m_contents_buttons_box), vbox, TRUE, TRUE, 0);
+	gtk_widget_show (wizard->m_contents_buttons_box);
 
-	vbox = gtk_vbox_new (FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_menu_box, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_title, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
-	gtk_widget_show (vbox);
-
-	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_menu_box, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_contents_buttons_box, TRUE, TRUE, 0);
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)
@@ -777,9 +776,11 @@ void ygtk_wizard_set_information_expose_hook (GtkWidget *widget, GtkAllocation *
 	                  G_CALLBACK (ygtk_wizard_set_information_expose_cb), alloc);
 }
 
-void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget)
+void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget,
+                                         gboolean complete_side)
 {
-	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), widget, FALSE, TRUE, 0);
+	GtkWidget *box = complete_side ? wizard->m_contents_buttons_box : wizard->m_contents_box;
+	gtk_box_pack_start (GTK_BOX (box), widget, FALSE, TRUE, 0);
 }
 
 void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget)
@@ -795,7 +796,7 @@ void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 	GtkWidget *box = gtk_event_box_new();  // so that expose affects only this window
 	gtk_container_add (GTK_CONTAINER (box), wizard->steps);
 	gtk_widget_show (box);
-	ygtk_wizard_set_information_widget (wizard, box);
+	ygtk_wizard_set_information_widget (wizard, box, TRUE);
 	ygtk_wizard_set_information_expose_hook (wizard->steps, &wizard->steps->allocation);
 }
 
