@@ -2624,10 +2624,10 @@ protected:
 	bool acceptText (Ypp::Package *package, const std::string &title,
 		const std::string &open, const std::string &text, bool question)
 	{
-		GtkWidget *dialog = gtk_message_dialog_new_with_markup (YGDialog::currentWindow(),
+		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 			(GtkDialogFlags) 0, question ? GTK_MESSAGE_QUESTION : GTK_MESSAGE_INFO,
 			question ? GTK_BUTTONS_YES_NO : GTK_BUTTONS_OK,
-			"<b>%s</b> %s", package->name().c_str(), title.c_str());
+			"%s %s", package->name().c_str(), title.c_str());
 		if (!open.empty())
 			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
 				"%s", open.c_str());
