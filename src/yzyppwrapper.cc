@@ -627,14 +627,23 @@ GSList *m_containsPackages;
 				}
 				authors += str;
 			}
-
 			if (rich) {
 				if (!authors.empty())
 					text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
-				if (!packager.empty())
-					text += _("Packaged by:") + ("<blockquote>" + packager) + "</blockquote>";
-				if (!vendor.empty() && !text.empty() /*doesn't make much sense alone*/)
-					text += _("Vendor:") + ("<blockquote>" + vendor) + "</blockquote>";
+				if (!packager.empty() || (!vendor.empty() && !text.empty())) {
+					text += _("Packaged by:");
+					text += "<blockquote>";
+					if (!packager.empty())
+						text += packager;
+					if (!vendor.empty()) {
+						if (!packager.empty())
+							text += "<br>(";
+						text += vendor;
+						if (!packager.empty())
+							text += ")";
+					}
+					text += "</blockquote>";
+				}
 			}
 			else
 				return authors;
