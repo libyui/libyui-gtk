@@ -1,9 +1,19 @@
+2008-10-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc (Categories): ensure Categories item
+	visibility when the pane forces the list size to be reduced.
+
+	* src/yzyppwrapper.h/cc: added build-age to description, and
+	such criteria to the pool query.
+
+	* src/YGPackageSelector.cc (Categories): recent spin button.
+
 2008-10-24  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* src/YGPackageSelector (ListView): shortcut: when row activated
+	* src/YGPackageSelector.cc (ListView): shortcut: when row activated
 	(double-click or space) install the package.
 
-	* src/YGDialog (setMinSize): fixed height.
+	* src/YGDialog.cc (setMinSize): fixed height.
 
 	* src/yzyppwrapper.h/cc: added Package::support() and notifyMesage()
 	interface in order to support ResObject::insnotify() and delnotify().

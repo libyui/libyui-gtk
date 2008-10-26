@@ -213,9 +213,10 @@ std::string m_name, m_summary;
 	virtual std::string authors (bool rich)  { return ""; }
 	virtual std::string support (bool rich)  { return ""; }
 	virtual std::string icon()               { return ""; }
-	virtual bool isRecommended() const      { return false; }
-	virtual bool isSuggested() const        { return false; }
-	virtual bool isUnsupported() const      { return false; }
+	virtual bool isRecommended() const       { return false; }
+	virtual bool isSuggested() const         { return false; }
+	virtual int  buildAge() const            { return 0; }
+	virtual bool isUnsupported() const       { return false; }
 
 	virtual std::string provides (bool rich) const { return ""; }
 	virtual std::string requires (bool rich) const { return ""; }
@@ -271,10 +272,11 @@ std::string Ypp::Package::support (bool rich)     { return impl->support (rich);
 std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
-bool Ypp::Package::isUnsupported() const            { return impl->isUnsupported(); }
+int Ypp::Package::buildAge() const                { return impl->buildAge(); }
+bool Ypp::Package::isUnsupported() const          { return impl->isUnsupported(); }
 
-std::string Ypp::Package::provides (bool rich) const        { return impl->provides (rich); }
-std::string Ypp::Package::requires (bool rich) const        { return impl->requires (rich); }
+std::string Ypp::Package::provides (bool rich) const { return impl->provides (rich); }
+std::string Ypp::Package::requires (bool rich) const { return impl->requires (rich); }
 
 const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
 { return impl->getInstalledVersion(); }
@@ -448,6 +450,11 @@ GSList *m_containsPackages;
 #else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 #endif
+				if (!isInstalled() || hasUpgrade()) {
+					text += br + "<b>" + _("Build time:") + "</b> " + m_sel->candidateObj()->buildtime().form("%x");
+					if (hasUpgrade())
+						text += std::string ("&nbsp;&nbsp;&nbsp;(<b>") + _("Installed time:") + "</b> " + m_sel->installedObj()->installtime().form("%x") + ")";
+				}
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:
@@ -715,6 +722,16 @@ GSList *m_containsPackages;
 					return true;
 			}
 		return false;
+	}
+
+	virtual int buildAge() const
+	{
+		if (m_sel->hasCandidateObj()) {
+			time_t build = static_cast <time_t> (m_sel->candidateObj()->buildtime());
+			time_t now = time (NULL);
+			return (now - build) / (60*60*24);  // in days
+		}
+		return -1;
 	}
 
 	virtual bool isUnsupported() const
@@ -1288,6 +1305,7 @@ struct Ypp::QueryPool::Query::Impl
 	Key <bool> toModify;
 	Key <bool> isRecommended;
 	Key <bool> isSuggested;
+	Key <int>  buildAge;
 	Key <bool> isUnsupported;
 	Ypp::Package *highlight;
 
@@ -1337,6 +1355,11 @@ struct Ypp::QueryPool::Query::Impl
 			match = isRecommended.is (package->isRecommended());
 		if (match && isSuggested.defined)
 			match = isSuggested.is (package->isSuggested());
+		if (match && buildAge.defined) {
+			int age = package->buildAge();
+			if (age < 0 || age > buildAge.value)
+				match = false;
+		}
 		if (match && isUnsupported.defined)
 			match = isUnsupported.is (package->isUnsupported());
 		if (match && names.defined) {
@@ -1472,6 +1495,8 @@ void Ypp::QueryPool::Query::setIsRecommended (bool value)
 { impl->isRecommended.set (value); }
 void Ypp::QueryPool::Query::setIsSuggested (bool value)
 { impl->isSuggested.set (value); }
+void Ypp::QueryPool::Query::setBuildAge (int value)
+{ impl->buildAge.set (value); }
 void Ypp::QueryPool::Query::setIsUnsupported (bool value)
 { impl->isUnsupported.set (value); }
 

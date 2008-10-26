@@ -65,6 +65,36 @@ static gboolean is_tree_model_iter_separator_cb (GtkTreeModel *model, GtkTreeIte
 	return ptr == NULL;
 }
 
+static void ensure_visible_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc)
+{
+	GList *paths;
+	if (GTK_IS_TREE_VIEW (widget)) {
+		GtkTreeView *view = GTK_TREE_VIEW (widget);
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+		paths = gtk_tree_selection_get_selected_rows (selection, NULL);
+		if (paths && !paths->next) {
+			GtkTreePath *path = (GtkTreePath *) paths->data;
+			gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
+		}
+	}
+	else { // if (GTK_IS_ICON_VIEW (widget))
+		GtkIconView *view = GTK_ICON_VIEW (widget);
+		paths = gtk_icon_view_get_selected_items (view);
+		if (paths && !paths->next) {
+			GtkTreePath *path = (GtkTreePath *) paths->data;
+			gtk_icon_view_scroll_to_path (view, path, FALSE, 0, 0);
+		}
+	}
+	g_list_foreach (paths, (GFunc) gtk_tree_path_free, 0);
+	g_list_free (paths);
+}
+
+static void ensure_view_visible_hook (GtkWidget *widget /* tree view or icon view */)
+{
+	g_signal_connect_after (G_OBJECT (widget), "size-allocate",
+	                        G_CALLBACK (ensure_visible_size_allocate_cb), NULL);
+}
+
 const char *lock_tooltip =
 	"<b>Package lock:</b> prevents the package status from being modified by "
     "the solver (that is, it won't honour dependencies or collections ties.)";
@@ -250,7 +280,6 @@ Listener *m_listener;
 		virtual GList *getSelectedPaths (GtkTreeModel **model) = 0;
 		virtual void selectAll() = 0;
 		virtual void unselectAll() = 0;
-		virtual void ensureVisible (GtkTreePath *path) = 0;
 
 		virtual int countSelected()
 		{
@@ -394,15 +423,6 @@ Listener *m_listener;
 
 		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
 		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
-
-		static void size_allocated_cb (GtkWidget *widget, GtkAllocation *alloc, View *pThis)
-		{
-			GList *paths = pThis->getSelectedPaths (NULL);
-			if (paths && !paths->next /* single selection */)
-				pThis->ensureVisible ((GtkTreePath *) paths->data);
-			g_list_foreach (paths, (GFunc) gtk_tree_path_free, 0);
-			g_list_free (paths);
-		}
 	};
 	struct ListView : public View
 	{
@@ -449,13 +469,12 @@ Listener *m_listener;
 				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
 					              G_CALLBACK (popup_button_cb), this);
 			}
-			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
-			                        G_CALLBACK (size_allocated_cb), this);
 			if (showTooltips) {
 				gtk_widget_set_has_tooltip (m_widget, TRUE);
 				g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
 				                  G_CALLBACK (query_tooltip_cb), this);
 			}
+			ensure_view_visible_hook (m_widget);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -524,12 +543,6 @@ Listener *m_listener;
 			return package != NULL;
 		}
 
-		virtual void ensureVisible (GtkTreePath *path)
-		{
-			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
-			gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
-		}
-
 		static gboolean query_tooltip_cb (GtkWidget *view, gint x, gint y,
 			gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
 		{
@@ -578,8 +591,7 @@ Listener *m_listener;
 				g_signal_connect_after (G_OBJECT (m_widget), "button-press-event",
 					                    G_CALLBACK (popup_button_after_cb), this);
 			}
-			g_signal_connect_after (G_OBJECT (m_widget), "size-allocate",
-			                        G_CALLBACK (size_allocated_cb), this);
+			ensure_view_visible_hook (m_widget);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -616,12 +628,6 @@ Listener *m_listener;
 			if (event->type == GDK_BUTTON_PRESS && event->button == 3)
 				pThis->signalPopup (3, event->time);
 			return FALSE;
-		}
-
-		virtual void ensureVisible (GtkTreePath *path)
-		{
-			GtkIconView *view = GTK_ICON_VIEW (m_widget);
-			gtk_icon_view_scroll_to_path (view, path, FALSE, 0, 0);
 		}
 	};
 
@@ -922,7 +928,7 @@ class Collections
 {
 public:
 	struct Listener {
-		virtual void collectionChanged() = 0;
+		virtual void collectionChanged (bool immediate) = 0;
 	};
 
 private:
@@ -941,8 +947,8 @@ private:
 		GtkWidget *getWidget()
 		{ return m_box; }
 
-		void signalChanged()
-		{ m_listener->collectionChanged(); }
+		void signalChanged()      { m_listener->collectionChanged (true); }
+		void signalChangedDelay() { m_listener->collectionChanged (false); }
 
 	protected:
 		GtkWidget *m_box;
@@ -1023,6 +1029,7 @@ private:
 
 			gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
 			gtk_widget_show (m_view);
+			ensure_view_visible_hook (m_view);
 		}
 
 		void block()
@@ -1093,6 +1100,7 @@ private:
 	struct Categories : public StoreView
 	{
 		bool m_patchMode, m_rpmGroups;
+		GtkWidget *m_daysSpin;
 	public:
 		Categories (Collections::Listener *listener, bool patch_mode)
 		: StoreView (listener), m_patchMode (patch_mode), m_rpmGroups (false)
@@ -1106,7 +1114,40 @@ private:
 					"RPM information."));
 				g_signal_connect (G_OBJECT (check), "toggled",
 					              G_CALLBACK (rpm_groups_toggled_cb), this);
+
+				struct inner {
+					static void value_changed_cb (GtkWidget *widget, Categories *pThis)
+					{ pThis->signalChangedDelay(); }
+					static void days_toggled_cb (GtkToggleButton *button, Categories *pThis)
+					{
+						gboolean active = gtk_toggle_button_get_active (button);
+						gtk_widget_set_sensitive (pThis->m_daysSpin, active);
+						pThis->signalChangedDelay();
+					}
+				};
+				GtkWidget *daysCheck;
+				daysCheck = gtk_check_button_new_with_label (_("Recent:"));
+				m_daysSpin = gtk_spin_button_new_with_range (0, 90, 1);
+				gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_daysSpin), 7);
+				gtk_widget_set_sensitive (m_daysSpin, FALSE);
+				g_signal_connect (G_OBJECT (daysCheck), "toggled",
+				                  G_CALLBACK (inner::days_toggled_cb), this);
+				g_signal_connect (G_OBJECT (m_daysSpin), "value-changed",
+				                  G_CALLBACK (inner::value_changed_cb), this);
+				GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
+				GtkWidget *label = gtk_label_new (_("days"));
+				gtk_box_pack_start (GTK_BOX (hbox), daysCheck, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (hbox), m_daysSpin, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, TRUE, 0);
+				YGUtils::setWidgetFont (label,
+					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+				YGUtils::setWidgetFont (m_daysSpin,
+					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+				YGUtils::setWidgetFont (GTK_BIN (daysCheck)->child,
+					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+
 				gtk_box_pack_start (GTK_BOX (m_box), check, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (m_box), hbox, FALSE, TRUE, 0);
 			}
 			build (m_rpmGroups, !m_rpmGroups, false);
 		}
@@ -1157,19 +1198,23 @@ private:
 		virtual void writeQuery (Ypp::QueryPool::Query *query,
 		                           const std::list <gpointer> &ptrs)
 		{
-			if (ptrs.empty())
-				return;
-			gpointer ptr = ptrs.front();
-			if (GPOINTER_TO_INT (ptr) == 1)
+			gpointer ptr = ptrs.empty() ? NULL : ptrs.front();
+			int nptr = GPOINTER_TO_INT (ptr);
+			if (nptr == 1)
 				query->setIsRecommended (true);
-			else if (GPOINTER_TO_INT (ptr) == 2)
+			else if (nptr == 2)
 				query->setIsSuggested (true);
-			else {
+			else if (ptr) {
 				Ypp::Node *node = (Ypp::Node *) ptr;
 				if (m_rpmGroups || m_patchMode)
 					query->addCategory (node);
 				else
 					query->addCategory2 (node);
+			}
+
+			if (GTK_WIDGET_IS_SENSITIVE (m_daysSpin)) {
+				int days = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (m_daysSpin));
+				query->setBuildAge (days);
 			}
 		}
 
@@ -1532,8 +1577,8 @@ private:
 	static void field_changed_cb (gpointer widget, Filters *pThis)
 	{ pThis->signalChangedDelay(); }
 
-	virtual void collectionChanged()
-	{ signalChanged(); }
+	virtual void collectionChanged (bool immediate)
+	{ immediate ? signalChanged() : signalChangedDelay(); }
 
 	void signalChanged()
 	{

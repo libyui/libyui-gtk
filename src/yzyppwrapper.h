@@ -61,6 +61,7 @@ struct Ypp
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
+		int buildAge() const;  // if < 0 , unsupported or error
 		bool isUnsupported() const;
 
 		std::string provides (bool rich) const;
@@ -155,6 +156,7 @@ struct Ypp
 			void setToModify (bool modify);
 			void setIsRecommended (bool recommended);
 			void setIsSuggested (bool suggested);
+			void setBuildAge (int days);
 			void setIsUnsupported (bool unsupported);
 
 			~Query();
