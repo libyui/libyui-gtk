@@ -60,6 +60,7 @@ zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 const char *
 zypp_tag_enum_to_icon (YPkgGroupEnum group)
 {
+	// NOTE: some icons are customized (bug 404818)
 	switch (group)
   {
 	case PK_GROUP_ENUM_ACCESSIBILITY:	return( "package_main"			);
@@ -68,15 +69,15 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 	case PK_GROUP_ENUM_GAMES:		return( "package_games"			);
 	case PK_GROUP_ENUM_GRAPHICS:		return( "package_graphics"		);
 	case PK_GROUP_ENUM_INTERNET:		return( "package_network"		);
-	case PK_GROUP_ENUM_OFFICE:		return( "package_office_addressbook"	);
+	case PK_GROUP_ENUM_OFFICE:		return( "applications-office"	);
 	case PK_GROUP_ENUM_OTHER:		return( "package_main"			);
 	case PK_GROUP_ENUM_PROGRAMMING:		return( "package_development"		);
 	case PK_GROUP_ENUM_MULTIMEDIA:		return( "package_multimedia"		);
-	case PK_GROUP_ENUM_SYSTEM:		return( "yast-system"			);
+	case PK_GROUP_ENUM_SYSTEM:		return( "applications-system"			);
 	case PK_GROUP_ENUM_DESKTOP_GNOME:	return( "pattern-gnome"			);
 	case PK_GROUP_ENUM_DESKTOP_KDE:		return( "pattern-kde"			);
-	case PK_GROUP_ENUM_DESKTOP_XFCE:	return( "package_utility_desktop"	);
-	case PK_GROUP_ENUM_DESKTOP_OTHER:	return( "package_utility_desktop"	);
+	case PK_GROUP_ENUM_DESKTOP_XFCE:	return( "pattern-xfce"	);
+	case PK_GROUP_ENUM_DESKTOP_OTHER:	return( "user-desktop"	);
 	case PK_GROUP_ENUM_PUBLISHING:		return( "package_main"			);
 	case PK_GROUP_ENUM_SERVERS:		return( "package_editors"		);
 	case PK_GROUP_ENUM_FONTS:		return( "package_main"			);
