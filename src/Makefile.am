@@ -95,7 +95,7 @@ dist_share_DATA = \
 	icons/pkg-remove.png \
 	icons/pkg-install.png \
 	icons/pkg-install-auto.png \
-	icons/pkg-install-upgrade.png \
+	icons/pkg-upgrade.png \
 	icons/pkg-installed-locked.png \
 	icons/pkg-unlocked.png \
 	icons/pkg-installed-upgradable-locked.png \

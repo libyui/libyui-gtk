@@ -40,8 +40,8 @@ struct PackageIcons {
 		available = loadPixbuf ("pkg-available.png");
 		available_locked = loadPixbuf ("pkg-available-locked.png");
 		to_install = loadPixbuf ("pkg-install.png");
+		to_install_upgrade = loadPixbuf ("pkg-upgrade.png");
 		to_remove = loadPixbuf ("pkg-remove.png");
-		to_install_upgrade = loadPixbuf ("pkg-install-upgrade.png");
 		to_auto_install = loadPixbuf ("pkg-install-auto.png");
 		to_auto_remove = loadPixbuf ("pkg-remove-auto.png");
 	}
