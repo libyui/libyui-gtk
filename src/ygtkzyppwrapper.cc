@@ -9,16 +9,8 @@
 #include "ygtkzyppwrapper.h"
 #include "YGUtils.h"
 
-#include "icons/pkg-installed.xpm"
-#include "icons/pkg-installed-upgradable.xpm"
-#include "icons/pkg-installed-upgradable-locked.xpm"
-#include "icons/pkg-installed-locked.xpm"
-#include "icons/pkg-available.xpm"
-#include "icons/pkg-available-locked.xpm"
-#include "icons/pkg-install.xpm"
-#include "icons/pkg-remove.xpm"
-#include "icons/pkg-install-auto.xpm"
-#include "icons/pkg-remove-auto.xpm"
+static GdkPixbuf *loadPixbuf (const char *icon)
+{ return YGUtils::loadPixbuf (std::string (DATADIR) + "/" + icon); }
 
 // bridge as we don't want to mix c++ class polymorphism and gobject
 static void ygtk_zypp_model_entry_changed (YGtkZyppModel *model, Ypp::Pool::Iter iter);
@@ -38,20 +30,20 @@ YGtkZyppModel *model;
 struct PackageIcons {
 	GdkPixbuf *installed, *installed_upgradable, *installed_locked,
 	          *installed_upgradable_locked, *available, *available_locked,
-	          *to_install, *to_remove, *to_auto_install, *to_auto_remove;
+	          *to_install, *to_install_upgrade, *to_remove, *to_auto_install,
+	          *to_auto_remove;
 	PackageIcons() {
-		installed = gdk_pixbuf_new_from_xpm_data (pkg_installed_xpm);
-		installed_upgradable =
-			gdk_pixbuf_new_from_xpm_data (pkg_installed_upgradable_xpm);
-		installed_locked = gdk_pixbuf_new_from_xpm_data (pkg_installed_locked_xpm);
-		installed_upgradable_locked =
-			gdk_pixbuf_new_from_xpm_data (pkg_installed_upgradable_locked_xpm);
-		available = gdk_pixbuf_new_from_xpm_data (pkg_available_xpm);
-		available_locked = gdk_pixbuf_new_from_xpm_data (pkg_available_locked_xpm);
-		to_install = gdk_pixbuf_new_from_xpm_data (pkg_install_xpm);
-		to_remove = gdk_pixbuf_new_from_xpm_data (pkg_remove_xpm);
-		to_auto_install = gdk_pixbuf_new_from_xpm_data (pkg_install_auto_xpm);
-		to_auto_remove = gdk_pixbuf_new_from_xpm_data (pkg_remove_auto_xpm);
+		installed = loadPixbuf ("pkg-installed.png");
+		installed_upgradable = loadPixbuf ("pkg-installed-upgradable.png");
+		installed_locked = loadPixbuf ("pkg-installed-locked.png");
+		installed_upgradable_locked = loadPixbuf ("pkg-installed-upgradable-locked.png");
+		available = loadPixbuf ("pkg-available.png");
+		available_locked = loadPixbuf ("pkg-available-locked.png");
+		to_install = loadPixbuf ("pkg-install.png");
+		to_remove = loadPixbuf ("pkg-remove.png");
+		to_install_upgrade = loadPixbuf ("pkg-install-upgrade.png");
+		to_auto_install = loadPixbuf ("pkg-install-auto.png");
+		to_auto_remove = loadPixbuf ("pkg-remove-auto.png");
 	}
 	~PackageIcons() {
 		g_object_unref (G_OBJECT (installed));
@@ -62,6 +54,7 @@ struct PackageIcons {
 		g_object_unref (G_OBJECT (available_locked));
 		g_object_unref (G_OBJECT (to_install));
 		g_object_unref (G_OBJECT (to_remove));
+		g_object_unref (G_OBJECT (to_install_upgrade));
 		g_object_unref (G_OBJECT (to_auto_install));
 		g_object_unref (G_OBJECT (to_auto_remove));
 	}
@@ -269,8 +262,11 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			if (package->toInstall()) {
 				if (auto_)
 					pixbuf = icons->to_auto_install;
-				else
+				else {
 					pixbuf = icons->to_install;
+					if (package->isInstalled())
+						pixbuf = icons->to_install_upgrade;
+				}
 			}
 			else if (package->toRemove()) {
 				if (auto_)
@@ -296,7 +292,8 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 				else
 					pixbuf = icons->available;
 			}
-			g_value_set_object (value, (GObject *) pixbuf);
+			if (pixbuf)  // otherwise it would crash (give it broken icon?)
+				g_value_set_object (value, (GObject *) pixbuf);
 			break;
 		}
 		case YGtkZyppModel::NAME_COLUMN:

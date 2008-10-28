@@ -25,13 +25,10 @@
 #include "ygtkzyppwrapper.h"
 
 // utilities
-static GtkWidget *createImageFromXPM (const char **xpm)
+static GtkWidget *image_new_from_file (const char *filename)
 {
-	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_xpm_data (xpm);
-	GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-	gtk_widget_show (image);
-	g_object_unref (pixbuf);
-	return image;
+	std::string file = std::string (DATADIR) + "/" + filename;
+	return gtk_image_new_from_file (file.c_str());
 }
 
 static GdkPixbuf *loadThemeIcon (const char *icon, int size)
@@ -236,11 +233,6 @@ private:
 	      _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2;
 };
 
-#include "icons/pkg-list-mode.xpm"
-#include "icons/pkg-tiles-mode.xpm"
-#include "icons/pkg-locked.xpm"
-#include "icons/pkg-unlocked.xpm"
-
 class PackagesView
 {
 public:
@@ -330,23 +322,22 @@ Listener *m_listener;
 
 			struct inner {
 				static void appendItem (GtkWidget *menu, const char *label,
-					const char *tooltip, const char *stock_icon, const char **xpm_icon,
-					bool sensitive,
+					const char *tooltip, const char *icon, bool sensitive,
 					void (& callback) (GtkMenuItem *item, View *pThis), View *pThis)
 				{
 					GtkWidget *item;
-					if (stock_icon || xpm_icon) {
+					if (icon) {
 						if (label) {
 							item = gtk_image_menu_item_new_with_mnemonic (label);
-							GtkWidget *icon;
-							if (stock_icon)
-								icon = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_MENU);
+							GtkWidget *image;
+							if (*icon == 'g')
+								image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_MENU);
 							else
-								icon = createImageFromXPM (xpm_icon);
-							gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
+								image = image_new_from_file (icon);
+							gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
 						}
 						else
-							item = gtk_image_menu_item_new_from_stock (stock_icon, NULL);
+							item = gtk_image_menu_item_new_from_stock (icon, NULL);
 					}
 					else
 						item = gtk_menu_item_new_with_mnemonic (label);
@@ -392,28 +383,28 @@ Listener *m_listener;
 			bool empty = true, canLock = packages.canLock(), unlocked = packages.unlocked();
 			bool locked = !unlocked && canLock;
 			if (packages.notInstalled())
-				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE, 0,
+				inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE,
 				                   !locked, inner::install_cb, this), empty = false;
 			if (packages.upgradable())
-				inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP, 0,
+				inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP,
 				                   !locked, inner::install_cb, this), empty = false;
 			if (packages.installed())
-				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE, 0,
+				inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
 				                   !locked, inner::remove_cb, this), empty = false;
 			if (packages.modified())
-				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO, 0,
+				inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
 				                   true, inner::undo_cb, this), empty = false;
 			if (canLock) {
 				if (packages.locked())
-					inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), 0, pkg_unlocked_xpm,
-						               true, inner::unlock_cb, this), empty = false;
+					inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), "pkg-unlocked.png",
+					                   true, inner::unlock_cb, this), empty = false;
 				if (unlocked)
-					inner::appendItem (menu, _("_Lock"), _(lock_tooltip), 0, pkg_locked_xpm,
-						               true, inner::lock_cb, this), empty = false;
+					inner::appendItem (menu, _("_Lock"), _(lock_tooltip), "pkg-locked.png",
+					                   true, inner::lock_cb, this), empty = false;
 			}
 			if (!empty)
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
-			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL, 0,
+			inner::appendItem (menu, 0, 0, GTK_STOCK_SELECT_ALL,
 			                   true, inner::select_all_cb, this);
 
 			gtk_menu_attach_to_widget (GTK_MENU (menu), m_widget, NULL);
@@ -647,9 +638,9 @@ public:
 
 		if (!isTree) {
 			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-			button = create_toggle_button (pkg_list_mode_xpm, _("View as list"), NULL);
+			button = create_toggle_button ("pkg-list-mode.xpm", _("View as list"), NULL);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-			button = create_toggle_button (pkg_tiles_mode_xpm, _("View as grid"), button);
+			button = create_toggle_button ("pkg-tiles-mode.xpm", _("View as grid"), button);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
 			gtk_widget_show_all (buttons);
 
@@ -720,7 +711,7 @@ public:
 	{ m_view->unselectAll(); }
 
 private:
-	GtkWidget *create_toggle_button (const char **xpm, const char *tooltip, GtkWidget *member)
+	GtkWidget *create_toggle_button (const char *icon, const char *tooltip, GtkWidget *member)
 	{
 		GSList *group = NULL;
 		if (member)
@@ -741,7 +732,7 @@ private:
 		g_signal_connect (G_OBJECT (button), "toggle-changed",
 		                  G_CALLBACK (mode_toggled_cb), this);
 
-		GtkWidget *image = createImageFromXPM (xpm);
+		GtkWidget *image = image_new_from_file (icon);
 		gtk_container_add (GTK_CONTAINER (button), image);
 		return button;
 	}
@@ -793,7 +784,7 @@ class ChangesPane : public Ypp::Pool::Listener
 					action = _("install");
 			}
 			else
-				action = _("Remove");
+				action = _("remove");
 			text = action + " " + package->name();
 			if (package->isAuto()) {
 				text = "\t" + text;
@@ -919,10 +910,6 @@ public:
 		entry->modified (package);
 	}
 };
-
-#include "icons/pkg-installed.xpm"
-#include "icons/pkg-installed-upgradable.xpm"
-#include "icons/pkg-available.xpm"
 
 class Collections
 {
@@ -1399,14 +1386,14 @@ class Filters : public Collections::Listener
 
 			GtkWidget *button;
 			GSList *group;
-			button = createButton (_("_Available"), pkg_available_xpm, NULL);
+			button = createButton (_("_Available"), "pkg-available.png", NULL);
 			group = ygtk_toggle_button_get_group (YGTK_TOGGLE_BUTTON (button));
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			if (!updateMode) {
-				button = createButton (_("_Upgrades"), pkg_installed_upgradable_xpm, group);
+				button = createButton (_("_Upgrades"), "pkg-installed-upgradable.png", group);
 				gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			}
-			button = createButton (_("_Installed"), pkg_installed_xpm, group);
+			button = createButton (_("_Installed"), "pkg-installed.png", group);
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			button = createButton (_("A_ll"), 0, group);
 			gtk_box_pack_start (GTK_BOX (m_box), button, FALSE, TRUE, 0);
@@ -1417,13 +1404,13 @@ class Filters : public Collections::Listener
 			return m_selected;
 		}
 
-		GtkWidget *createButton (const char *label, const char **xpm, GSList *group)
+		GtkWidget *createButton (const char *label, const char *icon, GSList *group)
 		{
 			GtkWidget *button = ygtk_toggle_button_new (group);
 			gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
 			GtkWidget *hbox = gtk_hbox_new (FALSE, 0);
-			if (xpm)
-				gtk_box_pack_start (GTK_BOX (hbox), createImageFromXPM (xpm), FALSE, TRUE, 0);
+			if (icon)
+				gtk_box_pack_start (GTK_BOX (hbox), image_new_from_file (icon), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (hbox),
 				gtk_label_new_with_mnemonic (label), TRUE, TRUE, 0);
 			gtk_container_add (GTK_CONTAINER (button), hbox);
@@ -1764,8 +1751,8 @@ Filters *m_filters;  // used to filter repo versions...
 		gtk_widget_set_tooltip_markup (m_lock_button, lock_tooltip);
 		g_signal_connect (G_OBJECT (m_lock_button), "toggled",
 		                  G_CALLBACK (locked_toggled_cb), this);
-		m_locked_image = createImageFromXPM (pkg_locked_xpm);
-		m_unlocked_image = createImageFromXPM (pkg_unlocked_xpm);
+		m_locked_image = image_new_from_file ("pkg-locked.png");
+		m_unlocked_image = image_new_from_file ("pkg-unlocked.png");
 		g_object_ref_sink (G_OBJECT (m_locked_image));
 		g_object_ref_sink (G_OBJECT (m_unlocked_image));
 
@@ -2232,9 +2219,6 @@ private:
 	}
 };
 
-#include "icons/harddisk.xpm"
-#include "icons/harddisk-full.xpm"
-
 class DiskView : public Ypp::Disk::Listener
 {
 GtkWidget *m_widget;
@@ -2263,8 +2247,8 @@ public:
 		m_widget = createMenuButton (m_model);
 		g_object_unref (G_OBJECT (m_model));
 
-		m_diskPixbuf = gdk_pixbuf_new_from_xpm_data (harddisk_xpm);
-		m_diskFullPixbuf = gdk_pixbuf_new_from_xpm_data (harddisk_full_xpm);
+		m_diskPixbuf = YGUtils::loadPixbuf (std::string (DATADIR) + "/harddisk.png");
+		m_diskFullPixbuf = YGUtils::loadPixbuf (std::string (DATADIR) + "/harddisk-full.png");
 
 		Ypp::get()->getDisk()->setListener (this);
 		update();

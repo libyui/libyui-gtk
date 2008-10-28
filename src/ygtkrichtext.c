@@ -684,7 +684,7 @@ rt_start_element (GMarkupParseContext *context,
 	state->htags = g_list_append (state->htags, tag);
 }
 
-#include "icons/hr.xpm"
+#include "hr.xpm"
 
 static void
 rt_end_element (GMarkupParseContext *context,

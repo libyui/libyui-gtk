@@ -1,7 +1,10 @@
+DATADIR=/usr/share/YaST2/gtk/
+
 AM_CFLAGS = $(GTK_CFLAGS) \
 	-DY2LOG=\"ui-gtk\" \
 	-DTHEMEDIR=\"${themedir}/current\" \
-	-DLOCALEDIR=\"${localedir}\"
+	-DLOCALEDIR=\"${localedir}\" \
+	-DDATADIR=\"${DATADIR}\"
 AM_CXXFLAGS = $(AM_CFLAGS)
 
 noinst_HEADERS = $(wildcard *.h)
@@ -69,7 +72,7 @@ libpy2gtk_la_SOURCES = \
 	yzyppwrapper.cc \
 	yzypptags.cc \
 	ygtkzyppwrapper.cc
-# should only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
+# should (maybe?) only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
 
 dummy_SOURCES = dummy.cc
 dummy_LDADD = libpy2gtk.la
@@ -82,23 +85,26 @@ test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS) $(GTKHTML_CFLAGS) $(WEBKIT_CFLAGS)
 
-EXTRA_DIST = \
-	icons/pkg-available-locked.xpm \
-	icons/pkg-installed-upgradable.xpm \
-	icons/pkg-remove-auto.xpm \
-	icons/pkg-available.xpm \
-	icons/pkg-installed.xpm \
-	icons/pkg-remove.xpm \
-	icons/pkg-install-auto.xpm \
-	icons/pkg-install.xpm \
+sharedir = $(DATADIR)
+dist_share_DATA = \
+	icons/pkg-available-locked.png \
+	icons/pkg-installed-upgradable.png \
+	icons/pkg-remove-auto.png \
+	icons/pkg-available.png \
+	icons/pkg-installed.png \
+	icons/pkg-remove.png \
+	icons/pkg-install.png \
+	icons/pkg-install-auto.png \
+	icons/pkg-install-upgrade.png \
+	icons/pkg-installed-locked.png \
+	icons/pkg-unlocked.png \
+	icons/pkg-installed-upgradable-locked.png \
+	icons/pkg-locked.png \
 	icons/pkg-tiles-mode.xpm \
-	icons/pkg-installed-locked.xpm \
 	icons/pkg-list-mode.xpm \
-	icons/pkg-unlocked.xpm \
-	icons/pkg-installed-upgradable-locked.xpm \
-	icons/pkg-locked.xpm \
-	icons/harddisk.xpm \
-	icons/harddisk-full.xpm \
-	icons/hr.xpm \
-	pkg-selector-help.h
+	icons/harddisk.png \
+	icons/harddisk-full.png
+EXTRA_DIST = $(dist_share_DATA) \
+	pkg-selector-help.h \
+	hr.xpm
 

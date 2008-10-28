@@ -13,6 +13,9 @@
 
 	* src/YGPackageSelector.cc: honor enableRepoMgr flag.
 
+	* src/Makefile.am, src/YGPackageSelector.cc & src/ygtkzyppwrapper.cc:
+	install quality PNG icons, instead of embeding XPM ones.
+
 2008-10-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (Categories): ensure Categories item
