@@ -103,8 +103,12 @@ GType ygtk_find_entry_get_type (void) G_GNUC_CONST;
 void ygtk_find_entry_attach_menu (YGtkFindEntry *entry, GtkMenu *popup_menu);
 
 // add an internal menu
-guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const char *stock);
+guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text,
+                                   const char *stock, const char *tooltip);
 gint ygtk_find_entry_get_selected_item (YGtkFindEntry *entry);
+void ygtk_find_entry_select_item (YGtkFindEntry *entry, gint item);
+
+void ygtk_find_entry_set_state (YGtkFindEntry *entry, gboolean correct);
 
 G_END_DECLS
 #endif /*YGTK_FIND_ENTRY_H*/

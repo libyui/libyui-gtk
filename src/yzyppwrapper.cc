@@ -2022,19 +2022,35 @@ Ypp::Impl::~Impl()
 const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 {
 	if (!repos) {
+		struct inner {
+			static void addRepo (Ypp::Impl *impl, const zypp::RepoInfo &info)
+			{
+				Repository *repo = new Repository();
+				repo->name = info.name();
+				if (!info.baseUrlsEmpty())
+					repo->url = info.baseUrlsBegin()->asString();
+				repo->alias = info.alias();
+				repo->enabled = info.enabled();
+				impl->repos = g_slist_append (impl->repos, repo);
+			}
+		};
 		for (zypp::ResPoolProxy::repository_iterator it = zyppPool().knownRepositoriesBegin();
 		     it != zyppPool().knownRepositoriesEnd(); it++) {
 			const zypp::Repository &zrepo = *it;
 			if (zrepo.isSystemRepo())
 				continue;
-			const zypp::RepoInfo info = zrepo.info();
-			Repository *repo = new Repository();
-			repo->name = info.name();
-			if (!info.baseUrlsEmpty())
-				repo->url = info.baseUrlsBegin()->asString();
-			repo->alias = info.alias();
-			repo->enabled = info.enabled();
-			repos = g_slist_append (repos, repo);
+			inner::addRepo (this, zrepo.info());
+		}
+		// zyppPool::knownRepositories is more accurate, but it doesn't feature disabled
+		// repositories. Add them with the following API.
+		zypp::RepoManager manager;
+		std::list <zypp::RepoInfo> known_repos = manager.knownRepositories();
+		for (std::list <zypp::RepoInfo>::const_iterator it = known_repos.begin();
+		     it != known_repos.end(); it++) {
+			const zypp::RepoInfo info = *it;
+			if (info.enabled())
+				continue;
+			inner::addRepo (this, info);
 		}
 	}
 	return (Repository *) g_slist_nth_data (repos, nb);

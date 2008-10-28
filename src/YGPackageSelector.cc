@@ -1100,7 +1100,6 @@ private:
 	struct Categories : public StoreView
 	{
 		bool m_patchMode, m_rpmGroups;
-		GtkWidget *m_daysSpin;
 	public:
 		Categories (Collections::Listener *listener, bool patch_mode)
 		: StoreView (listener), m_patchMode (patch_mode), m_rpmGroups (false)
@@ -1114,40 +1113,7 @@ private:
 					"RPM information."));
 				g_signal_connect (G_OBJECT (check), "toggled",
 					              G_CALLBACK (rpm_groups_toggled_cb), this);
-
-				struct inner {
-					static void value_changed_cb (GtkWidget *widget, Categories *pThis)
-					{ pThis->signalChangedDelay(); }
-					static void days_toggled_cb (GtkToggleButton *button, Categories *pThis)
-					{
-						gboolean active = gtk_toggle_button_get_active (button);
-						gtk_widget_set_sensitive (pThis->m_daysSpin, active);
-						pThis->signalChangedDelay();
-					}
-				};
-				GtkWidget *daysCheck;
-				daysCheck = gtk_check_button_new_with_label (_("Recent:"));
-				m_daysSpin = gtk_spin_button_new_with_range (0, 90, 1);
-				gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_daysSpin), 7);
-				gtk_widget_set_sensitive (m_daysSpin, FALSE);
-				g_signal_connect (G_OBJECT (daysCheck), "toggled",
-				                  G_CALLBACK (inner::days_toggled_cb), this);
-				g_signal_connect (G_OBJECT (m_daysSpin), "value-changed",
-				                  G_CALLBACK (inner::value_changed_cb), this);
-				GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
-				GtkWidget *label = gtk_label_new (_("days"));
-				gtk_box_pack_start (GTK_BOX (hbox), daysCheck, FALSE, TRUE, 0);
-				gtk_box_pack_start (GTK_BOX (hbox), m_daysSpin, FALSE, TRUE, 0);
-				gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, TRUE, 0);
-				YGUtils::setWidgetFont (label,
-					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-				YGUtils::setWidgetFont (m_daysSpin,
-					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-				YGUtils::setWidgetFont (GTK_BIN (daysCheck)->child,
-					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-
 				gtk_box_pack_start (GTK_BOX (m_box), check, FALSE, TRUE, 0);
-				gtk_box_pack_start (GTK_BOX (m_box), hbox, FALSE, TRUE, 0);
 			}
 			build (m_rpmGroups, !m_rpmGroups, false);
 		}
@@ -1210,11 +1176,6 @@ private:
 					query->addCategory (node);
 				else
 					query->addCategory2 (node);
-			}
-
-			if (GTK_WIDGET_IS_SENSITIVE (m_daysSpin)) {
-				int days = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (m_daysSpin));
-				query->setBuildAge (days);
 			}
 		}
 
@@ -1516,16 +1477,18 @@ public:
 			"will be matched against RPM <i>name</i> and <i>summary</i> attributes. "
 			"Other criteria attributes are available by pressing the search icon.\n"
 			"(usage example: \"yast dhcp\" will return yast's dhcpd tool)"));
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by name & summary"),
+		                             GTK_STOCK_FIND, NULL);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by description"),
+		                             GTK_STOCK_EDIT, NULL);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by file"),
+		                             GTK_STOCK_OPEN, NULL);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by author"),
+		                             GTK_STOCK_ABOUT, NULL);
+		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by novelty (in days)"),
+			GTK_STOCK_NEW, _("Number of days since the package was built by the repository."));
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (name_changed_cb), this);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by name & summary"),
-		                             GTK_STOCK_FIND);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by description"),
-		                             GTK_STOCK_EDIT);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by file"),
-		                             GTK_STOCK_OPEN);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by author"),
-		                             GTK_STOCK_ABOUT);
 		g_signal_connect (G_OBJECT (m_name), "menu-item-selected",
 		                  G_CALLBACK (name_item_changed_cb), this);
 
@@ -1561,8 +1524,19 @@ public:
 	}
 
 private:
+	void clearNameEntry()
+	{
+		g_signal_handlers_block_by_func (m_name, (gpointer) name_changed_cb, this);
+		g_signal_handlers_block_by_func (m_name, (gpointer) name_item_changed_cb, this);
+		gtk_entry_set_text (GTK_ENTRY (m_name), "");
+		ygtk_find_entry_select_item (YGTK_FIND_ENTRY (m_name), 0);
+		g_signal_handlers_unblock_by_func (m_name, (gpointer) name_changed_cb, this);
+		g_signal_handlers_unblock_by_func (m_name, (gpointer) name_item_changed_cb, this);
+	}
+
 	static void type_changed_cb (GtkComboBox *combo, Filters *pThis)
 	{
+		pThis->clearNameEntry();
 		int type = gtk_combo_box_get_active (combo);
 		if (pThis->m_updateMode && type == 1)
 			type = Collections::REPOS_TYPE;
@@ -1571,9 +1545,31 @@ private:
 	}
 
 	static void name_changed_cb (YGtkFindEntry *entry, Filters *pThis)
-	{ pThis->m_nameChanged = true; pThis->signalChangedDelay(); }
-	static void name_item_changed_cb (gpointer widget, gint nb, Filters *pThis)
-	{ pThis->m_nameChanged = true; pThis->signalChangedDelay(); }
+	{
+		gint nb = ygtk_find_entry_get_selected_item (entry);
+		if (nb == 4) {  // novelty only allows numbers
+			const gchar *text = gtk_entry_get_text (GTK_ENTRY (entry));
+			gboolean correct = TRUE;
+			for (const gchar *i = text; *i; i++)
+				if (!g_ascii_isdigit (*i)) {
+					correct = FALSE;
+					break;
+				}
+			ygtk_find_entry_set_state (entry, correct);
+		}
+		pThis->signalChangedDelay();
+	}
+	static void name_item_changed_cb (YGtkFindEntry *entry, gint nb, Filters *pThis)
+	{
+		const gchar *text = "";
+		if (nb == 4) text = "7";  // novelty is weird; show usage case
+		g_signal_handlers_block_by_func (entry, (gpointer) name_changed_cb, pThis);
+		gtk_entry_set_text (GTK_ENTRY (entry), text);
+		g_signal_handlers_unblock_by_func (entry, (gpointer) name_changed_cb, pThis);
+		gtk_editable_set_position (GTK_EDITABLE (entry), -1);
+
+		pThis->signalChanged();
+	}
 	static void field_changed_cb (gpointer widget, Filters *pThis)
 	{ pThis->signalChangedDelay(); }
 
@@ -1585,15 +1581,6 @@ private:
 		if (!m_listener) return;
 		busyCursor();
 
-		if (!m_nameChanged && *gtk_entry_get_text (GTK_ENTRY (m_name))) {
-			g_signal_handlers_block_by_func (m_name,
-				(gpointer) name_changed_cb, this);
-			gtk_entry_set_text (GTK_ENTRY (m_name), "");
-			g_signal_handlers_unblock_by_func (m_name,
-				(gpointer) name_changed_cb, this);
-		}
-		m_nameChanged = false;
-
 		// create query
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 		if (m_updateMode)
@@ -1604,58 +1591,65 @@ private:
 		const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
 		if (*name) {
 			gint item = ygtk_find_entry_get_selected_item (YGTK_FIND_ENTRY (m_name));
-			bool use_name, use_summary, use_description, use_filelist, use_authors;
-			use_name = use_summary = use_description = use_filelist = use_authors = false;
-			switch (item) {
-				case 0:  // name & summary
-				default:
-					use_name = use_summary = true;
-					break;
-				case 1:  // description
-					use_name = use_summary = use_description = true;
-					break;
-				case 2:  // file
-					use_filelist = true;
-					break;
-				case 3:  // author
-					use_authors = true;
-					break;
+			if (item == 4) {  // novelty
+				int days = atoi (name);
+				query->setBuildAge (days);
 			}
-			query->addNames (name, ' ', use_name, use_summary, use_description,
-			                 use_filelist, use_authors);
+			else {
+				bool use_name, use_summary, use_description, use_filelist, use_authors;
+				use_name = use_summary = use_description = use_filelist = use_authors = false;
+				switch (item) {
+					case 0:  // name & summary
+					default:
+						use_name = use_summary = true;
+						break;
+					case 1:  // description
+						use_name = use_summary = use_description = true;
+						break;
+					case 2:  // file
+						use_filelist = true;
+						break;
+					case 3:  // author
+						use_authors = true;
+						break;
+				}
+				query->addNames (name, ' ', use_name, use_summary, use_description,
+					             use_filelist, use_authors);
+			}
 
-			// tip: the user may be searching for patterns
-			static bool shown_pattern_tip = false;
-			if (!m_updateMode && !shown_pattern_tip &&
-			    gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
-			    (m_statuses->getActive() == StatusButtons::AVAILABLE ||
-			     m_statuses->getActive() == StatusButtons::ALL)) {
-				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-				query->addType (Ypp::Package::PATTERN_TYPE);
-				query->addNames (name, ' ', true, false, false, false, false, true);
-				query->setIsInstalled (false);
-				Ypp::QueryPool pool (query);
-				if (!pool.empty()) {
-					shown_pattern_tip = true;
-					//std::string first = pool.getName (pool.getFirst());
-					std::string text =
-						_("Patterns are available that can\n"
-						"assist you in the installment\nof");
-					text += " <i>" + std::string (name) + "</i> ";
-					text += _("related packages.");
-					GtkWidget *tooltip, *box, *label, *image;
-					tooltip = ygtk_tooltip_new();
-					label = gtk_label_new (text.c_str());
-					gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-					image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO,
-					                                  GTK_ICON_SIZE_BUTTON);
-					box = gtk_hbox_new (FALSE, 6);
-					gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
-					gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
-					gtk_widget_show_all (box);
-					gtk_container_add (GTK_CONTAINER (tooltip), box);
-					ygtk_tooltip_show_at_widget (YGTK_TOOLTIP (tooltip), m_type,
-							                     YGTK_POINTER_UP_LEFT);
+			if (item == 0) {  // tip: the user may be searching for patterns
+				static bool shown_pattern_tip = false;
+				if (!m_updateMode && !shown_pattern_tip &&
+					gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
+					(m_statuses->getActive() == StatusButtons::AVAILABLE ||
+					 m_statuses->getActive() == StatusButtons::ALL)) {
+					Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+					query->addType (Ypp::Package::PATTERN_TYPE);
+					query->addNames (name, ' ', true, false, false, false, false, true);
+					query->setIsInstalled (false);
+					Ypp::QueryPool pool (query);
+					if (!pool.empty()) {
+						shown_pattern_tip = true;
+						//std::string first = pool.getName (pool.getFirst());
+						std::string text =
+							_("Patterns are available that can\n"
+							"assist you in the installment\nof");
+						text += " <i>" + std::string (name) + "</i> ";
+						text += _("related packages.");
+						GtkWidget *tooltip, *box, *label, *image;
+						tooltip = ygtk_tooltip_new();
+						label = gtk_label_new (text.c_str());
+						gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+						image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO,
+							                              GTK_ICON_SIZE_BUTTON);
+						box = gtk_hbox_new (FALSE, 6);
+						gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
+						gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+						gtk_widget_show_all (box);
+						gtk_container_add (GTK_CONTAINER (tooltip), box);
+						ygtk_tooltip_show_at_widget (YGTK_TOOLTIP (tooltip), m_type,
+									                 YGTK_POINTER_UP_LEFT);
+					}
 				}
 			}
 		}

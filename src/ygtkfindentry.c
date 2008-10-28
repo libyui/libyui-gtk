@@ -570,18 +570,20 @@ static void menu_item_activate_cb (GtkMenuItem *item, YGtkFindEntry *entry)
 	GtkWidget *menu = gtk_widget_get_parent (GTK_WIDGET (item));
 	GList *items = gtk_container_get_children (GTK_CONTAINER (menu));
 	entry->selected_item = g_list_index (items, item);
-	g_signal_emit (entry, menu_item_selected_signal, 0, entry->selected_item);
 	g_list_free (items);
 	generate_find_icon (entry);
+	g_signal_emit (entry, menu_item_selected_signal, 0, entry->selected_item);
 }
 
-guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const char *stock)
+guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const char *stock, const char *tooltip)
 {
 	if (!entry->context_menu)
 		ygtk_find_entry_attach_menu (entry, GTK_MENU (gtk_menu_new()));
 	GtkWidget *item = gtk_image_menu_item_new_with_label (text);
 	GtkWidget *image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
+	if (tooltip)
+		gtk_widget_set_tooltip_text (item, tooltip);
 	gtk_menu_shell_append (GTK_MENU_SHELL (entry->context_menu), item);
 	gtk_widget_show_all (GTK_WIDGET (entry->context_menu));
 	g_signal_connect (G_OBJECT (item), "activate",
@@ -595,6 +597,31 @@ guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const
 gint ygtk_find_entry_get_selected_item (YGtkFindEntry *entry)
 {
 	return entry->selected_item;
+}
+
+void ygtk_find_entry_select_item (YGtkFindEntry *entry, gint item)
+{
+	if (entry->selected_item != item) {
+		entry->selected_item = item;
+		generate_find_icon (entry);
+		g_signal_emit (entry, menu_item_selected_signal, 0, entry->selected_item);
+	}
+}
+
+void ygtk_find_entry_set_state (YGtkFindEntry *entry, gboolean correct)
+{
+	GtkWidget *widget = GTK_WIDGET (entry);
+	if (correct) {  // revert
+		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+	}
+	else {
+		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
+				 white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &red);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &white);
+		gtk_widget_error_bell (widget);
+	}
 }
 
 GtkWidget *ygtk_find_entry_new (void /*gboolean will_use_find_icon */)

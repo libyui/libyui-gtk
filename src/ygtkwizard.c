@@ -45,17 +45,8 @@ static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
 	gchar *key = gtk_editable_get_chars (editable, 0, -1);
-	if (!ygtk_html_wrap_search (dialog->help_text, key)) {
-		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
-		         white = { 0, 255 << 8, 255 << 8, 255 << 8 };
-		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, &red);
-		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, &white);
-		gtk_widget_error_bell (GTK_WIDGET (dialog));
-	}
-	else {
-		gtk_widget_modify_base (dialog->search_entry, GTK_STATE_NORMAL, NULL);
-		gtk_widget_modify_text (dialog->search_entry, GTK_STATE_NORMAL, NULL);
-	}
+	gboolean found = ygtk_html_wrap_search (dialog->help_text, key);
+	ygtk_find_entry_set_state (YGTK_FIND_ENTRY (dialog->search_entry), found);
 	g_free (key);
 }
 static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)

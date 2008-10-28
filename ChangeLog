@@ -1,3 +1,16 @@
+2008-10-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.h/c: added tooltip argument to insert_item.
+	added set_state() method to highlight the entry for incorrect
+	input, and select_item().
+
+	* src/YGPackageSelector.cc: moved recent spin box into a find entry
+	item. Also, only remove find entry when changing the type combo.
+
+	* src/yzyppwrapper.cc: zypp::RepoManager::knownRepositories() isn't
+	accurate, but it features disabled repositories, so use it for that
+	purpose.
+
 2008-10-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (Categories): ensure Categories item
