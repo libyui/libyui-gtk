@@ -11,6 +11,8 @@
 	accurate, but it features disabled repositories, so use it for that
 	purpose.
 
+	* src/YGPackageSelector.cc: honor enableRepoMgr flag.
+
 2008-10-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (Categories): ensure Categories item

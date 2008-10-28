@@ -1190,7 +1190,7 @@ private:
 	struct Repositories : public StoreView
 	{
 	public:
-		Repositories (Collections::Listener *listener)
+		Repositories (Collections::Listener *listener, bool repoMgrEnabled)
 		: StoreView (listener)
 		{
 			GtkWidget *align, *button, *box, *image, *label;
@@ -1340,7 +1340,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	void setType (Type type, bool patch_mode)
+	void setType (Type type, bool patch_mode, bool repo_mgr_enabled)
 	{
 		if (m_view)
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->getWidget());
@@ -1358,7 +1358,7 @@ public:
 				m_view = new Pool (m_listener, Ypp::Package::LANGUAGE_TYPE);
 				break;
 			default:
-				m_view = new Repositories (m_listener);
+				m_view = new Repositories (m_listener, repo_mgr_enabled);
 				break;
 		}
 
@@ -1514,7 +1514,7 @@ public:
 		                        G_CALLBACK (type_changed_cb), this);
 
 		m_collection = new Collections (this);
-		m_collection->setType (Collections::GROUPS_TYPE, updateMode);
+		m_collection->setType (Collections::GROUPS_TYPE, updateMode, enableRepoMgr);
 	}
 
 	~Filters()
@@ -1540,7 +1540,8 @@ private:
 		int type = gtk_combo_box_get_active (combo);
 		if (pThis->m_updateMode && type == 1)
 			type = Collections::REPOS_TYPE;
-		pThis->m_collection->setType ((Collections::Type) type, pThis->m_updateMode);
+		pThis->m_collection->setType ((Collections::Type) type,
+			pThis->m_updateMode, pThis->m_enableRepoMgr);
 		pThis->signalChangedDelay();
 	}
 
