@@ -450,11 +450,19 @@ GSList *m_containsPackages;
 #else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 #endif
-				if (!isInstalled() || hasUpgrade()) {
-					text += br + "<b>" + _("Build time:") + "</b> " + m_sel->candidateObj()->buildtime().form("%x");
-					if (hasUpgrade())
-						text += std::string ("&nbsp;&nbsp;&nbsp;(<b>") + _("Installed time:") + "</b> " + m_sel->installedObj()->installtime().form("%x") + ")";
+
+				bool hasCandidate = m_sel->hasCandidateObj();
+				if (isInstalled()) {
+					text += br + "<b>" + _("Installed at:") + "</b> " + m_sel->installedObj()->installtime().form("%x");
+					if (!hasUpgrade())
+						hasCandidate = false;  // only for upgrades
+					if (hasCandidate)
+						text += "&nbsp;&nbsp;&nbsp;";
 				}
+				else if (hasCandidate)
+					text += br;
+				if (hasCandidate)
+					text += std::string ("<b>") + _("Last build from:") + "</b> " + m_sel->candidateObj()->buildtime().form("%x");
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:
