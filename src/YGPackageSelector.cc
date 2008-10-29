@@ -1555,6 +1555,7 @@ private:
 		gtk_entry_set_text (GTK_ENTRY (entry), text);
 		g_signal_handlers_unblock_by_func (entry, (gpointer) name_changed_cb, pThis);
 		gtk_editable_set_position (GTK_EDITABLE (entry), -1);
+		ygtk_find_entry_set_state (entry, TRUE);
 
 		pThis->signalChanged();
 	}
