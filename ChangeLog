@@ -1,3 +1,7 @@
+2008-10-29  Michael Meeks  <michael.meeks@novell.com>
+
+	* Version 2.17.4
+
 2008-10-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.h/c: added tooltip argument to insert_item.
@@ -70,8 +74,7 @@
 	at the window position x=0.
 
 	* src/YGBarGraph.cc (YGPartitionSplitter): bug fix: the widget was
-	broken. Aligned labels correctly as well.
-437738
+	broken. Aligned labels correctly as well. #437738#
 	* src/ygtkwizard.h/cc: added history combo box to the help dialog.
 
 2008-10-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>

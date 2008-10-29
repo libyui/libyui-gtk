@@ -1,4 +1,19 @@
 -------------------------------------------------------------------
+Wed Oct 29 10:54:07 CEST 2008 - michael.meeks@novell.com
+
+- Update to 2.17.4
+  * sizing fixes to wizard, partition splitter, ratiobox
+  * improved tooltips
+  * package selector fixes: updated zypper API use,
+    add unsupported support, updated recent spin box, png
+    icons, ergonomic fixes, sync groups with qt, support
+    non-edit mode
+  * bar graph color fixes
+  * help / history
+  * selectable multi-line labels
+  * fixes to scrolling widgets
+
+-------------------------------------------------------------------
 Mon Oct 13 10:21:07 CEST 2008 - michael.meeks@novell.com
 
 - Update to 2.17.3
