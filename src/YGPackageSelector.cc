@@ -418,7 +418,7 @@ Listener *m_listener;
 	struct ListView : public View
 	{
 		bool m_isTree;
-		ListView (bool isTree, bool showTooltips, bool editable, PackagesView *parent)
+		ListView (bool isTree, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
@@ -460,11 +460,9 @@ Listener *m_listener;
 				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
 					              G_CALLBACK (popup_button_cb), this);
 			}
-			if (showTooltips) {
-				gtk_widget_set_has_tooltip (m_widget, TRUE);
-				g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
-				                  G_CALLBACK (query_tooltip_cb), this);
-			}
+			gtk_widget_set_has_tooltip (m_widget, TRUE);
+			g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
+			                  G_CALLBACK (query_tooltip_cb), this);
 			ensure_view_visible_hook (m_widget);
 		}
 
@@ -534,20 +532,28 @@ Listener *m_listener;
 			return package != NULL;
 		}
 
-		static gboolean query_tooltip_cb (GtkWidget *view, gint x, gint y,
+		static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 			gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
 		{
+			GtkTreeView *view = GTK_TREE_VIEW (widget);
 			GtkTreeModel *model;
 			GtkTreePath *path;
 			GtkTreeIter iter;
-			if (gtk_tree_view_get_tooltip_context (GTK_TREE_VIEW (view),
+			if (gtk_tree_view_get_tooltip_context (view,
 			        &x, &y, keyboard_mode, &model, &path, &iter)) {
-				Ypp::Package *package = 0;
-				gtk_tree_model_get (model, &iter,
-					YGtkZyppModel::PTR_COLUMN, &package, -1);
-				gtk_tree_view_set_tooltip_row (GTK_TREE_VIEW (view), tooltip, path);
+				GtkTreeViewColumn *column;
+				int bx, by;
+				gtk_tree_view_convert_widget_to_bin_window_coords (view, x, y, &bx, &by);
+				gtk_tree_view_get_path_at_pos (view, x, y, NULL, &column, NULL, NULL);
+
+				gtk_tree_view_set_tooltip_row (view, tooltip, path);
 				gtk_tree_path_free (path);
-				if (package) {
+
+				Ypp::Package *package = 0;
+				gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
+				if (!package) return FALSE;
+
+				if (package->type() == Ypp::Package::PATTERN_TYPE) {
 					gtk_tooltip_set_text (tooltip, package->description (true).c_str());
 					const std::string &icon = package->icon();
 					if (!icon.empty()) {
@@ -556,6 +562,37 @@ Listener *m_listener;
 							gtk_tooltip_set_icon (tooltip, pixbuf);
 							g_object_unref (G_OBJECT (pixbuf));
 						}
+					}
+					return TRUE;
+				}
+				else if (column == gtk_tree_view_get_column (view, 0)) {
+					std::string status;
+					if (package->toInstall (NULL)) {
+						if (package->isInstalled())
+							status = _("To re-install a different version");
+						else
+							status = _("To install");
+					}
+					else if (package->toRemove())
+						status = _("To remove");
+					else if (package->isInstalled()) {
+						status = _("Installed");
+						if (package->hasUpgrade())
+							status += _(" (upgrade available)");
+					}
+					else
+						status = _("Not installed");
+					if (package->isAuto())
+						status += _("\n<i>status changed by the dependency solver</i>");
+					if (package->isLocked())
+						status += _("\n<i>locked: right-click to unlock</i>");
+					gtk_tooltip_set_markup (tooltip, status.c_str());
+					GdkPixbuf *pixbuf = 0;
+					gtk_tree_model_get (model, &iter,
+						YGtkZyppModel::ICON_COLUMN, &pixbuf, -1);
+					if (pixbuf) {
+						gtk_tooltip_set_icon (tooltip, pixbuf);
+						g_object_unref (G_OBJECT (pixbuf));
 					}
 					return TRUE;
 				}
@@ -669,7 +706,7 @@ public:
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
 		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, m_isTree, editable, this);
+			m_view = new ListView (m_isTree, editable, this);
 		else // if (mode == ICON_MODE)
 			m_view = new IconView (editable, this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
@@ -793,7 +830,7 @@ class ChangesPane : public Ypp::Pool::Listener
 			else
 				gtk_widget_show (m_button);
 			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
-			std::string tooltip = action + " " + package->summary();
+			std::string tooltip = action + " " + package->name();
 			if (version)
 				tooltip += std::string (_("\nfrom")) + " <i>" + version->repo->name + "</i>";
 			gtk_widget_set_tooltip_markup (m_label, tooltip.c_str());
@@ -838,7 +875,7 @@ public:
 		ygtk_wizard_set_information_expose_hook (vbox, &vbox->allocation);
 		ygtk_wizard_set_information_expose_hook (m_entries_box, &m_entries_box->allocation);
 
-		int width = YGUtils::getCharsWidth (vbox, 25);
+		int width = YGUtils::getCharsWidth (vbox, 35);
 		gtk_widget_set_size_request (vbox, width, -1);
 		gtk_widget_show_all (vbox);
 
