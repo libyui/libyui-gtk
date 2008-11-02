@@ -66,7 +66,6 @@ libpy2gtk_la_SOURCES = \
 	ygtktimezonepicker.c \
 	ygtkhandlebox.c \
 	ygtklinklabel.c \
-	ygtkprogressbar.c \
 	ygtktooltip.c \
 	ygtkrichtext.c \
 	yzyppwrapper.cc \

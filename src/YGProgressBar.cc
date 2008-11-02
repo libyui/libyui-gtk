@@ -22,8 +22,7 @@ public:
 		// NOTE: its label widget is positionated at the vertical, because its label
 		// may change often and so will its size, which will look odd (we may want
 		// to make the label widget to only grow).
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
-	                   YGTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_PROGRESS_BAR, NULL)
 	{}
 
 	// YProgressBar
@@ -31,9 +30,9 @@ public:
 	{
 		IMPL
 		YProgressBar::setValue (value);
-		YGtkProgressBar *bar = YGTK_PROGRESS_BAR (getWidget());
+		GtkProgressBar *bar = GTK_PROGRESS_BAR (getWidget());
 		float fraction = CLAMP ((float) value / maxValue(), 0, 1);
-		ygtk_progress_bar_set_fraction (bar, fraction);
+		gtk_progress_bar_set_fraction (bar, fraction);
 /*
 		char *text = g_strdup_printf ("%d %%", (int) (fraction*100));
 		gtk_progress_bar_set_text (bar, text);
@@ -150,9 +149,7 @@ public:
 	{
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 		for (int s = 0; s < segments(); s++) {
-			GtkWidget* bar = ygtk_progress_bar_new();
-			if (segments() > 1)
-				ygtk_progress_bar_disable_continuous (YGTK_PROGRESS_BAR (bar));
+			GtkWidget *bar = gtk_progress_bar_new();
 			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
 				horizontal() ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
 			// Progress bars would ask for too much size with weight...
@@ -174,8 +171,8 @@ public:
 		GList* children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
 		int s = 0;
 		for (GList *i = children; i && s < segments(); i = i->next, s++) {
-			YGtkProgressBar *bar = YGTK_PROGRESS_BAR (i->data);
-			ygtk_progress_bar_set_fraction (bar, getSegmentValue (s));
+			GtkProgressBar *bar = GTK_PROGRESS_BAR (i->data);
+			gtk_progress_bar_set_fraction (bar, getSegmentValue (s));
 		}
 		g_list_free (children);
 	}
@@ -210,8 +207,8 @@ YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget 
    until timeout is reached. The application will ping setAlive(true) calls -- and we
    reset the timeout -- as an indication that the program hasn't hang in some operation. */
 
-#define PULSE_INTERVAL 80
-#define PULSE_STEP  0.040
+#define PULSE_INTERVAL 100
+#define PULSE_STEP  0.050
 
 class YGBusyIndicator : public YBusyIndicator, public YGLabeledWidget
 {

@@ -361,6 +361,11 @@ void YGDialog::activate()
     m_window->setChild (this);
 }
 
+void YGDialog::present()
+{
+	gtk_window_present (GTK_WINDOW (m_window->getWidget()));
+}
+
 YGDialog *YGDialog::currentDialog()
 {
 	YDialog *ydialog = YDialog::currentDialog (false);
@@ -527,6 +532,7 @@ void YGDialog::setTitle (const std::string &title, bool sticky)
 		g_free (str);
 		m_stickyTitle = sticky;
 	}
+	present();
 }
 
 void YGDialog::setIcon (const std::string &icon)
