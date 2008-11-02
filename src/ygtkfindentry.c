@@ -502,7 +502,7 @@ static void ygtk_find_entry_insert_completion (YGtkFindEntry *fentry, const char
 	}
 }
 
-#define INSERT_COMPLETION_TIMEOUT 1000
+#define INSERT_COMPLETION_TIMEOUT 2000
 
 static gboolean completion_timeout_cb (void *pdata)
 {
