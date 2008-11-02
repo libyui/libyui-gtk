@@ -10,7 +10,6 @@
 #include <YGUI.h>
 #include "YGWidget.h"
 #include "YGi18n.h"
-#include "ygtkprogressbar.h"
 
 #include "YProgressBar.h"
 

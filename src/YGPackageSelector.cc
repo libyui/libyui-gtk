@@ -875,7 +875,7 @@ public:
 		ygtk_wizard_set_information_expose_hook (vbox, &vbox->allocation);
 		ygtk_wizard_set_information_expose_hook (m_entries_box, &m_entries_box->allocation);
 
-		int width = YGUtils::getCharsWidth (vbox, 35);
+		int width = YGUtils::getCharsWidth (vbox, 32);
 		gtk_widget_set_size_request (vbox, width, -1);
 		gtk_widget_show_all (vbox);
 
