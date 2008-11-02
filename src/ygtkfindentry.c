@@ -502,7 +502,7 @@ static void ygtk_find_entry_insert_completion (YGtkFindEntry *fentry, const char
 	}
 }
 
-#define INSERT_COMPLETION_TIMOUT 500
+#define INSERT_COMPLETION_TIMEOUT 1000
 
 static gboolean completion_timeout_cb (void *pdata)
 {
@@ -532,7 +532,7 @@ static void ygtk_find_entry_insert_text (GtkEditable *editable,
 	}
 	if (fentry->completion_timer_id)
 		g_source_remove (fentry->completion_timer_id);
-	fentry->completion_timer_id = g_timeout_add (INSERT_COMPLETION_TIMOUT,
+	fentry->completion_timer_id = g_timeout_add (INSERT_COMPLETION_TIMEOUT,
 	                                             completion_timeout_cb, fentry);
 }
 
