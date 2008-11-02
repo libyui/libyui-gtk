@@ -541,11 +541,6 @@ Listener *m_listener;
 			GtkTreeIter iter;
 			if (gtk_tree_view_get_tooltip_context (view,
 			        &x, &y, keyboard_mode, &model, &path, &iter)) {
-				GtkTreeViewColumn *column;
-				int bx, by;
-				gtk_tree_view_convert_widget_to_bin_window_coords (view, x, y, &bx, &by);
-				gtk_tree_view_get_path_at_pos (view, x, y, NULL, &column, NULL, NULL);
-
 				gtk_tree_view_set_tooltip_row (view, tooltip, path);
 				gtk_tree_path_free (path);
 
@@ -553,8 +548,47 @@ Listener *m_listener;
 				gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
 				if (!package) return FALSE;
 
-				if (package->type() == Ypp::Package::PATTERN_TYPE) {
-					gtk_tooltip_set_text (tooltip, package->description (true).c_str());
+				if (package->type() == Ypp::Package::PACKAGE_TYPE) {
+					GtkTreeViewColumn *column;
+					int bx, by;
+					gtk_tree_view_convert_widget_to_bin_window_coords (view, x, y, &bx, &by);
+					gtk_tree_view_get_path_at_pos (view, x, y, NULL, &column, NULL, NULL);
+					if (column == gtk_tree_view_get_column (view, 0)) {
+						std::string status;
+						if (package->toInstall (NULL)) {
+							if (package->isInstalled())
+								status = _("To re-install a different version");
+							else
+								status = _("To install");
+						}
+						else if (package->toRemove())
+							status = _("To remove");
+						else if (package->isInstalled()) {
+							status = _("Installed");
+							if (package->hasUpgrade())
+								status += _(" (upgrade available)");
+						}
+						else
+							status = _("Not installed");
+						if (package->isAuto())
+							status += _("\n<i>status changed by the dependency solver</i>");
+						if (package->isLocked())
+							status += _("\n<i>locked: right-click to unlock</i>");
+						gtk_tooltip_set_markup (tooltip, status.c_str());
+						GdkPixbuf *pixbuf = 0;
+						gtk_tree_model_get (model, &iter,
+							YGtkZyppModel::ICON_COLUMN, &pixbuf, -1);
+						if (pixbuf) {
+							gtk_tooltip_set_icon (tooltip, pixbuf);
+							g_object_unref (G_OBJECT (pixbuf));
+						}
+						return TRUE;
+					}
+				}
+				else {
+					std::string text ("<b>" + package->name() + "</b>\n");
+					text += package->description (true);
+					gtk_tooltip_set_markup (tooltip, text.c_str());
 					const std::string &icon = package->icon();
 					if (!icon.empty()) {
 						GdkPixbuf *pixbuf = loadThemeIcon (icon.c_str(), 32);
@@ -562,37 +596,6 @@ Listener *m_listener;
 							gtk_tooltip_set_icon (tooltip, pixbuf);
 							g_object_unref (G_OBJECT (pixbuf));
 						}
-					}
-					return TRUE;
-				}
-				else if (column == gtk_tree_view_get_column (view, 0)) {
-					std::string status;
-					if (package->toInstall (NULL)) {
-						if (package->isInstalled())
-							status = _("To re-install a different version");
-						else
-							status = _("To install");
-					}
-					else if (package->toRemove())
-						status = _("To remove");
-					else if (package->isInstalled()) {
-						status = _("Installed");
-						if (package->hasUpgrade())
-							status += _(" (upgrade available)");
-					}
-					else
-						status = _("Not installed");
-					if (package->isAuto())
-						status += _("\n<i>status changed by the dependency solver</i>");
-					if (package->isLocked())
-						status += _("\n<i>locked: right-click to unlock</i>");
-					gtk_tooltip_set_markup (tooltip, status.c_str());
-					GdkPixbuf *pixbuf = 0;
-					gtk_tree_model_get (model, &iter,
-						YGtkZyppModel::ICON_COLUMN, &pixbuf, -1);
-					if (pixbuf) {
-						gtk_tooltip_set_icon (tooltip, pixbuf);
-						g_object_unref (G_OBJECT (pixbuf));
 					}
 					return TRUE;
 				}
@@ -1004,7 +1007,8 @@ private:
 			// parent constructor should call build()
 		}
 
-		void build (bool tree_mode, bool with_icons, bool multi_selection)
+		void build (bool tree_mode, bool with_icons, bool multi_selection,
+		            bool do_tooltip)
 		{
 			if (m_view)
 				gtk_container_remove (GTK_CONTAINER (m_scroll), m_view);
@@ -1013,6 +1017,8 @@ private:
 			GtkTreeView *view = GTK_TREE_VIEW (m_view);
 			gtk_tree_view_set_headers_visible (view, FALSE);
 			gtk_tree_view_set_search_column (view, TEXT_COL);
+			if (do_tooltip)
+				gtk_tree_view_set_tooltip_column (view, TEXT_COL);
 			gtk_tree_view_set_show_expanders (view, tree_mode);
 
 			GtkTreeViewColumn *column;
@@ -1024,7 +1030,7 @@ private:
 				gtk_tree_view_append_column (view, column);
 			}
 			renderer = gtk_cell_renderer_text_new();
-			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_MIDDLE, NULL);
 			column = gtk_tree_view_column_new_with_attributes ("",
 				renderer, "markup", TEXT_COL, "sensitive", ENABLED_COL, NULL);
 			gtk_tree_view_append_column (view, column);
@@ -1139,7 +1145,7 @@ private:
 					              G_CALLBACK (rpm_groups_toggled_cb), this);
 				gtk_box_pack_start (GTK_BOX (m_box), check, FALSE, TRUE, 0);
 			}
-			build (m_rpmGroups, !m_rpmGroups, false);
+			build (m_rpmGroups, !m_rpmGroups, false, false);
 		}
 
 		virtual void doBuild (GtkTreeStore *store)
@@ -1206,7 +1212,7 @@ private:
 		static void rpm_groups_toggled_cb (GtkToggleButton *button, Categories *pThis)
 		{
 			pThis->m_rpmGroups = gtk_toggle_button_get_active (button);
-			pThis->build (pThis->m_rpmGroups, !pThis->m_rpmGroups, false);
+			pThis->build (pThis->m_rpmGroups, !pThis->m_rpmGroups, false, false);
 			pThis->signalChanged();
 		}
 	};
@@ -1217,21 +1223,24 @@ private:
 		Repositories (Collections::Listener *listener, bool repoMgrEnabled)
 		: StoreView (listener)
 		{
-			GtkWidget *align, *button, *box, *image, *label;
-			image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
-			label = gtk_label_new (_("Edit..."));
-			YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-			box = gtk_hbox_new (FALSE, 6);
-			gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
-			button = gtk_button_new();
-			gtk_container_add (GTK_CONTAINER (button), box);
-			align = gtk_alignment_new (0, 0, 0, 1);
-			gtk_container_add (GTK_CONTAINER (align), button);
-			g_signal_connect (G_OBJECT (button), "clicked",
-			                  G_CALLBACK (setup_button_clicked_cb), this);
-			gtk_box_pack_start (GTK_BOX (m_box), align, FALSE, TRUE, 0);
-			build (false, true, true);
+			if (repoMgrEnabled) {
+				GtkWidget *align, *button, *box, *image, *label;
+				image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
+				label = gtk_label_new (_("Edit..."));
+				YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+				box = gtk_hbox_new (FALSE, 6);
+				gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+				button = gtk_button_new();
+				gtk_container_add (GTK_CONTAINER (button), box);
+				gtk_widget_set_tooltip_text (button, _("Access the repositories manager tool."));
+				align = gtk_alignment_new (0, 0, 0, 1);
+				gtk_container_add (GTK_CONTAINER (align), button);
+				g_signal_connect (G_OBJECT (button), "clicked",
+					              G_CALLBACK (setup_button_clicked_cb), this);
+				gtk_box_pack_start (GTK_BOX (m_box), align, FALSE, TRUE, 0);
+			}
+			build (false, true, true, true);
 		}
 
 		virtual ~Repositories()
@@ -1959,7 +1968,7 @@ private:
 	{
 		if (pThis->m_packages.single()) {
 			Ypp::Package *package = pThis->m_packages.front();
-			int nb = gtk_combo_box_get_active (GTK_COMBO_BOX (pThis->m_available_versions));
+			int nb = gtk_combo_box_get_active (combo);
 			if (nb == -1) return;
 
 			const Ypp::Package::Version *version;
@@ -1976,6 +1985,12 @@ private:
 					installLabel = _("Down_grade");
 			}
 			gtk_button_set_label (GTK_BUTTON (pThis->m_install_button), installLabel);
+
+			gchar *tooltip = g_strdup_printf ("%s  <small>(%s)\n%s</small>",
+				version->number.c_str(), version->arch.c_str(),
+				version->repo ? version->repo->name.c_str() : "-repo error-");
+			gtk_widget_set_tooltip_markup (GTK_WIDGET (combo), tooltip);
+			g_free (tooltip);
 		}
 	}
 

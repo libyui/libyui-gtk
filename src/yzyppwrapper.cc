@@ -1096,7 +1096,7 @@ bool m_installed;
 
 	virtual std::string description (bool rich)
 	{
-		std::string text = m_locale.name() + " - " + m_locale.code();
+		std::string text ("(" + m_locale.code() + ")");
 		int installed = 0, total = 0;
 		for (GSList *i = getContainedPackages(); i; i = i->next) {
 			ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;

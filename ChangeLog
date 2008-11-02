@@ -2,6 +2,15 @@
 
 	* src/YGProgressBar.cc: got rid of ygtkprogressbar.
 
+	* src/YGPackageSelector.cc (ListView): revert status tooltip for
+	Language.
+
+	* src/YGPackageSelector.cc: enableRepoMgr flag not totally honored...
+
+	* src/YGPackageSelector.cc: wrap repositories items in the middle, and
+	added a tooltip to them. Added tooltip text to the repo available
+	versions combo box as well.
+
 2008-10-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc (ListView): tooltip for status icon.
