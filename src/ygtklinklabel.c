@@ -101,7 +101,8 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	ygtk_link_label_ensure_layout (label);
 	requisition->width = requisition->height = 0;
-	if (label->text && *label->text) {
+//	if (label->text && *label->text)
+	{
 		PangoContext *context;
 		PangoFontMetrics *metrics;
 		gint ascent, descent;
