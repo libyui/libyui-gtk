@@ -1,3 +1,8 @@
+2008-11-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: bug fix 441143: use candidate object as the
+	newest version -- just looking at the numbers ignores the arch.
+
 2008-11-02  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGProgressBar.cc: got rid of ygtkprogressbar.

@@ -1000,13 +1000,14 @@ GSList *m_containsPackages;
 		m_sel->setStatus (status);
 	}
 
-	static Ypp::Package::Version *constructVersion (ZyppObject object)
+	static Ypp::Package::Version *constructVersion (
+		ZyppObject object, ZyppObject installedObj)
 	{
 		Ypp::Package::Version *version = new Ypp::Package::Version();
 		version->number = object->edition().asString();
 		version->arch = object->arch().asString();
 		version->repo = ypp->impl->getRepository (object->repoInfo().alias());
-		version->cmp = 0;
+		version->cmp = installedObj ? zypp::Edition::compare (object->edition(), installedObj->edition()) : 0;
 		version->impl = (void *) get_pointer (object);
 		return version;
 	}
@@ -1016,7 +1017,7 @@ GSList *m_containsPackages;
 		if (!m_installedVersion) {
 			const ZyppObject installedObj = m_sel->installedObj();
 			assert (installedObj != NULL);
-			m_installedVersion = constructVersion (installedObj);
+			m_installedVersion = constructVersion (installedObj, NULL);
 		}
 		return m_installedVersion;
 	}
@@ -1025,13 +1026,20 @@ GSList *m_containsPackages;
 	{
 		if (!m_availableVersions) {
 			const ZyppObject installedObj = m_sel->installedObj();
+			const ZyppObject candidateObj = m_sel->candidateObj();
 			for (zypp::ui::Selectable::available_iterator it = m_sel->availableBegin();
 				 it != m_sel->availableEnd(); it++) {
-				Ypp::Package::Version *version = constructVersion (*it);
-				if (installedObj)
-					version->cmp = zypp::Edition::compare ((*it)->edition(), installedObj->edition());
-				m_availableVersions = g_slist_append (m_availableVersions, version);
+				if (candidateObj && (*it)->edition() == candidateObj->edition() &&
+				    (*it)->arch() == candidateObj->arch())
+					continue;
+				Ypp::Package::Version *version = constructVersion (*it, installedObj);
+				m_availableVersions = g_slist_prepend (m_availableVersions, version);
 			}
+			if (candidateObj) {  // make sure this goes first
+				Ypp::Package::Version *version = constructVersion (candidateObj, installedObj);
+				m_availableVersions = g_slist_prepend (m_availableVersions, version);
+			}
+#if 0  // let zypp order prevail
 			struct inner {
 				static gint version_compare (gconstpointer pa, gconstpointer pb)
 				{
@@ -1042,6 +1050,7 @@ GSList *m_containsPackages;
 				}
 			};
 			m_availableVersions = g_slist_sort (m_availableVersions, inner::version_compare);
+#endif
 		}
 		return (Ypp::Package::Version *) g_slist_nth_data (m_availableVersions, nb);
 	}
