@@ -101,6 +101,24 @@ check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
 	return TRUE;
 }
 
+/* Some entities are translated by the xhtml parser, but not all... */
+typedef struct EntityMap {
+	const gchar *html, *text;
+} EntityMap;
+
+static const EntityMap entities[] = {
+	{ "nbsp", " " },
+};
+
+static const EntityMap *lookup_entity (const char *html)
+{
+	int i;
+	for (i = 0; i < sizeof (entities) / sizeof (EntityMap); i++)
+		if (!g_ascii_strncasecmp (html+1, entities[i].html, strlen (entities[i].html)))
+			return entities+i;
+	return NULL;
+}
+
 // We have to:
 //   + rewrite <br> and <hr> tags
 //   + deal with <a attrib=noquotes>
@@ -225,13 +243,15 @@ gchar *convert_to_xhtml (const char *instr)
 				g_string_free (tag, TRUE);
 		}
 
-		// non-break space entity
-		else if (instr[i] == '&' &&
-			 !g_ascii_strncasecmp (instr + i, "&nbsp;",
-					       sizeof ("&nbsp;") - 1)) {
-			// Replace this by a white-space
-			g_string_append (outp, " ");
-			i += sizeof ("&nbsp;") - 2;
+		else if (instr[i] == '&') {  // Entity
+			const EntityMap *entity = lookup_entity (instr+i);
+			if (entity) {
+				g_string_append (outp, entity->text);
+				i += strlen (entity->html);
+				if (instr[i+1] == ';') i++;
+			}
+			else
+				g_string_append_c (outp, instr[i]);
 			was_space = FALSE;
 		}
 
@@ -501,7 +521,7 @@ static void ygtk_rich_text_populate_popup (GtkTextView *view, GtkMenu *menu)
 	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_SELECT_ALL, NULL);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	g_signal_connect (item, "activate", G_CALLBACK (select_all_activate_cb), buffer);
-	gtk_widget_show_all (menu);
+	gtk_widget_show_all (GTK_WIDGET (menu));
 }
 
 /* Rich Text parsing methods. */
