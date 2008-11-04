@@ -1033,7 +1033,7 @@ GSList *m_containsPackages;
 				    (*it)->arch() == candidateObj->arch())
 					continue;
 				Ypp::Package::Version *version = constructVersion (*it, installedObj);
-				m_availableVersions = g_slist_prepend (m_availableVersions, version);
+				m_availableVersions = g_slist_append (m_availableVersions, version);
 			}
 			if (candidateObj) {  // make sure this goes first
 				Ypp::Package::Version *version = constructVersion (candidateObj, installedObj);
