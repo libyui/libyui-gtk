@@ -41,8 +41,10 @@ public:
 				gtk_label_set_label (GTK_LABEL (getWidget()), l.c_str());
 			}
 		}
-		else
-			gtk_label_set_selectable (GTK_LABEL (getWidget()), i != std::string::npos);
+		else {
+			bool selectable = i != std::string::npos && i != label.size()-1;
+			gtk_label_set_selectable (GTK_LABEL (getWidget()), selectable);
+		}
 	}
 
 	YGWIDGET_IMPL_COMMON

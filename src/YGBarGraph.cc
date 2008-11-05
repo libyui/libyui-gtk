@@ -122,9 +122,6 @@ public:
 	virtual void setValue (int newValue)
 	{
 		IMPL
-		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(), freeSize());
-		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(), newPartSize());
-
 		// block connections
 		g_signal_handlers_block_by_func (m_scale,
 		                                 (gpointer) scale_changed_cb, this);
@@ -140,6 +137,9 @@ public:
 
 		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin), freeSize);
 		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin), newValue);
+
+		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(), freeSize);
+		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(), newValue);
 
 		// unblock connections
 		g_signal_handlers_unblock_by_func (m_scale,
