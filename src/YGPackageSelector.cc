@@ -1467,17 +1467,13 @@ class Filters : public Collections::Listener
 		GtkWidget *createButton (const char *label, const char *icon, GSList *group)
 		{
 			GtkWidget *button = ygtk_toggle_button_new (group);
-			gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-			GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
+			gtk_button_set_label (GTK_BUTTON (button), label);
+			gtk_button_set_use_underline (GTK_BUTTON (button), TRUE);
 			if (icon)
-				gtk_box_pack_start (GTK_BOX (hbox), image_new_from_file (icon), FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (hbox),
-				gtk_label_new_with_mnemonic (label), FALSE, TRUE, 0);
-			GtkWidget *align = gtk_alignment_new (0.5, 0, 0, 1);
-			gtk_container_add (GTK_CONTAINER (align), hbox);
-			gtk_container_add (GTK_CONTAINER (button), align);
+				gtk_button_set_image (GTK_BUTTON (button), image_new_from_file (icon));
 			if (!group)
 				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
+			gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
 			g_signal_connect (G_OBJECT (button), "toggle-changed",
 			                  G_CALLBACK (status_toggled_cb), this);
 			return button;
