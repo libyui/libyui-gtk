@@ -29,7 +29,7 @@ extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
 extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
-extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
+extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
 
 //** YGtkHelpDialog
 
@@ -81,7 +81,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 		GdkPixbuf *pixbuf = gtk_icon_info_load_icon (info, NULL);
 		if (pixbuf) {
 			const gchar *filename = gtk_icon_info_get_filename (info);
-			GdkPixbuf *transparent = ygutils_setOpacity (pixbuf, 60);
+			GdkPixbuf *transparent = ygutils_setOpacity (pixbuf, 60, FALSE);
 			ygtk_html_wrap_set_background (dialog->help_text, transparent, filename);
 			g_object_unref (pixbuf);
 			g_object_unref (transparent);

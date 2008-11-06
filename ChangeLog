@@ -6,6 +6,12 @@
 	* src/YGLabel.cc: don't set selectable for labels that use just
 	one break line for padding purposes.
 
+	* src/YGUtils.h/cc: added touchAlpha flag to setOpacity() that makes
+	the pixbuf whiter by the alpha layer.
+
+	* src/YGPackageSelector.cc: set pattern and languages tooltip icon
+	transparent if not installed -- and use list icons if none provided.
+
 2008-11-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix 441143: use candidate object as the

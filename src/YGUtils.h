@@ -46,7 +46,7 @@ namespace YGUtils
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Shifts colors in a GdkPixbuf. */
-	GdkPixbuf *setOpacity (const GdkPixbuf *src, int opacity);
+	GdkPixbuf *setOpacity (const GdkPixbuf *src, int opacity, bool touchAlpha);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
 	bool setStockIcon (GtkWidget *button, const std::string &label,
@@ -63,7 +63,7 @@ extern "C" {
 	gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
 	                               const char *fallbackIcon);
 
-	GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
+	GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean useAlpha);
 };
 
 #endif // YGUTILS_H

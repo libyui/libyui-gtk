@@ -9,7 +9,7 @@
 #include "ygtkfindentry.h"
 #include <gtk/gtk.h>
 
-extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity);
+extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
 
 static guint menu_item_selected_signal = 0;
 
@@ -264,7 +264,7 @@ static void generate_icon (GtkWidget *widget, const char *stock_icon,
 	}
 	if (stock_icon) {
 		*normal_icon = gtk_widget_render_icon (widget, stock_icon, GTK_ICON_SIZE_MENU, NULL);
-		*hover_icon = ygutils_setOpacity (*normal_icon, 88);
+		*hover_icon = ygutils_setOpacity (*normal_icon, 88, FALSE);
 	}
 }
 

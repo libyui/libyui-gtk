@@ -589,13 +589,25 @@ Listener *m_listener;
 					std::string text ("<b>" + package->name() + "</b>\n");
 					text += package->description (true);
 					gtk_tooltip_set_markup (tooltip, text.c_str());
-					const std::string &icon = package->icon();
-					if (!icon.empty()) {
-						GdkPixbuf *pixbuf = loadThemeIcon (icon.c_str(), 32);
-						if (pixbuf) {
-							gtk_tooltip_set_icon (tooltip, pixbuf);
-							g_object_unref (G_OBJECT (pixbuf));
-						}
+
+					std::string filename (package->icon());
+					GdkPixbuf *pixbuf = 0;
+					bool setTransparent = false;
+					if (!filename.empty()) {
+						pixbuf = loadThemeIcon (filename.c_str(), 32);
+						setTransparent = !package->isInstalled();
+					}
+					if (!pixbuf)
+						gtk_tree_model_get (model, &iter,
+							YGtkZyppModel::ICON_COLUMN, &pixbuf, -1);
+					if (pixbuf) {
+						GdkPixbuf *pixbuf2 = pixbuf;
+						if (setTransparent)
+							pixbuf2 = YGUtils::setOpacity (pixbuf, 40, true);
+						gtk_tooltip_set_icon (tooltip, pixbuf2);
+						if (setTransparent)
+							g_object_unref (G_OBJECT (pixbuf2));
+						g_object_unref (G_OBJECT (pixbuf));
 					}
 					return TRUE;
 				}
