@@ -256,7 +256,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 	{
 		case YGtkZyppModel::ICON_COLUMN:
 		{
-			GdkPixbuf *pixbuf;
+			GdkPixbuf *pixbuf = 0;
 			bool locked = package->isLocked();
 			bool auto_ = package->isAuto();
 			if (package->toInstall()) {
@@ -292,8 +292,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 				else
 					pixbuf = icons->available;
 			}
-			if (pixbuf)  // otherwise it would crash (give it broken icon?)
-				g_value_set_object (value, (GObject *) pixbuf);
+			g_value_set_object (value, (GObject *) pixbuf);
 			break;
 		}
 		case YGtkZyppModel::NAME_COLUMN:
