@@ -12,6 +12,8 @@
 	at start, because modifying the package might modify it's installed
 	status.
 
+	* src/YGPackageSelector.cc: align icon next to label in status buttons.
+
 2008-11-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGBarGraph.cc (YGPartitionSplitter): bug fix: bar graph
