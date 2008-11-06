@@ -238,6 +238,10 @@ std::string m_name, m_summary;
 	virtual void undo() = 0;
 	virtual bool canLock() = 0;
 	virtual void lock (bool lock) = 0;
+
+	// internal: did the resolver touch it
+	virtual bool isTouched() = 0;
+	virtual void setNotTouched() = 0;
 };
 
 Ypp::Package::Package (Impl *impl) : impl (impl) { impl->m_parent = this; }
@@ -334,7 +338,7 @@ ZyppSelectable m_sel;
 Ypp::Node *m_category, *m_category2;
 GSList *m_availableVersions;
 Ypp::Package::Version *m_installedVersion;
-bool m_hasUpgrade;
+bool m_isInstalled, m_hasUpgrade;
 zypp::ui::Status m_curStatus;  // so we know if resolver touched it
 // for Patterns
 GSList *m_containsPackages;
@@ -343,6 +347,16 @@ GSList *m_containsPackages;
 	: Impl (type), m_sel (sel), m_category (category), m_category2 (category2),
 	  m_availableVersions (NULL), m_installedVersion (NULL), m_containsPackages (NULL)
 	{
+		// for patterns, there is no reliable way to know if it's installed (because
+		// if it set to be installed that will alter candidate's satisfied status.)
+		if (type == Ypp::Package::PATTERN_TYPE)
+			m_isInstalled = m_sel->candidateObj().isSatisfied();
+		else {
+			if (m_sel->installedEmpty())
+				m_isInstalled = false;
+			else
+				m_isInstalled = !m_sel->installedObj().isBroken();
+		}
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
 		m_hasUpgrade = false;
@@ -351,7 +365,7 @@ GSList *m_containsPackages;
 		if (!!candidate && !!installed)
 			m_hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
 
-		setUnmodified();
+		setNotTouched();
 	}
 
 	virtual ~PackageSel()
@@ -363,9 +377,9 @@ GSList *m_containsPackages;
 		g_slist_free (m_containsPackages);
 	}
 
-	inline bool isModified()
+	virtual bool isTouched()
 	{ return m_curStatus != m_sel->status(); }
-	inline void setUnmodified()
+	virtual void setNotTouched()
 	{ m_curStatus = m_sel->status(); }
 
 	GSList *getContainedPackages()
@@ -804,11 +818,7 @@ GSList *m_containsPackages;
 
 	virtual bool isInstalled()
 	{
-		if (type == Ypp::Package::PATTERN_TYPE)
-			return m_sel->candidateObj().isSatisfied();
-		if (!m_sel->installedEmpty())
-			return !m_sel->installedObj().isBroken();
-		return false;
+		return m_isInstalled;
 	}
 
 	virtual bool hasUpgrade()
@@ -1068,18 +1078,23 @@ struct PackageLang : public Ypp::Package::Impl
 {
 zypp::Locale m_locale;
 GSList *m_containsPackages;
-bool m_installed;
+bool m_installed, m_setInstalled;
 
 	PackageLang (Ypp::Package::Type type, const zypp::Locale &zyppLang)
 	: Impl (type), m_locale (zyppLang), m_containsPackages (NULL)
 	{
-		m_installed = isSetInstalled();
+		m_installed = m_setInstalled = isSetInstalled();
 	}
 
 	~PackageLang()
 	{
 		g_slist_free (m_containsPackages);
 	}
+
+	virtual bool isTouched()
+	{ return m_setInstalled == isSetInstalled(); }
+	virtual void setNotTouched()
+	{ m_setInstalled = isSetInstalled(); }
 
 	virtual std::string name()
 	{ return m_locale.name(); }
@@ -2210,8 +2225,7 @@ void Ypp::Impl::finishTransactions()
 		std::list <std::pair <const Package *, const Repository *> > confirmPkgs;
 		for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
 			Ypp::Package *pkg = (Ypp::Package *) p->data;
-			PackageSel *sel = (PackageSel *) pkg->impl;
-			if (sel->isModified()) {
+			if (pkg->impl->isTouched()) {
 				const Ypp::Package::Version *version = 0;
 				if (pkg->toInstall (&version)) {
 					if (version->repo != repo) {
@@ -2234,15 +2248,16 @@ void Ypp::Impl::finishTransactions()
 		// resolver won't tell us what changed -- tell pools about Auto packages
 		// notify pools by the following order: 1st user selected, then autos (dependencies)
 		for (int order = 0; order < 2; order++)
-			for (GSList *p = packages [Ypp::Package::PACKAGE_TYPE]; p; p = p->next) {
-				Ypp::Package *pkg = (Ypp::Package *) p->data;
-				PackageSel *sel = (PackageSel *) pkg->impl;
-				if (sel->isModified()) {
-					bool isAuto = pkg->isAuto();
-					if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
-						for (GSList *i = pkg_listeners; i; i = i->next)
-							((PkgListener *) i->data)->packageModified (pkg);
-						sel->setUnmodified();
+			for (int type = 0; type < Ypp::Package::TOTAL_TYPES; type++) {
+				for (GSList *p = packages [type]; p; p = p->next) {
+					Ypp::Package *pkg = (Ypp::Package *) p->data;
+					if (pkg->impl->isTouched()) {
+						bool isAuto = pkg->isAuto();
+						if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
+							for (GSList *i = pkg_listeners; i; i = i->next)
+								((PkgListener *) i->data)->packageModified (pkg);
+							pkg->impl->setNotTouched();
+						}
 					}
 				}
 			}
