@@ -1349,6 +1349,8 @@ private:
 			for (PkgList::const_iterator it = selected.begin();
 			     it != selected.end(); it++)
 				query->addCollection (*it);
+			if (selected.empty())
+				query->setClear();
 		}
 
 		void doAll (bool install /*or remove*/)

@@ -158,6 +158,7 @@ struct Ypp
 			void setIsSuggested (bool suggested);
 			void setBuildAge (int days);
 			void setIsUnsupported (bool unsupported);
+			void setClear();
 
 			~Query();
 			struct Impl;

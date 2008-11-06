@@ -1324,11 +1324,13 @@ struct Ypp::QueryPool::Query::Impl
 	Key <bool> isSuggested;
 	Key <int>  buildAge;
 	Key <bool> isUnsupported;
+	bool clear;
 	Ypp::Package *highlight;
 
 	Impl()
 	{
 		highlight = NULL;
+		clear = false;
 	}
 
 	bool match (Package *package)
@@ -1354,6 +1356,8 @@ struct Ypp::QueryPool::Query::Impl
 			}
 		};
 
+		if (clear)
+			return false;
 		bool match = true;
 		if (match && types.defined)
 			match = types.is (package->type());
@@ -1516,6 +1520,8 @@ void Ypp::QueryPool::Query::setBuildAge (int value)
 { impl->buildAge.set (value); }
 void Ypp::QueryPool::Query::setIsUnsupported (bool value)
 { impl->isUnsupported.set (value); }
+void Ypp::QueryPool::Query::setClear()
+{ impl->clear = true; }
 
 //** Pool
 
