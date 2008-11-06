@@ -1467,10 +1467,20 @@ class Filters : public Collections::Listener
 		GtkWidget *createButton (const char *label, const char *icon, GSList *group)
 		{
 			GtkWidget *button = ygtk_toggle_button_new (group);
+#if 0
 			gtk_button_set_label (GTK_BUTTON (button), label);
 			gtk_button_set_use_underline (GTK_BUTTON (button), TRUE);
 			if (icon)
 				gtk_button_set_image (GTK_BUTTON (button), image_new_from_file (icon));
+#else
+			GtkWidget *box = gtk_hbox_new (FALSE, 6);
+			if (icon)
+				gtk_box_pack_start (GTK_BOX (box), image_new_from_file (icon),
+					FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box), gtk_label_new_with_mnemonic (label),
+				TRUE, TRUE, 0);
+			gtk_container_add (GTK_CONTAINER (button), box);
+#endif
 			if (!group)
 				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), TRUE);
 			gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
