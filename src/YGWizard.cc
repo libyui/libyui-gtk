@@ -52,7 +52,6 @@ class YGWizard : public YWizard, public YGWidget
 
 		virtual bool setKeyboardFocus()
 		{
-			YWidget::setKeyboardFocus();
 			gtk_widget_grab_focus (getWidget());
 			return gtk_widget_is_focus (getWidget());
 		}
