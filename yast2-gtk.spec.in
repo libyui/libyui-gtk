@@ -61,5 +61,4 @@ rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
 %doc @docdir@
 %{_libdir}/YaST2/plugin/libpy2gtk.so.*
 %{_libdir}/YaST2/plugin/libpy2gtk.so
-%{_datadir}/YaST2/gtk/*.png
-%{_datadir}/YaST2/gtk/*.xpm
+%{_datadir}/YaST2/gtk
