@@ -603,7 +603,7 @@ Listener *m_listener;
 					if (pixbuf) {
 						GdkPixbuf *pixbuf2 = pixbuf;
 						if (setTransparent)
-							pixbuf2 = YGUtils::setOpacity (pixbuf, 40, true);
+							pixbuf2 = YGUtils::setOpacity (pixbuf, 50, true);
 						gtk_tooltip_set_icon (tooltip, pixbuf2);
 						if (setTransparent)
 							g_object_unref (G_OBJECT (pixbuf2));

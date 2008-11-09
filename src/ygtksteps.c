@@ -50,8 +50,9 @@ static void ygtk_steps_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
 }
 
-static void ygtk_step_update_layout (YGtkSteps *steps, guint step)
+static void ygtk_step_update_layout (YGtkSteps *steps, gint step)
 {
+	if (step < 0) return;
 	gboolean bold = steps->current_step == step;
 	GList *children = gtk_container_get_children (GTK_CONTAINER (steps));
 	GtkWidget *label = (GtkWidget *) g_list_nth_data (children, step);
@@ -151,17 +152,21 @@ static gboolean current_mark_animation_cb (void *steps_ptr)
 
 void ygtk_steps_set_current (YGtkSteps *steps, gint step)
 {
-	guint old_step = steps->current_step;
+	gint old_step = steps->current_step;
 	steps->current_step = step;
 
 	// update step icons
-	ygtk_step_update_layout (steps, old_step);
-	ygtk_step_update_layout (steps, step);
+	if (old_step != step) {
+		ygtk_step_update_layout (steps, old_step);
+		ygtk_step_update_layout (steps, step);
+	}
 
-	steps->current_mark_frame = 0;
-	steps->current_mark_timeout_id = g_timeout_add
-		(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
-		current_mark_animation_cb, steps);
+	if (step != -1) {
+		steps->current_mark_frame = 0;
+		steps->current_mark_timeout_id = g_timeout_add
+			(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
+			current_mark_animation_cb, steps);
+	}
 }
 
 gint ygtk_steps_total (YGtkSteps *steps)

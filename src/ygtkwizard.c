@@ -1031,15 +1031,14 @@ void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)
 	ygtk_steps_append_heading (YGTK_STEPS (wizard->steps), text);
 }
 
-void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
+void ygtk_wizard_add_step (YGtkWizard *wizard, const char *text, const char *id)
 {
 	g_return_if_fail (wizard->steps != NULL);
 	YGtkSteps *steps = YGTK_STEPS (wizard->steps);
 
 	// append may be called for the same step a few times to mean that we
 	// should consider it several steps, but present it only once
-	guint step_nb;
-	gint last_n = ygtk_steps_total (steps)-1;
+	gint step_nb, last_n = ygtk_steps_total (steps)-1;
 	const gchar *last = ygtk_steps_get_nth_label (steps, last_n);
 	if (last && !strcmp (last, text))
 		step_nb = last_n;
@@ -1050,10 +1049,23 @@ void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id)
 
 gboolean ygtk_wizard_set_current_step (YGtkWizard *wizard, const char *id)
 {
-	gpointer step_nb = g_hash_table_lookup (wizard->steps_ids, id);
-	if (!step_nb)
-		return FALSE;
-	ygtk_steps_set_current (YGTK_STEPS (wizard->steps), GPOINTER_TO_INT (step_nb));
+	if (*id) {
+#if 0
+		gpointer step_nb = g_hash_table_lookup (wizard->steps_ids, id);
+		if (!step_nb)
+			return FALSE;
+		ygtk_steps_set_current (YGTK_STEPS (wizard->steps), GPOINTER_TO_INT (step_nb));
+#else
+		// can't use ordinary lookup because it returns '0' if not found
+		// which is a valid step_nb
+		gpointer step_nb, foo;
+		if (!g_hash_table_lookup_extended (wizard->steps_ids, id, &foo, &step_nb))
+			return FALSE;
+		ygtk_steps_set_current (YGTK_STEPS (wizard->steps), GPOINTER_TO_INT (step_nb));
+#endif
+	}
+	else
+		ygtk_steps_set_current (YGTK_STEPS (wizard->steps), -1);
 	return TRUE;
 }
 

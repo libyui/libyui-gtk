@@ -13,8 +13,7 @@
    step with the same name of the previous, that they'll be collapsed.
    (Internally, we call that the 'strength' of the step.)
 
-	TODO: the PangoLayout usage is getting a bit hacky. We may want to
-	replace it with Cairo methods.
+	Using GtkLabels, so it should be ATK friendly.
 */
 
 #ifndef YGTK_STEPS_H
@@ -57,7 +56,7 @@ GType ygtk_steps_get_type (void) G_GNUC_CONST;
 gint ygtk_steps_append (YGtkSteps *steps, const gchar *label);
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading);
 
-void ygtk_steps_set_current (YGtkSteps *steps, gint step);
+void ygtk_steps_set_current (YGtkSteps *steps, gint step);  /* -1 = none */
 gint ygtk_steps_total (YGtkSteps *steps);
 const gchar *ygtk_steps_get_nth_label (YGtkSteps *steps, gint n);
 
