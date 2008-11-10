@@ -1,3 +1,10 @@
+2008-11-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.h/cc & YG*.cc: bug fix 443214: bad event handling
+	on YSlider. Took the chance to reforms things a bit: signals are
+	now registered through YGWidget and a block method is offered that
+	should be used when a widget changes some GTK property.
+
 2008-11-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWizard.cc: don't call parent YWidget::setKeyboardFocus():
