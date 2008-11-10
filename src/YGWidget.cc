@@ -12,21 +12,56 @@
 #define DEFAULT_BORDER       6
 #define LABEL_WIDGET_SPACING 4
 
+/* Utilities */
+
+struct YGWidget::Signals
+{
+	typedef std::pair <GObject *, gulong> Handler;
+	std::list <Handler> m_handlers;
+	void connect (GObject *object, const char *name,
+	               GCallback callback, gpointer data, bool after)
+	{
+		gulong handler;
+		if (after)
+			handler = g_signal_connect_after (object, name, callback, data);
+		else
+			handler = g_signal_connect (object, name, callback, data);
+		Handler h (object, handler);
+		m_handlers.push_back (h);
+	}
+	void block()
+	{
+		for (std::list <Handler>::const_iterator it = m_handlers.begin();
+		     it != m_handlers.end(); it++) {
+			const Handler &h = *it;
+			g_signal_handler_block (h.first, h.second);
+		}
+	}
+	void unblock()
+	{
+		for (std::list <Handler>::const_iterator it = m_handlers.begin();
+		     it != m_handlers.end(); it++) {
+			const Handler &h = *it;
+			g_signal_handler_unblock (h.first, h.second);
+		}
+	}
+};
+
 /* YGWidget follows */
 
 static void min_size_cb (guint *min_width, guint *min_height, gpointer pData);
 
-YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent, bool show,
+YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent,
                    GtkType type, const char *property_name, ...)
 	: m_ywidget (ywidget)
 {
 	va_list args;
 	va_start (args, property_name);
-	construct (ywidget, yparent, show, type, property_name, args);
+	construct (ywidget, yparent, type, property_name, args);
 	va_end (args);
 }
 
-void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
+void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
                           GType type, const char *property_name, va_list args)
 {
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
@@ -39,18 +74,18 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent, bool _show,
 		gtk_widget_show (m_adj_size);
 		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
 	}
+	gtk_widget_show (m_widget);
 
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
 	ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
-	if (_show)
-		show();
 
 	ywidget->setWidgetRep ((void *) this);
 	if (yparent) {
 		ywidget->setParent (yparent);
 		yparent->addChild (ywidget);
 	}
+	m_signals = NULL;
 }
 
 YGWidget::~YGWidget()
@@ -70,11 +105,7 @@ YGWidget::~YGWidget()
 #endif
 	gtk_widget_destroy (m_adj_size);
 	g_object_unref (G_OBJECT (m_adj_size));
-}
-
-void YGWidget::show()
-{
-	gtk_widget_show (m_widget);
+	delete m_signals;
 }
 
 YGWidget *YGWidget::get (YWidget *ywidget)
@@ -147,8 +178,7 @@ void YGWidget::doSetSize (int width, int height)
 		ygtk_fixed_set_child_size (YGTK_FIXED (parent), m_adj_size, width, height);
 }
 
-void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
-                         bool if_not_pending, bool immediate)
+void YGWidget::emitEvent (YEvent::EventReason reason, EventFlags flags)
 {
 	struct inner
 	{
@@ -161,17 +191,34 @@ void YGWidget::emitEvent(YEvent::EventReason reason, bool if_notify,
 		}
 	};
 
-	if (!if_notify || m_ywidget->notify())
+	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify())
 	{
-		if (!immediate)
+		if (flags & DELAY_EVENT)
 			g_timeout_add (250, inner::dispatchEvent, new YWidgetEvent (m_ywidget, reason));
-		else if (!if_not_pending || !YGUI::ui()->eventPendingFor (m_ywidget))
-		{
-			if (immediate)
-				YGUI::ui()->sendEvent (new YWidgetEvent (m_ywidget, reason));
-		}
+		else if (!(flags & IF_NOT_PENDING_EVENT) || !YGUI::ui()->eventPendingFor (m_ywidget))
+			YGUI::ui()->sendEvent (new YWidgetEvent (m_ywidget, reason));
 	}
 }
+
+void YGWidget::connectSignal (GObject *object, const char *name,
+                               GCallback callback, gpointer data, bool after)
+{
+	if (!m_signals)
+		m_signals = new YGWidget::Signals();
+	m_signals->connect (object, name, callback, data, after);
+}
+
+void YGWidget::connect (GObject *object, const char *name,
+                         GCallback callback, gpointer data)
+{ connectSignal (object, name, callback, data, false); }
+void YGWidget::connect_after (GObject *object, const char *name,
+                               GCallback callback, gpointer data)
+{ connectSignal (object, name, callback, data, true); }
+
+void YGWidget::blockSignals()
+{ if (m_signals) m_signals->block(); }
+void YGWidget::unblockSignals()
+{ if (m_signals) m_signals->unblock(); }
 
 void YGWidget::setBorder (unsigned int border)
 {
@@ -183,12 +230,10 @@ void YGWidget::setBorder (unsigned int border)
 
 YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
                                   const std::string &label_text, YUIDimension label_ori,
-                                  bool show, GType type,
-                                  const char *property_name, ...)
-	: YGWidget (ywidget, parent, show,
+                                  GType type, const char *property_name, ...)
+	: YGWidget (ywidget, parent,
 //	            label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
-	            GTK_TYPE_VBOX,
-	            "spacing", LABEL_WIDGET_SPACING, NULL)
+	            GTK_TYPE_VBOX, "spacing", LABEL_WIDGET_SPACING, NULL)
 {
 	// Create the field widget
 	va_list args;
@@ -201,10 +246,8 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
 	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
 /*	if (label_ori == YD_HORIZ)
 		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);*/
-	if(show) {
-		gtk_widget_show (m_label);
-		gtk_widget_show (m_field);
-	}
+	gtk_widget_show (m_label);
+	gtk_widget_show (m_field);
 
 	setBuddy (m_field);
 	doSetLabel (label_text);
@@ -230,11 +273,8 @@ void YGLabeledWidget::setBuddy (GtkWidget *widget)
 
 void YGLabeledWidget::doSetLabel (const std::string &label)
 {
-	string str = YGUtils::mapKBAccel (label);
-	if (str.empty())
-		gtk_widget_hide (m_label);
-	else {
-		gtk_widget_show (m_label);
+	if (!label.empty()) {
+		string str = YGUtils::mapKBAccel (label);
 
 		// add a ':' at the end
 		int last = str.length()-1;
@@ -249,15 +289,15 @@ void YGLabeledWidget::doSetLabel (const std::string &label)
 		gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
 		gtk_label_set_use_underline (GTK_LABEL (m_label), TRUE);
 	}
+	setLabelVisible (!label.empty());
 }
 
 /* YGScrolledWidget follows */
 #define MAX_SCROLL_WIDTH 120
 
 YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
-                                    bool show, GType type,
-                                    const char *property_name, ...)
-	: YGLabeledWidget (ywidget, parent, string(), YD_VERT, show,
+                                    GType type, const char *property_name, ...)
+	: YGLabeledWidget (ywidget, parent, string(), YD_VERT,
 	                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;
@@ -269,9 +309,8 @@ YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
 
 YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
                                     const std::string &label_text, YUIDimension label_ori,
-                                    bool show, GType type,
-                                    const char *property_name, ...)
-	: YGLabeledWidget (ywidget, parent, label_text, label_ori, show,
+                                    GType type, const char *property_name, ...)
+	: YGLabeledWidget (ywidget, parent, label_text, label_ori,
 	                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;

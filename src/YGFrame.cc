@@ -19,8 +19,8 @@ GtkWidget *m_containee;
 
 public:
 	YGBaseFrame (YWidget *ywidget, YWidget *parent)
-	: YGWidget (ywidget, parent, true, GTK_TYPE_FRAME,
-	            "shadow-type", GTK_SHADOW_NONE, NULL)
+	: YGWidget (ywidget, parent,
+	            GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
 		IMPL
 		m_containee = gtk_alignment_new (0, 0, 1, 1);

@@ -74,7 +74,7 @@ ButtonHeightGroup group;
 public:
 	YGLayoutBox (YWidget *parent, YUIDimension dim)
 	: YLayoutBox (NULL, dim),
-	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
 		YGLAYOUT_INIT
@@ -108,7 +108,7 @@ ButtonHeightGroup group;
 public:
 	YGButtonBox (YWidget *parent)
 	: YButtonBox (NULL),
-	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
 		// YUI system variable test for layout policy doesn't work flawlessly
@@ -144,7 +144,7 @@ class YGAlignment : public YAlignment, public YGWidget
 public:
 	YGAlignment (YWidget *parent, YAlignmentType halign, YAlignmentType valign)
 	: YAlignment (NULL, halign, valign),
-	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
 		m_background_pixbuf = 0;
@@ -223,7 +223,7 @@ class YGEmpty : public YEmpty, public YGWidget
 public:
 	YGEmpty (YWidget *parent)
 	: YEmpty (NULL),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
 	}
@@ -245,7 +245,7 @@ class YGSpacing : public YSpacing, public YGWidget
 public:
 	YGSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size)
 	: YSpacing (NULL, dim, stretchable, size),
-	  YGWidget (this, parent, true, YGTK_TYPE_FIXED, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_FIXED, NULL)
 	{
 		setBorder (0);
 		YGLAYOUT_INIT
@@ -271,7 +271,7 @@ class YGReplacePoint : public YReplacePoint, public YGWidget
 public:
 	YGReplacePoint (YWidget *parent)
 	: YReplacePoint (NULL),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
 	}
@@ -296,7 +296,7 @@ class YGSquash : public YSquash, public YGWidget
 public:
 	YGSquash (YWidget *parent, bool hsquash, bool vsquash)
 	: YSquash (NULL, hsquash, vsquash),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
 	}

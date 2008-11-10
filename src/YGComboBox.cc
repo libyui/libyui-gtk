@@ -14,7 +14,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	public:
 		YGComboBox (YWidget *parent, const string &label, bool editable)
 		: YComboBox (NULL, label, editable)
-		, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
+		, YGLabeledWidget (this, parent, label, YD_HORIZ,
 		    editable ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL)
 		, YGSelectionModel (this, true, false)
 	{
@@ -35,8 +35,8 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
 			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
 
-		g_signal_connect (G_OBJECT (getWidget()), "changed",
-		                  G_CALLBACK (selected_changed_cb), this);
+		connect (getWidget(), "changed",
+		         G_CALLBACK (selected_changed_cb), this);
 	}
 
 	inline GtkComboBox *getComboBox()
@@ -57,11 +57,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 		return GTK_ENTRY (entry);
 	}
-
-	void blockEvents()
-	{ g_signal_handlers_block_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
-	void unblockEvents()
-	{ g_signal_handlers_unblock_by_func (getWidget(), (gpointer) selected_changed_cb, this); }
 
 	virtual string text()
 	{
@@ -86,28 +81,22 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	virtual void setText (const string &value)
 	{
 		IMPL
-		blockEvents();
+		BlockEvents block (this);
         GtkTreeIter iter;
         if (findByText (value, &iter))
             setFocusItem (&iter);
         else
             gtk_entry_set_text (getEntry(), value.c_str());
-		unblockEvents();
 	}
 
 	// YGSelectionModel
 	virtual void setFocusItem (GtkTreeIter *iter)
 	{
-		blockEvents();
-		gtk_combo_box_set_active_iter (getComboBox(), iter);
-		unblockEvents();
-	}
-
-	virtual void unsetFocus()
-	{
-		blockEvents();
-		gtk_combo_box_set_active (getComboBox(), -1);
-		unblockEvents();
+		BlockEvents block (this);
+		if (iter)
+			gtk_combo_box_set_active_iter (getComboBox(), iter);
+		else
+			gtk_combo_box_set_active (getComboBox(), -1);
 	}
 
     virtual YItem *focusItem()
@@ -133,9 +122,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 	// Events notifications
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
-	{
-		pThis->emitEvent (YEvent::ValueChanged);
-	}
+	{ pThis->emitEvent (YEvent::ValueChanged); }
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YComboBox)

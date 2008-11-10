@@ -15,9 +15,10 @@ class YGInputField : public YInputField, public YGLabeledWidget
 public:
 	YGInputField (YWidget *parent, const string &label, bool passwordMode)
 	: YInputField (NULL, label, passwordMode),
-	  YGLabeledWidget (this, parent, label, YD_HORIZ, true,
+	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
+		gtk_widget_set_size_request (getWidget(), 0, -1);  // let min size, set width
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_add_field (field, 0);
 
@@ -26,8 +27,8 @@ public:
 		if (passwordMode)
 			gtk_entry_set_visibility (entry, FALSE);
 
-		g_signal_connect (G_OBJECT (getWidget()), "field-entry-changed",
-		                  G_CALLBACK (value_changed_cb), this);
+		connect (getWidget(), "field-entry-changed",
+		         G_CALLBACK (value_changed_cb), this);
 	}
 
 	// YInputField
@@ -39,6 +40,7 @@ public:
 
 	virtual void setValue (const string &text)
 	{
+		BlockEvents block (this);
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_set_field_text (field, 0, text.c_str());
 	}
@@ -62,9 +64,7 @@ public:
 	}
 
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb, YGInputField *pThis)
-	{
-		pThis->emitEvent (YEvent::ValueChanged);
-	}
+	{ pThis->emitEvent (YEvent::ValueChanged); }
 
 	virtual bool doSetKeyboardFocus()
     {
@@ -94,7 +94,7 @@ class YGTimeField : public YTimeField, public YGLabeledWidget
 public:
 	YGTimeField (YWidget *parent, const string &label)
 	: YTimeField (NULL, label),
-	  YGLabeledWidget (this, parent, label, YD_HORIZ, true,
+	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
@@ -104,14 +104,14 @@ public:
 		ygtk_field_entry_setup_field (field, 0, 2, "0123456789");
 		ygtk_field_entry_setup_field (field, 1, 2, "0123456789");
 
-		g_signal_connect (G_OBJECT (getWidget()), "field-entry-changed",
-		                  G_CALLBACK (value_changed_cb), this);
+		connect (getWidget(), "field-entry-changed",
+		         G_CALLBACK (value_changed_cb), this);
 	}
 
 	// YTimeField
 	virtual void setValue (const string &time)
 	{
-		IMPL
+		BlockEvents block (this);
 		if (time.empty()) return;
 		char hours[3], mins[3];
 		sscanf (time.c_str(), "%2s:%2s", hours, mins);
@@ -138,7 +138,7 @@ public:
 	// callbacks
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
 	                              YGTimeField *pThis)
-	{ IMPL; pThis->emitEvent (YEvent::ValueChanged); }
+	{ pThis->emitEvent (YEvent::ValueChanged); }
 
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTimeField)
@@ -160,7 +160,7 @@ GtkWidget *m_calendar, *m_popup_calendar;
 public:
 	YGDateField (YWidget *parent, const string &label)
 	: YDateField (NULL, label),
-	  YGLabeledWidget (this, parent, label, YD_HORIZ, true, YGTK_TYPE_FIELD_ENTRY, NULL)
+	  YGLabeledWidget (this, parent, label, YD_HORIZ, YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
 		IMPL
 		ygtk_field_entry_add_field (getField(), '-');
@@ -179,13 +179,12 @@ public:
 		gtk_widget_show (menu_button);
 		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);
 
-		g_signal_connect (G_OBJECT (getField()), "field-entry-changed",
-		                  G_CALLBACK (value_changed_cb), this);
-
-		g_signal_connect (G_OBJECT (m_calendar), "day-selected",
-		                  G_CALLBACK (calendar_changed_cb), this);
-		g_signal_connect (G_OBJECT (m_calendar), "day-selected-double-click",
-		                  G_CALLBACK (double_click_cb), popup);
+		connect (getWidget(), "field-entry-changed",
+		         G_CALLBACK (value_changed_cb), this);
+		connect (m_calendar, "day-selected",
+		         G_CALLBACK (calendar_changed_cb), this);
+		connect (m_calendar, "day-selected-double-click",
+		         G_CALLBACK (double_click_cb), popup);
 	}
 
 	inline GtkCalendar *getCalendar()
@@ -196,7 +195,7 @@ public:
 	// YDateField
 	virtual void setValue (const string &date)
 	{
-		IMPL
+		BlockEvents block (this);
 		if (date.empty()) return;
 		char year[5], month[3], day[3];
 		sscanf (date.c_str(), "%4s-%2s-%2s", year, month, day);
@@ -228,7 +227,6 @@ public:
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
 	                              YGDateField *pThis)
 	{
-		IMPL
 		int year, month, day;
 		year  = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 0));
 		month = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 1));
@@ -251,7 +249,6 @@ public:
 
 	static void calendar_changed_cb (GtkCalendar *calendar, YGDateField *pThis)
 	{
-		IMPL
 		guint year, month, day;
 		gtk_calendar_get_date (calendar, &year, &month, &day);
 		month += 1;  // GTK calendar months go from 0 to 11
@@ -304,7 +301,7 @@ public:
 	YGTimezoneSelector (YWidget *parent, const std::string &pixmap,
 		const std::map <std::string, std::string> &timezones)
 	: YTimezoneSelector (NULL, pixmap, timezones),
-	  YGWidget (this, parent, true, YGTK_TYPE_TIME_ZONE_PICKER, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_TIME_ZONE_PICKER, NULL)
 	{
 		IMPL
 		setStretchable (YD_HORIZ, true);
@@ -312,8 +309,8 @@ public:
 		ygtk_time_zone_picker_set_map (YGTK_TIME_ZONE_PICKER (getWidget()),
 			pixmap.c_str(), convert_code_to_name, (gpointer) &timezones);
 
-		g_signal_connect (G_OBJECT (getWidget()), "zone-clicked",
-		                  G_CALLBACK (zone_clicked_cb), this);
+		connect (getWidget(), "zone-clicked",
+		         G_CALLBACK (zone_clicked_cb), this);
 	}
 
 	// YTimezoneSelector
@@ -329,6 +326,7 @@ public:
 
 	virtual void setCurrentZone (const std::string &zone, bool zoom)
 	{
+		BlockEvents block (this);
 		ygtk_time_zone_picker_set_current_zone (YGTK_TIME_ZONE_PICKER (getWidget()),
 		                                        zone.c_str(), zoom);
 	}
@@ -348,7 +346,7 @@ public:
 	// callbacks
 	static void zone_clicked_cb (YGtkTimeZonePicker *picker, const gchar *zone,
 	                             YGTimezoneSelector *pThis)
-	{ IMPL; pThis->emitEvent (YEvent::ValueChanged); }
+	{ pThis->emitEvent (YEvent::ValueChanged); }
 
 	YGWIDGET_IMPL_COMMON
 };

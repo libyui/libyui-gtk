@@ -22,7 +22,7 @@ class YGImage : public YImage, public YGWidget
 public:
 	YGImage (YWidget *parent, const string &filename, bool animated)
 	: YImage (NULL, filename, animated),
-	  YGWidget (this, parent, true, YGTK_TYPE_IMAGE, NULL)
+	  YGWidget (this, parent, YGTK_TYPE_IMAGE, NULL)
 	{
 		IMPL
 		YGtkImage *image = YGTK_IMAGE (getWidget());

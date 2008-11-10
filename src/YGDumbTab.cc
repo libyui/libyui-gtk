@@ -18,7 +18,7 @@ class YGDumbTab : public YDumbTab, public YGWidget
 public:
 	YGDumbTab (YWidget *parent)
 		: YDumbTab (NULL),
-		  YGWidget (this, parent, true, GTK_TYPE_NOTEBOOK, NULL)
+		  YGWidget (this, parent, GTK_TYPE_NOTEBOOK, NULL)
 	{
 		IMPL
 		m_containee = gtk_event_box_new();
@@ -31,8 +31,8 @@ public:
 		// the notebook reduce its size.
 		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
-		g_signal_connect_after (G_OBJECT (getWidget()), "switch-page",
-		                        G_CALLBACK (changed_tab_cb), this);
+		connect_after (getWidget(), "switch-page",
+		               G_CALLBACK (changed_tab_cb), this);
 	}
 
 	~YGDumbTab()
@@ -44,6 +44,7 @@ public:
 
 	virtual void addItem (YItem *item)
 	{
+		BlockEvents block (this);
 		YDumbTab::addItem (item);
 		GtkWidget *tab_label, *image = 0, *label;
 		label = gtk_label_new (YGUtils::mapKBAccel (item->label()).c_str());
@@ -69,7 +70,6 @@ public:
 		gtk_widget_show_all (tab_label);
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
-		g_signal_handlers_block_by_func (notebook, (gpointer) changed_tab_cb, this);
 
 		GtkWidget *page = gtk_event_box_new();
 		gtk_widget_show (page);
@@ -78,8 +78,6 @@ public:
 
 		gtk_notebook_append_page (notebook, page, tab_label);
 		selectItem (item, item->selected() || !m_last_tab /*first tab*/);
-
-		g_signal_handlers_unblock_by_func (notebook, (gpointer) changed_tab_cb, this);
 	}
 
 	virtual void deleteAllItems()
@@ -118,16 +116,12 @@ public:
 
 	virtual void selectItem (YItem *item, bool selected)
 	{
-		IMPL
 		if (selected) {
+			BlockEvents block (this);
 			GtkWidget *child = (GtkWidget *) item->data();
 			int page = gtk_notebook_page_num (GTK_NOTEBOOK (getWidget()), child);
 
-			g_signal_handlers_block_by_func (getWidget(),
-				(gpointer) changed_tab_cb, this);
 			gtk_notebook_set_current_page (GTK_NOTEBOOK (getWidget()), page);
-			g_signal_handlers_unblock_by_func (getWidget(),
-				(gpointer) changed_tab_cb, this);
 			syncTabPage();
 		}
 	}

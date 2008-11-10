@@ -2592,7 +2592,7 @@ PackageSelector *m_package_selector;
 public:
 	YGPackageSelector (YWidget *parent, long mode)
 		: YPackageSelector (NULL, mode),
-		  YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
+		  YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
 	{
 		setBorder (0);
 		YGDialog::currentDialog()->setMinSize (650, 750);  // enlarge

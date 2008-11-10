@@ -14,7 +14,7 @@ class YGMenuButton : public YMenuButton, public YGWidget
 public:
 	YGMenuButton (YWidget *parent, const string &label)
 	:  YMenuButton (NULL, label),
-	   YGWidget (this, parent, true, YGTK_TYPE_MENU_BUTTON, NULL)
+	   YGWidget (this, parent, YGTK_TYPE_MENU_BUTTON, NULL)
 	{
 		IMPL
 		string str = YGUtils::mapKBAccel (label.c_str());

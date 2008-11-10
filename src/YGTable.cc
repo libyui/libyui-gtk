@@ -19,12 +19,11 @@ protected:
 public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
 	             bool ordinaryModel, bool isTree)
-	: YGScrolledWidget (ywidget, parent, label, YD_VERT, true,
+	: YGScrolledWidget (ywidget, parent, label, YD_VERT,
 	                    GTK_TYPE_TREE_VIEW, NULL)
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
-		blockSelected = false;
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -102,21 +101,17 @@ public:
 	// YGSelectionModel
 	virtual void setFocusItem (GtkTreeIter *iter)
 	{
-		blockEvents();
-		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
-		gtk_tree_view_expand_to_path (getView(), path);
+		BlockEvents block (this);
+		if (iter) {
+			GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
+			gtk_tree_view_expand_to_path (getView(), path);
 
-		gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
-		gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
-		gtk_tree_path_free (path);
-		unblockEvents();
-	}
-
-	virtual void unsetFocus()
-	{
-		blockEvents();
-		gtk_tree_selection_unselect_all (getSelection());
-		unblockEvents();
+			gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
+			gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
+			gtk_tree_path_free (path);
+		}
+		else
+			gtk_tree_selection_unselect_all (getSelection());
 	}
 
 	virtual YItem *focusItem()
@@ -142,15 +137,7 @@ public:
 		return 80;
 	}
 
-private:
-	bool blockSelected;
-
 protected:
-	void blockEvents()
-	{ blockSelected = true; }
-	void unblockEvents()
-	{ blockSelected = false; }
-
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
@@ -169,11 +156,8 @@ protected:
 
 	static void selected_cb (GtkTreeView *view, YGTableView* pThis)
 	{
-		IMPL
-		if (pThis->blockSelected)
-			return;
 		if (pThis->immediateEvent())
-			pThis->emitEvent (YEvent::SelectionChanged, true, true);
+			pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();
 			for (YItemConstIterator it = pThis->itemsBegin(); it != pThis->itemsEnd(); it++) {
@@ -189,7 +173,6 @@ protected:
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                          GtkTreeViewColumn *column, YGTableView* pThis)
 	{
-		IMPL
 		pThis->emitEvent (YEvent::Activated);
 	}
 
@@ -237,10 +220,10 @@ public:
 		}
 		setModel();
 
-		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
-		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		connect (getWidget(), "row-activated",
+		         G_CALLBACK (activated_cb), (YGTableView*) this);
+		connect (getWidget(), "cursor-changed",
+		         G_CALLBACK (selected_cb), (YGTableView*) this);
 		if (!keepSorting())
 			setSortable (true);
 	}
@@ -336,10 +319,10 @@ public:
 	: YSelectionBox (NULL, label),
 	  YGTableView (this, parent, label, true, false)
 	{
-		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
-		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		connect (getWidget(), "row-activated",
+		         G_CALLBACK (activated_cb), (YGTableView*) this);
+		connect (getWidget(), "cursor-changed",
+		         G_CALLBACK (selected_cb), (YGTableView*) this);
 	}
 
 	virtual bool isShrinkable() { return shrinkable(); }
@@ -372,11 +355,11 @@ public:
 		appendIconTextColumn ("", YAlignUnchanged, 1, 2);
 		setModel();
 
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
+		connect (getWidget(), "cursor-changed",
 		                  G_CALLBACK (selected_cb), (YGTableView*) this);
 		// Let the user toggle, using space/enter or double click (not an event).
-		g_signal_connect_after (G_OBJECT (getWidget()), "row-activated",
-		                        G_CALLBACK (multi_activated_cb), this);
+		connect_after (getWidget(), "row-activated",
+		               G_CALLBACK (multi_activated_cb), this);
 	}
 
 	// YMultiSelectionBox
@@ -450,14 +433,14 @@ public:
 	: YTree (NULL, label)
 	, YGTableView (this, parent, label, true, true)
 	{
-		g_signal_connect (G_OBJECT (getWidget()), "row-activated",
-		                  G_CALLBACK (activated_cb), (YGTableView*) this);
-		g_signal_connect (G_OBJECT (getWidget()), "cursor-changed",
-		                  G_CALLBACK (row_selected_cb), this);
-		g_signal_connect (G_OBJECT (getWidget()), "row-collapsed",
-		                  G_CALLBACK (row_collapsed_cb), this);
-		g_signal_connect (G_OBJECT (getWidget()), "row-expanded",
-		                  G_CALLBACK (row_expanded_cb), this);
+		connect (getWidget(), "row-activated",
+		         G_CALLBACK (activated_cb), (YGTableView*) this);
+		connect (getWidget(), "cursor-changed",
+		         G_CALLBACK (row_selected_cb), this);
+		connect (getWidget(), "row-collapsed",
+		         G_CALLBACK (row_collapsed_cb), this);
+		connect (getWidget(), "row-expanded",
+		         G_CALLBACK (row_expanded_cb), this);
 	}
 
 	// YTree

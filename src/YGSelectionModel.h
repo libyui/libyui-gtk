@@ -30,8 +30,7 @@ struct YGSelectionModel
 	void doDeleteAllItems();
 
 	virtual YItem *focusItem() = 0;
-	virtual void setFocusItem (GtkTreeIter *iter) = 0;
-	virtual void unsetFocus() = 0;
+	virtual void setFocusItem (GtkTreeIter *iter) = 0;  // NULL to unset
 
 	YItemConstIterator itemsBegin() { return ywidget->itemsBegin(); }
 	YItemConstIterator itemsEnd()   { return ywidget->itemsEnd(); }
@@ -83,7 +82,7 @@ private:
 	}                                                 \
 	virtual void deselectAllItems() {                 \
 		ParentClass::deselectAllItems();              \
-		unsetFocus();                                 \
+		setFocusItem (NULL);                          \
 	}                                                 \
 	virtual YItem *selectedItem() {                   \
 		return focusItem();                           \

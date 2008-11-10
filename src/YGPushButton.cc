@@ -15,14 +15,13 @@ bool m_customIcon, m_labelIcon;
 public:
 	YGPushButton (YWidget *parent, const string &label)
 	:  YPushButton (NULL, label),
-	   YGWidget (this, parent, true, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
+	   YGWidget (this, parent, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
 		IMPL
 		m_customIcon = m_labelIcon = false;
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
-		g_signal_connect (G_OBJECT (getWidget ()), "clicked",
-		                  G_CALLBACK (clicked_cb), this);
+		connect (getWidget (), "clicked", G_CALLBACK (clicked_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -108,6 +107,11 @@ public:
 
 	virtual void setDefaultButton (bool isDefault)
 	{
+		struct inner {
+			static void realize_cb (GtkWidget *widget)
+			{ gtk_widget_grab_focus (widget); }
+		};
+
 		YPushButton::setDefaultButton (isDefault);
 		if (isDefault) {
 			GtkWidget *button = getWidget();
@@ -117,19 +121,13 @@ public:
 				gtk_widget_grab_focus (button);
 			else
 				g_signal_connect (G_OBJECT (button), "realize",
-				                  G_CALLBACK (realize_cb), this);
+				                  G_CALLBACK (inner::realize_cb), this);
 		}
 	}
 
 	// Events
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
-	{ pThis->emitEvent (YEvent::Activated, false); }
-
-	// give focus to default buttons, once they are realized
-	static void realize_cb (GtkWidget *widget)
-	{
-		gtk_widget_grab_focus (widget);
-	}
+	{ pThis->emitEvent (YEvent::Activated, IGNORE_NOTIFY_EVENT); }
 
 	YGWIDGET_IMPL_COMMON
 };

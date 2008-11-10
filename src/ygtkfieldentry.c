@@ -69,9 +69,7 @@ static void ygtk_field_entry_move_cursor (GtkEntry *entry, GtkMovementStep move,
 
 
 GtkWidget *ygtk_field_entry_new (void)
-{
-    return g_object_new (YGTK_TYPE_FIELD_ENTRY, NULL);
-}
+{ return g_object_new (YGTK_TYPE_FIELD_ENTRY, NULL); }
 
 static void ygtk_field_entry_entry_changed (GtkEditable *editable, YGtkFieldEntry *fields)
 {

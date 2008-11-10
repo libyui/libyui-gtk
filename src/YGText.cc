@@ -14,7 +14,7 @@ int maxChars;
 
 public:
 	YGTextView (YWidget *ywidget, YWidget *parent, const string &label, bool editable)
-		: YGScrolledWidget (ywidget, parent, label, YD_VERT, true,
+		: YGScrolledWidget (ywidget, parent, label, YD_VERT,
 		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR, NULL)
 	{
 		IMPL
@@ -26,8 +26,8 @@ public:
 			gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
 		}
 
-		g_signal_connect (G_OBJECT (getBuffer()), "changed",
-		                  G_CALLBACK (text_changed_cb), this);
+		connect (G_OBJECT (getBuffer()), "changed",
+		         G_CALLBACK (text_changed_cb), this);
 		if (!editable)
 			g_signal_connect (G_OBJECT (getWidget()), "realize",
 			                  G_CALLBACK (realize_cb), this);
@@ -52,19 +52,17 @@ public:
 
 	void truncateText(int pos)
 	{
-		IMPL
+		BlockEvents block (this);
 		GtkTextIter start_it, end_it;
 		gtk_text_buffer_get_iter_at_offset (getBuffer(), &start_it, pos);
 		gtk_text_buffer_get_end_iter (getBuffer(), &end_it);
-
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) text_changed_cb, this);
 		gtk_text_buffer_delete (getBuffer(), &start_it, &end_it);
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) text_changed_cb, this);
 	}
 
 	void setText (const string &text)
 	{
 		IMPL
+		BlockEvents block (this);
 		gtk_text_buffer_set_text (getBuffer(), text.c_str(), -1);
 	}
 
@@ -189,7 +187,7 @@ class YGRichText : public YRichText, YGScrolledWidget
 public:
 	YGRichText (YWidget *parent, const string &text, bool plainText)
 	: YRichText (NULL, text, plainText)
-	, YGScrolledWidget (this, parent, true, ygtk_html_wrap_get_type(), NULL)
+	, YGScrolledWidget (this, parent, ygtk_html_wrap_get_type(), NULL)
 	{
 		IMPL
 		ygtk_html_wrap_init (getWidget());

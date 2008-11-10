@@ -15,8 +15,8 @@ class YGSpinBox : public YGLabeledWidget
 public:
 	YGSpinBox (YWidget *ywidget, YWidget *parent, const string &label,
 	           int minValue, int maxValue, int initialValue, bool show_slider)
-	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ, true,
-	                   GTK_TYPE_HBOX, NULL)
+	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ,
+	                   GTK_TYPE_HBOX, "spacing", 6, NULL)
 	{
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);
 
@@ -30,23 +30,22 @@ public:
 			gtk_widget_set_size_request (m_slider, 100, -1);
 
 			gtk_box_pack_start (GTK_BOX (getWidget()), m_slider, TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (getWidget()), m_spiner, FALSE, FALSE, 5);
+			gtk_box_pack_start (GTK_BOX (getWidget()), m_spiner, FALSE, TRUE, 0);
 			gtk_widget_show (m_slider);
 		}
 		else {
 			m_slider = NULL;
 			YGLabeledWidget::setBuddy (m_spiner);
-
 			gtk_container_add (GTK_CONTAINER (getWidget()), m_spiner);
 		}
 		gtk_widget_show (m_spiner);
 
 		doSetValue (initialValue);
-		g_signal_connect (G_OBJECT (m_spiner), "value-changed",
-		                  G_CALLBACK (spiner_changed_cb), this);
+		connect (m_spiner, "value-changed",
+		         G_CALLBACK (spiner_changed_cb), this);
         if (m_slider)
-		    g_signal_connect (G_OBJECT (m_slider), "value-changed",
-                              G_CALLBACK (slider_changed_cb), this);
+		    connect (m_slider, "value-changed",
+                     G_CALLBACK (slider_changed_cb), this);
 	}
 
 	GtkSpinButton *getSpiner()
@@ -54,21 +53,20 @@ public:
 
 	bool useSlider()
     { return m_slider != NULL; }
-	GtkHScale *getSlider()
-	{ return GTK_HSCALE (m_slider); }
+	GtkRange *getSlider()
+	{ return GTK_RANGE (m_slider); }
 
 	virtual void reportValue (int value) = 0;
 
 	int doGetValue()
-	{
-		return gtk_spin_button_get_value_as_int (getSpiner());
-	}
+	{ return gtk_spin_button_get_value_as_int (getSpiner()); }
 
-	void doSetValue (int newValue)
+	void doSetValue (int value)
 	{
-		gtk_spin_button_set_value (getSpiner(), newValue);
+		BlockEvents block (this);
+		gtk_spin_button_set_value (getSpiner(), value);
 		if (useSlider())
-			gtk_range_set_value (GTK_RANGE (getSlider()), newValue);
+			gtk_range_set_value (getSlider(), value);
 	}
 
 	// Events callbacks
@@ -77,7 +75,7 @@ public:
 		int value = gtk_spin_button_get_value_as_int (pThis->getSpiner());
 		pThis->reportValue (value);
 		if (pThis->useSlider())
-			gtk_range_set_value (GTK_RANGE (pThis->getSlider()), value);
+			gtk_range_set_value (pThis->getSlider(), value);
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 

@@ -313,7 +313,7 @@ private:
 
 YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 	: YDialog (dialogType, colorMode),
-	   YGWidget (this, NULL, FALSE, GTK_TYPE_HBOX, NULL)
+	   YGWidget (this, NULL, GTK_TYPE_HBOX, NULL)
 {
     setBorder (0);
     m_stickyTitle = false;

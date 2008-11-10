@@ -77,7 +77,7 @@ public:
 		const string &abortButtonLabel, const string &nextButtonLabel,
 		YWizardMode wizardMode)
 	: YWizard (NULL, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
-	, YGWidget (this, parent, true, YGTK_TYPE_WIZARD, NULL)
+	, YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
 	{
 		IMPL
 		setBorder (0);

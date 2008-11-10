@@ -14,7 +14,7 @@ class YGBarGraph : public YBarGraph, public YGWidget
 public:
 	YGBarGraph (YWidget *parent)
 	: YBarGraph (NULL)
-	, YGWidget (this, parent, true, YGTK_TYPE_BAR_GRAPH, NULL)
+	, YGWidget (this, parent, YGTK_TYPE_BAR_GRAPH, NULL)
 	{}
 
 	// YBarGraph
@@ -68,7 +68,7 @@ public:
 		const string &newPartLabel, const string &freeFieldLabel, const string &newPartFieldLabel)
 	: YPartitionSplitter (NULL, usedSize, totalFreeSize, newPartSize, minNewPartSize,
 		minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel, newPartFieldLabel)
-	, YGWidget (this, parent, true, GTK_TYPE_VBOX, NULL)
+	, YGWidget (this, parent, GTK_TYPE_VBOX, NULL)
 	{
 		/* Bar graph widget */
 		GtkWidget *graph = ygtk_bar_graph_new();
@@ -97,12 +97,12 @@ public:
 		gtk_box_pack_start (GTK_BOX (slider_box), m_scale, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (slider_box), m_new_spin, FALSE, FALSE, 0);
 
-		g_signal_connect (G_OBJECT (m_scale), "value-changed",
-		                  G_CALLBACK (scale_changed_cb), this);
-		g_signal_connect (G_OBJECT (m_free_spin), "value-changed",
-		                  G_CALLBACK (free_spin_changed_cb), this);
-		g_signal_connect (G_OBJECT (m_new_spin), "value-changed",
-		                  G_CALLBACK (new_spin_changed_cb), this);
+		connect (m_scale, "value-changed",
+		         G_CALLBACK (scale_changed_cb), this);
+		connect (m_free_spin, "value-changed",
+		         G_CALLBACK (free_spin_changed_cb), this);
+		connect (m_new_spin, "value-changed",
+		         G_CALLBACK (new_spin_changed_cb), this);
 
 		/* Main layout */
 		gtk_box_pack_start (GTK_BOX (getWidget()), graph, TRUE, TRUE, 6);
@@ -121,15 +121,7 @@ public:
 
 	virtual void setValue (int newValue)
 	{
-		IMPL
-		// block connections
-		g_signal_handlers_block_by_func (m_scale,
-		                                 (gpointer) scale_changed_cb, this);
-		g_signal_handlers_block_by_func (m_free_spin,
-		                                 (gpointer) free_spin_changed_cb, this);
-		g_signal_handlers_block_by_func (m_new_spin,
-		                                 (gpointer) new_spin_changed_cb, this);
-
+		BlockEvents block (this);
 		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_new_spin), newValue);
 		int freeSize = totalFreeSize() - newValue;
 		gtk_spin_button_set_value (GTK_SPIN_BUTTON (m_free_spin), freeSize);
@@ -140,19 +132,10 @@ public:
 
 		ygtk_bar_graph_setup_entry (m_barGraph, 1, freeLabel().c_str(), freeSize);
 		ygtk_bar_graph_setup_entry (m_barGraph, 2, newPartLabel().c_str(), newValue);
-
-		// unblock connections
-		g_signal_handlers_unblock_by_func (m_scale,
-		                                   (gpointer) scale_changed_cb, this);
-		g_signal_handlers_unblock_by_func (m_free_spin,
-		                                   (gpointer) free_spin_changed_cb, this);
-		g_signal_handlers_unblock_by_func (m_new_spin,
-		                                   (gpointer) new_spin_changed_cb, this);
 	}
 
 	static void scale_changed_cb (GtkRange *range, YGPartitionSplitter *pThis)
 	{
-		IMPL
 		int newFreeSize = (int) gtk_range_get_value (range);
 		int newPartSize = pThis->totalFreeSize() - newFreeSize;
 
@@ -162,17 +145,14 @@ public:
 
 	static void free_spin_changed_cb (GtkSpinButton *spin, YGPartitionSplitter *pThis)
 	{
-		IMPL
 		int newFreeSize = gtk_spin_button_get_value_as_int (spin);
 		int newPartSize = pThis->totalFreeSize() - newFreeSize;
-
 		pThis->setValue (newPartSize);
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
 	static void new_spin_changed_cb (GtkSpinButton *spin, YGPartitionSplitter *pThis)
 	{
-		IMPL
 		pThis->setValue (gtk_spin_button_get_value_as_int (spin));
 		pThis->emitEvent (YEvent::ValueChanged);
 	}

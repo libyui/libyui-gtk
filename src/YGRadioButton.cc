@@ -49,7 +49,7 @@ class YGRadioButton : public YRadioButton, public YGWidget
 public:
 	YGRadioButton (YWidget *parent, const std::string &label, bool isChecked)
 	:  YRadioButton (NULL, label),
-	   YGWidget (this, parent, true, getCheckRadioButtonType(), NULL)
+	   YGWidget (this, parent, getCheckRadioButtonType(), NULL)
 	{
 		IMPL
 		if (!is_horizontal_box (parent))
@@ -58,8 +58,8 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), FALSE);
 
-		g_signal_connect_after (G_OBJECT (getWidget()), "toggled",
-		                        G_CALLBACK (toggled_cb), this);
+		connect_after (getWidget(), "toggled",
+		               G_CALLBACK (toggled_cb), this);
 	}
 
 	// YRadioButton
@@ -82,14 +82,13 @@ public:
 	virtual void setValue (bool checked)
 	{
 		IMPL
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
+		BlockEvents block (this);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
 		if (checked) {
 			YRadioButton *yradio = static_cast <YRadioButton *> (m_ywidget);
 			if (buttonGroup())
 				buttonGroup()->uncheckOtherButtons (yradio);
 		}
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}
 
 	YGWIDGET_IMPL_COMMON
@@ -98,7 +97,6 @@ public:
 	// callbacks
 	static void toggled_cb (GtkButton *button, YGRadioButton *pThis)
 	{
-		IMPL
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button)))
 			pThis->emitEvent (YEvent::ValueChanged);
 		pThis->setValue (true);
@@ -116,7 +114,6 @@ YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string 
 	if (group)
 		group->addRadioButton (button);
 	button->setValue (isChecked);
-
 	return button;
 }
 
@@ -125,7 +122,7 @@ class YGRadioButtonGroup : public YRadioButtonGroup, public YGWidget
 public:
 	YGRadioButtonGroup(YWidget *parent)
 	: YRadioButtonGroup (NULL),
-	  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
+	  YGWidget (this, parent, GTK_TYPE_EVENT_BOX, NULL)
 	{
 		setBorder (0);
 	}
@@ -149,7 +146,7 @@ class YGCheckBox : public YCheckBox, public YGWidget
 public:
 	YGCheckBox(YWidget *parent, const string &label, bool isChecked)
 	:  YCheckBox (NULL, label),
-	   YGWidget (this, parent, true, GTK_TYPE_CHECK_BUTTON, NULL)
+	   YGWidget (this, parent, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
 		IMPL
 		if (!is_horizontal_box (parent))
@@ -158,8 +155,8 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), isChecked);
 
-		g_signal_connect (G_OBJECT (getWidget ()), "toggled",
-		                  G_CALLBACK (toggled_cb), this);
+		connect (getWidget (), "toggled",
+		         G_CALLBACK (toggled_cb), this);
 	}
 
 	// YCheckButton
@@ -184,10 +181,8 @@ public:
 	virtual void setValue (YCheckBoxState value)
 	{
 		IMPL
+		BlockEvents block (this);
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
-
-		g_signal_handlers_block_by_func (getWidget(), (gpointer) toggled_cb, this);
-
 		switch (value) {
 			case YCheckBox_dont_care:
 				gtk_toggle_button_set_inconsistent (button, TRUE);
@@ -201,13 +196,10 @@ public:
 				gtk_toggle_button_set_active (button, FALSE);
 				break;
 		}
-
-		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) toggled_cb, this);
 	}
 
 	static void toggled_cb (GtkBox *box, YGCheckBox *pThis)
 	{
-		IMPL
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (box);
 		if (gtk_toggle_button_get_inconsistent (button))
 			pThis->setValue (YCheckBox_on);

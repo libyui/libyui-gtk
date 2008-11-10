@@ -21,7 +21,8 @@ public:
 		// NOTE: its label widget is positionated at the vertical, because its label
 		// may change often and so will its size, which will look odd (we may want
 		// to make the label widget to only grow).
-	, YGLabeledWidget (this, parent, label, YD_VERT, true, GTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_VERT,
+	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{}
 
 	// YProgressBar
@@ -63,7 +64,7 @@ public:
 	YGDownloadProgress (YWidget *parent, const string &label,
 	                    const string &filename, YFileSize_t expectedFileSize)
 	: YDownloadProgress (NULL, label, filename, expectedFileSize)
-	, YGLabeledWidget (this, parent, label, YD_HORIZ, true,
+	, YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   GTK_TYPE_PROGRESS_BAR, NULL)
 	{
 		timeout_id = g_timeout_add (250, timeout_cb, this);
@@ -143,7 +144,7 @@ class YGMultiProgressMeter : public YMultiProgressMeter, public YGWidget
 public:
 	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector <float> &maxValues)
 	: YMultiProgressMeter (NULL, dim, maxValues)
-	, YGWidget (this, parent, true,
+	, YGWidget (this, parent,
 	            horizontal() ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
 	{
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
@@ -217,7 +218,7 @@ int alive_timeout;
 public:
 	YGBusyIndicator (YWidget *parent, const string &label, int timeout)
 	: YBusyIndicator (NULL, label, timeout)
-	, YGLabeledWidget (this, parent, label, YD_VERT, true,
+	, YGLabeledWidget (this, parent, label, YD_VERT,
 	                   GTK_TYPE_PROGRESS_BAR, "pulse-step", PULSE_STEP, NULL)
 	{
 		pulse_timeout_id = 0;

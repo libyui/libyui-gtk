@@ -13,8 +13,8 @@
 class YGWidget
 {
 public:
-	YGWidget(YWidget *ywidget, YWidget *yparent, bool show,
-	         GType type, const char *property_name, ...);
+	YGWidget (YWidget *ywidget, YWidget *yparent,
+	          GType type, const char *property_name, ...);
 	virtual ~YGWidget();
 
 	virtual GtkWidget *getWidget() { return m_widget; }
@@ -39,8 +39,22 @@ public:
 	void doSetUseBoldFont (bool useBold);
 
 	// Event handling
-	void emitEvent(YEvent::EventReason reason, bool if_notify = true,
-	               bool if_not_pending = false, bool immediate = true);
+	enum EventFlags {
+		DELAY_EVENT = 2, IGNORE_NOTIFY_EVENT = 4, IF_NOT_PENDING_EVENT = 8,
+		NORMAL_EVENT = 0 };
+	void emitEvent (YEvent::EventReason reason, EventFlags flags = NORMAL_EVENT);
+
+	// Signal registration (use "BlockEvents (this)" when to block these)
+	void connect (GObject *object, const char *name,
+	               GCallback callback, gpointer data);
+	inline void connect (GtkWidget *widget, const char *name,
+	                      GCallback callback, gpointer data)
+	{ connect (G_OBJECT (widget), name, callback, data); }
+	void connect_after (GObject *object, const char *name,
+	                     GCallback callback, gpointer data);
+	inline void connect_after (GtkWidget *widget, const char *name,
+	                             GCallback callback, gpointer data)
+	{ connect_after (G_OBJECT (widget), name, callback, data); }
 
 	// Aesthetics
 	void setBorder (unsigned int border);  // in pixels
@@ -51,15 +65,32 @@ protected:
 	virtual int getPreferredSize (YUIDimension dimension);
 	void doSetSize (int width, int height);
 
-	void show();
-
 	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
 	GtkWidget *m_adj_size;  // installed on m_widget, allows better size constrains
 	YWidget *m_ywidget;  // associated YWidget
 
+	friend struct BlockEvents;
+	void connectSignal (GObject *object, const char *name,
+	                     GCallback callback, gpointer data, bool after);
+	void blockSignals();
+	void unblockSignals();
+	struct Signals;
+	friend struct Signals;
+	Signals *m_signals;
+
 	void construct (YWidget *ywidget, YWidget *yparent,
-	                bool show, GType type,
-	                const char *property_name, va_list args);
+	                GType type, const char *property_name, va_list args);
+};
+
+struct BlockEvents
+{
+BlockEvents (YGWidget *widget)
+	: m_widget (widget)
+	{ m_widget->blockSignals(); }
+~BlockEvents()
+	{ m_widget->unblockSignals(); }
+private:
+	YGWidget *m_widget;
 };
 
 /*
@@ -104,12 +135,12 @@ class YGLabeledWidget : public YGWidget
 	public:
 		YGLabeledWidget(YWidget *ywidget, YWidget *yparent,
 		                const std::string &label_text, YUIDimension label_ori,
-		                bool show, GType type, const char *property_name, ...);
+		                GType type, const char *property_name, ...);
 		virtual ~YGLabeledWidget () {}
 
 		virtual GtkWidget* getWidget() { return m_field; }
 
-		void setLabelVisible(bool show);
+		void setLabelVisible (bool show);
 		void setBuddy (GtkWidget *widget);
 		virtual void doSetLabel (const std::string &label);
 
@@ -133,11 +164,11 @@ class YGScrolledWidget : public YGLabeledWidget
 {
 	public:
 		YGScrolledWidget(YWidget *ywidget, YWidget *yparent,
-		                 bool show, GType type, const char *property_name, ...);
+		                 GType type, const char *property_name, ...);
 		// if you want a label, use:
 		YGScrolledWidget(YWidget *ywidget, YWidget *yparent,
 		                 const std::string &label_text, YUIDimension label_ori,
-		                 bool show, GType type, const char *property_name, ...);
+		                 GType type, const char *property_name, ...);
 		virtual ~YGScrolledWidget () {}
 
 		virtual GtkWidget *getWidget() { return m_widget; }
