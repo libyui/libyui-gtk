@@ -6,6 +6,7 @@
 // check the header file for information about these hooks
 
 #include <config.h>
+#include <gtk/gtk.h>
 #include "ygtkzyppwrapper.h"
 #include "YGUtils.h"
 
@@ -213,14 +214,11 @@ void ygtk_zypp_model_entry_deleted (YGtkZyppModel *model, Ypp::Pool::Iter it)
 }
 
 static gint ygtk_zypp_model_get_n_columns (GtkTreeModel *model)
-{
-	return YGtkZyppModel::TOTAL_COLUMNS;
-}
+{ return YGtkZyppModel::TOTAL_COLUMNS; }
 
 static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint column)
 {
-	switch (column)
-	{
+	switch (column) {
 		case YGtkZyppModel::ICON_COLUMN:
 			return GDK_TYPE_PIXBUF;
 		case YGtkZyppModel::NAME_COLUMN:
@@ -257,40 +255,61 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		case YGtkZyppModel::ICON_COLUMN:
 		{
 			GdkPixbuf *pixbuf = 0;
-			bool locked = package->isLocked();
-			bool auto_ = package->isAuto();
-			if (package->toInstall()) {
-				if (auto_)
-					pixbuf = icons->to_auto_install;
-				else {
-					pixbuf = icons->to_install;
-					if (package->isInstalled())
-						pixbuf = icons->to_install_upgrade;
+			if (column == YGtkZyppModel::ICON_COLUMN)
+				switch (package->type()) {
+					case Ypp::Package::PATTERN_TYPE: {
+						std::string filename (package->icon());
+						GtkIconTheme *icons = gtk_icon_theme_get_default();
+						pixbuf = gtk_icon_theme_load_icon (icons,
+							filename.c_str(), 32, GtkIconLookupFlags (0), NULL);
+						break;
+					}
+					default:
+						break;
+				}
+			if (pixbuf) {
+				if (!package->isInstalled()) {
+					GdkPixbuf *_pixbuf = pixbuf;
+					pixbuf = YGUtils::setOpacity (_pixbuf, 40, true);
+					g_object_unref (_pixbuf);
 				}
 			}
-			else if (package->toRemove()) {
-				if (auto_)
-					pixbuf = icons->to_auto_remove;
-				else
-					pixbuf = icons->to_remove;
-			}
-			else if (package->hasUpgrade()) {
-				if (locked)
-					pixbuf = icons->installed_upgradable_locked;
-				else
-					pixbuf = icons->installed_upgradable;
-			}
-			else if (package->isInstalled()) {
-				if (locked)
-					pixbuf = icons->installed_locked;
-				else
-					pixbuf = icons->installed;
-			}
 			else {
-				if (locked)
-					pixbuf = icons->available_locked;
-				else
-					pixbuf = icons->available;
+				bool locked = package->isLocked();
+				bool auto_ = package->isAuto();
+				if (package->toInstall()) {
+					if (auto_)
+						pixbuf = icons->to_auto_install;
+					else {
+						pixbuf = icons->to_install;
+						if (package->isInstalled())
+							pixbuf = icons->to_install_upgrade;
+					}
+				}
+				else if (package->toRemove()) {
+					if (auto_)
+						pixbuf = icons->to_auto_remove;
+					else
+						pixbuf = icons->to_remove;
+				}
+				else if (package->hasUpgrade()) {
+					if (locked)
+						pixbuf = icons->installed_upgradable_locked;
+					else
+						pixbuf = icons->installed_upgradable;
+				}
+				else if (package->isInstalled()) {
+					if (locked)
+						pixbuf = icons->installed_locked;
+					else
+						pixbuf = icons->installed;
+				}
+				else {
+					if (locked)
+						pixbuf = icons->available_locked;
+					else
+						pixbuf = icons->available;
+				}
 			}
 			g_value_set_object (value, (GObject *) pixbuf);
 			break;

@@ -52,6 +52,7 @@ struct Ypp
 		bool containsPackage (const Ypp::Package *package) const;
 		bool fromCollection (const Ypp::Package *collection) const
 		{ return collection->containsPackage (this); }
+		void containsStats (int *installed, int *total) const;
 
 		std::string description (bool rich);
 		std::string filelist (bool rich);

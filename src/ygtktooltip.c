@@ -12,6 +12,38 @@
 #define TOOLTIP_TIMEOUT 10000
 #define POINTER_LENGTH  10
 
+// header
+
+#define YGTK_TYPE_TOOLTIP            (ygtk_tooltip_get_type ())
+#define YGTK_TOOLTIP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+                                        YGTK_TYPE_TOOLTIP, YGtkTooltip))
+#define YGTK_TOOLTIP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+                                        YGTK_TYPE_TOOLTIP, YGtkTooltipClass))
+#define YGTK_IS_TOOLTIP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                        YGTK_TYPE_TOOLTIP))
+#define YGTK_IS_TOOLTIP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                        YGTK_TYPE_TOOLTIP))
+#define YGTK_TOOLTIP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+                                        YGTK_TYPE_TOOLTIP, YGtkTooltipClass))
+
+typedef struct YGtkTooltip
+{
+	GtkWindow parent;
+	// private:
+	YGtkPointerType pointer;
+	guint timeout_id;
+} YGtkTooltip;
+
+typedef struct YGtkTooltipClass
+{
+	GtkWindowClass parent_class;
+} YGtkTooltipClass;
+
+GtkWidget *ygtk_tooltip_new (void);
+GType ygtk_tooltip_get_type (void) G_GNUC_CONST;
+
+// implementation
+
 G_DEFINE_TYPE (YGtkTooltip, ygtk_tooltip, GTK_TYPE_WINDOW)
 
 static void ygtk_tooltip_init (YGtkTooltip *tooltip)
@@ -133,25 +165,57 @@ static gboolean tooltip_timeout_cb (void *pdata)
 	return FALSE;
 }
 
-void ygtk_tooltip_show_at (YGtkTooltip *tooltip, gint x, gint y, YGtkPointerType pointer)
+static YGtkTooltip *ygtk_tooltip_create (const gchar *text, const gchar *stock)
 {
-	tooltip->pointer = pointer;
+	GtkWidget *tooltip, *box, *label, *image = 0;
+	tooltip = ygtk_tooltip_new();
+	label = gtk_label_new (text);
+	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
+	box = gtk_hbox_new (FALSE, 6);
+	if (stock) {
+		image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
+		gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
+	}
+	gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
+	gtk_widget_show_all (box);
+	gtk_container_add (GTK_CONTAINER (tooltip), box);
+	return YGTK_TOOLTIP (tooltip);
+}
+
+static YGtkTooltip *singleton = 0;
+
+static void ygtk_tooltip_show (YGtkTooltip *tooltip, gint x, gint y)
+{
 	gtk_window_move (GTK_WINDOW (tooltip), x, y);
 	gtk_widget_show (GTK_WIDGET (tooltip));
-
+	if (singleton)
+		gtk_widget_destroy (GTK_WIDGET (singleton));
+	singleton = tooltip;
 	tooltip->timeout_id = g_timeout_add (TOOLTIP_TIMEOUT, tooltip_timeout_cb, tooltip);
+}
+
+void ygtk_tooltip_show_at (gint x, gint y, YGtkPointerType pointer,
+                           const gchar *label, const gchar *stock)
+{
+	YGtkTooltip *tooltip = ygtk_tooltip_create (label, stock);
+	tooltip->pointer = pointer;
+	ygtk_tooltip_show (tooltip, x, y);
 }
 
 #define XMARGIN 8
 #define YMARGIN 2
 
-void ygtk_tooltip_show_at_widget (YGtkTooltip *tooltip, GtkWidget *widget,
-                                  YGtkPointerType pointer)
+void ygtk_tooltip_show_at_widget (GtkWidget *widget, YGtkPointerType pointer,
+                                  const gchar *label, const gchar *stock)
 {
+	YGtkTooltip *tooltip = ygtk_tooltip_create (label, stock);
+	tooltip->pointer = pointer;
 	gint x, y;
 	gdk_window_get_origin (widget->window, &x, &y);
-	x += widget->allocation.x; y += widget->allocation.y;
-	tooltip->pointer = pointer;
+	if (GTK_WIDGET_NO_WINDOW (widget)) {
+		x += widget->allocation.x;
+		y += widget->allocation.y;
+	}
 	GtkRequisition tooltip_req;
 	gtk_widget_size_request (GTK_WIDGET (tooltip), &tooltip_req);
 	switch (pointer) {
@@ -176,7 +240,7 @@ void ygtk_tooltip_show_at_widget (YGtkTooltip *tooltip, GtkWidget *widget,
 			y -= tooltip_req.height + YMARGIN;
 			break;
 	}
-	ygtk_tooltip_show_at (tooltip, x, y, pointer);
+	ygtk_tooltip_show (tooltip, x, y);
 }
 
 GtkWidget *ygtk_tooltip_new (void)

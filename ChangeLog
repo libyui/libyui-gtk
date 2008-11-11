@@ -5,6 +5,19 @@
 	now registered through YGWidget and a block method is offered that
 	should be used when a widget changes some GTK property.
 
+	* src/ygtkfindentry.c: bug fix: initialize to 0 the item select,
+	rather than -1.
+
+	* src/YGPackageSelector.cc (PackagesView),
+	src/ygtkzypperwrapper.h/cc & src/yzyppwrapper.h/cc: show zypp
+	icons and installed info for patterns.
+
+	* src/ygtktooltip.h/c: hide widget from access; only expose a
+	couple of presentation methods.
+
+	* src/YGPackageSelector.cc (Filters): show tooltip indicating
+	file filter is only applicable to installed packages.
+
 2008-11-09  Coolo  <coolo@suse.de>
 
 	* Version 2.17.5

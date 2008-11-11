@@ -278,7 +278,6 @@ G_DEFINE_TYPE_WITH_CODE (YGtkFindEntry, ygtk_find_entry, YGTK_TYPE_EXT_ENTRY,
 
 static void ygtk_find_entry_init (YGtkFindEntry *entry)
 {
-	entry->selected_item = -1;
 }
 
 static void ygtk_find_entry_destroy (GtkObject *object)
@@ -317,7 +316,7 @@ static void ygtk_find_entry_set_borders (YGtkFindEntry *entry)
 static void generate_find_icon (YGtkFindEntry *entry)
 {
 	char *stock = GTK_STOCK_FIND;
-	if (entry->context_menu && entry->selected_item >= 0) {
+	if (entry->context_menu) {
 		GtkImageMenuItem *item;
 		GList *items = gtk_container_get_children (GTK_CONTAINER (entry->context_menu));
 		item = (GtkImageMenuItem *) g_list_nth_data (items, entry->selected_item);
@@ -595,9 +594,7 @@ guint ygtk_find_entry_insert_item (YGtkFindEntry *entry, const char *text, const
 }
 
 gint ygtk_find_entry_get_selected_item (YGtkFindEntry *entry)
-{
-	return entry->selected_item;
-}
+{ return entry->selected_item; }
 
 void ygtk_find_entry_select_item (YGtkFindEntry *entry, gint item)
 {

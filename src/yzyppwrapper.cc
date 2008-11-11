@@ -206,13 +206,14 @@ std::string m_name, m_summary;
 	virtual Node *category() { return NULL; }
 	virtual Node *category2() { return NULL; }
 	virtual bool containsPackage (const Ypp::Package *package) = 0;
+	virtual void containsStats (int *installed, int *total) = 0;
 
 	virtual std::string description (bool rich) = 0;
 	virtual std::string filelist (bool rich) { return ""; }
 	virtual std::string changelog()          { return ""; }
 	virtual std::string authors (bool rich)  { return ""; }
 	virtual std::string support (bool rich)  { return ""; }
-	virtual std::string icon()               { return ""; }
+	virtual std::string icon() = 0;
 	virtual bool isRecommended() const       { return false; }
 	virtual bool isSuggested() const         { return false; }
 	virtual int  buildAge() const            { return 0; }
@@ -267,6 +268,8 @@ Ypp::Node *Ypp::Package::category()                { return impl->category(); }
 Ypp::Node *Ypp::Package::category2()               { return impl->category2(); }
 bool Ypp::Package::containsPackage (const Ypp::Package *package) const
 { return const_cast <Impl *> (impl)->containsPackage (package); }
+void Ypp::Package::containsStats (int *installed, int *total) const
+{ const_cast <Impl *> (impl)->containsStats (installed, total); }
 
 std::string Ypp::Package::description (bool rich) { return impl->description (rich); }
 std::string Ypp::Package::filelist (bool rich)    { return impl->filelist (rich); }
@@ -342,6 +345,7 @@ bool m_isInstalled, m_hasUpgrade;
 zypp::ui::Status m_curStatus;  // so we know if resolver touched it
 // for Patterns
 GSList *m_containsPackages;
+int m_installedPkgs, m_totalPkgs;
 
 	PackageSel (Ypp::Package::Type type, ZyppSelectable sel, Ypp::Node *category, Ypp::Node *category2)
 	: Impl (type), m_sel (sel), m_category (category), m_category2 (category2),
@@ -366,6 +370,7 @@ GSList *m_containsPackages;
 			m_hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
 
 		setNotTouched();
+		m_installedPkgs = m_totalPkgs = 0;
 	}
 
 	virtual ~PackageSel()
@@ -390,8 +395,12 @@ GSList *m_containsPackages;
 				ZyppPattern pattern = tryCastToZyppPattern (object);
 				zypp::Pattern::Contents contents (pattern->contents());
 				for (zypp::Pattern::Contents::Selectable_iterator it =
-					contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-					m_containsPackages = g_slist_append (m_containsPackages, get_pointer (*it));
+				     contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+					ZyppSelectablePtr sel = get_pointer (*it);
+					m_containsPackages = g_slist_append (m_containsPackages, sel);
+					if (!sel->installedEmpty())
+						m_installedPkgs++;
+					m_totalPkgs++;
 				}
 			}
 		}
@@ -407,8 +416,13 @@ GSList *m_containsPackages;
 
 	virtual std::string summary()
 	{
-		if (type == Ypp::Package::PATTERN_TYPE)
-			return "";
+		if (type == Ypp::Package::PATTERN_TYPE) {
+			int installed, total;
+			containsStats (&installed, &total);
+			std::ostringstream stream;
+			stream << _("Installed: ") << installed << _(" of ") << total;
+			return stream.str();
+		}
 		return m_sel->theObj()->summary();
 	}
 
@@ -495,13 +509,8 @@ GSList *m_containsPackages;
 			}
 			case Ypp::Package::PATTERN_TYPE:
 			{
-				int installed = 0, total = 0;
-				for (GSList *i = getContainedPackages(); i; i = i->next) {
-					ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
-					if (!sel->installedEmpty())
-						installed++;
-					total++;
-				}
+				int installed, total;
+				containsStats (&installed, &total);
 				std::ostringstream stream;
 				stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
 				text += stream.str();
@@ -810,6 +819,13 @@ GSList *m_containsPackages;
 		return NULL;
 	}
 
+	virtual void containsStats (int *installed, int *total)
+	{
+		getContainedPackages();  // init
+		*installed = m_installedPkgs;
+		*total = m_totalPkgs;
+	}
+
 	virtual Ypp::Node *category()
 	{ return m_category; }
 
@@ -1079,11 +1095,13 @@ struct PackageLang : public Ypp::Package::Impl
 zypp::Locale m_locale;
 GSList *m_containsPackages;
 bool m_installed, m_setInstalled;
+int m_installedPkgs, m_totalPkgs;
 
 	PackageLang (Ypp::Package::Type type, const zypp::Locale &zyppLang)
 	: Impl (type), m_locale (zyppLang), m_containsPackages (NULL)
 	{
 		m_installed = m_setInstalled = isSetInstalled();
+		m_installedPkgs = m_totalPkgs = 0;
 	}
 
 	~PackageLang()
@@ -1099,14 +1117,35 @@ bool m_installed, m_setInstalled;
 	virtual std::string name()
 	{ return m_locale.name(); }
 	virtual std::string summary()
-	{ return ""; }
+	{
+		int installed, total;
+		containsStats (&installed, &total);
+		std::ostringstream stream;
+		stream << _("Installed: ") << installed << _(" of ") << total;
+		return stream.str();
+	}
+
+	virtual std::string description (bool rich)
+	{
+		std::string text ("(" + m_locale.code() + ")");
+		int installed, total;
+		containsStats (&installed, &total);
+		std::ostringstream stream;
+		stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
+		text += stream.str();
+		return text;
+	}
 
 	GSList *getContainedPackages()
 	{
 		if (!m_containsPackages) {
 			zypp::sat::LocaleSupport myLocale (m_locale);
 			for_( it, myLocale.selectableBegin(), myLocale.selectableEnd() ) {
-				m_containsPackages = g_slist_append (m_containsPackages, get_pointer (*it));
+				ZyppSelectablePtr sel = get_pointer (*it);
+				m_containsPackages = g_slist_append (m_containsPackages, sel);
+				if (!sel->installedEmpty())
+					m_installedPkgs++;
+				m_totalPkgs++;
 			}
         }
         return m_containsPackages;
@@ -1118,20 +1157,30 @@ bool m_installed, m_setInstalled;
 		return g_slist_find (getContainedPackages(), get_pointer (sel->m_sel)) != NULL;
 	}
 
-	virtual std::string description (bool rich)
+	virtual void containsStats (int *installed, int *total)
 	{
-		std::string text ("(" + m_locale.code() + ")");
-		int installed = 0, total = 0;
-		for (GSList *i = getContainedPackages(); i; i = i->next) {
-			ZyppSelectablePtr sel = (ZyppSelectablePtr) i->data;
-			if (!sel->installedEmpty())
-				installed++;
-			total++;
+		getContainedPackages();  // init
+		*installed = m_installedPkgs;
+		*total = m_totalPkgs;
+	}
+
+	virtual std::string icon()
+	{
+		#define ICON_PATH "/usr/share/locale/l10n/"
+		static int hasPath = -1;
+		if (hasPath == -1)
+			hasPath = g_file_test (ICON_PATH, G_FILE_TEST_IS_DIR) ? 1 : 0;
+		if (hasPath) {
+			std::string code (m_locale.code());
+			std::string::size_type i = code.find ('_', 0);
+			if (i != std::string::npos)
+				code.erase (i);
+			std::string filename (ICON_PATH);
+			filename += code + "/flag.png";
+			if (g_file_test (filename.c_str(), G_FILE_TEST_IS_REGULAR))
+				return filename;
 		}
-		std::ostringstream stream;
-		stream << "\n\n" << _("Installed: ") << installed << _(" of ") << total;
-		text += stream.str();
-		return text;
+		return "";
 	}
 
 	bool isSetInstalled()
