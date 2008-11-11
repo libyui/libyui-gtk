@@ -469,7 +469,7 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 		YGtkTimeZoneLocation *loc = i->data;
 		int x, y;
 		map_to_window (picker, loc->x, loc->y, &x, &y);
-		int radius = (picker->scale == 1) ? 3 : 1;
+		int radius = (picker->scale == 1) ? 3 : 0;
 
 		if (loc == picker->selected_loc) {
 			cairo_set_source_rgb (cr, 232/255.0, 66/255.0, 66/255.0);
@@ -480,15 +480,17 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 		else
 			cairo_set_source_rgb (cr, 192/255.0, 112/255.0, 160/255.0);
 
-		cairo_arc (cr, x-1, y-1, radius, 0, M_PI*2);
-		if (radius > 1) {
-			cairo_fill_preserve (cr);
-			cairo_set_source_rgb (cr, 90/255.0, 90/255.0, 90/255.0);
-			cairo_set_line_width (cr, 1.0);
-			cairo_stroke (cr);
+		if (radius) {
+			cairo_arc (cr, x-1, y-1, radius, 0, M_PI*2);
+			if (radius > 1) {
+				cairo_fill_preserve (cr);
+				cairo_set_source_rgb (cr, 90/255.0, 90/255.0, 90/255.0);
+				cairo_set_line_width (cr, 1.0);
+				cairo_stroke (cr);
+			}
+			else
+				cairo_fill (cr);
 		}
-		else
-			cairo_fill (cr);
 	}
 
 	YGtkTimeZoneLocation *label_loc = picker->hover_loc;
@@ -510,7 +512,7 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 		x += 11; y += 4;
 		int fw;
 		pango_layout_get_pixel_size (layout, &fw, NULL);
-		x = MAX (MIN (x, width - fw), x-11-fw);
+		x = MAX (MIN (x, width - fw - 5), x-11-fw);
 
 		cairo_set_source_rgb (cr, 0, 0, 0);
 		cairo_move_to (cr, x, y);
