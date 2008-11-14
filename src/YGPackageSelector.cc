@@ -2397,6 +2397,7 @@ class DiskView : public Ypp::Disk::Listener
 		              "style", PANGO_STYLE_ITALIC, NULL);
 		column = gtk_tree_view_column_new_with_attributes ("Delta",
 			renderer, "text", 5, NULL);
+		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_AUTOSIZE);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 
 		if (framed) {
