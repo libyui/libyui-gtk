@@ -1897,14 +1897,18 @@ GSList *partitions;
 
 			ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
 			for (ZyppDuSetIterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
-				if (!it->readonly) {
+				const ZyppDu &point = *it;
+				if (!point.readonly) {
 					// partition fields: dir, used_size, total_size (size on Kb)
 					Ypp::Disk::Partition *partition = new Partition();
-					partition->path = it->dir;
-					partition->used = it->pkg_size;
-					partition->total = it->total_size;
+					partition->path = point.dir;
+					partition->used = point.pkg_size;
+					partition->delta = point.pkg_size - point.used_size;
+					partition->total = point.total_size;
 					partition->used_str =
 						zypp::ByteCount (partition->used, zypp::ByteCount::K).asString() + "B";
+					partition->delta_str =
+						zypp::ByteCount (partition->delta, zypp::ByteCount::K).asString() + "B";
 					partition->total_str =
 						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString() + "B";
 					partitions = g_slist_append (partitions, (gpointer) partition);

@@ -39,11 +39,10 @@ inline void OPEN_URI (const char *uri)
 static int busyI = 0;
 static void busyCursor()
 {
-	if (!busyI) {
+	if (!busyI)
 		YGUI::ui()->busyCursor();
-		// so that the cursor is actually set...
-		while (g_main_context_iteration (NULL, FALSE)) ;
-	}
+	// ensure the cursor is actually set and update the UI...
+	while (g_main_context_iteration (NULL, FALSE)) ;
 	busyI++;
 }
 static void normalCursor()
@@ -2296,33 +2295,159 @@ private:
 	}
 };
 
+// either use YGtkBarGraph or GtkTreeView (w/ GtkCellRendererProgress)
+//#define USE_BARGRAPH
+#include "ygtkbargraph.h"
+
 class DiskView : public Ypp::Disk::Listener
 {
-GtkWidget *m_widget;
+#ifdef USE_BARGRAPH
+	static GtkWidget *DiskList_new (bool framed)
+	{
+		GtkWidget *widget = gtk_table_new (0, 0, FALSE);
+		gtk_container_set_border_width (GTK_CONTAINER (widget), 2);
+		gtk_table_set_col_spacings (GTK_TABLE (widget), 4);
+		return widget;
+	}
+
+	static void DiskList_setup (GtkWidget *widget, int i, const std::string &path,
+		int usage_percent, int delta_percent, const std::string &description,
+		const std::string &changed, bool is_full)
+	{
+		if (i == 0) {
+			GList *children = gtk_container_get_children (GTK_CONTAINER (widget));
+			for (GList *i = children; i; i = i->next)
+				gtk_container_remove (GTK_CONTAINER (widget), (GtkWidget *) i->data);
+			g_list_free (children);
+		}
+		gtk_table_resize (GTK_TABLE (widget), 2, (i+1)*2);
+
+		GtkWidget *path_label, *usage_label, *graph;
+		path_label = gtk_label_new (path.c_str());
+		gtk_misc_set_alignment (GTK_MISC (path_label), 0, 0.5);
+		gtk_label_set_ellipsize (GTK_LABEL (path_label), PANGO_ELLIPSIZE_END);
+		gtk_widget_set_tooltip_text (path_label, path.c_str());
+		gtk_widget_set_size_request (path_label, 40, -1);
+		usage_label = gtk_label_new (("used: " + description).c_str());
+		gtk_misc_set_alignment (GTK_MISC (usage_label), 1, 0.5);
+		YGUtils::setWidgetFont (usage_label, PANGO_STYLE_ITALIC, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
+		graph = ygtk_bar_graph_new();
+		gtk_widget_set_size_request (graph, 150, -1);
+
+		YGtkBarGraph *ygraph = YGTK_BAR_GRAPH (graph);
+		ygtk_bar_graph_set_style (ygraph, TRUE);
+		bool show_delta = delta_percent > 0;
+		int entries = show_delta ? 3 : 2;
+		ygtk_bar_graph_create_entries (ygraph, entries);
+		ygtk_bar_graph_setup_entry (ygraph, 0, "", usage_percent);
+		if (show_delta)
+			ygtk_bar_graph_setup_entry (ygraph, 1, "+", delta_percent);
+		ygtk_bar_graph_setup_entry (ygraph, entries-1, "", 100 - (delta_percent+usage_percent));
+
+// TODO: set some nice colors (do gradient for space)
+		if (is_full) {
+			GdkColor red = { 0, 0xffff, 0xffff, 0xffff };
+			ygtk_bar_graph_customize_bg (ygraph, 0, &red);
+		}
+
+		GtkAttachOptions regularOpt = GtkAttachOptions (GTK_FILL);
+		GtkAttachOptions expandOpt = GtkAttachOptions (GTK_EXPAND|GTK_FILL);
+		int row = i*2;
+		gtk_table_attach (GTK_TABLE (widget), path_label, 0, 1, row, row+1,
+		                  regularOpt, regularOpt, 0, 0);
+		gtk_table_attach (GTK_TABLE (widget), graph, 1, 2, row, row+1,
+		                  expandOpt, regularOpt, 0, 0);
+		gtk_table_attach (GTK_TABLE (widget), usage_label, 1, 2, row+1, row+2,
+		                  regularOpt, regularOpt, 0, 6);
+		gtk_widget_show_all (widget);
+	}
+
+#else  // GtkTreeView
+	static GtkWidget *DiskList_new (GtkTreeModel *model, bool framed)
+	{
+		bool foreign_model = model == NULL;
+		if (model == NULL) {
+			GtkListStore *store = gtk_list_store_new (6,
+				// 0 - mount point, 1 - usage percent, 2 - usage string,
+				// (highlight warns) 3 - font weight, 4 - font color string,
+				// 5 - delta description
+				G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING,
+				G_TYPE_STRING);
+			model = GTK_TREE_MODEL (store);
+		}
+
+		GtkWidget *view = gtk_tree_view_new_with_model (model), *scroll = view;
+		if (foreign_model)
+			g_object_unref (G_OBJECT (model));
+		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
+		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
+			                         GTK_SELECTION_NONE);
+
+		GtkTreeViewColumn *column;
+		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),
+			gtk_cell_renderer_text_new(), "text", 0, "weight", 3, "foreground", 4, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		column = gtk_tree_view_column_new_with_attributes (_("Usage"),
+			gtk_cell_renderer_progress_new(), "value", 1, "text", 2, NULL);
+		gtk_tree_view_column_set_min_width (column, 180);  // SIZE_REQUEST
+		gtk_tree_view_column_set_expand (column, TRUE);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+		g_object_set (G_OBJECT (renderer), "alignment", PANGO_ALIGN_RIGHT,
+		              "style", PANGO_STYLE_ITALIC, NULL);
+		column = gtk_tree_view_column_new_with_attributes ("Delta",
+			renderer, "text", 5, NULL);
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
+		if (framed) {
+			scroll = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
+				                                 GTK_SHADOW_IN);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+					                        GTK_POLICY_NEVER, GTK_POLICY_NEVER);
+			gtk_container_add (GTK_CONTAINER (scroll), view);
+		}
+		else
+			g_object_set (view, "can-focus", FALSE, NULL);
+		gtk_widget_show_all (scroll);
+		return scroll;
+	}
+
+	static void DiskList_setup (GtkWidget *widget, int i, const std::string &path,
+		int usage_percent, int delta_percent, const std::string &description,
+		const std::string &changed, bool is_full)
+	{
+		GtkTreeView *view = GTK_TREE_VIEW (widget);
+		GtkListStore *store = GTK_LIST_STORE (gtk_tree_view_get_model (view));
+		if (i == 0)
+			gtk_list_store_clear (store);
+		GtkTreeIter iter;
+		gtk_list_store_append (store, &iter);
+		gtk_list_store_set (store, &iter, 0, path.c_str(), 1, usage_percent,
+			                2, description.c_str(), 3, PANGO_WEIGHT_NORMAL, 4, NULL,
+			                5, changed.c_str(), -1);
+		if (is_full)
+			gtk_list_store_set (store, &iter, 3, PANGO_WEIGHT_BOLD, 4, "red", -1);
+	}
+#endif
+
 GdkPixbuf *m_diskPixbuf, *m_diskFullPixbuf;
 bool m_hasWarn;
-GtkTreeModel *m_model;
+GtkWidget *m_button, *m_view;
 
 public:
 	GtkWidget *getWidget()
-	{ return m_widget; }
+	{ return m_button; }
 
-	DiskView()
+	DiskView ()
 	: m_hasWarn (false)
 	{
-		m_model = GTK_TREE_MODEL (gtk_list_store_new (
-			// 0 - mount point, 1 - usage percent, 2 - usage string,
-			// (highlight warns) 3 - font weight, 4 - font color string
-			5, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING));
-		GtkListStore *store = GTK_LIST_STORE (m_model);
-		Ypp::Disk *disk = Ypp::get()->getDisk();
-		for (int i = 0; disk->getPartition (i); i++) {
-			GtkTreeIter iter;
-			gtk_list_store_append (store, &iter);
-		}
+		m_button = ygtk_menu_button_new();
+		gtk_widget_set_tooltip_text (m_button, _("Disk usage"));
+		gtk_container_add (GTK_CONTAINER (m_button), gtk_image_new_from_pixbuf (NULL));
 
-		m_widget = createMenuButton (m_model);
-		g_object_unref (G_OBJECT (m_model));
+		m_view = DiskList_new (NULL, false);
+		ygtk_menu_button_set_popup_align (YGTK_MENU_BUTTON (m_button), m_view, 0.0, 1.0);
 
 		m_diskPixbuf = YGUtils::loadPixbuf (std::string (DATADIR) + "/harddisk.png");
 		m_diskFullPixbuf = YGUtils::loadPixbuf (std::string (DATADIR) + "/harddisk-full.png");
@@ -2338,139 +2463,58 @@ public:
 	}
 
 private:
-	#define MIN_PERCENT_WARN 90
-	#define MIN_FREE_MB_WARN (500*1024)
 	virtual void update()
 	{
+		#define MIN_PERCENT_WARN 90
+		#define MIN_FREE_MB_WARN (500*1024)
 		bool warn = false;
-		GtkListStore *store = GTK_LIST_STORE (m_model);
 		Ypp::Disk *disk = Ypp::get()->getDisk();
 		for (int i = 0; disk->getPartition (i); i++) {
 			const Ypp::Disk::Partition *part = disk->getPartition (i);
 
-			long usage = (part->used * 100) / (part->total + 1);
-			bool full = usage > MIN_PERCENT_WARN && (part->total - part->used) < MIN_FREE_MB_WARN;
-			std::string usage_str = part->used_str + _(" of ") + part->total_str;
-			if (full)
-				warn = true;
+			int usage_percent = (part->used * 100) / (part->total + 1);
+			int delta_percent = (part->delta * 100) / (part->total + 1);
 
-			GtkTreeIter iter;
-			g_assert (gtk_tree_model_iter_nth_child (m_model, &iter, NULL, i));
-			gtk_list_store_set (store, &iter, 0, part->path.c_str(), 1, usage,
-			                    2, usage_str.c_str(), 3, PANGO_WEIGHT_NORMAL, 4, NULL, -1);
-			if (full)
-				gtk_list_store_set (store, &iter, 3, PANGO_WEIGHT_BOLD, 4, "red", -1);
+			bool full = usage_percent > MIN_PERCENT_WARN &&
+			            (part->total - part->used) < MIN_FREE_MB_WARN;
+			if (full) warn = true;
+			std::string description (part->used_str + _(" of ") + part->total_str);
+			std::string delta_str;
+			if (part->delta) {
+				delta_str = (part->delta > 0 ? "(+" : "(");
+				delta_str += part->delta_str + ")";
+			}
+			DiskList_setup (m_view, i, part->path, usage_percent, delta_percent,
+			                description, delta_str, full);
 		}
 		GdkPixbuf *pixbuf = m_diskPixbuf;
 		if (warn) {
 			pixbuf = m_diskFullPixbuf;
-			warnDialog();
+			popupWarning();
 		}
-		gtk_image_set_from_pixbuf (GTK_IMAGE (GTK_BIN (m_widget)->child), pixbuf);
+		gtk_image_set_from_pixbuf (GTK_IMAGE (GTK_BIN (m_button)->child), pixbuf);
 	}
 
-	void warnDialog()
+	void popupWarning()
 	{
 		if (m_hasWarn) return;
 		m_hasWarn = true;
-		if (!GTK_WIDGET_REALIZED (m_widget)) return;
+		if (!GTK_WIDGET_REALIZED (getWidget())) return;
 
 		GtkWidget *dialog, *view;
 		dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-                                                 GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
-                                                 GTK_BUTTONS_OK, "%s", _("Disk Almost Full !"));
+			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_WARNING,
+			GTK_BUTTONS_OK, "%s", _("Disk Almost Full !"));
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s",
 			_("One of the partitions is reaching its limit of capacity. You may "
 			"have to remove packages if you wish to install some."));
 
-		view = createView (m_model, true);
+		GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (m_view));
+		view = DiskList_new (model, true);
 		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view);
-
 		g_signal_connect (G_OBJECT (dialog), "response",
 		                  G_CALLBACK (gtk_widget_destroy), this);
 		gtk_widget_show (dialog);
-	}
-
-	// utilities
-	static GtkWidget *createView (GtkTreeModel *model, bool shadow)
-	{
-		GtkWidget *view = gtk_tree_view_new_with_model (model), *scroll;
-		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
-		gtk_tree_selection_set_mode (gtk_tree_view_get_selection (GTK_TREE_VIEW (view)),
-		                             GTK_SELECTION_NONE);
-
-		GtkTreeViewColumn *column;
-		column = gtk_tree_view_column_new_with_attributes (_("Mount Point"),
-			gtk_cell_renderer_text_new(), "text", 0, "weight", 3, "foreground", 4, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
-		column = gtk_tree_view_column_new_with_attributes (_("Usage"),
-			gtk_cell_renderer_progress_new(), "value", 1, "text", 2, NULL);
-		gtk_tree_view_column_set_min_width (column, 150);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
-		gtk_widget_show (view);
-
-		if (shadow) {
-			scroll = gtk_scrolled_window_new (NULL, NULL);
-			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
-			                                     GTK_SHADOW_IN);
-			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-				                            GTK_POLICY_NEVER, GTK_POLICY_NEVER);
-			gtk_container_add (GTK_CONTAINER (scroll), view);
-			gtk_widget_show (scroll);
-			return scroll;
-		}
-		g_object_set (view, "can-focus", FALSE, NULL);
-		return view;
-	}
-#if 0
-	static void packCellRenderers (GtkCellLayout *layout)
-	{
-		GtkCellRenderer *renderer;
-		renderer = gtk_cell_renderer_text_new();
-		gtk_cell_layout_pack_start (layout, renderer, FALSE);
-		gtk_cell_layout_set_attributes (layout, renderer, "text", 0, NULL);
-		// let's put all columns to the same width, to make it look like a table
-		g_object_set (G_OBJECT (renderer), "width-chars", 14, NULL);
-		renderer = gtk_cell_renderer_progress_new();
-		gtk_cell_layout_pack_start (layout, renderer, TRUE);
-		gtk_cell_layout_set_attributes (layout, renderer, "value", 1, "text", 2, NULL);
-		g_object_set (G_OBJECT (renderer), "width", 150, NULL);
-	}
-	static GtkWidget *createCombo (GtkTreeModel *model)
-	{
-		GtkWidget *combo = gtk_combo_box_new_with_model (model);
-		packCellRenderers (GTK_CELL_LAYOUT (combo));
-		return combo;
-	}
-#endif
-	static GtkWidget *createMenuButton (GtkTreeModel *model)
-	{
-		GtkWidget *button = ygtk_menu_button_new(), *menu;
-		gtk_widget_set_tooltip_text (button, _("Disk usage"));
-		gtk_container_add (GTK_CONTAINER (button), gtk_image_new_from_pixbuf (NULL));
-
-#if 1
-		menu = createView (model, false);
-#else
-		menu = gtk_menu_new();
-		Ypp::Disk *disk = Ypp::get()->getDisk();
-		for (int i = 0; disk->getPartition (i); i++) {
-			GtkWidget *cell = gtk_cell_view_new();
-			GtkTreePath *path = gtk_tree_path_new_from_indices (i, -1);
-			gtk_cell_view_set_model (GTK_CELL_VIEW (cell), model);
-			gtk_cell_view_set_displayed_row (GTK_CELL_VIEW (cell), path);
-			packCellRenderers (GTK_CELL_LAYOUT (cell));
-			gtk_tree_path_free (path);
-
-			GtkWidget *item = gtk_menu_item_new();
-			gtk_container_add (GTK_CONTAINER (item), cell);
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-			gtk_widget_show_all (cell);
-			gtk_widget_show_all (item);
-		}
-#endif
-		ygtk_menu_button_set_popup_align (YGTK_MENU_BUTTON (button), menu, 0.0, 1.0);
-		return button;
 	}
 };
 
@@ -2607,7 +2651,6 @@ public:
 		YGDialog::currentDialog()->setTitle (title);
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-		busyCursor();
 		ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"));
 		ygtk_wizard_set_button_str_id (wizard, wizard->abort_button, "cancel");
 		ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL);
@@ -2620,6 +2663,7 @@ public:
 		YGDialog *dialog = YGDialog::currentDialog();
 		dialog->setCloseCallback (confirm_cb, this);
 
+		busyCursor();
 		m_package_selector = new PackageSelector (wizard, onlineUpdateMode(),
 			repoMgrEnabled(), summaryMode());
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), m_package_selector->getWidget());

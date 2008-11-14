@@ -1,3 +1,12 @@
+2008-11-14  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.cc: bug fix 442052: clamp window to desktop size.
+
+	* src/ygtkbargraph.h/c: added flat style.
+
+	* src/YGPackageSelector.cc & src/yzyppwrapper.h/cc: show disk
+	changed size.
+
 2008-11-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.h/cc & YG*.cc: bug fix 443214: bad event handling

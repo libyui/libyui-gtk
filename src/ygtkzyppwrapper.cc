@@ -255,18 +255,17 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		case YGtkZyppModel::ICON_COLUMN:
 		{
 			GdkPixbuf *pixbuf = 0;
-			if (column == YGtkZyppModel::ICON_COLUMN)
-				switch (package->type()) {
-					case Ypp::Package::PATTERN_TYPE: {
-						std::string filename (package->icon());
-						GtkIconTheme *icons = gtk_icon_theme_get_default();
-						pixbuf = gtk_icon_theme_load_icon (icons,
-							filename.c_str(), 32, GtkIconLookupFlags (0), NULL);
-						break;
-					}
-					default:
-						break;
+			switch (package->type()) {
+				case Ypp::Package::PATTERN_TYPE: {
+					std::string filename (package->icon());
+					GtkIconTheme *icons = gtk_icon_theme_get_default();
+					pixbuf = gtk_icon_theme_load_icon (icons,
+						filename.c_str(), 32, GtkIconLookupFlags (0), NULL);
+					break;
 				}
+				default:
+					break;
+			}
 			if (pixbuf) {
 				if (!package->isInstalled()) {
 					GdkPixbuf *_pixbuf = pixbuf;

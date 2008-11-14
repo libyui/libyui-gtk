@@ -30,11 +30,13 @@ typedef struct _YGtkBarGraphClass  YGtkBarGraphClass;
 struct _YGtkBarGraph
 {
 	YGtkRatioHBox parent;
+	// members:
+	guint flat : 2;
 };
 
 struct _YGtkBarGraphClass
 {
-	YGtkRatioBoxClass parent_class;
+	YGtkRatioHBoxClass parent_class;
 };
 
 GtkWidget *ygtk_bar_graph_new (void);
@@ -43,6 +45,7 @@ GType ygtk_bar_graph_get_type (void) G_GNUC_CONST;
 void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries);
 void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *label_entry, int value);
 
+void ygtk_bar_graph_set_style (YGtkBarGraph *bar, gboolean flat);
 void ygtk_bar_graph_customize_bg (YGtkBarGraph *bar, int index, GdkColor *color);
 void ygtk_bar_graph_customize_fg (YGtkBarGraph *bar, int index, GdkColor *color);
 
@@ -91,7 +94,7 @@ GType ygtk_colored_label_get_type (void) G_GNUC_CONST;
 void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkColor *color);
 void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkColor *color);
 
-void ygtk_colored_label_set_shadow_type (YGtkColoredLabel *label, GtkShadowType type);
+void ygtk_colored_label_set_shadow (YGtkColoredLabel *label, gboolean set_shadow);
 
 G_END_DECLS
 #endif /*YGTK_COLORED_LABEL*/

@@ -253,8 +253,8 @@ struct Ypp
 
 	struct Disk {
 		struct Partition {
-			std::string path, used_str, total_str;
-			long long used, total;
+			std::string path, used_str, delta_str, total_str;
+			long long used, delta, total;
 		};
 		const Partition *getPartition (int nb);
 
