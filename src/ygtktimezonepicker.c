@@ -170,8 +170,8 @@ void ygtk_time_zone_picker_set_map (YGtkTimeZonePicker *picker, const char *file
 		picker->map_height = gdk_pixbuf_get_height (picker->map_pixbuf);
 	}
 	else {
-		g_warning ("Couldn't load map: %s\n%s\n", filename, error->message);
-		picker->map_width = picker->map_height = 1;
+		g_warning ("Couldn't load map: %s\n%s\n", filename, error ? error->message : "(unknown)");
+		picker->map_width = 300; picker->map_height = 50;
 	}
 
 	char buf [4096];
@@ -454,6 +454,17 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 	int width, height;
 	gdk_window_get_size (event->window, &width, &height);
 
+	if (!picker->map_pixbuf) {
+		// show alt text if no image was loaded
+		PangoLayout *layout;
+		layout = gtk_widget_create_pango_layout (widget,
+			"Timezone map could not be found.\nVerify the integrity of the yast2-theme-* package.");
+		cairo_move_to (cr, 10, 10);
+		pango_cairo_show_layout (cr, layout);
+		g_object_unref (layout);
+		goto cleanup;
+	}
+
 	gdk_cairo_set_source_pixbuf (cr, picker->map_pixbuf, 0, 0);
 	cairo_matrix_t matrix;
 	cairo_matrix_init_translate (&matrix, picker->map_x - (width/2)/picker->scale,
@@ -525,6 +536,7 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 		cairo_new_path (cr);
 	}
 
+cleanup:
 	cairo_destroy (cr);
 	gtk_paint_shadow (widget->style, event->window, GTK_STATE_NORMAL,
 		GTK_SHADOW_IN, &event->area, widget, "frame", 0, 0, width, height);
