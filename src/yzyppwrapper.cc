@@ -1172,9 +1172,14 @@ int m_installedPkgs, m_totalPkgs;
 			hasPath = g_file_test (ICON_PATH, G_FILE_TEST_IS_DIR) ? 1 : 0;
 		if (hasPath) {
 			std::string code (m_locale.code());
-			std::string::size_type i = code.find ('_', 0);
-			if (i != std::string::npos)
-				code.erase (i);
+			std::string::size_type i = code.find_last_of ('_');
+			if (i != std::string::npos) {
+				code.erase (0, i+1);
+				// down case country name
+				gchar *str = g_ascii_strdown (code.c_str(), -1);
+				code = str;
+				g_free (str);
+			}
 			std::string filename (ICON_PATH);
 			filename += code + "/flag.png";
 			if (g_file_test (filename.c_str(), G_FILE_TEST_IS_REGULAR))
