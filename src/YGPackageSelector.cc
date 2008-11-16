@@ -678,12 +678,12 @@ public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	PackagesView (bool isTree, bool editable)
+	PackagesView (bool isTree, bool enableIconsMode, bool editable)
 	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree)
 	{
 		m_bin = ygtk_scrolled_window_new();
 
-		if (!isTree) {
+		if (enableIconsMode) {
 			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
 			button = create_toggle_button ("pkg-list-mode.xpm", _("View as list"), NULL);
 			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
@@ -1303,7 +1303,7 @@ private:
 		Pool (Collections::Listener *listener, Ypp::Package::Type type)
 		: View (listener)
 		{
-			m_view = new PackagesView (type == Ypp::Package::PATTERN_TYPE, true);
+			m_view = new PackagesView (type == Ypp::Package::PATTERN_TYPE, false, true);
 			m_view->setPool (new Ypp::TreePool (type));
 			m_view->setListener (this);
 
@@ -2538,7 +2538,7 @@ public:
 	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr,
 	                 bool summaryMode)
 	{
-		m_packages = new PackagesView (false, true);
+		m_packages = new PackagesView (false, true, true);
 		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (updateMode);
@@ -2754,7 +2754,7 @@ protected:
 			gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
 							        GTK_STOCK_OK, GTK_RESPONSE_YES, NULL);
 
-			PackagesView *view = new PackagesView (false, true);
+			PackagesView *view = new PackagesView (false, false, true);
 			view->setPool (pool);
 			gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
 
