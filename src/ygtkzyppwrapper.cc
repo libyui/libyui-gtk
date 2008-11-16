@@ -269,7 +269,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			if (pixbuf) {
 				if (!package->isInstalled()) {
 					GdkPixbuf *_pixbuf = pixbuf;
-					pixbuf = YGUtils::setOpacity (_pixbuf, 40, true);
+					pixbuf = YGUtils::setOpacity (_pixbuf, 50, true);
 					g_object_unref (_pixbuf);
 				}
 			}
