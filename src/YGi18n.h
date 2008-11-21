@@ -25,6 +25,9 @@
 
 #define TEXTDOMAIN "yast2-gtk"
 
+// tag for translation but don't translate; no N_ in y2makepot ...
+#define __(a) (a)
+
 static inline const char * _( const char * msgid )
 {
 	return ( !msgid || !*msgid ) ? "" : dgettext( TEXTDOMAIN, msgid );

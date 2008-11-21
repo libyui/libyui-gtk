@@ -1,3 +1,9 @@
+2008-11-21  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGi18n.h: add __ macro for static string tagging
+	* src/pkg-selector-help.h: tag our strings, mangle Christian's
+	'Jager' to ascii to help (lame y2makepot)
+
 2008-11-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix 446352: patches were not being shown.

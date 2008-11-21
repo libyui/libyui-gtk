@@ -3,7 +3,7 @@
  */
 
 static const char *pkg_help =
-"<h1>Purpose</h1>"
+__("<h1>Purpose</h1>"
 "<p>This tool lets you install, remove, and update applications.</p>"
 "<p>openSUSE's software management is also called 'package management'. A package is "
 "generally an application bundle, but multiple packages that extend the application "
@@ -68,10 +68,10 @@ static const char *pkg_help =
 "without performing any changes, simply press the button labeled 'Abort'.</p>"
 ""
 "<blockquote><i>Developed by Ricardo Cruz &lt;rpmcruz@alunos.dcc.fc.up.pt&gt;<br>" 
-"Thanks to Christian Jäger for co-designing this tool.</i></blockquote>";
+"Thanks to Christian Jager for co-designing this tool.</i></blockquote>");
 
 static const char *patch_help =
-"<h1>Purpose</h1>"
+__("<h1>Purpose</h1>"
 "<p>This tool gives you control on overviewing and picking patches. You may also "
 "reverse patches that have been applied to the system.</p>"
 ""
@@ -89,5 +89,5 @@ static const char *patch_help =
 "are very restrained in pushing patches; you can be sure that all patches are "
 "of signficant severity.</p>"
 "<p>If you are looking for applications enhancements, you should check for Upgrades "
-"on the Software Manager.</p>";
+"on the Software Manager.</p>");
 
