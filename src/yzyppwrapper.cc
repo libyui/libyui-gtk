@@ -86,7 +86,7 @@ struct StringTree {
 		return NULL;
 	}
 
-	Ypp::Node *add (const std::string &tree_str, const char *icon)
+	Ypp::Node *add (const std::string &tree_str, const std::string &order, const char *icon)
 	{
 		const gchar delimiter[2] = { delim, '\0' };
 		gchar **nodes_str = g_strsplit (tree_str.c_str(), delimiter, -1);
@@ -98,16 +98,29 @@ struct StringTree {
 			if (!**i)
 				continue;
 			bool found = false;
-			for (sibling = parent->children; sibling; sibling = sibling->next) {
-				Ypp::Node *yNode = (Ypp::Node *) sibling->data;
-				int cmp = (*compare) (*i, yNode->name.c_str());
-				if (cmp == 0) {
-					found = true;
-					ret = yNode;
-					break;
+			if (!order.empty())
+				for (sibling = parent->children; sibling; sibling = sibling->next) {
+					Ypp::Node *yNode = (Ypp::Node *) sibling->data;
+					int cmp = (*compare) (*i, yNode->name.c_str());
+					if (cmp == 0) {
+						found = true;
+						ret = yNode;
+						break;
+					}
 				}
-				else if (cmp < 0)
-					break;
+			if (!found) {
+				const char *order_str = order.empty() ? *i : order.c_str();
+				for (sibling = parent->children; sibling; sibling = sibling->next) {
+					Ypp::Node *yNode = (Ypp::Node *) sibling->data;
+					int cmp = (*compare) (order_str, yNode->name.c_str());
+					if (cmp == 0) {
+						found = true;
+						ret = yNode;
+						break;
+					}
+					else if (cmp < 0)
+						break;
+				}
 			}
 			if (!found)
 				break;
@@ -168,7 +181,7 @@ public:
 
 private:
 	bool resolveProblems();
-	Node *addCategory (Ypp::Package::Type type, const std::string &str);
+	Node *addCategory (Ypp::Package::Type type, const std::string &str, const std::string &order);
 	void polishCategories (Ypp::Package::Type type);
 	Node *addCategory2 (Ypp::Package::Type type, ZyppSelectable sel);
 
@@ -208,7 +221,7 @@ std::string m_name, m_summary;
 	virtual bool containsPackage (const Ypp::Package *package) = 0;
 	virtual void containsStats (int *installed, int *total) = 0;
 
-	virtual std::string description (bool rich) = 0;
+	virtual std::string description (MarkupType markup) = 0;
 	virtual std::string filelist (bool rich) { return ""; }
 	virtual std::string changelog()          { return ""; }
 	virtual std::string authors (bool rich)  { return ""; }
@@ -271,7 +284,7 @@ bool Ypp::Package::containsPackage (const Ypp::Package *package) const
 void Ypp::Package::containsStats (int *installed, int *total) const
 { const_cast <Impl *> (impl)->containsStats (installed, total); }
 
-std::string Ypp::Package::description (bool rich) { return impl->description (rich); }
+std::string Ypp::Package::description (MarkupType markup) { return impl->description (markup); }
 std::string Ypp::Package::filelist (bool rich)    { return impl->filelist (rich); }
 std::string Ypp::Package::changelog()             { return impl->changelog(); }
 std::string Ypp::Package::authors (bool rich)     { return impl->authors (rich); }
@@ -353,7 +366,7 @@ int m_installedPkgs, m_totalPkgs;
 	{
 		// for patterns, there is no reliable way to know if it's installed (because
 		// if it set to be installed that will alter candidate's satisfied status.)
-		if (type == Ypp::Package::PATTERN_TYPE)
+		if (type == Ypp::Package::PATTERN_TYPE || type == Ypp::Package::PATCH_TYPE)
 			m_isInstalled = m_sel->candidateObj().isSatisfied();
 		else {
 			if (m_sel->installedEmpty())
@@ -390,18 +403,37 @@ int m_installedPkgs, m_totalPkgs;
 	GSList *getContainedPackages()
 	{
 		if (!m_containsPackages) {
-			if (type == Ypp::Package::PATTERN_TYPE) {
-				ZyppObject object = m_sel->theObj();
-				ZyppPattern pattern = tryCastToZyppPattern (object);
-				zypp::Pattern::Contents contents (pattern->contents());
-				for (zypp::Pattern::Contents::Selectable_iterator it =
-				     contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-					ZyppSelectablePtr sel = get_pointer (*it);
-					m_containsPackages = g_slist_append (m_containsPackages, sel);
-					if (!sel->installedEmpty())
-						m_installedPkgs++;
-					m_totalPkgs++;
+			switch (type) {
+				case Ypp::Package::PATTERN_TYPE: {
+					ZyppObject object = m_sel->theObj();
+					ZyppPattern pattern = tryCastToZyppPattern (object);
+					zypp::Pattern::Contents contents (pattern->contents());
+					for (zypp::Pattern::Contents::Selectable_iterator it =
+						 contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+						ZyppSelectablePtr sel = get_pointer (*it);
+						m_containsPackages = g_slist_append (m_containsPackages, sel);
+						if (!sel->installedEmpty())
+							m_installedPkgs++;
+						m_totalPkgs++;
+					}
+					break;
 				}
+				case Ypp::Package::PATCH_TYPE: {
+					ZyppObject object = m_sel->theObj();
+					ZyppPatch patch = tryCastToZyppPatch (object);
+					zypp::Patch::Contents contents (patch->contents());
+					for (zypp::Patch::Contents::Selectable_iterator it =
+					     contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+						ZyppSelectablePtr sel = get_pointer (*it);
+						m_containsPackages = g_slist_append (m_containsPackages, sel);
+						if (!sel->installedEmpty())
+							m_installedPkgs++;
+						m_totalPkgs++;
+					}
+					break;
+				}
+				default:
+					break;
 			}
 		}
 		return m_containsPackages;
@@ -426,11 +458,24 @@ int m_installedPkgs, m_totalPkgs;
 		return m_sel->theObj()->summary();
 	}
 
-	virtual std::string description (bool rich)
+	virtual std::string description (MarkupType markup)
 	{
 		ZyppObject object = m_sel->theObj();
 		std::string text = object->description(), br = "<br>";
-		if (!rich)
+		if (markup == GTK_MARKUP && type == Ypp::Package::PACKAGE_TYPE) {
+			text += "\n";
+			const Ypp::Package::Version *version;
+			version = getInstalledVersion();
+			if (version)
+				text += std::string ("\n") + _("Installed:") + " " + version->number;
+			version = getAvailableVersion (0);
+			if (version) {
+				text += std::string ("\n") + _("Candidate:") + " " + version->number;
+				text += std::string (" (") + _("from") + " " + version->repo->name + ")";
+			}
+			return text;
+		}
+		if (markup == NO_MARKUP)
 			return text;
 
 		switch (type) {
@@ -438,7 +483,6 @@ int m_installedPkgs, m_totalPkgs;
 			{
 				// if it has this header, then it is HTML
 				const char *header = "<!-- DT:Rich -->", header_len = 16;
-
 				if (!text.compare (0, header_len, header, header_len))
 					;
 				else {
@@ -534,7 +578,7 @@ int m_installedPkgs, m_totalPkgs;
 				const std::list <std::string> &filesList = package->filenames();
 				for (std::list <std::string>::const_iterator it = filesList.begin();
 					 it != filesList.end(); it++)
-					tree.add (*it, 0);
+					tree.add (*it, "", 0);
 
 				struct inner {
 					static std::string getPath (GNode *node)
@@ -812,11 +856,8 @@ int m_installedPkgs, m_totalPkgs;
 
 	virtual bool containsPackage (const Ypp::Package *package)
 	{
-		if (type == Ypp::Package::PATTERN_TYPE) {
-			PackageSel *sel = (PackageSel *) package->impl;
-			return g_slist_find (getContainedPackages(), get_pointer (sel->m_sel)) != NULL;
-		}
-		return NULL;
+		PackageSel *sel = (PackageSel *) package->impl;
+		return g_slist_find (getContainedPackages(), get_pointer (sel->m_sel)) != NULL;
 	}
 
 	virtual void containsStats (int *installed, int *total)
@@ -1042,8 +1083,13 @@ int m_installedPkgs, m_totalPkgs;
 	{
 		if (!m_installedVersion) {
 			const ZyppObject installedObj = m_sel->installedObj();
-			assert (installedObj != NULL);
-			m_installedVersion = constructVersion (installedObj, NULL);
+			if (installedObj != NULL)
+				m_installedVersion = constructVersion (installedObj, NULL);
+			else {  // patch
+				if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
+					m_installedVersion = constructVersion (m_sel->candidateObj(), NULL);
+			}
+				
 		}
 		return m_installedVersion;
 	}
@@ -1125,7 +1171,7 @@ int m_installedPkgs, m_totalPkgs;
 		return stream.str();
 	}
 
-	virtual std::string description (bool rich)
+	virtual std::string description (MarkupType markup)
 	{
 		std::string text ("(" + m_locale.code() + ")");
 		int installed, total;
@@ -1243,6 +1289,12 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				Package *b = (Package *) _b;
 				return strcasecmp (a->name().c_str(), b->name().c_str());
 			}
+			static gint compare_pattern (gconstpointer a, gconstpointer b)
+			{
+				ZyppPattern pattern1 = tryCastToZyppPattern (((PackageSel *) ((Package *) a)->impl)->m_sel->theObj());
+				ZyppPattern pattern2 = tryCastToZyppPattern (((PackageSel *) ((Package *) b)->impl)->m_sel->theObj());
+				return strcmp (pattern1->order().c_str(), pattern2->order().c_str());
+			}
 		};
 
 		if (type == Package::LANGUAGE_TYPE) {
@@ -1289,7 +1341,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 						ZyppPackage zpackage = tryCastToZyppPkg (object);
 						if (!zpackage)
 							continue;
-						category = addCategory (type, zpackage->group());
+						category = addCategory (type, zpackage->group(), "");
 						category2 = addCategory2 (type, sel);
 						break;
 					}
@@ -1298,7 +1350,7 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 						ZyppPattern pattern = tryCastToZyppPattern (object);
 						if (!pattern || !pattern->userVisible())
 							continue;
-						category = addCategory (type, pattern->category());
+						category = addCategory (type, pattern->category(), pattern->order());
 						break;
 					}
 					case Package::PATCH_TYPE:
@@ -1309,11 +1361,8 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 						if (sel->candidateObj()) {
 							if (!sel->candidateObj().isRelevant())
 								continue;
-							if (sel->installedEmpty() && sel->candidateObj().isSatisfied())
-								continue;
 						}
-					continue;
-						category = addCategory (type, patch->category());
+						category = addCategory (type, patch->category(), "");
 						break;
 					}
 					default:
@@ -1328,7 +1377,10 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 		// lets reverse before sorting, as they are somewhat sorted already
 		pool = g_slist_reverse (pool);
 		// a sort merge. Don't use g_slist_insert_sorted() -- its linear
-		pool = g_slist_sort (pool, inner::compare);
+		if (type == Ypp::Package::PATTERN_TYPE)
+			pool = g_slist_sort (pool, inner::compare_pattern);
+		else
+			pool = g_slist_sort (pool, inner::compare);
 		packages[type] = pool;
 		polishCategories (type);
 	}
@@ -1465,7 +1517,7 @@ struct Ypp::QueryPool::Query::Impl
 					str_match = inner::strstr (package->summary().c_str(), key,
 					                           false, full_word_match);
 				if (!str_match && use_description)
-					str_match = inner::strstr (package->description (false).c_str(), key,
+					str_match = inner::strstr (package->description (NO_MARKUP).c_str(), key,
 					                           false, full_word_match);
 				if (!str_match && use_filelist)
 					str_match = inner::strstr (package->filelist (false).c_str(), key,
@@ -1974,7 +2026,7 @@ Ypp::Node *Ypp::Node::child()
 	return NULL;
 }
 
-Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &category_str)
+Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &category_str, const std::string &order)
 {
 	struct inner {
 		static int cmp (const char *a, const char *b)
@@ -2004,7 +2056,7 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 
 	if (!categories[type])
 		categories[type] = new StringTree (inner::cmp, '/');
-	return categories[type]->add (category, 0);
+	return categories[type]->add (category, order, 0);
 }
 
 Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
@@ -2045,7 +2097,7 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
 
 	if (!categories2)
 		categories2 = new StringTree (inner::cmp, '/');
-	return categories2->add (group_name, group_icon);
+	return categories2->add (group_name, "", group_icon);
 }
 
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)

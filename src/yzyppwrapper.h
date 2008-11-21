@@ -25,6 +25,10 @@
 #include <string>
 #include <list>
 
+enum MarkupType {
+	HTML_MARKUP, GTK_MARKUP, NO_MARKUP
+};
+
 struct Ypp
 {
 	struct Repository;
@@ -54,7 +58,7 @@ struct Ypp
 		{ return collection->containsPackage (this); }
 		void containsStats (int *installed, int *total) const;
 
-		std::string description (bool rich);
+		std::string description (MarkupType markup);
 		std::string filelist (bool rich);
 		std::string changelog();
 		std::string authors (bool rich);

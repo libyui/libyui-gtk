@@ -414,9 +414,9 @@ Listener *m_listener;
 	};
 	struct ListView : public View
 	{
-		bool m_isTree;
-		ListView (bool isTree, bool editable, PackagesView *parent)
-		: View (parent), m_isTree (isTree)
+		bool m_isTree, m_descriptiveTooltip;
+		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
+		: View (parent), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
 			gtk_tree_view_set_headers_visible (view, FALSE);
@@ -430,6 +430,10 @@ Listener *m_listener;
 			gtk_tree_view_column_set_fixed_width (column, 38);
 			gtk_tree_view_append_column (view, column);
 			renderer = gtk_cell_renderer_text_new();
+			if (isTree) {
+				int height = MAX (34, YGUtils::getCharsHeight (m_widget, 2));
+				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
+			}
 			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 			column = gtk_tree_view_column_new_with_attributes ("", renderer,
 				"markup", YGtkZyppModel::NAME_DESCRIPTION_COLUMN, NULL);
@@ -437,9 +441,8 @@ Listener *m_listener;
 			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
 			gtk_tree_view_column_set_expand (column, TRUE);
 			gtk_tree_view_append_column (view, column);
-			if (!isTree)
-				gtk_tree_view_set_fixed_height_mode (view, TRUE);
-			gtk_tree_view_set_show_expanders (view, FALSE);
+			gtk_tree_view_set_fixed_height_mode (view, TRUE);
+			gtk_tree_view_set_show_expanders (view, FALSE);  /* would conflict with icons */
 
 			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 			gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
@@ -530,7 +533,7 @@ Listener *m_listener;
 		}
 
 		static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
-			gboolean keyboard_mode, GtkTooltip *tooltip, gpointer data)
+			gboolean keyboard_mode, GtkTooltip *tooltip, ListView *pThis)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (widget);
 			GtkTreeModel *model;
@@ -546,41 +549,38 @@ Listener *m_listener;
 				if (!package) return FALSE;
 
 				std::string text;
-				switch (package->type()) {
-					case Ypp::Package::PACKAGE_TYPE: {
-						GtkTreeViewColumn *column;
-						int bx, by;
-						gtk_tree_view_convert_widget_to_bin_window_coords (
-							view, x, y, &bx, &by);
-						gtk_tree_view_get_path_at_pos (
-							view, x, y, NULL, &column, NULL, NULL);
-						if (column == gtk_tree_view_get_column (view, 0)) {
-							if (package->toInstall (NULL)) {
-								if (package->isInstalled())
-									text = _("To re-install a different version");
-								else
-									text = _("To install");
-							}
-							else if (package->toRemove())
-								text = _("To remove");
-							else if (package->isInstalled()) {
-								text = _("Installed");
-								if (package->hasUpgrade())
-									text += _(" (upgrade available)");
-							}
+				if (!pThis->m_descriptiveTooltip) {
+					GtkTreeViewColumn *column;
+					int bx, by;
+					gtk_tree_view_convert_widget_to_bin_window_coords (
+						view, x, y, &bx, &by);
+					gtk_tree_view_get_path_at_pos (
+						view, x, y, NULL, &column, NULL, NULL);
+					if (column == gtk_tree_view_get_column (view, 0)) {
+						if (package->toInstall()) {
+							if (package->isInstalled())
+								text = _("To re-install a different version");
 							else
-								text = _("Not installed");
-							if (package->isAuto())
-								text += _("\n<i>status changed by the dependency solver</i>");
-							if (package->isLocked())
-								text += _("\n<i>locked: right-click to unlock</i>");
+								text = _("To install");
 						}
-						break;
+						else if (package->toRemove())
+							text = _("To remove");
+						else if (package->isInstalled()) {
+							text = _("Installed");
+							if (package->hasUpgrade())
+								text += _(" (upgrade available)");
+						}
+						else
+							text = _("Not installed");
+						if (package->isAuto())
+							text += _("\n<i>status changed by the dependency solver</i>");
+						if (package->isLocked())
+							text += _("\n<i>locked: right-click to unlock</i>");
 					}
-					default:
-						text = std::string ("<b>") + package->name() + "</b>\n";
-						text += package->description (true);
-						break;
+				}
+				else {
+					text = std::string ("<b>") + package->name() + "</b>\n";
+					text += package->description (GTK_MARKUP);
 				}
 				if (text.empty())
 					return FALSE;
@@ -672,28 +672,30 @@ Listener *m_listener;
 GtkWidget *m_bin;
 GtkTreeModel *m_model;
 View *m_view;
-bool m_isTree;
+bool m_isTree, m_descriptiveTooltip;
 
 public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	PackagesView (bool isTree, bool enableIconsMode, bool editable)
-	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree)
+	PackagesView (bool useScrollWindow, bool isTree, bool descriptiveTooltip, bool enableTilesMode, bool editable)
+	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 	{
-		m_bin = ygtk_scrolled_window_new();
+		if (useScrollWindow) {
+			m_bin = ygtk_scrolled_window_new();
+			if (enableTilesMode) {
+				GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
+				button = create_toggle_button ("pkg-list-mode.xpm", _("View as list"), NULL);
+				gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
+				button = create_toggle_button ("pkg-tiles-mode.xpm", _("View as grid"), button);
+				gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
+				gtk_widget_show_all (buttons);
 
-		if (enableIconsMode) {
-			GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-			button = create_toggle_button ("pkg-list-mode.xpm", _("View as list"), NULL);
-			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-			button = create_toggle_button ("pkg-tiles-mode.xpm", _("View as grid"), button);
-			gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-			gtk_widget_show_all (buttons);
-
-			ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
+				ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
+			}
 		}
-
+		else
+			m_bin = gtk_event_box_new();
 		setMode (LIST_MODE, editable);
 	}
 
@@ -714,7 +716,7 @@ public:
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
 		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, editable, this);
+			m_view = new ListView (m_isTree, m_descriptiveTooltip, editable, this);
 		else // if (mode == ICON_MODE)
 			m_view = new IconView (editable, this);
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
@@ -1303,7 +1305,7 @@ private:
 		Pool (Collections::Listener *listener, Ypp::Package::Type type)
 		: View (listener)
 		{
-			m_view = new PackagesView (type == Ypp::Package::PATTERN_TYPE, false, true);
+			m_view = new PackagesView (true, true, true, false, true);
 			m_view->setPool (new Ypp::TreePool (type));
 			m_view->setListener (this);
 
@@ -1732,7 +1734,6 @@ private:
 		}
 
 		m_collection->writeQuery (query);
-
 		m_listener->doQuery (query);
 		normalCursor();
 	}
@@ -1858,9 +1859,13 @@ Filters *m_filters;  // used to filter repo versions...
 		if (packages.installed()) {
 			gtk_widget_show (m_installed_box);
 			if (single_package) {
-				std::string version = single_package->getInstalledVersion()->number;
-				version += "  <small>(" + single_package->getInstalledVersion()->arch + ")</small>";
-				gtk_label_set_markup (GTK_LABEL (m_installed_version), version.c_str());
+				std::string text;
+				const Ypp::Package::Version *version = single_package->getInstalledVersion();
+				if (version) {
+					text = version->number;
+					text += "  <small>(" + version->arch + ")</small>";
+				}
+				gtk_label_set_markup (GTK_LABEL (m_installed_version), text.c_str());
 			}
 			else
 				gtk_label_set_text (GTK_LABEL (m_installed_version), "(several)");
@@ -2074,7 +2079,6 @@ private:
 		}
 	};
 
-
 	struct DepExpander {
 		GtkWidget *expander, *table, *requires, *provides;
 
@@ -2120,6 +2124,8 @@ private:
 GtkWidget *m_widget, *m_icon, *m_icon_frame;
 TextExpander *m_description, *m_filelist, *m_changelog, *m_authors, *m_support;
 DepExpander *m_dependencies;
+GtkWidget *m_contents_expander;
+PackagesView *m_contents;
 Listener *m_listener;
 
 public:
@@ -2150,6 +2156,7 @@ public:
 			m_authors = new TextExpander (_("Authors"));
 			m_support = new TextExpander (_("Support"));
 			m_dependencies = new DepExpander (_("Dependencies"));
+			m_contents = NULL;
 			gtk_box_pack_start (GTK_BOX (vbox), m_filelist->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_changelog->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (vbox), m_authors->getWidget(), FALSE, TRUE, 0);
@@ -2162,6 +2169,11 @@ public:
 		else {
 			m_filelist = m_changelog = m_authors = m_support = NULL;
 			m_dependencies = NULL;
+			m_contents = new PackagesView (false, false, true, false, true);
+			m_contents_expander = gtk_expander_new (_("<b>Applies to</b>"));
+			gtk_expander_set_use_markup (GTK_EXPANDER (m_contents_expander), TRUE);
+			gtk_container_add (GTK_CONTAINER (m_contents_expander), m_contents->getWidget());
+			gtk_box_pack_start (GTK_BOX (vbox), m_contents_expander, FALSE, TRUE, 0);
 		}
 	}
 
@@ -2172,6 +2184,7 @@ public:
 		delete m_authors;
 		delete m_support;
 		delete m_dependencies;
+		delete m_contents;
 	}
 
 	void setPackages (const PkgList &packages)
@@ -2181,7 +2194,7 @@ public:
 		gtk_widget_hide (m_icon_frame);
 		if (packages.single()) {
 			string description = "<b>" + package->name() + "</b><br>";
-			description += package->description (true);
+			description += package->description (HTML_MARKUP);
 			m_description->setText (description);
 
 			if (m_filelist)  m_filelist->setText (package->filelist (true));
@@ -2207,8 +2220,7 @@ public:
 			if (!packages.empty()) {
 				description = "Selected:";
 				description += "<ul>";
-				for (std::list <Ypp::Package *>::const_iterator it = packages.begin();
-				     it != packages.end(); it++)
+				for (PkgList::const_iterator it = packages.begin(); it != packages.end(); it++)
 					description += "<li><b>" + (*it)->name() + "</b></li>";
 				description += "</ul>";
 			}
@@ -2218,6 +2230,20 @@ public:
 			if (m_authors)   m_authors->setText ("");
 			if (m_support)   m_support->setText ("");
 			if (m_dependencies) m_dependencies->setPackage (NULL);
+		}
+		if (m_contents) {
+			Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+			if (packages.empty()) {
+				gtk_widget_hide (m_contents_expander);
+				query->setClear();
+			}
+			else {
+				gtk_widget_show (m_contents_expander);
+				query->addType (Ypp::Package::PACKAGE_TYPE);
+				for (PkgList::const_iterator it = packages.begin(); it != packages.end(); it++)
+					query->addCollection (*it);
+			}
+			m_contents->setQuery (query);
 		}
 	}
 
@@ -2538,7 +2564,7 @@ public:
 	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr,
 	                 bool summaryMode)
 	{
-		m_packages = new PackagesView (false, true, true);
+		m_packages = new PackagesView (true, false, false, true, true);
 		m_filters = new Filters (updateMode, enableRepoMgr);
 		m_control = new PackageControl (m_filters);
 		m_details = new PackageDetails (updateMode);
@@ -2754,7 +2780,7 @@ protected:
 			gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
 							        GTK_STOCK_OK, GTK_RESPONSE_YES, NULL);
 
-			PackagesView *view = new PackagesView (false, false, true);
+			PackagesView *view = new PackagesView (true, false, false, false, true);
 			view->setPool (pool);
 			gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
 

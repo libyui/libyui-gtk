@@ -1,3 +1,16 @@
+2008-11-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: bug fix 446352: patches were not being shown.
+	Code disabled from some debugging I guess, plus a fix to installed
+	patches.
+
+	* src/yzyppwrapper.cc: honor patterns order.
+
+	* src/YGPackageSelector.cc (Details): show contained packages from patch.
+
+	* src/YGPackageSelector.cc (PackagesView): set fixed height to
+	pattern for performance reasons.
+
 2008-11-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: bug fix: use country suffix of language

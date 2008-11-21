@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Nov 21 10:25:17 CET 2008 - coolo@suse.de
+
+ * fixed online update (bnc#446352)
+
+ * fixed patterns order.
+
+-------------------------------------------------------------------
 Wed Nov 19 10:25:17 CET 2008 - coolo@suse.de
 
 - new version on behalf of Ricardo: 2.17.6

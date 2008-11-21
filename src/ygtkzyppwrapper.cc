@@ -244,7 +244,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		    column == YGtkZyppModel::NAME_DESCRIPTION_COLUMN) {
 			std::string name = zmodel->pool->getName (iter->user_data);
 			if (column == YGtkZyppModel::NAME_DESCRIPTION_COLUMN)
-				name = "<b>" + name + "</b>";
+				name = "<big><b><span color=\"darkgray\">" + name + "</span></b></big>";
 			g_value_set_string (value, g_strdup (name.c_str()));
 		}
 		return;
