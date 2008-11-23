@@ -460,11 +460,19 @@ static void ygtk_wizard_header_set_description (YGtkWizardHeader *header, const 
 			}
 		}
 	}
-	gboolean cut = FALSE;
+	gboolean cut = FALSE, markup = FALSE;
 	for (; text[i]; i++) {
-		if (!g_ascii_isspace (text[i])) {
-			cut = TRUE;
-			break;
+		if (markup) {
+			if (text[i] == '>')
+				markup = FALSE;
+		}
+		else {
+			if (text[i] == '<')
+				markup = TRUE;
+			else if (!g_ascii_isspace (text[i])) {
+				cut = TRUE;
+				break;
+			}
 		}
 	}
 	gchar *desc = g_string_free (str, FALSE);
