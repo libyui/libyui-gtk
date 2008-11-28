@@ -358,6 +358,7 @@ static gboolean isIdentTag (const char *tag)
 
 void ygtk_rich_text_init (YGtkRichText *rtext)
 {
+	GtkWidget *widget = GTK_WIDGET (rtext);
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
 	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_editable (tview, FALSE);
@@ -366,12 +367,12 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_view_set_left_margin (tview, 4);
 
 	// Init link support
-	GdkDisplay *display = gtk_widget_get_display (GTK_WIDGET (rtext));
+	GdkDisplay *display = gtk_widget_get_display (widget);
 	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
 	gdk_cursor_ref (rtext->hand_cursor);
 
 #if GTK_CHECK_VERSION(2,10,0)
-	gtk_widget_style_get (GTK_WIDGET (rtext), "link_color", &link_color, NULL);
+	gtk_widget_style_get (widget, "link_color", &link_color, NULL);
 #endif
 
 	g_signal_connect (tview, "event-after",
@@ -379,11 +380,12 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 
 	// Create a few tags like 'h3', 'b', 'i'. others need to be created as we parse
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
-	PangoFontDescription *font_desc = GTK_WIDGET (rtext)->style->font_desc;
+	PangoFontDescription *font_desc = widget->style->font_desc;
 	int size = pango_font_description_get_size (font_desc);
 	if (pango_font_description_get_size_is_absolute (font_desc))
 		size /= PANGO_SCALE;
 
+	gtk_text_buffer_create_tag (buffer, "body", NULL);
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
 		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16,
 		"foreground", "#5c5c5c", NULL);
@@ -410,6 +412,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
 	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER, NULL);
+	gtk_text_buffer_create_tag (buffer, "right", "justification", GTK_JUSTIFY_RIGHT, NULL);
 	// helpers
 	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow", NULL);
 }
@@ -592,9 +595,6 @@ rt_start_element (GMarkupParseContext *context,
                   gpointer             user_data,
                   GError             **error)
 {	// Called for open tags <foo bar="baz">
-	if (!g_ascii_strcasecmp (element_name, "body"))
-		return;
-
 	GRTParseState *state = (GRTParseState*) user_data;
 	GRTPTag *tag = g_malloc (sizeof (GRTPTag));
 	GtkTextIter iter;
@@ -712,9 +712,6 @@ rt_end_element (GMarkupParseContext *context,
                 gpointer             user_data,
                 GError             **error)
 {	// Called for close tags </foo>
-	if (!g_ascii_strcasecmp (element_name, "body"))
-		return;
-
 	GRTParseState *state = (GRTParseState*) user_data;
 
 	if (g_list_length (state->htags) == 0) {
@@ -835,6 +832,26 @@ GtkWidget *ygtk_rich_text_new (void)
 	return g_object_new (YGTK_TYPE_RICH_TEXT, NULL);
 }
 
+static void ygtk_rich_text_set_rtl (YGtkRichText *rtext)
+{
+	GtkTextView *view = GTK_TEXT_VIEW (rtext);
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+	GtkTextIter iter;
+	gtk_text_buffer_get_start_iter (buffer, &iter);
+	do {
+		GtkTextIter end = iter;
+		if (!gtk_text_iter_forward_line (&end))
+			gtk_text_buffer_get_end_iter (buffer, &end);
+
+		gchar *text = gtk_text_iter_get_text (&iter, &end);
+		PangoDirection dir = pango_find_base_dir (text, -1);
+		if (dir == PANGO_DIRECTION_LTR)
+			gtk_text_buffer_apply_tag_by_name (buffer, "right", &iter, &end);
+
+		iter = end;
+	} while (!gtk_text_iter_is_end (&iter));
+}
+
 void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)
 {
 	GtkTextBuffer *buffer;
@@ -871,6 +888,11 @@ void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean p
 	if (gtk_text_iter_backward_char (&before_end_it) &&
 	    gtk_text_iter_get_char (&before_end_it) == '\n')
 		gtk_text_buffer_delete (buffer, &before_end_it, &end_it);
+
+	// GtkTextView does LTR and RTL depending on the paragraph; we want
+	// to change that behavior so it's RTL to the all thing for Arabic
+	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+		ygtk_rich_text_set_rtl (rtext);
 }
 
 /* gtk_text_iter_forward_search() is case-sensitive so we roll our own.

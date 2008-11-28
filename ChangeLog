@@ -34,6 +34,10 @@
 	* src/YGPackageSelector.cc (ListView): arabic fix: because of our previous
 	hack, status column is now 1: adjust tooltips.
 
+	* src/ygtkrichtext.c: arabic fix (bug fix 449600): GtkTextView only detects
+	Arabic in a paragraph per paragraph basis. Work around it so the entire
+	text, including the English parts, are aligned to the right.
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest
