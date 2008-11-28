@@ -28,6 +28,9 @@
 	append a shadow column because GTK doesn't support not having no
 	expand columns.
 
+	* src/yzyppwrapper.cc: i18n fix: use g_utf8_collate in order to properly
+	sort languages and PackageKit categories.
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest

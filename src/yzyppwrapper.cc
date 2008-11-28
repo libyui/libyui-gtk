@@ -1290,6 +1290,12 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				Package *b = (Package *) _b;
 				return strcasecmp (a->name().c_str(), b->name().c_str());
 			}
+			static gint compare_utf8 (gconstpointer _a, gconstpointer _b)
+			{	// slower -- don't use for packages -- only for patterns and languages
+				Package *a = (Package *) _a;
+				Package *b = (Package *) _b;
+				return g_utf8_collate (a->name().c_str(), b->name().c_str());
+			}
 			static gint compare_pattern (gconstpointer a, gconstpointer b)
 			{
 				ZyppPattern pattern1 = tryCastToZyppPattern (((PackageSel *) ((Package *) a)->impl)->m_sel->theObj());
@@ -1380,6 +1386,8 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 		// a sort merge. Don't use g_slist_insert_sorted() -- its linear
 		if (type == Ypp::Package::PATTERN_TYPE)
 			pool = g_slist_sort (pool, inner::compare_pattern);
+		else if (type == Ypp::Package::LANGUAGE_TYPE)
+			pool = g_slist_sort (pool, inner::compare_utf8);
 		else
 			pool = g_slist_sort (pool, inner::compare);
 		packages[type] = pool;
@@ -2037,7 +2045,7 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 				return !strcmp (b, "Other") ? 0 : 1;
 			if (!strcmp (b, "Other"))
 				return -1;
-			return strcmp (a, b);
+			return strcasecmp (a, b);
 		}
 	};
 
@@ -2065,13 +2073,13 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
 	struct inner {
 		static int cmp (const char *a, const char *b)
 		{
-			int r = strcmp (a, b);
+			int r = g_utf8_collate (a, b);
 			if (r != 0) {
 				const char *unknown = zypp_tag_group_enum_to_localised_text
 					(PK_GROUP_ENUM_UNKNOWN);
-				if (!strcmp (a, unknown))
+				if (!g_utf8_collate (a, unknown))
 					return 1;
-				if (!strcmp (b, unknown))
+				if (!g_utf8_collate (b, unknown))
 					return -1;
 			}
 			return r;
