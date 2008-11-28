@@ -78,6 +78,9 @@ public:
 	{
 		setBorder (0);
 		YGLAYOUT_INIT
+		if (dim == YD_HORIZ)
+			// realize doesn't seem to work, so...
+			g_timeout_add_full (G_PRIORITY_LOW, 50, treat_button_icons_cb, this, NULL);
 	}
 
 	virtual void addChild (YWidget *ychild)
@@ -90,6 +93,26 @@ public:
 	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
 	YGLAYOUT_SET_SIZE_IMPL (YLayoutBox)
+
+	static gboolean treat_button_icons_cb (gpointer pData)
+	{
+		YGLayoutBox *pThis = (YGLayoutBox *) pData;
+		// only set stock icons if all to the left have them
+		bool enable = true;
+		for (YWidgetListConstIterator it = pThis->childrenBegin();
+		     it != pThis->childrenEnd(); it++) {
+			YPushButton *ybutton = dynamic_cast <YPushButton *> (*it);
+			if (ybutton) {
+				GtkWidget *button = YGWidget::get (ybutton)->getWidget();
+				GtkWidget *icon = gtk_button_get_image (GTK_BUTTON (button));
+				if (enable)
+					enable = icon != NULL;
+				else if (icon)
+					gtk_widget_hide (icon);
+			}
+		}
+		return FALSE;
+	}
 };
 
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)

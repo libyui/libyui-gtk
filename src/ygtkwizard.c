@@ -711,7 +711,7 @@ static void ygtk_wizard_map (GtkWidget *widget)
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 	YGtkWizardHeader *header = YGTK_WIZARD_HEADER (wizard->m_title);
 	const gchar *title = gtk_label_get_text (GTK_LABEL (header->title));
-	ygdialog_setTitle (title, FALSE);
+	ygdialog_setTitle (strcmp (title, "YaST") ? title : "", FALSE);
 }
 
 static gboolean clear_hash_cb (gpointer key, gpointer value, gpointer data)

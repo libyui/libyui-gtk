@@ -523,13 +523,11 @@ void YGDialog::highlight (YWidget *ywidget)
 
 void YGDialog::setTitle (const std::string &title, bool sticky)
 {
+	if (title.empty())
+		return;
 	if (!m_stickyTitle || sticky) {
 		GtkWindow *window = GTK_WINDOW (m_window->getWidget());
-		gchar *str;
-		if (title.empty())
-			str = g_strdup ("YaST");
-		else
-			str = g_strdup_printf ("%s - YaST", title.c_str());
+		gchar *str = g_strdup_printf ("%s - YaST", title.c_str());
 		gtk_window_set_title (window, str);
 		g_free (str);
 		m_stickyTitle = sticky;
