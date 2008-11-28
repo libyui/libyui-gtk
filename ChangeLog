@@ -38,6 +38,13 @@
 	Arabic in a paragraph per paragraph basis. Work around it so the entire
 	text, including the English parts, are aligned to the right.
 
+	* src/YGDialog.cc: export setTitle() to C code.
+	* src/ygtklinklabel.c: bug fix 449194: "more" link was disapearing on unmap.
+	Not sure why but showing it on map was causing glitches.
+	Just force a resize.
+	* src/ygtkwizard.c: bug fix 449194: update the window title on map (when the
+	wizard is swapped in).
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest

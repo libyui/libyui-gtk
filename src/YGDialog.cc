@@ -537,6 +537,15 @@ void YGDialog::setTitle (const std::string &title, bool sticky)
 	present();
 }
 
+extern "C" {
+	void ygdialog_setTitle (const gchar *title, gboolean sticky);
+};
+
+void ygdialog_setTitle (const gchar *title, gboolean sticky)
+{
+	YGDialog::currentDialog()->setTitle (title, sticky);
+}
+
 void YGDialog::setIcon (const std::string &icon)
 {
 	GtkWindow *window = GTK_WINDOW (m_window->getWidget());

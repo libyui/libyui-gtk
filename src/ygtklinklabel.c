@@ -55,6 +55,14 @@ static void ygtk_link_label_unrealize (GtkWidget *widget)
 	GTK_WIDGET_CLASS (ygtk_link_label_parent_class)->unrealize (widget);
 }
 
+static void ygtk_link_label_map (GtkWidget *widget)
+{
+	// "more" hides on unmap and for some reason showing it clears the
+	// text...
+	gtk_widget_queue_resize (widget);
+	GTK_WIDGET_CLASS (ygtk_link_label_parent_class)->map (widget);
+}
+
 static void ygtk_link_label_clear_layout (YGtkLinkLabel *label)
 {
 	if (label->layout) {
@@ -210,6 +218,7 @@ static void ygtk_link_label_class_init (YGtkLinkLabelClass *klass)
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->realize = ygtk_link_label_realize;
 	widget_class->unrealize = ygtk_link_label_unrealize;
+	widget_class->map = ygtk_link_label_map;
 	widget_class->size_request = ygtk_link_label_size_request;
 	widget_class->size_allocate = ygtk_link_label_size_allocate;
 	widget_class->expose_event = ygtk_link_label_expose_event;

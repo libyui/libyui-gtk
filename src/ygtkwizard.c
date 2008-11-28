@@ -30,6 +30,7 @@ extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
 extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
+extern void ygdialog_setTitle (const gchar *title, gboolean sticky);
 
 //** YGtkHelpDialog
 
@@ -703,6 +704,16 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 	gtk_widget_grab_focus (wizard->next_button);
 }
 
+static void ygtk_wizard_map (GtkWidget *widget)
+{
+	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->map (widget);
+	// since wizards can swap the window, we need to update the title on map
+	YGtkWizard *wizard = YGTK_WIZARD (widget);
+	YGtkWizardHeader *header = YGTK_WIZARD_HEADER (wizard->m_title);
+	const gchar *title = gtk_label_get_text (GTK_LABEL (header->title));
+	ygdialog_setTitle (title, FALSE);
+}
+
 static gboolean clear_hash_cb (gpointer key, gpointer value, gpointer data)
 { return TRUE; }
 static void clear_hash (GHashTable *hash_table)
@@ -1116,6 +1127,7 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
 	widget_class->realize = ygtk_wizard_realize;
+	widget_class->map = ygtk_wizard_map;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_wizard_destroy;
