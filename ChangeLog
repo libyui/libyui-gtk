@@ -31,6 +31,9 @@
 	* src/yzyppwrapper.cc: i18n fix: use g_utf8_collate in order to properly
 	sort languages and PackageKit categories.
 
+	* src/YGPackageSelector.cc (ListView): arabic fix: because of our previous
+	hack, status column is now 1: adjust tooltips.
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest

@@ -561,7 +561,9 @@ Listener *m_listener;
 						view, x, y, &bx, &by);
 					gtk_tree_view_get_path_at_pos (
 						view, x, y, NULL, &column, NULL, NULL);
-					if (column == gtk_tree_view_get_column (view, 0)) {
+					int status_col =
+						gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL ? 1 : 0;
+					if (column == gtk_tree_view_get_column (view, status_col)) {
 						if (package->toInstall()) {
 							if (package->isInstalled())
 								text = _("To re-install a different version");
