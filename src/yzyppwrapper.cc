@@ -2077,9 +2077,9 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
 			if (r != 0) {
 				const char *unknown = zypp_tag_group_enum_to_localised_text
 					(PK_GROUP_ENUM_UNKNOWN);
-				if (!g_utf8_collate (a, unknown))
+				if (!strcmp (a, unknown))
 					return 1;
-				if (!g_utf8_collate (b, unknown))
+				if (!strcmp (b, unknown))
 					return -1;
 			}
 			return r;
