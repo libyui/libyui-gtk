@@ -93,6 +93,10 @@ public:
 		m_new_spin  = gtk_spin_button_new_with_range
 			(minNewPartSize, maxNewPartSize(), 1);
 
+		// keep the partition's order
+		gtk_widget_set_direction (labels_box, GTK_TEXT_DIR_LTR);
+		gtk_widget_set_direction (slider_box, GTK_TEXT_DIR_LTR);
+
 		gtk_box_pack_start (GTK_BOX (slider_box), m_free_spin, FALSE, FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (slider_box), m_scale, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (slider_box), m_new_spin, FALSE, FALSE, 0);

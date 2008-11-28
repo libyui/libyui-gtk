@@ -435,12 +435,17 @@ Listener *m_listener;
 				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
 			}
 			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+			gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+			if (reverse) {  // work-around: Pango ignored alignment flag on RTL
+				gtk_widget_set_direction (m_widget, GTK_TEXT_DIR_LTR);
+				g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
+			}
 			column = gtk_tree_view_column_new_with_attributes ("", renderer,
 				"markup", YGtkZyppModel::NAME_DESCRIPTION_COLUMN, NULL);
 			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
 			gtk_tree_view_column_set_expand (column, TRUE);
-			gtk_tree_view_append_column (view, column);
+			gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 			gtk_tree_view_set_fixed_height_mode (view, TRUE);
 			gtk_tree_view_set_show_expanders (view, FALSE);  /* would conflict with icons */
 

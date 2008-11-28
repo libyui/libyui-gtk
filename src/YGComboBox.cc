@@ -37,12 +37,14 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 		connect (getWidget(), "changed",
 		         G_CALLBACK (selected_changed_cb), this);
+		// realize doesn't seem to work, so...
+		g_timeout_add_full (G_PRIORITY_LOW, 500, realize_cb, this, NULL);
 	}
 
 	inline GtkComboBox *getComboBox()
 	{ return GTK_COMBO_BOX (getWidget()); }
 
-	GtkEntry *getEntry ()
+	GtkEntry *getEntry()
 	{
 		if (!GTK_IS_COMBO_BOX_ENTRY (getWidget())) {
 			yuiError() << "YGComboBox: trying to edit read-only combo box\n";
@@ -127,6 +129,18 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	YGWIDGET_IMPL_COMMON
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YComboBox)
 	YGSELECTION_WIDGET_IMPL_ALL (YComboBox)
+
+	static gboolean realize_cb (gpointer pData)
+	{
+		// some combo boxes have too many items -- wrap the thing in columns
+		YGComboBox *pThis = (YGComboBox *) pData;
+		int rows;
+		pThis->getMaxDepth (&rows);
+		int cols = MIN (rows / 20, 3) + 1;
+		if (cols > 1)  // this changes the popup width, so only set it for cols > 1
+			gtk_combo_box_set_wrap_width (pThis->getComboBox(), cols);
+		return FALSE;
+	}
 };
 
 YComboBox *YGWidgetFactory::createComboBox (YWidget *parent, const string &label, bool editable)

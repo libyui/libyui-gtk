@@ -539,7 +539,7 @@ std::string YGApplication::glyph (const std::string &sym)
 	if (sym == YUIGlyph_CheckMark)
 		return "\u2714";
 	if (sym == YUIGlyph_BulletArrowRight)
-		return "\u279c";
+		return (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL) ? "\u21e6" : "\u279c";
 	if (sym == YUIGlyph_BulletCircle)
 		return "\u274d";
 	if (sym == YUIGlyph_BulletSquare)

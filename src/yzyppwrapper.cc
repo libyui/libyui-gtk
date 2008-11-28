@@ -1162,6 +1162,7 @@ int m_installedPkgs, m_totalPkgs;
 
 	virtual std::string name()
 	{ return m_locale.name(); }
+
 	virtual std::string summary()
 	{
 		int installed, total;

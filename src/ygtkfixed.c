@@ -91,8 +91,7 @@ static void ygtk_fixed_forall (GtkContainer *container, gboolean include_interna
 	}
 }
 
-static void ygtk_fixed_size_request (GtkWidget      *widget,
-                                     GtkRequisition *requisition)
+static void ygtk_fixed_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	YGtkFixed *fixed = YGTK_FIXED (widget);
 	fixed->preferred_size_cb (fixed, &requisition->width, &requisition->height,
@@ -101,8 +100,7 @@ static void ygtk_fixed_size_request (GtkWidget      *widget,
 	GTK_WIDGET_CLASS (ygtk_fixed_parent_class)->size_request (widget, requisition);
 }
 
-static void ygtk_fixed_size_allocate (GtkWidget      *widget,
-                                      GtkAllocation  *allocation)
+static void ygtk_fixed_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	YGtkFixed *fixed = YGTK_FIXED (widget);
 	fixed->set_size_cb (fixed, allocation->width, allocation->height, fixed->data);
@@ -110,7 +108,10 @@ static void ygtk_fixed_size_allocate (GtkWidget      *widget,
 	GSList *i;
 	for (i = fixed->children; i; i = i->next) {
 		YGtkFixedChild *child = i->data;
-		int x = child->x + allocation->x;
+		int x = child->x;
+		if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+			x = allocation->width - (child->x + child->width);
+		x += allocation->x;
 		int y = child->y + allocation->y;
 		GtkAllocation child_alloc =
 			{ x, y, child->width, child->height };

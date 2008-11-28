@@ -29,8 +29,12 @@ static void ygtk_steps_init (YGtkSteps *steps)
 	PangoContext *context = gtk_widget_get_pango_context (GTK_WIDGET (steps));
 	steps->check_mark_layout = pango_layout_new (context);
 	steps->current_mark_layout = pango_layout_new (context);
-	pango_layout_set_markup (steps->check_mark_layout, "\u2714", -1);
-	pango_layout_set_markup (steps->current_mark_layout, "<b>\u2192</b>", -1);
+
+	const gchar *check = "\u2714", *current = "<b>\u2192</b>";
+	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+		current = "<b>\u2190</b>";
+	pango_layout_set_markup (steps->check_mark_layout, check, -1);
+	pango_layout_set_markup (steps->current_mark_layout, current, -1);
 	steps->current_mark_timeout_id = steps->current_mark_frame = 0;
 }
 
@@ -77,6 +81,7 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->expose_event (widget, event);
 
 	YGtkSteps *steps = YGTK_STEPS (widget);
+	gboolean reverse = gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL;
 	GtkStyle *style = gtk_widget_get_style (widget);
 	GList *children = gtk_container_get_children (GTK_CONTAINER (widget)), *i;
 	int n = 0;
@@ -88,13 +93,21 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 			PangoLayout *mark = (n == steps->current_step) ?
 				steps->current_mark_layout : steps->check_mark_layout;
 			int x = label->allocation.x, y = label->allocation.y;
-			x += 4;
+			if (reverse) {
+				PangoRectangle rect;
+				pango_layout_get_pixel_extents (mark, NULL, &rect);
+				x += label->allocation.width - rect.width - 4;
+			}
+			else
+				x += 4;
 			if (n == steps->current_step) {
+				int offset;
 				if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
-					x -= steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
+					offset = steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
 				else
-					x -= (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
+					offset = (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
 					      CURRENT_MARK_ANIMATION_OFFSET;
+				x += offset * (reverse ? 1 : -1);
 			}
 
 			gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,

@@ -68,8 +68,10 @@ public:
 			case YAlignUnchanged:
 				break;
 		}
-		if (xalign != -1)
+		if (xalign != -1) {
 			g_object_set (renderer, "xalign", xalign, NULL);
+			gtk_tree_view_column_set_alignment (column, xalign);
+		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
@@ -91,6 +93,12 @@ public:
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
+	}
+
+	void appendDumbColumn()
+	{
+		IMPL
+		gtk_tree_view_append_column (getView(), gtk_tree_view_column_new());
 	}
 
 	void setModel()
@@ -216,7 +224,11 @@ public:
 		createModel (types);
 		for (int i = 0; i < columns(); i++) {
 			int col = i*2;
-			appendIconTextColumn (header (i), alignment (i), col, col+1);
+			YAlignmentType align = alignment (i);
+			appendIconTextColumn (header (i), align, col, col+1);
+			if ((align == YAlignCenter || align == YAlignEnd) && i == columns()-1)
+				// if last col is aligned: add another so that it doesn't expand.
+				appendDumbColumn();
 		}
 		setModel();
 
@@ -274,6 +286,8 @@ public:
 		GList *columns = gtk_tree_view_get_columns (getView());
 		for (GList *i = columns; i; i = i->next, n++) {
 			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
+			if (n >= this->columns())
+				break;
 			if (sortable) {
 				int index = (n*2)+1;
 				if (!sortable)

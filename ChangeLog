@@ -1,3 +1,33 @@
+2008-11-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGBarGraph.cc (YPartitionSplitter): fix for arabic: tell GTK
+	to not mirror the splitter since we want to keep the partition's order.
+
+	* src/YGPackageSelector (ListView): fix for arabic: properly align packages
+	names and descriptions to the right (otherwise, Pango tries to be smart
+	when aligning English multi-line text for RTL).
+
+	* src/YGUI.cc (glyph): fix for arabic: on yast initilization a right-arrow
+	is used: make it use a left one for arabic.
+
+	* src/ygtkcellrenderertextpixbuf.c: fix for arabic: made the alignment
+	when an icon is set working properly. (bug fix 449627)
+
+	* src/ygtkfixed.c: fix for arabic: mirror the UI for arabic. libyui probably
+	should do this in the future.
+
+	* src/ygtklinklabel.c: fix for arabic: header open help line's "more"
+	link wasn't being placed properly.
+
+	* src/ygtksteps.c: fix for arabic: mirror the marker placement.
+
+	* src/YGSelectionModel.cc: fixed getMaxDepth() for lists.
+	* src/YGComboBox.cc: when too many items, wrap the combo into columns.
+
+	* src/YGTable.cc (YTable): when the last column alignment flag is set,
+	append a shadow column because GTK doesn't support not having no
+	expand columns.
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest

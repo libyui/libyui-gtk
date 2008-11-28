@@ -74,7 +74,6 @@ static void ygtk_link_label_ensure_layout (YGtkLinkLabel *label)
 		label->layout = gtk_widget_create_pango_layout (widget, label->text);
 		pango_layout_set_single_paragraph_mode (label->layout, TRUE);
 		pango_layout_set_ellipsize (label->layout, PANGO_ELLIPSIZE_END);
-		pango_layout_set_width (label->layout, widget->allocation.width * PANGO_SCALE);
 	}
 	if (!label->link_layout) {
 		label->link_layout = gtk_widget_create_pango_layout (widget, label->link);
@@ -118,8 +117,7 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 
 #define SPACING 4
 
-static void ygtk_link_label_size_allocate (GtkWidget      *widget,
-                                            GtkAllocation  *allocation)
+static void ygtk_link_label_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	GTK_WIDGET_CLASS (ygtk_link_label_parent_class)->size_allocate (widget, allocation);
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
@@ -139,9 +137,12 @@ static void ygtk_link_label_size_allocate (GtkWidget      *widget,
 				x = allocation->x + logical.width/PANGO_SCALE + SPACING;
 			else
 				x = allocation->x + (allocation->width - link_width);
+			if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+				x = (2*allocation->x + allocation->width) - (x + link_width);
 			gdk_window_move_resize (label->link_window, x,
 				allocation->y, link_width, allocation->height);
-			pango_layout_set_width (label->layout, width);
+			if (logical.width > width)
+				pango_layout_set_width (label->layout, width);
 			gdk_window_show (label->link_window);
 		}
 		else
@@ -157,6 +158,11 @@ static gboolean ygtk_link_label_expose_event (GtkWidget *widget, GdkEventExpose 
 	gint x = 0, y = 0;
 	PangoLayout *layout = 0;
 	if (event->window == widget->window) {
+		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL) {
+			PangoRectangle extent;
+			pango_layout_get_extents (label->layout, NULL, &extent);
+			x = widget->allocation.width - extent.width/PANGO_SCALE;
+		}
 		x += widget->allocation.x;
 		y += widget->allocation.y;
 		layout = label->layout;

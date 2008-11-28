@@ -90,7 +90,7 @@ public:
 			m_customIcon = true;
 			string path (icon);
 			if (path[0] != '/')
-				path = ICON_DIR + path;
+				path = std::string (THEMEDIR) + "/" + path;
 
 			GError *error = 0;
 			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);

@@ -23,7 +23,7 @@ UI::OpenDialog (
 	`VBox (
 		`Heading ("Prices"),
 		`MinSize (30, 10,
-			`Table (`id(`table), `header("Name", "price"), itemlist1)
+			`Table (`id(`table), `header("Name", `Right ("price")), itemlist1)
 			),
 		`Right (
 			`HBox (

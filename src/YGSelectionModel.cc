@@ -200,7 +200,6 @@ static int getChildrenDepth (GtkTreeModel *model, GtkTreeIter *parent, int *rows
 
 int YGSelectionModel::getMaxDepth (int *rows)
 {
-	if (!isTree) return 0;
 	GtkTreeModel *model = getModel();
 	int depth = 0; *rows = 0;
 	GtkTreeIter iter;

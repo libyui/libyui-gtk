@@ -79,6 +79,8 @@ static PangoLayout *create_layout (YGtkCellRendererTextPixbuf *tpcell, GtkWidget
 	return NULL;
 }
 
+#define BORDER 1
+
 static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 	GtkWidget *widget, GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
 	gint *width, gint *height)
@@ -110,15 +112,14 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 
 		g_object_unref (G_OBJECT (layout));
 	}
-	*width += cell->xpad*2;
-	*height += cell->ypad*2 + 2;
+	*width += (cell->xpad+BORDER)*2;
+	*height += (cell->ypad+BORDER)*2;
 }
 
 static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 	GdkDrawable *window, GtkWidget *widget, GdkRectangle *background_area,
 	GdkRectangle *cell_area, GdkRectangle *expose_area, GtkCellRendererState flags)
 {
-	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (cell);
 	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (cell);
 
 	GtkStateType state;
@@ -140,45 +141,55 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 			state = GTK_STATE_NORMAL;
 	}
 
-	int x = cell_area->x, y = cell_area->y;
+	// positioning
 
+	gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 	gfloat xalign = cell->xalign, yalign = cell->yalign;
-	if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+	if (reverse)
 		xalign = 1.0 - xalign;
 
-	if (tpcell->pixbuf) {
-		int w, h;
-		w = gdk_pixbuf_get_width (tpcell->pixbuf);
-		h = gdk_pixbuf_get_height (tpcell->pixbuf);
-
-		int xoffset, yoffset;
-		xoffset = xalign * (cell_area->width - (w + (2*cell->xpad)));
-		yoffset = yalign * (cell_area->height - (h + (2*cell->ypad)));
-
-		cairo_t *cr = gdk_cairo_create (window);
-		gdk_cairo_set_source_pixbuf (cr, tpcell->pixbuf, x+xoffset, y+yoffset);
-
-		cairo_rectangle (cr, x+xoffset, y+yoffset, w, h);
-		cairo_fill (cr);
-		cairo_destroy (cr);
-
-		x += w + PIXBUF_TEXT_SPACING;
+	GdkPixbuf *pixbuf = tpcell->pixbuf;
+	int pixbuf_width = 0, pixbuf_height = 0;
+	if (pixbuf) {
+		pixbuf_width = gdk_pixbuf_get_width (pixbuf);
+		pixbuf_height = gdk_pixbuf_get_height (pixbuf);
 	}
 
-	if (tcell->text) {
-		PangoLayout *layout = create_layout (tpcell, widget);
-
+	PangoLayout *layout = create_layout (tpcell, widget);
+	int text_width = 0, text_height = 0;
+	if (layout) {
 		PangoRectangle rect;
 		pango_layout_get_pixel_extents (layout, NULL, &rect);
+		text_width = rect.width;
+		text_height = rect.height;
+	}
 
-		int xoffset, yoffset;
-		xoffset = xalign * (cell_area->width - (rect.width + (2*cell->xpad)));
-		yoffset = yalign * (cell_area->height - (rect.height + (2*cell->ypad)));
+	int spacing = (text_width && pixbuf_width) ? PIXBUF_TEXT_SPACING : 0;
+	int offset_x = xalign * (cell_area->width - (text_width + pixbuf_width + spacing));
 
+	int text_x = offset_x, text_y;
+	if (pixbuf_width && !reverse)
+		text_x += (pixbuf_width + spacing);
+	text_y = yalign * (cell_area->height - text_height);
+
+	int pixbuf_x = offset_x, pixbuf_y;
+	if (text_width && reverse)
+		pixbuf_x += (text_width + spacing);
+	pixbuf_y = yalign * (cell_area->height - pixbuf_height);
+
+	// paint
+	int x = cell_area->x + cell->xpad+BORDER, y = cell_area->y + cell->ypad+BORDER;
+	if (pixbuf) {
+		cairo_t *cr = gdk_cairo_create (window);
+		gdk_cairo_set_source_pixbuf (cr, pixbuf, pixbuf_x+x, pixbuf_y+y);
+		cairo_rectangle (cr, pixbuf_x+x, pixbuf_y+y, pixbuf_width, pixbuf_height);
+		cairo_fill (cr);
+		cairo_destroy (cr);
+	}
+	if (layout) {
 		GtkStyle *style = gtk_widget_get_style (widget);
 		gtk_paint_layout (style, window, state, TRUE, expose_area, widget,
-		                   "cellrenderertext", x+xoffset, y+yoffset, layout);
-
+			              "cellrenderertext", text_x+x, text_y+y, layout);
 		g_object_unref (G_OBJECT (layout));
 	}
 }
