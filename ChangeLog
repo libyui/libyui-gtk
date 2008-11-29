@@ -48,6 +48,12 @@
 	* src/YGLayout.cc: bug fix 446524: disable those orphan icon buttons
 	in the middle of a box.
 
+	* src/YGLayout.cc, src/YGPushButton.cc & src/YGComboBox.cc: realize
+	doesn't seem very reliable, so was using timeouts. Those can get
+	trigger while the widget is destroyed though which can mean trouble.
+	Use expose then disconnect. Also moved stock button stuff from
+	YGLayout.cc to YGPushButton.cc.
+
 2008-11-23  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: don't show "more" link on help line if the rest

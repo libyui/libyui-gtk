@@ -4,9 +4,11 @@
 
 #include <config.h>
 #include <YGUI.h>
-#include "YPushButton.h"
+#include <YPushButton.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
+
+#include <YLayoutBox.h>
 
 class YGPushButton : public YPushButton, public YGWidget
 {
@@ -21,7 +23,9 @@ public:
 		m_customIcon = m_labelIcon = false;
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
-		connect (getWidget (), "clicked", G_CALLBACK (clicked_cb), this);
+		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
+		                        G_CALLBACK (treat_icon_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -123,6 +127,33 @@ public:
 				g_signal_connect (G_OBJECT (button), "realize",
 				                  G_CALLBACK (inner::realize_cb), this);
 		}
+	}
+
+	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
+	                               YGPushButton *pThis)
+	{
+		// only set stock icons if all to the left have them
+		YLayoutBox *ybox = dynamic_cast <YLayoutBox *> (pThis->parent());
+		if (ybox && ybox->primary() == YD_HORIZ && !pThis->m_customIcon) {
+			YWidget *ylast = 0;
+			for (YWidgetListConstIterator it = ybox->childrenBegin();
+			     it != ybox->childrenEnd(); it++) {
+				if ((YWidget *) pThis == *it) {
+					if (ylast) {
+						GtkWidget *button = YGWidget::get (ylast)->getWidget();
+						GtkWidget *icon = gtk_button_get_image (GTK_BUTTON (button));
+						if (!icon || !GTK_WIDGET_VISIBLE (icon))
+							pThis->setIcon ("");
+					}
+					break;
+				}
+				ylast = *it;
+				if (!dynamic_cast <YPushButton *> (ylast))
+					ylast = NULL;
+			}
+		}
+		g_signal_handlers_disconnect_by_func (widget, (gpointer) treat_icon_cb, pThis);
+		return FALSE;
 	}
 
 	// Events

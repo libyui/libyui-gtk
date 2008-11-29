@@ -37,8 +37,9 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 		connect (getWidget(), "changed",
 		         G_CALLBACK (selected_changed_cb), this);
-		// realize doesn't seem to work, so...
-		g_timeout_add_full (G_PRIORITY_LOW, 500, realize_cb, this, NULL);
+		// realize doesn't seem reliable -- expose then disconnect
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
+		                  G_CALLBACK (realize_cb), this);
 	}
 
 	inline GtkComboBox *getComboBox()
@@ -130,15 +131,16 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YComboBox)
 	YGSELECTION_WIDGET_IMPL_ALL (YComboBox)
 
-	static gboolean realize_cb (gpointer pData)
+	static gboolean realize_cb (GtkWidget *widget, GdkEventExpose *event,
+	                            YGComboBox *pThis)
 	{
 		// some combo boxes have too many items -- wrap the thing in columns
-		YGComboBox *pThis = (YGComboBox *) pData;
 		int rows;
 		pThis->getMaxDepth (&rows);
-		int cols = MIN (rows / 20, 3) + 1;
+		int cols = MIN (rows / 20, 5) + 1;
 		if (cols > 1)  // this changes the popup width, so only set it for cols > 1
 			gtk_combo_box_set_wrap_width (pThis->getComboBox(), cols);
+		g_signal_handlers_disconnect_by_func (widget, (gpointer) realize_cb, pThis);
 		return FALSE;
 	}
 };
