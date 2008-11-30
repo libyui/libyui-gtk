@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Dec 01 10:25:17 CET 2008 - coolo@suse.de
+
+ * fixes to cope with Arabic and other languages of
+ a right-to-left writing style.
+
+-------------------------------------------------------------------
 Wed Nov 21 10:25:17 CET 2008 - coolo@suse.de
 
  * fixed online update (bnc#446352)
