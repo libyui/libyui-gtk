@@ -373,10 +373,13 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
 	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
 	                       PANGO_SCALE_X_LARGE);
+	GdkColor black = { 0, 0, 0, 0 };  // set text to black cause of some style colors
+	gtk_widget_modify_fg (header->title, GTK_STATE_NORMAL, &black);
 
 	header->description = ygtk_link_label_new ("", _("more"));
 	g_signal_connect (G_OBJECT (header->description), "link-clicked",
 	                  G_CALLBACK (description_link_clicked_cb), header);
+	gtk_widget_modify_fg (header->description, GTK_STATE_NORMAL, &black);
 
 	header->icon = gtk_image_new();
 
@@ -401,6 +404,8 @@ GtkWidget *ygtk_wizard_header_new()
 
 static void ygtk_wizard_header_class_init (YGtkWizardHeaderClass *klass)
 {
+	ygtk_wizard_header_parent_class = g_type_class_peek_parent (klass);
+
 	more_clicked_signal = g_signal_new ("more-clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (YGtkWizardHeaderClass, more_clicked), NULL, NULL,

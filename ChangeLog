@@ -1,3 +1,8 @@
+2008-11-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: ensure header text is black to contrast with the
+	white background (independent of style).
+
 2008-11-28  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGBarGraph.cc (YPartitionSplitter): fix for arabic: tell GTK
