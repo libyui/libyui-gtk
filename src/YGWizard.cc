@@ -143,8 +143,11 @@ public:
 		button->setLabel (label);
 	}
 
-	virtual void setHelpText (const string &text)
+	virtual void setHelpText (const string &_text)
 	{
+		std::string productName = YUI::app()->productName();
+		std::string text(_text);
+		YGUtils::replace (text, "&product;", 9, productName.c_str());
 		ygtk_wizard_set_help_text (getWizard(), text.c_str());
 	}
 

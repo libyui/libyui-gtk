@@ -1,5 +1,21 @@
 2008-12-01  Michael Meeks  <michael.meeks@novell.com>
 
+	fix: #446064 - lots of code movement, regression tests and little
+	underlying change:
+	
+	* src/test.cc (testHeaderize): impl. with some real regression tests.
+
+	* src/YGWizard.cc (YGWidget): do product substitution here.
+
+	* src/ygtkrichtext.c: move convert_to_xhtml into
+	* src/YGUtils.cc (ygutils_convert_to_xhtml): here.
+	(ygutils_headerize_help): convert to xhtml first.
+
+	* src/ygtkwizard.c (ygtk_wizard_header_set_description): split out to:
+	* src/YGUtils.cc (ygutils_headerize_help): here.
+
+2008-12-01  Michael Meeks  <michael.meeks@novell.com>
+
 	* src/YGWidget.cc (doSetLabel): cope with unicode colon too: 449385
 
 2008-11-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>

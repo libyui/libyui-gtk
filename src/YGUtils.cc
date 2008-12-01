@@ -7,6 +7,267 @@
 #include "YGUI.h"
 #include "YGUtils.h"
 
+static inline void skipSpace (const char *instr, int *i)
+{ while (g_ascii_isspace (instr[*i])) (*i)++; }
+
+typedef struct {
+	GString     *tag;
+	int          tag_len : 31;
+	unsigned int early_closer : 1;
+} TagEntry;
+
+static TagEntry *
+tag_entry_new (GString *tag, int tag_len)
+{
+	static const char *early_closers[] = { "p", "li" };
+	TagEntry *entry = g_new (TagEntry, 1);
+	entry->tag = tag;
+	entry->tag_len = tag_len;
+	entry->early_closer = FALSE;
+
+	unsigned int i;
+	for (i = 0; i < G_N_ELEMENTS (early_closers); i++)
+		if (!g_ascii_strncasecmp (tag->str, early_closers[i], tag_len))
+			entry->early_closer = TRUE;
+	return entry;
+}
+
+static void
+tag_entry_free (TagEntry *entry)
+{
+	if (entry && entry->tag)
+		g_string_free (entry->tag, TRUE);
+	g_free (entry);
+}
+
+static void
+emit_unclosed_tags_for (GString *outp, GQueue *tag_queue, const char *tag_str, int tag_len)
+{
+	gboolean matched = FALSE;
+
+	// top-level tag ...
+	if (g_queue_is_empty (tag_queue))
+		return;
+
+	do {
+		TagEntry *last_entry = (TagEntry *)g_queue_pop_tail (tag_queue);
+		if (!last_entry)
+			break;
+
+		if (last_entry->tag_len != tag_len ||
+		    g_ascii_strncasecmp (last_entry->tag->str, tag_str, tag_len)) {
+			/* different tag - emit a close ... */
+			g_string_append (outp, "</");
+			g_string_append_len (outp, last_entry->tag->str, last_entry->tag_len);
+			g_string_append_c (outp, '>');
+		} else
+			matched = TRUE;
+
+		tag_entry_free (last_entry);
+	} while (!matched);
+}
+
+static gboolean
+check_early_close (GString *outp, GQueue *tag_queue, TagEntry *entry)
+{
+	TagEntry *last_tag;
+
+        // Early closers:
+	if (!entry->early_closer)
+		return FALSE;
+
+	last_tag = (TagEntry *) g_queue_peek_tail (tag_queue);
+	if (!last_tag || !last_tag->early_closer)
+		return FALSE;
+
+	if (entry->tag_len != last_tag->tag_len ||
+	    g_ascii_strncasecmp (last_tag->tag->str, entry->tag->str, entry->tag_len))
+		return FALSE;
+
+	// Emit close & leave last tag on the stack
+
+	g_string_append (outp, "</");
+	g_string_append_len (outp, entry->tag->str, entry->tag_len);
+	g_string_append_c (outp, '>');
+
+	return TRUE;
+}
+
+/* Some entities are translated by the xhtml parser, but not all... */
+typedef struct EntityMap {
+	const gchar *html, *text;
+} EntityMap;
+
+static const EntityMap entities[] = {
+	{ "nbsp", " " },
+};
+
+static const EntityMap *lookup_entity (const char *html)
+{
+	unsigned int i;
+	for (i = 0; i < sizeof (entities) / sizeof (EntityMap); i++)
+		if (!g_ascii_strncasecmp (html+1, entities[i].html, strlen (entities[i].html)))
+			return entities+i;
+	return NULL;
+}
+
+// We have to:
+//   + rewrite <br> and <hr> tags
+//   + deal with <a attrib=noquotes>
+gchar *ygutils_convert_to_xhtml (const char *instr)
+{
+	GString *outp = g_string_new ("");
+	GQueue *tag_queue = g_queue_new();
+	int i = 0;
+
+	gboolean was_space = TRUE, pre_mode = FALSE;
+	skipSpace (instr, &i);
+
+	// we must add an outer tag to make GMarkup happy
+	g_string_append (outp, "<body>");
+
+	for (; instr[i] != '\0'; i++)
+	{
+		// Tag foo
+		if (instr[i] == '<') {
+			// ignore comments
+			if (strncmp (&instr[i], "<!--", 4) == 0) {
+				for (i += 3; instr[i] != '\0'; i++)
+					if (strncmp (&instr[i], "-->", 3) == 0) {
+						i += 2;
+						break;
+					}
+				continue;
+			}
+
+			gint j;
+			gboolean is_close = FALSE;
+			gboolean in_tag;
+			int tag_len;
+			GString *tag = g_string_sized_new (20);
+
+			i++;
+			skipSpace (instr, &i);
+
+			if (instr[i] == '/') {
+			    i++;
+			    is_close = TRUE;
+			}
+
+			skipSpace (instr, &i);
+
+			// find the tag name piece
+			in_tag = TRUE;
+			tag_len = 0;
+			for (; instr[i] != '>' && instr[i]; i++) {
+				if (in_tag) {
+					if (!g_ascii_isalnum(instr[i]))
+						in_tag = FALSE;
+					else
+						tag_len++;
+				}
+				g_string_append_c (tag, instr[i]);
+			}
+
+			// Unmatched tags
+			if (!is_close && tag_len == 2 &&
+			      (!g_ascii_strncasecmp (tag->str, "hr", 2) ||
+			      !g_ascii_strncasecmp (tag->str, "br", 2)) &&
+			      tag->str[tag->len - 1] != '/')
+				g_string_append_c (tag, '/');
+
+			if (!g_ascii_strncasecmp (tag->str, "pre", 3))
+				pre_mode = !is_close;
+
+			// Add quoting for un-quoted attributes
+			unsigned int k;
+			for (k = 0; k < tag->len; k++) {
+				if (tag->str[k] == '=') {
+					gboolean unquote = tag->str[k+1] != '"';
+					if (unquote)
+						g_string_insert_c (tag, k+1, '"');
+					else
+						k++;
+					for (k++; tag->str[k]; k++) {
+						if (unquote && g_ascii_isspace (tag->str[k]))
+							break;
+						else if (!unquote && tag->str[k] == '"')
+							break;
+					}
+					if (unquote)
+						g_string_insert_c (tag, k, '"');
+				}
+				else
+					tag->str[k] = g_ascii_tolower (tag->str[k]);
+			}
+
+			// Is it an open or close ?
+			j = tag->len - 1;
+
+			while (j > 0 && g_ascii_isspace (tag->str[j])) j--;
+
+			gboolean is_open_close = (tag->str[j] == '/');
+			if (is_open_close)
+				; // ignore it
+			else if (is_close)
+				emit_unclosed_tags_for (outp, tag_queue, tag->str, tag_len);
+			else {
+				TagEntry *entry = tag_entry_new (tag, tag_len);
+
+				entry->tag = tag;
+				entry->tag_len = tag_len;
+
+				if (!check_early_close (outp, tag_queue, entry))
+					g_queue_push_tail (tag_queue, entry);
+				else {
+					entry->tag = NULL;
+					tag_entry_free (entry);
+				}
+			}
+
+			g_string_append_c (outp, '<');
+			if (is_close)
+			    g_string_append_c (outp, '/');
+			g_string_append_len (outp, tag->str, tag->len);
+			g_string_append_c (outp, '>');
+
+			if (is_close || is_open_close)
+				g_string_free (tag, TRUE);
+		}
+
+		else if (instr[i] == '&') {  // Entity
+			const EntityMap *entity = lookup_entity (instr+i);
+			if (entity) {
+				g_string_append (outp, entity->text);
+				i += strlen (entity->html);
+				if (instr[i+1] == ';') i++;
+			}
+			else
+				g_string_append_c (outp, instr[i]);
+			was_space = FALSE;
+		}
+
+		else {  // Normal text
+			if (!pre_mode && g_ascii_isspace (instr[i])) {
+				if (!was_space)
+					g_string_append_c (outp, ' ');
+				was_space = TRUE;
+			}
+			else {
+				was_space = FALSE;
+				g_string_append_c (outp, instr[i]);
+			}
+		}
+	}
+
+	emit_unclosed_tags_for (outp, tag_queue, "", 0);
+	g_queue_free (tag_queue);
+	g_string_append (outp, "</body>");
+
+	gchar *ret = g_string_free (outp, FALSE);
+	return ret;
+}
+
 string YGUtils::mapKBAccel (const string &src)
 {
 	// we won't use use replace since we also want to escape _ to __
@@ -342,6 +603,75 @@ bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 	return foundIcon;
 }
 
+
+/*
+ * construct a help string by dropping the title, and mentioning
+ * the first sentence for a dialog sub-title
+ */
+gchar *
+ygutils_headerize_help (const char *help_text, gboolean *cut)
+{
+	char *text = ygutils_convert_to_xhtml (help_text);
+
+	GString *str = g_string_new ("");
+	int i;
+	gboolean copy_word = FALSE;
+	for (i = 0; text[i]; i++) {
+		if (text[i] == '<') {
+			int a = i;
+			for (; text[i]; i++)
+				if (text[i] == '>')
+					break;
+			
+			if (!strncasecmp (text+a, "<h", 2) || !strncasecmp (text+a, "<big>", 5) ||
+			    (!str->len && !strncasecmp (text+a, "<b>", 3))) {
+				for (i++; text[i]; i++) {
+					if (text[i] == '<')
+						a = i;
+					if (text[i] == '>') {
+						if (!strncasecmp (text+a, "</h", 3) || !strncasecmp (text+a, "</big>", 6) ||
+						    !strncasecmp (text+a, "</b>", 4))
+							break;
+					}
+				}
+			}
+		}
+		else if (g_ascii_isspace (text[i])) {
+			if (copy_word)
+				g_string_append_c (str, ' ');
+			copy_word = FALSE;
+		}
+		else {
+			copy_word = TRUE;
+			g_string_append_c (str, text[i]);
+			if (text[i] == '.') {
+				if (g_ascii_isspace (text[i+1]) || text[i+1] == '<') {
+					i++;
+					break;
+				}
+			}
+		}
+	}
+	*cut = FALSE;
+	gboolean markup = FALSE;
+	for (; text[i]; i++) {
+		if (markup) {
+			if (text[i] == '>')
+				markup = FALSE;
+		}
+		else {
+			if (text[i] == '<')
+				markup = TRUE;
+			else if (!g_ascii_isspace (text[i])) {
+				*cut = TRUE;
+				break;
+			}
+		}
+	}
+	g_free (text);
+	return g_string_free (str, FALSE);
+}
+
 gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                const char *fallbackIcon)
 { return YGUtils::setStockIcon (button, label, fallbackIcon); }
@@ -380,4 +710,5 @@ def set_busy_cursor (window):
             __LEFT_PTR_WATCH = gtk.gdk.Cursor(gtk.gdk.WATCH)
     window.set_cursor (__LEFT_PTR_WATCH)
 #endif
+
 

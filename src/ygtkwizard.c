@@ -31,6 +31,7 @@ extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
 extern void ygdialog_setTitle (const gchar *title, gboolean sticky);
+extern gchar *ygutils_headerize_help (const char *help_text, gboolean *cut);
 
 //** YGtkHelpDialog
 
@@ -420,68 +421,8 @@ static const gchar *ygtk_wizard_header_get_title (YGtkWizardHeader *header)
 
 static void ygtk_wizard_header_set_description (YGtkWizardHeader *header, const gchar *text)
 {
-	GString *str = g_string_new ("");
-	int i;
-	gboolean copy_word = FALSE;
-	for (i = 0; text[i]; i++) {
-		if (text[i] == '<') {
-			int a = i;
-			for (; text[i]; i++)
-				if (text[i] == '>')
-					break;
-			if (!strncasecmp (text+a, "<h", 2) || !strncasecmp (text+a, "<big>", 5) ||
-		        (!str->len && !strncasecmp (text+a, "<b>", 3))) {
-				for (i++; text[i]; i++) {
-					if (text[i] == '<')
-						a = i;
-					if (text[i] == '>') {
-						if (!strncasecmp (text+a, "</h", 3) || !strncasecmp (text+a, "</big>", 6) ||
-						    !strncasecmp (text+a, "</b>", 4))
-							break;
-					}
-				}
-			}
-		}
-		else if (g_ascii_isspace (text[i])) {
-			if (copy_word)
-				g_string_append_c (str, ' ');
-			copy_word = FALSE;
-		}
-		else {
-			copy_word = TRUE;
-			if (text[i] == '&') {
-				if (!strncasecmp (text+i, "&product;", 9)) {
-					g_string_append (str, "Linux");
-					i += 8;
-				}
-			}
-			else {
-				g_string_append_c (str, text[i]);
-				if (text[i] == '.') {
-					if (g_ascii_isspace (text[i+1]) || text[i+1] == '<') {
-						i++;
-						break;
-					}
-				}
-			}
-		}
-	}
-	gboolean cut = FALSE, markup = FALSE;
-	for (; text[i]; i++) {
-		if (markup) {
-			if (text[i] == '>')
-				markup = FALSE;
-		}
-		else {
-			if (text[i] == '<')
-				markup = TRUE;
-			else if (!g_ascii_isspace (text[i])) {
-				cut = TRUE;
-				break;
-			}
-		}
-	}
-	gchar *desc = g_string_free (str, FALSE);
+	gboolean cut = FALSE;
+	gchar *desc = ygutils_headerize_help (text, &cut);
 	ygtk_link_label_set_text (YGTK_LINK_LABEL (header->description), desc, NULL, cut);
 	g_free (desc);
 }
@@ -859,6 +800,8 @@ void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 	if (!strcmp (title, "YaST"))
 		title = 0;
 	ygtk_help_text_set (wizard->m_help, title, text);
+/*	helpful for building out test.cc
+	fprintf (stderr, "Help text:\n%s\n", text); */
 	ygtk_wizard_header_set_description (YGTK_WIZARD_HEADER (wizard->m_title), text);
 	ENABLE_WIDGET_STR (text, wizard->help_button);
 }

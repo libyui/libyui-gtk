@@ -64,6 +64,11 @@ extern "C" {
 	                               const char *fallbackIcon);
 
 	GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean useAlpha);
+
+	gchar *ygutils_headerize_help (const char *help_text, gboolean *cut);
+
+	// convert liberal html to xhtml
+	gchar *ygutils_convert_to_xhtml (const char *instr);
 };
 
 #endif // YGUTILS_H

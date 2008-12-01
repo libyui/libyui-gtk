@@ -79,7 +79,7 @@ bool testXHtmlConvert()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		gchar *out = convert_to_xhtml (aTests[i].in);
+		gchar *out = ygutils_convert_to_xhtml (aTests[i].in);
 		if (strcmp (out, aTests[i].out)) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out, aTests[i].out);
@@ -157,6 +157,44 @@ bool testTruncate()
 	return true;
 }
 
+bool testHeaderize()
+{
+	fprintf (stderr, "Test headerize\t");
+	struct {
+		const char *in;
+		const char *out;
+		gboolean    cut;
+	} aTests[] = {
+		{ "test", "test", FALSE },
+		{ "<h1>Purpose</h1><p>This tool lets you install, remove, and update applications.</p><p>openSUSE's software management",
+		  "This tool lets you install, remove, and update applications.", TRUE },
+		{ "\n<p><big><b>Section List</b></big><br>\n<P>From <B>Other</B>,\nyou can manually edit the boot loader configuration files, clear the current\n"
+		  "configuration and propose a new configuration, start from scratch, or reread\nthe configuration saved on your disk. If you have multiple Linux systems installed,",
+		  "From Other, you can manually edit the boot loader configuration files, clear the current configuration and "
+		  "propose a new configuration, start from scratch, or reread the configuration saved on your disk.", TRUE },
+		{ "<p><big><b>Sound Cards</b><big></p><P>Select an unconfigured card from the list and press <B>Edit</B> to\nconfigure it. If the card was not detected, press <B>Add</B> and\nconfigure the card manually.</P>",
+		  "Select an unconfigured card from the list and press Edit to configure it.", TRUE },
+		{ "\n<p><b><big>Service Start</big></b><br>\nTo start the service every time your computer is booted, set\n"
+		  "<b>Enable firewall</b>. Otherwise set <b>Disable firewall</b>.</p>\n<p><b><big>Switch On or Off</big></b><br>",
+		  "To start the service every time your computer is booted, set Enable firewall.", TRUE },
+		{ NULL, NULL }
+	};
+	for (int i = 0; aTests[i].in; i++) {
+		gboolean cut = FALSE;
+		char *out = ygutils_headerize_help (aTests[i].in, &cut);
+		if (strcmp (aTests[i].out, out)) {
+			fprintf (stderr, "Mis-headerized test %d:\n-- \n%s\n-- should be --\n%s\n-- xhtml --\n%s\n-- \n",
+				 i, out, aTests[i].out, ygutils_convert_to_xhtml (aTests[i].in));
+			return false;
+		}
+		if (!!aTests[i].cut != !!cut)
+			fprintf (stderr, "Mis-labelled as cut (%d)\n", !!cut);
+		fprintf (stderr, "%d ", i);
+	}
+	fprintf (stderr, "\n");
+	return true;
+}
+
 int main (int argc, char **argv)
 {
 	bool bSuccess = true;
@@ -165,6 +203,7 @@ int main (int argc, char **argv)
 	bSuccess &= testXHtmlConvert();
 	bSuccess &= testMarkupEscape();
 	bSuccess &= testTruncate();
+	bSuccess &= testHeaderize();
 
 	return !bSuccess;
 }
