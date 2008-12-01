@@ -32,6 +32,29 @@ public:
 	{
 		if (!m_customIcon) {
 			const char *stock = NULL;
+			if (hasFunctionKey())
+				switch (functionKey()) {
+					case 2:
+						stock = GTK_STOCK_INFO;
+						break;
+					case 3:
+						stock = GTK_STOCK_ADD;
+						break;
+					case 4:
+						stock = GTK_STOCK_EDIT;
+						break;
+					case 5:
+						stock = GTK_STOCK_DELETE;
+						break;
+					case 6:
+						stock = GTK_STOCK_EXECUTE;
+						break;
+					case 7:
+						stock = GTK_STOCK_PREFERENCES;
+						break;
+					default:
+						break;
+				}
 #if YAST2_VERSION >= 2017006
 			switch (role()) {
 				case YOKButton:

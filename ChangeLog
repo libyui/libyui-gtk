@@ -1,3 +1,13 @@
+2008-12-01  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPushButton.cc: bug fix 449740: use functionKey as a stock
+	icon fallback.
+
+	* src/YGLayout.cc: include YMenuButtons into the horizontal box
+	size-group.
+
+	* src/ygtkcellrenderertextpixbuf.c: clear Y-padding.
+
 2008-12-01  Michael Meeks  <michael.meeks@novell.com>
 
 	fix: #446064 - lots of code movement, regression tests and little

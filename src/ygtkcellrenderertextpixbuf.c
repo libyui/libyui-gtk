@@ -79,7 +79,8 @@ static PangoLayout *create_layout (YGtkCellRendererTextPixbuf *tpcell, GtkWidget
 	return NULL;
 }
 
-#define BORDER 1
+#define XPAD 1
+#define YPAD 0
 
 static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 	GtkWidget *widget, GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
@@ -112,8 +113,8 @@ static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 
 		g_object_unref (G_OBJECT (layout));
 	}
-	*width += (cell->xpad+BORDER)*2;
-	*height += (cell->ypad+BORDER)*2;
+	*width += (cell->xpad+XPAD)*2;
+	*height += (cell->ypad+YPAD)*2;
 }
 
 static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
@@ -178,7 +179,7 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 	pixbuf_y = yalign * (cell_area->height - pixbuf_height);
 
 	// paint
-	int x = cell_area->x + cell->xpad+BORDER, y = cell_area->y + cell->ypad+BORDER;
+	int x = cell_area->x + cell->xpad+XPAD, y = cell_area->y + cell->ypad+YPAD;
 	if (pixbuf) {
 		cairo_t *cr = gdk_cairo_create (window);
 		gdk_cairo_set_source_pixbuf (cr, pixbuf, pixbuf_x+x, pixbuf_y+y);
