@@ -1,3 +1,7 @@
+2008-12-01  Michael Meeks  <michael.meeks@novell.com>
+
+	* src/YGWidget.cc (doSetLabel): cope with unicode colon too: 449385
+
 2008-11-30  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: ensure header text is black to contrast with the
