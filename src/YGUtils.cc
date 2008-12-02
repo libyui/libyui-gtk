@@ -549,8 +549,8 @@ static void stripEnd (std::string &str, char ch)
 		str.erase (str.size()-1, 1);
 }
 
-bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
-                            const char *fallbackIcon)
+const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
+                                   const char *fallbackIcon)
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
@@ -600,7 +600,7 @@ bool YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		if (image)
 			gtk_widget_hide (image);
 	}
-	return foundIcon;
+	return foundIcon ? icon : NULL;
 }
 
 
@@ -672,9 +672,8 @@ ygutils_headerize_help (const char *help_text, gboolean *cut)
 	return g_string_free (str, FALSE);
 }
 
-gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
-                               const char *fallbackIcon)
-{ return YGUtils::setStockIcon (button, label, fallbackIcon); }
+const char *ygutils_setStockIcon (GtkWidget *button, const char *label, const char *fallback)
+{ return YGUtils::setStockIcon (button, label, fallback); }
 
 /* interactive busy cursor */
 // half cursor, half clock cursor is not a Xlib theme icon, but there is

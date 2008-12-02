@@ -40,8 +40,13 @@ class YGWizard : public YWizard, public YGWidget
 		virtual void setLabel (const string &label)
 		{
 			YPushButton::setLabel (label);
+
+			// notice: we can't use functionKey() to deduce the icon because yast
+			// tools code differ from the text-mode to the GUIs when setting buttons
+			// up, and the opt_f10 and so on will not be set in the GUI code
+			YGtkWizard *wizard = getWizard();
 			std::string _label = YGUtils::mapKBAccel (label);
-			ygtk_wizard_set_button_label (getWizard(), getWidget(), _label.c_str());
+			ygtk_wizard_set_button_label (wizard, getWidget(), _label.c_str(), NULL);
 		}
 
 		virtual void setEnabled (bool enable)
@@ -60,8 +65,8 @@ class YGWizard : public YWizard, public YGWidget
 		virtual int preferredHeight() { return 0; }
 		virtual void setSize (int w, int h) {}
 
-		GtkWidget *getWidget() { return m_widget; }
-		YGtkWizard *getWizard() { return YGTK_WIZARD (m_wizard->getWidget()); }
+		inline GtkWidget *getWidget() { return m_widget; }
+		inline YGtkWizard *getWizard() { return YGTK_WIZARD (m_wizard->getWidget()); }
 
 		private:
 			GtkWidget *m_widget;
@@ -258,13 +263,13 @@ public:
 	virtual void showReleaseNotesButton (const string &label, const string &id)
 	{
 		string str = YGUtils::mapKBAccel (label.c_str());
-		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), str.c_str());
+		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), str.c_str(), NULL);
 		ygtk_wizard_set_button_str_id (getWizard(), m_notes_button->getWidget(), id.c_str());
 	}
 
 	virtual void hideReleaseNotesButton()
 	{
-		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), NULL);
+		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), NULL, NULL);
 	}
 
 	virtual void retranslateInternalButtons()

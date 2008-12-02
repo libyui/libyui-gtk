@@ -2685,10 +2685,12 @@ public:
 		YGDialog::currentDialog()->setTitle (title);
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-		ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"));
+		ygtk_wizard_set_button_label (wizard,  wizard->abort_button,
+		                              _("_Cancel"), GTK_STOCK_CANCEL);
 		ygtk_wizard_set_button_str_id (wizard, wizard->abort_button, "cancel");
-		ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL);
-		ygtk_wizard_set_button_label (wizard,  wizard->next_button, _("A_pply"));
+		ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL, NULL);
+		ygtk_wizard_set_button_label (wizard,  wizard->next_button,
+		                              _("A_pply"), GTK_STOCK_APPLY);
 		ygtk_wizard_set_button_str_id (wizard, wizard->next_button, "accept");
 		ygtk_wizard_enable_button (wizard, wizard->next_button, FALSE);
 		g_signal_connect (G_OBJECT (wizard), "action-triggered",

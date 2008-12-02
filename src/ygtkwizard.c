@@ -27,7 +27,7 @@
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
-extern gboolean ygutils_setStockIcon (GtkWidget *button, const char *label,
+extern const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
 extern void ygdialog_setTitle (const gchar *title, gboolean sticky);
@@ -876,19 +876,19 @@ gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon)
 	return TRUE;
 }
 
-void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button, const char *_label)
+void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button,
+                                   const char *_label, const char *stock)
 {
 	const char *label = _label ? _label : "";
 	gtk_button_set_label (GTK_BUTTON (button), label);
 	ENABLE_WIDGET_STR (label, button);
-	const char *stock = 0;
 	if (button == wizard->abort_button)
 		stock = GTK_STOCK_CANCEL;
-	else if (button == wizard->next_button)
-		stock = GTK_STOCK_APPLY;
 	else if (button == wizard->release_notes_button)
 		stock = GTK_STOCK_EDIT;
-	ygutils_setStockIcon (button, label, stock);
+
+	const char *_stock = ygutils_setStockIcon (button, label, stock);
+	g_object_set_data (G_OBJECT (button), "icon-fallback", _stock ? 0 : GINT_TO_POINTER (1));
 }
 
 void ygtk_wizard_set_button_str_id (YGtkWizard *wizard, GtkWidget *button, const char *id)

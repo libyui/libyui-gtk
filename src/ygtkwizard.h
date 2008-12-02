@@ -143,7 +143,7 @@ void ygtk_wizard_set_header_text (YGtkWizard *wizard, const char *text);
 gboolean ygtk_wizard_set_header_icon (YGtkWizard *wizard, const char *icon);
 
 void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button,
-                                   const char *text);
+                                   const char *text, const char *stock);
 void ygtk_wizard_enable_button (YGtkWizard *wizard, GtkWidget *button,
                                  gboolean enable);
 void ygtk_wizard_set_button_str_id (YGtkWizard *wizard, GtkWidget *button,
