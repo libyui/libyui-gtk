@@ -279,9 +279,7 @@ void YGLabeledWidget::doSetLabel (const std::string &label)
 		// add a ':' at the end
 		const gchar *last = g_utf8_find_prev_char (str.c_str(), str.c_str() + str.length());
 		gunichar last_char = g_utf8_get_char (last);
-
-		if (last_char != ':' && last_char != '.' &&
-		    last_char != ' ' && last_char != 0xff1a /* unicode-colon */)
+		if (g_unichar_isalpha (last_char))
 			str += ':';
 
 /*		// set it as upper case

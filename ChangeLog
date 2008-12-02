@@ -8,6 +8,10 @@
 
 	* src/ygtkcellrenderertextpixbuf.c: clear Y-padding.
 
+	* src/YGWidget.cc: bug fix 449385: add a colon at the end of a label: changed
+	to an inclusive: instead of adding it to all cases other than ':' and '.'.
+	Add it only in the cases where the last character is a letter.
+
 2008-12-01  Michael Meeks  <michael.meeks@novell.com>
 
 	fix: #446064 - lots of code movement, regression tests and little
