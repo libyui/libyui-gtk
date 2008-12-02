@@ -126,6 +126,10 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	if (pango_font_description_get_size_is_absolute (font_desc))
 		size /= PANGO_SCALE;
 
+	gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+	const char *left_margin = reverse ? "right-margin" : "left-margin";
+	const char *right_margin = reverse ? "left-margin" : "right-margin";
+
 	gtk_text_buffer_create_tag (buffer, "body", NULL);
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
 		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16,
@@ -148,7 +152,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
 	gtk_text_buffer_create_tag (buffer, "tt", "family", "monospace", NULL);
 	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace",
-		"paragraph-background", "#f0f0f0", "left-margin", 16, "right-margin", 20, NULL);
+		"paragraph-background", "#f0f0f0", left_margin, 16, right_margin, 20, NULL);
 	gtk_text_buffer_create_tag (buffer, "b", "weight", PANGO_WEIGHT_BOLD, NULL);
 	gtk_text_buffer_create_tag (buffer, "i", "style", PANGO_STYLE_ITALIC, NULL);
 	gtk_text_buffer_create_tag (buffer, "u", "underline", PANGO_UNDERLINE_SINGLE, NULL);
@@ -437,8 +441,11 @@ rt_start_element (GMarkupParseContext *context,
 
 	if (!tag->tag && isIdentTag (element_name)) {
 		state->left_margin += IDENT_MARGIN;
+
+		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+		const char *margin = reverse ? "right-margin" : "left-margin";
 		tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-		                   "left-margin", state->left_margin, NULL);
+			margin, state->left_margin, NULL);
 	}
 
 	g_free (lower);
