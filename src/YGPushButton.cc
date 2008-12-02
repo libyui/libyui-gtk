@@ -86,6 +86,13 @@ public:
 	}
 #endif
 
+	virtual void setFunctionKey (int key)
+	{
+		YPushButton::setFunctionKey (key);
+		if (!m_labelIcon && hasFunctionKey())
+			setStockIcon (label());
+	}
+
 	virtual void setHelpButton (bool helpButton)
 	{
 		YPushButton::setHelpButton (helpButton);
