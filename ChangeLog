@@ -3,6 +3,10 @@
 	* src/ygtkrichtext.c: arabic fix: margin was being mirrored for
 	block tags like <li> and <blockquote>.
 
+	* src/YGUI.cc: bug fix 442052: GTK doesn't seem to have a desktopSize()
+	call that doesn't include the panel and window frame in the display-size.
+	Assume less 80px in the display-size to compensate for that.
+
 2008-12-01  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPushButton.cc: bug fix 449740: use functionKey as a stock

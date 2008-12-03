@@ -143,13 +143,6 @@ void YGUI::checkInit()
 #endif
 }
 
-static inline GdkScreen *getScreen ()
-{ return gdk_display_get_default_screen (gdk_display_get_default()); }
-static int getDisplayWidth()
-{ return gdk_screen_get_width (getScreen()); }
-static int getDisplayHeight()
-{ return gdk_screen_get_height (getScreen()); }
-
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
                                gpointer data)
 {
@@ -564,11 +557,14 @@ float YGApplication::layoutUnits (YUIDimension dim, int units)
 	else                 return size * (25/480.0);
 }
 
+static inline GdkScreen *getScreen ()
+{ return gdk_display_get_default_screen (gdk_display_get_default()); }
+// GTK doesn't seem to have some desktopWidth/Height like Qt, so we to report
+// a reduced display size to compensate for the panel, or the window frame
 int YGApplication::displayWidth()
-{ return getDisplayWidth(); }
-
+{ return gdk_screen_get_width (getScreen()) - 80; }
 int YGApplication::displayHeight()
-{ return getDisplayHeight(); }
+{ return gdk_screen_get_height (getScreen()) - 80; }
 
 int YGApplication::displayDepth()
 { return gdk_visual_get_best_depth(); }
@@ -576,10 +572,10 @@ int YGApplication::displayDepth()
 long YGApplication::displayColors()
 { return 1L << displayDepth(); /*from yast-qt*/ }
 
-// YCP uses defaultWidth/Height() to use their smaller YWizard impl, so we fool
-// them since we want to use a smaller default size than qt
-int YGApplication::defaultWidth() { return 800; }
-int YGApplication::defaultHeight() { return 600; }
+// YCP uses defaultWidth/Height() to use their smaller YWizard impl; we
+// want to use a smaller default size than qt though, so assume a bigger size
+int YGApplication::defaultWidth() { return MIN (displayWidth(), 1024); }
+int YGApplication::defaultHeight() { return MIN (displayHeight(), 768); }
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }
