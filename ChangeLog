@@ -7,6 +7,8 @@
 	call that doesn't include the panel and window frame in the display-size.
 	Assume less 80px in the display-size to compensate for that.
 
+	* src/YGDialog.cc: maximize main window for small screens.
+
 2008-12-01  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPushButton.cc: bug fix 449740: use functionKey as a stock
