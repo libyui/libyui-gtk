@@ -1,3 +1,7 @@
+2008-12-05  Michael Meeks  <michael.meeks@novell.com>
+
+	* tests/Wizard2.ycp: try to add a test for 449773.
+
 2008-12-03  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.c: arabic fix: margin was being mirrored for
