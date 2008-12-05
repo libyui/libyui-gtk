@@ -149,27 +149,52 @@ public:
 		}
 	}
 
+	static bool hasIcon (YWidget *ywidget)
+	{
+		if (dynamic_cast <YPushButton *> (ywidget)) {
+			GtkWidget *button = YGWidget::get (ywidget)->getWidget();
+			GtkWidget *icon = gtk_button_get_image (GTK_BUTTON (button));
+			return icon && GTK_WIDGET_VISIBLE (icon);
+		}
+		return true;
+	}
+
 	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
 	                               YGPushButton *pThis)
 	{
-		// only set stock icons if all to the left have them
 		YLayoutBox *ybox = dynamic_cast <YLayoutBox *> (pThis->parent());
-		if (ybox && ybox->primary() == YD_HORIZ && !pThis->m_customIcon) {
-			YWidget *ylast = 0;
-			for (YWidgetListConstIterator it = ybox->childrenBegin();
-			     it != ybox->childrenEnd(); it++) {
-				if ((YWidget *) pThis == *it) {
-					if (ylast) {
-						GtkWidget *button = YGWidget::get (ylast)->getWidget();
-						GtkWidget *icon = gtk_button_get_image (GTK_BUTTON (button));
-						if (!icon || !GTK_WIDGET_VISIBLE (icon))
+		if (ybox && !pThis->m_customIcon) {
+			if (ybox->primary() == YD_HORIZ) {
+				// only set stock icons if all to the left have them
+				YWidget *ylast = 0;
+				for (YWidgetListConstIterator it = ybox->childrenBegin();
+					 it != ybox->childrenEnd(); it++) {
+					if ((YWidget *) pThis == *it) {
+						if (ylast && !hasIcon (ylast)) 
 							pThis->setIcon ("");
+						break;
 					}
-					break;
+					ylast = *it;
+					if (!dynamic_cast <YPushButton *> (ylast))
+						ylast = NULL;
 				}
-				ylast = *it;
-				if (!dynamic_cast <YPushButton *> (ylast))
-					ylast = NULL;
+			}
+			else {  // YD_VERT
+				// different strategy: set icons for all or none
+				bool disableIcons = false;
+				for (YWidgetListConstIterator it = ybox->childrenBegin();
+					 it != ybox->childrenEnd(); it++)
+					if (!hasIcon (*it))
+						disableIcons = true;
+				if (disableIcons)
+					for (YWidgetListConstIterator it = ybox->childrenBegin();
+						 it != ybox->childrenEnd(); it++)
+						if (dynamic_cast <YPushButton *> (*it)) {
+							YGPushButton *button = (YGPushButton *)
+								YGWidget::get (*it);
+							if (!button->m_customIcon)
+								button->setIcon ("");
+						}
 			}
 		}
 		g_signal_handlers_disconnect_by_func (widget, (gpointer) treat_icon_cb, pThis);

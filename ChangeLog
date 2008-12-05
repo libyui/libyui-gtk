@@ -1,3 +1,8 @@
+2008-12-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPushButton.cc: bug fix 449320: for a vertical Box: either
+	have stock icons for all buttons, or disable it for all.
+
 2008-12-05  Michael Meeks  <michael.meeks@novell.com>
 
 	* tests/Wizard2.ycp: try to add a test for 449773.
