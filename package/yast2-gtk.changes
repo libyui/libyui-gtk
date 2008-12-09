@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Dec xx 00:00:00 CET 2008 - xxxx@suse.de
+
+ * another Arabic fix.
+ * fixed issue with small displays.
+ * fixed labeling and button icon problems.
+
+-------------------------------------------------------------------
 Wed Dec 01 10:25:17 CET 2008 - coolo@suse.de
 
  * fixes to cope with Arabic and other languages of
