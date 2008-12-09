@@ -127,7 +127,9 @@ gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 {
 	GtkWidget *label = gtk_label_new (text);
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
-	gtk_misc_set_padding (GTK_MISC (label), 20, 0);
+	int mark_width = 10;
+	pango_layout_get_pixel_size (steps->check_mark_layout, &mark_width, NULL);
+	gtk_misc_set_padding (GTK_MISC (label), mark_width+12, 0);
 	gtk_widget_show (label);
 	gtk_box_pack_start (GTK_BOX (steps), label, FALSE, TRUE, 0);
 	return ygtk_steps_total (steps)-1;

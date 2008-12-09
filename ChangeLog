@@ -1,3 +1,8 @@
+2008-12-09  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtksteps.c: bug fix 457752: ensure space between tick and
+	text.
+
 2008-12-05  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPushButton.cc: bug fix 449320: for a vertical Box: either
