@@ -7,6 +7,7 @@
 #include <string>
 #include "YGUtils.h"
 #include "YGWidget.h"
+#include "ygtktextview.h"
 
 class YGTextView : public YGScrolledWidget
 {
@@ -15,16 +16,12 @@ int maxChars;
 public:
 	YGTextView (YWidget *ywidget, YWidget *parent, const string &label, bool editable)
 		: YGScrolledWidget (ywidget, parent, label, YD_VERT,
-		                    GTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR, NULL)
+		                    YGTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR,
+		                    "editable", editable, NULL)
 	{
 		IMPL
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
-
 		maxChars = -1;
-		if (!editable) {
-			gtk_text_view_set_editable (GTK_TEXT_VIEW (getWidget()), FALSE);
-			gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (getWidget()), FALSE);
-		}
 
 		connect (G_OBJECT (getBuffer()), "changed",
 		         G_CALLBACK (text_changed_cb), this);

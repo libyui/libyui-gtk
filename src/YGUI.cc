@@ -754,6 +754,7 @@ void dumpTree (YWidget *ywidget)
 }
 
 #include <YRichText.h>
+#include "ygtktextview.h"
 
 void dumpYastHtml (YWidget *widget)
 {
@@ -768,10 +769,8 @@ void dumpYastHtml (YWidget *widget)
 			if (rtext) {
 				std::string text = rtext->text();
 
-				GtkWidget *view = gtk_text_view_new();
+				GtkWidget *view = ygtk_text_view_new (FALSE);
 				gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (view), GTK_WRAP_WORD);
-				gtk_text_view_set_editable (GTK_TEXT_VIEW (view), FALSE);
-				gtk_text_view_set_cursor_visible (GTK_TEXT_VIEW (view), FALSE);
 				GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (view));
 				gtk_text_buffer_set_text (buffer, text.c_str(), -1);
 

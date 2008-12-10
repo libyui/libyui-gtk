@@ -13,11 +13,10 @@
 #define IDENT_MARGIN      20
 #define PARAGRAPH_SPACING 12
 
-// convert liberal html to xhtml since we use a xhtml parser
-// convert liberal html to xhtml
+// convert liberal html to xhtml, as we use a xhtml parser
 extern gchar *ygutils_convert_to_xhtml (const char *instr);
 
-G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, GTK_TYPE_TEXT_VIEW)
+G_DEFINE_TYPE (YGtkRichText, ygtk_rich_text, YGTK_TYPE_TEXT_VIEW)
 
 static guint link_clicked_signal;
 static GdkColor link_color = { 0, 0, 0, 0xeeee };

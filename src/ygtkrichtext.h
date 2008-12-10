@@ -10,7 +10,7 @@
 #ifndef YGTK_RICH_TEXT_H
 #define YGTK_RICH_TEXT_H
 
-#include <gtk/gtktextview.h>
+#include "ygtktextview.h"
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_RICH_TEXT            (ygtk_rich_text_get_type ())
@@ -27,7 +27,7 @@ G_BEGIN_DECLS
 
 typedef struct _YGtkRichText
 {
-	GtkTextView parent;
+	YGtkTextView parent;
 	// members:
 	GdkCursor *hand_cursor;
 	GdkPixbuf *background_pixbuf;
@@ -35,7 +35,7 @@ typedef struct _YGtkRichText
 
 typedef struct _YGtkRichTextClass
 {
-	GtkTextViewClass parent_class;
+	YGtkTextViewClass parent_class;
 
 	// signals:
 	void (*link_clicked) (YGtkRichText *rich_text, const gchar *link);
