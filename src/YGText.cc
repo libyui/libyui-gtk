@@ -22,12 +22,8 @@ public:
 		IMPL
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 		maxChars = -1;
-
 		connect (G_OBJECT (getBuffer()), "changed",
 		         G_CALLBACK (text_changed_cb), this);
-		if (!editable)
-			g_signal_connect (G_OBJECT (getWidget()), "realize",
-			                  G_CALLBACK (realize_cb), this);
 	}
 
 	GtkTextBuffer* getBuffer()
@@ -88,14 +84,6 @@ public:
 			gtk_widget_error_bell (pThis->getWidget());
 		}
 		pThis->emitEvent (YEvent::ValueChanged);
-	}
-
-	// change cursor to the cursor one if non-editable
-	static void realize_cb (GtkWidget *widget)
-	{
-		GtkTextView *view = GTK_TEXT_VIEW (widget);
-		GdkWindow *window = gtk_text_view_get_window (view, GTK_TEXT_WINDOW_TEXT);
-		gdk_window_set_cursor (window, NULL);
 	}
 };
 
