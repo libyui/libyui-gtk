@@ -100,9 +100,8 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 {
 	GtkWidget *widget = GTK_WIDGET (rtext);
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
-	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_editable (tview, FALSE);
-	gtk_text_view_set_cursor_visible (tview, FALSE);
+	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_pixels_below_lines (tview, 4);
 	gtk_text_view_set_left_margin (tview, 4);
 
@@ -170,14 +169,6 @@ static void ygtk_rich_text_destroy (GtkObject *object)
 	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
 }
 
-static void ygtk_rich_text_realize (GtkWidget *widget)
-{
-	GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->realize (widget);
-	GtkTextView *view = GTK_TEXT_VIEW (widget);
-	GdkWindow *window = gtk_text_view_get_window (view, GTK_TEXT_WINDOW_TEXT);
-	gdk_window_set_cursor (window, NULL);
-}
-
 // Change the cursor to the "hands" cursor typically used by web browsers,
 // if there is a link in the given position.
 static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
@@ -234,41 +225,6 @@ static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *
 	ret = GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->expose_event (widget, event);
 	set_cursor_if_appropriate (text, -1, -1);
 	return ret;
-}
-
-// get rid of editable popup items
-
-static void copy_activate_cb (GtkMenuItem *item, GtkTextBuffer *buffer)
-{ gtk_text_buffer_copy_clipboard (buffer, gtk_clipboard_get (GDK_SELECTION_CLIPBOARD)); }
-static void select_all_activate_cb (GtkMenuItem *item, GtkTextBuffer *buffer)
-{
-	GtkTextIter start, end;
-	gtk_text_buffer_get_bounds (buffer, &start, &end);
-	gtk_text_buffer_select_range (buffer, &start, &end);
-}
-
-static void ygtk_rich_text_populate_popup (GtkTextView *view, GtkMenu *menu)
-{
-	GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
-
-	GList *items = gtk_container_get_children (GTK_CONTAINER (menu)), *i;
-	for (i = items; i; i = i->next)
-		gtk_container_remove (GTK_CONTAINER (menu), i->data);
-	g_list_free (items);
-
-	GtkWidget *item;
-	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_COPY, NULL);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-	if (gtk_text_buffer_get_has_selection (buffer))
-		g_signal_connect (item, "activate", G_CALLBACK (copy_activate_cb), buffer);
-	else
-		gtk_widget_set_sensitive (item, FALSE);
-	item = gtk_separator_menu_item_new();
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_SELECT_ALL, NULL);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-	g_signal_connect (item, "activate", G_CALLBACK (select_all_activate_cb), buffer);
-	gtk_widget_show_all (GTK_WIDGET (menu));
 }
 
 /* Rich Text parsing methods. */
@@ -575,9 +531,7 @@ static GMarkupParser rt_parser = {
 };
 
 GtkWidget *ygtk_rich_text_new (void)
-{
-	return g_object_new (YGTK_TYPE_RICH_TEXT, NULL);
-}
+{ return g_object_new (YGTK_TYPE_RICH_TEXT, NULL); }
 
 static void ygtk_rich_text_set_rtl (YGtkRichText *rtext)
 {
@@ -739,11 +693,7 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 
 void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
-	GtkTextViewClass *gtktextview_class = GTK_TEXT_VIEW_CLASS (klass);
-	gtktextview_class->populate_popup = ygtk_rich_text_populate_popup;
-
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
-	gtkwidget_class->realize = ygtk_rich_text_realize;
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
 	gtkwidget_class->expose_event = ygtk_rich_text_expose_event;
 
