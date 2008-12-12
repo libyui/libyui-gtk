@@ -1076,7 +1076,8 @@ private:
 
 			gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
 			gtk_widget_show (m_view);
-			ensure_view_visible_hook (m_view);
+			if (!tree_mode)
+				ensure_view_visible_hook (m_view);
 		}
 
 		void block()

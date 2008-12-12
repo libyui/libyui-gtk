@@ -60,10 +60,11 @@ struct StringTree {
 	typedef int (*Compare)(const char *, const char *);
 	Compare compare;
 	char delim;
+	const char *trans_domain;
 	GNode *root;
 
-	StringTree (Compare compare, char delim)
-	: compare (compare), delim (delim)
+	StringTree (Compare compare, char delim, const char *trans_domain)
+	: compare (compare), delim (delim), trans_domain (trans_domain)
 	{
 		// the root is a dummy node to keep GNode happy
 		root = g_node_new (NULL);
@@ -86,7 +87,7 @@ struct StringTree {
 		return NULL;
 	}
 
-	Ypp::Node *add (const std::string &tree_str, const std::string &order, const char *icon)
+	Ypp::Node *add (const std::string &tree_str, const std::string &order)
 	{
 		const gchar delimiter[2] = { delim, '\0' };
 		gchar **nodes_str = g_strsplit (tree_str.c_str(), delimiter, -1);
@@ -97,25 +98,30 @@ struct StringTree {
 		for (i = nodes_str; *i; i++) {
 			if (!**i)
 				continue;
+			const char *str = *i;
+			if (trans_domain)
+				str = dgettext (trans_domain, str);
 			bool found = false;
 			if (!order.empty())
+				// when ordered, make sure it already doesn't exist with another order
 				for (sibling = parent->children; sibling; sibling = sibling->next) {
-					Ypp::Node *yNode = (Ypp::Node *) sibling->data;
-					int cmp = (*compare) (*i, yNode->name.c_str());
+					Ypp::Node *node = (Ypp::Node *) sibling->data;
+					int cmp = (*compare) (str, node->name.c_str());
 					if (cmp == 0) {
 						found = true;
-						ret = yNode;
+						ret = node;
 						break;
 					}
 				}
 			if (!found) {
-				const char *order_str = order.empty() ? *i : order.c_str();
+				const char *s1 = order.empty() ? str : order.c_str();
 				for (sibling = parent->children; sibling; sibling = sibling->next) {
-					Ypp::Node *yNode = (Ypp::Node *) sibling->data;
-					int cmp = (*compare) (order_str, yNode->name.c_str());
+					Ypp::Node *node = (Ypp::Node *) sibling->data;
+					const char *s2 = order.empty() ? node->name.c_str() : node->order.c_str();
+					int cmp = (*compare) (s1, s2);
 					if (cmp == 0) {
 						found = true;
-						ret = yNode;
+						ret = node;
 						break;
 					}
 					else if (cmp < 0)
@@ -128,15 +134,19 @@ struct StringTree {
 		}
 
 		for (; *i; i++) {
-			Ypp::Node *yNode = new Ypp::Node();
-			GNode *n = g_node_new ((void *) yNode);
-			yNode->name = *i;
-			yNode->icon = icon;
-			yNode->impl = (void *) n;
+			Ypp::Node *node = new Ypp::Node();
+			GNode *n = g_node_new ((void *) node);
+			const char *str = *i;
+			if (trans_domain)
+				str = dgettext (trans_domain, str);
+			node->name = str;
+			node->order = order;
+			node->icon = NULL;
+			node->impl = (void *) n;
 			g_node_insert_before (parent, sibling, n);
 			parent = n;
 			sibling = NULL;
-			ret = yNode;
+			ret = node;
 		}
 		g_strfreev (nodes_str);
 		return ret;
@@ -573,12 +583,12 @@ int m_installedPkgs, m_totalPkgs;
 		ZyppPackage package = tryCastToZyppPkg (object);
 		if (package) {
 			if (rich) {
-				StringTree tree (strcmp, '/');
+				StringTree tree (strcmp, '/', NULL);
 
 				const std::list <std::string> &filesList = package->filenames();
 				for (std::list <std::string>::const_iterator it = filesList.begin();
 					 it != filesList.end(); it++)
-					tree.add (*it, "", 0);
+					tree.add (*it, "");
 
 				struct inner {
 					static std::string getPath (GNode *node)
@@ -1318,6 +1328,10 @@ GSList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				case Package::PACKAGE_TYPE:
 					it = zyppPool().byKindBegin <zypp::Package>();
 					end = zyppPool().byKindEnd <zypp::Package>();
+
+					// for the categories
+					bindtextdomain ("rpm-groups", LOCALEDIR);
+					bind_textdomain_codeset ("rpm-groups", "utf8");
 					break;
 				case Package::PATTERN_TYPE:
 					it = zyppPool().byKindBegin <zypp::Pattern>();
@@ -2041,11 +2055,12 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 		static int cmp (const char *a, const char *b)
 		{
 			// Other group should always go as last
-			if (!strcmp (a, "Other"))
-				return !strcmp (b, "Other") ? 0 : 1;
-			if (!strcmp (b, "Other"))
+			if (!strcmp (a, _("Other")))
+				return !strcmp (b, _("Other")) ? 0 : 1;
+			if (!strcmp (b, _("Other")))
 				return -1;
 			return strcasecmp (a, b);
+//			return g_utf8_collate (a, b);  // slow?
 		}
 	};
 
@@ -2063,9 +2078,13 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 			category = _("Documentation");
 	}
 
-	if (!categories[type])
-		categories[type] = new StringTree (inner::cmp, '/');
-	return categories[type]->add (category, order, 0);
+	if (!categories[type]) {
+		const char *trans_domain = 0;
+		if (type == Package::PACKAGE_TYPE)
+			trans_domain = "rpm-groups";
+		categories[type] = new StringTree (inner::cmp, '/', trans_domain);
+	}
+	return categories[type]->add (category, order);
 }
 
 Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
@@ -2105,8 +2124,10 @@ Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
 	const char *group_icon = zypp_tag_enum_to_icon (group);
 
 	if (!categories2)
-		categories2 = new StringTree (inner::cmp, '/');
-	return categories2->add (group_name, "", group_icon);
+		categories2 = new StringTree (inner::cmp, '/', NULL);
+	Ypp::Node *node = categories2->add (group_name, "");
+	node->icon = group_icon;
+	return node;
 }
 
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)

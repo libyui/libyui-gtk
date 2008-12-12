@@ -7,6 +7,10 @@
 	* src/YGPackageSelector.cc: instead of passing pkg-selector all
 	around the code, keep a singleton point for it.
 
+	* src/yzyppwrapper.h/cc: fixed pattern categories ordering.
+
+	* src/yzyppwrapper.cc: bug fix 448309: localize RPM groups.
+
 2008-12-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtksteps.c: bug fix 457752: ensure space between tick and

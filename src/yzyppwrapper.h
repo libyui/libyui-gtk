@@ -35,7 +35,7 @@ struct Ypp
 
 	// Utilities
 	struct Node {
-		std::string name;
+		std::string name, order;
 		const char *icon;
 		Node *next();
 		Node *child();
