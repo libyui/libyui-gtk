@@ -1,3 +1,12 @@
+2008-12-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 457563: enable Apply button
+	when (un)locking as well. In fact, after some change is done, let
+	it stay enabled.
+
+	* src/YGPackageSelector.cc: instead of passing pkg-selector all
+	around the code, keep a singleton point for it.
+
 2008-12-10  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtksteps.c: bug fix 457752: ensure space between tick and

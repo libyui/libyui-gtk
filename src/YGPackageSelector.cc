@@ -11,8 +11,12 @@
 #include "YGUtils.h"
 #include "YGi18n.h"
 #include "YGDialog.h"
+#include "YPackageSelector.h"
 
-#if 1
+// singleton like Ypp -- used for the flags
+static YPackageSelector *pkg_selector = 0;
+
+#if 1  // set 0 to disable this widget
 #include "ygtkwizard.h"
 #include "ygtkfindentry.h"
 #include "ygtkmenubutton.h"
@@ -31,10 +35,11 @@ static GtkWidget *image_new_from_file (const char *filename)
 	return gtk_image_new_from_file (file.c_str());
 }
 
+#define GNOME_OPEN_PATH "/usr/bin/gnome-open"
 inline bool CAN_OPEN_URIS()
-{ return g_file_test ("/usr/bin/gnome-open", G_FILE_TEST_IS_EXECUTABLE); }
+{ return g_file_test (GNOME_OPEN_PATH, G_FILE_TEST_IS_EXECUTABLE); }
 inline void OPEN_URI (const char *uri)
-{ system ((std::string ("/usr/bin/gnome-open ") + uri + " &").c_str()); }
+{ system ((std::string (GNOME_OPEN_PATH " ") + uri + " &").c_str()); }
 
 static int busyI = 0;
 static void busyCursor()
@@ -231,6 +236,8 @@ private:
 	guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
 	      _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2;
 };
+
+// UI controls
 
 class PackagesView
 {
@@ -860,14 +867,13 @@ class ChangesPane : public Ypp::Pool::Listener
 GtkWidget *m_box, *m_entries_box;
 Ypp::Pool *m_pool;
 GList *m_entries;
-YGtkWizard *m_wizard;
 
 public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	ChangesPane (YGtkWizard *wizard, bool update_mode, bool summary_mode)
-	: m_entries (NULL), m_wizard (wizard)
+	ChangesPane()
+	: m_entries (NULL)
 	{
 		GtkWidget *heading = gtk_label_new (_("Changes:"));
 		YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -901,7 +907,7 @@ public:
 
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 		query->setToModify (true);
-		if (update_mode)
+		if (pkg_selector->updateMode())
 			query->addType (Ypp::Package::PATCH_TYPE);
 		m_pool = new Ypp::QueryPool (query);
 		// initialize list -- there could already be packages modified
@@ -931,7 +937,6 @@ public:
 
 	void UpdateVisible()
 	{
-		ygtk_wizard_enable_button (m_wizard, m_wizard->next_button, m_entries != NULL);
 		m_entries != NULL ? gtk_widget_show (m_box) : gtk_widget_hide (m_box);
 	}
 
@@ -1141,12 +1146,12 @@ private:
 
 	struct Categories : public StoreView
 	{
-		bool m_patchMode, m_rpmGroups;
+		bool m_rpmGroups;
 	public:
-		Categories (Collections::Listener *listener, bool patch_mode)
-		: StoreView (listener), m_patchMode (patch_mode), m_rpmGroups (false)
+		Categories (Collections::Listener *listener)
+		: StoreView (listener), m_rpmGroups (false)
 		{
-			if (!m_patchMode) {
+			if (!pkg_selector->updateMode()) {
 				GtkWidget *check = gtk_check_button_new_with_label (_("Detailed"));
 				YGUtils::setWidgetFont (GTK_BIN (check)->child,
 					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
@@ -1178,14 +1183,14 @@ private:
 			};
 
 			Ypp::Node *first_category;
-			Ypp::Package::Type type =
-				m_patchMode ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
-			if (!m_rpmGroups && !m_patchMode)
+			Ypp::Package::Type type = pkg_selector->updateMode() ?
+				Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
+			if (!m_rpmGroups && !pkg_selector->updateMode())
 				first_category = Ypp::get()->getFirstCategory2 (type);
 			else
 				first_category = Ypp::get()->getFirstCategory (type);
 			inner::populate (store, NULL, first_category, this);
-			if (!m_rpmGroups && !m_patchMode) {
+			if (!m_rpmGroups && !pkg_selector->updateMode()) {
 				GtkTreeView *view = GTK_TREE_VIEW (m_view);
 				GtkTreeIter iter;
 				gtk_tree_store_append (store, &iter, NULL);
@@ -1214,7 +1219,7 @@ private:
 				query->setIsSuggested (true);
 			else if (ptr) {
 				Ypp::Node *node = (Ypp::Node *) ptr;
-				if (m_rpmGroups || m_patchMode)
+				if (m_rpmGroups || pkg_selector->updateMode())
 					query->addCategory (node);
 				else
 					query->addCategory2 (node);
@@ -1232,10 +1237,10 @@ private:
 	struct Repositories : public StoreView
 	{
 	public:
-		Repositories (Collections::Listener *listener, bool repoMgrEnabled)
+		Repositories (Collections::Listener *listener)
 		: StoreView (listener)
 		{
-			if (repoMgrEnabled) {
+			if (pkg_selector->repoMgrEnabled()) {
 				GtkWidget *align, *button, *box, *image, *label;
 				image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
 				label = gtk_label_new (_("Edit..."));
@@ -1387,7 +1392,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_bin; }
 
-	void setType (Type type, bool patch_mode, bool repo_mgr_enabled)
+	void setType (Type type)
 	{
 		if (m_view)
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->getWidget());
@@ -1396,7 +1401,7 @@ public:
 		switch (type)
 		{
 			case GROUPS_TYPE:
-				m_view = new Categories (m_listener, patch_mode);
+				m_view = new Categories (m_listener);
 				break;
 			case PATTERNS_TYPE:
 				m_view = new Pool (m_listener, Ypp::Package::PATTERN_TYPE);
@@ -1405,7 +1410,7 @@ public:
 				m_view = new Pool (m_listener, Ypp::Package::LANGUAGE_TYPE);
 				break;
 			default:
-				m_view = new Repositories (m_listener, repo_mgr_enabled);
+				m_view = new Repositories (m_listener);
 				break;
 		}
 
@@ -1433,14 +1438,13 @@ class Filters : public Collections::Listener
 		GtkWidget *m_box;
 		Filters *m_filters;
 		Status m_selected;
-		bool m_updateMode;
 
 	public:
 		GtkWidget *getWidget()
 		{ return m_box; }
 
-		StatusButtons (Filters *filters, bool updateMode)
-		: m_filters (filters), m_selected (AVAILABLE), m_updateMode (updateMode)
+		StatusButtons (Filters *filters)
+		: m_filters (filters), m_selected (AVAILABLE)
 		{
 			m_box = gtk_hbox_new (FALSE, 6);
 
@@ -1449,7 +1453,7 @@ class Filters : public Collections::Listener
 			button = createButton (_("_Available"), "pkg-available.png", NULL);
 			group = ygtk_toggle_button_get_group (YGTK_TOGGLE_BUTTON (button));
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
-			if (!updateMode) {
+			if (!pkg_selector->updateMode()) {
 				button = createButton (_("_Upgrades"), "pkg-installed-upgradable.png", group);
 				gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			}
@@ -1501,7 +1505,7 @@ class Filters : public Collections::Listener
 		static void status_toggled_cb (GtkToggleButton *toggle, gint nb, StatusButtons *pThis)
 		{
 			pThis->m_selected = (Status) nb;
-			if (pThis->m_updateMode && nb >= 1)
+			if (pkg_selector->updateMode() && nb >= 1)
 				pThis->m_selected = (Status) (nb+1);
 			pThis->m_filters->signalChanged();
 		}
@@ -1520,7 +1524,6 @@ private:
 	GtkWidget *m_name, *m_type;
 	Listener *m_listener;
 	guint timeout_id;
-	bool m_updateMode, m_enableRepoMgr;
 	bool m_nameChanged;  // clear name field if some other changes
 
 public:
@@ -1529,11 +1532,10 @@ public:
 	GtkWidget *getNameWidget()       { return m_name; }
 	GtkWidget *getTypeWidget()       { return m_type; }
 
-	Filters (bool updateMode, bool enableRepoMgr)
-	: m_listener (NULL), timeout_id (0), m_updateMode (updateMode),
-	  m_enableRepoMgr (enableRepoMgr), 	m_nameChanged (false)
+	Filters()
+	: m_listener (NULL), timeout_id (0), m_nameChanged (false)
 	{
-		m_statuses = new StatusButtons (this, updateMode);
+		m_statuses = new StatusButtons (this);
 
 		m_name = ygtk_find_entry_new();
 		gtk_widget_set_tooltip_markup (m_name,
@@ -1557,7 +1559,7 @@ public:
 		                  G_CALLBACK (name_item_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
-		if (updateMode)
+		if (pkg_selector->updateMode())
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Severity"));
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
@@ -1578,7 +1580,7 @@ public:
 		                  G_CALLBACK (type_changed_cb), this);
 
 		m_collection = new Collections (this);
-		m_collection->setType (Collections::GROUPS_TYPE, updateMode, enableRepoMgr);
+		m_collection->setType (Collections::GROUPS_TYPE);
 	}
 
 	~Filters()
@@ -1603,10 +1605,9 @@ private:
 		busyCursor();
 		pThis->clearNameEntry();
 		int type = gtk_combo_box_get_active (combo);
-		if (pThis->m_updateMode && type == 1)
+		if (pkg_selector->updateMode() && type == 1)
 			type = Collections::REPOS_TYPE;
-		pThis->m_collection->setType ((Collections::Type) type,
-			pThis->m_updateMode, pThis->m_enableRepoMgr);
+		pThis->m_collection->setType ((Collections::Type) type);
 		pThis->signalChanged();
 		normalCursor();
 	}
@@ -1651,7 +1652,7 @@ private:
 
 		// create query
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-		if (m_updateMode)
+		if (pkg_selector->updateMode())
 			query->addType (Ypp::Package::PATCH_TYPE);
 		else
 			query->addType (Ypp::Package::PACKAGE_TYPE);
@@ -1687,7 +1688,7 @@ private:
 
 			if (item == 0) {  // tip: the user may be searching for patterns
 				static bool shown_pattern_tip = false;
-				if (!m_updateMode && !shown_pattern_tip &&
+				if (!pkg_selector->updateMode() && !shown_pattern_tip &&
 					gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
 					(m_statuses->getActive() == StatusButtons::AVAILABLE ||
 					 m_statuses->getActive() == StatusButtons::ALL)) {
@@ -1724,7 +1725,7 @@ private:
 		switch (m_statuses->getActive())
 		{
 			case StatusButtons::AVAILABLE:
-				if (m_updateMode)
+				if (pkg_selector->updateMode())
 					// special pane for patches upgrades makes little sense, so
 					// we instead list them together with availables
 					query->setHasUpgrade (true);
@@ -2142,7 +2143,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_widget; }
 
-	PackageDetails (bool update_mode)
+	PackageDetails()
 	: m_listener (NULL)
 	{
 		GtkWidget *vbox;
@@ -2157,7 +2158,7 @@ public:
 		                    FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
 
-		if (!update_mode) {
+		if (!pkg_selector->updateMode()) {
 			m_filelist = new TextExpander (_("File List"));
 			m_changelog = new TextExpander (_("Changelog"));
 			m_authors = new TextExpander (_("Authors"));
@@ -2553,7 +2554,7 @@ private:
 };
 
 class PackageSelector : public Filters::Listener, public PackagesView::Listener,
-                        public PackageDetails::Listener
+                         public PackageDetails::Listener
 {
 friend class YGPackageSelector;
 PackagesView *m_packages;
@@ -2568,15 +2569,14 @@ public:
 	GtkWidget *getWidget()
 	{ return m_box; }
 
-	PackageSelector (YGtkWizard *wizard, bool updateMode, bool enableRepoMgr,
-	                 bool summaryMode)
+	PackageSelector()
 	{
 		m_packages = new PackagesView (true, false, false, true, true);
-		m_filters = new Filters (updateMode, enableRepoMgr);
+		m_filters = new Filters();
 		m_control = new PackageControl (m_filters);
-		m_details = new PackageDetails (updateMode);
+		m_details = new PackageDetails();
 		m_disk = new DiskView();
-		m_changes = new ChangesPane (wizard, updateMode, summaryMode);
+		m_changes = new ChangesPane();
 		m_packages->setListener (this);
 		m_filters->setListener (this);
 		m_details->setListener (this);
@@ -2658,10 +2658,12 @@ public:
 	void packageModified (Ypp::Package *package)
 	{
 		m_control->packageModified (package);
+
+		YGtkWizard *wizard = YGTK_WIZARD (YGWidget::get (pkg_selector)->getWidget());
+		ygtk_wizard_enable_button (wizard, wizard->next_button, TRUE);
 	}
 };
 
-#include "YPackageSelector.h"
 #include "pkg-selector-help.h"
 
 class YGPackageSelector : public YPackageSelector, public YGWidget,
@@ -2674,6 +2676,7 @@ public:
 		: YPackageSelector (NULL, mode),
 		  YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
 	{
+		pkg_selector = this;
 		setBorder (0);
 		YGDialog::currentDialog()->setMinSize (650, 750);  // enlarge
 
@@ -2700,8 +2703,7 @@ public:
 		dialog->setCloseCallback (confirm_cb, this);
 
 		busyCursor();
-		m_package_selector = new PackageSelector (wizard, onlineUpdateMode(),
-			repoMgrEnabled(), summaryMode());
+		m_package_selector = new PackageSelector();
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), m_package_selector->getWidget());
 
 		createToolsButton();
@@ -2718,6 +2720,7 @@ public:
 	{
 		delete m_package_selector;
 		ygtk_zypp_model_finish();
+		pkg_selector = 0;
 	}
 
 protected:
@@ -3171,7 +3174,6 @@ protected:
 };
 
 #else
-#include "YPackageSelector.h"
 class YGPackageSelector : public YPackageSelector, public YGWidget
 {
 public:
