@@ -2143,13 +2143,13 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 			if (ynode->child()) {
 				GNode *node = (GNode *) ynode->impl;
 				GNode *last = g_node_last_child (node);
-				if (((Ypp::Node *) last->data)->name == "Other")
+				if (((Ypp::Node *) last->data)->name == _("Other"))
 					sel->m_category = (Ypp::Node *) last->data;
 				else {
 					// must create a "Other" node
 					Ypp::Node *yN = new Ypp::Node();
 					GNode *n = g_node_new ((void *) yN);
-					yN->name = "Other";
+					yN->name = _("Other");
 					yN->icon = NULL;
 					yN->impl = (void *) n;
 					g_node_insert_before (node, NULL, n);
