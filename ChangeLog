@@ -1,3 +1,11 @@
+2008-12-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: fixed a bug from a commit at 12-12,
+	causing online_update to be unfunctional.
+
+	* src/YGPackageSelector.cc: no need to show "applies to" in the details
+	box when multiple patches are selected (see bug 459095).
+
 2008-12-12  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: bug fix 457563: enable Apply button
