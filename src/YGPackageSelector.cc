@@ -907,7 +907,7 @@ public:
 
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
 		query->setToModify (true);
-		if (pkg_selector->updateMode())
+		if (pkg_selector->onlineUpdateMode())
 			query->addType (Ypp::Package::PATCH_TYPE);
 		m_pool = new Ypp::QueryPool (query);
 		// initialize list -- there could already be packages modified
@@ -1152,7 +1152,7 @@ private:
 		Categories (Collections::Listener *listener)
 		: StoreView (listener), m_rpmGroups (false)
 		{
-			if (!pkg_selector->updateMode()) {
+			if (!pkg_selector->onlineUpdateMode()) {
 				GtkWidget *check = gtk_check_button_new_with_label (_("Detailed"));
 				YGUtils::setWidgetFont (GTK_BIN (check)->child,
 					PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
@@ -1184,14 +1184,14 @@ private:
 			};
 
 			Ypp::Node *first_category;
-			Ypp::Package::Type type = pkg_selector->updateMode() ?
+			Ypp::Package::Type type = pkg_selector->onlineUpdateMode() ?
 				Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
-			if (!m_rpmGroups && !pkg_selector->updateMode())
+			if (!m_rpmGroups && !pkg_selector->onlineUpdateMode())
 				first_category = Ypp::get()->getFirstCategory2 (type);
 			else
 				first_category = Ypp::get()->getFirstCategory (type);
 			inner::populate (store, NULL, first_category, this);
-			if (!m_rpmGroups && !pkg_selector->updateMode()) {
+			if (!m_rpmGroups && !pkg_selector->onlineUpdateMode()) {
 				GtkTreeView *view = GTK_TREE_VIEW (m_view);
 				GtkTreeIter iter;
 				gtk_tree_store_append (store, &iter, NULL);
@@ -1220,7 +1220,7 @@ private:
 				query->setIsSuggested (true);
 			else if (ptr) {
 				Ypp::Node *node = (Ypp::Node *) ptr;
-				if (m_rpmGroups || pkg_selector->updateMode())
+				if (m_rpmGroups || pkg_selector->onlineUpdateMode())
 					query->addCategory (node);
 				else
 					query->addCategory2 (node);
@@ -1454,7 +1454,7 @@ class Filters : public Collections::Listener
 			button = createButton (_("_Available"), "pkg-available.png", NULL);
 			group = ygtk_toggle_button_get_group (YGTK_TOGGLE_BUTTON (button));
 			gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
-			if (!pkg_selector->updateMode()) {
+			if (!pkg_selector->onlineUpdateMode()) {
 				button = createButton (_("_Upgrades"), "pkg-installed-upgradable.png", group);
 				gtk_box_pack_start (GTK_BOX (m_box), button, TRUE, TRUE, 0);
 			}
@@ -1506,7 +1506,7 @@ class Filters : public Collections::Listener
 		static void status_toggled_cb (GtkToggleButton *toggle, gint nb, StatusButtons *pThis)
 		{
 			pThis->m_selected = (Status) nb;
-			if (pkg_selector->updateMode() && nb >= 1)
+			if (pkg_selector->onlineUpdateMode() && nb >= 1)
 				pThis->m_selected = (Status) (nb+1);
 			pThis->m_filters->signalChanged();
 		}
@@ -1560,7 +1560,7 @@ public:
 		                  G_CALLBACK (name_item_changed_cb), this);
 
 		m_type = gtk_combo_box_new_text();
-		if (pkg_selector->updateMode())
+		if (pkg_selector->onlineUpdateMode())
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Severity"));
 		else {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_type), _("Groups"));
@@ -1606,7 +1606,7 @@ private:
 		busyCursor();
 		pThis->clearNameEntry();
 		int type = gtk_combo_box_get_active (combo);
-		if (pkg_selector->updateMode() && type == 1)
+		if (pkg_selector->onlineUpdateMode() && type == 1)
 			type = Collections::REPOS_TYPE;
 		pThis->m_collection->setType ((Collections::Type) type);
 		pThis->signalChanged();
@@ -1653,7 +1653,7 @@ private:
 
 		// create query
 		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-		if (pkg_selector->updateMode())
+		if (pkg_selector->onlineUpdateMode())
 			query->addType (Ypp::Package::PATCH_TYPE);
 		else
 			query->addType (Ypp::Package::PACKAGE_TYPE);
@@ -1689,7 +1689,7 @@ private:
 
 			if (item == 0) {  // tip: the user may be searching for patterns
 				static bool shown_pattern_tip = false;
-				if (!pkg_selector->updateMode() && !shown_pattern_tip &&
+				if (!pkg_selector->onlineUpdateMode() && !shown_pattern_tip &&
 					gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
 					(m_statuses->getActive() == StatusButtons::AVAILABLE ||
 					 m_statuses->getActive() == StatusButtons::ALL)) {
@@ -1726,7 +1726,7 @@ private:
 		switch (m_statuses->getActive())
 		{
 			case StatusButtons::AVAILABLE:
-				if (pkg_selector->updateMode())
+				if (pkg_selector->onlineUpdateMode())
 					// special pane for patches upgrades makes little sense, so
 					// we instead list them together with availables
 					query->setHasUpgrade (true);
@@ -2159,7 +2159,7 @@ public:
 		                    FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
 
-		if (!pkg_selector->updateMode()) {
+		if (!pkg_selector->onlineUpdateMode()) {
 			m_filelist = new TextExpander (_("File List"));
 			m_changelog = new TextExpander (_("Changelog"));
 			m_authors = new TextExpander (_("Authors"));
@@ -2212,6 +2212,14 @@ public:
 			if (m_support)   m_support->setText (package->support (true));
 			if (m_dependencies) m_dependencies->setPackage (package);
 
+			if (m_contents) {  // patches -- "apply to"
+				gtk_widget_show (m_contents_expander);
+				Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+				query->addType (Ypp::Package::PACKAGE_TYPE);
+				query->addCollection (package);
+				m_contents->setQuery (query);
+			}
+
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons,
@@ -2239,20 +2247,7 @@ public:
 			if (m_authors)   m_authors->setText ("");
 			if (m_support)   m_support->setText ("");
 			if (m_dependencies) m_dependencies->setPackage (NULL);
-		}
-		if (m_contents) {
-			Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
-			if (packages.empty()) {
-				gtk_widget_hide (m_contents_expander);
-				query->setClear();
-			}
-			else {
-				gtk_widget_show (m_contents_expander);
-				query->addType (Ypp::Package::PACKAGE_TYPE);
-				for (PkgList::const_iterator it = packages.begin(); it != packages.end(); it++)
-					query->addCollection (*it);
-			}
-			m_contents->setQuery (query);
+			if (m_contents)  gtk_widget_hide (m_contents_expander);
 		}
 	}
 
