@@ -47,21 +47,13 @@ public:
 			}
 #if YAST2_VERSION >= 2017006
 			switch (role()) {
-				case YOKButton:
-					stock = GTK_STOCK_OK;
-					break;
-				case YApplyButton:
-					stock = GTK_STOCK_APPLY;
-					break;
-				case YCancelButton:
-					stock = GTK_STOCK_CANCEL;
-					break;
-				default:
-					break;
+				case YOKButton:     stock = GTK_STOCK_OK; break;
+				case YApplyButton:  stock = GTK_STOCK_APPLY; break;
+				case YCancelButton: stock = GTK_STOCK_CANCEL; break;
+				case YHelpButton:   stock = GTK_STOCK_HELP; break;
+				case YCustomButton: case YMaxButtonRole: break;
 			}
 #endif
-			if (isHelpButton())
-				stock = GTK_STOCK_HELP;
 			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, stock);
 		}
 	}

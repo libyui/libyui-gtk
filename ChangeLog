@@ -1,3 +1,7 @@
+2008-12-16  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPushButton.cc: test role for help icon.
+
 2008-12-15  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixed a bug from a commit at 12-12,
