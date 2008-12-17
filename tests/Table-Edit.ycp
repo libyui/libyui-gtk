@@ -1,0 +1,60 @@
+// bug 459313
+
+{
+    UI::OpenDialog(
+		   `VBox(
+			 `MinSize( 25, 8,
+				   `Table(`id(`table),
+					  `header("Mark", "Name"),
+					  [
+					   `item(`id(2), "", "Salami Baguette"),
+					   `item(`id(1), "", "Chili"),
+					   `item(`id(4), "", "Steak Sandwich"),
+					   `item(`id(3), "", "Spaghetti")
+					   ]
+					  )
+				   ),
+			`HBox (
+			 `PushButton(`id(`select), "&Select / de-select"),
+			 `PushButton(`id(`lookup), "&Lookup"),
+			 `PushButton(`id(`cancel), "&Close")
+			 )
+			 )
+		   );
+
+	any ret = nil;
+	repeat {
+		ret = UI::UserInput();
+
+		if (ret == `select) {
+			integer current_item_id  = (integer) UI::QueryWidget(`id(`table), `CurrentItem);
+			boolean selected = UI::QueryWidget(`table, `Cell( current_item_id, 0 ) ) == "X";
+			string write = "";
+			if (!selected)
+				write = "X";
+			UI::ChangeWidget(`id(`table), `Cell( current_item_id, 0 ), write );
+		}
+		if (ret == `lookup) {
+			any id = UI::QueryWidget(`id(`table), `CurrentItem);
+			if (is(id, integer)) {
+				string text = sformat (
+					"Line: %1", UI::QueryWidget(`id(`table), `Item(id)));
+				UI::OpenDialog (
+					`MarginBox (1, 0.2,
+						`VBox (
+							`Left (`Label ("Current Table Item")),
+							`Label(`opt(`outputField), text),
+							`PushButton("&OK")
+							)
+						)
+					);
+			UI::UserInput();
+			UI::CloseDialog();
+			}
+		}
+
+	} until (ret == `cancel);
+
+    UI::CloseDialog();
+}
+
