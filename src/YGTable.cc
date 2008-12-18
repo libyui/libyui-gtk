@@ -231,13 +231,12 @@ public:
 				appendDumbColumn();
 		}
 		setModel();
+		setKeepSorting (keepSorting());
 
 		connect (getWidget(), "row-activated",
 		         G_CALLBACK (activated_cb), (YGTableView*) this);
 		connect (getWidget(), "cursor-changed",
 		         G_CALLBACK (selected_cb), (YGTableView*) this);
-		if (!keepSorting())
-			setSortable (true);
 	}
 
 	virtual void setKeepSorting (bool keepSorting)
@@ -276,12 +275,17 @@ public:
 	{
 		int index = cell->column() * 2;
    		setCellIcon (iter, index, cell->iconName());
-   		setCellLabel (iter, index+1, cell->label());
+   		std::string label (cell->label());
+   		if (label == "X")
+   			label = YUI::app()->glyph (YUIGlyph_CheckMark);
+   		setCellLabel (iter, index+1, label);
 	}
 
 	void setSortable (bool sortable)
 	{
 		IMPL
+		if (!sortable && !GTK_WIDGET_REALIZED (getWidget()))
+			return;
 		int n = 0;
 		GList *columns = gtk_tree_view_get_columns (getView());
 		for (GList *i = columns; i; i = i->next, n++) {

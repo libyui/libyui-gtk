@@ -48,6 +48,7 @@ struct YGSelectionModel
 	void setCellToggle (GtkTreeIter *iter, int col, bool selected);
 
 	int getPtrCol();
+	int getIdCol();
 
 	int getMaxDepth (int *rows);  // not cached
 
@@ -60,6 +61,7 @@ private:
 	GtkTreeStore *getTreeStore();
 	bool isEmpty();
 	YSelectionWidget *ywidget;  // we use it, to get the path for icons
+	gpointer dataIndex;
 };
 
 #define YGSELECTION_WIDGET_IMPL_ADD(ParentClass)      \
