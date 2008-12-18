@@ -9,7 +9,7 @@
 #include "YGUtils.h"
 
 YGSelectionModel::YGSelectionModel (YSelectionWidget *ywidget, bool ordinaryModel, bool isTree)
-	: isTree (isTree), ywidget (ywidget)
+	: isTree (isTree), ywidget (ywidget), dataIndex (0)
 {
 	if (ordinaryModel) {
 		vector <GType> cols;
@@ -24,12 +24,13 @@ YGSelectionModel::~YGSelectionModel()
 
 void YGSelectionModel::createModel (const vector <GType> &types)
 {
-	int colsNb = types.size()+1;
+	int colsNb = types.size()+2;
 	GType types_array [colsNb];
 	int i = 0;
 	for (vector <GType>::const_iterator it = types.begin(); it != types.end(); it++)
 		types_array [i++] = *it;
-	types_array[colsNb-1] = G_TYPE_POINTER;
+	types_array[colsNb-2] = G_TYPE_POINTER;  // pointer to YItem
+	types_array[colsNb-1] = G_TYPE_POINTER;  // unique id -- using GtkTreeRowReference is expensive
 
 	if (isTree)
 		m_model = GTK_TREE_MODEL (gtk_tree_store_newv (colsNb, types_array));
@@ -80,7 +81,15 @@ void YGSelectionModel::doDeleteAllItems()
 		gtk_tree_store_clear (getTreeStore());
 	else
 		gtk_list_store_clear (getListStore());
+	dataIndex = 0;
 }
+
+int YGSelectionModel::getPtrCol()
+{ return gtk_tree_model_get_n_columns (getModel()) - 2; }
+
+static int getIdCol (GtkTreeModel *model)
+{ return gtk_tree_model_get_n_columns (model) - 1; }
+int YGSelectionModel::getIdCol() { return ::getIdCol (getModel()); }
 
 YItem *YGSelectionModel::getItem (GtkTreeIter *iter)
 {
@@ -93,15 +102,34 @@ bool YGSelectionModel::getIter (const YItem *item, GtkTreeIter *iter)
 {
 	if (!item)
 		return false;
-	GtkTreePath *path = gtk_tree_path_new();
-	for (; item; item = item->parent()) {
-		int index = GPOINTER_TO_INT (item->data());
-		gtk_tree_path_prepend_index (path, index);
-	}
 
-	bool ret = gtk_tree_model_get_iter (getModel(), iter, path);
-	gtk_tree_path_free (path);
-	return ret;
+	struct inner {
+		static void free_iter (gpointer iter)
+		{ gtk_tree_iter_free ((GtkTreeIter *) iter); }
+
+		static gboolean find_iter (GtkTreeModel *model, GtkTreePath *path,
+		                           GtkTreeIter *iter, gpointer data)
+		{
+			gpointer iter_data = 0;
+			gtk_tree_model_get (model, iter, ::getIdCol (model), &iter_data, -1);
+			if (data == iter_data) {
+				g_object_set_data_full (G_OBJECT (model), "found",
+					gtk_tree_iter_copy (iter), free_iter);
+				return TRUE;
+			}
+			return FALSE;
+		}
+	};
+
+	GtkTreeModel *model = getModel();
+	g_object_set_data (G_OBJECT (model), "found", 0);  // hacky
+	gtk_tree_model_foreach (model, inner::find_iter, item->data());
+	GtkTreeIter *found = (GtkTreeIter *) g_object_get_data (G_OBJECT (model), "found");
+	if (found) {
+		*iter = *found;
+		return TRUE;
+	}
+	return FALSE;
 }
 
 void YGSelectionModel::implFocusItem (YItem *item)
@@ -111,27 +139,13 @@ void YGSelectionModel::implFocusItem (YItem *item)
 		setFocusItem (&iter);
 }
 
-int YGSelectionModel::getPtrCol()
-{
-	return gtk_tree_model_get_n_columns (getModel()) - 1;
-}
-
 void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select)
 {
 	struct inner {
-		static void setItemData (GtkTreeModel *model, GtkTreeIter *iter, YItem *item)
+		static void setItemData (YGSelectionModel *model, GtkTreeIter *iter, YItem *item)
 		{
-			int index;
-			GtkTreePath *path = gtk_tree_model_get_path (model, iter);
-
-			int depth = gtk_tree_path_get_depth (path);
-			int *path_int = gtk_tree_path_get_indices (path);
-			g_assert (path_int != NULL);
-			index = path_int [depth-1];
-
-			gtk_tree_path_free (path);
-			g_assert (index != -1);
-			item->setData (GINT_TO_POINTER (index));
+			item->setData (model->dataIndex);
+			model->dataIndex = GINT_TO_POINTER (GPOINTER_TO_INT (model->dataIndex) + 1);
 		}
 	};
 
@@ -144,14 +158,14 @@ void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select
 		}
 		else
 			gtk_tree_store_append (store, iter, NULL);
-		gtk_tree_store_set (store, iter, getPtrCol(), item, -1);
-		inner::setItemData (getModel(), iter, item);
+		gtk_tree_store_set (store, iter, getPtrCol(), item, getIdCol(), dataIndex, -1);
+		inner::setItemData (this, iter, item);
 	}
 	else {
 		GtkListStore *store = getListStore();
 		gtk_list_store_append (store, iter);
-		gtk_list_store_set (store, iter, getPtrCol(), item, -1);
-		inner::setItemData (getModel(), iter, item);
+		gtk_list_store_set (store, iter, getPtrCol(), item, getIdCol(), dataIndex, -1);
+		inner::setItemData (this, iter, item);
 	}
 
 	if (honor_select && item->selected())

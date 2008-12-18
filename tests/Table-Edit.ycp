@@ -7,10 +7,10 @@
 				   `Table(`id(`table),
 					  `header("Mark", "Name"),
 					  [
-					   `item(`id(2), "", "Salami Baguette"),
-					   `item(`id(1), "", "Chili"),
-					   `item(`id(4), "", "Steak Sandwich"),
-					   `item(`id(3), "", "Spaghetti")
+					   `item(`id(1), "", "Salami Baguette"),
+					   `item(`id(2), "", "Chili"),
+					   `item(`id(3), "", "Steak Sandwich"),
+					   `item(`id(4), "", "Spaghetti")
 					   ]
 					  )
 				   ),
