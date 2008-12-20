@@ -8,7 +8,7 @@
 #include "YGUtils.h"
 #include "ygtkfieldentry.h"
 
-#include "YInputField.h"
+#include <YInputField.h>
 
 class YGInputField : public YInputField, public YGLabeledWidget
 {

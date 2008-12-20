@@ -192,7 +192,9 @@ gboolean ygtk_field_entry_set_focus (YGtkFieldEntry *fields)
 	GList *children = gtk_container_get_children (GTK_CONTAINER (fields));
     g_return_val_if_fail (children != NULL, FALSE);
     GtkWidget *widget = GTK_WIDGET (children->data);
+    g_list_free (children);
 
+	gtk_editable_select_region (GTK_EDITABLE (widget), 0, -1);
 	gtk_widget_grab_focus (widget);
 	return gtk_widget_is_focus (widget);
 }

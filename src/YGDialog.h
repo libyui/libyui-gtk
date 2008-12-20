@@ -44,8 +44,8 @@ public:
 	void setTitle (const std::string &title, bool sticky = false);
 	void setIcon (const std::string &icon);
 
-	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+	YGWIDGET_IMPL_CHILD_ADDED (YDialog, m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (YDialog, m_containee)
 };
 
 #endif // YGDIALOG_H

@@ -128,8 +128,8 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
+	YGWIDGET_IMPL_CHILD_ADDED (YRadioButtonGroup, m_widget)
+	YGWIDGET_IMPL_CHILD_REMOVED (YRadioButtonGroup, m_widget)
 };
 
 YRadioButtonGroup *YGWidgetFactory::createRadioButtonGroup (YWidget *parent)

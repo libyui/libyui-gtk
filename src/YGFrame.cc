@@ -101,8 +101,8 @@ public:
 	{ return label(); }
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+	YGWIDGET_IMPL_CHILD_ADDED (YFrame, m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (YFrame, m_containee)
 };
 
 
@@ -173,8 +173,8 @@ public:
     }
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+	YGWIDGET_IMPL_CHILD_ADDED (YCheckBoxFrame, m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (YCheckBoxFrame, m_containee)
 
 private:
     static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
