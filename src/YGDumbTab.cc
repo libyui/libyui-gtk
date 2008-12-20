@@ -153,8 +153,8 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_containee)
+	YGWIDGET_IMPL_CHILD_ADDED (YDumbTab, m_containee)
+	YGWIDGET_IMPL_CHILD_REMOVED (YDumbTab, m_containee)
 };
 
 YDumbTab *YGOptionalWidgetFactory::createDumbTab (YWidget *parent)

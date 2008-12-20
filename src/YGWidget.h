@@ -116,14 +116,14 @@ private:
     }
 
 // for containers
-#define YGWIDGET_IMPL_CHILD_ADDED(container)                    \
+#define YGWIDGET_IMPL_CHILD_ADDED(ParentClass, container)       \
 	virtual void addChild (YWidget *ychild) {                   \
-		YWidget::addChild (ychild);                             \
+		ParentClass::addChild (ychild);                         \
 		doAddChild (ychild, container);                         \
 	}
-#define YGWIDGET_IMPL_CHILD_REMOVED(container)                  \
+#define YGWIDGET_IMPL_CHILD_REMOVED(ParentClass, container)     \
 	virtual void removeChild (YWidget *ychild) {                \
-		YWidget::removeChild (ychild);                          \
+		ParentClass::removeChild (ychild);                      \
 		doRemoveChild (ychild, container);                      \
 	}
 

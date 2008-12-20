@@ -1,3 +1,12 @@
+2008-12-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.h, src/YGLayoutBox.cc, src/YGDialog.h, src/YGFrame.cc,
+	  src/YGDumbTab.cc, src/YGRadioButton.cc, src/YGWizard.cc:
+	  	bug fix 460728: make sure to call parent class for add and removeChild
+	  	methods. Affects YAlignment.
+
+	* src/ygtkfieldentry.c: select entry besides focusing it.
+
 2008-12-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGSelectionModel.h/cc: bug fix 459313: we are using GTK model

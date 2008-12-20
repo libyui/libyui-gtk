@@ -293,8 +293,8 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_ADDED (YWizard, getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (YWizard, getWidget())
 };
 
 YWizard *YGOptionalWidgetFactory::createWizard (YWidget *parent,

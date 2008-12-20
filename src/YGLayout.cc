@@ -83,12 +83,12 @@ public:
 
 	virtual void addChild (YWidget *ychild)
 	{
-		YWidget::addChild (ychild);
+		YLayoutBox::addChild (ychild);
 		doAddChild (ychild, getWidget());
 		if (primary() == YD_HORIZ)
 			group.addWidget (ychild);
 	}
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (YLayoutBox, getWidget())
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
 	YGLAYOUT_SET_SIZE_IMPL (YLayoutBox)
 };
@@ -119,11 +119,11 @@ public:
 
 	virtual void addChild (YWidget *ychild)
 	{
-		YWidget::addChild (ychild);
+		YButtonBox::addChild (ychild);
 		doAddChild (ychild, getWidget());
 		group.addWidget (ychild);
 	}
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (YButtonBox, getWidget())
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YButtonBox)
 	YGLAYOUT_SET_SIZE_IMPL (YButtonBox)
 };
@@ -158,8 +158,8 @@ public:
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 	}
 
-	YGWIDGET_IMPL_CHILD_ADDED (m_widget)
-	YGWIDGET_IMPL_CHILD_REMOVED (m_widget)
+	YGWIDGET_IMPL_CHILD_ADDED (YAlignment, m_widget)
+	YGWIDGET_IMPL_CHILD_REMOVED (YAlignment, m_widget)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YAlignment)
 	YGLAYOUT_SET_SIZE_IMPL (YAlignment)
 
@@ -278,8 +278,8 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_ADDED (YReplacePoint, getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (YReplacePoint, getWidget())
 };
 
 YReplacePoint *YGWidgetFactory::createReplacePoint (YWidget *parent)
@@ -303,8 +303,8 @@ public:
 	}
 
 	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (getWidget())
+	YGWIDGET_IMPL_CHILD_ADDED (YSquash, getWidget())
+	YGWIDGET_IMPL_CHILD_REMOVED (YSquash, getWidget())
 };
 
 YSquash *YGWidgetFactory::createSquash (YWidget *parent, bool hsquash, bool vsquash)
