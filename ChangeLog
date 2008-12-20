@@ -7,6 +7,8 @@
 
 	* src/ygtkfieldentry.c: select entry besides focusing it.
 
+	* src/YGTable.cc: bug fix 460746: table multi-selection broken.
+
 2008-12-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGSelectionModel.h/cc: bug fix 459313: we are using GTK model

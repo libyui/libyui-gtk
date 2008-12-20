@@ -114,8 +114,13 @@ public:
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 			gtk_tree_view_expand_to_path (getView(), path);
 
-			gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
-			gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
+			if (gtk_tree_selection_get_mode (getSelection()) == GTK_SELECTION_MULTIPLE) {
+				gtk_tree_selection_select_iter (getSelection(), iter);
+			}
+			else {
+				gtk_tree_view_set_cursor (getView(), path, NULL, FALSE);
+				gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0.5);
+			}
 			gtk_tree_path_free (path);
 		}
 		else
@@ -162,10 +167,8 @@ protected:
 		emitEvent (YEvent::ValueChanged);
 	}
 
-	static void selected_cb (GtkTreeView *view, YGTableView* pThis)
+	static void selection_changed_cb (GtkTreeSelection *selection, YGTableView* pThis)
 	{
-		if (pThis->immediateEvent())
-			pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();
 			for (YItemConstIterator it = pThis->itemsBegin(); it != pThis->itemsEnd(); it++) {
@@ -176,6 +179,8 @@ protected:
 				}
 			}
 		}
+		if (pThis->immediateEvent())
+			pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
 	}
 
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
@@ -235,8 +240,8 @@ public:
 
 		connect (getWidget(), "row-activated",
 		         G_CALLBACK (activated_cb), (YGTableView*) this);
-		connect (getWidget(), "cursor-changed",
-		         G_CALLBACK (selected_cb), (YGTableView*) this);
+		connect (G_OBJECT (getSelection()), "changed",
+		         G_CALLBACK (selection_changed_cb), (YGTableView*) this);
 	}
 
 	virtual void setKeepSorting (bool keepSorting)
@@ -339,8 +344,8 @@ public:
 	{
 		connect (getWidget(), "row-activated",
 		         G_CALLBACK (activated_cb), (YGTableView*) this);
-		connect (getWidget(), "cursor-changed",
-		         G_CALLBACK (selected_cb), (YGTableView*) this);
+		connect (G_OBJECT (getSelection()), "changed",
+		         G_CALLBACK (selection_changed_cb), (YGTableView*) this);
 	}
 
 	virtual bool isShrinkable() { return shrinkable(); }
@@ -373,8 +378,8 @@ public:
 		appendIconTextColumn ("", YAlignUnchanged, 1, 2);
 		setModel();
 
-		connect (getWidget(), "cursor-changed",
-		                  G_CALLBACK (selected_cb), (YGTableView*) this);
+		connect (G_OBJECT (getSelection()), "changed",
+		         G_CALLBACK (selection_changed_cb), (YGTableView*) this);
 		// Let the user toggle, using space/enter or double click (not an event).
 		connect_after (getWidget(), "row-activated",
 		               G_CALLBACK (multi_activated_cb), this);
@@ -523,10 +528,11 @@ public:
 	static void row_selected_cb (GtkTreeView *view, YGTree *pThis)
 	{
 		// expand selected row
+		GtkTreeSelection *selection = pThis->getSelection();
 		GtkTreeIter iter;
-		if (gtk_tree_selection_get_selected (pThis->getSelection(), NULL, &iter))
+		if (gtk_tree_selection_get_selected (selection, NULL, &iter))
 			pThis->expand (&iter);
-		YGTable::selected_cb (view, pThis);
+		YGTable::selection_changed_cb (selection, pThis);
 	}
 
 	YGWIDGET_IMPL_COMMON

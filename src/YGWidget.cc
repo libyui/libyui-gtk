@@ -91,6 +91,7 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 YGWidget::~YGWidget()
 {
 	IMPL
+	delete m_signals;
 	if (YGUI::ui()->eventPendingFor (m_ywidget))
 		YGUI::ui()->m_event_handler.consumePendingEvent();
 	// remove children if container?
@@ -105,7 +106,6 @@ YGWidget::~YGWidget()
 #endif
 	gtk_widget_destroy (m_adj_size);
 	g_object_unref (G_OBJECT (m_adj_size));
-	delete m_signals;
 }
 
 YGWidget *YGWidget::get (YWidget *ywidget)
