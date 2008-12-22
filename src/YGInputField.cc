@@ -27,8 +27,7 @@ public:
 		if (passwordMode)
 			gtk_entry_set_visibility (entry, FALSE);
 
-		connect (getWidget(), "field-entry-changed",
-		         G_CALLBACK (value_changed_cb), this);
+		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
 	}
 
 	// YInputField
@@ -63,22 +62,21 @@ public:
 		updateProps();
 	}
 
+	// callbacks
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb, YGInputField *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
 
+	// YGWidget
 	virtual bool doSetKeyboardFocus()
     {
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
         return ygtk_field_entry_set_focus (field);
     }
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YInputField)
-
 	virtual unsigned int getMinSize (YUIDimension dim)
-	{
-		return dim == YD_HORIZ ? (shrinkable() ? 30 : 200) : 0;
-	}
+	{ return dim == YD_HORIZ ? (shrinkable() ? 30 : 200) : 0; }
+
+	YGLABEL_WIDGET_IMPL (YInputField)
 };
 
 YInputField *YGWidgetFactory::createInputField (YWidget *parent, const string &label,
@@ -104,8 +102,7 @@ public:
 		ygtk_field_entry_setup_field (field, 0, 2, "0123456789");
 		ygtk_field_entry_setup_field (field, 1, 2, "0123456789");
 
-		connect (getWidget(), "field-entry-changed",
-		         G_CALLBACK (value_changed_cb), this);
+		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
 	}
 
 	// YTimeField
@@ -140,8 +137,7 @@ public:
 	                              YGTimeField *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YTimeField)
+	YGLABEL_WIDGET_IMPL (YTimeField)
 };
 
 YTimeField *YGOptionalWidgetFactory::createTimeField (YWidget *parent, const string &label)
@@ -179,12 +175,10 @@ public:
 		gtk_widget_show (menu_button);
 		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);
 
-		connect (getWidget(), "field-entry-changed",
-		         G_CALLBACK (value_changed_cb), this);
-		connect (m_calendar, "day-selected",
-		         G_CALLBACK (calendar_changed_cb), this);
-		connect (m_calendar, "day-selected-double-click",
-		         G_CALLBACK (double_click_cb), popup);
+		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
+		connect (m_calendar, "day-selected", G_CALLBACK (calendar_changed_cb), this);
+		g_signal_connect (G_OBJECT (m_calendar), "day-selected-double-click",
+		                  G_CALLBACK (double_click_cb), popup);
 	}
 
 	inline GtkCalendar *getCalendar()
@@ -282,8 +276,7 @@ public:
 		gtk_widget_hide (GTK_WIDGET (popup));
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YDateField)
+	YGLABEL_WIDGET_IMPL (YDateField)
 };
 
 YDateField *YGOptionalWidgetFactory::createDateField (YWidget *parent, const string &label)
@@ -309,8 +302,7 @@ public:
 		ygtk_time_zone_picker_set_map (YGTK_TIME_ZONE_PICKER (getWidget()),
 			pixmap.c_str(), convert_code_to_name, (gpointer) &timezones);
 
-		connect (getWidget(), "zone-clicked",
-		         G_CALLBACK (zone_clicked_cb), this);
+		connect (getWidget(), "zone-clicked", G_CALLBACK (zone_clicked_cb), this);
 	}
 
 	// YTimezoneSelector
@@ -348,7 +340,7 @@ public:
 	                             YGTimezoneSelector *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YTimezoneSelector)
 };
 
 YTimezoneSelector *YGOptionalWidgetFactory::createTimezoneSelector (YWidget *parent,

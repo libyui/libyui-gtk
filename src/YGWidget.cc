@@ -18,14 +18,15 @@ struct YGWidget::Signals
 {
 	typedef std::pair <GObject *, gulong> Handler;
 	std::list <Handler> m_handlers;
-	void connect (GObject *object, const char *name,
-	               GCallback callback, gpointer data, bool after)
+	void connectSignal (GObject *object, const char *name,
+	                    GCallback callback, gpointer data, bool after)
 	{
 		gulong handler;
 		if (after)
 			handler = g_signal_connect_after (object, name, callback, data);
 		else
 			handler = g_signal_connect (object, name, callback, data);
+
 		Handler h (object, handler);
 		m_handlers.push_back (h);
 	}
@@ -92,6 +93,7 @@ YGWidget::~YGWidget()
 {
 	IMPL
 	delete m_signals;
+	m_signals = 0;
 	if (YGUI::ui()->eventPendingFor (m_ywidget))
 		YGUI::ui()->m_event_handler.consumePendingEvent();
 	// remove children if container?
@@ -151,7 +153,7 @@ void YGWidget::doRemoveChild (YWidget *ychild, GtkWidget *container)
 	}
 }
 
-int YGWidget::getPreferredSize (YUIDimension dimension)
+int YGWidget::doPreferredSize (YUIDimension dimension)
 {
 	// We might want to do some caching here..
 	GtkRequisition req;
@@ -191,29 +193,22 @@ void YGWidget::emitEvent (YEvent::EventReason reason, EventFlags flags)
 		}
 	};
 
-	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify())
-	{
+	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify()) {
+		YWidgetEvent *event = new YWidgetEvent (m_ywidget, reason);
 		if (flags & DELAY_EVENT)
-			g_timeout_add (250, inner::dispatchEvent, new YWidgetEvent (m_ywidget, reason));
+			g_timeout_add (250, inner::dispatchEvent, event);
 		else if (!(flags & IF_NOT_PENDING_EVENT) || !YGUI::ui()->eventPendingFor (m_ywidget))
-			YGUI::ui()->sendEvent (new YWidgetEvent (m_ywidget, reason));
+			YGUI::ui()->sendEvent (event);
 	}
 }
 
-void YGWidget::connectSignal (GObject *object, const char *name,
-                               GCallback callback, gpointer data, bool after)
+void YGWidget::connect (gpointer object, const char *name, GCallback callback, gpointer data,
+                        bool after)
 {
 	if (!m_signals)
 		m_signals = new YGWidget::Signals();
-	m_signals->connect (object, name, callback, data, after);
+	m_signals->connectSignal (G_OBJECT (object), name, callback, data, after);
 }
-
-void YGWidget::connect (GObject *object, const char *name,
-                         GCallback callback, gpointer data)
-{ connectSignal (object, name, callback, data, false); }
-void YGWidget::connect_after (GObject *object, const char *name,
-                               GCallback callback, gpointer data)
-{ connectSignal (object, name, callback, data, true); }
 
 void YGWidget::blockSignals()
 { if (m_signals) m_signals->block(); }

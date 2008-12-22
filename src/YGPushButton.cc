@@ -24,8 +24,6 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
-		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
-		                        G_CALLBACK (treat_icon_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -150,7 +148,7 @@ public:
 		}
 		return true;
 	}
-
+#if 0
 	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
 	                               YGPushButton *pThis)
 	{
@@ -192,12 +190,13 @@ public:
 		g_signal_handlers_disconnect_by_func (widget, (gpointer) treat_icon_cb, pThis);
 		return FALSE;
 	}
+#endif
 
-	// Events
+	// callbacks
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
 	{ pThis->emitEvent (YEvent::Activated, IGNORE_NOTIFY_EVENT); }
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YPushButton)
 };
 
 YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const string &label)

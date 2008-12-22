@@ -1,3 +1,8 @@
+2008-12-22  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.h/cc, touching most code: some small cleanups on
+	macros and connections.
+
 2008-12-20  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.h, src/YGLayoutBox.cc, src/YGDialog.h, src/YGFrame.cc,

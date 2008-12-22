@@ -22,8 +22,7 @@ public:
 		IMPL
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 		maxChars = -1;
-		connect (G_OBJECT (getBuffer()), "changed",
-		         G_CALLBACK (text_changed_cb), this);
+		connect (getBuffer(), "changed", G_CALLBACK (text_changed_cb), this);
 	}
 
 	GtkTextBuffer* getBuffer()
@@ -110,8 +109,7 @@ public:
 		YMultiLineEdit::setInputMaxLength (nb);
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YMultiLineEdit)
+	// YGWidget
 
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{
@@ -121,6 +119,8 @@ public:
 		}
 		return 30;
 	}
+
+	YGLABEL_WIDGET_IMPL (YMultiLineEdit)
 };
 
 YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const string &label)
@@ -139,14 +139,14 @@ public:
 	{}
 
 	// YLogView
+
 	virtual void displayLogText (const string &text)
 	{
 		setText (text);
 		scrollToBottom();
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(YLogView)
+	// YGWidget
 
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{
@@ -156,6 +156,8 @@ public:
 		}
 		return 50;
 	}
+
+	YGLABEL_WIDGET_IMPL (YLogView)
 };
 
 YLogView *YGWidgetFactory::createLogView (YWidget *parent, const string &label,
@@ -225,16 +227,18 @@ public:
 	    	setText (value(), plain_mode);
     }
 
-	// events
+	// callbacks
 	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
 	{
 		YGUI::ui()->sendEvent (new YMenuEvent (url));
 	}
 
-	YGWIDGET_IMPL_COMMON
+	// YGWidget
 
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return shrinkable() ? 10 : 100; }
+
+	YGWIDGET_IMPL_COMMON (YRichText)
 };
 
 

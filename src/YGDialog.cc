@@ -98,9 +98,6 @@ public:
 		    }
 
 		    gtk_window_set_role (window, "yast2-gtk");
-		    if (!YGUI::ui()->hasWM())
-		        g_signal_connect (G_OBJECT (m_widget), "expose-event",
-		                          G_CALLBACK (draw_border_cb), this);
 		}
 
 		if (_main_window)
@@ -263,23 +260,6 @@ private:
 		return FALSE;
 	}
 
-	static gboolean draw_border_cb (GtkWidget *widget, GdkEventExpose *event,
-			                        YGWindow *pThis)
-	{
-		IMPL
-		// to avoid background from overlapping, we emit the expose to the containee
-		// ourselves
-		gtk_container_propagate_expose (GTK_CONTAINER (widget),
-		                                gtk_bin_get_child (GTK_BIN (widget)),
-		                                event);
-
-		GtkAllocation *alloc = &widget->allocation;
-		gtk_draw_shadow (gtk_widget_get_style (widget), widget->window,
-		                 GTK_STATE_NORMAL, GTK_SHADOW_ETCHED_OUT,
-		                 alloc->x, alloc->y, alloc->width, alloc->height);
-		return TRUE;
-	}
-
 	static void realize_cb (GtkWidget *widget, YGWindow *pThis)
 	{ pThis->busyCursor(); }
 
@@ -408,13 +388,7 @@ void YGDialog::busyCursor()
 
 // YWidget
 
-void YGDialog::setEnabled (bool enabled)
-{
-	doSetEnabled (enabled);
-	YWidget::setEnabled (enabled);
-}
-
-void YGDialog::setSize (int width, int height)
+void YGDialog::doSetSize (int width, int height)
 {
 	// libyui calls YDialog::setSize() to force a geometry recalculation as a
 	// result of changed layout properties

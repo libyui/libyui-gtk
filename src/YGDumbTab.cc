@@ -31,8 +31,7 @@ public:
 		// the notebook reduce its size.
 		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
-		connect_after (getWidget(), "switch-page",
-		               G_CALLBACK (changed_tab_cb), this);
+		connect (getWidget(), "switch-page", G_CALLBACK (changed_tab_cb), this);
 	}
 
 	~YGDumbTab()
@@ -41,6 +40,9 @@ public:
 		gtk_widget_destroy (m_containee);
 		g_object_unref (G_OBJECT (m_containee));
 	}
+
+	virtual GtkWidget *getContainer()
+	{ return m_containee; }
 
 	virtual void addItem (YItem *item)
 	{
@@ -152,9 +154,7 @@ public:
 		pThis->syncTabPage();
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YDumbTab, m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (YDumbTab, m_containee)
+	YGWIDGET_IMPL_CONTAINER (YDumbTab)
 };
 
 YDumbTab *YGOptionalWidgetFactory::createDumbTab (YWidget *parent)

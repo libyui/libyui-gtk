@@ -41,11 +41,9 @@ public:
 		gtk_widget_show (m_spiner);
 
 		doSetValue (initialValue);
-		connect (m_spiner, "value-changed",
-		         G_CALLBACK (spiner_changed_cb), this);
+		connect (m_spiner, "value-changed", G_CALLBACK (spiner_changed_cb), this);
         if (m_slider)
-		    connect (m_slider, "value-changed",
-                     G_CALLBACK (slider_changed_cb), this);
+		    connect (m_slider, "value-changed", G_CALLBACK (slider_changed_cb), this);
 	}
 
 	GtkSpinButton *getSpiner()
@@ -88,7 +86,7 @@ public:
 	}
 };
 
-#define YGSPIN_BOX_IMPL_SET_VALUE_CHAIN(ParentClass) \
+#define YGSPIN_BOX_IMPL(ParentClass) \
 	virtual void reportValue (int value) {           \
 		ParentClass::setValue (value);               \
 	}                                                \
@@ -110,9 +108,8 @@ public:
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, false)
 	{}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YIntField)
-	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
+	YGLABEL_WIDGET_IMPL (YIntField)
+	YGSPIN_BOX_IMPL (YIntField)
 };
 
 YIntField *YGWidgetFactory::createIntField (YWidget *parent, const string &label,
@@ -132,12 +129,11 @@ public:
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, true)
 	{}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YSlider)
-	YGSPIN_BOX_IMPL_SET_VALUE_CHAIN (YIntField)
-
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return dim == YD_HORIZ ? 200 : 0; }
+
+	YGLABEL_WIDGET_IMPL (YSlider)
+	YGSPIN_BOX_IMPL (YSlider)
 };
 
 YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const string &label,

@@ -18,6 +18,8 @@ public:
 	YGDialog (YDialogType dialogType, YDialogColorMode colorMode);
 	virtual ~YGDialog();
 
+	virtual GtkWidget *getContainer() { return m_containee; }
+
     void setCloseCallback (YGWindowCloseFn closeCallback, void *closeData);
     void unsetCloseCallback();
 
@@ -28,9 +30,8 @@ public:
 	static YGDialog *currentDialog();
 	static GtkWindow *currentWindow();
 
-	virtual void setSize (int width, int height);
+	virtual void doSetSize (int width, int height);
 	void setMinSize (int width, int height);  // used internally by YGPackageSelector.cc
-	virtual void setEnabled (bool enabled);
 
 	virtual void openInternal();
 	virtual void activate();
@@ -44,8 +45,7 @@ public:
 	void setTitle (const std::string &title, bool sticky = false);
 	void setIcon (const std::string &icon);
 
-	YGWIDGET_IMPL_CHILD_ADDED (YDialog, m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (YDialog, m_containee)
+	YGWIDGET_IMPL_CONTAINER (YDialog)
 };
 
 #endif // YGDIALOG_H

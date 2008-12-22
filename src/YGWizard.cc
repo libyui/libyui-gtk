@@ -292,9 +292,7 @@ public:
 			ygtk_wizard_set_child (getWizard(), YGWidget::get (ychild)->getLayout());
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YWizard, getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (YWizard, getWidget())
+	YGWIDGET_IMPL_CONTAINER (YWizard)
 };
 
 YWizard *YGOptionalWidgetFactory::createWizard (YWidget *parent,

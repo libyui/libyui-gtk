@@ -3,7 +3,6 @@
  ********************************************************************/
 
 #include <config.h>
-#include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 
@@ -33,16 +32,11 @@ static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 	                         gpointer pThis) { \
 		((ParentClass *) pThis)->ParentClass::setSize (width, height); \
 	} \
-	virtual void setSize (int width, int height) { doSetSize (width, height); } \
 	virtual void moveChild (YWidget *ychild, int x, int y)      \
 	{ doMoveChild (getWidget(), ychild, x, y); }                \
-	virtual void setEnabled (bool enabled) {                    \
-		ParentClass::setEnabled (enabled);                      \
-		doSetEnabled (enabled);                                 \
-	}
 
-#include "YPushButton.h"
-#include "YMenuButton.h"
+#include <YPushButton.h>
+#include <YMenuButton.h>
 
 class ButtonHeightGroup
 {
@@ -65,7 +59,7 @@ public:
 	}
 };
 
-#include "YLayoutBox.h"
+#include <YLayoutBox.h>
 
 class YGLayoutBox : public YLayoutBox, public YGWidget
 {
@@ -81,14 +75,14 @@ public:
 		YGLAYOUT_INIT
 	}
 
-	virtual void addChild (YWidget *ychild)
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
-		YLayoutBox::addChild (ychild);
-		doAddChild (ychild, getWidget());
+		YGWidget::doAddChild (ychild, container);
 		if (primary() == YD_HORIZ)
 			group.addWidget (ychild);
 	}
-	YGWIDGET_IMPL_CHILD_REMOVED (YLayoutBox, getWidget())
+
+	YGWIDGET_IMPL_CONTAINER (YLayoutBox)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YLayoutBox)
 	YGLAYOUT_SET_SIZE_IMPL (YLayoutBox)
 };
@@ -100,7 +94,7 @@ YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dime
 }
 
 #if YAST2_VERSION >= 2017006
-#include "YButtonBox.h"
+#include <YButtonBox.h>
 
 class YGButtonBox : public YButtonBox, public YGWidget
 {
@@ -117,13 +111,13 @@ public:
 		YGLAYOUT_INIT
 	}
 
-	virtual void addChild (YWidget *ychild)
+	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
-		YButtonBox::addChild (ychild);
-		doAddChild (ychild, getWidget());
+		YGWidget::doAddChild (ychild, container);
 		group.addWidget (ychild);
 	}
-	YGWIDGET_IMPL_CHILD_REMOVED (YButtonBox, getWidget())
+
+	YGWIDGET_IMPL_CONTAINER (YButtonBox)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YButtonBox)
 	YGLAYOUT_SET_SIZE_IMPL (YButtonBox)
 };
@@ -136,7 +130,7 @@ YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)
 
 #endif
 
-#include "YAlignment.h"
+#include <YAlignment.h>
 
 class YGAlignment : public YAlignment, public YGWidget
 {
@@ -158,8 +152,7 @@ public:
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 	}
 
-	YGWIDGET_IMPL_CHILD_ADDED (YAlignment, m_widget)
-	YGWIDGET_IMPL_CHILD_REMOVED (YAlignment, m_widget)
+	YGWIDGET_IMPL_CONTAINER (YAlignment)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YAlignment)
 	YGLAYOUT_SET_SIZE_IMPL (YAlignment)
 
@@ -216,7 +209,7 @@ YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType ha
 	return new YGAlignment (parent, halign, valign);
 }
 
-#include "YEmpty.h"
+#include <YEmpty.h>
 
 // Just an empty space.
 class YGEmpty : public YEmpty, public YGWidget
@@ -229,7 +222,7 @@ public:
 		setBorder (0);
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YEmpty)
 };
 
 YEmpty *YGWidgetFactory::createEmpty (YWidget *parent)
@@ -238,7 +231,7 @@ YEmpty *YGWidgetFactory::createEmpty (YWidget *parent)
 	return new YGEmpty (parent);
 }
 
-#include "YSpacing.h"
+#include <YSpacing.h>
 
 // Empty space, with a fixed size.
 class YGSpacing : public YSpacing, public YGWidget
@@ -252,7 +245,7 @@ public:
 		YGLAYOUT_INIT
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YSpacing)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YSpacing)
 	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, 
 	                         gpointer pThis) {}
@@ -264,7 +257,7 @@ YSpacing *YGWidgetFactory::createSpacing (YWidget *parent, YUIDimension dim,
 	return new YGSpacing (parent, dim, stretchable, size);
 }
 
-#include "YReplacePoint.h"
+#include <YReplacePoint.h>
 
 // an empty space that will get replaced
 class YGReplacePoint : public YReplacePoint, public YGWidget
@@ -277,18 +270,15 @@ public:
 		setBorder (0);
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YReplacePoint, getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (YReplacePoint, getWidget())
+	YGWIDGET_IMPL_CONTAINER (YReplacePoint)
 };
 
 YReplacePoint *YGWidgetFactory::createReplacePoint (YWidget *parent)
 {
-	IMPL
 	return new YGReplacePoint (parent);
 }
 
-#include "YSquash.h"
+#include <YSquash.h>
 
 // A-like YAlignment, YSquash messes around child settings.
 // In this case, it can remove the stretchable attribute.
@@ -302,9 +292,7 @@ public:
 		setBorder (0);
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YSquash, getWidget())
-	YGWIDGET_IMPL_CHILD_REMOVED (YSquash, getWidget())
+	YGWIDGET_IMPL_CONTAINER (YSquash)
 };
 
 YSquash *YGWidgetFactory::createSquash (YWidget *parent, bool hsquash, bool vsquash)
