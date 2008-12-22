@@ -69,7 +69,7 @@ public:
 		YGUI::ui()->sendEvent (new YMenuEvent (item));
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YMenuButton)
 };
 
 YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const string &label)

@@ -42,12 +42,10 @@ public:
 		return color;
 	}
 
-	YGWIDGET_IMPL_COMMON
-
 	virtual unsigned int getMinSize (YUIDimension dim)
-	{
-		return dim == YD_HORIZ ? 80 : 30;
-	}
+	{ return dim == YD_HORIZ ? 80 : 30; }
+
+	YGWIDGET_IMPL_COMMON (YBarGraph)
 };
 
 YBarGraph *YGOptionalWidgetFactory::createBarGraph (YWidget *parent)
@@ -101,12 +99,9 @@ public:
 		gtk_box_pack_start (GTK_BOX (slider_box), m_scale, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (slider_box), m_new_spin, FALSE, FALSE, 0);
 
-		connect (m_scale, "value-changed",
-		         G_CALLBACK (scale_changed_cb), this);
-		connect (m_free_spin, "value-changed",
-		         G_CALLBACK (free_spin_changed_cb), this);
-		connect (m_new_spin, "value-changed",
-		         G_CALLBACK (new_spin_changed_cb), this);
+		connect (m_scale, "value-changed", G_CALLBACK (scale_changed_cb), this);
+		connect (m_free_spin, "value-changed", G_CALLBACK (free_spin_changed_cb), this);
+		connect (m_new_spin, "value-changed", G_CALLBACK (new_spin_changed_cb), this);
 
 		/* Main layout */
 		gtk_box_pack_start (GTK_BOX (getWidget()), graph, TRUE, TRUE, 6);
@@ -161,7 +156,7 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YPartitionSplitter)
 };
 
 YPartitionSplitter *YGOptionalWidgetFactory::createPartitionSplitter (YWidget *parent,

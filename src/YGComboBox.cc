@@ -35,8 +35,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (getWidget()), cell,
 			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
 
-		connect (getWidget(), "changed",
-		         G_CALLBACK (selected_changed_cb), this);
+		connect (getWidget(), "changed", G_CALLBACK (selected_changed_cb), this);
 		// realize doesn't seem reliable -- expose then disconnect
 		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
 		                  G_CALLBACK (realize_cb), this);
@@ -87,13 +86,13 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		BlockEvents block (this);
         GtkTreeIter iter;
         if (findByText (value, &iter))
-            setFocusItem (&iter);
+            doSelectItem (&iter);
         else
             gtk_entry_set_text (getEntry(), value.c_str());
 	}
 
 	// YGSelectionModel
-	virtual void setFocusItem (GtkTreeIter *iter)
+	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		BlockEvents block (this);
 		if (iter)
@@ -102,7 +101,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 			gtk_combo_box_set_active (getComboBox(), -1);
 	}
 
-    virtual YItem *focusItem()
+    virtual YItem *doSelectedItem()
     {
     	GtkTreeIter iter;
     	if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
@@ -127,9 +126,10 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YComboBox)
-	YGSELECTION_WIDGET_IMPL_ALL (YComboBox)
+	YGLABEL_WIDGET_IMPL (YComboBox)
+	YGSELECTION_WIDGET_IMPL (YComboBox)
+
+	// callbacks
 
 	static gboolean realize_cb (GtkWidget *widget, GdkEventExpose *event,
 	                            YGComboBox *pThis)

@@ -58,8 +58,7 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), FALSE);
 
-		connect_after (getWidget(), "toggled",
-		               G_CALLBACK (toggled_cb), this);
+		connect (getWidget(), "toggled", G_CALLBACK (toggled_cb), this);
 	}
 
 	// YRadioButton
@@ -91,7 +90,7 @@ public:
 		}
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YRadioButton)
 	YGWIDGET_IMPL_USE_BOLD (YRadioButton)
 
 	// callbacks
@@ -127,9 +126,7 @@ public:
 		setBorder (0);
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YRadioButtonGroup, m_widget)
-	YGWIDGET_IMPL_CHILD_REMOVED (YRadioButtonGroup, m_widget)
+	YGWIDGET_IMPL_CONTAINER (YRadioButtonGroup)
 };
 
 YRadioButtonGroup *YGWidgetFactory::createRadioButtonGroup (YWidget *parent)
@@ -155,8 +152,7 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), isChecked);
 
-		connect (getWidget (), "toggled",
-		         G_CALLBACK (toggled_cb), this);
+		connect (getWidget(), "toggled", G_CALLBACK (toggled_cb), this);
 	}
 
 	// YCheckButton
@@ -206,7 +202,7 @@ public:
 		pThis->emitEvent (YEvent::ValueChanged);
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YCheckBox)
 	YGWIDGET_IMPL_USE_BOLD (YCheckBox)
 };
 

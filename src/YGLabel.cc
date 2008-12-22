@@ -47,7 +47,7 @@ public:
 		}
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YLabel)
 	YGWIDGET_IMPL_USE_BOLD (YLabel)
 };
 

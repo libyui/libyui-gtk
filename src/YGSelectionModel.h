@@ -26,11 +26,10 @@ struct YGSelectionModel
 	GtkTreeModel *getModel();
 	void createModel (const vector <GType> &types);
 
-	void doAddItem (YItem *item);
-	void doDeleteAllItems();
-
-	virtual YItem *focusItem() = 0;
-	virtual void setFocusItem (GtkTreeIter *iter) = 0;  // NULL to unset
+	virtual void doAddItem (YItem *item);
+	virtual void doDeleteAllItems();
+	virtual YItem *doSelectedItem() = 0;
+	virtual void doSelectItem (GtkTreeIter *iter) = 0;  // NULL to unselect all
 
 	YItemConstIterator itemsBegin() { return ywidget->itemsBegin(); }
 	YItemConstIterator itemsEnd()   { return ywidget->itemsEnd(); }
@@ -53,7 +52,7 @@ struct YGSelectionModel
 	int getMaxDepth (int *rows);  // not cached
 
 protected:
-	void implFocusItem (YItem *item);
+	void implSelectItem (YItem *item);
 private:
 	GtkTreeModel *m_model;
 	bool isTree;
@@ -64,36 +63,27 @@ private:
 	gpointer dataIndex;
 };
 
-#define YGSELECTION_WIDGET_IMPL_ADD(ParentClass)      \
-	virtual void addItem(YItem *item) {               \
-		ParentClass::addItem (item);                  \
-		doAddItem (item);                             \
-	}
-
-#define YGSELECTION_WIDGET_IMPL_CLEAR(ParentClass)    \
-	virtual void deleteAllItems() {                   \
-		ParentClass::deleteAllItems();                \
-		doDeleteAllItems();                           \
-	}
-
-#define YGSELECTION_WIDGET_IMPL_SELECT(ParentClass)   \
+#define YGSELECTION_WIDGET_IMPL(ParentClass)             \
+	virtual void addItem(YItem *item) {                  \
+		ParentClass::addItem (item);                     \
+		doAddItem (item);                                \
+	}                                                    \
+	virtual void deleteAllItems() {                      \
+		ParentClass::deleteAllItems();                   \
+		doDeleteAllItems();                              \
+	}                                                    \
 	virtual void selectItem (YItem *item, bool select) { \
-		ParentClass::selectItem (item, select);       \
-		if (select)                                   \
-			implFocusItem (item);                     \
-	}                                                 \
-	virtual void deselectAllItems() {                 \
-		ParentClass::deselectAllItems();              \
-		setFocusItem (NULL);                          \
-	}                                                 \
-	virtual YItem *selectedItem() {                   \
-		return focusItem();                           \
-	}                                                 \
-
-#define YGSELECTION_WIDGET_IMPL_ALL(ParentClass)      \
-	YGSELECTION_WIDGET_IMPL_ADD(ParentClass)          \
-	YGSELECTION_WIDGET_IMPL_CLEAR(ParentClass)        \
-	YGSELECTION_WIDGET_IMPL_SELECT(ParentClass)
+		ParentClass::selectItem (item, select);          \
+		if (select)                                      \
+			implSelectItem (item);                       \
+	}                                                    \
+	virtual void deselectAllItems() {                    \
+		ParentClass::deselectAllItems();                 \
+		doSelectItem (NULL);                             \
+	}                                                    \
+	virtual YItem *selectedItem() {                      \
+		return doSelectedItem();                         \
+	}
 
 #endif /*YGSELECTION_MODEL_H*/
 

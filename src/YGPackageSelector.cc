@@ -3036,7 +3036,7 @@ protected:
 		m_package_selector->packageModified (package);
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YPackageSelector)
 
 	// Utilities
 	void createToolsButton()
@@ -3178,7 +3178,7 @@ public:
 		  YGWidget (this, parent, true, GTK_TYPE_EVENT_BOX, NULL)
 	{
 	}
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YPackageSelector)
 };
 #endif
 

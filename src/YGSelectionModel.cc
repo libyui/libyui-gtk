@@ -61,7 +61,7 @@ void YGSelectionModel::doAddItem (YItem *item)
 	for (YItemIterator it = item->childrenBegin(); it != item->childrenEnd(); it++)
 		doAddItem (*it);
 	if (empty || item->selected())
-		setFocusItem (&iter);
+		doSelectItem (&iter);
 
 	YTreeItem *tree_item = dynamic_cast <YTreeItem *> (item);
 	if (tree_item && tree_item->isOpen()) {
@@ -132,11 +132,11 @@ bool YGSelectionModel::getIter (const YItem *item, GtkTreeIter *iter)
 	return FALSE;
 }
 
-void YGSelectionModel::implFocusItem (YItem *item)
+void YGSelectionModel::implSelectItem (YItem *item)
 {
 	GtkTreeIter iter;
 	if (getIter (item, &iter))
-		setFocusItem (&iter);
+		doSelectItem (&iter);
 }
 
 void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select)
@@ -169,7 +169,7 @@ void YGSelectionModel::addRow (GtkTreeIter *iter, YItem *item, bool honor_select
 	}
 
 	if (honor_select && item->selected())
-		setFocusItem (iter);
+		doSelectItem (iter);
 }
 
 void YGSelectionModel::setCellLabel (GtkTreeIter *iter, int col, const string &label)

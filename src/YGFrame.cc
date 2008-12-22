@@ -29,7 +29,9 @@ public:
 		gtk_widget_show (m_containee);
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_containee);
 	}
-	virtual ~YGBaseFrame() {}
+
+	virtual GtkWidget *getContainer()
+	{ return m_containee; }
 };
 
 #include "YFrame.h"
@@ -84,9 +86,8 @@ public:
 		setLabel (label);
 	}
 
-	virtual ~YGFrame() {}
-
 	// YFrame
+
 	virtual void setLabel (const string &_str)
 	{
 		IMPL
@@ -96,13 +97,12 @@ public:
 		YFrame::setLabel (_str);
 	}
 
-	// Debug
+	YGWIDGET_IMPL_CONTAINER (YFrame)
+
+	// YGWidget
+
 	virtual string getDebugLabel() const
 	{ return label(); }
-
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YFrame, m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (YFrame, m_containee)
 };
 
 
@@ -130,12 +130,11 @@ public:
 
 		setLabel (label);
 		setValue (checked);
-		g_signal_connect (G_OBJECT (button), "toggled",
-                          G_CALLBACK (toggled_cb), this);
+		connect (button, "toggled", G_CALLBACK (toggled_cb), this);
 	}
-	virtual ~YGCheckBoxFrame() {}
 
 	// YCheckBoxFrame
+
 	virtual void setLabel (const string &_str)
 	{
 		GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
@@ -154,9 +153,12 @@ public:
 
     void setValue (bool value)
     {
+    	BlockEvents (this);
         GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
+
+	// YGWidget
 
 	virtual void doSetEnabled (bool enabled)
 	{
@@ -172,9 +174,7 @@ public:
         YWidget::setEnabled (enabled);
     }
 
-	YGWIDGET_IMPL_COMMON
-	YGWIDGET_IMPL_CHILD_ADDED (YCheckBoxFrame, m_containee)
-	YGWIDGET_IMPL_CHILD_REMOVED (YCheckBoxFrame, m_containee)
+	YGWIDGET_IMPL_CONTAINER (YCheckBoxFrame)
 
 private:
     static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)

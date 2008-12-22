@@ -51,7 +51,7 @@ public:
 		ygtk_image_set_props (YGTK_IMAGE (getWidget()), align, NULL);
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YImage)
 };
 
 YImage *YGWidgetFactory::createImage (YWidget *parent, const string &filename, bool animated)

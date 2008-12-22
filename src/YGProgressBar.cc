@@ -21,8 +21,7 @@ public:
 		// NOTE: its label widget is positionated at the vertical, because its label
 		// may change often and so will its size, which will look odd (we may want
 		// to make the label widget to only grow).
-	, YGLabeledWidget (this, parent, label, YD_VERT,
-	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_VERT, GTK_TYPE_PROGRESS_BAR, NULL)
 	{}
 
 	// YProgressBar
@@ -40,17 +39,15 @@ public:
 */
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YProgressBar)
-
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return dim == YD_HORIZ ? 200 : 0; }
+
+	YGLABEL_WIDGET_IMPL (YProgressBar)
 };
 
 YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const string &label,
                                                   int maxValue)
 {
-	IMPL
 	return new YGProgressBar (parent, label, maxValue);
 }
 
@@ -64,8 +61,7 @@ public:
 	YGDownloadProgress (YWidget *parent, const string &label,
 	                    const string &filename, YFileSize_t expectedFileSize)
 	: YDownloadProgress (NULL, label, filename, expectedFileSize)
-	, YGLabeledWidget (this, parent, label, YD_HORIZ,
-	                   GTK_TYPE_PROGRESS_BAR, NULL)
+	, YGLabeledWidget (this, parent, label, YD_HORIZ, GTK_TYPE_PROGRESS_BAR, NULL)
 	{
 		timeout_id = g_timeout_add (250, timeout_cb, this);
 	}
@@ -125,8 +121,7 @@ public:
 		return TRUE;
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YDownloadProgress)
+	YGLABEL_WIDGET_IMPL (YDownloadProgress)
 };
 
 YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *parent,
@@ -192,11 +187,11 @@ public:
 		return 1.0 - (((float) currentValue (n)) / maxValue (n));
 	}
 
-	YGWIDGET_IMPL_COMMON
+	YGWIDGET_IMPL_COMMON (YMultiProgressMeter)
 };
 
 YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget *parent,
-		YUIDimension dim, const vector<float> &maxValues)
+		YUIDimension dim, const vector <float> &maxValues)
 {
 	return new YGMultiProgressMeter (parent, dim, maxValues);
 }
@@ -264,8 +259,7 @@ public:
 			return TRUE;
 	}
 
-	YGWIDGET_IMPL_COMMON
-	YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN (YBusyIndicator)
+	YGLABEL_WIDGET_IMPL (YBusyIndicator)
 };
 
 YBusyIndicator *YGWidgetFactory::createBusyIndicator (YWidget *parent, const string &label, int timeout)

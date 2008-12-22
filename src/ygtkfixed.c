@@ -33,6 +33,7 @@ static YGtkFixedChild *ygtk_fixed_get_child (YGtkFixed *fixed, GtkWidget *widget
 		if (child->widget == widget)
 			return child;
 	}
+	g_warning ("YGtkFixed: could not find child.");
 	return NULL;
 }
 
@@ -96,7 +97,6 @@ static void ygtk_fixed_size_request (GtkWidget *widget, GtkRequisition *requisit
 	YGtkFixed *fixed = YGTK_FIXED (widget);
 	fixed->preferred_size_cb (fixed, &requisition->width, &requisition->height,
 	                          fixed->data);
-
 	GTK_WIDGET_CLASS (ygtk_fixed_parent_class)->size_request (widget, requisition);
 }
 

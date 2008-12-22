@@ -17,61 +17,43 @@ public:
 	          GType type, const char *property_name, ...);
 	virtual ~YGWidget();
 
-	virtual GtkWidget *getWidget() { return m_widget; }
-	// containers should use this call rather than getWidget()
-	GtkWidget *getLayout() { return m_adj_size; }
-
-	// Get the YGWidget associated with a YWidget
+	// get the YGWidget associated with a YWidget
 	static YGWidget *get (YWidget *y_widget);
+
+	virtual inline GtkWidget *getWidget() { return m_widget; }
+	GtkWidget *getLayout() { return m_adj_size; }  // add this to a container
+	virtual GtkWidget *getContainer() { return m_widget; }  // add children here
+
+	// overload YWidget methods with these ones
+	virtual bool doSetKeyboardFocus();
+	virtual void doSetEnabled (bool enabled);
+	virtual void doSetUseBoldFont (bool useBold);
+	virtual void doAddChild (YWidget *child, GtkWidget *container);
+	virtual void doRemoveChild (YWidget *child, GtkWidget *container);
+
+	// layout
+	virtual int doPreferredSize (YUIDimension dimension);
+	virtual void doSetSize (int width, int height);
 
 	// debug
 	const char *getWidgetName() const { return m_ywidget->widgetClass(); }
 	virtual string getDebugLabel() const  // let YWidget::debugLabel() be overloaded
-	{	// container debug labels are worse than useless
-		if (m_ywidget->hasChildren()) return string();
-		return m_ywidget->debugLabel(); }
+	{ if (m_ywidget->hasChildren()) return string(); return m_ywidget->debugLabel(); }
 
-	// for YWidget
-	virtual bool doSetKeyboardFocus();
-	virtual void doSetEnabled (bool enabled);
-	virtual void doAddChild (YWidget *child, GtkWidget *container);
-	virtual void doRemoveChild (YWidget *child, GtkWidget *container);
-	void doSetUseBoldFont (bool useBold);
-
-	// Event handling
-	enum EventFlags {
-		DELAY_EVENT = 2, IGNORE_NOTIFY_EVENT = 4, IF_NOT_PENDING_EVENT = 8,
-		NORMAL_EVENT = 0 };
-	void emitEvent (YEvent::EventReason reason, EventFlags flags = NORMAL_EVENT);
-
-	// Signal registration (use "BlockEvents (this)" when to block these)
-	void connect (GObject *object, const char *name,
-	               GCallback callback, gpointer data);
-	inline void connect (GtkWidget *widget, const char *name,
-	                      GCallback callback, gpointer data)
-	{ connect (G_OBJECT (widget), name, callback, data); }
-	void connect_after (GObject *object, const char *name,
-	                     GCallback callback, gpointer data);
-	inline void connect_after (GtkWidget *widget, const char *name,
-	                             GCallback callback, gpointer data)
-	{ connect_after (G_OBJECT (widget), name, callback, data); }
-
-	// Aesthetics
+	// aesthetics
 	void setBorder (unsigned int border);  // in pixels
 	virtual unsigned int getMinSize (YUIDimension dim) { return 0; }
 
 protected:
-	// layout
-	virtual int getPreferredSize (YUIDimension dimension);
-	void doSetSize (int width, int height);
+	// event emission
+	enum EventFlags
+	{ DELAY_EVENT = 2, IGNORE_NOTIFY_EVENT = 4, IF_NOT_PENDING_EVENT = 8 };
+	void emitEvent (YEvent::EventReason reason, EventFlags flags = (EventFlags) 0);
 
-	GtkWidget *m_widget;  // associated GtkWidget -- use getWidget()
-	GtkWidget *m_adj_size;  // installed on m_widget, allows better size constrains
-	YWidget *m_ywidget;  // associated YWidget
-
+	// signal registration; use "BlockEvents (this)" to temp block all signals
 	friend struct BlockEvents;
-	void connectSignal (GObject *object, const char *name,
-	                     GCallback callback, gpointer data, bool after);
+	void connect (gpointer object, const char *name,
+	              GCallback callback, gpointer data, bool after = true);
 	void blockSignals();
 	void unblockSignals();
 	struct Signals;
@@ -80,17 +62,20 @@ protected:
 
 	void construct (YWidget *ywidget, YWidget *yparent,
 	                GType type, const char *property_name, va_list args);
+
+	// data
+	GtkWidget *m_widget, *m_adj_size;  // associated GtkWidget, and adjustment for borders
+	YWidget *m_ywidget;  // associated YWidget
 };
 
 struct BlockEvents
 {
-BlockEvents (YGWidget *widget)
-	: m_widget (widget)
+	BlockEvents (YGWidget *widget) : m_widget (widget)
 	{ m_widget->blockSignals(); }
-~BlockEvents()
+	~BlockEvents()
 	{ m_widget->unblockSignals(); }
-private:
-	YGWidget *m_widget;
+
+	private: YGWidget *m_widget;
 };
 
 /*
@@ -98,15 +83,15 @@ private:
  * methods and the (multiply inherited) YGWidget base implementation
  * for GTK+.
  */
-#define YGWIDGET_IMPL_COMMON                                    \
+#define YGWIDGET_IMPL_COMMON(ParentClass)                       \
 	virtual bool setKeyboardFocus() {                           \
 		return doSetKeyboardFocus(); }                          \
 	virtual void setEnabled (bool enabled) {                    \
-		YWidget::setEnabled (enabled);                          \
+		ParentClass::setEnabled (enabled);                      \
 		doSetEnabled (enabled);                                 \
 	}                                                           \
-	virtual int  preferredWidth()  { return getPreferredSize (YD_HORIZ); } \
-	virtual int  preferredHeight() { return getPreferredSize (YD_VERT); }  \
+	virtual int  preferredWidth()  { return doPreferredSize (YD_HORIZ); } \
+	virtual int  preferredHeight() { return doPreferredSize (YD_VERT); }  \
 	virtual void setSize (int width, int height) { doSetSize (width, height); }
 
 #define YGWIDGET_IMPL_USE_BOLD(ParentClass)                     \
@@ -115,16 +100,15 @@ private:
     	doSetUseBoldFont (useBold);                             \
     }
 
-// for containers
-#define YGWIDGET_IMPL_CHILD_ADDED(ParentClass, container)       \
+#define YGWIDGET_IMPL_CONTAINER(ParentClass)                    \
+	YGWIDGET_IMPL_COMMON (ParentClass)                          \
 	virtual void addChild (YWidget *ychild) {                   \
 		ParentClass::addChild (ychild);                         \
-		doAddChild (ychild, container);                         \
-	}
-#define YGWIDGET_IMPL_CHILD_REMOVED(ParentClass, container)     \
+		doAddChild (ychild, getContainer());                    \
+	}                                                           \
 	virtual void removeChild (YWidget *ychild) {                \
 		ParentClass::removeChild (ychild);                      \
-		doRemoveChild (ychild, container);                      \
+		doRemoveChild (ychild, getContainer());                 \
 	}
 
 /* This is a convenience class that allows for a label next to the
@@ -138,7 +122,7 @@ class YGLabeledWidget : public YGWidget
 		                GType type, const char *property_name, ...);
 		virtual ~YGLabeledWidget () {}
 
-		virtual GtkWidget* getWidget() { return m_field; }
+		virtual inline GtkWidget* getWidget() { return m_field; }
 
 		void setLabelVisible (bool show);
 		void setBuddy (GtkWidget *widget);
@@ -152,9 +136,9 @@ class YGLabeledWidget : public YGWidget
 		YUIDimension m_orientation;
 };
 
-#define YGLABEL_WIDGET_IMPL_SET_LABEL_CHAIN(ParentClass)   \
+#define YGLABEL_WIDGET_IMPL(ParentClass)                   \
+	YGWIDGET_IMPL_COMMON (ParentClass)                     \
 	virtual void setLabel (const std::string &label) {     \
-		IMPL                                               \
 		ParentClass::setLabel (label);                     \
 		doSetLabel (label);                                \
 	}
@@ -171,7 +155,7 @@ class YGScrolledWidget : public YGLabeledWidget
 		                 GType type, const char *property_name, ...);
 		virtual ~YGScrolledWidget () {}
 
-		virtual GtkWidget *getWidget() { return m_widget; }
+		virtual inline GtkWidget *getWidget() { return m_widget; }
 
 		// you should use this method, not gtk_scrolled_window_set...
 		void setPolicy (GtkPolicyType hpolicy, GtkPolicyType vpolicy);
