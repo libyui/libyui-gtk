@@ -238,7 +238,8 @@ public:
 				appendDumbColumn();
 		}
 		setModel();
-		setKeepSorting (keepSorting());
+		if (!keepSorting())
+			setSortable (true);
 
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
@@ -290,7 +291,7 @@ public:
 				gtk_tree_view_column_set_sort_column_id (column, index);
 			}
 			else
-				gtk_tree_view_column_set_clickable (column, FALSE);
+				gtk_tree_view_column_set_sort_column_id (column, -1);
 		}
 		g_list_free (columns);
 	}
