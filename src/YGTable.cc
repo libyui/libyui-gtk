@@ -118,7 +118,7 @@ public:
 
 			gtk_tree_selection_select_iter (getSelection(), iter);
 			if (gtk_tree_selection_get_mode (getSelection()) != GTK_SELECTION_MULTIPLE)
-				gtk_tree_view_scroll_to_cell (getView(), path, NULL, FALSE, 0.5, 0);
+				gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0);
 			gtk_tree_path_free (path);
 		}
 		else
