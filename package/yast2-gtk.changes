@@ -1,9 +1,15 @@
 -------------------------------------------------------------------
-Wed Dec xx 00:00:00 CET 2008 - xxxx@suse.de
+Wed Jan 07 12:20:00 CET 2008 - michael.meeks@novell.com
 
- * another Arabic fix.
- * fixed issue with small displays.
- * fixed labeling and button icon problems.
+ * label / tick spacing in wizard #449320#
+ * table multi-select fix #460746#
+ * layout / alignment fix #460728#
+ * another Arabic fixes #449627#, #449600#
+ * fixed issue with small displays #442052#
+ * fixed labeling and button icon problems. #449740#, #446524#
+ * fix window / titling issues #449385#, #449194#
+ * package selector fixes #457563#, #448309#, #459313#
+ * misc. other fixes #443214#, #446352#, #445950#
 
 -------------------------------------------------------------------
 Wed Dec 01 10:25:17 CET 2008 - coolo@suse.de
