@@ -1,3 +1,7 @@
+2009-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix 449306: crash on conflict dialog.
+
 2008-06-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.h/c: bug fix 393143: cursor ownership was
