@@ -521,10 +521,11 @@ std::string YGApplication::askForSaveFileName (
 
 std::string YGApplication::glyph (const std::string &sym)
 {
+	bool reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 	if (sym == YUIGlyph_ArrowLeft)
-		return "\u2190";
+		return reverse ? "\u2192" : "\u2190";
 	if (sym == YUIGlyph_ArrowRight)
-		return "\u2192";
+		return reverse ? "\u2190" : "\u2192";
 	if (sym == YUIGlyph_ArrowUp)
 		return "\u2191";
 	if (sym == YUIGlyph_ArrowDown)
@@ -532,7 +533,7 @@ std::string YGApplication::glyph (const std::string &sym)
 	if (sym == YUIGlyph_CheckMark)
 		return "\u2714";
 	if (sym == YUIGlyph_BulletArrowRight)
-		return (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL) ? "\u21e6" : "\u279c";
+		return reverse ? "\u21e6" : "\u279c";
 	if (sym == YUIGlyph_BulletCircle)
 		return "\u274d";
 	if (sym == YUIGlyph_BulletSquare)
