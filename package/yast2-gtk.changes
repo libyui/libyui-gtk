@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jan  8 10:31:44 CET 2009 - jsrain@suse.de
+
+* src/YGPackageSelector.cc: bug fix 449306: crash on conflict dialog
+- 2.16.15
+
+-------------------------------------------------------------------
 Sun Jun  8 10:34:15 CEST 2008 - coolo@suse.de
 
 - Update to 2.16.14
