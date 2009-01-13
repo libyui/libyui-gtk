@@ -65,7 +65,22 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 	virtual string text()
 	{
-		return gtk_combo_box_get_active_text (getComboBox());
+		gchar *str = 0;
+		if (GTK_IS_COMBO_BOX_ENTRY (getWidget()))
+			str = gtk_combo_box_get_active_text (getComboBox());
+		else {
+			GtkTreeIter iter;
+			if (gtk_combo_box_get_active_iter (getComboBox(), &iter)) {
+				gchar *str = 0;
+				gtk_tree_model_get (getModel(), &iter, LABEL_COLUMN, &str, -1);
+			}
+		}
+		std::string ret;
+		if (str) {
+			ret = str;
+			g_free (str);
+		}
+		return ret;
 	}
 
 	virtual void setText (const string &value)
