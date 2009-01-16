@@ -1844,7 +1844,7 @@ Ypp::Disk *Ypp::getDisk()
 { return impl->getDisk(); }
 
 void Ypp::setInterface (Ypp::Interface *interface)
-{ impl->interface = interface; }
+{ impl->interface = interface; resolveProblems(); }
 
 void Ypp::addPkgListener (PkgListener *listener)
 { impl->pkg_listeners = g_slist_append (impl->pkg_listeners, listener); }
