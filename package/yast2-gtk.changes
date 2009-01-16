@@ -5,6 +5,12 @@ Thu Jan  8 10:31:44 CET 2009 - jsrain@suse.de
 - 2.16.15
 
 -------------------------------------------------------------------
+Tue Jul  1 01:29:47 CEST 2008 - jpr@suse.de
+
+- Prevent crash configuring network printer (bnc #394309)
+- Launch dep resolver on start (bnc #402316)
+
+-------------------------------------------------------------------
 Sun Jun  8 10:34:15 CEST 2008 - coolo@suse.de
 
 - Update to 2.16.14
