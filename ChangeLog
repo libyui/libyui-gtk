@@ -2,6 +2,9 @@
 
 	* src/ygtkwizard.c: fixed packaging error: missing textdomain.
 
+	* src/YGPackageSelector.cc: backporting fix: check changed
+	packages at start.
+
 2009-01-13  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGComboBox.cc: porting over a fix for active_text.

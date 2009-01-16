@@ -820,7 +820,7 @@ public:
 			m_pool = new Ypp::QueryPool (query);
 		}
 		else
-			m_pool = new Ypp::QueryPool (query, true);
+			m_pool = new Ypp::QueryPool (query);
 		// initialize list -- there could already be packages modified
 		for (Ypp::Pool::Iter it = m_pool->getFirst(); it; it = m_pool->getNext (it))
 			ChangesPane::entryInserted (it, m_pool->get (it));
