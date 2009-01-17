@@ -3160,7 +3160,7 @@ protected:
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (button), popup);
 		gtk_widget_show_all (popup);
 
-		GtkWidget *box = gtk_hbox_new (FALSE, 12);
+		GtkWidget *box = gtk_hbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (box), button, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (box),
 			m_package_selector->m_disk->getWidget(), FALSE, TRUE, 0);

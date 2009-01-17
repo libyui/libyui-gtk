@@ -187,11 +187,14 @@ public:
 		ygtk_html_wrap_set_text (getWidget(), text.c_str(), TRUE);
 	}
 
-	void setRichText (const string &_text)
+	void setRichText (const string &text)
 	{
+#if 0  // current done at the XHTML treatment level, we may want to enable
+       // this code so that we replace the entity for all widgets
 		string text (_text);
 		std::string productName = YUI::app()->productName();
 		YGUtils::replace (text, "&product;", 9, productName.c_str());
+#endif
 		ygtk_html_wrap_set_text (getWidget(), text.c_str(), FALSE);
 	}
 

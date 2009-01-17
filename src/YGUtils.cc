@@ -100,6 +100,7 @@ typedef struct EntityMap {
 
 static const EntityMap entities[] = {
 	{ "nbsp", " " },
+	{ "product", 0 },  // dynamic
 };
 
 static const EntityMap *lookup_entity (const char *html)
@@ -238,7 +239,10 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 		else if (instr[i] == '&') {  // Entity
 			const EntityMap *entity = lookup_entity (instr+i);
 			if (entity) {
-				g_string_append (outp, entity->text);
+				if (!strcmp (entity->html, "product"))
+					g_string_append (outp, YUI::app()->productName().c_str());
+				else
+					g_string_append (outp, entity->text);
 				i += strlen (entity->html);
 				if (instr[i+1] == ';') i++;
 			}
