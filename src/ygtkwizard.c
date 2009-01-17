@@ -591,7 +591,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	g_signal_connect (G_OBJECT (wizard->help_button), "toggled",
 	                  G_CALLBACK (help_button_toggled_cb), wizard);
 
-	wizard->m_buttons = gtk_hbox_new (FALSE, 12);
+	wizard->m_buttons = gtk_hbox_new (FALSE, 6);
 	gtk_widget_show (wizard->m_buttons);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->help_button, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->release_notes_button,
@@ -618,19 +618,17 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_menu_box = gtk_event_box_new();
 
 	wizard->m_pane = gtk_hpaned_new();
-	GtkWidget *contents_align = gtk_alignment_new (0, 0, 1, 1);
-	gtk_alignment_set_padding (GTK_ALIGNMENT (contents_align), 6, 12, 0, 0);
-	gtk_container_add (GTK_CONTAINER (contents_align), wizard->m_pane);
-	gtk_widget_show_all (contents_align);
+	gtk_widget_show (wizard->m_pane);
 
 	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
-	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), contents_align, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), wizard->m_pane, TRUE, TRUE, 0);
 	gtk_widget_show (wizard->m_contents_box);
 
 	GtkWidget *vbox;
-	vbox = gtk_vbox_new (FALSE, 0);
+	vbox = gtk_vbox_new (FALSE, 12);
+	gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);  // content's border
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 6);
+	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 0);
 	gtk_widget_show (vbox);
 
 	wizard->m_contents_buttons_box = gtk_hbox_new (FALSE, 6);
