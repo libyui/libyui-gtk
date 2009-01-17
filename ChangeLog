@@ -8,6 +8,9 @@
 	* src/pkg-selector-help.h: bug fix 448192 & 459457: improved
 	pkg selector help a bit.
 
+	* src/YGLayout.cc: looks odd when adjusting menu buttons to the same
+	height as the other buttons.
+
 2009-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc: bug fix 461617: return opposite arrow glyph for

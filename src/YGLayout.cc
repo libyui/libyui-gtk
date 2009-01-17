@@ -36,7 +36,6 @@ static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 	{ doMoveChild (getWidget(), ychild, x, y); }                \
 
 #include <YPushButton.h>
-#include <YMenuButton.h>
 
 class ButtonHeightGroup
 {
@@ -47,8 +46,7 @@ public:
 
 	void addWidget (YWidget *ywidget)
 	{
-		if (dynamic_cast <YPushButton *> (ywidget) ||
-		    dynamic_cast <YMenuButton *> (ywidget)) {
+		if (dynamic_cast <YPushButton *> (ywidget)) {
 			bool create_group = !group;
 			if (create_group)
 				group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
