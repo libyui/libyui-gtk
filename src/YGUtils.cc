@@ -307,7 +307,7 @@ void YGUtils::setFilter (GtkEntry *entry, const string &validChars)
 					if (!*j) {
 						// not valid text
 						g_signal_stop_emission_by_name (editable, "insert_text");
-						gdk_beep();
+						gtk_widget_error_bell (GTK_WIDGET (editable));
 						return;
 					}
 				}

@@ -45,6 +45,9 @@ public:
 	void setTitle (const std::string &title, bool sticky = false);
 	void setIcon (const std::string &icon);
 
+	YWidget *getFunctionWidget (int key);
+	std::list <YWidget *> getClassWidgets (const char *className);
+
 	YGWIDGET_IMPL_CONTAINER (YDialog)
 };
 

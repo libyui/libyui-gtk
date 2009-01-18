@@ -9,6 +9,7 @@
 #include "YSelectionWidget.h"
 #include "YGSelectionModel.h"
 #include "ygtkcellrenderertextpixbuf.h"
+#include "ygtkscrolledwindow.h"
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget, public YGSelectionModel
@@ -21,7 +22,7 @@ public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
 	             bool ordinaryModel, bool isTree)
 	: YGScrolledWidget (ywidget, parent, label, YD_VERT,
-	                    GTK_TYPE_TREE_VIEW, NULL)
+	                    YGTK_TYPE_TREE_VIEW, NULL)
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
@@ -203,6 +204,8 @@ protected:
 };
 
 #include "YTable.h"
+#include "YGDialog.h"
+#include <gdk/gdkkeysyms.h>
 
 class YGTable : public YTable, public YGTableView
 {
@@ -243,6 +246,8 @@ public:
 
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "key-press-event", G_CALLBACK (key_press_event_cb), this);
 	}
 
 	virtual void setKeepSorting (bool keepSorting)
@@ -322,6 +327,63 @@ public:
     }
 
 	YGSELECTION_WIDGET_IMPL (YTable)
+
+	// callbacks
+
+	// hack up a popup menu and honor the delete key as suggested at:
+	// http://mvidner.blogspot.com/2009/01/yast-ui-table-usability.html
+	static void activateButton (YWidget *button)
+	{
+		YWidgetEvent *event = new YWidgetEvent (button, YEvent::Activated);
+		YGUI::ui()->sendEvent (event);
+	}
+
+	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
+	{
+		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
+			// undetermined case -- more than one table exists
+			YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1) {
+			gtk_widget_error_bell (GTK_WIDGET (view));
+			return;
+		}
+
+		struct inner {
+			static void key_activate_cb (GtkMenuItem *item, YWidget *button)
+			{ activateButton (button); }
+			static void appendItem (GtkWidget *menu, const gchar *stock, int key)
+			{
+				YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
+				if (button) {
+					GtkWidget *item;
+					item = gtk_image_menu_item_new_from_stock (stock, NULL);
+					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+					g_signal_connect (G_OBJECT (item), "activate",
+								      G_CALLBACK (key_activate_cb), button);
+				}
+			}
+		};
+
+		GtkWidget *menu = gtk_menu_new();
+		if (outreach)
+			inner::appendItem (menu, GTK_STOCK_ADD, 3);
+		else {
+			inner::appendItem (menu, GTK_STOCK_EDIT, 4);
+			inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+		}
+		ygtk_tree_view_popup_menu (view, menu);
+	}
+
+	static gboolean key_press_event_cb (GtkWidget *widget, GdkEventKey *event, YGTable *pThis)
+	{
+		if (event->keyval == GDK_Delete) {
+			YWidget *button = YGDialog::currentDialog()->getFunctionWidget (5);
+			if (button)
+				activateButton (button);
+			return TRUE;
+		}
+		return FALSE;
+	}
+
 };
 
 #if YAST2_VERSION >= 2017005

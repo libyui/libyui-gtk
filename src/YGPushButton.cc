@@ -40,7 +40,7 @@ public:
 				case 7: stock = GTK_STOCK_PREFERENCES; break;  // Expert
 				case 8: stock = GTK_STOCK_GO_BACK; break;
 				case 9: stock = GTK_STOCK_CANCEL; break;
-//				case 10: stock = GTK_STOCK_GO_FORWARD; break;
+				case 10: stock = GTK_STOCK_OK; break;  // Next/Finish/OK
 				default: break;
 			}
 #if YAST2_VERSION >= 2017006

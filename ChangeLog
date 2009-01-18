@@ -8,8 +8,17 @@
 	* src/pkg-selector-help.h: bug fix 448192 & 459457: improved
 	pkg selector help a bit.
 
-	* src/YGLayout.cc: looks odd when adjusting menu buttons to the same
-	height as the other buttons.
+	* src/YGLayout.cc: bug fix 464904: looks odd when adjusting menu
+	buttons to the same height as the other buttons.
+
+	* src/YGDialog.h/cc: methods to retrive function key widget and
+	and list of widgets from a given class.
+
+	* src/YGPackageSelector.cc & src/ygtkscrolledwindow.h/c: moved
+	right-click tree hack from the pkg selector to its own widget.
+
+	* src/YGTable.cc: implemented Martin Vidner suggestion on function
+	keys: http://mvidner.blogspot.com/2009/01/yast-ui-table-usability.html
 
 2009-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

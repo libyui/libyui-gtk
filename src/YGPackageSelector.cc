@@ -415,9 +415,6 @@ Listener *m_listener;
 			gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
 			gtk_widget_show_all (menu);
 		}
-
-		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
-		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
 	};
 	struct ListView : public View
 	{
@@ -425,7 +422,7 @@ Listener *m_listener;
 		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 		{
-			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget = ygtk_tree_view_new());
 			gtk_tree_view_set_headers_visible (view, FALSE);
 			gtk_tree_view_set_search_column (view, YGtkZyppModel::NAME_COLUMN);
 			GtkTreeViewColumn *column;
@@ -467,10 +464,8 @@ Listener *m_listener;
 			if (editable) {
 				g_signal_connect (G_OBJECT (m_widget), "row-activated",
 				                  G_CALLBACK (package_activated_cb), this);
-				g_signal_connect (G_OBJECT (m_widget), "popup-menu",
-					              G_CALLBACK (popup_key_cb), this);
-				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
-					              G_CALLBACK (popup_button_cb), this);
+				g_signal_connect (G_OBJECT (m_widget), "right-click",
+					              G_CALLBACK (popup_menu_cb), this);
 			}
 			gtk_widget_set_has_tooltip (m_widget, TRUE);
 			g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
@@ -514,25 +509,8 @@ Listener *m_listener;
 				packages.install();
 		}
 
-		static gboolean popup_button_cb (GtkWidget *widget, GdkEventButton *event, View *pThis)
-		{
-			// workaround (based on gedit): we want the tree view to receive this press in order
-			// to select the row, but we can't use connect_after, so we throw a dummy mouse press
-			if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-				static bool safeguard = false;
-				if (safeguard) return false;
-				safeguard = true;
-				if (pThis->countSelected() <= 1) {  // if there is a selection, let it be
-					event->button = 1;
-					if (!gtk_widget_event (widget, (GdkEvent *) event))
-						return FALSE;
-				}
-				pThis->signalPopup (3, event->time);
-				safeguard = false;
-				return TRUE;
-			}
-			return FALSE;
-		}
+		static void popup_menu_cb (YGtkTreeView *view, View *pThis)
+		{ pThis->signalPopup(3, gtk_get_current_event_time()); }
 
 		static gboolean can_select_row_cb (GtkTreeSelection *selection, GtkTreeModel *model,
 			GtkTreePath *path, gboolean path_currently_selected, gpointer data)
@@ -681,6 +659,8 @@ Listener *m_listener;
 				pThis->signalPopup (3, event->time);
 			return FALSE;
 		}
+		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
+		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
 	};
 
 GtkWidget *m_bin;
