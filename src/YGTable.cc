@@ -379,6 +379,8 @@ public:
 			YWidget *button = YGDialog::currentDialog()->getFunctionWidget (5);
 			if (button)
 				activateButton (button);
+			else
+				gtk_widget_error_bell (widget);
 			return TRUE;
 		}
 		return FALSE;
