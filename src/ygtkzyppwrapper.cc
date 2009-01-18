@@ -222,8 +222,11 @@ static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint col
 		case YGtkZyppModel::ICON_COLUMN:
 			return GDK_TYPE_PIXBUF;
 		case YGtkZyppModel::NAME_COLUMN:
+		case YGtkZyppModel::NAME_TRUNCATE_COLUMN:
 		case YGtkZyppModel::NAME_DESCRIPTION_COLUMN:
 			return G_TYPE_STRING;
+		case YGtkZyppModel::IS_INSTALLED_COLUMN:
+			return G_TYPE_BOOLEAN;
 		case YGtkZyppModel::PTR_COLUMN:
 			return G_TYPE_POINTER;
 	}
@@ -314,6 +317,9 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			break;
 		}
 		case YGtkZyppModel::NAME_COLUMN:
+			g_value_set_string (value, g_strdup (package->name().c_str()));
+			break;
+		case YGtkZyppModel::NAME_TRUNCATE_COLUMN:
 		{
 			std::string name = YGUtils::truncate (package->name(), 15, 1);
 			g_value_set_string (value, g_strdup (name.c_str()));
@@ -333,6 +339,13 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			if (highlight)
 				str = "<b>" + str + "</b>";
 			g_value_set_string (value, g_strdup (str.c_str()));
+			break;
+		}
+		case YGtkZyppModel::IS_INSTALLED_COLUMN:
+		{
+			bool installed = package->toInstall() ||
+				(package->isInstalled() && !package->toRemove());
+			g_value_set_boolean (value, installed);
 			break;
 		}
 		case YGtkZyppModel::PTR_COLUMN:

@@ -20,6 +20,11 @@
 	* src/YGTable.cc: implemented Martin Vidner suggestion on function
 	keys: http://mvidner.blogspot.com/2009/01/yast-ui-table-usability.html
 
+	* src/ygtkzyppwrapper.h/cc: exposed a couple new data columns.
+
+	* src/YGPackageSelector.cc (PackagesView): added CheckView for
+	mockup purposes.
+
 2009-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc: bug fix 461617: return opposite arrow glyph for

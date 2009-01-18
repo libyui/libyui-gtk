@@ -416,40 +416,16 @@ Listener *m_listener;
 			gtk_widget_show_all (menu);
 		}
 	};
-	struct ListView : public View
+	// TreeView: base class for ListView and CheckView (see append*Col methods)
+	struct TreeView : public View
 	{
 		bool m_isTree, m_descriptiveTooltip;
-		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
+		TreeView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget = ygtk_tree_view_new());
 			gtk_tree_view_set_headers_visible (view, FALSE);
 			gtk_tree_view_set_search_column (view, YGtkZyppModel::NAME_COLUMN);
-			GtkTreeViewColumn *column;
-			GtkCellRenderer *renderer;
-			renderer = gtk_cell_renderer_pixbuf_new();
-			column = gtk_tree_view_column_new_with_attributes ("", renderer,
-				"pixbuf", YGtkZyppModel::ICON_COLUMN, NULL);
-			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-			gtk_tree_view_column_set_fixed_width (column, 38);
-			gtk_tree_view_append_column (view, column);
-			renderer = gtk_cell_renderer_text_new();
-			if (isTree) {
-				int height = MAX (34, YGUtils::getCharsHeight (m_widget, 2));
-				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
-			}
-			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
-			gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
-			if (reverse) {  // work-around: Pango ignored alignment flag on RTL
-				gtk_widget_set_direction (m_widget, GTK_TEXT_DIR_LTR);
-				g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
-			}
-			column = gtk_tree_view_column_new_with_attributes ("", renderer,
-				"markup", YGtkZyppModel::NAME_DESCRIPTION_COLUMN, NULL);
-			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
-			gtk_tree_view_column_set_expand (column, TRUE);
-			gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 			gtk_tree_view_set_fixed_height_mode (view, TRUE);
 			gtk_tree_view_set_show_expanders (view, FALSE);  /* would conflict with icons */
 
@@ -471,6 +447,54 @@ Listener *m_listener;
 			g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
 			                  G_CALLBACK (query_tooltip_cb), this);
 			ensure_view_visible_hook (m_widget);
+		}
+
+		void appendIconCol()
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkTreeViewColumn *column;
+			GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+			if (m_isTree) {
+				int height = MAX (34, YGUtils::getCharsHeight (m_widget, 2));
+				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
+			}
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, "pixbuf", YGtkZyppModel::ICON_COLUMN, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			gtk_tree_view_column_set_fixed_width (column, 38);
+			gtk_tree_view_append_column (view, column);
+		}
+		void appendTextCol (int modelCol, bool markup)
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+			gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+			if (reverse) {  // work-around: Pango ignored alignment flag on RTL
+				gtk_widget_set_direction (m_widget, GTK_TEXT_DIR_LTR);
+				g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
+			}
+			GtkTreeViewColumn *column;
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, markup ? "markup" : "text", modelCol, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
+			gtk_tree_view_column_set_expand (column, TRUE);
+			gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
+		}
+		void appendCheckCol()
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+			GtkTreeViewColumn *column;
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, "active", YGtkZyppModel::IS_INSTALLED_COLUMN, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			// it seems like GtkCellRendererToggle has no width at start, so fixed doesn't work
+			gtk_tree_view_column_set_fixed_width (column, 25);
+			gtk_tree_view_append_column (view, column);
+			g_signal_connect (G_OBJECT (renderer), "toggled",
+				              G_CALLBACK (toggled_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -509,6 +533,22 @@ Listener *m_listener;
 				packages.install();
 		}
 
+		static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
+				                TreeView *pThis)
+		{
+			Ypp::Package *package = 0;
+			GtkTreeIter iter;
+			GtkTreeView *view = GTK_TREE_VIEW (pThis->m_widget);
+			GtkTreeModel *model = gtk_tree_view_get_model (view);
+			gtk_tree_model_get_iter_from_string (model, &iter, path_str);
+			gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
+
+			if (package->isInstalled())
+				package->remove();
+			else
+				package->install (0);
+		}
+
 		static void popup_menu_cb (YGtkTreeView *view, View *pThis)
 		{ pThis->signalPopup(3, gtk_get_current_event_time()); }
 
@@ -523,7 +563,7 @@ Listener *m_listener;
 		}
 
 		static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
-			gboolean keyboard_mode, GtkTooltip *tooltip, ListView *pThis)
+			gboolean keyboard_mode, GtkTooltip *tooltip, TreeView *pThis)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (widget);
 			GtkTreeModel *model;
@@ -602,13 +642,31 @@ Listener *m_listener;
 			return FALSE;
 		}
 	};
+	struct ListView : public TreeView
+	{
+		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
+		: TreeView (isTree, descriptiveTooltip, editable, parent)
+		{
+			appendIconCol();
+			appendTextCol (YGtkZyppModel::NAME_DESCRIPTION_COLUMN, true);
+		}
+	};
+	struct CheckView : public TreeView
+	{
+		CheckView (PackagesView *parent)
+		: TreeView (false, false, true, parent)
+		{
+			appendCheckCol();
+			appendTextCol (YGtkZyppModel::NAME_COLUMN, false);
+		}
+	};
 	struct IconView : public View
 	{
 		IconView (bool editable, PackagesView *parent)
 		: View (parent)
 		{
 			GtkIconView *view = GTK_ICON_VIEW (m_widget = gtk_icon_view_new());
-			gtk_icon_view_set_text_column (view, YGtkZyppModel::NAME_COLUMN);
+			gtk_icon_view_set_text_column (view, YGtkZyppModel::NAME_TRUNCATE_COLUMN);
 			gtk_icon_view_set_pixbuf_column (view, YGtkZyppModel::ICON_COLUMN);
 			gtk_icon_view_set_selection_mode (view, GTK_SELECTION_MULTIPLE);
 			g_signal_connect (G_OBJECT (m_widget), "selection-changed",
@@ -701,7 +759,7 @@ public:
 	}
 
 	enum ViewMode {
-		LIST_MODE, ICON_MODE
+		LIST_MODE, ICON_MODE, CHECK_MODE
 	};
 	void setMode (ViewMode mode, bool editable)
 	{
@@ -709,10 +767,17 @@ public:
 		if (m_view)
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
-		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, m_descriptiveTooltip, editable, this);
-		else // if (mode == ICON_MODE)
-			m_view = new IconView (editable, this);
+		switch (mode) {
+			case LIST_MODE:
+				m_view = new ListView (m_isTree, m_descriptiveTooltip, editable, this);
+				break;
+			case ICON_MODE:
+				m_view = new IconView (editable, this);
+				break;
+			case CHECK_MODE:
+				m_view = new CheckView (this);
+				break;
+		}
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
 		if (m_model)
 			m_view->setModel (m_model);
