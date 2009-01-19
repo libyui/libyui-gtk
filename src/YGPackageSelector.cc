@@ -464,7 +464,7 @@ Listener *m_listener;
 			gtk_tree_view_column_set_fixed_width (column, 38);
 			gtk_tree_view_append_column (view, column);
 		}
-		void appendTextCol (int modelCol, bool markup)
+		void appendTextCol (int modelCol)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
 			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
@@ -476,7 +476,7 @@ Listener *m_listener;
 			}
 			GtkTreeViewColumn *column;
 			column = gtk_tree_view_column_new_with_attributes (
-				"", renderer, markup ? "markup" : "text", modelCol, NULL);
+				"", renderer, "markup", modelCol, NULL);
 			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
 			gtk_tree_view_column_set_expand (column, TRUE);
@@ -542,15 +542,16 @@ Listener *m_listener;
 			GtkTreeModel *model = gtk_tree_view_get_model (view);
 			gtk_tree_model_get_iter_from_string (model, &iter, path_str);
 			gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
-
-			if (package->isInstalled())
+			if (package->toModify())
+				package->undo();
+			else if (package->isInstalled())
 				package->remove();
 			else
 				package->install (0);
 		}
 
-		static void popup_menu_cb (YGtkTreeView *view, View *pThis)
-		{ pThis->signalPopup(3, gtk_get_current_event_time()); }
+		static void popup_menu_cb (YGtkTreeView *view, gboolean outreach, View *pThis)
+		{ if (!outreach) pThis->signalPopup(3, gtk_get_current_event_time()); }
 
 		static gboolean can_select_row_cb (GtkTreeSelection *selection, GtkTreeModel *model,
 			GtkTreePath *path, gboolean path_currently_selected, gpointer data)
@@ -648,7 +649,7 @@ Listener *m_listener;
 		: TreeView (isTree, descriptiveTooltip, editable, parent)
 		{
 			appendIconCol();
-			appendTextCol (YGtkZyppModel::NAME_DESCRIPTION_COLUMN, true);
+			appendTextCol (YGtkZyppModel::NAME_DESCRIPTION_COLUMN);
 		}
 	};
 	struct CheckView : public TreeView
@@ -657,7 +658,7 @@ Listener *m_listener;
 		: TreeView (false, false, true, parent)
 		{
 			appendCheckCol();
-			appendTextCol (YGtkZyppModel::NAME_COLUMN, false);
+			appendTextCol (YGtkZyppModel::NAME_COLUMN);
 		}
 	};
 	struct IconView : public View
@@ -2594,6 +2595,9 @@ private:
 	}
 };
 
+// mockup experiments
+#define PKG_SELECTOR_FACE 0
+
 class PackageSelector : public Filters::Listener, public PackagesView::Listener,
                          public PackageDetails::Listener
 {
@@ -2622,6 +2626,7 @@ public:
 		m_filters->setListener (this);
 		m_details->setListener (this);
 
+#if (PKG_SELECTOR_FACE == 0)
 		GtkWidget *categories_box = gtk_vbox_new (FALSE, 4);
 		gtk_box_pack_start (GTK_BOX (categories_box), m_filters->getTypeWidget(), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (categories_box), m_filters->getCollectionWidget(),
@@ -2658,6 +2663,103 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_box), m_filters->getStatusesWidget(),
 		                    FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_box), details_pane, TRUE, TRUE, 0);
+#endif
+#if (PKG_SELECTOR_FACE == 1)
+		// based on KPorts: http://kde-apps.org/content/show.php/KPorts?content=24579
+		GtkWidget *type_combo = gtk_combo_box_new_text();
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Search");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Groups");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Changed");
+		gtk_combo_box_set_active (GTK_COMBO_BOX (type_combo), 0);
+
+		GtkWidget *pkg_box = gtk_vbox_new (FALSE, 6);
+		//gtk_box_pack_start (GTK_BOX (pkg_box), m_filters->getTypeWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), type_combo, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), m_filters->getNameWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), m_packages->getWidget(), TRUE, TRUE, 0);
+		m_packages->setMode (PackagesView::CHECK_MODE, true);
+
+		GtkWidget *control_align = gtk_alignment_new (0, 0, 0, 1);
+		gtk_container_add (GTK_CONTAINER (control_align), m_control->getWidget());
+
+		m_details_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (m_details_box), m_details->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), control_align, FALSE, TRUE, 0);
+
+		m_box = gtk_hpaned_new();
+		gtk_paned_pack1 (GTK_PANED (m_box), pkg_box, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (m_box), m_details_box, TRUE, FALSE);
+		gtk_paned_set_position (GTK_PANED (m_box), 250);
+#endif
+#if (PKG_SELECTOR_FACE == 2)
+		struct inner {
+			static void install_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.install();
+			}
+			static void remove_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.remove();
+			}
+			static void undo_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.undo();
+			}
+		};
+
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+		query->setToModify (true);
+		PackagesView *changes = new PackagesView (true, false, false, true, true);
+		changes->setQuery (query);
+
+		GtkWidget *install_btn = gtk_button_new_with_label ("  install >  ");
+		GtkWidget *undo_btn = gtk_button_new_with_label ("  < undo  ");
+		g_signal_connect (G_OBJECT (install_btn), "clicked",
+		                  G_CALLBACK (inner::install_button_clicked_cb), m_packages);
+		g_signal_connect (G_OBJECT (undo_btn), "clicked",
+		                  G_CALLBACK (inner::undo_button_clicked_cb), changes);
+		//gtk_widget_set_sensitive (undo_btn, FALSE);
+
+		m_details_box = gtk_vbox_new (FALSE, 18);
+		//gtk_box_pack_start (GTK_BOX (m_details_box), m_control->getWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), gtk_label_new (""), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), install_btn, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), undo_btn, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), gtk_label_new (""), TRUE, TRUE, 0);
+
+		GtkWidget *type_combo = gtk_combo_box_new_text();
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Available");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Upgrades");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Installed");
+		gtk_combo_box_set_active (GTK_COMBO_BOX (type_combo), 0);
+
+		GtkWidget *find_align = gtk_alignment_new (0, 0, 0, 1);
+		gtk_container_add (GTK_CONTAINER (find_align), m_filters->getNameWidget());
+
+		GtkWidget *packages_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (packages_box), type_combo, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (packages_box), m_packages->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (packages_box), find_align, FALSE, TRUE, 0);
+
+		GtkWidget *changes_label = gtk_label_new ("Changes:");
+		gtk_misc_set_alignment (GTK_MISC (changes_label), 0, 0.5);
+		GtkWidget *changes_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (changes_box), changes_label, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (changes_box), changes->getWidget(), TRUE, TRUE, 0);
+
+		GtkSizeGroup *labels_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
+		gtk_size_group_add_widget (labels_group, type_combo); // type_combo is acting as a label
+		gtk_size_group_add_widget (labels_group, changes_label);
+		g_object_unref (G_OBJECT (labels_group));
+
+		m_box = gtk_hbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (m_box), packages_box, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), m_details_box, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), changes_box, TRUE, TRUE, 0);
+#endif
 
 		gtk_widget_show_all (m_box);
 		m_changes->startHack();
@@ -2748,8 +2850,10 @@ public:
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), m_package_selector->getWidget());
 
 		createToolsButton();
+#if (PKG_SELECTOR_FACE == 0)
 		ygtk_wizard_set_information_widget (YGTK_WIZARD (wizard),
 			m_package_selector->m_changes->getWidget(), FALSE);
+#endif
 
 		Ypp::get()->setInterface (this);
 		Ypp::get()->addPkgListener (this);

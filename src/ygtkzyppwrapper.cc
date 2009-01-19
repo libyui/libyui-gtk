@@ -317,12 +317,20 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			break;
 		}
 		case YGtkZyppModel::NAME_COLUMN:
-			g_value_set_string (value, g_strdup (package->name().c_str()));
+		{
+			bool highlight = zmodel->pool->highlight (pool_iter);
+			std::string str (package->name());
+			if (highlight)
+				str = "<b>" + str + "</b>";
+			if (package->toModify())
+				str = "<i>" + str + "</i>";
+			g_value_set_string (value, g_strdup (str.c_str()));
 			break;
+		}
 		case YGtkZyppModel::NAME_TRUNCATE_COLUMN:
 		{
-			std::string name = YGUtils::truncate (package->name(), 15, 1);
-			g_value_set_string (value, g_strdup (name.c_str()));
+			std::string str (YGUtils::truncate (package->name(), 15, 1));
+			g_value_set_string (value, g_strdup (str.c_str()));
 			break;
 		}
 		case YGtkZyppModel::NAME_DESCRIPTION_COLUMN:
