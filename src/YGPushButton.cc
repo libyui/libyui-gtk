@@ -24,6 +24,7 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event", G_CALLBACK (treat_icon_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -148,7 +149,7 @@ public:
 		}
 		return true;
 	}
-#if 0
+#if 1
 	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
 	                               YGPushButton *pThis)
 	{
