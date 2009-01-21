@@ -1,3 +1,8 @@
+2009-01-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGProgressBar.cc (YGDownloadProgress): bug fix 460106:
+	set size units translatable.
+
 2009-01-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector (PackageSelector): a couple of mockups

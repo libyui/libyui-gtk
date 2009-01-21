@@ -11,6 +11,30 @@
 #include "YGWidget.h"
 #include "YGi18n.h"
 
+std::string size_stdform (YFileSize_t size)
+{
+	long double mantissa = size;
+	int unit = 0;
+	for (; mantissa/1024 > 1; unit++)
+		mantissa /= 1024;
+
+	const char *unit_str = "";
+	switch (unit) {
+		// translator: byte shorthand
+		case 0: unit_str = _("B"); break;
+		case 1: unit_str = _("KB"); break;
+		case 2: unit_str = _("MB"); break;
+		case 3: unit_str = _("GB"); break;
+		case 4: unit_str = _("TB"); break;
+		default: mantissa = 0; break;
+	}
+
+	gchar *text = g_strdup_printf ("%.1f %s", (float) mantissa, unit_str);
+	std::string str (text);
+	g_free (text);
+	return str;
+}
+
 #include "YProgressBar.h"
 
 class YGProgressBar : public YProgressBar, public YGLabeledWidget
@@ -82,42 +106,13 @@ public:
 		YGDownloadProgress *pThis = (YGDownloadProgress*) pData;
 		GtkProgressBar *bar = GTK_PROGRESS_BAR (pThis->getWidget());
 
-		double current, total;
-		int unit = 0;
-		for (current = pThis->currentFileSize(), total = pThis->expectedSize(); total/1024>1; unit++) {
-			current /= 1024;
-			total /= 1024;
+		gtk_progress_bar_set_fraction (bar, pThis->currentPercent() / 100.0);
+		if (pThis->expectedSize() > 0) {
+			std::string current (size_stdform (pThis->currentFileSize()));
+			std::string total (size_stdform (pThis->expectedSize()));
+			std::string text = current + " " + _("of") + " " + total;
+			gtk_progress_bar_set_text (GTK_PROGRESS_BAR (bar), text.c_str());
 		}
-		float fraction = 0;
-		if (total)
-			fraction = MIN ((float) current / total, 1);
-		
-		gtk_progress_bar_set_fraction (bar, fraction);
-		const char *unit_str;
-		switch (unit) {
-			case 0:
-				unit_str = "B";
-				break;
-			case 1:
-				unit_str = "KB";
-				break;
-			case 2:
-				unit_str = "MB";
-				break;
-			case 3:
-				unit_str = "GB";
-				break;
-			default:
-				unit_str = "";
-				break;
-		}
-		char *text;
-		if (total)
-			text = g_strdup_printf ("%.1f %s %s %.1f %s", current, unit_str, _("of"), total, unit_str);
-		else
-			text = g_strdup_printf ("%.1f %s", current, unit_str);
-		gtk_progress_bar_set_text (GTK_PROGRESS_BAR (bar), text);
-		g_free (text);
 		return TRUE;
 	}
 
