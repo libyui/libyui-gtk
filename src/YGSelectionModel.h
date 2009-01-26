@@ -29,7 +29,8 @@ struct YGSelectionModel
 	virtual void doAddItem (YItem *item);
 	virtual void doDeleteAllItems();
 	virtual YItem *doSelectedItem() = 0;
-	virtual void doSelectItem (GtkTreeIter *iter) = 0;  // NULL to unselect all
+	virtual void doSelectItem (GtkTreeIter *iter) = 0;
+	virtual void doUnselectAll() = 0;
 
 	YItemConstIterator itemsBegin() { return ywidget->itemsBegin(); }
 	YItemConstIterator itemsEnd()   { return ywidget->itemsEnd(); }
@@ -79,7 +80,7 @@ private:
 	}                                                    \
 	virtual void deselectAllItems() {                    \
 		ParentClass::deselectAllItems();                 \
-		doSelectItem (NULL);                             \
+		doUnselectAll();                                 \
 	}                                                    \
 	virtual YItem *selectedItem() {                      \
 		return doSelectedItem();                         \

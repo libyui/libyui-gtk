@@ -10,13 +10,14 @@
 #include "YGSelectionModel.h"
 #include "ygtkcellrenderertextpixbuf.h"
 #include "ygtkscrolledwindow.h"
+#include <time.h>
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget, public YGSelectionModel
 {
 protected:
 	int m_colsNb;
-	bool m_blockSelected;  // GtkTreeSelection signals act weird
+	time_t m_blockTime;  // GtkTreeSelection signals act weird
 
 public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
@@ -26,7 +27,7 @@ public:
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
-		m_blockSelected = false;
+		m_blockTime = time (NULL);
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -82,7 +83,6 @@ public:
 
 	void appendCheckColumn (string header, int bool_col)
 	{
-		IMPL
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer;
 
@@ -100,7 +100,6 @@ public:
 
 	void appendDumbColumn()
 	{
-		IMPL
 		gtk_tree_view_append_column (getView(), gtk_tree_view_column_new());
 	}
 
@@ -110,20 +109,28 @@ public:
 	virtual bool immediateEvent() { return true; }
 
 	// YGSelectionModel
+
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
-		m_blockSelected = true;
-		if (iter) {
+		if (!gtk_tree_selection_iter_is_selected (getSelection(), iter)) {
+			m_blockTime = time (NULL);
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 			gtk_tree_view_expand_to_path (getView(), path);
 
-			gtk_tree_selection_select_iter (getSelection(), iter);
 			if (gtk_tree_selection_get_mode (getSelection()) != GTK_SELECTION_MULTIPLE)
 				gtk_tree_view_scroll_to_cell (getView(), path, NULL, TRUE, 0.5, 0);
 			gtk_tree_path_free (path);
+
+			gtk_tree_selection_select_iter (getSelection(), iter);
 		}
-		else
+	}
+
+	virtual void doUnselectAll()
+	{
+		if (gtk_tree_selection_count_selected_rows (getSelection())) {
+			m_blockTime = time (NULL);
 			gtk_tree_selection_unselect_all (getSelection());
+		}
 	}
 
 	virtual YItem *doSelectedItem()
@@ -168,10 +175,8 @@ protected:
 
 	static void selection_changed_cb (GtkTreeSelection *selection, YGTableView *pThis)
 	{
-		if (pThis->m_blockSelected) {
-			pThis->m_blockSelected = false;
+		if (time (NULL) - pThis->m_blockTime <= 2)
 			return;
-		}
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();
 			for (YItemConstIterator it = pThis->itemsBegin(); it != pThis->itemsEnd(); it++) {
@@ -450,28 +455,14 @@ public:
 	}
 
 	// YMultiSelectionBox
-    virtual void doAddItem (YItem *item)
-    {
+	virtual void doAddItem (YItem *item)
+	{
     	GtkTreeIter iter;
 		addRow (&iter, item, false);
    		setCellToggle (&iter, 0, item->selected());
    		setCellIcon   (&iter, 1, item->iconName());
    		setCellLabel  (&iter, 2, item->label());
     }
-
-	virtual void doSelectItem (YItem *item)
-	{
-		GtkTreeIter iter;
-		if (getIter (item, &iter))
-			setCellToggle (&iter, 0, item->selected());
-		else {  // unselect all
-			if (gtk_tree_model_get_iter_first (getModel(), &iter)) {
-				do {
-					setCellToggle (&iter, 0, false);
-				} while (gtk_tree_model_iter_next (getModel(), &iter));
-			}
-		}
-	}
 
 	virtual YItem *currentItem()
 	{ return doSelectedItem(); }
@@ -490,13 +481,28 @@ public:
 	// Events
 	static void multi_activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                                GtkTreeViewColumn *column, YGMultiSelectionBox* pThis)
+	{ pThis->toggle (path, 0); }
+
+	// YGSelectionModel
+
+	virtual void doSelectItem (GtkTreeIter *iter)
 	{
-		IMPL
-		pThis->toggle (path, 0);
+		setCellToggle (iter, 0, true);
 	}
 
-	virtual bool isShrinkable() { return shrinkable(); }
+	virtual void doUnselectAll()
+	{
+		GtkTreeIter iter;
+		if (gtk_tree_model_get_iter_first (getModel(), &iter)) {
+			do {
+				setCellToggle (&iter, 0, false);
+			} while (gtk_tree_model_iter_next (getModel(), &iter));
+		}
+	}
 
+	// YGWidget
+
+	virtual bool isShrinkable() { return shrinkable(); }
 	YGWIDGET_IMPL_COMMON (YMultiSelectionBox)
 	YGSELECTION_WIDGET_IMPL (YMultiSelectionBox)
 };
@@ -518,10 +524,10 @@ public:
 	: YTree (NULL, label)
 	, YGTableView (this, parent, label, true, true)
 	{
-		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), this);
-		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
 		connect (getWidget(), "row-collapsed", G_CALLBACK (row_collapsed_cb), this);
 		connect (getWidget(), "row-expanded", G_CALLBACK (row_expanded_cb), this);
+		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
+		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 	}
 
 	// YTree
@@ -583,6 +589,7 @@ public:
 			}
 		}
 	}
+
 	static void row_selected_cb (GtkTreeView *view, YGTree *pThis)
 	{
 		// expand selected row

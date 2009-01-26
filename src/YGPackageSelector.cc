@@ -2778,6 +2778,10 @@ public:
 
 	virtual void doQuery (Ypp::QueryPool::Query *query)
 	{
+#if (PKG_SELECTOR_FACE == 1)
+query = new Ypp::QueryPool::Query();
+query->addType (Ypp::Package::PACKAGE_TYPE);
+#endif
 		m_packages->setQuery (query);
 	}
 
