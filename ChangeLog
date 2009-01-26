@@ -1,6 +1,21 @@
-2009-01-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2009-01-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* src/YGPushButton.cc: bug fix 446440: re-enable treat icon code.
+	* src/YGSelectionModel.h: decoupled doSelectItem(NULL) into
+	doUnselectAllItem().
+
+	* src/YGTable.cc: bug fix 468974: selection was broken. Also
+	fixed YTree's double click crash, and YMultiSelectionBox
+	check boxes default values.
+
+2009-01-21  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGProgressBar.cc (YGDownloadProgress): bug fix 460106:
+	set size units translatable.
+
+2009-01-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector (PackageSelector): a couple of mockups
+	(change PKG_SELECTOR_FACE to enable).
 
 2009-01-17  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
@@ -12,8 +27,22 @@
 	* src/pkg-selector-help.h: bug fix 448192 & 459457: improved
 	pkg selector help a bit.
 
-	* src/YGLayout.cc: looks odd when adjusting menu buttons to the same
-	height as the other buttons.
+	* src/YGLayout.cc: bug fix 464904: looks odd when adjusting menu
+	buttons to the same height as the other buttons.
+
+	* src/YGDialog.h/cc: methods to retrive function key widget and
+	and list of widgets from a given class.
+
+	* src/YGPackageSelector.cc & src/ygtkscrolledwindow.h/c: moved
+	right-click tree hack from the pkg selector to its own widget.
+
+	* src/YGTable.cc: implemented Martin Vidner suggestion on function
+	keys: http://mvidner.blogspot.com/2009/01/yast-ui-table-usability.html
+
+	* src/ygtkzyppwrapper.h/cc: exposed a couple new data columns.
+
+	* src/YGPackageSelector.cc (PackagesView): added CheckView for
+	mockup purposes.
 
 2009-01-08  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 

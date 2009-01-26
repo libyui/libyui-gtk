@@ -415,44 +415,17 @@ Listener *m_listener;
 			gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
 			gtk_widget_show_all (menu);
 		}
-
-		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
-		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
 	};
-	struct ListView : public View
+	// TreeView: base class for ListView and CheckView (see append*Col methods)
+	struct TreeView : public View
 	{
 		bool m_isTree, m_descriptiveTooltip;
-		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
+		TreeView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 		{
-			GtkTreeView *view = GTK_TREE_VIEW (m_widget = gtk_tree_view_new());
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget = ygtk_tree_view_new());
 			gtk_tree_view_set_headers_visible (view, FALSE);
 			gtk_tree_view_set_search_column (view, YGtkZyppModel::NAME_COLUMN);
-			GtkTreeViewColumn *column;
-			GtkCellRenderer *renderer;
-			renderer = gtk_cell_renderer_pixbuf_new();
-			column = gtk_tree_view_column_new_with_attributes ("", renderer,
-				"pixbuf", YGtkZyppModel::ICON_COLUMN, NULL);
-			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-			gtk_tree_view_column_set_fixed_width (column, 38);
-			gtk_tree_view_append_column (view, column);
-			renderer = gtk_cell_renderer_text_new();
-			if (isTree) {
-				int height = MAX (34, YGUtils::getCharsHeight (m_widget, 2));
-				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
-			}
-			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
-			gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
-			if (reverse) {  // work-around: Pango ignored alignment flag on RTL
-				gtk_widget_set_direction (m_widget, GTK_TEXT_DIR_LTR);
-				g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
-			}
-			column = gtk_tree_view_column_new_with_attributes ("", renderer,
-				"markup", YGtkZyppModel::NAME_DESCRIPTION_COLUMN, NULL);
-			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
-			gtk_tree_view_column_set_expand (column, TRUE);
-			gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 			gtk_tree_view_set_fixed_height_mode (view, TRUE);
 			gtk_tree_view_set_show_expanders (view, FALSE);  /* would conflict with icons */
 
@@ -467,15 +440,61 @@ Listener *m_listener;
 			if (editable) {
 				g_signal_connect (G_OBJECT (m_widget), "row-activated",
 				                  G_CALLBACK (package_activated_cb), this);
-				g_signal_connect (G_OBJECT (m_widget), "popup-menu",
-					              G_CALLBACK (popup_key_cb), this);
-				g_signal_connect (G_OBJECT (m_widget), "button-press-event",
-					              G_CALLBACK (popup_button_cb), this);
+				g_signal_connect (G_OBJECT (m_widget), "right-click",
+					              G_CALLBACK (popup_menu_cb), this);
 			}
 			gtk_widget_set_has_tooltip (m_widget, TRUE);
 			g_signal_connect (G_OBJECT (m_widget), "query-tooltip",
 			                  G_CALLBACK (query_tooltip_cb), this);
 			ensure_view_visible_hook (m_widget);
+		}
+
+		void appendIconCol()
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkTreeViewColumn *column;
+			GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+			if (m_isTree) {
+				int height = MAX (34, YGUtils::getCharsHeight (m_widget, 2));
+				gtk_cell_renderer_set_fixed_size (renderer, -1, height);
+			}
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, "pixbuf", YGtkZyppModel::ICON_COLUMN, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			gtk_tree_view_column_set_fixed_width (column, 38);
+			gtk_tree_view_append_column (view, column);
+		}
+		void appendTextCol (int modelCol)
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+			g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+			gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+			if (reverse) {  // work-around: Pango ignored alignment flag on RTL
+				gtk_widget_set_direction (m_widget, GTK_TEXT_DIR_LTR);
+				g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
+			}
+			GtkTreeViewColumn *column;
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, "markup", modelCol, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
+			gtk_tree_view_column_set_expand (column, TRUE);
+			gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
+		}
+		void appendCheckCol()
+		{
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget);
+			GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
+			GtkTreeViewColumn *column;
+			column = gtk_tree_view_column_new_with_attributes (
+				"", renderer, "active", YGtkZyppModel::IS_INSTALLED_COLUMN, NULL);
+			gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+			// it seems like GtkCellRendererToggle has no width at start, so fixed doesn't work
+			gtk_tree_view_column_set_fixed_width (column, 25);
+			gtk_tree_view_append_column (view, column);
+			g_signal_connect (G_OBJECT (renderer), "toggled",
+				              G_CALLBACK (toggled_cb), this);
 		}
 
 		virtual void setModel (GtkTreeModel *model)
@@ -514,25 +533,25 @@ Listener *m_listener;
 				packages.install();
 		}
 
-		static gboolean popup_button_cb (GtkWidget *widget, GdkEventButton *event, View *pThis)
+		static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
+				                TreeView *pThis)
 		{
-			// workaround (based on gedit): we want the tree view to receive this press in order
-			// to select the row, but we can't use connect_after, so we throw a dummy mouse press
-			if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-				static bool safeguard = false;
-				if (safeguard) return false;
-				safeguard = true;
-				if (pThis->countSelected() <= 1) {  // if there is a selection, let it be
-					event->button = 1;
-					if (!gtk_widget_event (widget, (GdkEvent *) event))
-						return FALSE;
-				}
-				pThis->signalPopup (3, event->time);
-				safeguard = false;
-				return TRUE;
-			}
-			return FALSE;
+			Ypp::Package *package = 0;
+			GtkTreeIter iter;
+			GtkTreeView *view = GTK_TREE_VIEW (pThis->m_widget);
+			GtkTreeModel *model = gtk_tree_view_get_model (view);
+			gtk_tree_model_get_iter_from_string (model, &iter, path_str);
+			gtk_tree_model_get (model, &iter, YGtkZyppModel::PTR_COLUMN, &package, -1);
+			if (package->toModify())
+				package->undo();
+			else if (package->isInstalled())
+				package->remove();
+			else
+				package->install (0);
 		}
+
+		static void popup_menu_cb (YGtkTreeView *view, gboolean outreach, View *pThis)
+		{ if (!outreach) pThis->signalPopup(3, gtk_get_current_event_time()); }
 
 		static gboolean can_select_row_cb (GtkTreeSelection *selection, GtkTreeModel *model,
 			GtkTreePath *path, gboolean path_currently_selected, gpointer data)
@@ -545,7 +564,7 @@ Listener *m_listener;
 		}
 
 		static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
-			gboolean keyboard_mode, GtkTooltip *tooltip, ListView *pThis)
+			gboolean keyboard_mode, GtkTooltip *tooltip, TreeView *pThis)
 		{
 			GtkTreeView *view = GTK_TREE_VIEW (widget);
 			GtkTreeModel *model;
@@ -624,13 +643,31 @@ Listener *m_listener;
 			return FALSE;
 		}
 	};
+	struct ListView : public TreeView
+	{
+		ListView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
+		: TreeView (isTree, descriptiveTooltip, editable, parent)
+		{
+			appendIconCol();
+			appendTextCol (YGtkZyppModel::NAME_DESCRIPTION_COLUMN);
+		}
+	};
+	struct CheckView : public TreeView
+	{
+		CheckView (PackagesView *parent)
+		: TreeView (false, false, true, parent)
+		{
+			appendCheckCol();
+			appendTextCol (YGtkZyppModel::NAME_COLUMN);
+		}
+	};
 	struct IconView : public View
 	{
 		IconView (bool editable, PackagesView *parent)
 		: View (parent)
 		{
 			GtkIconView *view = GTK_ICON_VIEW (m_widget = gtk_icon_view_new());
-			gtk_icon_view_set_text_column (view, YGtkZyppModel::NAME_COLUMN);
+			gtk_icon_view_set_text_column (view, YGtkZyppModel::NAME_TRUNCATE_COLUMN);
 			gtk_icon_view_set_pixbuf_column (view, YGtkZyppModel::ICON_COLUMN);
 			gtk_icon_view_set_selection_mode (view, GTK_SELECTION_MULTIPLE);
 			g_signal_connect (G_OBJECT (m_widget), "selection-changed",
@@ -681,6 +718,8 @@ Listener *m_listener;
 				pThis->signalPopup (3, event->time);
 			return FALSE;
 		}
+		static gboolean popup_key_cb (GtkWidget *widget, View *pThis)
+		{ pThis->signalPopup (0, gtk_get_current_event_time()); return TRUE; }
 	};
 
 GtkWidget *m_bin;
@@ -721,7 +760,7 @@ public:
 	}
 
 	enum ViewMode {
-		LIST_MODE, ICON_MODE
+		LIST_MODE, ICON_MODE, CHECK_MODE
 	};
 	void setMode (ViewMode mode, bool editable)
 	{
@@ -729,10 +768,17 @@ public:
 		if (m_view)
 			gtk_container_remove (GTK_CONTAINER (m_bin), m_view->m_widget);
 		delete m_view;
-		if (mode == LIST_MODE)
-			m_view = new ListView (m_isTree, m_descriptiveTooltip, editable, this);
-		else // if (mode == ICON_MODE)
-			m_view = new IconView (editable, this);
+		switch (mode) {
+			case LIST_MODE:
+				m_view = new ListView (m_isTree, m_descriptiveTooltip, editable, this);
+				break;
+			case ICON_MODE:
+				m_view = new IconView (editable, this);
+				break;
+			case CHECK_MODE:
+				m_view = new CheckView (this);
+				break;
+		}
 		gtk_container_add (GTK_CONTAINER (m_bin), m_view->m_widget);
 		if (m_model)
 			m_view->setModel (m_model);
@@ -2549,6 +2595,9 @@ private:
 	}
 };
 
+// mockup experiments
+#define PKG_SELECTOR_FACE 0
+
 class PackageSelector : public Filters::Listener, public PackagesView::Listener,
                          public PackageDetails::Listener
 {
@@ -2577,6 +2626,7 @@ public:
 		m_filters->setListener (this);
 		m_details->setListener (this);
 
+#if (PKG_SELECTOR_FACE == 0)
 		GtkWidget *categories_box = gtk_vbox_new (FALSE, 4);
 		gtk_box_pack_start (GTK_BOX (categories_box), m_filters->getTypeWidget(), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (categories_box), m_filters->getCollectionWidget(),
@@ -2613,6 +2663,103 @@ public:
 		gtk_box_pack_start (GTK_BOX (m_box), m_filters->getStatusesWidget(),
 		                    FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_box), details_pane, TRUE, TRUE, 0);
+#endif
+#if (PKG_SELECTOR_FACE == 1)
+		// based on KPorts: http://kde-apps.org/content/show.php/KPorts?content=24579
+		GtkWidget *type_combo = gtk_combo_box_new_text();
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Search");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Groups");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Changed");
+		gtk_combo_box_set_active (GTK_COMBO_BOX (type_combo), 0);
+
+		GtkWidget *pkg_box = gtk_vbox_new (FALSE, 6);
+		//gtk_box_pack_start (GTK_BOX (pkg_box), m_filters->getTypeWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), type_combo, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), m_filters->getNameWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (pkg_box), m_packages->getWidget(), TRUE, TRUE, 0);
+		m_packages->setMode (PackagesView::CHECK_MODE, true);
+
+		GtkWidget *control_align = gtk_alignment_new (0, 0, 0, 1);
+		gtk_container_add (GTK_CONTAINER (control_align), m_control->getWidget());
+
+		m_details_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (m_details_box), m_details->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), control_align, FALSE, TRUE, 0);
+
+		m_box = gtk_hpaned_new();
+		gtk_paned_pack1 (GTK_PANED (m_box), pkg_box, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (m_box), m_details_box, TRUE, FALSE);
+		gtk_paned_set_position (GTK_PANED (m_box), 250);
+#endif
+#if (PKG_SELECTOR_FACE == 2)
+		struct inner {
+			static void install_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.install();
+			}
+			static void remove_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.remove();
+			}
+			static void undo_button_clicked_cb (GtkButton *button, PackagesView *view)
+			{
+				PkgList pkgs = view->getSelected();
+				pkgs.undo();
+			}
+		};
+
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+		query->setToModify (true);
+		PackagesView *changes = new PackagesView (true, false, false, true, true);
+		changes->setQuery (query);
+
+		GtkWidget *install_btn = gtk_button_new_with_label ("  install >  ");
+		GtkWidget *undo_btn = gtk_button_new_with_label ("  < undo  ");
+		g_signal_connect (G_OBJECT (install_btn), "clicked",
+		                  G_CALLBACK (inner::install_button_clicked_cb), m_packages);
+		g_signal_connect (G_OBJECT (undo_btn), "clicked",
+		                  G_CALLBACK (inner::undo_button_clicked_cb), changes);
+		//gtk_widget_set_sensitive (undo_btn, FALSE);
+
+		m_details_box = gtk_vbox_new (FALSE, 18);
+		//gtk_box_pack_start (GTK_BOX (m_details_box), m_control->getWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), gtk_label_new (""), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), install_btn, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), undo_btn, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_details_box), gtk_label_new (""), TRUE, TRUE, 0);
+
+		GtkWidget *type_combo = gtk_combo_box_new_text();
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Available");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Upgrades");
+		gtk_combo_box_append_text (GTK_COMBO_BOX (type_combo), "Installed");
+		gtk_combo_box_set_active (GTK_COMBO_BOX (type_combo), 0);
+
+		GtkWidget *find_align = gtk_alignment_new (0, 0, 0, 1);
+		gtk_container_add (GTK_CONTAINER (find_align), m_filters->getNameWidget());
+
+		GtkWidget *packages_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (packages_box), type_combo, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (packages_box), m_packages->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (packages_box), find_align, FALSE, TRUE, 0);
+
+		GtkWidget *changes_label = gtk_label_new ("Changes:");
+		gtk_misc_set_alignment (GTK_MISC (changes_label), 0, 0.5);
+		GtkWidget *changes_box = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (changes_box), changes_label, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (changes_box), changes->getWidget(), TRUE, TRUE, 0);
+
+		GtkSizeGroup *labels_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
+		gtk_size_group_add_widget (labels_group, type_combo); // type_combo is acting as a label
+		gtk_size_group_add_widget (labels_group, changes_label);
+		g_object_unref (G_OBJECT (labels_group));
+
+		m_box = gtk_hbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (m_box), packages_box, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), m_details_box, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), changes_box, TRUE, TRUE, 0);
+#endif
 
 		gtk_widget_show_all (m_box);
 		m_changes->startHack();
@@ -2631,6 +2778,10 @@ public:
 
 	virtual void doQuery (Ypp::QueryPool::Query *query)
 	{
+#if (PKG_SELECTOR_FACE == 1)
+query = new Ypp::QueryPool::Query();
+query->addType (Ypp::Package::PACKAGE_TYPE);
+#endif
 		m_packages->setQuery (query);
 	}
 
@@ -2703,8 +2854,10 @@ public:
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), m_package_selector->getWidget());
 
 		createToolsButton();
+#if (PKG_SELECTOR_FACE == 0)
 		ygtk_wizard_set_information_widget (YGTK_WIZARD (wizard),
 			m_package_selector->m_changes->getWidget(), FALSE);
+#endif
 
 		Ypp::get()->setInterface (this);
 		Ypp::get()->addPkgListener (this);

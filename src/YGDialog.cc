@@ -11,6 +11,7 @@
 #endif
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
+#include <string.h>
 
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
    there is already a main window, it should replace its content -- and when closed,
@@ -527,6 +528,38 @@ void YGDialog::setIcon (const std::string &icon)
 		gtk_window_set_icon (window, pixbuf);
 		g_object_unref (G_OBJECT (pixbuf));
 	}
+}
+
+typedef bool (*FindWidgetsCb) (YWidget *widget, void *data) ;
+
+static void findWidgets (
+	std::list <YWidget *> *widgets, YWidget *widget, FindWidgetsCb find_cb, void *cb_data)
+{
+	if (find_cb (widget, cb_data))
+		widgets->push_back (widget);
+	for (YWidgetListConstIterator it = widget->childrenBegin();
+	     it != widget->childrenEnd(); it++)
+		findWidgets (widgets, *it, find_cb, cb_data);
+}
+
+static bool IsFunctionWidget (YWidget *widget, void *data)
+{ return widget->functionKey() == GPOINTER_TO_INT (data); }
+
+YWidget *YGDialog::getFunctionWidget (int key)
+{
+	std::list <YWidget *> widgets;
+	findWidgets (&widgets, this, IsFunctionWidget, GINT_TO_POINTER (key));
+	return widgets.empty() ? NULL : widgets.front();
+}
+
+static bool IsClassWidget (YWidget *widget, void *data)
+{ return !strcmp (widget->widgetClass(), (char *) data); }
+
+std::list <YWidget *> YGDialog::getClassWidgets (const char *className)
+{
+	std::list <YWidget *> widgets;
+	findWidgets (&widgets, this, IsClassWidget, (void *) className);
+	return widgets;
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)

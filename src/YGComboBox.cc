@@ -82,11 +82,10 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 
 	virtual void setText (const string &value)
 	{
-		IMPL
 		BlockEvents block (this);
-        GtkTreeIter iter;
-        if (findByText (value, &iter))
-            doSelectItem (&iter);
+		GtkTreeIter iter;
+		if (findByText (value, &iter))
+			doSelectItem (&iter);
         else
             gtk_entry_set_text (getEntry(), value.c_str());
 	}
@@ -95,11 +94,15 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		BlockEvents block (this);
-		if (iter)
-			gtk_combo_box_set_active_iter (getComboBox(), iter);
-		else
-			gtk_combo_box_set_active (getComboBox(), -1);
+		gtk_combo_box_set_active_iter (getComboBox(), iter);
 	}
+
+	virtual void doUnselectAll()
+	{
+		BlockEvents block (this);
+		gtk_combo_box_set_active (getComboBox(), -1);
+	}
+
 
     virtual YItem *doSelectedItem()
     {
