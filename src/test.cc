@@ -41,6 +41,22 @@ bool testMapKBAccel()
 
 #include "ygtkrichtext.h"
 
+bool testParse(const char *xml)
+{
+  GError *error = NULL;
+  GMarkupParser parser = { 0, };
+  GMarkupParseContext *ctx = g_markup_parse_context_new (&parser, GMarkupParseFlags (0), NULL, NULL);
+
+  if (!g_markup_parse_context_parse (ctx, xml, -1, &error))
+    {
+      fprintf (stderr, "Invalid XML: '%s'\n '%s'\n", xml, error->message);
+      return false;
+    }
+  g_markup_parse_context_free (ctx);
+
+  return true;
+}
+
 bool testXHtmlConvert()
 {
 	fprintf (stderr, "Test HTML->XML rewrite \t");
@@ -76,6 +92,12 @@ bool testXHtmlConvert()
 		// comment
 		{ "we need <b>to <!-- really need to? --> do something</b> about it.",
 		  "<body>we need <b>to do something</b> about it.</body>" },
+		{ "&amp;", "<body>&amp;</body>" },
+		{ "&amp", "<body>&amp;amp</body>" },
+		{ "&amp; foo", "<body>&amp; foo</body>" },
+		{ "&amp foo", "<body>&amp;amp foo</body>" },
+		{ "<pre>https://foo.com/regsvc-1.0/?lang=de-DE&guid=1529f49dc701449fbd854aebf7e40806&command=interactive</pre>\n",
+		  "<body><pre>https://foo.com/regsvc-1.0/?lang=de-DE&amp;guid=1529f49dc701449fbd854aebf7e40806&amp;command=interactive</pre> </body>" },
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
@@ -85,6 +107,9 @@ bool testXHtmlConvert()
 				 i, out, aTests[i].out);
 			return false;
 		}
+		if (!testParse (out))
+		  return false;
+
 		fprintf (stderr, "%d ", i);
 		g_free (out);
 	}

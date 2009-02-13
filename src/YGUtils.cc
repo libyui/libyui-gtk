@@ -246,8 +246,18 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 				i += strlen (entity->html);
 				if (instr[i+1] == ';') i++;
 			}
-			else
-				g_string_append_c (outp, instr[i]);
+			else {
+				int j;
+				// check it is a valid entity - not a floating '&' in a <pre> tag eg.
+				for (j = i + 1; instr[j] != '\0'; j++) {
+					if (!g_ascii_isalnum (instr[j]) && instr[j] != '#')
+						break;
+				}
+				if (instr[j] != ';') // entity terminator
+					g_string_append (outp, "&amp;");
+				else
+					g_string_append_c (outp, instr[i]);
+			}
 			was_space = FALSE;
 		}
 
