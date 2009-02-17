@@ -1,9 +1,21 @@
--------------------------------------------------------------------
-Wed Dec xx 00:00:00 CET 2008 - xxxx@suse.de
+Thu Feb 12 18:48:25 CET 2009 - mkudlvasr@suse.cz
 
- * another Arabic fix.
- * fixed issue with small displays.
- * fixed labeling and button icon problems.
+- new version on behalf of Ricardo: 2.17.10
+ * fix for table selection of software repositories (bnc#468974)
+ * fix for tree doubleclick crash (bnc#472779)
+
+-------------------------------------------------------------------
+Wed Jan 07 12:20:00 CET 2009 - michael.meeks@novell.com
+
+ * label / tick spacing in wizard #449320#
+ * table multi-select fix #460746#
+ * layout / alignment fix #460728#
+ * another Arabic fixes #449627#, #449600#
+ * fixed issue with small displays #442052#
+ * fixed labeling and button icon problems. #449740#, #446524#
+ * fix window / titling issues #449385#, #449194#
+ * package selector fixes #457563#, #448309#, #459313#
+ * misc. other fixes #443214#, #446352#, #445950#
 
 -------------------------------------------------------------------
 Wed Dec 01 10:25:17 CET 2008 - coolo@suse.de
