@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Feb 19 18:13:33 CET 2009 - mkudlvasr@suse.cz
+
+- fix for window maximizing on small displays (bnc#462476)
+
+-------------------------------------------------------------------
 Tue Feb 17 16:07:14 CET 2009 - mkudlvasr@suse.cz
 
 - fix for wrong handling of & in gtk widgets (bnc#475275)

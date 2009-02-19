@@ -1,3 +1,10 @@
+2009-02-19 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* change src/YGDialog.cc to maximize window when screen width <= 800 OR
+	* screen height <= 600. There was AND previously.
+	* fixes bnc#462476
+	* Version 2.17.12
+
 2009-02-17 Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* backport of mmeeks changes in trunk (r55491),
