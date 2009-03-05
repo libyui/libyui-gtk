@@ -1,3 +1,8 @@
+2009-03-05 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* add tests/MultiLine.ycp for bnc#459657
+	* src/YGText.cc: overload doSetEnabled for YGMultiLineEdit
+
 2009-02-26  Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* change src/YGDialog.cc to maximize window when screen width <= 800 OR

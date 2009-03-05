@@ -120,6 +120,11 @@ public:
 		return 30;
 	}
 
+	virtual void doSetEnabled (bool enabled)
+	{
+		gtk_text_view_set_editable(GTK_TEXT_VIEW (getWidget()), enabled);
+	}
+
 	YGLABEL_WIDGET_IMPL (YMultiLineEdit)
 };
 
