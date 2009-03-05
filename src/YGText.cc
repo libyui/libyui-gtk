@@ -8,6 +8,7 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include "ygtktextview.h"
+#include <gtk/gtk.h>
 
 class YGTextView : public YGScrolledWidget
 {
@@ -118,6 +119,11 @@ public:
 			return MAX (10, height);
 		}
 		return 30;
+	}
+
+	virtual void doSetEnabled (bool enabled)
+	{
+		gtk_text_view_set_editable(GTK_TEXT_VIEW (getWidget()), enabled);
 	}
 
 	YGLABEL_WIDGET_IMPL (YMultiLineEdit)
