@@ -2851,6 +2851,8 @@ public:
 
 		busyCursor();
 		m_package_selector = new PackageSelector();
+		ygtk_wizard_enable_button (wizard, wizard->next_button,
+		                           modifiedPackagesExist() ? TRUE : FALSE);
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), m_package_selector->getWidget());
 
 		createToolsButton();
@@ -2873,6 +2875,19 @@ public:
 	}
 
 protected:
+
+	bool modifiedPackagesExist()
+	{
+		Ypp::QueryPool::Query *query = new Ypp::QueryPool::Query();
+		query->setToModify (true);
+		if (pkg_selector->onlineUpdateMode())
+			query->addType (Ypp::Package::PATCH_TYPE);
+		Ypp::QueryPool * tmp_pool = new Ypp::QueryPool (query);
+		bool m_p_exist = tmp_pool->getFirst() != NULL;
+		delete tmp_pool;
+		return m_p_exist;
+	}
+
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 	                              gint id_type, YGPackageSelector *pThis)
 	{

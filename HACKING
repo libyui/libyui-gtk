@@ -158,7 +158,7 @@ Code practices
   http://pantransit.reptiles.org/prog/CodingStyle.html
   There may be some differences as it obviously doesn't mention
   C++ classes.
-  For identations, tabs are used. For layout, spaces are used.
+  For indentations, tabs are used. For layout, spaces are used.
   Example:
   <tab>int variable_with_very_long_name = function (arg1,
   <tab>.............................................arg2);
