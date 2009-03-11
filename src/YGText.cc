@@ -8,7 +8,6 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include "ygtktextview.h"
-#include <gtk/gtk.h>
 
 class YGTextView : public YGScrolledWidget
 {

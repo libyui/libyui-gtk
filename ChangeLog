@@ -1,3 +1,11 @@
+2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* src/YGPackageSelector.cc add YGPackageSelector::modifiedPackagesExist
+	initial state of the Apply button should be enabled, if there are some
+	modified packages on start (for instance when PS is called from addon 
+	yast module)
+	fixes bnc#475259
+
 2009-03-05 Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* add tests/MultiLine.ycp for bnc#459657
