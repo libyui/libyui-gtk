@@ -1,5 +1,9 @@
 2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
 
+	* Version 2.17.13
+
+2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
+
 	* src/YGPackageSelector.cc add YGPackageSelector::modifiedPackagesExist
 	initial state of the Apply button should be enabled, if there are some
 	modified packages on start (for instance when PS is called from addon 

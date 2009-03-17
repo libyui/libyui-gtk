@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Tue Mar 17 15:50:10 CET 2009 - mkudlvasr@suse.cz
+
+- new version: 2.17.13
+ * fix for package selector when invoked from add-on install
+   (bnc#475259)
+ * fix for MultiLineEdit, that wasn't able to scroll when disabled
+   (bnc#459657)
+
+-------------------------------------------------------------------
 Thu Feb 19 18:13:33 CET 2009 - mkudlvasr@suse.cz
 
 - fix for window maximizing on small displays (bnc#462476)
