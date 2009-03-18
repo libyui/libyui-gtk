@@ -1,3 +1,8 @@
+2009-03-18 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* tests/ButtonOrder.ycp added test to see button order heuristic
+	behaviour (bnc#479874)
+
 2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* src/YGPackageSelector.cc add YGPackageSelector::modifiedPackagesExist

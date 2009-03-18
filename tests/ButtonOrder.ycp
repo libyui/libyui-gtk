@@ -1,0 +1,25 @@
+{
+import "Label";
+	UI::OpenDialog(
+		       `VBox(
+			     `ButtonBox (
+				   `PushButton (`id (`cancel), `opt(`cancelButton, `key_F9, `default), Label::BackButton()),
+				   `PushButton (`id (`ok), `opt (`okButton, `key_F10), Label::InstallButton ())
+				   )
+			     )
+		       );
+	UI::UserInput();
+	UI::CloseDialog();
+	UI::OpenDialog(
+		       `VBox(
+			     `ButtonBox (
+				   `PushButton (`id (`cancel), `opt(`cancelButton, `key_F10, `default), Label::BackButton()),
+				   `PushButton (`id (`ok), `opt (`okButton, `key_F9), Label::InstallButton ())
+				   )
+			     )
+		       );
+	UI::UserInput();
+	UI::CloseDialog();
+
+
+}
