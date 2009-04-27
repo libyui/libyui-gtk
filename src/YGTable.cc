@@ -156,7 +156,6 @@ public:
 		return 80;
 	}
 
-protected:
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
