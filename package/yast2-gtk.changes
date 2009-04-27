@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Apr 27 11:28:40 CEST 2009 - coolo@suse.de
+
+- fix compilation with gcc 4.4
+- 2.18.0
+
+-------------------------------------------------------------------
 Wed Jan 07 12:20:00 CET 2009 - michael.meeks@novell.com
 
  * label / tick spacing in wizard #449320#
