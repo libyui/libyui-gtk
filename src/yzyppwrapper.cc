@@ -585,9 +585,8 @@ int m_installedPkgs, m_totalPkgs;
 			if (rich) {
 				StringTree tree (strcmp, '/', NULL);
 
-				const std::list <std::string> &filesList = package->filenames();
-				for (std::list <std::string>::const_iterator it = filesList.begin();
-					 it != filesList.end(); it++)
+				for (zypp::Package::FileList::iterator it = package->filelist().begin();
+					 it != package->filelist().end(); it++)
 					tree.add (*it, "");
 
 				struct inner {
@@ -638,9 +637,8 @@ int m_installedPkgs, m_totalPkgs;
 						         inner::traverse, (void *) &text);
 			}
 			else {
-				const std::list <std::string> &filesList = package->filenames();
-				for (std::list <std::string>::const_iterator it = filesList.begin();
-					 it != filesList.end(); it++)
+				for (zypp::Package::FileList::iterator  it = package->filelist().begin();
+					 it != package->filelist().end(); it++)
 					text += *it + " ";
 			}
 		}
