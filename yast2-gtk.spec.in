@@ -19,14 +19,14 @@
 
 Url:            http://en.opensuse.org/YaST2-GTK
 
-Name:		yast2-gtk
-Version:	@VERSION@
-Release:	0
+Name:           yast2-gtk
+Version:        @VERSION@
+Release:        0
 License:        LGPL v2.1 or later
-Group:		System/YaST
-BuildRoot:	%{_tmppath}/%{name}-%{version}-build
-Source0:	yast2-gtk-@VERSION@.tar.bz2
-prefix:		/usr
+Group:          System/YaST
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Source0:        yast2-gtk-@VERSION@.tar.bz2
+prefix:         /usr
 Source2:        yast2-gtk-rpmlintrc
 BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-devtools gtk2-devel
 BuildRequires:  yast2-core-devel >= 2.16.27
@@ -46,6 +46,15 @@ Authors:
 --------
     Ricardo Cruz
     Michael Meeks
+
+%package devel
+Summary: -
+Group: Development/Libraries
+Requires:    yast2-gtk = %{version}
+Requires:    yast2-libyui-devel
+
+%description devel
+-
 
 @PREP@
 

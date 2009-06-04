@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jun  4 15:23:35 CEST 2009 - mkudlvasr@novell.com
+
+- teared away PackageSelector. It now resides in a separate plugin
+  package yast2-gtk-pkg
+
+-------------------------------------------------------------------
 Thu Jun  4 11:52:25 CEST 2009 - coolo@novell.com
 
 - adapt to new libzypp
