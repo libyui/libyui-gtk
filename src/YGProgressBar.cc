@@ -6,6 +6,7 @@
   Textdomain "yast2-gtk"
  */
 
+#define YUILogComponent "gtk"
 #include <config.h>
 #include <YGUI.h>
 #include "YGWidget.h"

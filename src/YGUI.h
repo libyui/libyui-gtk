@@ -9,7 +9,6 @@
 #include <YSimpleEventHandler.h>
 #include <map>
 
-#define YUILogComponent "gtk"
 #include <YUILog.h>
 
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
@@ -191,6 +190,7 @@ public:
 };
 
 #include <YApplication.h>
+#include "YGPackageSelectorPluginStub.h"
 
 class YGApplication : public YApplication
 {
@@ -200,11 +200,13 @@ public:
 	virtual std::string glyph (const std::string &symbolName);
 
 	virtual std::string askForExistingDirectory (const std::string &startDir,
-		const std::string &headline);
+	                                             const std::string &headline);
 	virtual std::string askForExistingFile (const std::string &startWith,
-		const std::string &filter, const std::string &headline);
+	                                        const std::string &filter, 
+	                                        const std::string &headline);
 	virtual std::string askForSaveFileName (const std::string &startWith,
-		const std::string &filter, const std::string &headline);
+	                                        const std::string &filter, 
+	                                        const std::string &headline);
 
 	virtual void busyCursor() { YGUI::ui()->busyCursor(); }
 	virtual void normalCursor() { YGUI::ui()->normalCursor(); }
@@ -234,6 +236,12 @@ public:
 #else
 	virtual bool richTextSupportsTable() IMPL_RET (false)
 #endif
+
+	/**
+	* Return the package selector plugin singleton or creates it
+	* (including loading the plugin lib) if it does not exist yet.
+	**/
+	static YGPackageSelectorPluginStub * packageSelectorPlugin();
 
 private:
     // for screenshots:
