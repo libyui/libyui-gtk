@@ -71,3 +71,9 @@ rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
 %{_libdir}/YaST2/plugin/libpy2gtk.so.*
 %{_libdir}/YaST2/plugin/libpy2gtk.so
 %{_datadir}/YaST2/gtk
+
+%files devel
+%defattr (-, root, root)
+%_includedir/*
+
+%changelog
