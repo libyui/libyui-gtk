@@ -80,3 +80,5 @@ test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS) $(GTKHTML_CFLAGS) $(WEBKIT_CFLAGS)
 
+EXTRA_DIST = $(dist_share_DATA) \
+	hr.xpm
