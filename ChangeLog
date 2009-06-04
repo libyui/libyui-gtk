@@ -1,3 +1,8 @@
+2009-06-04 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* teared away PackageSelector. It now resides in a separate plugin
+	  package yast2-gtk-pkg
+
 2009-03-18 Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* tests/ButtonOrder.ycp added test to see button order heuristic
