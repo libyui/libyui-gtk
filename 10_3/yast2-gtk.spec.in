@@ -10,13 +10,6 @@ Provides:       yast2_ui
 One of several user interfaces available for YaST2, based on GTK and
 the X Window System.
 
-
-
-Authors:
---------
-    Ricardo Cruz
-    Michael Meeks
-
 @PREP@
 
 @BUILD@

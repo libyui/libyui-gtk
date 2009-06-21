@@ -40,13 +40,6 @@ Provides:       yast2_ui_pkg
 One of several user interfaces available for YaST2, based on GTK and
 the X Window System.
 
-
-
-Authors:
---------
-    Ricardo Cruz
-    Michael Meeks
-
 %package devel
 Summary: -
 Group: Development/Libraries
