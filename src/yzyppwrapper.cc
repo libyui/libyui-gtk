@@ -90,7 +90,8 @@ struct StringTree {
 	Ypp::Node *add (const std::string &tree_str, const std::string &order)
 	{
 		const gchar delimiter[2] = { delim, '\0' };
-		gchar **nodes_str = g_strsplit (tree_str.c_str(), delimiter, -1);
+		const char *tree_cstr = tree_str.empty() ? _("Uncategorized") : tree_str.c_str();
+		gchar **nodes_str = g_strsplit (tree_cstr, delimiter, -1);
 
 		GNode *parent = root, *sibling = 0;
 		Ypp::Node *ret = 0;
