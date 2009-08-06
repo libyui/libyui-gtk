@@ -4,7 +4,7 @@
     UI::OpenDialog(
 		   `VBox(
 			 `MinSize( 25, 8,
-				   `Table(`id(`table),
+				   `Table(`id(`table), `opt(`keepSorting),
 					  `header("Mark", "Name"),
 					  [
 					   `item(`id(1), "", "Salami Baguette"),

@@ -34,7 +34,6 @@ BuildRequires:  yast2-libyui-devel
 Requires:       yast2-core >= 2.16.27
 Summary:        YaST2 - Gtk Graphical User Interface
 Provides:       yast2_ui
-Provides:       yast2_ui_pkg
 
 %description
 One of several user interfaces available for YaST2, based on GTK and
@@ -63,7 +62,6 @@ rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
 %doc @docdir@
 %{_libdir}/YaST2/plugin/libpy2gtk.so.*
 %{_libdir}/YaST2/plugin/libpy2gtk.so
-%{_datadir}/YaST2/gtk
 
 %files devel
 %defattr (-, root, root)
