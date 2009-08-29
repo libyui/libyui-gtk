@@ -6,7 +6,6 @@
   Textdomain "yast2-gtk"
  */
 
-#define YUILogComponent "gtk"
 #include <config.h>
 #include <string.h>
 #include <stdio.h>
@@ -578,22 +577,6 @@ long YGApplication::displayColors()
 // want to use a smaller default size than qt though, so assume a bigger size
 int YGApplication::defaultWidth() { return MIN (displayWidth(), 1024); }
 int YGApplication::defaultHeight() { return MIN (displayHeight(), 768); }
-
-YGPackageSelectorPluginStub * YGApplication::packageSelectorPlugin()
-{
-    static YGPackageSelectorPluginStub * plugin = 0;
-
-    if ( ! plugin )
-    {
-        plugin = new YGPackageSelectorPluginStub();
-
-        // This is a deliberate memory leak: If an application requires a
-        // PackageSelector, it is a package selection application by
-        // definition. In this case, the gtk_pkg plugin is intentionally
-        // kept open to avoid repeated start-up cost of the plugin and libzypp.
-    }
-    return plugin;
-}
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }

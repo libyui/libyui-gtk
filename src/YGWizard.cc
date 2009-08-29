@@ -119,6 +119,7 @@ public:
 		m_abort_button = new YGWButton (this, wizard->abort_button, abortButtonLabel);
 		m_next_button  = new YGWButton (this, wizard->next_button, nextButtonLabel);
 		m_notes_button = new YGWButton (this, wizard->release_notes_button, string());
+		ygtk_wizard_set_default_button (wizard, wizard->next_button);
 
 		//** All event are sent through this signal together with an id
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",

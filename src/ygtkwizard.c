@@ -612,6 +612,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_widget_set_size_request (wizard->m_buttons, 0, -1);
 	g_signal_connect_after (G_OBJECT (wizard->m_buttons), "size-allocate",
 	                        G_CALLBACK (buttons_size_allocate_cb), buttons_group);
+	wizard->m_default_button = NULL;
 
 	//** The menu and the navigation widgets will be created when requested.
 	// space for them
@@ -644,8 +645,10 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->realize (widget);
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
-	gtk_widget_grab_default (wizard->next_button);
-	gtk_widget_grab_focus (wizard->next_button);
+	if (wizard->m_default_button) {
+		gtk_widget_grab_default (wizard->m_default_button);
+		gtk_widget_grab_focus (wizard->m_default_button);
+	}
 }
 
 static void ygtk_wizard_map (GtkWidget *widget)
@@ -898,6 +901,9 @@ void ygtk_wizard_set_button_ptr_id (YGtkWizard *wizard, GtkWidget *button, gpoin
 {
 	g_object_set_data (G_OBJECT (button), "ptr-id", id);
 }
+
+void ygtk_wizard_set_default_button (YGtkWizard *wizard, GtkWidget *button)
+{ wizard->m_default_button = button; }
 
 void ygtk_wizard_enable_button (YGtkWizard *wizard, GtkWidget *button, gboolean enable)
 {

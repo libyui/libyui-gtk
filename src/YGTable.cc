@@ -10,7 +10,7 @@
 #include "YSelectionWidget.h"
 #include "YGSelectionModel.h"
 #include "ygtkcellrenderertextpixbuf.h"
-#include "ygtkscrolledwindow.h"
+#include "ygtktreeview.h"
 #include <time.h>
 
 /* A generic widget for table related widgets. */

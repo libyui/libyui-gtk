@@ -1,7 +1,16 @@
-2009-06-04 Martin Kudlvasr  <mkudlvasr@novell.com>
+2009-08-28 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* teared away PackageSelector. It now resides in a separate plugin
-	  package yast2-gtk-pkg
+	* src/ygtktreeview.h/.c: moved from ygtkscrolledwindow.h to its
+	rightful file.
+
+	* src/yzyppwrapper.h/.cc: some big re-work: most interestingly,
+	integrated PkgList from YGPackageSelector.cc into the Pool structure.
+
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/YGPackageSelector.cc: preliminrary major changes to the UI as
+	discussed with the other devs. Special thanks to Christian Jager
+	<christian.jaeger@rub.de>.
 
 2009-03-18 Martin Kudlvasr  <mkudlvasr@novell.com>
 

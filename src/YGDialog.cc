@@ -439,7 +439,7 @@ void YGDialog::highlight (YWidget *ywidget)
 
 			cairo_t *cr = gdk_cairo_create (widget->window);
 			cairo_rectangle (cr, x, y, w, h);
-			cairo_set_source_rgb (cr, (0xff/255.0), (0x88)/255.0, 0);
+			cairo_set_source_rgb (cr, 0xff/255.0, 0x88/255.0, 0);
 			cairo_fill (cr);
 			cairo_destroy (cr);
 			return FALSE;

@@ -7,8 +7,7 @@ AM_CFLAGS = $(GTK_CFLAGS) \
 	-DDATADIR=\"${DATADIR}\"
 AM_CXXFLAGS = $(AM_CFLAGS)
 
-pkgincludedir = $(includedir)/gtk
-pkginclude_HEADERS = $(wildcard *.h)
+noinst_HEADERS = $(wildcard *.h)
 
 # test linkage for missing symbols etc.
 noinst_PROGRAMS = dummy
@@ -49,7 +48,7 @@ libpy2gtk_la_SOURCES = \
 	YGBarGraph.cc \
 	YGDumbTab.cc \
 	YGWizard.cc \
-	YGPackageSelectorPluginStub.cc \
+	YGPackageSelector.cc \
 	ygtkratiobox.c \
 	ygtkfixed.c \
 	ygtkbargraph.c \
@@ -61,12 +60,16 @@ libpy2gtk_la_SOURCES = \
 	ygdkmngloader.c \
 	ygtkimage.c \
 	ygtkcellrenderertextpixbuf.c \
-	ygtkscrolledwindow.c \
+	ygtktreeview.c \
 	ygtkhtmlwrap.c \
 	ygtktimezonepicker.c \
 	ygtklinklabel.c \
+	ygtktooltip.c \
 	ygtktextview.c \
-	ygtkrichtext.c 
+	ygtkrichtext.c \
+	yzyppwrapper.cc \
+	yzypptags.cc \
+	ygtkzyppwrapper.cc
 # should (maybe?) only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
 
 dummy_SOURCES = dummy.cc
@@ -80,5 +83,26 @@ test_LDADD = $(top_builddir)/src/$(plugin_LTLIBRARIES)
 
 INCLUDES = -I$(srcdir)/include -I$(includedir) -I$(includedir)/yui $(ZYPP_CFLAGS) $(GTKHTML_CFLAGS) $(WEBKIT_CFLAGS)
 
+sharedir = $(DATADIR)
+dist_share_DATA = \
+	icons/pkg-available-locked.png \
+	icons/pkg-installed-upgradable.png \
+	icons/pkg-remove-auto.png \
+	icons/pkg-available.png \
+	icons/pkg-installed.png \
+	icons/pkg-remove.png \
+	icons/pkg-install.png \
+	icons/pkg-install-auto.png \
+	icons/pkg-upgrade.png \
+	icons/pkg-installed-locked.png \
+	icons/pkg-unlocked.png \
+	icons/pkg-installed-upgradable-locked.png \
+	icons/pkg-locked.png \
+	icons/pkg-tiles-mode.xpm \
+	icons/pkg-list-mode.xpm \
+	icons/harddisk.png \
+	icons/harddisk-full.png
 EXTRA_DIST = $(dist_share_DATA) \
+	pkg-selector-help.h \
 	hr.xpm
+
