@@ -79,6 +79,8 @@ struct Ypp
 			void *impl;
 		};
 		const Version *getInstalledVersion();
+			// available versions order is not specified
+			// however the most recent version is ensured to be placed as nb==0
 		const Version *getAvailableVersion (int nb);
 		  // convenience -- null if not from repo:
 		const Version *fromRepository (const Repository *repo);

@@ -192,6 +192,8 @@ static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint col
 		case YGtkZyppModel::NAME_SUMMARY_COLUMN:
 		case YGtkZyppModel::REPOSITORY_COLUMN:
 		case YGtkZyppModel::SUPPORT_COLUMN:
+		case YGtkZyppModel::INSTALLED_VERSION_COLUMN:
+		case YGtkZyppModel::AVAILABLE_VERSION_COLUMN:
 			return G_TYPE_STRING;
 		case YGtkZyppModel::TO_INSTALL_COLUMN:
 		case YGtkZyppModel::TO_UPGRADE_COLUMN:
@@ -332,6 +334,18 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		case YGtkZyppModel::SUPPORT_COLUMN:
 			g_value_set_string (value, g_strdup (package->support (true).c_str()));
 			break;
+		case YGtkZyppModel::INSTALLED_VERSION_COLUMN: {
+			const Ypp::Package::Version *version = package->getInstalledVersion();
+			std::string ver = version ? version->number : "";
+			g_value_set_string (value, g_strdup (ver.c_str()));
+			break;
+		}
+		case YGtkZyppModel::AVAILABLE_VERSION_COLUMN: {
+			const Ypp::Package::Version *version = package->getAvailableVersion (0);
+			std::string ver = version ? version->number : "";
+			g_value_set_string (value, g_strdup (ver.c_str()));
+			break;
+		}
 		case YGtkZyppModel::TO_INSTALL_COLUMN:
 			g_value_set_boolean (value, package->toInstall());
 			break;

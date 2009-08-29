@@ -522,17 +522,17 @@ int m_installedPkgs, m_totalPkgs;
 
 				// specific
 				ZyppPackage package = tryCastToZyppPkg (object);
-				std::string url = package->url(), license = package->license();
-				if (!url.empty())
-					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
-				if (!license.empty())
-					text += br + "<b>" + _("License:") + "</b> " + license;
 #if ZYPP_VERSION >= 5013001
 				text += br + "<b>" + _("Size:") + "</b> " + object->installSize().asString();
 #else
 				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
 #endif
-
+				std::string url = package->url(), license = package->license();
+				if (!url.empty())
+					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
+				if (!license.empty())
+					text += br + "<b>" + _("License:") + "</b> " + license;
+#if 0  // show "Installed at:" and "Last build:" info
 				bool hasCandidate = m_sel->hasCandidateObj();
 				if (isInstalled()) {
 					text += br + "<b>" + _("Installed at:") + "</b> " + m_sel->installedObj()->installtime().form("%x");
@@ -545,6 +545,7 @@ int m_installedPkgs, m_totalPkgs;
 					text += br;
 				if (hasCandidate)
 					text += std::string ("<b>") + _("Last build:") + "</b> " + m_sel->candidateObj()->buildtime().form("%x");
+#endif
 				break;
 			}
 			case Ypp::Package::PATCH_TYPE:

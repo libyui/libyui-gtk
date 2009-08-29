@@ -144,11 +144,12 @@ public:
 		gtk_tree_view_append_column (view, column);
 	}
 
-	void appendTextColumn (const char *header, int col)
+	void appendTextColumn (const char *header, int col, int size = -1)
 	{
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-		g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+		g_object_set (G_OBJECT (renderer), "ellipsize",
+			size == -1 ? PANGO_ELLIPSIZE_END : PANGO_ELLIPSIZE_MIDDLE, NULL);
 /*		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 		if (reverse) {  // work-around: Pango ignored alignment flag on RTL
 			gtk_widget_set_direction (m_view, GTK_TEXT_DIR_LTR);
@@ -161,8 +162,11 @@ public:
 //			"style", YGtkZyppModel::IS_MODIFIED_ITALIC_COLUMN,
 			NULL);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-		gtk_tree_view_column_set_fixed_width (column, 50 /* it will expand */);
-		gtk_tree_view_column_set_expand (column, TRUE);
+		gtk_tree_view_column_set_resizable (column, TRUE);
+		if (size >= 0)
+			gtk_tree_view_column_set_fixed_width (column, size);
+		else
+			gtk_tree_view_column_set_expand (column, TRUE);
 //		gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 		gtk_tree_view_append_column (view, column);
 	}
@@ -801,7 +805,7 @@ public:
 		else {
 			m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = NULL;
 			m_contents = new PackagesTable();
-			m_contents->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN);
+			m_contents->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN, 150);
 			m_contents->appendTextColumn (_("Summary"), YGtkZyppModel::SUMMARY_COLUMN);
 			appendExpander (vbox, _("Applies to"), m_contents->getWidget());
 		}
@@ -1794,8 +1798,14 @@ private:
 		}
 		m_view = new PackagesTable();
 		m_view->appendCheckColumn (NULL, col);
-		m_view->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN);
-		m_view->appendTextColumn (_("Summary"), YGtkZyppModel::SUMMARY_COLUMN);
+		int nameSize = (col == YGtkZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
+		m_view->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN, nameSize);
+		if (col == YGtkZyppModel::TO_UPGRADE_COLUMN) {
+			m_view->appendTextColumn (_("Installed"), YGtkZyppModel::INSTALLED_VERSION_COLUMN, 150);
+			m_view->appendTextColumn (_("Available"), YGtkZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+		}
+		else
+			m_view->appendTextColumn (_("Summary"), YGtkZyppModel::SUMMARY_COLUMN);
 		m_view->setListener (this);
 
 		m_oldPage = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), nb);
@@ -2207,7 +2217,7 @@ static bool confirmPkgs (const char *title, const char *message,
 
 	PackagesTable *view = new PackagesTable();
 	view->appendCheckColumn (NULL, YGtkZyppModel::TO_INSTALL_COLUMN);
-	view->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN);
+	view->appendTextColumn (_("Name"), YGtkZyppModel::NAME_COLUMN, 150);
 	view->appendTextColumn (extraColTitle, extraCol);
 	view->setModel (list);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());

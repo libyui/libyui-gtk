@@ -1,3 +1,13 @@
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: show installed and candidate versions
+	for the upgrades view.
+
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/yzyppwrapper.h/.cc: commented out installed and last build info
+	from the description box. (maybe show as tooltips for the versions enum?)
+
 2009-08-28 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtktreeview.h/.c: moved from ygtkscrolledwindow.h to its
