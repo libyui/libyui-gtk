@@ -1,5 +1,16 @@
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/YGPackageSelector.cc: gray-out tabs for which the query
+	is not applicable (e.g. can't find for files on available view
+	for technical limitations).
+
+	* src/YGPackageSelector.cc: replaced old pattern suggestion tooltip
+	for a label in the search pane.
+
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGPackageSelector.cc: show installed and candidate versions
 	for the upgrades view.
 

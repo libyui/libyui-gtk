@@ -201,6 +201,7 @@ static GType ygtk_zypp_model_get_column_type (GtkTreeModel *tree_model, gint col
 		case YGtkZyppModel::TO_MODIFY_COLUMN:
 		case YGtkZyppModel::IS_UNLOCKED_COLUMN:
 			return G_TYPE_BOOLEAN;
+		case YGtkZyppModel::IS_HIGHLIGHT_WEIGHT_COLUMN:
 		case YGtkZyppModel::IS_MODIFIED_ITALIC_COLUMN:
 			return G_TYPE_INT;
 		case YGtkZyppModel::PTR_COLUMN:
@@ -293,10 +294,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			break;
 		}
 		case YGtkZyppModel::NAME_COLUMN: {
-			bool highlight = zmodel->list->highlight (ziter);
 			std::string str (package->name());
-			if (highlight)
-				str = "<b>" + str + "</b>";
 			g_value_set_string (value, g_strdup (str.c_str()));
 			break;
 		}
@@ -364,6 +362,13 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		case YGtkZyppModel::IS_UNLOCKED_COLUMN:
 			g_value_set_boolean (value, !package->isLocked());
 			break;
+		case YGtkZyppModel::IS_HIGHLIGHT_WEIGHT_COLUMN: {
+			int weight = PANGO_WEIGHT_NORMAL;
+			if (zmodel->list->highlight (ziter))
+				weight = PANGO_WEIGHT_BOLD;
+			g_value_set_int (value, weight);
+			break;
+		}
 		case YGtkZyppModel::IS_MODIFIED_ITALIC_COLUMN: {
 			int modified = package->toModify() ? PANGO_STYLE_ITALIC : PANGO_STYLE_NORMAL;
 			g_value_set_int (value, modified);

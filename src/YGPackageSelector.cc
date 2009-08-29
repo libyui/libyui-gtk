@@ -18,7 +18,6 @@
 #include "ygtkmenubutton.h"
 #include "ygtkhtmlwrap.h"
 #include "ygtkrichtext.h"
-#include "ygtktooltip.h"
 #include "ygtktreeview.h"
 #include "ygtkzyppwrapper.h"
 
@@ -160,6 +159,7 @@ public:
 			header, renderer, "markup", col,
 			"sensitive", YGtkZyppModel::IS_UNLOCKED_COLUMN,
 //			"style", YGtkZyppModel::IS_MODIFIED_ITALIC_COLUMN,
+			"weight", YGtkZyppModel::IS_HIGHLIGHT_WEIGHT_COLUMN,
 			NULL);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_resizable (column, TRUE);
@@ -1000,6 +1000,9 @@ public:
 	void setListener (QueryListener *listener) { m_listener = listener; }
 	virtual GtkWidget *getWidget() = 0;
 	virtual void writeQuery (Ypp::PkgQuery::Query *query) = 0;
+
+	virtual bool availablePackagesOnly() { return false; }
+	virtual bool installedPackagesOnly() { return false; }
 };
 
 class StoreView : public QueryWidget
@@ -1317,6 +1320,8 @@ protected:
 		Ypp::get()->setFavoriteRepository ((Ypp::Repository *) ptr);
 	}
 
+	virtual bool availablePackagesOnly() { return true; }
+
 	static void setup_button_clicked_cb (GtkButton *button, Repositories *pThis)
 	{ YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
 };
@@ -1459,12 +1464,14 @@ class FindEntry
 
 class FindBox : public QueryWidget
 {
-GtkWidget *m_box, *m_name, *m_radio[5];
+GtkWidget *m_box, *m_name, *m_radio[5], *m_info_box, *m_info_label;
+bool m_onlineUpdate;
 
 public:
 	virtual GtkWidget *getWidget() { return m_box; }
 
-	FindBox()
+	FindBox (bool onlineUpdate)
+	: m_onlineUpdate (onlineUpdate)
 	{
 		GtkWidget *name_box = gtk_hbox_new (FALSE, 6), *button;
 		m_name = ygtk_find_entry_new();
@@ -1485,20 +1492,38 @@ public:
 		GtkRadioButton *radiob = GTK_RADIO_BUTTON (m_radio[0]);
 		m_radio[1] = gtk_radio_button_new_with_label_from_widget (radiob, _("Description"));
 		m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File"));
-		m_radio[3] = gtk_radio_button_new_with_label_from_widget (radiob, _("Author"));
+		gtk_widget_set_tooltip_markup (m_radio[2],
+			_("Only applicable to <b>installed</b> packages."));
+		if (m_onlineUpdate)
+			m_radio[3] = NULL;
+		else
+			m_radio[3] = gtk_radio_button_new_with_label_from_widget (radiob, _("Author"));
 		m_radio[4] = gtk_radio_button_new_with_label_from_widget (radiob, _("Novelty (in days)"));
 		g_signal_connect (G_OBJECT (m_radio[4]), "toggled", G_CALLBACK (novelty_toggled_cb), this);
 		gtk_widget_set_tooltip_markup (m_radio[4],
 			_("Number of days since the package was built by the repository."));
 		for (int i = 0; i < 5; i++)
-			gtk_box_pack_start (GTK_BOX (radio_box), m_radio[i], FALSE, TRUE, 0);
+			if (m_radio [i])
+				gtk_box_pack_start (GTK_BOX (radio_box), m_radio[i], FALSE, TRUE, 0);
 
 		GtkWidget *radio_frame = gtk_frame_new (_("Options:"));
 		gtk_container_add (GTK_CONTAINER (radio_frame), radio_box);
 
+		m_info_box = gtk_hbox_new (FALSE, 6);
+		m_info_label = gtk_label_new ("");
+		gtk_label_set_line_wrap (GTK_LABEL (m_info_label), TRUE);
+		gtk_box_pack_start (GTK_BOX (m_info_box),
+			gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO, GTK_ICON_SIZE_MENU), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_info_box), m_info_label, TRUE, TRUE, 0);
+
+		GtkWidget *separator = gtk_event_box_new();
+		gtk_widget_set_size_request (separator, -1, 50);
+
 		m_box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_box), name_box, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_box), radio_frame, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), separator, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), m_info_box, FALSE, TRUE, 0);
 
 		g_signal_connect (G_OBJECT (m_name), "activate", G_CALLBACK (button_clicked_cb), this);
 		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (button_clicked_cb), this);
@@ -1506,13 +1531,14 @@ public:
 
 	virtual void writeQuery (Ypp::PkgQuery::Query *query)
 	{
+		gtk_widget_hide (m_info_box);
 		const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
 		if (*name) {
 			int item;
-			for (item = 0; item < 5; item++) {
-				if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_radio[item])))
-					break;
-			}
+			for (item = 0; item < 5; item++)
+				if (m_radio[item])
+				    if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_radio[item])))
+						break;
 			if (item >= 5) ;
 			else if (item == 4) {  // novelty
 				int days = atoi (name);
@@ -1539,44 +1565,32 @@ public:
 				query->addNames (name, ' ', use_name, use_summary, use_description,
 					             use_filelist, use_authors);
 			}
-#if 0  // TODO
-			if (item == 0) {  // tip: the user may be searching for patterns
-				static bool shown_pattern_tip = false;
-				if (!pkg_selector->onlineUpdateMode() && !shown_pattern_tip &&
-					gtk_combo_box_get_active (GTK_COMBO_BOX (m_type)) == 0 &&
-					(m_statuses->getActive() == StatusButtons::AVAILABLE ||
-					 m_statuses->getActive() == StatusButtons::ALL)) {
+			if (item == 0) {  // tip: the user may be unaware of the patterns
+				if (!m_onlineUpdate) {
 					Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-					query->addType (Ypp::Package::PATTERN_TYPE);
 					query->addNames (name, ' ', true, false, false, false, false, true);
 					query->setIsInstalled (false);
-					Ypp::PkgQuery pool (query);
+					Ypp::PkgQuery pool (Ypp::Package::PATTERN_TYPE, query);
 					if (!pool.empty()) {
-						shown_pattern_tip = true;
-						//std::string first = pool.getName (pool.getFirst());
-						std::string text =
-							_("Patterns are available that can\n"
-							"assist you in the installment\nof");
-						text += " <i>" + std::string (name) + "</i> ";
-						text += _("related packages.");
-						ygtk_tooltip_show_at_widget (m_type, YGTK_POINTER_UP_LEFT,
-							text.c_str(), GTK_STOCK_DIALOG_INFO);
+						std::string _name = pool.get (pool.first())->name();
+						std::string text = _("Patterns are available that can "
+							"assist you in the installment of");
+						text += " <i>" + _name + "</i>.";
+						gtk_label_set_markup (GTK_LABEL (m_info_label), text.c_str());
+
+						int width;
+						gtk_icon_size_lookup (GTK_ICON_SIZE_MENU, &width, NULL);
+						width = m_box->allocation.width - width - 6;
+						gtk_widget_set_size_request (m_info_label, width, -1);
+						gtk_widget_show_all (m_info_box);
 					}
 				}
 			}
-			else if (item == 2) {
-				if (m_statuses->getActive() == StatusButtons::AVAILABLE) {
-					const char *text =
-						_("The file filter is only\n"
-						"applicable to <b>installed</b> packages.");
-					ygtk_tooltip_show_at_widget (
-						m_statuses->getSpecificWidget (StatusButtons::INSTALLED),
-						YGTK_POINTER_DOWN_RIGHT, text, GTK_STOCK_DIALOG_ERROR);
-				}
-			}
-#endif
 		}
 	}
+
+	virtual bool installedPackagesOnly()
+	{ return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_radio[2])); }
 
 private:
 	static void novelty_toggled_cb (GtkToggleButton *button, FindBox *pThis)
@@ -1660,6 +1674,11 @@ public:
 	virtual void writeQuery (Ypp::PkgQuery::Query *query)
 	{ m_queryWidget->writeQuery (query); }
 
+	virtual bool availablePackagesOnly()
+	{ return m_queryWidget->availablePackagesOnly(); }
+	virtual bool installedPackagesOnly()
+	{ return m_queryWidget->installedPackagesOnly(); }
+
 private:
 	void set (GtkWidget *widget)
 	{
@@ -1681,7 +1700,7 @@ private:
 		}
 		else {
 			switch (nb) {
-				case 0: m_queryWidget = new FindBox(); break;
+				case 0: m_queryWidget = new FindBox (m_onlineUpdate); break;
 				case 1: m_queryWidget = new Categories (m_onlineUpdate); break;
 				case 2: m_queryWidget = new Collection (Ypp::Package::PATTERN_TYPE); break;
 				case 3: m_queryWidget = new Collection (Ypp::Package::LANGUAGE_TYPE); break;
@@ -1828,6 +1847,51 @@ private:
 
 	virtual void queryNotify()
 	{
+		// limit users to the tabs whose query is applicable
+		{
+			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
+			for (GList *i = pages; i; i = i->next) {
+				GtkWidget *label, *page = (GtkWidget *) i->data;
+				label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
+				if (!GTK_WIDGET_IS_SENSITIVE (label)) {
+					gtk_widget_set_sensitive (label, TRUE);
+					gtk_widget_set_tooltip_text (label, "");
+				}
+			}
+			g_list_free (pages);
+		}
+		if (m_combo->availablePackagesOnly()) {
+			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
+			if (selected > 0)
+				gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 0);
+
+			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
+			for (GList *i = pages->next; i->next; i = i->next) {
+				GtkWidget *label, *page = (GtkWidget *) i->data;
+				label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
+				gtk_widget_set_sensitive (label, FALSE);
+				gtk_widget_set_tooltip_text (label, _("Query only applicable to available packages."));
+			}
+			g_list_free (pages);
+			if (selected > 0)
+				return;
+		}
+		else if (m_combo->installedPackagesOnly()) {
+			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
+			if (selected == 0)
+				gtk_notebook_set_current_page (
+					GTK_NOTEBOOK (m_notebook), m_onlineUpdate ? 1 : 2);
+
+			GtkWidget *label, *page;
+			page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), 0);
+			label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
+			gtk_widget_set_sensitive (label, FALSE);
+			gtk_widget_set_tooltip_text (label, _("Query only applicable to installed packages."));
+			if (selected == 0)
+				return;
+		}
+
+		// set query
 		Cursor::busy();
 		Ypp::Package::Type type =
 			m_onlineUpdate ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
