@@ -306,8 +306,6 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 		case YGtkZyppModel::NAME_SUMMARY_COLUMN: {
 			bool highlight = zmodel->list->highlight (ziter);
 			std::string str = package->name();
-/*			if (highlight)
-				str = "<span color=\"red\">" + str + "</span>";*/
 			std::string summary = package->summary();
 			if (!summary.empty()) {
 				YGUtils::escapeMarkup (summary);
@@ -330,7 +328,7 @@ static void ygtk_zypp_model_get_value (GtkTreeModel *model, GtkTreeIter *iter,
 			break;
 		}
 		case YGtkZyppModel::SUPPORT_COLUMN:
-			g_value_set_string (value, g_strdup (package->support (true).c_str()));
+			g_value_set_string (value, g_strdup (package->support().c_str()));
 			break;
 		case YGtkZyppModel::INSTALLED_VERSION_COLUMN: {
 			const Ypp::Package::Version *version = package->getInstalledVersion();

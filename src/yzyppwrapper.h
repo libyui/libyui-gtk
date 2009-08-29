@@ -62,7 +62,8 @@ struct Ypp
 		std::string filelist (bool rich);
 		std::string changelog();
 		std::string authors (bool rich);
-		std::string support (bool rich);
+		std::string support();
+		std::string supportText (bool rich);
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;

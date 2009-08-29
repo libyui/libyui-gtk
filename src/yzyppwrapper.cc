@@ -235,7 +235,8 @@ std::string m_name, m_summary;
 	virtual std::string filelist (bool rich) { return ""; }
 	virtual std::string changelog()          { return ""; }
 	virtual std::string authors (bool rich)  { return ""; }
-	virtual std::string support (bool rich)  { return ""; }
+	virtual std::string support()            { return ""; }
+	virtual std::string supportText (bool rich) { return ""; }
 	virtual std::string icon() = 0;
 	virtual bool isRecommended() const       { return false; }
 	virtual bool isSuggested() const         { return false; }
@@ -298,7 +299,8 @@ std::string Ypp::Package::description (MarkupType markup) { return impl->descrip
 std::string Ypp::Package::filelist (bool rich)    { return impl->filelist (rich); }
 std::string Ypp::Package::changelog()             { return impl->changelog(); }
 std::string Ypp::Package::authors (bool rich)     { return impl->authors (rich); }
-std::string Ypp::Package::support (bool rich)     { return impl->support (rich); }
+std::string Ypp::Package::support()               { return impl->support(); }
+std::string Ypp::Package::supportText (bool rich) { return impl->supportText (rich); }
 std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
@@ -719,21 +721,15 @@ int m_installedPkgs, m_totalPkgs;
 				authors += str;
 			}
 			if (rich) {
-				if (!authors.empty())
-					text += _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
-				if (!packager.empty() || (!vendor.empty() && !text.empty())) {
-					text += _("Packaged by:");
-					text += "<blockquote>";
-					if (!packager.empty())
-						text += packager;
-					if (!vendor.empty()) {
-						if (!packager.empty())
-							text += "<br>(";
-						text += vendor;
-						if (!packager.empty())
-							text += ")";
+				if (!authors.empty()) {
+					text = _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
+					if (!packager.empty() || !vendor.empty()) {
+						text += _("Packaged by:");
+						text += "<blockquote>";
+						if (!packager.empty()) text += packager + " ";
+						if (!vendor.empty()) text += "(" + vendor + ")";
+						text += "</blockquote>";
 					}
-					text += "</blockquote>";
 				}
 			}
 			else
@@ -742,22 +738,29 @@ int m_installedPkgs, m_totalPkgs;
 		return text;
 	}
 
-	virtual std::string support (bool rich)
+	virtual std::string support()
 	{
-		std::string text;
-#if ZYPP_VERSION >= 5013001
 		ZyppObject object = m_sel->theObj();
 		ZyppPackage package = tryCastToZyppPkg (object);
 		if (package) {
 			zypp::VendorSupportOption opt = package->vendorSupport();
-			text = zypp::asUserString (opt) + ": ";
+			return zypp::asUserString (opt);
+		}
+		return "";
+	}
+
+	virtual std::string supportText (bool rich)
+	{
+		ZyppObject object = m_sel->theObj();
+		ZyppPackage package = tryCastToZyppPkg (object);
+		if (package) {
+			zypp::VendorSupportOption opt = package->vendorSupport();
 			std::string str (zypp::asUserStringDescription (opt));
 			if (rich)
 				YGUtils::escapeMarkup (str);
-			text += str;
+			return str;
 		}
-#endif
-		return text;
+		return "";
 	}
 
 	virtual std::string icon()

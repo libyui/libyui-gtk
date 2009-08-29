@@ -1,5 +1,18 @@
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzyppwrapper.h/.cc: split up Package::support()
+
+	* src/YGPackageSelector.cc: touched up support expander on details.
+
+	* src/YGPackageSelector.cc: made list-details box move horizontal
+	on large widescreens.
+
+	* src/pkg-selector-help.h: touched to reflect UI changes.
+
+	* src/YGPackageSelector.cc: split selector-help in small pieces.
+
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppwrapper.h/.cc: more column properties.
 
 	* src/YGPackageSelector.cc: gray-out tabs for which the query

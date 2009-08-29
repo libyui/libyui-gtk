@@ -782,21 +782,20 @@ public:
 
 		if (!onlineUpdate) {
 			m_filelist = ygtk_rich_text_new();
-			appendExpander (vbox, _("File List"), m_filelist);
 			m_changelog = ygtk_rich_text_new();
-			appendExpander (vbox, _("Changelog"), m_changelog);
 			m_authors = ygtk_rich_text_new();
-			appendExpander (vbox, _("Authors"), m_authors);
 			m_support = ygtk_rich_text_new();
-			appendExpander (vbox, _("Support"), m_support);
-
 			m_requires = ygtk_rich_text_new();
 			m_provides = ygtk_rich_text_new();
 			GtkWidget *dependencies_box = gtk_hbox_new (TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (dependencies_box), m_requires, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (dependencies_box), m_provides, TRUE, TRUE, 0);
-			appendExpander (vbox, _("Dependencies"), dependencies_box);
 
+			appendExpander (vbox, _("File List"), m_filelist);
+			appendExpander (vbox, _("Changelog"), m_changelog);
+			appendExpander (vbox, _("Authors"), m_authors);
+			appendExpander (vbox, _("Dependencies"), dependencies_box);
+			appendExpander (vbox, _(""), m_support);
 			m_contents = NULL;
 			if (CAN_OPEN_URIS())
 				g_signal_connect (G_OBJECT (m_filelist), "link-clicked",
@@ -809,6 +808,7 @@ public:
 			m_contents->appendTextColumn (_("Summary"), YGtkZyppModel::SUMMARY_COLUMN);
 			appendExpander (vbox, _("Applies to"), m_contents->getWidget());
 		}
+		gtk_widget_show_all (vbox);
 	}
 
 	~PackageDetails()
@@ -828,7 +828,13 @@ public:
 			if (m_filelist)  setText (m_filelist, package->filelist (true));
 			if (m_changelog) setText (m_changelog, package->changelog());
 			if (m_authors)   setText (m_authors, package->authors (true));
-			if (m_support)   setText (m_support, package->support (true));
+			if (m_support) {
+				GtkWidget *expander = gtk_widget_get_ancestor (m_support, GTK_TYPE_EXPANDER);
+				std::string label ("<b>" + std::string (_("Support:")) + "</b> ");
+				label += package->support();
+				gtk_expander_set_label (GTK_EXPANDER (expander), label.c_str());
+				setText (m_support, package->supportText (true));
+			}
 			if (m_requires && m_provides) {
 				std::string requires_str = _("Requires:");
 				std::string provides_str = _("Provides:");
@@ -1720,6 +1726,80 @@ private:
 	}
 };
 
+class FlexPane
+{
+GtkWidget *m_bin, *m_child1, *m_child2;
+bool m_isVertical, m_resize1, m_resize2, m_shrink1, m_shrink2;
+int m_vpos, m_hpos;
+
+public:
+	GtkWidget *getWidget() { return m_bin; }
+
+	FlexPane() : m_child1 (NULL), m_isVertical (true), m_vpos (0), m_hpos (0)
+	{
+		m_bin = gtk_event_box_new();
+		gtk_widget_show (m_bin);
+		g_signal_connect_after (G_OBJECT (m_bin), "size-allocate",
+		                        G_CALLBACK (size_allocate_cb), this);
+	}
+
+	~FlexPane()
+	{
+		g_object_unref (G_OBJECT (m_child1));
+		g_object_unref (G_OBJECT (m_child2));
+	}
+
+	void pack (GtkWidget *child, bool resize, bool shrink)
+	{
+		g_object_ref_sink (G_OBJECT (child));
+		if (m_child1) {
+			m_child2 = child; m_resize2 = resize; m_shrink2 = shrink;
+		}
+		else {
+			m_child1 = child; m_resize1 = resize; m_shrink1 = shrink;
+		}
+	}
+
+	void setPosition (int vpos, int hpos)
+	{ m_vpos = vpos; m_hpos = hpos; }
+
+private:
+	static bool isVertical (int width)
+	{ return width < 1000; }  // heuristic
+
+	void setup()
+	{
+		bool isVer = isVertical (m_bin->allocation.width);
+fprintf (stderr, "FlexPane::setup - width? %d - isVer? %d\n", m_bin->allocation.width, isVer);
+		GtkWidget *oldPane = GTK_BIN (m_bin)->child;
+		if (!oldPane || (m_isVertical != isVer)) {
+fprintf (stderr, "\tcreate pane!\n");
+			m_isVertical = isVer;
+			if (oldPane) {
+				gtk_container_remove (GTK_CONTAINER (oldPane), m_child1);
+				gtk_container_remove (GTK_CONTAINER (oldPane), m_child2);
+				gtk_container_remove (GTK_CONTAINER (m_bin), oldPane);
+			}
+
+			GtkWidget *pane = isVer ? gtk_vpaned_new() : gtk_hpaned_new();
+			gtk_paned_pack1 (GTK_PANED (pane), m_child1, m_resize1, m_shrink1);
+			gtk_paned_pack2 (GTK_PANED (pane), m_child2, m_resize2, m_shrink2);
+			if (m_hpos) {
+				int size = isVer ? m_bin->allocation.height : m_bin->allocation.width;
+				int pos = isVer ? m_vpos : m_hpos;
+				pos = pos < 0 ? size + pos : pos;
+				gtk_paned_set_position (GTK_PANED (pane), pos);
+			}
+
+			gtk_container_add (GTK_CONTAINER (m_bin), pane);
+			gtk_widget_show (pane);
+		}
+	}
+
+	static void size_allocate_cb (GtkWidget *bin, GtkAllocation *alloc, FlexPane *pThis)
+	{ pThis->setup(); }
+};
+
 class QueryNotebook : public QueryListener, PackagesView::Listener
 {
 GtkWidget *m_widget, *m_notebook;
@@ -1727,6 +1807,7 @@ bool m_onlineUpdate;
 PackagesTable *m_view;
 FilterCombo *m_combo;
 PackageDetails *m_details;
+FlexPane *m_pane;
 GtkWidget *m_oldPage;
 guint m_timeout_id;
 Ypp::PkgList *m_changes;
@@ -1748,19 +1829,20 @@ public:
 			query->setToModify (true);
 			m_changes = new Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
 		}
+		gtk_widget_show (m_notebook);
 		g_signal_connect_after (G_OBJECT (m_notebook), "switch-page",
 		                        G_CALLBACK (switch_page_cb), this);
 
 		m_details = new PackageDetails (onlineUpdate);
-		GtkWidget *vpane = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (vpane), m_notebook, TRUE, FALSE);
-		gtk_paned_pack2 (GTK_PANED (vpane), m_details->getWidget(), FALSE, FALSE);
-		gtk_paned_set_position (GTK_PANED (vpane), 500);
+		m_pane = new FlexPane();
+		m_pane->pack (m_notebook, true, false);
+		m_pane->pack (m_details->getWidget(), false, false);
+		m_pane->setPosition (-175, -500);
 
 		m_combo = new FilterCombo (this, onlineUpdate, repoMgrEnabled);
 		GtkWidget *hpane = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (hpane), m_combo->getWidget(), FALSE, TRUE);
-		gtk_paned_pack2 (GTK_PANED (hpane), vpane, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (hpane), m_pane->getWidget(), TRUE, FALSE);
 		gtk_paned_set_position (GTK_PANED (hpane), 180);
 
 		m_widget = hpane;
@@ -1777,6 +1859,7 @@ public:
 		delete m_view;
 		delete m_combo;
 		delete m_details;
+		delete m_pane;
 		delete m_changes;
 	}
 
@@ -2506,7 +2589,7 @@ public:
 		YGDialog::currentDialog()->setTitle (title);
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-while (g_main_context_iteration (NULL, FALSE)) ;
+while (g_main_context_iteration (NULL, FALSE)) ;  // FIXME: debug
 
 		ygtk_wizard_set_button_label (wizard,  wizard->abort_button,
 		                              _("_Cancel"), GTK_STOCK_CANCEL);
@@ -2526,9 +2609,14 @@ while (g_main_context_iteration (NULL, FALSE)) ;
 		ygtk_wizard_set_extra_button (YGTK_WIZARD (getWidget()), m_tools->getWidget());
 
 		Ypp::get()->setInterface (this);
-		ygtk_wizard_set_help_text (wizard, onlineUpdateMode() ? _(patch_help) : _(pkg_help));
-		Cursor::normal();
+		const char **help = onlineUpdate ? patch_help : pkg_help;
+		std::string str;
+		str.reserve (6144);
+		for (int i = 0; help[i]; i++)
+			str.append (help [i]);
+		ygtk_wizard_set_help_text (wizard, str.c_str());
 		m_button_timeout_id = g_timeout_add (7500, wizard_enable_button_cb, this);
+		Cursor::normal();
 	}
 
 	virtual ~YGPackageSelector()
