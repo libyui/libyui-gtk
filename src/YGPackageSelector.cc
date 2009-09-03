@@ -536,7 +536,10 @@ public:
 			"(usage example: \"yast dhcp\" will return yast's dhcpd tool)"));
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (name_changed_cb), this);
-		button = gtk_button_new_with_mnemonic (_("_Search"));
+		button = gtk_button_new_with_label ("");
+		GtkWidget *image = gtk_image_new_from_stock (GTK_STOCK_OK, GTK_ICON_SIZE_MENU);
+		gtk_button_set_image (GTK_BUTTON (button), image);
+		gtk_widget_set_tooltip_text (button, _("Search!"));
 		gtk_box_pack_start (GTK_BOX (name_box), m_name, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (name_box), button, FALSE, TRUE, 0);
 
@@ -547,7 +550,7 @@ public:
 		m_radio[1] = gtk_radio_button_new_with_label_from_widget (radiob, _("Description"));
 		m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File name"));
 		gtk_widget_set_tooltip_markup (m_radio[2],
-			_("Only applicable to <b>installed</b> packages."));
+			_("Only applicable to installed packages."));
 		if (m_onlineUpdate)
 			m_radio[3] = NULL;
 		else
@@ -576,14 +579,21 @@ public:
 			gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO, GTK_ICON_SIZE_MENU), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_info_box), m_info_label, TRUE, TRUE, 0);
 
-		GtkWidget *separator = gtk_event_box_new();
-		gtk_widget_set_size_request (separator, -1, 50);
+		GtkWidget *separator1 = gtk_event_box_new();
+		gtk_widget_set_size_request (separator1, -1, 12);
+		GtkWidget *separator2 = gtk_event_box_new();
+		gtk_widget_set_size_request (separator2, -1, 15);
+		GtkWidget *separator3 = gtk_event_box_new();
+		gtk_widget_set_size_request (separator3, -1, 50);
 
-		m_box = gtk_vbox_new (FALSE, 12);
-		gtk_box_pack_start (GTK_BOX (m_box), name_box, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_box), radio_frame, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_box), separator, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_box), m_info_box, FALSE, TRUE, 0);
+		GtkWidget *box = gtk_vbox_new (FALSE, 0);
+		gtk_box_pack_start (GTK_BOX (box), separator1, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), name_box, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), separator2, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), radio_frame, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), separator3, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (box), m_info_box, FALSE, TRUE, 0);
+		m_box = box;
 
 		g_signal_connect (G_OBJECT (m_name), "activate", G_CALLBACK (button_clicked_cb), this);
 		g_signal_connect (G_OBJECT (button), "clicked", G_CALLBACK (button_clicked_cb), this);
@@ -640,7 +650,7 @@ public:
 
 						int width;
 						gtk_icon_size_lookup (GTK_ICON_SIZE_MENU, &width, NULL);
-						width = m_box->allocation.width - width - 6;
+						width = getWidget()->allocation.width - width - 6;
 						gtk_widget_set_size_request (m_info_label, width, -1);
 						gtk_widget_show_all (m_info_box);
 					}
@@ -651,6 +661,15 @@ public:
 
 	virtual bool installedPackagesOnly()
 	{ return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_radio[2])); }
+
+	const char *searchName()
+	{
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (m_radio[0]))) {
+			const char *name = gtk_entry_get_text (GTK_ENTRY (m_name));
+			return *name ? name : NULL;
+		}
+		return NULL;
+	}
 
 private:
 	static void novelty_toggled_cb (GtkToggleButton *button, FindBox *pThis)
@@ -679,7 +698,9 @@ private:
 				}
 			ygtk_find_entry_set_state (entry, correct);
 		}
-		if (*text == '\0')  // user may have pressed brush icon thus except search clear
+		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (pThis->m_radio[0])))
+			pThis->notifyDelay();
+		else if (*text == '\0')
 			pThis->notify();
 	}
 
@@ -711,6 +732,8 @@ public:
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Languages"));
 			gtk_widget_set_tooltip_markup (m_combo,
 				_("Packages can be organized in:\n"
+				"<b>Search:</b> find a given package by name, summary or some "
+				"other attribute.\n"
 				"<b>Groups:</b> simple categorization of packages by purpose.\n"
 				"<b>Patterns:</b> assists in installing all packages necessary "
 				"for several working environments.\n"
@@ -740,6 +763,13 @@ public:
 	{ return m_queryWidget->availablePackagesOnly(); }
 	virtual bool installedPackagesOnly()
 	{ return m_queryWidget->installedPackagesOnly(); }
+
+	const char *searchName()
+	{
+		if (gtk_combo_box_get_active (GTK_COMBO_BOX (m_combo)) == 0)
+			return ((FindBox *) m_queryWidget)->searchName();
+		return NULL;
+	}
 
 private:
 	void set (GtkWidget *widget)
@@ -852,6 +882,134 @@ private:
 	{ pThis->setup(); }
 };
 
+class UndoView
+{
+GtkWidget *m_vbox;
+Ypp::PkgList m_changes;
+
+public:
+	GtkWidget *getWidget() { return m_vbox; }
+
+	UndoView (PackagesView::Listener *listener)
+	{
+		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+		query->setToModify (true);
+		m_changes = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
+
+		GtkWidget *view = createView (m_changes, listener);
+
+		GtkWidget *uncouple_button = gtk_button_new_with_label (_("Uncouple"));
+		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (uncouple_button), icon);
+		GtkWidget *uncouple_align = gtk_alignment_new (1, .5, 0, 1);
+		gtk_container_add (GTK_CONTAINER (uncouple_align), uncouple_button);
+		g_signal_connect (G_OBJECT (uncouple_button), "clicked",
+		                  G_CALLBACK (uncouple_clicked_cb), this);
+
+		m_vbox = gtk_vbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (m_vbox), 6);
+		gtk_box_pack_start (GTK_BOX (m_vbox), view, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_vbox), uncouple_align, FALSE, TRUE, 0);
+		gtk_widget_show_all (m_vbox);
+		g_object_ref_sink (m_vbox);
+	}
+
+	~UndoView()
+	{ g_object_unref (m_vbox); }
+
+private:
+	static GtkWidget *createView (const Ypp::PkgList changes, PackagesView::Listener *listener)
+	{
+		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
+		for (int i = 0; i < 3; i++) {
+			const char *str = 0, *stock = 0;
+			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+			int checkCol = 0;
+			switch (i) {
+				case 0:
+					str = _("To install:");
+					stock = GTK_STOCK_ADD;
+					query->setToInstall (true);
+					query->setIsInstalled (false);
+					checkCol = ZyppModel::TO_INSTALL_COLUMN;
+					break;
+				case 1:
+					str = _("To upgrade:");
+					stock = GTK_STOCK_GO_UP;
+					query->setToInstall (true);
+					query->setIsInstalled (true);
+					checkCol = ZyppModel::TO_UPGRADE_COLUMN;
+					break;
+				case 2:
+					str = _("To remove:");
+					stock = GTK_STOCK_REMOVE;
+					query->setToRemove (true);
+					checkCol = ZyppModel::TO_REMOVE_COLUMN;
+					break;
+				default: break;
+			}
+			Ypp::PkgQuery list (changes, query);
+
+			GtkWidget *label_box, *icon, *label;
+			label = gtk_label_new (str);
+			gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
+			icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
+			label_box = gtk_hbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (label_box), icon, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
+			PackagesView *view = new PackagesView (true);
+			view->appendCheckColumn (checkCol);
+			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN);
+			view->setRows (list, NULL);
+			view->setFrame (true);
+			view->setListener (listener);
+			// PackagesView is not a GtkWidget, we need to destroy it:
+			g_object_set_data_full (G_OBJECT (label_box), "view", view, delete_pkgview);
+
+			GtkWidget *box = gtk_vbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (box), label_box, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box), view->getWidget(), TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (hbox), box, TRUE, TRUE, 0);
+		}
+		return hbox;
+	}
+
+	static void uncouple_clicked_cb (GtkButton *button, UndoView *pThis)
+	{
+		gtk_widget_hide (pThis->m_vbox);
+		GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Undo History"),
+			YGDialog::currentWindow(), GTK_DIALOG_DESTROY_WITH_PARENT,
+			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+		gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
+		gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
+		g_signal_connect (G_OBJECT (dialog), "delete-event",
+		                  G_CALLBACK (uncouple_delete_event_cb), pThis);
+		g_signal_connect (G_OBJECT (dialog), "response",
+		                  G_CALLBACK (close_response_cb), pThis);
+
+		GtkWidget *view = createView (pThis->m_changes, NULL);
+		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), view);
+		gtk_widget_show_all (dialog);
+	}
+
+	static void delete_pkgview (gpointer data)
+	{ delete (PackagesView *) data; }
+
+	static gboolean uncouple_delete_event_cb (
+		GtkWidget *widget, GdkEvent *event, UndoView *pThis)
+	{
+		gtk_widget_show (pThis->m_vbox);
+		return FALSE;
+	}
+
+	static void close_response_cb (GtkDialog *dialog, gint response, UndoView *pThis)
+	{
+		gtk_widget_show (pThis->m_vbox);
+		gtk_widget_destroy (GTK_WIDGET (dialog));
+	}
+};
+
 class QueryNotebook : public QueryListener, PackagesView::Listener
 {
 GtkWidget *m_widget, *m_notebook;
@@ -861,29 +1019,36 @@ FilterCombo *m_combo;
 PackageDetails *m_details;
 FlexPane *m_pane;
 GtkWidget *m_oldPage;
+UndoView *m_undoView;
 guint m_timeout_id;
-Ypp::PkgList m_changes;
+bool m_highlightTab;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	QueryNotebook (bool onlineUpdate, bool repoMgrEnabled)
-	: m_onlineUpdate (onlineUpdate), m_view (NULL), m_oldPage (NULL), m_timeout_id (0)
+	: m_onlineUpdate (onlineUpdate), m_view (NULL), m_timeout_id (0), m_highlightTab (false)
 	{
 		m_notebook = gtk_notebook_new();
-		appendPage (m_notebook, _("_Install"), GTK_STOCK_ADD, 0);
+		appendPage (m_notebook, _("_Install"), GTK_STOCK_ADD, 0, NULL);
 		if (!onlineUpdate)
-			appendPage (m_notebook, _("_Upgrade"), GTK_STOCK_GO_UP, 1);
-		appendPage (m_notebook, _("_Remove"), GTK_STOCK_REMOVE, 2);
+			appendPage (m_notebook, _("_Upgrade"), GTK_STOCK_GO_UP, 1, NULL);
+		appendPage (m_notebook, _("_Remove"), GTK_STOCK_REMOVE, 2, NULL);
 		if (!onlineUpdate) {
-			appendPage (m_notebook, _("_Undo"), GTK_STOCK_UNDO, 3);
-			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-			query->setToModify (true);
-			m_changes = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
+			m_undoView = new UndoView (this);
+			appendPage (m_notebook, _("_Undo"), GTK_STOCK_UNDO, 3, m_undoView->getWidget());
 		}
 		gtk_widget_show (m_notebook);
 		g_signal_connect_after (G_OBJECT (m_notebook), "switch-page",
 		                        G_CALLBACK (switch_page_cb), this);
+
+#if 0	// test: put search entry as a new tab (since we can't make use of the empty space...)
+		GtkWidget *entry = ygtk_find_entry_new();
+		gtk_widget_show (entry);
+		GtkWidget *page = gtk_event_box_new();
+		gtk_widget_show (page);
+		gtk_notebook_append_page (GTK_NOTEBOOK (m_notebook), page, entry);
+#endif
 
 		m_details = new PackageDetails (onlineUpdate);
 		m_pane = new FlexPane();
@@ -900,7 +1065,7 @@ public:
 		m_widget = hpane;
 		gtk_widget_show_all (m_widget);
 		gtk_widget_hide (m_details->getWidget());
-		preparePage (0);
+		m_oldPage = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), 0);
 		queryNotify();
 	}
 
@@ -912,11 +1077,18 @@ public:
 		delete m_combo;
 		delete m_details;
 		delete m_pane;
+		delete m_undoView;
+	}
+
+	void setUndoPage()
+	{
+		if (!m_onlineUpdate)
+			gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 3);
 	}
 
 private:
-	static void appendPage (GtkWidget *notebook, const char *text,
-	                                const char *stock_icon, int nb)
+	static void appendPage (GtkWidget *notebook, const char *text, const char *stock_icon,
+		int nb, GtkWidget *child)
 	{
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *label, *icon;
 		if (stock_icon) {
@@ -926,49 +1098,30 @@ private:
 		label = gtk_label_new (text);
 		gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 		gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, TRUE, 0);
+		g_object_set_data (G_OBJECT (hbox), "label", label);
 		gtk_widget_show_all (hbox);
 
-		GtkWidget *page = gtk_event_box_new();
+		GtkWidget *page = child;
+		if (!page) page = gtk_event_box_new();
 		gtk_widget_show (page);
 		g_object_set_data (G_OBJECT (page), "nb", GINT_TO_POINTER (nb));
 
 		gtk_notebook_append_page (GTK_NOTEBOOK (notebook), page, hbox);
 	}
 
-	void preparePage (int nb)
+	void clearPage()
 	{
-		if (m_view)
-			gtk_container_remove (GTK_CONTAINER (m_oldPage), m_view->getWidget());
+		if (m_oldPage)
+			gtk_container_remove (GTK_CONTAINER (m_oldPage), GTK_BIN (m_oldPage)->child);
 		delete m_view;
-
-		int col;
-		switch (selectedPage()) {
-			default:
-			case 0: col = ZyppModel::TO_INSTALL_COLUMN; break;
-			case 1: col = ZyppModel::TO_UPGRADE_COLUMN; break;
-			case 2: col = ZyppModel::NOT_TO_REMOVE_COLUMN; break;
-			case 3: col = ZyppModel::TO_MODIFY_COLUMN; break;
-		}
-		m_view = new PackagesView (false);
-		m_view->appendCheckColumn (col);
-		int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
-		m_view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
-		if (col == ZyppModel::TO_UPGRADE_COLUMN) {
-			m_view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
-			m_view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
-		}
-		else
-			m_view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
-		m_view->setListener (this);
-
-		m_oldPage = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), nb);
-		gtk_container_add (GTK_CONTAINER (m_oldPage), m_view->getWidget());
+		m_view = NULL;
 	}
 
 	static void switch_page_cb (GtkNotebook *notebook, GtkNotebookPage *,
 	                            guint nb, QueryNotebook *pThis)
 	{
-		pThis->preparePage (nb);
+		pThis->clearPage();
+		pThis->m_oldPage = gtk_notebook_get_nth_page (notebook, nb);
 		pThis->queryNotify();
 	}
 
@@ -979,10 +1132,37 @@ private:
 		return GPOINTER_TO_INT (g_object_get_data (G_OBJECT (page), "nb"));
 	}
 
+	Ypp::PkgQuery getQuery (int page)
+	{
+		Ypp::Package::Type type =
+			m_onlineUpdate ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
+		Ypp::PkgList list (Ypp::get()->getPackages (type));
+
+		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+		switch (page) {
+			case 0:  // available
+				if (m_onlineUpdate)
+					// special pane for patches upgrades makes little sense, so
+					// we instead list them together with availables
+					query->setHasUpgrade (true);
+				query->setIsInstalled (false);
+				break;
+			case 1:  // upgrades
+				query->setHasUpgrade (true);
+				break;
+			case 2:  // installed
+				query->setIsInstalled (true);
+				break;
+			default: break;
+		}
+
+		m_combo->writeQuery (query);
+		return Ypp::PkgQuery (list, query);
+	}
+
 	virtual void queryNotify()
 	{
-		// limit users to the tabs whose query is applicable
-		{
+		{  // limit users to the tabs whose query is applicable
 			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
 			for (GList *i = pages; i; i = i->next) {
 				GtkWidget *label, *page = (GtkWidget *) i->data;
@@ -996,7 +1176,7 @@ private:
 		}
 		if (m_combo->availablePackagesOnly()) {
 			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-			if (selected > 0)
+			if (selected > 0 && selected < 3)
 				gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 0);
 
 			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
@@ -1007,7 +1187,7 @@ private:
 				gtk_widget_set_tooltip_text (label, _("Query only applicable to available packages."));
 			}
 			g_list_free (pages);
-			if (selected > 0)
+			if (selected > 0 && selected < 3)
 				return;
 		}
 		else if (m_combo->installedPackagesOnly()) {
@@ -1025,49 +1205,63 @@ private:
 				return;
 		}
 
+		int page = selectedPage();
+		if (page == 3) {
+			gtk_container_add (GTK_CONTAINER (m_oldPage), m_undoView->getWidget());
+			return;
+		}
+
+		if (!m_view) {
+			int col;
+			switch (page) {
+				default:
+				case 0: col = ZyppModel::TO_INSTALL_COLUMN; break;
+				case 1: col = ZyppModel::TO_UPGRADE_COLUMN; break;
+				case 2: col = ZyppModel::TO_REMOVE_COLUMN; break;
+			}
+			m_view = new PackagesView (false);
+			m_view->appendCheckColumn (col);
+			int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
+			m_view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
+			if (col == ZyppModel::TO_UPGRADE_COLUMN) {
+				m_view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
+				m_view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+			}
+			else
+				m_view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			m_view->setListener (this);
+			gtk_container_add (GTK_CONTAINER (m_oldPage), m_view->getWidget());
+		}
+
 		// set query
 		m_view->clear();
-		Ypp::Package::Type type =
-			m_onlineUpdate ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
-		Ypp::PkgList list (Ypp::get()->getPackages (type));
+		const char *applyAll = page == 1 ? _("Upgrade All") : 0;
+		m_view->setRows (getQuery (page), applyAll);
 
-		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-
-		int page = selectedPage();
-		switch (page) {
-			case 0:  // available
-				if (m_onlineUpdate)
-					// special pane for patches upgrades makes little sense, so
-					// we instead list them together with availables
-					query->setHasUpgrade (true);
-				query->setIsInstalled (false);
-				break;
-			case 1:  // upgrades
-				query->setHasUpgrade (true);
-				break;
-			case 2:  // installed
-				query->setIsInstalled (true);
-				break;
-			case 3:  // undo
-				list = m_changes;
-				break;
-			default: break;
-		}
-
-		m_combo->writeQuery (query);
-
-		if (page == 3) {
-			query = new Ypp::PkgQuery::Query();
-			query->setToInstall (true);
-			m_view->appendRows (_("To install:"), Ypp::PkgQuery (m_changes, query), NULL);
-
-			query = new Ypp::PkgQuery::Query();
-			query->setToRemove (true);;
-			m_view->appendRows (_("To remove:"), Ypp::PkgQuery (m_changes, query), NULL);
-		}
-		else {
-			const char *applyAll = page == 1 ? _("Upgrade All") : 0;
-			m_view->setRows (Ypp::PkgQuery (list, query), applyAll);
+		if (!m_onlineUpdate) {
+			// set tab label bold if there's a package there with the name
+			if (m_highlightTab) {
+				for (int i = 0; i < 3; i++)
+					setTabLabelWeight (i, PANGO_WEIGHT_NORMAL);
+				m_highlightTab = false;
+			}
+			const char *name = m_combo->searchName();
+			if (name) {
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				query->addNames (name, 0, true, false, false, false, false, true, true);
+				Ypp::PkgQuery list (Ypp::Package::PACKAGE_TYPE, query);
+				if (list.size()) {
+					m_highlightTab = true;
+					Ypp::Package *pkg = list.get (0);
+					if (!pkg->isInstalled())
+						setTabLabelWeight (0, PANGO_WEIGHT_BOLD);
+					else {
+						setTabLabelWeight (2, PANGO_WEIGHT_BOLD);
+						if (pkg->hasUpgrade())
+							setTabLabelWeight (1, PANGO_WEIGHT_BOLD);
+					}
+				}
+			}
 		}
 	}
 
@@ -1091,6 +1285,15 @@ private:
 		m_details->setPackages (packages);
 		if (packages.size() > 0)
 			gtk_widget_show (m_details->getWidget());
+	}
+
+	void setTabLabelWeight (int page, PangoWeight weight)
+	{
+		GtkNotebook *notebook = GTK_NOTEBOOK (m_notebook);
+		GtkWidget *label = gtk_notebook_get_tab_label (notebook,
+			gtk_notebook_get_nth_page (notebook, page));
+		label = (GtkWidget *) g_object_get_data (G_OBJECT (label), "label");
+		YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, weight, PANGO_SCALE_MEDIUM);
 	}
 };
 
@@ -1395,84 +1598,6 @@ private:
 
 //** Dialogs
 
-static bool confirmApply()
-{
-	if (!Ypp::get()->isModified())
-		return true;
-
-    GtkWidget *dialog = gtk_dialog_new_with_buttons (_("Confirm Changes"),
-		YGDialog::currentWindow(), GTK_DIALOG_DESTROY_WITH_PARENT,
-		GTK_STOCK_CANCEL, GTK_RESPONSE_NO, GTK_STOCK_APPLY, GTK_RESPONSE_YES, NULL);
-    gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
-    gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
-    gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
-
-	GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
-	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), vbox);
-	GtkWidget *label = gtk_label_new (_("Please confirm changes:"));
-	YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
-	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
-	gtk_box_pack_start (GTK_BOX (vbox), label, FALSE, TRUE, 0);
-
-	GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
-	gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
-	for (int i = 0; i < 3; i++) {
-		const char *str, *stock;
-		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		int checkCol;
-		switch (i) {
-			case 0:
-				str = _("To install:");
-				stock = GTK_STOCK_ADD;
-				query->setToInstall (true);
-				query->setIsInstalled (false);
-				checkCol = ZyppModel::TO_INSTALL_COLUMN;
-				break;
-			case 1:
-				str = _("To upgrade:");
-				stock = GTK_STOCK_GO_UP;
-				query->setToInstall (true);
-				query->setIsInstalled (true);
-				checkCol = ZyppModel::TO_UPGRADE_COLUMN;
-				break;
-			case 2:
-				str = _("To remove:");
-				stock = GTK_STOCK_REMOVE;
-				query->setToRemove (true);
-				checkCol = ZyppModel::NOT_TO_REMOVE_COLUMN;
-				break;
-			default: break;
-		}
-
-		Ypp::PkgQuery list (Ypp::Package::PACKAGE_TYPE, query);
-		if (list.size() == 0)
-			continue;
-
-		GtkWidget *label_box, *icon, *label;
-		label = gtk_label_new (str);
-		gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
-		icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
-		label_box = gtk_hbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (label_box), icon, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
-		PackagesView *view = new PackagesView (true);
-		view->appendCheckColumn (checkCol);
-		view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN);
-		view->setRows (list, NULL);
-		view->setFrame (true);
-
-		GtkWidget *box = gtk_vbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (box), label_box, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (box), view->getWidget(), TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), box, TRUE, TRUE, 0);
-	}
-
-	gtk_widget_show_all (vbox);
-    bool ok = gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES;
-	gtk_widget_destroy (dialog);
-    return ok;
-}
-
 static bool confirmExit()
 {
 	if (!Ypp::get()->isModified())
@@ -1531,7 +1656,7 @@ static bool askConfirmUnsupported()
 		return confirmPkgs (_("Unsupported Packages"),	_("Please realize that the following "
 			"software is either unsupported or requires an additional customer contract "
 			"for support."), GTK_MESSAGE_WARNING, list,
-			_("Support"), ZyppModel::SUPPORT_COLUMN);
+			_("Supportability"), ZyppModel::SUPPORT_COLUMN);
 	return true;
 }
 
@@ -1790,6 +1915,16 @@ public:
 		return FALSE;
 	}
 
+	static gboolean wizard_confirm_button_cb (gpointer data)
+	{
+		YGPackageSelector *pThis = (YGPackageSelector *) data;
+		pThis->m_button_timeout_id = 0;
+		YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
+		ygtk_wizard_set_button_label (wizard,  wizard->next_button,
+					                  _("A_pply"), GTK_STOCK_APPLY);
+		return FALSE;
+	}
+
     static bool confirm_cb (void *pThis)
     { return confirmExit(); }
 
@@ -1804,8 +1939,15 @@ public:
 				if (pThis->confirmUnsupported())
 					if (!askConfirmUnsupported())
 						return;
-				if (!confirmApply())
+				if (Ypp::get()->isModified() && !pThis->m_button_timeout_id) {
+					pThis->m_notebook->setUndoPage();
+					YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
+					ygtk_wizard_set_button_label (wizard,  wizard->next_button,
+								                  _("_Sure?"), GTK_STOCK_OK);
+					pThis->m_button_timeout_id =
+						g_timeout_add (10*1000, wizard_confirm_button_cb, pThis);
 					return;
+				}
 			}
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}

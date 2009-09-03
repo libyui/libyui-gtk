@@ -94,7 +94,7 @@ static GType _columnType (int col)
 			return G_TYPE_STRING;
 		case ZyppModel::TO_INSTALL_COLUMN:
 		case ZyppModel::TO_UPGRADE_COLUMN:
-		case ZyppModel::NOT_TO_REMOVE_COLUMN:
+		case ZyppModel::TO_REMOVE_COLUMN:
 		case ZyppModel::TO_MODIFY_COLUMN:
 		case ZyppModel::SENSITIVE_COLUMN:
 		case ZyppModel::CHECK_VISIBLE_COLUMN:
@@ -129,7 +129,7 @@ static void _getValueDefault (int col, GValue *value)
 			break;
 		case ZyppModel::TO_INSTALL_COLUMN:
 		case ZyppModel::TO_UPGRADE_COLUMN:
-		case ZyppModel::NOT_TO_REMOVE_COLUMN:
+		case ZyppModel::TO_REMOVE_COLUMN:
 		case ZyppModel::TO_MODIFY_COLUMN:
 			g_value_set_boolean (value, FALSE);
 			break;
@@ -332,8 +332,21 @@ protected:
 				case ZyppModel::NAME_COLUMN:
 					g_value_set_string (value, g_strdup (segment->applyAll.c_str()));
 					break;
-				case ZyppModel::BACKGROUND_COLUMN:
+				case ZyppModel::BACKGROUND_COLUMN: {
+#if 0
+				case ZyppModel::FOREGROUND_COLUMN:
+					GtkStyle *style = gtk_widget_get_default_style();
+					GdkColor *color = &style->bg [GTK_STATE_SELECTED];
+					if (col == ZyppModel::FOREGROUND_COLUMN)
+						color = &style->fg [GTK_STATE_NORMAL];
+					gchar *str = gdk_color_to_string (color);  // old: "lightblue"
+					g_value_set_string (value, str);
+#endif
 					g_value_set_string (value, g_strdup ("lightblue"));
+					break;
+				}
+				case ZyppModel::FOREGROUND_COLUMN:
+					g_value_set_string (value, g_strdup ("black"));
 					break;
 				default:
 					_getValueDefault (col, value);
@@ -460,8 +473,8 @@ protected:
 					g_value_set_boolean (value, version->cmp > 0);
 				break;
 			}
-			case ZyppModel::NOT_TO_REMOVE_COLUMN:
-				g_value_set_boolean (value, !package->toRemove());
+			case ZyppModel::TO_REMOVE_COLUMN:
+				g_value_set_boolean (value, package->toRemove());
 				break;
 			case ZyppModel::TO_MODIFY_COLUMN:
 				g_value_set_boolean (value, package->toModify());
@@ -469,6 +482,13 @@ protected:
 			case ZyppModel::SENSITIVE_COLUMN:
 				g_value_set_boolean (value, !package->isLocked());
 				break;
+			case ZyppModel::STYLE_COLUMN: {
+				PangoStyle style = PANGO_STYLE_NORMAL;
+				if (package->isAuto())
+					style = PANGO_STYLE_ITALIC;
+				g_value_set_int (value, style);
+				break;
+			}
 			case ZyppModel::WEIGHT_COLUMN: {
 				bool highlight = segment->list.highlight (index);
 				int weight = highlight ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
@@ -857,7 +877,7 @@ struct PackagesView::Impl
 			case ZyppModel::TO_UPGRADE_COLUMN:
 				package->install (0);
 				break;
-			case ZyppModel::NOT_TO_REMOVE_COLUMN:
+			case ZyppModel::TO_REMOVE_COLUMN:
 				package->remove();
 				break;
 			default: break;
@@ -930,8 +950,7 @@ struct PackagesView::Impl
 					view, x, y, &bx, &by);
 				gtk_tree_view_get_path_at_pos (
 					view, x, y, NULL, &column, NULL, NULL);
-				int status_col =
-					gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL ? 1 : 0;
+				int status_col = 0;
 				if (column == gtk_tree_view_get_column (view, status_col)) {
 					if (package->toInstall()) {
 						if (package->isInstalled())
@@ -951,9 +970,11 @@ struct PackagesView::Impl
 					if (package->isAuto())
 						text += _("\n<i>status changed by the dependency solver</i>");
 				}
-				if (package->isLocked()) {
-					if (!text.empty()) text += "\n";
-					text += _("<i>locked: right-click to unlock</i>");
+				else {
+					if (package->isLocked())
+						text = _("locked: right-click to unlock");
+					else if (package->isAuto())
+						text = _("auto: automatically selected due to dependencies");
 				}
 			}
 			else {
@@ -1320,23 +1341,19 @@ public:
 	Impl (bool onlineUpdate)
 	{
 		m_versions = new Versions();
-		GtkWidget *vbox;
-		m_widget = createWhiteViewPort (&vbox);
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 2);
+		m_widget = createWhiteViewPort (hbox);
 
 		GtkWidget *versions_box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (versions_box),
 			createIconWidget (&m_icon, &m_icon_frame), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (versions_box), m_versions->getWidget(), FALSE, TRUE, 0);
 
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
 		m_description = ygtk_rich_text_new();
 		g_signal_connect (G_OBJECT (m_description), "link-clicked",
 		                  G_CALLBACK (link_pressed_cb), this);
-
-		GtkWidget *description_box = gtk_hbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (description_box), m_description, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (description_box), versions_box, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), description_box, FALSE, TRUE, 0);
-
+		gtk_box_pack_start (GTK_BOX (vbox), m_description, FALSE, TRUE, 0);
 		if (!onlineUpdate) {
 			m_filelist = ygtk_rich_text_new();
 			m_changelog = ygtk_rich_text_new();
@@ -1365,7 +1382,10 @@ public:
 			m_contents->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
 			appendExpander (vbox, _("Applies to"), m_contents->getWidget());
 		}
-		gtk_widget_show_all (vbox);
+
+		gtk_box_pack_start (GTK_BOX (hbox), vbox, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), versions_box, FALSE, TRUE, 0);
+		gtk_widget_show_all (hbox);
 	}
 
 	~Impl()
@@ -1387,7 +1407,7 @@ public:
 			if (m_authors)   setText (m_authors, package->authors (true));
 			if (m_support) {
 				GtkWidget *expander = gtk_widget_get_ancestor (m_support, GTK_TYPE_EXPANDER);
-				std::string label ("<b>" + std::string (_("Support:")) + "</b> ");
+				std::string label ("<b>" + std::string (_("Supportability:")) + "</b> ");
 				label += package->support();
 				gtk_expander_set_label (GTK_EXPANDER (expander), label.c_str());
 				setText (m_support, package->supportText (true));
@@ -1483,7 +1503,7 @@ private:
 		*icon_frame = align;
 		return align;
 	}
-	static GtkWidget *createWhiteViewPort (GtkWidget **vbox)
+	static GtkWidget *createWhiteViewPort (GtkWidget *box)
 	{
 		struct inner {
 			static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
@@ -1499,14 +1519,12 @@ private:
 			}
 		};
 
-		*vbox = gtk_vbox_new (FALSE, 0);
-		g_signal_connect (G_OBJECT (*vbox), "expose-event",
+		g_signal_connect (G_OBJECT (box), "expose-event",
 			              G_CALLBACK (inner::expose_cb), NULL);
-
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), *vbox);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), box);
 		return scroll;
 	}
 	static void appendExpander (GtkWidget *box, const char *label, GtkWidget *child)

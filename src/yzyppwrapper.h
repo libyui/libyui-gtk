@@ -176,7 +176,7 @@ struct Ypp
 			void addNames (std::string name, char separator = 0, bool use_name = true,
 				bool use_summary = true, bool use_description = false,
 				bool use_filelist = false, bool use_authors = false,
-				bool full_word_match = false);
+				bool whole_word = false, bool whole_string = false);
 			void addCategory (Ypp::Node *category);
 			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);

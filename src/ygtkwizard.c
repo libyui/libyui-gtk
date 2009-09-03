@@ -66,7 +66,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 		GTK_WIDGET (dialog), GTK_STOCK_HELP, GTK_ICON_SIZE_MENU, NULL);
 	gtk_window_set_icon (GTK_WINDOW (dialog), icon);
 	g_object_unref (G_OBJECT (icon));
-	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 350);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
 
 	// help text
 	dialog->help_box = gtk_scrolled_window_new (NULL, NULL);

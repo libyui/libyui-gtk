@@ -3,6 +3,22 @@
 	* src/icons/pkg-tiles-mode.xpm & pkg-list-mode.xpm:
 	removed.
 
+	* src/YGPackageSelector.cc: when exact package found,
+	highlight respective tab.
+
+	* src/YGPackageSelector.cc: replaced the undo tab by the
+	confirmation dialog widgetry.
+
+	* src/ygtkwizard.c: enlarged help window.
+
+	* src/ygtkzyppview.h/cc: switched remove tab default toggles.
+
+	* src/yzyppwrapper.h/cc: added whole_string option to
+	PkgQuery::Query.
+
+	* src/ygtkzyppview.h/cc: re-aligned description and version
+	control boxes.
+
 2009-09-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtktreemodel.h/cc: nice wrapper for GtkTreeModel.
