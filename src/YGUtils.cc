@@ -5,8 +5,9 @@
 #define YUILogComponent "gtk"
 #include <config.h>
 #include <string.h>
-#include "YGUI.h"
 #include "YGUtils.h"
+#include "YGUI.h"
+#include "YGi18n.h"
 
 static inline void skipSpace (const char *instr, int *i)
 { while (g_ascii_isspace (instr[*i])) (*i)++; }

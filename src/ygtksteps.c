@@ -82,8 +82,10 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 
 	YGtkSteps *steps = YGTK_STEPS (widget);
 	gboolean reverse = gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL;
-	GtkStyle *style = gtk_widget_get_style (widget);
 	GList *children = gtk_container_get_children (GTK_CONTAINER (widget)), *i;
+
+	cairo_t *cr = gdk_cairo_create (event->window);
+	cairo_set_source_rgb (cr, 0, 0, 0);
 	int n = 0;
 	for (i = children; i; i = i->next, n++) {
 		if (n <= steps->current_step) {
@@ -110,10 +112,12 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 				x += offset * (reverse ? 1 : -1);
 			}
 
-			gtk_paint_layout (style, widget->window, GTK_STATE_NORMAL, TRUE,
-			                  NULL, /*event->area,*/ widget, NULL, x, y, mark);
+
+			cairo_move_to (cr, x, y);
+			pango_cairo_show_layout (cr, mark);
 		}
 	}
+	cairo_destroy (cr);
 	g_list_free (children);
 	return 	FALSE;
 }
@@ -126,6 +130,8 @@ GtkWidget* ygtk_steps_new (void)
 gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 {
 	GtkWidget *label = gtk_label_new (text);
+	GdkColor black = { 0, 0, 0, 0 };
+	gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &black);
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 	int mark_width = 10;
 	pango_layout_get_pixel_size (steps->check_mark_layout, &mark_width, NULL);
@@ -138,6 +144,8 @@ gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
 	GtkWidget *label = gtk_label_new (heading);
+	GdkColor black = { 0, 0, 0, 0 };
+	gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &black);
 	g_object_set_data (G_OBJECT (label), "is-header", GINT_TO_POINTER (1));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 

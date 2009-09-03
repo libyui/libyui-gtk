@@ -491,16 +491,12 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 
 static GtkWidget *create_help_button()
 {
-	GtkWidget *button, *image = 0;
+	GtkWidget *button, *image;
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-	GdkPixbuf *pixbuf = gtk_widget_render_icon (button, GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON, NULL);
-	if (pixbuf) {
-		image = gtk_image_new_from_pixbuf (pixbuf);
-		g_object_unref (G_OBJECT (pixbuf));
-		gtk_button_set_image (GTK_BUTTON (button), image);
-	}
+	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
+	gtk_button_set_image (GTK_BUTTON (button), image);
 	return button;
 }
 

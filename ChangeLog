@@ -33,6 +33,12 @@
 	* src/YGUtils.cc: bug fix 446524: complement our label mapping
 	strategy with an array of translatable yast2 labels.
 
+	* src/ygtksteps.c: bug fix 471059: ignore style: force black
+	color on the text (since our background is white).
+
+	* src/ygtkwizard.c: use stock image for help button: copes
+	with style change.
+
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.h/.cc: split up Package::support()
