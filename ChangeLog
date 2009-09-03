@@ -19,6 +19,9 @@
 	* src/ygtkzyppview.h/cc: re-aligned description and version
 	control boxes.
 
+	* src/yzyppwrapper/cc: reduced busy tolerance from 50ms to 30ms
+	for 500 loops.
+
 2009-09-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtktreemodel.h/cc: nice wrapper for GtkTreeModel.

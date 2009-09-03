@@ -1614,7 +1614,7 @@ void Ypp::PkgList::copy (const Ypp::PkgList list)
 		else if (i == 499) {  // show progress if it takes more than 1 sec to drive 'N' loops
 			GTimeVal now;
 			g_get_current_time (&now);
-			if (now.tv_usec - then.tv_usec >= 50*1000 || now.tv_sec - then.tv_sec >= 1) {
+			if (now.tv_usec - then.tv_usec >= 35*1000 || now.tv_sec - then.tv_sec >= 1) {
 				showProgress = true;
 				ypp->impl->interface->loading (0);
 			}
