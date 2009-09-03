@@ -47,6 +47,9 @@ public:
     YEvent *waitInput (unsigned long timeout_ms, bool block);
 
 	virtual YEvent *runPkgSelection (YWidget *packageSelector);
+#if YAST2_VERSION > 2018003
+	virtual bool openContextMenu (const YItemCollection &itemCollection);
+#endif
 
 	// used internally: for public use, see YApplication
 	void busyCursor();
@@ -181,6 +184,8 @@ public:
 	virtual bool hasDownloadProgress() IMPL_RET (true)
 	virtual YDownloadProgress *createDownloadProgress (YWidget *parent,
 		const string &label, const string & filename, YFileSize_t expectedFileSize);
+
+	virtual bool hasContextMenu() IMPL_RET (true)
 
 	virtual bool hasSimplePatchSelector() IMPL_RET (false)
 	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags)

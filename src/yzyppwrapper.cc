@@ -15,6 +15,8 @@
 #include "yzypptags.h"
 #include <string.h>
 #include <string>
+#include <algorithm>
+#include <vector>
 #include <sstream>
 #define YUILogComponent "gtk-pkg"
 #include <YUILog.h>
@@ -201,7 +203,7 @@ private:
 	friend class Ypp;
 	PkgList *packages [Package::TOTAL_TYPES];  // primitive pools
 	StringTree *categories [Package::TOTAL_TYPES], *categories2;
-	GSList *repos;
+	std::vector <Repository *> repos;
 	const Repository *favoriteRepo;
 	int favoriteRepoPriority;
 	Disk *disk;
@@ -918,14 +920,10 @@ int m_installedPkgs, m_totalPkgs;
 	}
 
 	virtual bool toRemove()
-	{
-		return m_sel->toDelete();
-	}
+	{ return m_sel->toDelete(); }
 
 	virtual bool toModify()
-	{
-		return m_sel->toModify();
-	}
+	{ return m_sel->toModify(); }
 
 	virtual bool isAuto()
 	{
@@ -1294,43 +1292,38 @@ int m_installedPkgs, m_totalPkgs;
 Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 {
 	if (!packages[type]) {
+		interface->loading (0);
+
 		PkgList *list = new PkgList();
 		struct inner {
-			static gint compare (gconstpointer _a, gconstpointer _b)
+			// slower -- don't use for packages -- only for languages
+			static bool utf8_order (const Package *a, const Package *b)
+			{ return g_utf8_collate (a->name().c_str(), b->name().c_str()) < 0; }
+			static bool pattern_order (const Package *a, const Package *b)
 			{
-				Package *a = (Package *) _a;
-				Package *b = (Package *) _b;
-				return strcasecmp (a->name().c_str(), b->name().c_str());
-			}
-			static gint compare_utf8 (gconstpointer _a, gconstpointer _b)
-			{	// slower -- don't use for packages -- only for patterns and languages
-				Package *a = (Package *) _a;
-				Package *b = (Package *) _b;
-				return g_utf8_collate (a->name().c_str(), b->name().c_str());
-			}
-			static gint compare_pattern (gconstpointer a, gconstpointer b)
-			{
-				ZyppPattern pattern1 = tryCastToZyppPattern (((PackageSel *) ((Package *) a)->impl)->m_sel->theObj());
-				ZyppPattern pattern2 = tryCastToZyppPattern (((PackageSel *) ((Package *) b)->impl)->m_sel->theObj());
-				return strcmp (pattern1->order().c_str(), pattern2->order().c_str());
+				ZyppPattern pattern1 = tryCastToZyppPattern (((PackageSel *) a->impl)->m_sel->theObj());
+				ZyppPattern pattern2 = tryCastToZyppPattern (((PackageSel *) b->impl)->m_sel->theObj());
+				return strcmp (pattern1->order().c_str(), pattern2->order().c_str()) < 0;
 			}
 		};
 
 		if (type == Package::LANGUAGE_TYPE) {
 			zypp::LocaleSet locales = zypp::getZYpp()->pool().getAvailableLocales();
+			list->reserve (locales.size());
 			for (zypp::LocaleSet::const_iterator it = locales.begin();
 			     it != locales.end(); it++) {
 				Package *package = new Package (new PackageLang (type, *it));
-				list->prepend (package);
+				list->append (package);
 			}
 		}
 		else {  // Pool Selectables
 			ZyppPool::const_iterator it, end;
+			int size = 0;
 			switch (type) {
 				case Package::PACKAGE_TYPE:
 					it = zyppPool().byKindBegin <zypp::Package>();
 					end = zyppPool().byKindEnd <zypp::Package>();
-
+					size = zyppPool().size(zypp::ResKind::package);
 					// for the categories
 					bindtextdomain ("rpm-groups", LOCALEDIR);
 					bind_textdomain_codeset ("rpm-groups", "utf8");
@@ -1338,14 +1331,18 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				case Package::PATTERN_TYPE:
 					it = zyppPool().byKindBegin <zypp::Pattern>();
 					end = zyppPool().byKindEnd <zypp::Pattern>();
+					size = zyppPool().size(zypp::ResKind::pattern);
 					break;
 				case Package::PATCH_TYPE:
 					it = zyppPool().byKindBegin <zypp::Patch>();
 					end = zyppPool().byKindEnd <zypp::Patch>();
+					size = zyppPool().size(zypp::ResKind::patch);
 					break;
 				default:
 					break;
 			}
+			list->reserve (size);
+
 			for (; it != end; it++) {
 				Ypp::Node *category = 0, *category2 = 0;
 				ZyppSelectable sel = *it;
@@ -1393,19 +1390,24 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				}
 
 				Package *package = new Package (new PackageSel (type, sel, category, category2));
-				list->prepend (package);
+				list->append (package);
+
+				int i = list->size();
+				if ((i % 500) == 0)
+					interface->loading (i / (float) size);
 			}
 		}
-		list->reverse();  // lets reverse before sorting, as they are somewhat sorted already
 		// a sort merge. Don't use g_slist_insert_sorted() -- its linear
 		if (type == Ypp::Package::PATTERN_TYPE)
-			list->sort (inner::compare_pattern);
+			list->sort (inner::pattern_order);
 		else if (type == Ypp::Package::LANGUAGE_TYPE)
-			list->sort (inner::compare_utf8);
+
+			list->sort (inner::utf8_order);
 		else
-			list->sort (inner::compare);
+			list->sort();
 		packages[type] = list;
 		polishCategories (type);
+		interface->loading (1);
 	}
 	return packages[type];
 }
@@ -1415,7 +1417,7 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 struct Ypp::PkgList::Impl : public Ypp::PkgListener
 {
 PkgList::Listener *listener;
-GSList *list;
+std::vector <Ypp::Package *> pool;
 guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
       _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2;
 int refcount;
@@ -1426,7 +1428,7 @@ char getId()
 { return (_id + 'a' > 'z') ? (_id - ('z'-'a') + '0') : (_id + 'a'); }
 
 	Impl() : PkgListener()
-	, listener (NULL), list (NULL), inited (false), refcount (1)
+	, listener (NULL), inited (false), refcount (1)
 	{
 static int _idTotal = 0;
 		_id = _idTotal++;
@@ -1435,16 +1437,23 @@ static int _idTotal = 0;
 
 	~Impl()
 	{
-		Ypp::get()->removePkgListener (this);
-		g_slist_free (list);
-	}
+Ypp::get()->removePkgListener (this); }
 
 	// implementations
-	Iter find (const Package *package) const
-	{ return (Iter) g_slist_find (list, (gconstpointer) package); }
+	int find (const Package *package) const
+	{
+		for (unsigned int i = 0; i < pool.size(); i++)
+			if (pool[i] == package)
+				return i;
+		return -1;
+	}
 
-	void setListener (Ypp::PkgList::Listener *listener) const
-	{ const_cast <Impl *> (this)->listener = listener; }
+	void remove (int i)
+	{
+		std::vector <Package *>::iterator it = pool.begin();
+		it += i;
+		pool.erase (it);
+	}
 
 	void buildProps() const
 	{ if (!inited) const_cast <Impl *> (this)->_buildProps(); }
@@ -1452,19 +1461,18 @@ static int _idTotal = 0;
 	void _buildProps()
 	{
 		inited = true;
-		if (list) {
+		if (!pool.empty()) {
 			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
 				_allLocked = _allUnlocked = _allCanLock = true;
-			for (GSList *i = list; i; i = i->next) {
-				Package *pkg = (Package *) i->data;
+			for (unsigned int  i = 0; i < pool.size(); i++) {
+				Package *pkg = pool[i];
 				if (!pkg->isInstalled()) {
 					_allInstalled = false;
 					_allUpgradable = false;
 				 }
 				 else {
 				 	_allNotInstalled = false;
-				 	const Ypp::Package::Version *version = pkg->getAvailableVersion(0);
-				 	if (!version || version->cmp <= 0)
+				 	if (!pkg->hasUpgrade())
 				 		_allUpgradable = false;
 				 }
 				if (pkg->toModify()) {
@@ -1492,63 +1500,56 @@ static int _idTotal = 0;
 		bool live = liveList();
 		if (!live && !listener)
 			return;
+
+		PkgList list (this);
+		refcount++;
 		bool match = this->match (package);
-		Iter iter = find (package);
+		int index = find (package);
+
 		if (live) {
-fprintf (stderr, "match package: %s - matched? %d - found? %d\n", package->name().c_str(), match, iter != 0);
-			if (iter) {  // is on the pool
+			if (index >= 0) {  // is on the pool
 				if (match) {  // modified
 					if (listener)
-						listener->entryChanged (iter, package);
+						listener->entryChanged (list, index, package);
 				}
 				else {  // removed
-fprintf (stderr, "\tremove!\n");
 					if (listener)
-						listener->entryDeleted (iter, package);
-					list = g_slist_delete_link (list, (GSList *) iter);
+						listener->entryDeleted (list, index, package);
+					remove (index);
 				}
 			}
 			else {  // not on pool
 				if (match) {  // inserted
-					list = g_slist_append (list, (gpointer) package);
-					iter = (Iter) g_slist_last (list);
+					pool.push_back (package);
 					if (listener)
-						listener->entryInserted (iter, package);
+						listener->entryInserted (list, pool.size()-1, package);
 				}
 			}
 		}
-		else if (iter)
-			listener->entryChanged (iter, package);
+		else if (index >= 0)
+			listener->entryChanged (list, index, package);
 	}
 
 	// for sub-classes to implement live lists
 	virtual bool liveList() const { return false; }
 	virtual bool match (Package *pkg) const { return true; }
-	virtual bool highlight (Iter it) const { return false; }
+	virtual bool highlight (int index) const { return false; }
 };
 
 Ypp::PkgList::PkgList()
 : impl (new Impl())
-{
-fprintf (stderr, "create blank PkgList: %c\n", impl->getId());
-}
+{}
 
 Ypp::PkgList::PkgList (Ypp::PkgList::Impl *impl)  // sub-class
 : impl (impl)
-{
-fprintf (stderr, "create PkgList sub-class: %c\n", impl->getId());
-}
+{}
 
 Ypp::PkgList::PkgList (const Ypp::PkgList &other)
 : impl (other.impl)
-{ impl->refcount++;
-fprintf (stderr, "ref PkgList %c: %d\n", impl->getId(), impl->refcount);
-}
+{ impl->refcount++; }
 
 Ypp::PkgList & Ypp::PkgList::operator = (const Ypp::PkgList &other)
 {
-fprintf (stderr, "set %c PkgList = %c: %d\n", impl->getId(), other.impl->getId(), other.impl->refcount+1);
-fprintf (stderr, "\tunref PkgList %c: %d%s\n", impl->getId(), impl->refcount-1, impl->refcount-1<=0 ? " -- free!" : "");
 	if (--impl->refcount <= 0) delete impl;
 	impl = other.impl;
 	impl->refcount++;
@@ -1556,81 +1557,78 @@ fprintf (stderr, "\tunref PkgList %c: %d%s\n", impl->getId(), impl->refcount-1, 
 }
 
 Ypp::PkgList::~PkgList()
-{
-fprintf (stderr, "\t~PkgList %c: %d%s\n", impl->getId(), impl->refcount-1, impl->refcount-1<=0 ? " -- free!" : "");
-if (--impl->refcount <= 0) delete impl;
-}
+{ if (--impl->refcount <= 0) delete impl; }
 
-Ypp::PkgList::Iter Ypp::PkgList::first() const
-{ if (!this) return 0; return (Ypp::PkgList::Iter) impl->list; }
+Ypp::Package *Ypp::PkgList::get (int i) const
+{ return i >= (signed) impl->pool.size() ? NULL : impl->pool.at (i); }
 
-Ypp::PkgList::Iter Ypp::PkgList::next (Ypp::PkgList::Iter it) const
-{ return (Ypp::PkgList::Iter) ((GSList *) it)->next; }
-
-Ypp::Package *Ypp::PkgList::get (Ypp::PkgList::Iter it) const
-{ return (Ypp::Package *) ((GSList *) it)->data; }
-
-bool Ypp::PkgList::highlight (Ypp::PkgList::Iter it) const
-{ return impl->highlight (it); }
-
-bool Ypp::PkgList::empty() const
-{ return !first(); }
-
-bool Ypp::PkgList::single() const
-{
-	if (first())
-		if (!next (first()))
-			return true;
-	return false;
-}
+bool Ypp::PkgList::highlight (int i) const
+{ return impl->highlight (i); }
 
 int Ypp::PkgList::size() const
-{
-	int size = 0;
-	for (Iter iter = first(); iter; iter = next (iter)) size++;
-	return size;
-}
+{ return impl->pool.size(); }
 
-void Ypp::PkgList::prepend (Ypp::Package *package)
-{ impl->list = g_slist_prepend (impl->list, package); }
+void Ypp::PkgList::reserve (int size)
+{ impl->pool.reserve (size); }
 
 void Ypp::PkgList::append (Ypp::Package *package)
-{ impl->list = g_slist_append (impl->list, package); }
+{ impl->pool.push_back (package); }
 
-void Ypp::PkgList::reverse()
-{ impl->list = g_slist_reverse (impl->list); }
+static bool pkgorder (const Ypp::Package *a, const Ypp::Package *b)
+{ return strcasecmp (a->name().c_str(), b->name().c_str()) < 0; }
 
-void Ypp::PkgList::sort (int (* compare) (const void *, const void *))
-{ impl->list = g_slist_sort (impl->list, compare); }
+void Ypp::PkgList::sort (bool (* compare) (const Package *, const Package *))
+{
+	std::sort (impl->pool.begin(), impl->pool.end(), compare ? compare : pkgorder);
+}
 
-void Ypp::PkgList::remove (Ypp::PkgList::Iter it)
-{ impl->list = g_slist_delete_link (impl->list, (GSList *) it); }
+void Ypp::PkgList::remove (int i)
+{ impl->remove (i); }
 
 void Ypp::PkgList::copy (const Ypp::PkgList list)
 {
-	for (Iter it = list.first(); it; it = list.next (it)) {
-		Package *pkg = list.get (it);
+	bool showProgress = false;
+	GTimeVal then;
+	g_get_current_time (&then);
+
+	for (int i = 0; i < list.size(); i++) {
+		Package *pkg = list.get (i);
 		if (impl->match (pkg))
-			prepend (pkg);
+			append (pkg);
+
+		if (showProgress) {
+			if ((i % 500) == 0)
+				ypp->impl->interface->loading (i / (float) list.size());
+		}
+		else if (i == 499) {  // show progress if it takes more than 1 sec to drive 'N' loops
+			GTimeVal now;
+			g_get_current_time (&now);
+			if (now.tv_usec - then.tv_usec >= 50*1000 || now.tv_sec - then.tv_sec >= 1) {
+				showProgress = true;
+				ypp->impl->interface->loading (0);
+			}
+		}
 	}
-	reverse();
+	if (showProgress)
+		ypp->impl->interface->loading (1);
 }
 
 bool Ypp::PkgList::contains (const Ypp::Package *package) const
-{ return find (package); }
+{ return find (package) != -1; }
 
-Ypp::PkgList::Iter Ypp::PkgList::find (const Ypp::Package *package) const
+int Ypp::PkgList::find (const Ypp::Package *package) const
 { return impl->find (package); }
 
 Ypp::Package *Ypp::PkgList::find (const std::string &name) const
 {
-	for (Iter it = first(); it; it = next (it)) {
-		Ypp::Package *pkg = get (it);
-		if (name == pkg->name())
-			return pkg;
-	}
+	for (int i = 0; i < size(); i++)
+		if (name == get (i)->name())
+			return get (i);
 	return NULL;
 }
+
+bool Ypp::PkgList::operator == (const Ypp::PkgList &other) const
+{ return this->impl == other.impl; }
 
 bool Ypp::PkgList::installed() const
 { impl->buildProps(); return impl->_allInstalled; }
@@ -1659,37 +1657,37 @@ void Ypp::PkgList::refreshProps()
 void Ypp::PkgList::install()
 {
 	Ypp::get()->startTransactions();
-	for (Iter it = first(); it; it = next (it))
-		get (it)->install (0);
+	for (int i = 0; get (i); i++)
+		get (i)->install (0);
 	Ypp::get()->finishTransactions();
 }
 
 void Ypp::PkgList::remove()
 {
 	Ypp::get()->startTransactions();
-	for (Iter it = first(); it; it = next (it))
-		get (it)->remove();
+	for (int i = 0; get (i); i++)
+		get (i)->remove();
 	Ypp::get()->finishTransactions();
 }
 
 void Ypp::PkgList::lock (bool toLock)
 {
 	Ypp::get()->startTransactions();
-	for (Iter it = first(); it; it = next (it))
-		get (it)->lock (toLock);
+	for (int i = 0; get (i); i++)
+		get (i)->lock (toLock);
 	Ypp::get()->finishTransactions();
 }
 
 void Ypp::PkgList::undo()
 {
 	Ypp::get()->startTransactions();
-	for (Iter it = first(); it; it = next (it))
-		get (it)->undo();
+	for (int i = 0; get (i); i++)
+		get (i)->undo();
 	Ypp::get()->finishTransactions();
 }
 
-void Ypp::PkgList::setListener (Ypp::PkgList::Listener *listener) const
-{ impl->setListener (listener); }
+void Ypp::PkgList::setListener (Ypp::PkgList::Listener *listener)
+{ impl->listener = listener; }
 
 //** Query
 
@@ -1743,9 +1741,8 @@ struct Ypp::PkgQuery::Query::Impl
 	Keys <const Repository *> repositories;
 	Key <bool> isInstalled;
 	Key <bool> hasUpgrade;
-	Key <bool> toModify;
-	Key <bool> isRecommended;
-	Key <bool> isSuggested;
+	Key <bool> toModify, toInstall, toRemove;
+	Key <bool> isRecommended, isSuggested;
 	Key <int>  buildAge;
 	Key <bool> isUnsupported;
 	bool clear;
@@ -1794,6 +1791,10 @@ struct Ypp::PkgQuery::Query::Impl
 		}
 		if (match && toModify.defined)
 			match = toModify.is (package->toModify());
+		if (match && toInstall.defined)
+			match = toInstall.is (package->toInstall());
+		if (match && toRemove.defined)
+			match = toRemove.is (package->toRemove());
 		if (match && isRecommended.defined)
 			match = isRecommended.is (package->isRecommended());
 		if (match && isSuggested.defined)
@@ -1932,6 +1933,10 @@ void Ypp::PkgQuery::Query::setHasUpgrade (bool value)
 { impl->hasUpgrade.set (value); }
 void Ypp::PkgQuery::Query::setToModify (bool value)
 { impl->toModify.set (value); }
+void Ypp::PkgQuery::Query::setToInstall (bool value)
+{ impl->toInstall.set (value); }
+void Ypp::PkgQuery::Query::setToRemove (bool value)
+{ impl->toRemove.set (value); }
 void Ypp::PkgQuery::Query::setIsRecommended (bool value)
 { impl->isRecommended.set (value); }
 void Ypp::PkgQuery::Query::setIsSuggested (bool value)
@@ -1960,70 +1965,26 @@ Query *query;
 	{ return true; }
 
 	virtual bool match (Package *pkg) const
-	{ return query->impl->match (pkg); }
+	{ return query ? query->impl->match (pkg) : true; }
 
-	virtual bool highlight (Iter it) const
-	{ return query->impl->highlight == (Package *) ((GSList *) it)->data; }
+	virtual bool highlight (int index) const
+	{ return query ? query->impl->highlight == pool [index] : false; }
 };
 
 Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::PkgQuery::Query *query)
-: PkgList ((impl = new Impl (query)))
+: PkgList ((impl = new PkgQuery::Impl (query)))
 { copy (list); }
 
 Ypp::PkgQuery::PkgQuery (Ypp::Package::Type type, Ypp::PkgQuery::Query *query)
-: PkgList ((impl = new Impl (query)))
+: PkgList ((impl = new PkgQuery::Impl (query)))
 { copy (Ypp::get()->getPackages (type)); }
-
-//** PkgTree
-
-Ypp::PkgTree::PkgTree (Ypp::Package::Type type) : PkgList()
-{
-	Ypp::Node *category = Ypp::get()->getFirstCategory (type);
-	for (; category; category = category->next()) {
-		impl->list = g_slist_append (impl->list, (gpointer) category);
-		const PkgList list = Ypp::get()->getPackages (type);
-		for (Iter it = list.first(); it; it = list.next (it))
-			impl->list = g_slist_append (impl->list, (gpointer) list.get (it));
-	}
-}
-
-/*
-Ypp::Package *Ypp::PkgTree::get (Ypp::PkgList::Iter it) const
-{
-	return Ypp::PkgList::get (it);
-}
-
-std::string Ypp::PkgTree::getName (Ypp::PkgList::Iter it) const
-{
-	gpointer data = ((GSList *) it)->data;
-	Package *pkg = (Package *) data;
-	if (pkg) return pkg->name();
-	return ((Node *) data)->name;
-}
-*/
-
-/*
-Ypp::Package *Ypp::TreePool::get (Ypp::Pool::Iter iter)
-{
-	GNode *node = (GNode *) iter;
-	return node->children ? NULL : (Ypp::Package *) node->data;
-}
-
-std::string Ypp::TreePool::getName (Ypp::Pool::Iter iter)
-{
-	Ypp::Package *package = get (iter);
-	if (package)
-		return package->name();
-	return ((Ypp::Node *) ((GNode *) iter)->data)->name;
-}
-*/
 
 //** Misc
 
 struct Ypp::Disk::Impl
 {
 Ypp::Disk::Listener *listener;
-GSList *partitions;
+std::vector <Disk::Partition *> partitions;
 
 	Impl()
 	: partitions (NULL)
@@ -2047,20 +2008,20 @@ GSList *partitions;
 
 	void clearPartitions()
 	{
-		for (GSList *i = partitions; i; i = i->next)
-			delete ((Partition *) i->data);
-		g_slist_free (partitions);
-		partitions = NULL;
+		for (unsigned int i = 0; i < partitions.size(); i++)
+			delete partitions[i];
+		partitions.clear();
 	}
 
 	const Partition *getPartition (int nb)
 	{
-		if (!partitions) {
+		if (partitions.empty()) {
 			typedef zypp::DiskUsageCounter::MountPoint    ZyppDu;
 			typedef zypp::DiskUsageCounter::MountPointSet ZyppDuSet;
 			typedef zypp::DiskUsageCounter::MountPointSet::iterator ZyppDuSetIterator;
 
 			ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
+			partitions.reserve (diskUsage.size());
 			for (ZyppDuSetIterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
 				const ZyppDu &point = *it;
 				if (!point.readonly) {
@@ -2076,11 +2037,13 @@ GSList *partitions;
 						zypp::ByteCount (partition->delta, zypp::ByteCount::K).asString() + "B";
 					partition->total_str =
 						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString() + "B";
-					partitions = g_slist_append (partitions, (gpointer) partition);
+					partitions.push_back (partition);
 				}
 			}
 		}
-		return (Partition *) g_slist_nth_data (partitions, nb);
+		if (nb >= (signed) partitions.size())
+			return NULL;
+		return partitions[nb];
 	}
 };
 
@@ -2212,8 +2175,8 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 	// Packages must be on leaves. If not, create a "Other" leaf, and put it there.
 	if (type == Package::PACKAGE_TYPE) {
 		PkgList *list = ypp->impl->getPackages (type);
-		for (PkgList::Iter it = list->first(); it; it = list->next (it)) {
-			Package *pkg = list->get (it);
+		for (int i = 0; list->get (i); i++) {
+			Package *pkg = list->get (i);
 			PackageSel *sel = (PackageSel *) pkg->impl;
 			Ypp::Node *ynode = pkg->category();
 			if (ynode->child()) {
@@ -2239,7 +2202,7 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 //** Ypp top methods & internal connections
 
 Ypp::Impl::Impl()
-: repos (NULL), favoriteRepo (NULL), disk (NULL), interface (NULL),
+: favoriteRepo (NULL), disk (NULL), interface (NULL),
   pkg_listeners (NULL), inTransaction (false), transactions (NULL)
 {
 	for (int i = 0; i < Package::TOTAL_TYPES; i++) {
@@ -2257,15 +2220,15 @@ Ypp::Impl::~Impl()
 	};
 
 	for (int t = 0; t < Package::TOTAL_TYPES; t++) {
-		for (Ypp::PkgList::Iter it = packages[t]->first(); it; it = packages[t]->next (it))
-			delete packages[t]->get (it);
+		if (packages [t])
+			for (int p = 0; p < packages[t]->size(); p++)
+				delete packages[t]->get (p);
 		delete packages [t];
 		delete categories[t];
 	}
 	delete categories2;
-
-	g_slist_foreach (repos, inner::free_repo, NULL);
-	g_slist_free (repos);
+	for (unsigned int i = 0; i < repos.size(); i++)
+		delete repos[i];
 
 	// don't delete pools as they don't actually belong to Ypp, just listeners
 	g_slist_free (pkg_listeners);
@@ -2274,7 +2237,7 @@ Ypp::Impl::~Impl()
 
 const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 {
-	if (!repos) {
+	if (repos.empty()) {
 		struct inner {
 			static void addRepo (Ypp::Impl *impl, const zypp::RepoInfo &info)
 			{
@@ -2284,9 +2247,17 @@ const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 					repo->url = info.baseUrlsBegin()->asString();
 				repo->alias = info.alias();
 				repo->enabled = info.enabled();
-				impl->repos = g_slist_append (impl->repos, repo);
+				impl->repos.push_back (repo);
 			}
 		};
+		
+		int size;
+		zypp::RepoManager manager;
+		std::list <zypp::RepoInfo> known_repos = manager.knownRepositories();
+		size = known_repos.size();
+		size += zyppPool().knownRepositoriesSize();
+		repos.reserve (size);
+
 		for (zypp::ResPoolProxy::repository_iterator it = zyppPool().knownRepositoriesBegin();
 		     it != zyppPool().knownRepositoriesEnd(); it++) {
 			const zypp::Repository &zrepo = *it;
@@ -2296,8 +2267,6 @@ const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 		}
 		// zyppPool::knownRepositories is more accurate, but it doesn't feature disabled
 		// repositories. Add them with the following API.
-		zypp::RepoManager manager;
-		std::list <zypp::RepoInfo> known_repos = manager.knownRepositories();
 		for (std::list <zypp::RepoInfo>::const_iterator it = known_repos.begin();
 		     it != known_repos.end(); it++) {
 			const zypp::RepoInfo info = *it;
@@ -2306,7 +2275,9 @@ const Ypp::Repository *Ypp::Impl::getRepository (int nb)
 			inner::addRepo (this, info);
 		}
 	}
-	return (Repository *) g_slist_nth_data (repos, nb);
+	if (nb >= (signed) repos.size())
+		return NULL;
+	return repos[nb];
 }
 
 const Ypp::Repository *Ypp::Impl::getRepository (const std::string &alias)
@@ -2439,20 +2410,21 @@ void Ypp::Impl::finishTransactions()
 		const Repository *repo = ypp->favoriteRepository();
 		PkgList confirmPkgs;
 		const PkgList *list = packages [Ypp::Package::PACKAGE_TYPE];
-		for (PkgList::Iter it = list->first(); it; it = list->next (it)) {
-			Ypp::Package *pkg = list->get (it);
+		for (int i = 0; list->get (i); i++) {
+			Ypp::Package *pkg = list->get (i);
 			if (pkg->impl->isTouched()) {
 				const Ypp::Package::Version *version = 0;
 				if (pkg->toInstall (&version)) {
 					if (version->repo != repo)
-						confirmPkgs.prepend (pkg);
+						confirmPkgs.append (pkg);
 				}
 			}
 		}
-		if (!confirmPkgs.empty())
+		if (confirmPkgs.size() != 0)
 			cancel = (interface->allowRestrictedRepo (confirmPkgs) == false);
 	}
 
+	interface->loading (0);
 	if (cancel) {
 		// user canceled resolver -- undo all
 		for (GSList *i = transactions; i; i = i->next)
@@ -2464,17 +2436,27 @@ void Ypp::Impl::finishTransactions()
 		for (int order = 0; order < 2; order++)
 			for (int type = 0; type < Ypp::Package::TOTAL_TYPES; type++) {
 				const PkgList *list = packages [type];
-				for (PkgList::Iter it = list->first(); it; it = list->next (it)) {
-					Ypp::Package *pkg = list->get (it);
-					if (pkg->impl->isTouched()) {
-						bool isAuto = pkg->isAuto();
-						if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
-							for (GSList *i = pkg_listeners; i; i = i->next)
-								((PkgListener *) i->data)->packageModified (pkg);
-							pkg->impl->setNotTouched();
+				if (list)
+					for (int i = 0; i < list->size(); i++) {
+						Ypp::Package *pkg = list->get (i);
+						if (pkg->impl->isTouched()) {
+							bool isAuto = pkg->isAuto();
+							if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
+								for (GSList *i = pkg_listeners; i; i = i->next) {
+									PkgListener *listener = (PkgListener *) i->data;
+									listener->packageModified (pkg);
+								}
+								pkg->impl->setNotTouched();
+							}
 						}
+#if 0
+						if ((i % 500) == 0) {
+							float total = 2*Ypp::Package::TOTAL_TYPES*list->size();
+							float progress = (i*order*type) / total;
+							interface->loading (progress);
+						}
+#endif
 					}
-				}
 			}
 	}
 	g_slist_free (transactions);
@@ -2482,14 +2464,15 @@ void Ypp::Impl::finishTransactions()
 	inTransaction = false;
 	if (disk)
 		disk->impl->packageModified();
+	interface->loading (1);
 }
 
 Ypp::Ypp()
 {
 	impl = new Impl();
-    zyppPool().saveState<zypp::Package  >();
-    zyppPool().saveState<zypp::Pattern  >();
-    zyppPool().saveState<zypp::Patch    >();
+    zyppPool().saveState <zypp::Package>();
+    zyppPool().saveState <zypp::Pattern>();
+    zyppPool().saveState <zypp::Patch  >();
 }
 
 Ypp::~Ypp()
@@ -2540,9 +2523,9 @@ void Ypp::removePkgListener (PkgListener *listener)
 
 bool Ypp::isModified()
 {
-	return zyppPool().diffState<zypp::Package  >() ||
-	       zyppPool().diffState<zypp::Pattern  >() ||
-	       zyppPool().diffState<zypp::Patch    >();
+	return zyppPool().diffState<zypp::Package>() ||
+	       zyppPool().diffState<zypp::Pattern>() ||
+	       zyppPool().diffState<zypp::Patch  >();
 }
 
 void Ypp::startTransactions()

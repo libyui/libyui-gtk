@@ -13,15 +13,15 @@ G_BEGIN_DECLS
 
 #define YGTK_TYPE_TREE_VIEW            (ygtk_tree_view_get_type ())
 #define YGTK_TREE_VIEW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
-	YGTK_TYPE_TREE_VIEW, YGtkScrolledWindow))
+	YGTK_TYPE_TREE_VIEW, YGtkTreeView))
 #define YGTK_TREE_VIEW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
-	YGTK_TYPE_TREE_VIEW, YGtkScrolledWindowClass))
+	YGTK_TYPE_TREE_VIEW, YGtkTreeViewClass))
 #define YGTK_IS_TREE_VIEW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
                                               YGTK_TYPE_TREE_VIEW))
 #define YGTK_IS_TREE_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
                                               YGTK_TYPE_TREE_VIEW))
 #define YGTK_TREE_VIEW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
-	YGTK_TYPE_TREE_VIEW, YGtkScrolledWindowClass))
+	YGTK_TYPE_TREE_VIEW, YGtkTreeViewClass))
 
 typedef struct _YGtkTreeView
 {

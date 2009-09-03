@@ -206,6 +206,13 @@ public:
 		pThis->toggle (path, column);
 		gtk_tree_path_free (path);
 	}
+
+#if YAST2_VERSION > 2018003
+	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTableView *pThis)
+	{
+		emitEvent (YEvent::ContextMenuActivated);
+	}
+#endif
 };
 
 #include "YTable.h"
@@ -251,7 +258,7 @@ public:
 
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (hack_right_click_cb), this);
 		connect (getWidget(), "key-press-event", G_CALLBACK (key_press_event_cb), this);
 	}
 
@@ -343,8 +350,12 @@ public:
 		YGUI::ui()->sendEvent (event);
 	}
 
-	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
+	static void hack_right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
 	{
+#if YAST2_VERSION > 2018003
+		if (pThis->notifyContextMenu())
+			return YGTableview::hack_right_click_cb (view, outreach, pThis);
+#endif
 		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
 			// undetermined case -- more than one table exists
 			YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1) {
@@ -417,6 +428,9 @@ public:
 	{
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
+#if YAST2_VERSION > 2018003
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+#endif
 	}
 
 	virtual bool isShrinkable() { return shrinkable(); }
@@ -452,6 +466,9 @@ public:
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
 		// Let the user toggle, using space/enter or double click (not an event).
 		connect (getWidget(), "row-activated", G_CALLBACK (multi_activated_cb), this);
+#if YAST2_VERSION > 2018003
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+#endif
 	}
 
 	// YMultiSelectionBox
@@ -528,6 +545,9 @@ public:
 		connect (getWidget(), "row-expanded", G_CALLBACK (row_expanded_cb), this);
 		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
+#if YAST2_VERSION > 2018003
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+#endif
 	}
 
 	// YTree

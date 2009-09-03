@@ -66,9 +66,10 @@ libpy2gtk_la_SOURCES = \
 	ygtklinklabel.c \
 	ygtktextview.c \
 	ygtkrichtext.c \
+	ygtktreemodel.cc \
+	ygtkzyppview.cc \
 	yzyppwrapper.cc \
-	yzypptags.cc \
-	ygtkzyppwrapper.cc
+	yzypptags.cc
 # should (maybe?) only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
 
 dummy_SOURCES = dummy.cc

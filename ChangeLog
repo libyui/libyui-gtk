@@ -1,3 +1,35 @@
+2009-09-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtktreemodel.h/cc: nice wrapper for GtkTreeModel.
+
+	* src/yzyppview.h/cc: moved PackagesView and PackageDetails
+	here. Re-worked the model: in particular, added support for
+	multiple lists and apply all entry.
+
+	* src/YGPackageSelector.cc: made use of new PackagesView
+	functionality: in particular, split out undo tab. 
+
+	* src/YGPackageSelector.cc: added confirmation dialog on
+	apply.
+
+	* src/YGPackageSelector.cc: added progress bar.
+
+	* src/yzyppwrapper.h/.cc: PkgList now a vector: much nicer
+	for the multiple lists enable model.
+
+	* src/yzyppwrapper.h/.cc: added progress bar signal.
+
+	* src/ygtkwizard.c: fixed set_child().
+
+	* src/YGMenuButton.cc: implemented new YGContextMenu.
+
+	* src/YGUI.h: respective hook for YGContextMenu.
+
+	* src/YGTable.cc: respective context-menu signals.
+
+	* src/YGWidget.cc: emitEvent(): contain context-menu signals
+	to flags notifyContextMenu().
+
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.h/.cc: split up Package::support()

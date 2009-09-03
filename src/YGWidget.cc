@@ -68,7 +68,7 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 {
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 
-	if (type == GTK_TYPE_WINDOW)
+	if (type == GTK_TYPE_WINDOW || type == GTK_TYPE_MENU)
 		m_adj_size = m_widget;
 	else {
 		m_adj_size = ygtk_adj_size_new();
@@ -194,6 +194,10 @@ void YGWidget::emitEvent (YEvent::EventReason reason, EventFlags flags)
 		}
 	};
 
+#if YAST2_VERSION > 2018003
+	if (reason == YEvent::ContextMenuActivated && !m_ywidget->notifyContextMenu())
+		;  // cancel
+#endif
 	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify()) {
 		YWidgetEvent *event = new YWidgetEvent (m_ywidget, reason);
 		if (flags & DELAY_EVENT)

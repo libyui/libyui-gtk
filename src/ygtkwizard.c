@@ -705,10 +705,13 @@ static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard)
 		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
-void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget)
+void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *child)
 {
-	wizard->m_child = widget;
-	gtk_paned_pack2 (GTK_PANED (wizard->m_pane), widget, TRUE, TRUE);
+	if (wizard->m_child)
+		gtk_container_remove (GTK_CONTAINER (wizard->m_pane), wizard->m_child);
+	wizard->m_child = child;
+	if (child)
+		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, TRUE);
 }
 
 static gboolean ygtk_wizard_set_information_expose_cb (GtkWidget *widget, GdkEventExpose *event,

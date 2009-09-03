@@ -4,19 +4,16 @@
 
 /* A simplification of libzypp's API.
 
-   To get a list of packages, setup a Query object and create a Pool with
+   To get a list of packages, setup a Query object and create a PkgQuery with
    it. Package has a set of manipulation methods, the results of which are
-   then reported to Pool listeners, which you can choose to act on your
+   then reported to PkgList listeners, which you can choose to act on your
    interface, if you want them reflected on the viewer.
-   Iterate the pool using Pool::Iter. If you want to keep references to them
-   around for the UI, you probably want to look at paths.
+   Iterate PkgList using integers (it's actually a vector).
 
    You must register an object that implements Interface, as some transactions
    are bound by user decisions. Ypp is a singleton; first call to get() will
    initialize it; you should call finish() when you're done to de-allocate
    caches.
-   The only thing you should free is Pool objects. A Query will be freed by
-   the Pool object you pass it to.
 */
 
 #ifndef ZYPP_WRAPPER_H
@@ -115,28 +112,23 @@ struct Ypp
 
 	// Listing
 	// this class and all proper subclassed are refcounted
-	struct PkgList {
-		typedef void * Iter;
-		Iter first() const;
-		Iter next (Iter it) const;
-		Package *get (Iter it) const;
-		bool highlight (Iter it) const;  // applicable to some subclasses only
-
-		bool empty() const;
-		bool single() const;
+	struct PkgList {  // NOTE: this is actually implemented as a vector
+		Package *get (int index) const;
+		bool highlight (int index) const;  // applicable to some subclasses only
 		int size() const;
 
-		// for construction, it's faster to prepend & reverse than append
-		void prepend (Package *package);
+		void reserve (int size);
 		void append (Package *package);
-		void reverse();
-		void sort (int (* compare) (const void *, const void *));
-		void remove (Iter it);
+		void sort (bool (* order) (const Package *, const Package *) = 0);
+		void remove (int index);
 		void copy (const PkgList list);  // will only copy entry for which match() == true
 
 		bool contains (const Package *package) const;
-		Iter find (const Package *package) const;
+		int find (const Package *package) const;  // -1 if not found
 		Package *find (const std::string &name) const;
+
+		// NOTE: checks if both lists point to the same memory space, not equal contents
+		bool operator == (const PkgList &other) const;
 
 		// common properties
 		// NOTE: there is a hit first time one of these methods is used
@@ -159,11 +151,11 @@ struct Ypp
 		// a Listener can be plugged for when an entry gets modified
 		// -- Inserted and Deleted are only available for particular subclasses
 		struct Listener {
-			virtual void entryChanged  (Iter iter, Package *package) = 0;
-			virtual void entryInserted (Iter iter, Package *package) = 0;
-			virtual void entryDeleted  (Iter iter, Package *package) = 0;
+			virtual void entryChanged  (const PkgList list, int index, Package *package) = 0;
+			virtual void entryInserted (const PkgList list, int index, Package *package) = 0;
+			virtual void entryDeleted  (const PkgList list, int index, Package *package) = 0;
 		};
-		void setListener (Listener *listener) const;
+		void setListener (Listener *listener);
 
 		struct Impl;
 		Impl *impl;
@@ -189,6 +181,8 @@ struct Ypp
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
 			void setToModify (bool modify);
+			void setToInstall (bool install);
+			void setToRemove (bool remove);
 			void setIsRecommended (bool recommended);
 			void setIsSuggested (bool suggested);
 			void setBuildAge (int days);
@@ -207,13 +201,7 @@ struct Ypp
 		Impl *impl;
 	};
 
-	// list 1D categories intertwined with its constituent packages
-	struct PkgTree : public PkgList {
-		// FIXME: currently broken
-		PkgTree (Package::Type type);
-	};
-
-	// List primitives
+	// list primitives
 	const PkgList getPackages (Package::Type type);
 
 	struct PkgListener {
@@ -244,6 +232,7 @@ struct Ypp
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
 		virtual bool allowRestrictedRepo (const PkgList list) = 0;
+		virtual void loading (float progress) = 0;
 	};
 	void setInterface (Interface *interface);
 
