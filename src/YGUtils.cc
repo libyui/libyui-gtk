@@ -569,6 +569,9 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
+		firstTime = false;
+
+		// match GTK stock labels to yast ones
 		GSList *list = gtk_stock_list_ids();
 		for (GSList *i = list; i; i = i->next) {
 			gchar *id = (gchar *) i->data;
@@ -586,7 +589,18 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 			g_free (id);
 		}
 		g_slist_free (list);
-		firstTime = false;
+
+		stockMap [_("Apply")] = GTK_STOCK_APPLY;
+		stockMap [_("Accept")] = GTK_STOCK_APPLY;
+		stockMap [_("OK")] = GTK_STOCK_OK;
+		stockMap [_("Cancel")] = GTK_STOCK_CANCEL;
+		stockMap [_("Yes")] = GTK_STOCK_YES;
+		stockMap [_("No")] = GTK_STOCK_NO;
+		stockMap [_("Add")] = GTK_STOCK_ADD;
+		stockMap [_("Edit")] = GTK_STOCK_EDIT;
+		stockMap [_("Delete")] = GTK_STOCK_DELETE;
+		stockMap [_("Up")] = GTK_STOCK_GO_UP;
+		stockMap [_("Down")] = GTK_STOCK_GO_DOWN;
 	}
 
 	std::string id = cutUnderline (label);

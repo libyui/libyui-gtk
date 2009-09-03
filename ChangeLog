@@ -30,6 +30,9 @@
 	* src/YGWidget.cc: emitEvent(): contain context-menu signals
 	to flags notifyContextMenu().
 
+	* src/YGUtils.cc: bug fix 446524: complement our label mapping
+	strategy with an array of translatable yast2 labels.
+
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.h/.cc: split up Package::support()
