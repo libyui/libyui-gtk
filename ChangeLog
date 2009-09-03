@@ -39,6 +39,12 @@
 	* src/ygtkwizard.c: use stock image for help button: copes
 	with style change.
 
+	* src/yzyppwrapper.h/.c: added canRemove() property to
+	packages, and extended PkgList.
+
+	* src/yzyppview.cc: bug fix 489016: don't show lock&remove
+	buttons for patterns.
+
 2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.h/.cc: split up Package::support()

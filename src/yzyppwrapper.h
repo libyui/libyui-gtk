@@ -96,8 +96,10 @@ struct Ypp
 		                                        // null for most recent version
 		void remove();
 		void undo();
-		bool canLock();
 		void lock (bool lock);
+
+		bool canRemove();
+		bool canLock();
 
 		struct Impl;
 		Impl *impl;
@@ -138,6 +140,7 @@ struct Ypp
 		bool modified() const;
 		bool locked() const;
 		bool unlocked() const;
+		bool canRemove() const;
 		bool canLock() const;
 		void refreshProps();
 

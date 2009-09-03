@@ -264,6 +264,7 @@ std::string m_name, m_summary;
 	virtual void remove() = 0;
 	virtual void undo() = 0;
 	virtual bool canLock() = 0;
+	virtual bool canRemove() = 0;
 	virtual void lock (bool lock) = 0;
 
 	// internal: did the resolver touch it
@@ -355,6 +356,8 @@ void Ypp::Package::undo()
 }
 
 bool Ypp::Package::canLock() { return impl->canLock(); }
+
+bool Ypp::Package::canRemove() { return impl->canRemove(); }
 
 void Ypp::Package::lock (bool lock)
 {
@@ -1062,7 +1065,9 @@ int m_installedPkgs, m_totalPkgs;
 		m_sel->setStatus (status);
 	}
 
-	virtual bool canLock() { return true; }
+	virtual bool canLock() { return type == Ypp::Package::PACKAGE_TYPE; }
+
+	virtual bool canRemove() { return type != Ypp::Package::PATTERN_TYPE; }
 
 	virtual void lock (bool lock)
 	{
@@ -1284,8 +1289,10 @@ int m_installedPkgs, m_totalPkgs;
 			install (0);
 	}
 
-	virtual bool canLock() { return false; }
 	virtual void lock (bool lock) {}
+
+	virtual bool canRemove() { return true; }
+	virtual bool canLock() { return false; }
 };
 
 // Packages Factory
@@ -1419,7 +1426,8 @@ struct Ypp::PkgList::Impl : public Ypp::PkgListener
 PkgList::Listener *listener;
 std::vector <Ypp::Package *> pool;
 guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
-      _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2;
+      _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2,
+      _allCanRemove : 2;
 int refcount;
 
 int _id;  // DEBUG: TEMP
@@ -1463,7 +1471,7 @@ Ypp::get()->removePkgListener (this); }
 		inited = true;
 		if (!pool.empty()) {
 			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
-				_allLocked = _allUnlocked = _allCanLock = true;
+				_allLocked = _allUnlocked = _allCanLock = _allCanRemove = true;
 			for (unsigned int  i = 0; i < pool.size(); i++) {
 				Package *pkg = pool[i];
 				if (!pkg->isInstalled()) {
@@ -1487,11 +1495,13 @@ Ypp::get()->removePkgListener (this); }
 					_allLocked = false;
 				if (!pkg->canLock())
 					_allCanLock = false;
+				if (!pkg->canRemove())
+					_allCanRemove = false;
 			}
 		}
 		else
 			_allInstalled = _allNotInstalled = _allUpgradable = _allModified =
-				_allLocked = _allUnlocked = _allCanLock = false;
+				_allLocked = _allUnlocked = _allCanLock = _allCanRemove = false;
 	}
 
 	// Ypp callback
@@ -1650,6 +1660,9 @@ bool Ypp::PkgList::unlocked() const
 
 bool Ypp::PkgList::canLock() const
 { impl->buildProps(); return impl->_allCanLock; }
+
+bool Ypp::PkgList::canRemove() const
+{ impl->buildProps(); return impl->_allCanRemove; }
 
 void Ypp::PkgList::refreshProps()
 { impl->inited = 0; }

@@ -793,7 +793,7 @@ struct PackagesView::Impl
 		if (packages.upgradable())
 			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP,
 			                   !locked, inner::install_cb, this), empty = false;
-		if (packages.installed())
+		if (packages.installed() && packages.canRemove())
 			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
 			                   !locked, inner::remove_cb, this), empty = false;
 		if (packages.modified())
