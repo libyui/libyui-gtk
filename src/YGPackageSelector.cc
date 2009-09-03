@@ -1021,13 +1021,14 @@ FlexPane *m_pane;
 GtkWidget *m_oldPage;
 UndoView *m_undoView;
 guint m_timeout_id;
-bool m_highlightTab;
+bool m_disabledTab, m_highlightTab;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	QueryNotebook (bool onlineUpdate, bool repoMgrEnabled)
-	: m_onlineUpdate (onlineUpdate), m_view (NULL), m_timeout_id (0), m_highlightTab (false)
+	: m_onlineUpdate (onlineUpdate), m_view (NULL), m_timeout_id (0),
+	  m_disabledTab (true), m_highlightTab (false)
 	{
 		m_notebook = gtk_notebook_new();
 		appendPage (m_notebook, _("_Install"), GTK_STOCK_ADD, 0, NULL);
@@ -1109,6 +1110,20 @@ private:
 		gtk_notebook_append_page (GTK_NOTEBOOK (notebook), page, hbox);
 	}
 
+	const char *getTooltip (int page)
+	{
+		if (m_onlineUpdate && page > 0)
+			page++;
+		switch (page) {
+			case 0: return _("Available for install");
+			case 1: return _("Upgrades");
+			case 2: return _("Installed");
+			case 3: return _("Undo history");
+			default: break;
+		}
+		return NULL;
+	}
+
 	void clearPage()
 	{
 		if (m_oldPage)
@@ -1162,22 +1177,24 @@ private:
 
 	virtual void queryNotify()
 	{
-		{  // limit users to the tabs whose query is applicable
+		if (m_disabledTab) {  // limit users to the tabs whose query is applicable
+			m_disabledTab = false;
 			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
-			for (GList *i = pages; i; i = i->next) {
+			int p = 0;
+			for (GList *i = pages; i; i = i->next, p++) {
 				GtkWidget *label, *page = (GtkWidget *) i->data;
 				label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
-				if (!GTK_WIDGET_IS_SENSITIVE (label)) {
-					gtk_widget_set_sensitive (label, TRUE);
-					gtk_widget_set_tooltip_text (label, "");
-				}
+				gtk_widget_set_sensitive (label, TRUE);
+				gtk_widget_set_tooltip_text (label, getTooltip (p));
 			}
 			g_list_free (pages);
 		}
 		if (m_combo->availablePackagesOnly()) {
 			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-			if (selected > 0 && selected < 3)
+			if (selected > 0 && selected < 3) {
 				gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 0);
+				return;
+			}
 
 			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
 			for (GList *i = pages->next; i->next; i = i->next) {
@@ -1187,22 +1204,21 @@ private:
 				gtk_widget_set_tooltip_text (label, _("Query only applicable to available packages."));
 			}
 			g_list_free (pages);
-			if (selected > 0 && selected < 3)
-				return;
+			m_disabledTab = true;
 		}
 		else if (m_combo->installedPackagesOnly()) {
 			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-			if (selected == 0)
+			if (selected == 0) {
 				gtk_notebook_set_current_page (
 					GTK_NOTEBOOK (m_notebook), m_onlineUpdate ? 1 : 2);
-
+				return;
+			}
 			GtkWidget *label, *page;
 			page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), 0);
 			label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
 			gtk_widget_set_sensitive (label, FALSE);
 			gtk_widget_set_tooltip_text (label, _("Query only applicable to installed packages."));
-			if (selected == 0)
-				return;
+			m_disabledTab = true;
 		}
 
 		int page = selectedPage();
