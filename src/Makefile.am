@@ -98,8 +98,6 @@ dist_share_DATA = \
 	icons/pkg-unlocked.png \
 	icons/pkg-installed-upgradable-locked.png \
 	icons/pkg-locked.png \
-	icons/pkg-tiles-mode.xpm \
-	icons/pkg-list-mode.xpm \
 	icons/harddisk.png \
 	icons/harddisk-full.png
 EXTRA_DIST = $(dist_share_DATA) \
