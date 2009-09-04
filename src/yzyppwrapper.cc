@@ -384,18 +384,20 @@ int m_installedPkgs, m_totalPkgs;
 		// for patterns, there is no reliable way to know if it's installed (because
 		// if it set to be installed that will alter candidate's satisfied status.)
 		if (type == Ypp::Package::PATTERN_TYPE || type == Ypp::Package::PATCH_TYPE)
-			m_isInstalled = m_sel->candidateObj().isSatisfied();
+			m_isInstalled = sel->candidateObj().isSatisfied() &&
+				// from yast-qt, may be it is satisfied because is preselected:
+				!sel->candidateObj().status().isToBeInstalled();
 		else {
-			if (m_sel->installedEmpty())
+			if (sel->installedEmpty())
 				m_isInstalled = false;
 			else
-				m_isInstalled = !m_sel->installedObj().isBroken();
+				m_isInstalled = !sel->installedObj().isBroken();
 		}
 		// don't use getAvailableVersion(0) for hasUpgrade() has its inneficient.
 		// let's just cache candidate() at start, which should point to the newest version.
+		const ZyppObject candidate = sel->candidateObj();
+		const ZyppObject installed = sel->installedObj();
 		m_hasUpgrade = false;
-		ZyppObject candidate = sel->candidateObj();
-		ZyppObject installed = sel->installedObj();
 		if (!!candidate && !!installed)
 			m_hasUpgrade = zypp::Edition::compare (candidate->edition(), installed->edition()) > 0;
 
@@ -559,8 +561,11 @@ int m_installedPkgs, m_totalPkgs;
 			case Ypp::Package::PATCH_TYPE:
 			{
 				ZyppPatch patch = tryCastToZyppPatch (object);
-				if (patch->rebootSuggested())
-					text += br + br + "<b>" + _("Reboot needed!") + "</b>";
+				if (patch->rebootSuggested()) {
+					text += br + br + "<b>" + _("Reboot required: ") + "</b>";
+					text += _("the system will have to be restarted in order for "
+						"this patch to take effect.");
+				}
 				if (patch->referencesBegin() != patch->referencesEnd()) {
 					text += br + br + "<b>Bugzilla:</b><ul>";
 					for (zypp::Patch::ReferenceIterator it = patch->referencesBegin();
@@ -1066,8 +1071,7 @@ int m_installedPkgs, m_totalPkgs;
 		m_sel->setStatus (status);
 	}
 
-	virtual bool canLock() { return type == Ypp::Package::PACKAGE_TYPE; }
-
+	virtual bool canLock() { return type != Ypp::Package::PATTERN_TYPE; }
 	virtual bool canRemove() { return type != Ypp::Package::PATTERN_TYPE; }
 
 	virtual void lock (bool lock)
@@ -1098,14 +1102,13 @@ int m_installedPkgs, m_totalPkgs;
 	virtual const Ypp::Package::Version *getInstalledVersion()
 	{
 		if (!m_installedVersion) {
-			const ZyppObject installedObj = m_sel->installedObj();
-			if (installedObj != NULL)
-				m_installedVersion = constructVersion (installedObj, NULL);
-			else {  // patch
+			ZyppObject installedObj = m_sel->installedObj();
+			if (type == Ypp::Package::PATCH_TYPE) {
 				if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
-					m_installedVersion = constructVersion (m_sel->candidateObj(), NULL);
+					installedObj = m_sel->candidateObj();
 			}
-				
+			if (installedObj)
+				m_installedVersion = constructVersion (installedObj, NULL);
 		}
 		return m_installedVersion;
 	}
@@ -1113,7 +1116,11 @@ int m_installedPkgs, m_totalPkgs;
 	virtual const Ypp::Package::Version *getAvailableVersion (int nb)
 	{
 		if (!m_availableVersions) {
-			const ZyppObject installedObj = m_sel->installedObj();
+			ZyppObject installedObj = m_sel->installedObj();
+			if (type == Ypp::Package::PATCH_TYPE) {
+				if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
+					installedObj = m_sel->candidateObj();
+			}
 			const ZyppObject candidateObj = m_sel->candidateObj();
 			for (zypp::ui::Selectable::available_iterator it = m_sel->availableBegin();
 				 it != m_sel->availableEnd(); it++) {
@@ -1390,7 +1397,29 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 							if (!sel->candidateObj().isRelevant())
 								continue;
 						}
-						category = addCategory (type, patch->category(), "");
+
+fprintf (stderr, "patch '%s' category: %s - %d\n", patch->name().c_str(), patch->category().c_str(), patch->categoryEnum());
+						std::string str;
+#if 0  // Zypp patch->categoryEnum() seems broken: always returns the same value (opensuse 11.1)
+						switch (patch->categoryEnum()) {
+							case zypp::Patch::CAT_OTHER: str = _("Other"); break;
+							case zypp::Patch::CAT_YAST: str = "YaST"; break;
+							case zypp::Patch::CAT_SECURITY: str = _("Security"); break;
+							case zypp::Patch::CAT_RECOMMENDED: str = _("Recommended"); break;
+							case zypp::Patch::CAT_OPTIONAL: str = _("Optional"); break;
+							case zypp::Patch::CAT_DOCUMENT: str = _("Documentation"); break;
+						}
+#else
+						if (patch->category() == "security")
+							str = _("Security");
+						else if (patch->category() == "recommended")
+							str = _("Recommended");
+						else if (patch->category() == "yast")
+							str = "YaST";
+						else if (patch->category() == "document")
+							str = _("Documentation");
+#endif
+						category = addCategory (type, str, "");
 						break;
 					}
 					default:
@@ -1422,8 +1451,9 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 
 //** PkgList
 
-struct Ypp::PkgList::Impl : public Ypp::PkgListener
+struct Ypp::PkgList::Impl : public Ypp::PkgList::Listener
 {
+PkgList *parent;
 std::list <PkgList::Listener *> listeners;
 std::vector <Ypp::Package *> pool;
 guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
@@ -1431,12 +1461,26 @@ guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
       _allCanRemove : 2;
 int refcount;
 
-	Impl() : PkgListener()
-	, inited (false), refcount (1)
-	{ Ypp::get()->addPkgListener (this); }
+char id;
+
+	Impl (const Ypp::PkgList *lparent) : Listener()
+	, parent (NULL), inited (false), refcount (1)
+	{
+		static int idN = 0;
+		id = idN++;
+		if (lparent) {
+			parent = new PkgList (*lparent);
+			parent->addListener (this);
+		}
+	}
 
 	~Impl()
-	{ Ypp::get()->removePkgListener (this); }
+	{
+		if (parent) {
+			parent->removeListener (this);
+			delete parent;
+		}
+	}
 
 	// implementations
 	int find (const Package *package) const
@@ -1453,6 +1497,12 @@ int refcount;
 		it += i;
 		pool.erase (it);
 	}
+
+	void addListener (Ypp::PkgList::Listener *listener)
+	{ listeners.push_back (listener); }
+
+	void removeListener (Ypp::PkgList::Listener *listener)
+	{ listeners.remove (listener); }
 
 	void buildProps() const
 	{ if (!inited) const_cast <Impl *> (this)->_buildProps(); }
@@ -1520,7 +1570,7 @@ int refcount;
 	}
 
 	// Ypp callback
-	virtual void packageModified (Package *package)
+	void packageModified (Package *package)
 	{
 		bool live = liveList();
 		if (!live && listeners.empty())
@@ -1548,6 +1598,13 @@ int refcount;
 			signalChanged (index, package);
 	}
 
+	virtual void entryChanged  (const PkgList list, int index, Package *package)
+	{ packageModified (package); }
+	virtual void entryInserted (const PkgList list, int index, Package *package)
+	{ packageModified (package); }
+	virtual void entryDeleted  (const PkgList list, int index, Package *package)
+	{ packageModified (package); }
+
 	// for sub-classes to implement live lists
 	virtual bool liveList() const { return false; }
 	virtual bool match (Package *pkg) const { return true; }
@@ -1555,7 +1612,7 @@ int refcount;
 };
 
 Ypp::PkgList::PkgList()
-: impl (new Impl())
+: impl (new PkgList::Impl (NULL))
 {}
 
 Ypp::PkgList::PkgList (Ypp::PkgList::Impl *impl)  // sub-class
@@ -1708,10 +1765,10 @@ void Ypp::PkgList::undo()
 }
 
 void Ypp::PkgList::addListener (Ypp::PkgList::Listener *listener)
-{ impl->listeners.push_back (listener); }
+{ impl->addListener (listener); }
 
 void Ypp::PkgList::removeListener (Ypp::PkgList::Listener *listener)
-{ impl->listeners.remove (listener); }
+{ impl->removeListener (listener); }
 
 //** Query
 
@@ -1984,8 +2041,8 @@ struct Ypp::PkgQuery::Impl : public Ypp::PkgList::Impl
 {
 Query *query;
 
-	Impl (Query *query)
-	: Ypp::PkgList::Impl(), query (query)
+	Impl (const PkgList parent, Query *query)
+	: PkgList::Impl (&parent), query (query)
 	{}
 
 	~Impl()
@@ -2002,11 +2059,11 @@ Query *query;
 };
 
 Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::PkgQuery::Query *query)
-: PkgList ((impl = new PkgQuery::Impl (query)))
+: PkgList ((impl = new PkgQuery::Impl (list, query)))
 { copy (list); }
 
 Ypp::PkgQuery::PkgQuery (Ypp::Package::Type type, Ypp::PkgQuery::Query *query)
-: PkgList ((impl = new PkgQuery::Impl (query)))
+: PkgList ((impl = new PkgQuery::Impl (Ypp::get()->getPackages (type), query)))
 { copy (Ypp::get()->getPackages (type)); }
 
 //** Misc
@@ -2131,28 +2188,16 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 		}
 	};
 
-	std::string category = category_str;
-	if (type == Package::PATCH_TYPE) {
-		if (category_str == "security")
-			category = _("Security");
-		else if (category_str == "recommended")
-			category = _("Recommended");
-		else if (category_str == "optional")
-			category = _("Optional");
-		else if (category_str == "yast")
-			category = "YaST";
-		else if (category_str == "document")
-			category = _("Documentation");
-	}
-	if (category_str.empty())
-		category = _("Other");
-
 	if (!categories[type]) {
 		const char *trans_domain = 0;
 		if (type == Package::PACKAGE_TYPE)
 			trans_domain = "rpm-groups";
 		categories[type] = new StringTree (inner::cmp, '/', trans_domain);
 	}
+
+	std::string category = category_str;
+	if (category_str.empty())
+		category = _("Other");
 	return categories[type]->add (category, order);
 }
 
@@ -2472,10 +2517,7 @@ void Ypp::Impl::finishTransactions()
 						if (pkg->impl->isTouched()) {
 							bool isAuto = pkg->isAuto();
 							if ((order == 0 && !isAuto) || (order == 1 && isAuto)) {
-								for (GSList *i = pkg_listeners; i; i = i->next) {
-									PkgListener *listener = (PkgListener *) i->data;
-									listener->packageModified (pkg);
-								}
+								list->impl->signalChanged (i, pkg);
 								pkg->impl->setNotTouched();
 							}
 						}
@@ -2545,11 +2587,6 @@ void Ypp::setInterface (Ypp::Interface *interface)
 
 const Ypp::PkgList Ypp::getPackages (Ypp::Package::Type type)
 { return *impl->getPackages (type); }
-
-void Ypp::addPkgListener (PkgListener *listener)
-{ impl->pkg_listeners = g_slist_append (impl->pkg_listeners, listener); }
-void Ypp::removePkgListener (PkgListener *listener)
-{ impl->pkg_listeners = g_slist_remove (impl->pkg_listeners, listener); }
 
 bool Ypp::isModified()
 {

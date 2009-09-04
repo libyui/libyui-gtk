@@ -208,12 +208,6 @@ struct Ypp
 	// list primitives
 	const PkgList getPackages (Package::Type type);
 
-	struct PkgListener {
-		virtual void packageModified (Package *package) = 0;
-	};
-	void addPkgListener (PkgListener *listener);
-	void removePkgListener (PkgListener *listener);
-
 	// Resolver
 	struct Problem {
 		std::string description, details;

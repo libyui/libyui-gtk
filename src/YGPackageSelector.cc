@@ -956,7 +956,7 @@ private:
 			label_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (label_box), icon, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
-			YGtkPackageView *view = ygtk_package_view_new (TRUE);
+			YGtkPackageView *view = ygtk_package_view_new (FALSE);
 			view->appendCheckColumn (checkCol);
 			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN);
 			view->setList (list, NULL);
@@ -1022,7 +1022,8 @@ public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	QueryNotebook (bool onlineUpdate, bool repoMgrEnabled)
-	: m_onlineUpdate (onlineUpdate), m_timeout_id (0), m_disabledTab (true), m_highlightTab (false)
+	: m_onlineUpdate (onlineUpdate), m_timeout_id (0), m_disabledTab (true), m_highlightTab (false),
+	  m_undoView (NULL)
 	{
 		m_notebook = gtk_notebook_new();
 		appendPage (0, _("_Install"), GTK_STOCK_ADD);
@@ -1143,7 +1144,7 @@ private:
 		switch (page) {
 			case 0: return _("Available for install");
 			case 1: return _("Upgrades");
-			case 2: return _("Installed");
+			case 2: return m_onlineUpdate ? _("Installed patches") : _("Installed packages");
 			case 3: return _("Undo history");
 			default: break;
 		}
@@ -1204,7 +1205,9 @@ private:
 			if (page) {
 				YGtkPackageView *view = YGTK_PACKAGE_VIEW (page);
 				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-				switch (i) {
+				int n = i;
+				if (m_onlineUpdate && n > 0) n++;
+				switch (n) {
 					case 0:  // available
 						if (m_onlineUpdate)
 							// special pane for patches upgrades makes little sense, so
@@ -1222,7 +1225,7 @@ private:
 				}
 				Ypp::PkgQuery list (m_pool, query);
 				const char *applyAll = NULL;
-				if (!m_onlineUpdate && i == 1)
+				if (!m_onlineUpdate && n == 1)
 					applyAll = _("Upgrade All");
 				view->setList (list, applyAll);
 			}

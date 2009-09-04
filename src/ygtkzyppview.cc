@@ -1384,9 +1384,10 @@ public:
 		}
 		else {
 			m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = NULL;
-			m_contents = ygtk_package_view_new (false);
+			m_contents = ygtk_package_view_new (TRUE);
 			m_contents->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 150);
 			m_contents->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			gtk_widget_set_size_request (GTK_WIDGET (m_contents), -1, 150);
 			appendExpander (vbox, _("Applies to"), GTK_WIDGET (m_contents));
 		}
 

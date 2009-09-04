@@ -1,5 +1,17 @@
 2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/YGPackageSelector.cc: fixes for online_update.
+
+	* src/ygtkzyppwrapper.cc: touched up Patch contents box.
+
+	* src/yzyppwrapper.h/cc: got rid of setPkgListener. Instead
+	use the listeners from PkgList.
+
+	* src/yzyppwrapper.cc: some fixes on support of patches:
+	installed status and version rank.
+
+2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGPackageSelector.cc: use a common pool for all tabs
 	so to make it a snap to change tabs.
 
