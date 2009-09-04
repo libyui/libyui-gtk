@@ -670,10 +670,8 @@ static void destroy_hash (GHashTable **hash, gboolean is_tree)
 	*hash = NULL;
 }
 
-static void ygtk_wizard_destroy (GtkObject *object)
+static void ygtk_wizard_finalize (GObject *object)
 {
-	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
-
 	YGtkWizard *wizard = YGTK_WIZARD (object);
 	wizard->help_button = NULL;  // dialog unmap will try to access this
 	destroy_hash (&wizard->menu_ids, FALSE);
@@ -683,6 +681,7 @@ static void ygtk_wizard_destroy (GtkObject *object)
 		ygtk_help_text_destroy (wizard->m_help);
 		wizard->m_help = NULL;
 	}
+	G_OBJECT_CLASS (ygtk_wizard_parent_class)->finalize (object);
 }
 
 GtkWidget *ygtk_wizard_new (void)
@@ -1080,8 +1079,8 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	widget_class->realize = ygtk_wizard_realize;
 	widget_class->map = ygtk_wizard_map;
 
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_wizard_destroy;
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class->finalize = ygtk_wizard_finalize;
 
 	action_triggered_signal = g_signal_new ("action-triggered",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,

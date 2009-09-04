@@ -1424,29 +1424,19 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 
 struct Ypp::PkgList::Impl : public Ypp::PkgListener
 {
-PkgList::Listener *listener;
+std::list <PkgList::Listener *> listeners;
 std::vector <Ypp::Package *> pool;
 guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
       _allModified : 2, _allLocked : 2, _allUnlocked : 2, _allCanLock : 2,
       _allCanRemove : 2;
 int refcount;
 
-int _id;  // DEBUG: TEMP
-
-char getId()
-{ return (_id + 'a' > 'z') ? (_id - ('z'-'a') + '0') : (_id + 'a'); }
-
 	Impl() : PkgListener()
-	, listener (NULL), inited (false), refcount (1)
-	{
-static int _idTotal = 0;
-		_id = _idTotal++;
-		Ypp::get()->addPkgListener (this);
-	}
+	, inited (false), refcount (1)
+	{ Ypp::get()->addPkgListener (this); }
 
 	~Impl()
-	{
-Ypp::get()->removePkgListener (this); }
+	{ Ypp::get()->removePkgListener (this); }
 
 	// implementations
 	int find (const Package *package) const
@@ -1505,40 +1495,57 @@ Ypp::get()->removePkgListener (this); }
 				_allLocked = _allUnlocked = _allCanLock = _allCanRemove = false;
 	}
 
+	void signalChanged (int index, Package *package)
+	{
+		PkgList list (this); refcount++;
+		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
+		     it != listeners.end(); it++)
+			(*it)->entryChanged (list, index, package);
+	}
+
+	void signalInserted (int index, Package *package)
+	{
+		PkgList list (this); refcount++;
+		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
+		     it != listeners.end(); it++)
+			(*it)->entryInserted (list, index, package);
+	}
+
+	void signalDeleted (int index, Package *package)
+	{
+		PkgList list (this); refcount++;
+		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
+		     it != listeners.end(); it++)
+			(*it)->entryDeleted (list, index, package);
+	}
+
 	// Ypp callback
 	virtual void packageModified (Package *package)
 	{
 		bool live = liveList();
-		if (!live && !listener)
+		if (!live && listeners.empty())
 			return;
 
-		PkgList list (this);
-		refcount++;
 		bool match = this->match (package);
 		int index = find (package);
-
 		if (live) {
 			if (index >= 0) {  // is on the pool
-				if (match) {  // modified
-					if (listener)
-						listener->entryChanged (list, index, package);
-				}
+				if (match)  // modified
+					signalChanged (index, package);
 				else {  // removed
-					if (listener)
-						listener->entryDeleted (list, index, package);
+					signalDeleted (index, package);
 					remove (index);
 				}
 			}
 			else {  // not on pool
 				if (match) {  // inserted
 					pool.push_back (package);
-					if (listener)
-						listener->entryInserted (list, pool.size()-1, package);
+					signalInserted (pool.size()-1, package);
 				}
 			}
 		}
 		else if (index >= 0)
-			listener->entryChanged (list, index, package);
+			signalChanged (index, package);
 	}
 
 	// for sub-classes to implement live lists
@@ -1700,8 +1707,11 @@ void Ypp::PkgList::undo()
 	Ypp::get()->finishTransactions();
 }
 
-void Ypp::PkgList::setListener (Ypp::PkgList::Listener *listener)
-{ impl->listener = listener; }
+void Ypp::PkgList::addListener (Ypp::PkgList::Listener *listener)
+{ impl->listeners.push_back (listener); }
+
+void Ypp::PkgList::removeListener (Ypp::PkgList::Listener *listener)
+{ impl->listeners.remove (listener); }
 
 //** Query
 
@@ -1778,8 +1788,6 @@ struct Ypp::PkgQuery::Query::Impl
 				if (whole_string) {
 					if (case_sensitive)
 						return strcmp (str1, str2) == 0;
-if (strcasecmp (str1, str2) == 0)
-	fprintf (stderr, "whole string: '%s' vs '%s'\n", str1, str2);
 					return strcasecmp (str1, str2) == 0;
 				}
 				if (case_sensitive)

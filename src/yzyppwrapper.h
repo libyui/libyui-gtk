@@ -158,7 +158,8 @@ struct Ypp
 			virtual void entryInserted (const PkgList list, int index, Package *package) = 0;
 			virtual void entryDeleted  (const PkgList list, int index, Package *package) = 0;
 		};
-		void setListener (Listener *listener);
+		void addListener (Listener *listener);
+		void removeListener (Listener *listener);
 
 		struct Impl;
 		Impl *impl;

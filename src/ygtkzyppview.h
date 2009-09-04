@@ -9,6 +9,7 @@
 #define YGTK_ZYPP_WRAPPER_H
 
 #include "yzyppwrapper.h"
+#include <gtk/gtkscrolledwindow.h>
 
 namespace ZyppModel {
 	enum Columns {
@@ -31,23 +32,34 @@ GtkTreeModel *ygtk_zypp_model_new();
 void ygtk_zypp_model_append (GtkTreeModel *model,
 	const char *header, Ypp::PkgList list, const char *applyAllLabel);
 
-struct PackagesView
-{
-	PackagesView (bool descriptiveTooltip);
-	~PackagesView();
-	GtkWidget *getWidget();
+// calls Ypp::finish() for cleaning, and it cleans our icon resources as well
+void ygtk_zypp_finish (void);
 
-	void setRows (Ypp::PkgList list, const char *applyAllLabel);  // tiny bit optimized
+#define YGTK_TYPE_PACKAGE_VIEW            (ygtk_package_view_get_type ())
+#define YGTK_PACKAGE_VIEW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+	YGTK_TYPE_PACKAGE_VIEW, YGtkPackageView))
+#define YGTK_PACKAGE_VIEW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+	YGTK_TYPE_PACKAGE_VIEW, YGtkPackageViewClass))
+#define YGTK_IS_PACKAGE_VIEW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                              YGTK_TYPE_PACKAGE_VIEW))
+#define YGTK_IS_PACKAGE_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                              YGTK_TYPE_PACKAGE_VIEW))
+#define YGTK_PACKAGE_VIEW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+	YGTK_TYPE_PACKAGE_VIEW, YGtkPackageViewClass))
+
+struct YGtkPackageView
+{  // use ygtk_package_view_new() to instance the object
+	GtkScrolledWindow parent;
+
+	void setList (Ypp::PkgList list, const char *applyAllLabel);  // tiny bit optimized
 	// pack multiple lists:
-	void appendRows (const char *header, Ypp::PkgList list, const char *applyAllLabel);
+	void appendList (const char *header, Ypp::PkgList list, const char *applyAllLabel);
 	void clear();
 
 	void appendCheckColumn (int col);
 	void appendIconColumn (const char *header, int col);
 	void appendTextColumn (const char *header, int col, int size = -1);
 	// (set all column headers to NULL in order to hide them.)
-
-	void setFrame (bool show);
 
 	struct Listener {
 		virtual void packagesSelected (Ypp::PkgList packages) = 0;
@@ -59,11 +71,29 @@ struct PackagesView
 	Impl *impl;
 };
 
-struct PackageDetails
+struct YGtkPackageViewClass
 {
-	PackageDetails (bool onlineUpdate);
-	~PackageDetails();
-	GtkWidget *getWidget();
+	GtkScrolledWindowClass parent_class;
+};
+
+YGtkPackageView* ygtk_package_view_new (gboolean descriptiveTooltip);
+GType ygtk_package_view_get_type (void) G_GNUC_CONST;
+
+#define YGTK_TYPE_DETAIL_VIEW            (ygtk_detail_view_get_type ())
+#define YGTK_DETAIL_VIEW(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), \
+	YGTK_TYPE_DETAIL_VIEW, YGtkDetailView))
+#define YGTK_DETAIL_VIEW_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  \
+	YGTK_TYPE_DETAIL_VIEW, YGtkDetailViewClass))
+#define YGTK_IS_DETAIL_VIEW(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), \
+                                              YGTK_TYPE_DETAIL_VIEW))
+#define YGTK_IS_DETAIL_VIEW_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  \
+                                              YGTK_TYPE_DETAIL_VIEW))
+#define YGTK_DETAIL_VIEW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  \
+	YGTK_TYPE_DETAIL_VIEW, YGtkDetailViewClass))
+
+struct YGtkDetailView
+{  // use ygtk_detail_view_new() to instance the object
+	GtkScrolledWindow parent;
 
 	void setPackages (Ypp::PkgList packages);
 	void setPackage (Ypp::Package *package);  // convenience
@@ -72,8 +102,13 @@ struct PackageDetails
 	Impl *impl;
 };
 
-// calls Ypp::finish() for cleaning, and it cleans our stuff as well
-void ygtk_zypp_finish (void);
+struct YGtkDetailViewClass
+{
+	GtkScrolledWindowClass parent_class;
+};
+
+GtkWidget* ygtk_detail_view_new (gboolean onlineUpdate);
+GType ygtk_detail_view_get_type (void) G_GNUC_CONST;
 
 #endif /*YGTK_ZYPP_WRAPPER_H*/
 

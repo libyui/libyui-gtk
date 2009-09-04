@@ -365,10 +365,10 @@ protected:
 	{ YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
 };
 
-struct Collection : public QueryWidget, PackagesView::Listener
+struct Collection : public QueryWidget, YGtkPackageView::Listener
 {
 private:
-	PackagesView * m_view;
+	YGtkPackageView *m_view;
 	GtkWidget *m_buttons_box, *m_box;
 
 public:
@@ -377,15 +377,15 @@ public:
 	Collection (Ypp::Package::Type type)
 	: QueryWidget()
 	{
-		m_view = new PackagesView (true);
+		m_view = ygtk_package_view_new (TRUE);
 		m_view->appendIconColumn (NULL, ZyppModel::ICON_COLUMN);
 		m_view->appendTextColumn (NULL, ZyppModel::NAME_SUMMARY_COLUMN);
 		if (type == Ypp::Package::LANGUAGE_TYPE)
-			m_view->setRows (Ypp::PkgQuery (type, NULL), NULL);
+			m_view->setList (Ypp::PkgQuery (type, NULL), NULL);
 		else
 			populateView (m_view, type);
 		m_view->setListener (this);
-		m_view->setFrame (true);
+		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (m_view), GTK_SHADOW_IN);
 
 		// control buttons
 		m_buttons_box = gtk_alignment_new (0, 0, 0, 0);
@@ -400,20 +400,17 @@ public:
 
 		// layout
 		m_box = gtk_vbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (m_box), m_view->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_box), GTK_WIDGET (m_view), TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_box), m_buttons_box, FALSE, TRUE, 0);
 	}
 
-	virtual ~Collection()
-	{ delete m_view; }
-
-	static void populateView (PackagesView *view, Ypp::Package::Type type)
+	static void populateView (YGtkPackageView *view, Ypp::Package::Type type)
 	{  // list 1D categories intertwined with its constituent packages
 		Ypp::Node *category = Ypp::get()->getFirstCategory (type);
 		for (; category; category = category->next()) {
 			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 			query->addCategory (category);
-			view->appendRows (category->name.c_str(), Ypp::PkgQuery (type, query), NULL);
+			view->appendList (category->name.c_str(), Ypp::PkgQuery (type, query), NULL);
 		}
 	}
 
@@ -549,7 +546,7 @@ public:
 		GtkRadioButton *radiob = GTK_RADIO_BUTTON (m_radio[0]);
 		m_radio[1] = gtk_radio_button_new_with_label_from_widget (radiob, _("Description"));
 		m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File name"));
-		gtk_widget_set_tooltip_markup (m_radio[2],
+		gtk_widget_set_tooltip_text (m_radio[2],
 			_("Only applicable to installed packages."));
 		if (m_onlineUpdate)
 			m_radio[3] = NULL;
@@ -774,7 +771,8 @@ public:
 private:
 	void set (GtkWidget *widget)
 	{
-		gtk_container_remove (GTK_CONTAINER (m_bin), GTK_BIN (m_bin)->child);
+		if (GTK_BIN (m_bin)->child)
+			gtk_container_remove (GTK_CONTAINER (m_bin), GTK_BIN (m_bin)->child);
 		gtk_container_add (GTK_CONTAINER (m_bin), widget);
 		gtk_widget_show_all (m_bin);
 	}
@@ -890,7 +888,7 @@ Ypp::PkgList m_changes;
 public:
 	GtkWidget *getWidget() { return m_vbox; }
 
-	UndoView (PackagesView::Listener *listener)
+	UndoView (YGtkPackageView::Listener *listener)
 	{
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 		query->setToModify (true);
@@ -903,6 +901,7 @@ public:
 		gtk_button_set_image (GTK_BUTTON (uncouple_button), icon);
 		GtkWidget *uncouple_align = gtk_alignment_new (1, .5, 0, 1);
 		gtk_container_add (GTK_CONTAINER (uncouple_align), uncouple_button);
+		gtk_widget_set_tooltip_text (uncouple_button, _("Open in new window"));
 		g_signal_connect (G_OBJECT (uncouple_button), "clicked",
 		                  G_CALLBACK (uncouple_clicked_cb), this);
 
@@ -918,7 +917,7 @@ public:
 	{ g_object_unref (m_vbox); }
 
 private:
-	static GtkWidget *createView (const Ypp::PkgList changes, PackagesView::Listener *listener)
+	static GtkWidget *createView (const Ypp::PkgList changes, YGtkPackageView::Listener *listener)
 	{
 		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
 		for (int i = 0; i < 3; i++) {
@@ -957,18 +956,17 @@ private:
 			label_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (label_box), icon, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
-			PackagesView *view = new PackagesView (true);
+			YGtkPackageView *view = ygtk_package_view_new (TRUE);
 			view->appendCheckColumn (checkCol);
 			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN);
-			view->setRows (list, NULL);
-			view->setFrame (true);
+			view->setList (list, NULL);
 			view->setListener (listener);
-			// PackagesView is not a GtkWidget, we need to destroy it:
-			g_object_set_data_full (G_OBJECT (label_box), "view", view, delete_pkgview);
+			gtk_scrolled_window_set_shadow_type (
+				GTK_SCROLLED_WINDOW (view), GTK_SHADOW_IN);
 
 			GtkWidget *box = gtk_vbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (box), label_box, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box), view->getWidget(), TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box), GTK_WIDGET (view), TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (hbox), box, TRUE, TRUE, 0);
 		}
 		return hbox;
@@ -993,9 +991,6 @@ private:
 		gtk_widget_show_all (dialog);
 	}
 
-	static void delete_pkgview (gpointer data)
-	{ delete (PackagesView *) data; }
-
 	static gboolean uncouple_delete_event_cb (
 		GtkWidget *widget, GdkEvent *event, UndoView *pThis)
 	{
@@ -1010,38 +1005,35 @@ private:
 	}
 };
 
-class QueryNotebook : public QueryListener, PackagesView::Listener
+class QueryNotebook : public QueryListener, YGtkPackageView::Listener
 {
 GtkWidget *m_widget, *m_notebook;
 bool m_onlineUpdate;
-PackagesView *m_view;
 FilterCombo *m_combo;
-PackageDetails *m_details;
+YGtkDetailView *m_details;
 FlexPane *m_pane;
 GtkWidget *m_oldPage;
-UndoView *m_undoView;
 guint m_timeout_id;
 bool m_disabledTab, m_highlightTab;
+UndoView *m_undoView;
+Ypp::PkgList m_packages, m_pool;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	QueryNotebook (bool onlineUpdate, bool repoMgrEnabled)
-	: m_onlineUpdate (onlineUpdate), m_view (NULL), m_timeout_id (0),
-	  m_disabledTab (true), m_highlightTab (false)
+	: m_onlineUpdate (onlineUpdate), m_timeout_id (0), m_disabledTab (true), m_highlightTab (false)
 	{
 		m_notebook = gtk_notebook_new();
-		appendPage (m_notebook, _("_Install"), GTK_STOCK_ADD, 0, NULL);
+		appendPage (0, _("_Install"), GTK_STOCK_ADD);
 		if (!onlineUpdate)
-			appendPage (m_notebook, _("_Upgrade"), GTK_STOCK_GO_UP, 1, NULL);
-		appendPage (m_notebook, _("_Remove"), GTK_STOCK_REMOVE, 2, NULL);
-		if (!onlineUpdate) {
-			m_undoView = new UndoView (this);
-			appendPage (m_notebook, _("_Undo"), GTK_STOCK_UNDO, 3, m_undoView->getWidget());
-		}
+			appendPage (1, _("_Upgrade"), GTK_STOCK_GO_UP);
+		appendPage (2, _("_Remove"), GTK_STOCK_REMOVE);
+		if (!onlineUpdate)
+			appendPage (3, _("_Undo"), GTK_STOCK_UNDO);
 		gtk_widget_show (m_notebook);
-		g_signal_connect_after (G_OBJECT (m_notebook), "switch-page",
-		                        G_CALLBACK (switch_page_cb), this);
+		g_signal_connect (G_OBJECT (m_notebook), "switch-page",
+		                  G_CALLBACK (switch_page_cb), this);
 
 #if 0	// test: put search entry as a new tab (since we can't make use of the empty space...)
 		GtkWidget *entry = ygtk_find_entry_new();
@@ -1049,12 +1041,15 @@ public:
 		GtkWidget *page = gtk_event_box_new();
 		gtk_widget_show (page);
 		gtk_notebook_append_page (GTK_NOTEBOOK (m_notebook), page, entry);
+		gtk_notebook_set_tab_label_packing (
+			GTK_NOTEBOOK (m_notebook), page, TRUE, TRUE, GTK_PACK_START);
+		g_object_set (G_OBJECT (m_notebook), "tab-vborder", 0, NULL);
 #endif
 
-		m_details = new PackageDetails (onlineUpdate);
+		m_details = YGTK_DETAIL_VIEW (ygtk_detail_view_new (onlineUpdate));
 		m_pane = new FlexPane();
 		m_pane->pack (m_notebook, true, false);
-		m_pane->pack (m_details->getWidget(), false, false);
+		m_pane->pack (GTK_WIDGET (m_details), false, false);
 		m_pane->setPosition (-175, -500);
 
 		m_combo = new FilterCombo (this, onlineUpdate, repoMgrEnabled);
@@ -1065,8 +1060,12 @@ public:
 
 		m_widget = hpane;
 		gtk_widget_show_all (m_widget);
-		gtk_widget_hide (m_details->getWidget());
-		m_oldPage = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), 0);
+		gtk_widget_hide (GTK_WIDGET (m_details));
+
+		Ypp::Package::Type type = Ypp::Package::PACKAGE_TYPE;
+		if (m_onlineUpdate)
+			type = Ypp::Package::PATCH_TYPE;
+		m_packages = Ypp::get()->getPackages (type);
 		queryNotify();
 	}
 
@@ -1074,11 +1073,9 @@ public:
 	{
 		if (m_timeout_id)
 			g_source_remove (m_timeout_id);
-		delete m_view;
-		delete m_combo;
-		delete m_details;
-		delete m_pane;
 		delete m_undoView;
+		delete m_combo;
+		delete m_pane;
 	}
 
 	void setUndoPage()
@@ -1088,12 +1085,11 @@ public:
 	}
 
 private:
-	static void appendPage (GtkWidget *notebook, const char *text, const char *stock_icon,
-		int nb, GtkWidget *child)
+	void appendPage (int nb, const char *text, const char *stock)
 	{
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *label, *icon;
-		if (stock_icon) {
-			icon = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_MENU);
+		if (stock) {
+			icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
 			gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 		}
 		label = gtk_label_new (text);
@@ -1102,12 +1098,42 @@ private:
 		g_object_set_data (G_OBJECT (hbox), "label", label);
 		gtk_widget_show_all (hbox);
 
-		GtkWidget *page = child;
-		if (!page) page = gtk_event_box_new();
-		gtk_widget_show (page);
-		g_object_set_data (G_OBJECT (page), "nb", GINT_TO_POINTER (nb));
+		GtkWidget *page;
+		if (nb < 3) {
+			int col;
+			switch (nb) {
+				default:
+				case 0: col = ZyppModel::TO_INSTALL_COLUMN; break;
+				case 1: col = ZyppModel::TO_UPGRADE_COLUMN; break;
+				case 2: col = ZyppModel::TO_REMOVE_COLUMN; break;
+			}
+			YGtkPackageView *view = ygtk_package_view_new (FALSE);
+			view->appendCheckColumn (col);
+			int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
+			view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
+			if (col == ZyppModel::TO_UPGRADE_COLUMN) {
+				view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
+				view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+			}
+			else
+				view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			view->setListener (this);
+			page = GTK_WIDGET (view);
+		}
+		else {
+			m_undoView = new UndoView (this);
+			page = m_undoView->getWidget();
+		}
+		gtk_notebook_append_page (GTK_NOTEBOOK (m_notebook), page, hbox);
+	}
 
-		gtk_notebook_append_page (GTK_NOTEBOOK (notebook), page, hbox);
+	void setTabLabelWeight (int page, PangoWeight weight)
+	{
+		GtkNotebook *notebook = GTK_NOTEBOOK (m_notebook);
+		GtkWidget *label = gtk_notebook_get_tab_label (notebook,
+			gtk_notebook_get_nth_page (notebook, page));
+		label = (GtkWidget *) g_object_get_data (G_OBJECT (label), "label");
+		YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, weight, PANGO_SCALE_MEDIUM);
 	}
 
 	const char *getTooltip (int page)
@@ -1124,135 +1150,83 @@ private:
 		return NULL;
 	}
 
-	void clearPage()
+	void setEnabled (int page_nb, bool enabled, int new_page_nb = -1)
 	{
-		if (m_oldPage)
-			gtk_container_remove (GTK_CONTAINER (m_oldPage), GTK_BIN (m_oldPage)->child);
-		delete m_view;
-		m_view = NULL;
-	}
-
-	static void switch_page_cb (GtkNotebook *notebook, GtkNotebookPage *,
-	                            guint nb, QueryNotebook *pThis)
-	{
-		pThis->clearPage();
-		pThis->m_oldPage = gtk_notebook_get_nth_page (notebook, nb);
-		pThis->queryNotify();
-	}
-
-	int selectedPage()
-	{
-		int nb = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-		GtkWidget *page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), nb);
-		return GPOINTER_TO_INT (g_object_get_data (G_OBJECT (page), "nb"));
-	}
-
-	Ypp::PkgQuery getQuery (int page)
-	{
-		Ypp::Package::Type type =
-			m_onlineUpdate ? Ypp::Package::PATCH_TYPE : Ypp::Package::PACKAGE_TYPE;
-		Ypp::PkgList list (Ypp::get()->getPackages (type));
-
-		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		switch (page) {
-			case 0:  // available
-				if (m_onlineUpdate)
-					// special pane for patches upgrades makes little sense, so
-					// we instead list them together with availables
-					query->setHasUpgrade (true);
-				query->setIsInstalled (false);
-				break;
-			case 1:  // upgrades
-				query->setHasUpgrade (true);
-				break;
-			case 2:  // installed
-				query->setIsInstalled (true);
-				break;
-			default: break;
+		GtkNotebook *notebook = GTK_NOTEBOOK (m_notebook);
+		GtkWidget *page = gtk_notebook_get_nth_page (notebook, page_nb);
+		if (page) {
+			GtkWidget *label = gtk_notebook_get_tab_label (notebook, page);
+			gtk_widget_set_sensitive (label, enabled);
+			const char *tooltip = getTooltip (page_nb);
+			if (!enabled)
+				tooltip = _("Query only applicable to available packages.");
+			gtk_widget_set_tooltip_text (label, tooltip);
+			if (!enabled && new_page_nb >= 0) {
+				GtkWidget *selected = gtk_notebook_get_nth_page (notebook,
+					gtk_notebook_get_current_page (notebook));
+				if (selected == page)
+					gtk_notebook_set_current_page (notebook, new_page_nb);
+			}
 		}
-
-		m_combo->writeQuery (query);
-		return Ypp::PkgQuery (list, query);
 	}
 
 	virtual void queryNotify()
 	{
 		if (m_disabledTab) {  // limit users to the tabs whose query is applicable
 			m_disabledTab = false;
-			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
-			int p = 0;
-			for (GList *i = pages; i; i = i->next, p++) {
-				GtkWidget *label, *page = (GtkWidget *) i->data;
-				label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
-				gtk_widget_set_sensitive (label, TRUE);
-				gtk_widget_set_tooltip_text (label, getTooltip (p));
-			}
-			g_list_free (pages);
+			for (int i = 0; i < 4; i++)
+				setEnabled (i, true);
 		}
 		if (m_combo->availablePackagesOnly()) {
-			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-			if (selected > 0 && selected < 3) {
-				gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 0);
-				return;
-			}
-
-			GList *pages = gtk_container_get_children (GTK_CONTAINER (m_notebook));
-			for (GList *i = pages->next; i->next; i = i->next) {
-				GtkWidget *label, *page = (GtkWidget *) i->data;
-				label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
-				gtk_widget_set_sensitive (label, FALSE);
-				gtk_widget_set_tooltip_text (label, _("Query only applicable to available packages."));
-			}
-			g_list_free (pages);
+			setEnabled (1, false);
+			if (!m_onlineUpdate)
+				setEnabled (2, false, 0);
 			m_disabledTab = true;
 		}
 		else if (m_combo->installedPackagesOnly()) {
-			int selected = gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook));
-			if (selected == 0) {
-				gtk_notebook_set_current_page (
-					GTK_NOTEBOOK (m_notebook), m_onlineUpdate ? 1 : 2);
-				return;
-			}
-			GtkWidget *label, *page;
-			page = gtk_notebook_get_nth_page (GTK_NOTEBOOK (m_notebook), 0);
-			label = gtk_notebook_get_tab_label (GTK_NOTEBOOK (m_notebook), page);
-			gtk_widget_set_sensitive (label, FALSE);
-			gtk_widget_set_tooltip_text (label, _("Query only applicable to installed packages."));
+			int new_page = m_onlineUpdate ? 1 : 2;
+			setEnabled (0, false, new_page);
 			m_disabledTab = true;
 		}
 
-		int page = selectedPage();
-		if (page == 3) {
-			gtk_container_add (GTK_CONTAINER (m_oldPage), m_undoView->getWidget());
-			return;
+		GtkNotebook *notebook = GTK_NOTEBOOK (m_notebook);
+		for (int i = 0; i < 3; i++) {
+			GtkWidget *page = gtk_notebook_get_nth_page (notebook, i);
+			if (page) YGTK_PACKAGE_VIEW (page)->clear();
 		}
 
-		if (!m_view) {
-			int col;
-			switch (page) {
-				default:
-				case 0: col = ZyppModel::TO_INSTALL_COLUMN; break;
-				case 1: col = ZyppModel::TO_UPGRADE_COLUMN; break;
-				case 2: col = ZyppModel::TO_REMOVE_COLUMN; break;
-			}
-			m_view = new PackagesView (false);
-			m_view->appendCheckColumn (col);
-			int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
-			m_view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
-			if (col == ZyppModel::TO_UPGRADE_COLUMN) {
-				m_view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
-				m_view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
-			}
-			else
-				m_view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
-			m_view->setListener (this);
-			gtk_container_add (GTK_CONTAINER (m_oldPage), m_view->getWidget());
-		}
+		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+		m_combo->writeQuery (query);
+		m_pool = Ypp::PkgQuery (m_packages, query);
 
-		// set query
-		m_view->clear();
-		const char *applyAll = page == 1 ? _("Upgrade All") : 0;
-		m_view->setRows (getQuery (page), applyAll);
+		for (int i = 0; i < 3; i++) {
+			GtkWidget *page = gtk_notebook_get_nth_page (notebook, i);
+			if (page) {
+				YGtkPackageView *view = YGTK_PACKAGE_VIEW (page);
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				switch (i) {
+					case 0:  // available
+						if (m_onlineUpdate)
+							// special pane for patches upgrades makes little sense, so
+							// we instead list them together with availables
+							query->setHasUpgrade (true);
+						query->setIsInstalled (false);
+						break;
+					case 1:  // upgrades
+						query->setHasUpgrade (true);
+						break;
+					case 2:  // installed
+						query->setIsInstalled (true);
+						break;
+					default: break;
+				}
+				Ypp::PkgQuery list (m_pool, query);
+				const char *applyAll = NULL;
+				if (!m_onlineUpdate && i == 1)
+					applyAll = _("Upgrade All");
+				view->setList (list, applyAll);
+			}
+		}
 
 		if (!m_onlineUpdate) {
 			// set tab label bold if there's a package there with the name
@@ -1300,16 +1274,28 @@ private:
 	{
 		m_details->setPackages (packages);
 		if (packages.size() > 0)
-			gtk_widget_show (m_details->getWidget());
+			gtk_widget_show (GTK_WIDGET (m_details));
 	}
 
-	void setTabLabelWeight (int page, PangoWeight weight)
+	static void switch_page_cb (GtkNotebook *notebook, GtkNotebookPage *,
+	                            gint page_nb, QueryNotebook *pThis)
+	{  // don't let user selected insensitive tab
+		GtkWidget *page = gtk_notebook_get_nth_page (notebook, page_nb);
+		GtkWidget *label = gtk_notebook_get_tab_label (notebook, page);
+		if (!GTK_WIDGET_IS_SENSITIVE (label)) {  // change back to current page
+			int page_nb = gtk_notebook_get_current_page (notebook);
+			// seems like GTK doesn't like changing current page here
+			g_object_set_data (G_OBJECT (notebook), "to-page", GINT_TO_POINTER (page_nb));
+			g_idle_add_full (G_PRIORITY_HIGH_IDLE, change_page_idle_cb, notebook, NULL);
+		}
+	}
+
+	static gboolean change_page_idle_cb (gpointer data)
 	{
-		GtkNotebook *notebook = GTK_NOTEBOOK (m_notebook);
-		GtkWidget *label = gtk_notebook_get_tab_label (notebook,
-			gtk_notebook_get_nth_page (notebook, page));
-		label = (GtkWidget *) g_object_get_data (G_OBJECT (label), "label");
-		YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, weight, PANGO_SCALE_MEDIUM);
+		GtkNotebook *notebook = (GtkNotebook *) data;
+		int page_nb = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (notebook), "to-page"));
+		gtk_notebook_set_current_page (notebook, page_nb);
+		return FALSE;
 	}
 };
 
@@ -1647,12 +1633,13 @@ static bool confirmPkgs (const char *title, const char *message,
 	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 480);
 	gtk_widget_show_all (dialog);
 
-	PackagesView *view = new PackagesView (false);
+	YGtkPackageView *view = ygtk_package_view_new (TRUE);
 	view->appendCheckColumn (ZyppModel::TO_INSTALL_COLUMN);
 	view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 150);
 	view->appendTextColumn (extraColTitle, extraCol);
-	view->setRows (list, NULL);
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view->getWidget());
+	view->setList (list, NULL);
+	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (view), GTK_SHADOW_IN);
+	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), GTK_WIDGET (view));
 
 	bool confirm = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES);
 	gtk_widget_destroy (dialog);

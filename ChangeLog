@@ -1,3 +1,17 @@
+2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: use a common pool for all tabs
+	so to make it a snap to change tabs.
+
+	* src/ygtkzyppview.h/cc: turned Package & Detail views into
+	GTK widgets so we don't have to bother with mem management.
+
+	* src/ygtkwizard.c: gtk_object_destroy() -> g_object_finalize();
+	not sure what the difference is, but latter seems more used.
+
+	* src/yzyppwrapper.h/cc: allow multiple listeners for PkgList.
+	bug fix: versions on the detail box now reflect any pkg changes.
+
 2009-09-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/icons/pkg-tiles-mode.xpm & pkg-list-mode.xpm:

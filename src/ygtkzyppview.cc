@@ -163,7 +163,7 @@ struct YGtkZyppModel : public YGtkTreeModel, Ypp::PkgList::Listener
 	void append (const std::string &header, Ypp::PkgList list, const std::string &applyAllLabel)
 	{
 		block.segments.push_back (Block::Segment (&block, header, list, applyAllLabel));
-		list.setListener (this);
+		list.addListener (this);
 	}
 
 protected:
@@ -564,16 +564,14 @@ struct EmptyModel : public YGtkTreeModel
 
 //** View
 
-struct PackagesView::Impl
+struct YGtkPackageView::Impl
 {
-	Impl (bool descriptiveTooltip)
+	Impl (GtkWidget *scroll, bool descriptiveTooltip)
 	: m_listener (NULL), m_popup_hack (NULL), m_descriptiveTooltip (descriptiveTooltip),
 	  m_model (NULL), m_modelId (0)
 	{
-		m_scroll = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		g_object_ref_sink (G_OBJECT (m_scroll));
 
 		GtkTreeView *view = GTK_TREE_VIEW (m_view = ygtk_tree_view_new());
 		gtk_tree_view_set_search_column (view, ZyppModel::NAME_COLUMN);
@@ -595,28 +593,27 @@ struct PackagesView::Impl
 		g_signal_connect (G_OBJECT (m_view), "query-tooltip",
 		                  G_CALLBACK (query_tooltip_cb), this);
 
-		gtk_container_add (GTK_CONTAINER (m_scroll), m_view);
-		gtk_widget_show_all (m_scroll);
+		gtk_container_add (GTK_CONTAINER (scroll), m_view);
+		gtk_widget_show_all (scroll);
 		clear();
 	}
 
 	~Impl()
 	{
 		if (m_popup_hack) gtk_widget_destroy (m_popup_hack);
-		g_object_unref (G_OBJECT (m_scroll));
 		if (m_model)
 			g_object_unref (G_OBJECT (m_model));
 	}
 
 	// data
-	PackagesView::Listener *m_listener;
-	GtkWidget *m_scroll, *m_view, *m_popup_hack;
+	YGtkPackageView::Listener *m_listener;
+	GtkWidget *m_view, *m_popup_hack;
 	bool m_descriptiveTooltip;
 	GtkTreeModel *m_model;
 	guint m_modelId;
 
 	// methods
-	void setRows (Ypp::PkgList list, const char *applyAllLabel)
+	void setList (Ypp::PkgList list, const char *applyAllLabel)
 	{
 		std::string _applyAllLabel = applyAllLabel ? applyAllLabel : "";
 		if (m_model)
@@ -625,9 +622,11 @@ struct PackagesView::Impl
 		ygtk_zypp_model_append (m_model, std::string (""), list, _applyAllLabel);
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		gtk_tree_view_set_model (view, m_model);
+		if (GTK_WIDGET_REALIZED (view))
+			gtk_tree_view_scroll_to_point (view, -1, 0);
 	}
 
-	void appendRows (const char *header, Ypp::PkgList list, const char *applyAllLabel)
+	void appendList (const char *header, Ypp::PkgList list, const char *applyAllLabel)
 	{
 		std::string _header = header ? header : "";
 		std::string _applyAllLabel = applyAllLabel ? applyAllLabel : "";
@@ -1003,52 +1002,62 @@ struct PackagesView::Impl
 	}
 };
 
-PackagesView::PackagesView (bool descriptiveTooltip)
-: impl (new Impl (descriptiveTooltip))
+G_DEFINE_TYPE (YGtkPackageView, ygtk_package_view, GTK_TYPE_SCROLLED_WINDOW)
+
+static void ygtk_package_view_init (YGtkPackageView *view)
 {}
 
-PackagesView::~PackagesView()
-{ delete impl; }
-
-GtkWidget *PackagesView::getWidget()
-{ return impl->m_scroll; }
-
-void PackagesView::setRows (Ypp::PkgList list, const char *applyAllLabel)
-{ impl->setRows (list, applyAllLabel); }
-
-void PackagesView::appendRows (const char *header, Ypp::PkgList list, const char *applyAllLabel)
-{ impl->appendRows (header, list, applyAllLabel); }
-
-void PackagesView::clear()
-{ impl->clear(); }
-
-void PackagesView::appendIconColumn (const char *header, int col)
-{ impl->appendIconColumn (header, col); }
-
-void PackagesView::appendCheckColumn (int col)
-{ impl->appendCheckColumn (col); }
-
-void PackagesView::appendTextColumn (const char *header, int col, int size)
-{ impl->appendTextColumn (header, col, size); }
-
-void PackagesView::setFrame (bool show)
+YGtkPackageView *ygtk_package_view_new (gboolean descriptiveTooltip)
 {
-	GtkShadowType shadow = show ? GTK_SHADOW_IN : GTK_SHADOW_NONE;
-	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (impl->m_scroll), shadow);
+	YGtkPackageView *view = (YGtkPackageView *) g_object_new (YGTK_TYPE_PACKAGE_VIEW, NULL);
+	view->impl = new YGtkPackageView::Impl (GTK_WIDGET (view), descriptiveTooltip);
+	return view;
 }
 
-void PackagesView::setListener (Listener *listener)
+static void ygtk_package_view_finalize (GObject *object)
+{
+	G_OBJECT_CLASS (ygtk_package_view_parent_class)->finalize (object);
+	YGtkPackageView *view = YGTK_PACKAGE_VIEW (object);
+	delete view->impl;
+	view->impl = NULL;
+}
+
+static void ygtk_package_view_class_init (YGtkPackageViewClass *klass)
+{
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class->finalize = ygtk_package_view_finalize;
+}
+
+void YGtkPackageView::setList (Ypp::PkgList list, const char *applyAllLabel)
+{ impl->setList (list, applyAllLabel); }
+
+void YGtkPackageView::appendList (const char *header, Ypp::PkgList list, const char *applyAllLabel)
+{ impl->appendList (header, list, applyAllLabel); }
+
+void YGtkPackageView::clear()
+{ impl->clear(); }
+
+void YGtkPackageView::appendIconColumn (const char *header, int col)
+{ impl->appendIconColumn (header, col); }
+
+void YGtkPackageView::appendCheckColumn (int col)
+{ impl->appendCheckColumn (col); }
+
+void YGtkPackageView::appendTextColumn (const char *header, int col, int size)
+{ impl->appendTextColumn (header, col, size); }
+
+void YGtkPackageView::setListener (Listener *listener)
 { impl->m_listener = listener; }
 
-Ypp::PkgList PackagesView::getSelected()
+Ypp::PkgList YGtkPackageView::getSelected()
 { return impl->getSelected(); }
 
 //** Detail & control
 
-class PackageDetails::Impl
+class YGtkDetailView::Impl
 {
 private:
-	struct Versions {
+	struct Versions : public Ypp::PkgList::Listener {
 		GtkWidget *m_box, *m_versions_box, *m_button, *m_undo_button;
 		Ypp::PkgList m_packages;  // we keep a copy to test against modified...
 
@@ -1066,6 +1075,7 @@ private:
 			m_undo_button = gtk_button_new_with_label ("");
 			gtk_button_set_image (GTK_BUTTON (m_undo_button),
 				gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_BUTTON));
+			gtk_widget_set_tooltip_text (m_undo_button, _("Undo"));
 			g_signal_connect (G_OBJECT (m_undo_button), "clicked", G_CALLBACK (undo_clicked_cb), this);
 			GtkWidget *button_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (button_box), gtk_label_new(""), TRUE, TRUE, 0);
@@ -1078,10 +1088,15 @@ private:
 			gtk_box_pack_start (GTK_BOX (m_box), button_box, FALSE, TRUE, 0);
 		}
 
+		~Versions()
+		{ m_packages.removeListener (this); }
+
 		void setPackages (Ypp::PkgList packages)
 		{
+			m_packages.removeListener (this);
 			m_packages = packages;
 			m_packages.refreshProps();
+			m_packages.addListener (this);
 
 			GList *children = gtk_container_get_children (GTK_CONTAINER (m_versions_box));
 			for (GList *i = children; i; i = i->next)
@@ -1183,6 +1198,13 @@ private:
 		}
 
 	private:
+		virtual void entryChanged  (const Ypp::PkgList list, int index, Ypp::Package *package)
+		{ setPackages (m_packages); /* refresh */ }
+
+		// won't happen:
+		virtual void entryInserted (const Ypp::PkgList list, int index, Ypp::Package *package) {}
+		virtual void entryDeleted  (const Ypp::PkgList list, int index, Ypp::Package *package) {}
+
 		static gboolean draw_gray_cb (GtkWidget *widget, GdkEventExpose *event, Versions *pThis)
 		{
 			GtkAllocation *alloc = &widget->allocation;
@@ -1308,41 +1330,26 @@ private:
 				else if (pThis->m_packages.modified())
 					pThis->m_packages.undo();
 			}
-			pThis->setPackages (pThis->m_packages);  // refresh
 		}
 
 		static void undo_clicked_cb (GtkButton *button, Versions *pThis)
 		{
 			pThis->m_packages.undo();
-			pThis->setPackages (pThis->m_packages);  // refresh
 		}
-
-#if 0
-		void packageModified (Ypp::Package *package)
-		{
-			// GTK+ doesn't fire selection change when a selected row changes, so we need
-			// to re-load Versions in that occasions.
-			if (m_packages.contains (package)) {
-				m_packages.clearCache();
-				setPackages (m_packages);
-			}
-		}
-#endif
 	};
 
-GtkWidget *m_widget, *m_icon, *m_icon_frame, *m_description, *m_filelist, *m_changelog,
+GtkWidget *m_scroll, *m_icon, *m_icon_frame, *m_description, *m_filelist, *m_changelog,
 	*m_authors, *m_support, *m_requires, *m_provides;
 Versions *m_versions;
-PackagesView *m_contents;
+YGtkPackageView *m_contents;
 
 public:
-	GtkWidget *getWidget() { return m_widget; }
-
-	Impl (bool onlineUpdate)
+	Impl (GtkWidget *scroll, bool onlineUpdate)
 	{
+		m_scroll = scroll;
 		m_versions = new Versions();
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 2);
-		m_widget = createWhiteViewPort (hbox);
+		setupScrollAsWhite (scroll, hbox);
 
 		GtkWidget *versions_box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (versions_box),
@@ -1377,10 +1384,10 @@ public:
 		}
 		else {
 			m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = NULL;
-			m_contents = new PackagesView (false);
+			m_contents = ygtk_package_view_new (false);
 			m_contents->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 150);
 			m_contents->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
-			appendExpander (vbox, _("Applies to"), m_contents->getWidget());
+			appendExpander (vbox, _("Applies to"), GTK_WIDGET (m_contents));
 		}
 
 		gtk_box_pack_start (GTK_BOX (hbox), vbox, TRUE, TRUE, 0);
@@ -1389,10 +1396,7 @@ public:
 	}
 
 	~Impl()
-	{
-		delete m_contents;
-		delete m_versions;
-	}
+	{ delete m_versions; }
 
 	void setPackages (Ypp::PkgList packages)
 	{
@@ -1430,8 +1434,7 @@ public:
 			if (m_contents) {  // patches -- "apply to"
 				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 				query->addCollection (package);
-				m_contents->clear();
-				m_contents->appendRows (0, Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
+				m_contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
 			}
 
 			gtk_image_clear (GTK_IMAGE (m_icon));
@@ -1461,7 +1464,8 @@ public:
 			if (m_requires)  setText (m_requires, "");
 			if (m_provides)  setText (m_provides, "");
 			if (m_contents) {
-				gtk_widget_hide (gtk_widget_get_ancestor (m_contents->getWidget(), GTK_TYPE_EXPANDER));
+				gtk_widget_hide (gtk_widget_get_ancestor (
+					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
 				m_contents->clear();
 			}
 		}
@@ -1480,7 +1484,7 @@ public:
 private:
 	void scrollTop()
 	{
-		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (m_widget);
+		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (m_scroll);
 		YGUtils::scrollWidget (gtk_scrolled_window_get_vadjustment (scroll), true);
 	}
 
@@ -1503,7 +1507,8 @@ private:
 		*icon_frame = align;
 		return align;
 	}
-	static GtkWidget *createWhiteViewPort (GtkWidget *box)
+
+	static void setupScrollAsWhite (GtkWidget *scroll, GtkWidget *box)
 	{
 		struct inner {
 			static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
@@ -1521,12 +1526,11 @@ private:
 
 		g_signal_connect (G_OBJECT (box), "expose-event",
 			              G_CALLBACK (inner::expose_cb), NULL);
-		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), box);
-		return scroll;
 	}
+
 	static void appendExpander (GtkWidget *box, const char *label, GtkWidget *child)
 	{
 		std::string str = std::string ("<b>") + label + "</b>";
@@ -1535,6 +1539,7 @@ private:
 		gtk_container_add (GTK_CONTAINER (expander), child);
 		gtk_box_pack_start (GTK_BOX (box), expander, FALSE, TRUE, 0);
 	}
+
 	static void setText (GtkWidget *text, const std::string &str)
 	{
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
@@ -1564,19 +1569,35 @@ private:
 	}
 };
 
-PackageDetails::PackageDetails (bool onlineUpdate)
-: impl (new Impl (onlineUpdate))
+G_DEFINE_TYPE (YGtkDetailView, ygtk_detail_view, GTK_TYPE_SCROLLED_WINDOW)
+
+static void ygtk_detail_view_init (YGtkDetailView *view)
 {}
 
-PackageDetails::~PackageDetails()
-{ delete impl; }
+GtkWidget *ygtk_detail_view_new (gboolean onlineUpdate)
+{
+	YGtkDetailView *view = (YGtkDetailView *) g_object_new (YGTK_TYPE_DETAIL_VIEW, NULL);
+	view->impl = new YGtkDetailView::Impl (GTK_WIDGET (view), onlineUpdate);
+	return GTK_WIDGET (view);
+}
 
-GtkWidget *PackageDetails::getWidget()
-{ return impl->getWidget(); }
+static void ygtk_detail_view_finalize (GObject *object)
+{
+	G_OBJECT_CLASS (ygtk_detail_view_parent_class)->finalize (object);
+	YGtkDetailView *view = YGTK_DETAIL_VIEW (object);
+	delete view->impl;
+	view->impl = NULL;
+}
 
-void PackageDetails::setPackages (Ypp::PkgList packages)
+static void ygtk_detail_view_class_init (YGtkDetailViewClass *klass)
+{
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class->finalize = ygtk_detail_view_finalize;
+}
+
+void YGtkDetailView::setPackages (Ypp::PkgList packages)
 { impl->setPackages (packages); }
 
-void PackageDetails::setPackage (Ypp::Package *package)
+void YGtkDetailView::setPackage (Ypp::Package *package)
 { impl->setPackage (package); }
 
