@@ -1,5 +1,10 @@
 2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkzyppview.h/cc & src/YGPackageSelector.cc: use
+	"xpad" instead of italic fonts for 'auto' packages.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGUtils.cc: map stock icons for enable/disable.
 
 	* src/ygtkfindentry.c: look: center-align menu arrow.

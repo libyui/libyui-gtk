@@ -180,7 +180,7 @@ private:
 			gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
 			view->appendCheckColumn (checkCol);
-			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN);
+			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN, -1, true);
 			view->setList (list, NULL);
 			view->setListener (listener);
 			gtk_scrolled_window_set_shadow_type (

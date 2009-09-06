@@ -101,6 +101,7 @@ static GType _columnType (int col)
 			return G_TYPE_BOOLEAN;
 		case ZyppModel::STYLE_COLUMN:
 		case ZyppModel::WEIGHT_COLUMN:
+		case ZyppModel::XPAD_COLUMN:
 			return G_TYPE_INT;
 		case ZyppModel::PTR_COLUMN:
 			return G_TYPE_POINTER;
@@ -138,6 +139,9 @@ static void _getValueDefault (int col, GValue *value)
 			break;
 		case ZyppModel::WEIGHT_COLUMN:
 			g_value_set_int (value, PANGO_WEIGHT_NORMAL);
+			break;
+		case ZyppModel::XPAD_COLUMN:
+			g_value_set_int (value, 0);
 			break;
 		case ZyppModel::SENSITIVE_COLUMN:
 			g_value_set_boolean (value, TRUE);
@@ -490,6 +494,7 @@ protected:
 			case ZyppModel::SENSITIVE_COLUMN:
 				g_value_set_boolean (value, !package->isLocked());
 				break;
+/*
 			case ZyppModel::STYLE_COLUMN: {
 				PangoStyle style = PANGO_STYLE_NORMAL;
 				if (package->isAuto())
@@ -497,10 +502,16 @@ protected:
 				g_value_set_int (value, style);
 				break;
 			}
+*/
 			case ZyppModel::WEIGHT_COLUMN: {
 				bool highlight = segment->list.highlight (package);
 				int weight = highlight ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
 				g_value_set_int (value, weight);
+				break;
+			}
+			case ZyppModel::XPAD_COLUMN: {
+				int xpad = package->isAuto() ? 10 : 0;
+				g_value_set_int (value, xpad);
 				break;
 			}
 			case ZyppModel::PTR_COLUMN:
@@ -722,7 +733,7 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_append_column (view, column);
 	}
 
-	void appendTextColumn (const char *header, int col, int size)
+	void appendTextColumn (const char *header, int col, int size, bool identAuto)
 	{
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		if (header)
@@ -744,6 +755,8 @@ struct YGtkPackageView::Impl
 			"foreground", ZyppModel::FOREGROUND_COLUMN,
 			"cell-background", ZyppModel::BACKGROUND_COLUMN,
 			NULL);
+		if (identAuto)
+			gtk_tree_view_column_add_attribute (column, renderer, "xpad", ZyppModel::XPAD_COLUMN);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		if (size >= 0)
@@ -1055,8 +1068,8 @@ void YGtkPackageView::appendIconColumn (const char *header, int col)
 void YGtkPackageView::appendCheckColumn (int col)
 { impl->appendCheckColumn (col); }
 
-void YGtkPackageView::appendTextColumn (const char *header, int col, int size)
-{ impl->appendTextColumn (header, col, size); }
+void YGtkPackageView::appendTextColumn (const char *header, int col, int size, bool identAuto)
+{ impl->appendTextColumn (header, col, size, identAuto); }
 
 void YGtkPackageView::setListener (Listener *listener)
 { impl->m_listener = listener; }
