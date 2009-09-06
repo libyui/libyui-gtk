@@ -24,13 +24,10 @@ static GdkColor link_color = { 0, 0, 0, 0xeeee };
 // utilities
 // Looks at all tags covering the position of iter in the text view,
 // and returns the link the text points to, in case that text is a link.
-static const char *get_link (GtkTextView *text_view, gint x, gint y)
+static const char *get_link_at_iter (GtkTextView *text_view, GtkTextIter *iter)
 {
-	GtkTextIter iter;
-	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
-
 	char *link = NULL;
-	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
+	GSList *tags = gtk_text_iter_get_tags (iter), *tagp;
 	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
 		GtkTextTag *tag = (GtkTextTag*) tagp->data;
 		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
@@ -42,23 +39,27 @@ static const char *get_link (GtkTextView *text_view, gint x, gint y)
 		g_slist_free (tags);
 	return link;
 }
+static const char *get_link (GtkTextView *text_view, gint win_x, gint win_y)
+{
+	gint buffer_x, buffer_y;
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+		GTK_TEXT_WINDOW_WIDGET, win_x, win_y, &buffer_x, &buffer_y);
+	GtkTextIter iter;
+	gtk_text_view_get_iter_at_location (text_view, &iter, buffer_x, buffer_y);
+	return get_link_at_iter (text_view, &iter);
+}
 
 // callbacks
 // Links can also be activated by clicking.
 static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 {
-	GtkTextIter start, end;
-	GtkTextBuffer *buffer;
-	GdkEventButton *event;
-	gint x, y;
-
 	if (ev->type != GDK_BUTTON_RELEASE)
 		return FALSE;
-
-	event = (GdkEventButton *)ev;
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+	GdkEventButton *event = (GdkEventButton *) ev;
 	if (event->button != 1)
 		return FALSE;
-
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
 
 	// We shouldn't follow a link if the user is selecting something.
@@ -66,10 +67,7 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
 		return FALSE;
 
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
-
-	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
+	const char *link = get_link (GTK_TEXT_VIEW (text_view), event->x, event->y);
 	if (link)  // report link
 		g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
 	return FALSE;
@@ -180,12 +178,9 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 		    wy >= widget->allocation.height)
 			return;
 	}
-	gint bx, by;
-	gtk_text_view_window_to_buffer_coords (view, GTK_TEXT_WINDOW_WIDGET,
-	                                       wx, wy, &bx, &by);
 
 	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (view, bx, by) != NULL;
+	gboolean hovering = get_link (view, wx, wy) != NULL;
 
 	if (hovering != hovering_over_link) {
 		hovering_over_link = hovering;
@@ -691,11 +686,39 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 		g_object_ref (G_OBJECT (pixbuf));
 }
 
-void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
+static gboolean ygtk_rich_text_button_press_event (GtkWidget *widget, GdkEventButton *event)
+{	// if right-click on links, select the entire link, so the user can then easily copy it
+	if (event->button == 3) {
+		GtkTextView *view = GTK_TEXT_VIEW (widget);
+		GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+		if (!gtk_text_buffer_get_has_selection (buffer)) {
+			gint buffer_x, buffer_y;
+			gtk_text_view_window_to_buffer_coords (view,
+				GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &buffer_x, &buffer_y);
+			GtkTextIter iter;
+			gtk_text_view_get_iter_at_location (view, &iter, buffer_x, buffer_y);
+			if (get_link_at_iter (view, &iter)) {
+				GtkTextIter start = iter, end = iter;
+				while (gtk_text_view_move_visually (view, &start, -1))
+					if (!get_link_at_iter (view, &start))
+						break;
+				gtk_text_view_move_visually (view, &start, +1);
+				while (gtk_text_view_move_visually (view, &end, +1))
+					if (!get_link_at_iter (view, &end))
+						break;
+				gtk_text_buffer_select_range (buffer, &start, &end);
+			}
+		}
+	}
+	return GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->button_press_event (widget, event);
+}
+
+static void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
 	gtkwidget_class->expose_event = ygtk_rich_text_expose_event;
+	gtkwidget_class->button_press_event = ygtk_rich_text_button_press_event;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_rich_text_destroy;
