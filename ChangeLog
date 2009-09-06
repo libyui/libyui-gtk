@@ -1,5 +1,14 @@
 2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/YGUtils.cc: map stock icons for enable/disable.
+
+	* src/ygtkfindentry.c: look: center-align menu arrow.
+
+	* src/ygtkzyppview.cc: bug fix: "upgrade all" was alternating
+	the check boxes instead of simply setting all true.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtktooltip.h/c: re-added tooltip window.
 
 	* src/ygtknotebook.h/c: sub-notebook that allows a widget to be

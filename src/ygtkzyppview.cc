@@ -875,29 +875,32 @@ struct YGtkPackageView::Impl
 		return package != NULL;
 	}
 
-	static void apply (Ypp::Package *package, int col)
+	static void apply (Ypp::Package *package, int col, bool enable)
 	{
-		if (package->toModify())
+		if (enable)
+			switch (col) {
+				case ZyppModel::TO_INSTALL_COLUMN:
+				case ZyppModel::TO_UPGRADE_COLUMN:
+					package->install (0);
+					break;
+				case ZyppModel::TO_REMOVE_COLUMN:
+					package->remove();
+					break;
+				default: break;
+			}
+		else
 			package->undo();
-		else switch (col) {
-			case ZyppModel::TO_INSTALL_COLUMN:
-			case ZyppModel::TO_UPGRADE_COLUMN:
-				package->install (0);
-				break;
-			case ZyppModel::TO_REMOVE_COLUMN:
-				package->remove();
-				break;
-			default: break;
-		}
 	}
 
 	static gboolean apply_iter_cb (GtkTreeModel *model,
 		GtkTreePath *path, GtkTreeIter *iter, gpointer col)
 	{
 		Ypp::Package *package;
+		gboolean enable;
+		enable = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (model), "enable"));
 		gtk_tree_model_get (model, iter, ZyppModel::PTR_COLUMN, &package, -1);
 		if (package)
-			apply (package, GPOINTER_TO_INT (col));
+			apply (package, GPOINTER_TO_INT (col), enable);
 		return FALSE;
 	}
 
@@ -911,12 +914,13 @@ struct YGtkPackageView::Impl
 		gtk_tree_model_get_iter_from_string (model, &iter, path_str);
 		gtk_tree_model_get (model, &iter, ZyppModel::PTR_COLUMN, &package, -1);
 
-		//gboolean active = gtk_cell_renderer_toggle_get_active (renderer);
+		gboolean active = gtk_cell_renderer_toggle_get_active (renderer);
 		int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "col"));
 		if (package)
-			apply (package, col);
+			apply (package, col, !active);
 		else {
 			if (!gtk_tree_model_iter_next (model, &iter)) {  // on apply-all
+				g_object_set_data (G_OBJECT (model), "enable", GINT_TO_POINTER (!active));
 				Ypp::get()->startTransactions();
 				gtk_tree_model_foreach (model, apply_iter_cb, GINT_TO_POINTER (col));
 				Ypp::get()->finishTransactions();

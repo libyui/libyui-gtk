@@ -602,6 +602,8 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		stockMap [_("Delete")] = GTK_STOCK_DELETE;
 		stockMap [_("Up")] = GTK_STOCK_GO_UP;
 		stockMap [_("Down")] = GTK_STOCK_GO_DOWN;
+		stockMap [_("Enable")] = GTK_STOCK_YES;
+		stockMap [_("Disable")] = GTK_STOCK_NO;
 	}
 
 	std::string id = cutUnderline (label);

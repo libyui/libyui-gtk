@@ -389,7 +389,7 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 		if (fentry->context_menu && event->window == eentry->left_window)
 			gtk_paint_arrow (widget->style, event->window, GTK_STATE_NORMAL,
 				GTK_SHADOW_NONE, &event->area, widget, NULL, GTK_ARROW_DOWN, FALSE,
-				win_width - ARROW_SIZE-1, win_height - ARROW_SIZE, ARROW_SIZE, ARROW_SIZE);
+				win_width - ARROW_SIZE-1, (win_height - ARROW_SIZE)/2, ARROW_SIZE, ARROW_SIZE);
 	}
 	else
 		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->expose_event (widget, event);
