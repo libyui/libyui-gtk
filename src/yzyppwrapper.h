@@ -116,7 +116,7 @@ struct Ypp
 	// this class and all proper subclassed are refcounted
 	struct PkgList {  // NOTE: this is actually implemented as a vector
 		Package *get (int index) const;
-		bool highlight (int index) const;  // applicable to some subclasses only
+		bool highlight (Ypp::Package *pkg) const;  // applicable to some subclasses only
 		int size() const;
 
 		void reserve (int size);
@@ -142,7 +142,6 @@ struct Ypp
 		bool unlocked() const;
 		bool canRemove() const;
 		bool canLock() const;
-		void refreshProps();
 
 		// actions
 		// NOTE: can take time (depending on size); show busy cursor

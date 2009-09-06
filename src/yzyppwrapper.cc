@@ -1398,7 +1398,6 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 								continue;
 						}
 
-fprintf (stderr, "patch '%s' category: %s - %d\n", patch->name().c_str(), patch->category().c_str(), patch->categoryEnum());
 						std::string str;
 #if 0  // Zypp patch->categoryEnum() seems broken: always returns the same value (opensuse 11.1)
 						switch (patch->categoryEnum()) {
@@ -1524,10 +1523,9 @@ char id;
 				 	if (!pkg->hasUpgrade())
 				 		_allUpgradable = false;
 				 }
-				if (pkg->toModify()) {
+				if (pkg->toModify())
 					// if modified, can't be locked or unlocked
 					_allLocked = _allUnlocked = false;
-				}
 				else
 					_allModified = false;
 				if (pkg->isLocked())
@@ -1547,6 +1545,7 @@ char id;
 
 	void signalChanged (int index, Package *package)
 	{
+		inited = false;
 		PkgList list (this); refcount++;
 		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
 		     it != listeners.end(); it++)
@@ -1555,6 +1554,7 @@ char id;
 
 	void signalInserted (int index, Package *package)
 	{
+		inited = false;
 		PkgList list (this); refcount++;
 		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
 		     it != listeners.end(); it++)
@@ -1563,6 +1563,7 @@ char id;
 
 	void signalDeleted (int index, Package *package)
 	{
+		inited = false;
 		PkgList list (this); refcount++;
 		for (std::list <PkgList::Listener *>::iterator it = listeners.begin();
 		     it != listeners.end(); it++)
@@ -1608,7 +1609,7 @@ char id;
 	// for sub-classes to implement live lists
 	virtual bool liveList() const { return false; }
 	virtual bool match (Package *pkg) const { return true; }
-	virtual bool highlight (int index) const { return false; }
+	virtual bool highlight (Package *pkg) const { return false; }
 };
 
 Ypp::PkgList::PkgList()
@@ -1637,8 +1638,8 @@ Ypp::PkgList::~PkgList()
 Ypp::Package *Ypp::PkgList::get (int i) const
 { return i >= (signed) impl->pool.size() ? NULL : impl->pool.at (i); }
 
-bool Ypp::PkgList::highlight (int i) const
-{ return impl->highlight (i); }
+bool Ypp::PkgList::highlight (Ypp::Package *pkg) const
+{ return impl->highlight (pkg); }
 
 int Ypp::PkgList::size() const
 { return impl->pool.size(); }
@@ -1728,9 +1729,6 @@ bool Ypp::PkgList::canLock() const
 
 bool Ypp::PkgList::canRemove() const
 { impl->buildProps(); return impl->_allCanRemove; }
-
-void Ypp::PkgList::refreshProps()
-{ impl->inited = 0; }
 
 void Ypp::PkgList::install()
 {
@@ -1829,11 +1827,8 @@ struct Ypp::PkgQuery::Query::Impl
 	bool clear;
 	Ypp::Package *highlight;
 
-	Impl()
-	{
-		highlight = NULL;
-		clear = false;
-	}
+	Impl() : clear (false), highlight (NULL)
+	{}
 
 	bool match (Package *package) const
 	{
@@ -2054,8 +2049,12 @@ Query *query;
 	virtual bool match (Package *pkg) const
 	{ return query ? query->impl->match (pkg) : true; }
 
-	virtual bool highlight (int index) const
-	{ return query ? query->impl->highlight == pool [index] : false; }
+	virtual bool highlight (Package *pkg) const
+	{
+		if (query && query->impl->highlight == pkg)
+			return true;
+		return parent->highlight (pkg);  // this might be a sub-query
+	}
 };
 
 Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::PkgQuery::Query *query)

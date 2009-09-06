@@ -382,8 +382,8 @@ rt_start_element (GMarkupParseContext *context,
 
 		// for tags like <br/>, GMarkup will pass them through the end
 		// tag callback too, so we'll deal with them there
-		else if (!g_ascii_strcasecmp (element_name, "br"))
-			;
+		else if (!g_ascii_strcasecmp (element_name, "br")) ;
+		else if (!g_ascii_strcasecmp (element_name, "hr")) ;
 
 		else
 		{

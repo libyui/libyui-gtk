@@ -1,3 +1,19 @@
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtktooltip.h/c: re-added tooltip window.
+
+	* src/ygtknotebook.h/c: sub-notebook that allows a widget to be
+	installed at the empty top-right corner.
+
+	* src/YGPackageSelector.cc: replaced find pane by a find entry
+	at the tab-book corner.
+
+	* src/yzyppwrapper.h/cc: bug fix: highlight broken for sub-queries:
+	now pass Package to highlight() instead of index.
+
+	* src/yzyppwrapper.h/cc: replaced explicit PkgList::refreshProps()
+	for an implicit call when a package in the list is modified.
+
 2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: fixes for online_update.

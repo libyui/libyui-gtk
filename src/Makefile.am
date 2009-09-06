@@ -66,6 +66,8 @@ libpy2gtk_la_SOURCES = \
 	ygtklinklabel.c \
 	ygtktextview.c \
 	ygtkrichtext.c \
+	ygtknotebook.c \
+	ygtktooltip.c \
 	ygtktreemodel.cc \
 	ygtkzyppview.cc \
 	yzyppwrapper.cc \

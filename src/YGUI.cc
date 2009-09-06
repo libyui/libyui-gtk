@@ -84,7 +84,12 @@ static void print_log (const gchar *domain, GLogLevelFlags level, const gchar *m
 	// intern the domain - that can be allocated (or belong to a transient
 	// plugin's address space).
 	const char *component = domain ? g_intern_string (domain) : "yast2-gtk";
-	YUILog::instance()->log (ylevel, component, "yast2-gtk", 0, "") << message;
+	YUILog::instance()->log (ylevel, component, "yast2-gtk", 0, "") << message << std::endl;
+#if 0  // uncomment to put a stop to gdb
+	static int bugStop = 0;
+	if (bugStop-- <= 0)
+		abort();
+#endif
 }
 
 void YGUI::checkInit()

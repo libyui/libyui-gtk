@@ -348,6 +348,14 @@ protected:
 				case ZyppModel::FOREGROUND_COLUMN:
 					g_value_set_string (value, g_strdup ("black"));
 					break;
+				case ZyppModel::TO_INSTALL_COLUMN:
+				case ZyppModel::TO_UPGRADE_COLUMN:
+				case ZyppModel::TO_REMOVE_COLUMN:
+				case ZyppModel::TO_MODIFY_COLUMN: {
+					bool modified = segment->list.modified();
+					g_value_set_boolean (value, modified);
+					break;
+				}
 				default:
 					_getValueDefault (col, value);
 					break;
@@ -490,7 +498,7 @@ protected:
 				break;
 			}
 			case ZyppModel::WEIGHT_COLUMN: {
-				bool highlight = segment->list.highlight (index);
+				bool highlight = segment->list.highlight (package);
 				int weight = highlight ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
 				g_value_set_int (value, weight);
 				break;
@@ -1095,7 +1103,6 @@ private:
 		{
 			m_packages.removeListener (this);
 			m_packages = packages;
-			m_packages.refreshProps();
 			m_packages.addListener (this);
 
 			GList *children = gtk_container_get_children (GTK_CONTAINER (m_versions_box));
@@ -1376,7 +1383,7 @@ public:
 			appendExpander (vbox, _("Changelog"), m_changelog);
 			appendExpander (vbox, _("Authors"), m_authors);
 			appendExpander (vbox, _("Dependencies"), dependencies_box);
-			appendExpander (vbox, _(""), m_support);
+			appendExpander (vbox, "", m_support);
 			m_contents = NULL;
 			if (CAN_OPEN_URIS())
 				g_signal_connect (G_OBJECT (m_filelist), "link-clicked",

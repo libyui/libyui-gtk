@@ -301,7 +301,7 @@ static void ygtk_find_entry_set_borders (YGtkFindEntry *entry)
 	if (entry->find_icon) {
 		left_border = gdk_pixbuf_get_width (entry->find_icon) + 2;
 		if (entry->context_menu)
-			left_border += ARROW_SIZE - 1;
+			left_border += ARROW_SIZE;
 	}
 	if (entry->clear_icon)
 	    right_border = gdk_pixbuf_get_width (entry->clear_icon) + 2;
@@ -365,17 +365,22 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 	GdkWindow *hover_window = gdk_display_get_window_at_pointer (
 		gtk_widget_get_display (widget), NULL, NULL);
 
-	if (event->window == eentry->left_window ||
-	    event->window == eentry->right_window) {
+	if (event->window == eentry->left_window || event->window == eentry->right_window) {
 		gboolean hover = hover_window == event->window;
+		int win_width, win_height;
+		gdk_drawable_get_size (event->window, &win_width, &win_height);
+
+/*		if (fentry->context_menu && event->window == eentry->left_window)
+			gtk_paint_box (widget->style, event->window, GTK_STATE_NORMAL,
+				GTK_SHADOW_OUT, &event->area, widget, "combobox",
+				0, 0, win_width, win_height);*/
+
 		GdkPixbuf *pixbuf;
 		if (event->window == eentry->left_window)
 			pixbuf = hover ? fentry->find_hover_icon : fentry->find_icon;
 		else
 			pixbuf = hover ? fentry->clear_hover_icon : fentry->clear_icon;
-
-		int pix_height = gdk_pixbuf_get_height (pixbuf), win_width, win_height, y;
-		gdk_drawable_get_size (event->window, &win_width, &win_height);
+		int pix_height = gdk_pixbuf_get_height (pixbuf), y;
 		y = (win_height - pix_height) / 2;
 
 		gdk_draw_pixbuf (event->window, widget->style->fg_gc[0], pixbuf,
@@ -383,10 +388,8 @@ static gboolean ygtk_find_entry_expose (GtkWidget *widget, GdkEventExpose *event
 
 		if (fentry->context_menu && event->window == eentry->left_window)
 			gtk_paint_arrow (widget->style, event->window, GTK_STATE_NORMAL,
-			                 GTK_SHADOW_NONE, &event->area, widget, NULL,
-			                 GTK_ARROW_DOWN, FALSE,
-			                 win_width - ARROW_SIZE - 1, win_height - ARROW_SIZE,
-			                 ARROW_SIZE, ARROW_SIZE);
+				GTK_SHADOW_NONE, &event->area, widget, NULL, GTK_ARROW_DOWN, FALSE,
+				win_width - ARROW_SIZE-1, win_height - ARROW_SIZE, ARROW_SIZE, ARROW_SIZE);
 	}
 	else
 		GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->expose_event (widget, event);
