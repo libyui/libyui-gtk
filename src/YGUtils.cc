@@ -397,15 +397,16 @@ static gboolean scroll_down_cb (void *pData)
 	gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
 	return FALSE;
 }
+
 void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
 	// for some widgets, we need to change adjustment before moving down...
-	gtk_adjustment_set_value (vadj, vadj->lower);
-	if (!top) {
+	if (top)
+		gtk_adjustment_set_value (vadj, vadj->lower);
+	else
 		// since we usually want to call this together with a text change, we
 		// must wait till that gets in effect
-		g_timeout_add_full (G_PRIORITY_LOW, 25, scroll_down_cb, vadj, NULL);
-	}
+		g_idle_add_full (G_PRIORITY_LOW, scroll_down_cb, vadj, NULL);
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)

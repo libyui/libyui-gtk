@@ -1510,7 +1510,8 @@ private:
 	void scrollTop()
 	{
 		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (m_scroll);
-		YGUtils::scrollWidget (gtk_scrolled_window_get_vadjustment (scroll), true);
+		GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment (scroll);
+		YGUtils::scrollWidget (vadj, true);
 	}
 
 	// utilities:

@@ -59,14 +59,14 @@ public:
 		gtk_text_buffer_set_text (getBuffer(), text.c_str(), -1);
 	}
 
-	string getText()
+	std::string getText()
 	{
 		IMPL
 		GtkTextIter start_it, end_it;
 		gtk_text_buffer_get_bounds (getBuffer(), &start_it, &end_it);
 
 		gchar* text = gtk_text_buffer_get_text (getBuffer(), &start_it, &end_it, FALSE);
-		string str (text);
+		std::string str (text);
 		g_free (text);
 		return str;
 	}
@@ -140,15 +140,10 @@ public:
 	{}
 
 	// YLogView
-
 	virtual void displayLogText (const string &text)
-	{
-		setText (text);
-		scrollToBottom();
-	}
+	{ setText (text); }
 
 	// YGWidget
-
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{
 		if (dim == YD_VERT) {

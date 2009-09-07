@@ -18,7 +18,7 @@ class YGTableView : public YGScrolledWidget, public YGSelectionModel
 {
 protected:
 	int m_colsNb;
-	time_t m_blockTime;  // GtkTreeSelection signals act weird
+	bool m_blockSelected;
 
 public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
@@ -28,7 +28,7 @@ public:
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
-		m_blockTime = time (NULL);
+		m_blockSelected = false;
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -109,12 +109,24 @@ public:
 
 	virtual bool immediateEvent() { return true; }
 
-	// YGSelectionModel
+	static gboolean block_selected_timeout_cb (gpointer data)
+	{
+		YGTableView *pThis = (YGTableView *) data;
+		pThis->m_blockSelected = false;
+		return FALSE;
+	}
 
+	void blockSelected()
+	{  // GtkTreeSelection only fires when idle; so set a timeout
+		m_blockSelected = true;
+		g_timeout_add_full (G_PRIORITY_LOW, 250, block_selected_timeout_cb, this, NULL);
+	}
+
+	// YGSelectionModel
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		if (!gtk_tree_selection_iter_is_selected (getSelection(), iter)) {
-			m_blockTime = time (NULL);
+			blockSelected();
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 			gtk_tree_view_expand_to_path (getView(), path);
 
@@ -129,7 +141,7 @@ public:
 	virtual void doUnselectAll()
 	{
 		if (gtk_tree_selection_count_selected_rows (getSelection())) {
-			m_blockTime = time (NULL);
+			blockSelected();
 			gtk_tree_selection_unselect_all (getSelection());
 		}
 	}
@@ -175,7 +187,7 @@ public:
 
 	static void selection_changed_cb (GtkTreeSelection *selection, YGTableView *pThis)
 	{
-		if (time (NULL) - pThis->m_blockTime <= 2)
+		if (pThis->m_blockSelected)
 			return;
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();

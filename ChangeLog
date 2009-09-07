@@ -1,7 +1,10 @@
 2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* src/ygtkrichtext.c: bug fix 523694: when the user right-clicks
-	on a link, select the all link so he can easily copy it.
+	* src/YGTable.cc: bug fix 513085: block selection was too
+	ambitious.
+
+	* src/YGUtils.cc: fixed flicker from scrolling text
+	widgets like LogView.
 
 2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
