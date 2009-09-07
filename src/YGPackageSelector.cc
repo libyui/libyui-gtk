@@ -267,8 +267,7 @@ protected:
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
 				                        GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
 		m_view = NULL;
-
-		m_box = gtk_vbox_new (FALSE, 6);
+		m_box = gtk_vbox_new (FALSE, 2);
 		gtk_box_pack_start (GTK_BOX (m_box), m_scroll, TRUE, TRUE, 0);
 
 		// parent constructor should call build()
