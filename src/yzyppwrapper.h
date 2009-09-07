@@ -66,6 +66,8 @@ struct Ypp
 		bool isSuggested() const;
 		int buildAge() const;  // if < 0 , unsupported or error
 		bool isUnsupported() const;
+		int severity() const;
+		static std::string severityStr (int id);
 
 		std::string provides (bool rich) const;
 		std::string requires (bool rich) const;
@@ -190,6 +192,7 @@ struct Ypp
 			void setIsSuggested (bool suggested);
 			void setBuildAge (int days);
 			void setIsUnsupported (bool unsupported);
+			void setSeverity (int severity);
 			void setClear();
 
 			~Query();

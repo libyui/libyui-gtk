@@ -699,15 +699,14 @@ public:
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (m_radio[0]), TRUE);
 		GtkRadioButton *radiob = GTK_RADIO_BUTTON (m_radio[0]);
 		m_radio[1] = gtk_radio_button_new_with_label_from_widget (radiob, _("Description"));
-		m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File name"));
-		gtk_widget_set_tooltip_text (m_radio[2], find_entry_file_tooltip);
-		if (m_onlineUpdate)
-			m_radio[3] = NULL;
-		else
+		if (!onlineUpdate) {
+			m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File name"));
+			gtk_widget_set_tooltip_text (m_radio[2], find_entry_file_tooltip);
 			m_radio[3] = gtk_radio_button_new_with_label_from_widget (radiob, _("Author"));
-		m_radio[4] = gtk_radio_button_new_with_label_from_widget (radiob, _("Novelty (in days)"));
-		g_signal_connect (G_OBJECT (m_radio[4]), "toggled", G_CALLBACK (novelty_toggled_cb), this);
-		gtk_widget_set_tooltip_markup (m_radio[4], find_entry_novelty_tooltip);
+			m_radio[4] = gtk_radio_button_new_with_label_from_widget (radiob, _("Novelty (in days)"));
+			g_signal_connect (G_OBJECT (m_radio[4]), "toggled", G_CALLBACK (novelty_toggled_cb), this);
+			gtk_widget_set_tooltip_markup (m_radio[4], find_entry_novelty_tooltip);
+		}
 		for (int i = 0; i < 5; i++)
 			if (m_radio [i])
 				gtk_box_pack_start (GTK_BOX (radio_box), m_radio[i], FALSE, TRUE, 0);
@@ -868,12 +867,14 @@ public:
 			_("Filter by name & summary"), GTK_STOCK_FIND, NULL);
 		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
 			_("Filter by description"), GTK_STOCK_EDIT, NULL);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
-			_("Filter by file"), GTK_STOCK_OPEN, find_entry_file_tooltip);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
-			_("Filter by author"), GTK_STOCK_ABOUT, NULL);
-		ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by novelty (in days)"),
-			GTK_STOCK_NEW, find_entry_novelty_tooltip);
+		if (!onlineUpdate) {
+			ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
+				_("Filter by file"), GTK_STOCK_OPEN, find_entry_file_tooltip);
+			ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
+				_("Filter by author"), GTK_STOCK_ABOUT, NULL);
+			ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by novelty (in days)"),
+				GTK_STOCK_NEW, find_entry_novelty_tooltip);
+		}
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (name_changed_cb), this);
 		g_signal_connect (G_OBJECT (m_name), "menu-item-selected",
@@ -1119,7 +1120,10 @@ public:
 		appendPage (0, _("_Install"), GTK_STOCK_ADD);
 		if (!onlineUpdate)
 			appendPage (1, _("_Upgrade"), GTK_STOCK_GO_UP);
-		appendPage (2, _("_Remove"), GTK_STOCK_REMOVE);
+		if (!onlineUpdate)
+			appendPage (2, _("_Remove"), GTK_STOCK_REMOVE);
+		else
+			appendPage (2, _("_System"), GTK_STOCK_HARDDISK);
 		if (!onlineUpdate)
 			appendPage (3, _("_Undo"), GTK_STOCK_UNDO);
 
@@ -1244,10 +1248,21 @@ private:
 					default: break;
 				}
 				Ypp::PkgQuery list (m_pool, query);
-				const char *applyAll = NULL;
-				if (!m_onlineUpdate && n == 1)
-					applyAll = _("Upgrade All");
-				view->setList (list, applyAll);
+				if (!m_onlineUpdate) {
+					const char *applyAll = NULL;
+					if (!m_onlineUpdate && n == 1)
+						applyAll = _("Upgrade All");
+					view->setList (list, applyAll);
+				}
+				else {
+					for (int i = 0; i < 6; i++) {
+						Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+						query->setSeverity (i);
+						Ypp::PkgQuery severity_list (list, query);
+						std::string str (Ypp::Package::severityStr (i));
+						view->appendList (str.c_str(), severity_list, NULL);
+					}
+				}
 			}
 		}
 
@@ -1328,7 +1343,8 @@ private:
 				case 2: col = ZyppModel::TO_REMOVE_COLUMN; break;
 			}
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
-			view->appendCheckColumn (col);
+			if (!m_onlineUpdate || nb == 0)
+				view->appendCheckColumn (col);
 			int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
 			view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
 			if (col == ZyppModel::TO_UPGRADE_COLUMN) {

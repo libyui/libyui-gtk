@@ -244,6 +244,7 @@ std::string m_name, m_summary;
 	virtual bool isSuggested() const         { return false; }
 	virtual int  buildAge() const            { return 0; }
 	virtual bool isUnsupported() const       { return false; }
+	virtual int severity() const             { return 0; }
 
 	virtual std::string provides (bool rich) const { return ""; }
 	virtual std::string requires (bool rich) const { return ""; }
@@ -309,6 +310,22 @@ bool Ypp::Package::isRecommended() const          { return impl->isRecommended()
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
 int Ypp::Package::buildAge() const                { return impl->buildAge(); }
 bool Ypp::Package::isUnsupported() const          { return impl->isUnsupported(); }
+
+int Ypp::Package::severity() const                { return impl->severity(); }
+
+std::string Ypp::Package::severityStr (int id)
+{
+	switch (id) {
+		case 0: return _("Security");
+		case 1: return _("Recommended");
+		case 2: return "YaST";
+		case 3: return _("Documentation");
+		case 4: return _("Optional");
+		case 5: default: break;
+	}
+	return _("Other");
+}
+
 
 std::string Ypp::Package::provides (bool rich) const { return impl->provides (rich); }
 std::string Ypp::Package::requires (bool rich) const { return impl->requires (rich); }
@@ -564,6 +581,11 @@ int m_installedPkgs, m_totalPkgs;
 				if (patch->rebootSuggested()) {
 					text += br + br + "<b>" + _("Reboot required: ") + "</b>";
 					text += _("the system will have to be restarted in order for "
+						"this patch to take effect.");
+				}
+				if (patch->reloginSuggested()) {
+					text += br + br + "<b>" + _("Relogin required: ") + "</b>";
+					text += _("you must logout and login again for "
 						"this patch to take effect.");
 				}
 				if (patch->referencesBegin() != patch->referencesEnd()) {
@@ -845,6 +867,19 @@ int m_installedPkgs, m_totalPkgs;
 #endif
 	}
 
+	virtual int severity() const
+	{
+		ZyppObject object = m_sel->theObj();
+		ZyppPatch patch = tryCastToZyppPatch (object);
+		if (patch->category() == "security") return 0;
+		if (patch->category() == "recommended") return 1;
+		if (patch->category() == "yast")     return 2;
+		if (patch->category() == "document") return 3;
+		if (patch->category() == "optional") return 4;
+		//if (patch->category() == "other")
+			return 5;
+	}
+
 	virtual std::string provides (bool rich) const
 	{
 		std::string text;
@@ -1072,7 +1107,7 @@ int m_installedPkgs, m_totalPkgs;
 	}
 
 	virtual bool canLock() { return type != Ypp::Package::PATTERN_TYPE; }
-	virtual bool canRemove() { return type != Ypp::Package::PATTERN_TYPE; }
+	virtual bool canRemove() { return type == Ypp::Package::PACKAGE_TYPE; }
 
 	virtual void lock (bool lock)
 	{
@@ -1417,6 +1452,10 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 							str = "YaST";
 						else if (patch->category() == "document")
 							str = _("Documentation");
+						else if (patch->category() == "optional")
+							str = _("Optional");
+						else if (patch->category() == "other")
+							str = _("Other");
 #endif
 						category = addCategory (type, str, "");
 						break;
@@ -1818,12 +1857,11 @@ struct Ypp::PkgQuery::Query::Impl
 	Keys <Node *> categories, categories2;
 	Keys <const Package *> collections;
 	Keys <const Repository *> repositories;
-	Key <bool> isInstalled;
-	Key <bool> hasUpgrade;
-	Key <bool> toModify, toInstall, toRemove;
+	Key <bool> isInstalled, hasUpgrade, toModify, toInstall, toRemove;
 	Key <bool> isRecommended, isSuggested;
 	Key <int>  buildAge;
 	Key <bool> isUnsupported;
+	Key <int> severity;
 	bool clear;
 	Ypp::Package *highlight;
 
@@ -1887,6 +1925,8 @@ struct Ypp::PkgQuery::Query::Impl
 		}
 		if (match && isUnsupported.defined)
 			match = isUnsupported.is (package->isUnsupported());
+		if (match && severity.defined)
+			match = severity.is (package->severity());
 		if (match && names.defined) {
 			const std::list <std::string> &values = names.values;
 			std::list <std::string>::const_iterator it;
@@ -2027,6 +2067,8 @@ void Ypp::PkgQuery::Query::setBuildAge (int value)
 { impl->buildAge.set (value); }
 void Ypp::PkgQuery::Query::setIsUnsupported (bool value)
 { impl->isUnsupported.set (value); }
+void Ypp::PkgQuery::Query::setSeverity (int value)
+{ impl->severity.set (value); }
 void Ypp::PkgQuery::Query::setClear()
 { impl->clear = true; }
 

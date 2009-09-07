@@ -1,5 +1,15 @@
 2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzyppwrapper.h/cc: added severity() description
+	to Package structure.
+
+	* src/YGPackageSelector.cc: split online_update list by
+	severity.
+
+	* src/ygtkzyppview.cc: bug fix: show "applies to" list.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGTable.cc: bug fix 513085: block selection was too
 	ambitious.
 

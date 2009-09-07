@@ -491,9 +491,11 @@ protected:
 			case ZyppModel::TO_MODIFY_COLUMN:
 				g_value_set_boolean (value, package->toModify());
 				break;
-			case ZyppModel::SENSITIVE_COLUMN:
-				g_value_set_boolean (value, !package->isLocked());
+			case ZyppModel::SENSITIVE_COLUMN: {
+				bool sensitive = !package->isLocked();
+				g_value_set_boolean (value, sensitive);
 				break;
+			}
 /*
 			case ZyppModel::STYLE_COLUMN: {
 				PangoStyle style = PANGO_STYLE_NORMAL;
@@ -1460,6 +1462,8 @@ public:
 				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 				query->addCollection (package);
 				m_contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
+				gtk_widget_show (gtk_widget_get_ancestor (
+					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
 			}
 
 			gtk_image_clear (GTK_IMAGE (m_icon));
