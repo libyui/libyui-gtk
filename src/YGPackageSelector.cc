@@ -1138,7 +1138,7 @@ public:
 		GtkWidget *hpane = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (hpane), m_combo->getWidget(), FALSE, TRUE);
 		gtk_paned_pack2 (GTK_PANED (hpane), m_pane->getWidget(), TRUE, FALSE);
-		gtk_paned_set_position (GTK_PANED (hpane), 160);
+		gtk_paned_set_position (GTK_PANED (hpane), 170);
 
 		m_widget = hpane;
 		gtk_widget_show_all (m_widget);
@@ -1946,7 +1946,7 @@ public:
 		bool onlineUpdate = onlineUpdateMode();
 		YGDialog *dialog = YGDialog::currentDialog();
 		dialog->setCloseCallback (confirm_cb, this);
-		dialog->setMinSize (650, 800);  // enlarge
+		dialog->setMinSize (700, 800);  // enlarge
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
