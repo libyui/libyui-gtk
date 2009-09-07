@@ -1198,7 +1198,7 @@ private:
 							gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
 							activeSet = true;
 						}
-						else if (i == 0)
+						else if (i == 0 && (!package->isInstalled() || version->cmp > 0))
 							gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
 						else if (version->repo == favoriteRepo) {
 							gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
