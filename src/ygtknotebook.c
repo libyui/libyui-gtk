@@ -39,20 +39,15 @@ static void ygtk_notebook_size_allocate (GtkWidget *widget, GtkAllocation *alloc
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (widget);
 		int tabs_width = 0;
-		if (reverse) {
-			GtkWidget *first_label = gtk_notebook_get_nth_page (notebook, 0);
-			if (first_label)
-				first_label = gtk_notebook_get_tab_label (notebook, first_label);
-			if (first_label)
-				tabs_width = (allocation->width + allocation->x) - first_label->allocation.x + 8;
-		}
-		else {
-			int npages = gtk_notebook_get_n_pages (notebook);
-			GtkWidget *last_label = gtk_notebook_get_nth_page (notebook, npages-1);
-			if (last_label)
-				last_label = gtk_notebook_get_tab_label (notebook, last_label);
-			if (last_label)
-				tabs_width = last_label->allocation.x + last_label->allocation.width + 8;
+		int npages = gtk_notebook_get_n_pages (notebook);
+		GtkWidget *last_label = gtk_notebook_get_nth_page (notebook, npages-1);
+		if (last_label)
+			last_label = gtk_notebook_get_tab_label (notebook, last_label);
+		if (last_label) {
+			if (reverse)
+				tabs_width = (allocation->width + allocation->x) - last_label->allocation.x + 8;
+			else
+				tabs_width = (last_label->allocation.width + last_label->allocation.x) - allocation->x + 8;
 		}
 
 		GtkAllocation child_alloc;
