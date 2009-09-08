@@ -3,6 +3,9 @@
 	* src/ygtknotebook.cc: handle right-to-left text flow:
 	thank Michael for the reminder.
 
+	* src/ygtkzyppview.cc: bug fix 523694: find a way to
+	fire the browser as the session's user.
+
 2009-09-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkzyppview.cc: select installed version radio

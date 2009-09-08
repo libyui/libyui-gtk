@@ -24,11 +24,39 @@
 
 //** Utilities
 
+#define BROWSER_PATH "/usr/bin/firefox"
 #define GNOME_OPEN_PATH "/usr/bin/gnome-open"
-inline bool CAN_OPEN_URIS()
+inline bool CAN_OPEN_URL()
+{ return g_file_test (BROWSER_PATH, G_FILE_TEST_IS_EXECUTABLE); }
+inline bool CAN_OPEN_DIRNAME()
 { return g_file_test (GNOME_OPEN_PATH, G_FILE_TEST_IS_EXECUTABLE); }
-inline void OPEN_URI (const char *uri)
-{ system ((std::string (GNOME_OPEN_PATH " ") + uri + " &").c_str()); }
+void OPEN_URL (const char *uri)
+{
+	std::string command;
+	command.reserve (256);
+	command = BROWSER_PATH " --new-window ";
+	command += uri;
+
+	char *username = getenv ("USERNAME");
+	std::string gnomesu, gnomesu_end;  // we don't want to run the browser as root
+	if (username) {  // run as the user that owns the session
+		gnomesu.reserve (64);
+		gnomesu = "gnomesu -u ";
+		gnomesu += username;
+		gnomesu += " -c \"";
+		gnomesu_end = "\"";
+	}
+	system ((gnomesu + command + gnomesu_end + " &").c_str());
+}
+void OPEN_DIRNAME (const char *uri)
+{
+	std::string command;
+	command.reserve (256);
+	command = GNOME_OPEN_PATH " ";
+	command += uri;
+	command += " &";
+	system (command.c_str());
+}
 
 static GdkPixbuf *loadPixbuf (const char *icon)
 { return YGUtils::loadPixbuf (std::string (DATADIR) + "/" + icon); }
@@ -1404,9 +1432,9 @@ public:
 			appendExpander (vbox, _("Dependencies"), dependencies_box);
 			appendExpander (vbox, "", m_support);
 			m_contents = NULL;
-			if (CAN_OPEN_URIS())
+			if (CAN_OPEN_DIRNAME())
 				g_signal_connect (G_OBJECT (m_filelist), "link-clicked",
-						          G_CALLBACK (link_pressed_cb), this);
+						          G_CALLBACK (dirname_pressed_cb), this);
 		}
 		else {
 			m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = NULL;
@@ -1595,8 +1623,11 @@ private:
 			}
 		}
 		else
-			OPEN_URI (link);
+			OPEN_URL (link);
 	}
+
+	static void dirname_pressed_cb (GtkWidget *text, const gchar *link, Impl *pThis)
+	{ OPEN_DIRNAME (link); }
 };
 
 G_DEFINE_TYPE (YGtkDetailView, ygtk_detail_view, GTK_TYPE_SCROLLED_WINDOW)
