@@ -141,7 +141,10 @@ public:
 
 	// YLogView
 	virtual void displayLogText (const string &text)
-	{ setText (text); }
+	{
+		setText (text);
+		scrollToBottom();
+	}
 
 	// YGWidget
 	virtual unsigned int getMinSize (YUIDimension dim)

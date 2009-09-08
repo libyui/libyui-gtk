@@ -400,7 +400,6 @@ static gboolean scroll_down_cb (void *pData)
 
 void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
-	// for some widgets, we need to change adjustment before moving down...
 	if (top)
 		gtk_adjustment_set_value (vadj, vadj->lower);
 	else
