@@ -1139,7 +1139,8 @@ int m_installedPkgs, m_totalPkgs;
 		if (!m_installedVersion) {
 			ZyppObject installedObj = m_sel->installedObj();
 			if (type == Ypp::Package::PATCH_TYPE) {
-				if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
+				if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied() &&
+				    !m_sel->candidateObj().status().isToBeInstalled())
 					installedObj = m_sel->candidateObj();
 			}
 			if (installedObj)

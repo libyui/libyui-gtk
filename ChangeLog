@@ -6,6 +6,9 @@
 	* src/ygtkzyppview.cc: bug fix 523694: find a way to
 	fire the browser as the session's user.
 
+	* src/yzyppwrapper.cc: bug fix: online_update: was reporting
+	available patches as already installed on version box.
+
 2009-09-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkzyppview.cc: select installed version radio

@@ -1122,7 +1122,7 @@ public:
 		if (!onlineUpdate)
 			appendPage (2, _("_Remove"), GTK_STOCK_REMOVE);
 		else
-			appendPage (2, _("_System"), GTK_STOCK_HARDDISK);
+			appendPage (2, _("Installed"), GTK_STOCK_HARDDISK);
 		if (!onlineUpdate)
 			appendPage (3, _("_Undo"), GTK_STOCK_UNDO);
 
