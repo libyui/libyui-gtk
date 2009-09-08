@@ -31,24 +31,37 @@ static void ygtk_notebook_size_request (GtkWidget *widget, GtkRequisition *requi
 static void ygtk_notebook_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
 {
 	GTK_WIDGET_CLASS (ygtk_notebook_parent_class)->size_allocate (widget, allocation);
+	gboolean reverse = gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL;
 	YGtkNotebook *ynotebook = YGTK_NOTEBOOK (widget);
 	if (ynotebook->corner_widget) {
 		GtkRequisition child_req;
 		gtk_widget_get_child_requisition (ynotebook->corner_widget, &child_req);
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (widget);
-		int npages = gtk_notebook_get_n_pages (notebook);
-		GtkWidget *last_label = gtk_notebook_get_nth_page (notebook, npages-1);
-		if (last_label)
-			last_label = gtk_notebook_get_tab_label (notebook, last_label);
 		int tabs_width = 0;
-		if (last_label)
-			tabs_width = last_label->allocation.x + last_label->allocation.width + 8;
+		if (reverse) {
+			GtkWidget *first_label = gtk_notebook_get_nth_page (notebook, 0);
+			if (first_label)
+				first_label = gtk_notebook_get_tab_label (notebook, first_label);
+			if (first_label)
+				tabs_width = (allocation->width + allocation->x) - first_label->allocation.x + 8;
+		}
+		else {
+			int npages = gtk_notebook_get_n_pages (notebook);
+			GtkWidget *last_label = gtk_notebook_get_nth_page (notebook, npages-1);
+			if (last_label)
+				last_label = gtk_notebook_get_tab_label (notebook, last_label);
+			if (last_label)
+				tabs_width = last_label->allocation.x + last_label->allocation.width + 8;
+		}
 
 		GtkAllocation child_alloc;
-		child_alloc.width = MIN (allocation->width - tabs_width, child_req.width);
+		child_alloc.width = MIN (allocation->width - allocation->x - tabs_width, child_req.width);
 		child_alloc.height = child_req.height;
-		child_alloc.x = allocation->x + (allocation->width - child_alloc.width);
+		if (reverse)
+			child_alloc.x = allocation->x;
+		else
+			child_alloc.x = allocation->x + (allocation->width - child_alloc.width);
 		child_alloc.y = allocation->y + 3;
 
 		gtk_widget_size_allocate (ynotebook->corner_widget, &child_alloc);
