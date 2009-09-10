@@ -558,7 +558,7 @@ protected:
 				break;
 			}
 			case ZyppModel::XPAD_COLUMN: {
-				int xpad = package->isAuto() ? 10 : 0;
+				int xpad = package->isAuto() ? 15 : 0;
 				g_value_set_int (value, xpad);
 				break;
 			}
