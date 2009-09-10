@@ -346,6 +346,19 @@ static void ygtk_find_entry_realize (GtkWidget *widget)
 	gdk_window_hide (eentry->right_window);  // show when text is inserted
 }
 
+static void ygtk_find_entry_unrealize (GtkWidget *widget)
+{
+	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->unrealize (widget);
+
+	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (widget);
+	generate_icon (NULL, NULL, &fentry->find_icon, &fentry->find_hover_icon);
+	generate_icon (NULL, NULL, &fentry->clear_icon, &fentry->clear_hover_icon);
+
+	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
+	ygtk_ext_entry_set_border_window_size (eentry, YGTK_EXT_ENTRY_LEFT_WIN, 0);
+	ygtk_ext_entry_set_border_window_size (eentry, YGTK_EXT_ENTRY_RIGHT_WIN, 0);
+}
+
 static void ygtk_find_entry_map (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->map (widget);
@@ -633,6 +646,7 @@ static void ygtk_find_entry_class_init (YGtkFindEntryClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_find_entry_realize;
+	gtkwidget_class->unrealize = ygtk_find_entry_unrealize;
 	gtkwidget_class->map = ygtk_find_entry_map;
 	gtkwidget_class->expose_event = ygtk_find_entry_expose;
 	gtkwidget_class->enter_notify_event = ygtk_find_entry_enter_leave_notify_event;

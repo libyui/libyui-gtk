@@ -1,5 +1,10 @@
 2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkfindentry.c: bug fix: on resize find and erase
+	icons disapear (unrealize not implemented).
+
+2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkcellrendererbutton.c: look more like a button
 	when pressed.
 

@@ -1488,9 +1488,11 @@ GtkWidget *m_scroll, *m_icon, *m_icon_frame, *m_description, *m_filelist, *m_cha
 	*m_authors, *m_support, *m_requires, *m_provides;
 Versions *m_versions;
 YGtkPackageView *m_contents;
+bool m_verMode;
 
 public:
 	Impl (GtkWidget *scroll, bool onlineUpdate)
+	: m_verMode (false)
 	{
 		m_scroll = scroll;
 		m_versions = new Versions();
@@ -1536,10 +1538,11 @@ public:
 			gtk_widget_set_size_request (GTK_WIDGET (m_contents), -1, 150);
 			appendExpander (vbox, _("Applies to"), GTK_WIDGET (m_contents));
 		}
-
 		gtk_box_pack_start (GTK_BOX (hbox), vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), versions_box, FALSE, TRUE, 0);
 		gtk_widget_show_all (hbox);
+		g_signal_connect (G_OBJECT (scroll), "hierarchy-changed",
+		                  G_CALLBACK (hierarchy_changed_cb), this);
 	}
 
 	~Impl()
@@ -1628,6 +1631,13 @@ public:
 		Ypp::PkgList packages;
 		packages.append (package);
 		setPackages (packages);
+	}
+
+	void setVerticalMode (bool verMode)
+	{
+		if (verMode != m_verMode) {
+			m_verMode = verMode;
+		}
 	}
 
 private:
@@ -1720,6 +1730,15 @@ private:
 
 	static void dirname_pressed_cb (GtkWidget *text, const gchar *link, Impl *pThis)
 	{ OPEN_DIRNAME (link); }
+
+	static void hierarchy_changed_cb (GtkWidget *widget, GtkWidget *old, Impl *pThis)
+	{
+		GtkWidget *parent = gtk_widget_get_parent (widget);
+		if (parent) {
+			bool vertical = GTK_IS_HPANED (parent) || GTK_IS_HBOX (parent);
+			pThis->setVerticalMode (vertical);
+		}
+	}
 };
 
 G_DEFINE_TYPE (YGtkDetailView, ygtk_detail_view, GTK_TYPE_SCROLLED_WINDOW)
