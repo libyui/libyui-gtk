@@ -20,13 +20,19 @@
 #include "ygtkrichtext.h"
 #include "ygtktreeview.h"
 #include "ygtkzyppview.h"
-
-// experimentations:
-//#define SHOW_FIND_PANE
-
-#ifndef SHOW_FIND_PANE
 #include "ygtktooltip.h"
-#endif
+
+// experiments:
+static bool show_find_pane = false, use_buttons = false;
+bool YGUI::pkgSelectorParse (const char *arg)
+{
+	if (!strcmp (arg, "find-pane"))
+		show_find_pane = true;
+	else if (!strcmp (arg, "buttons"))
+		use_buttons = true;
+	else return false;
+	return true;
+}
 
 //** UI components -- split up for re-usability, but mostly for readability
 
@@ -669,7 +675,6 @@ static std::string findPatternTooltip (const std::string &name)
 	return "";
 }
 
-#ifdef SHOW_FIND_PANE
 class FindPane : public QueryWidget
 {
 GtkWidget *m_box, *m_name, *m_radio[5], *m_info_box, *m_info_label;
@@ -846,7 +851,6 @@ private:
 	{ pThis->notify(); }
 };
 
-#else
 class FindEntry : public QueryWidget
 {
 GtkWidget *m_name;
@@ -974,7 +978,6 @@ private:
 		pThis->notify();
 	}
 };
-#endif
 
 class FilterCombo : public QueryWidget
 {
@@ -994,18 +997,17 @@ public:
 		if (onlineUpdate)
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Severity"));
 		else {
-			#ifdef SHOW_FIND_PANE
-			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Search"));
-			#endif
+			if (show_find_pane)
+				gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Search"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Groups"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Patterns"));
 			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Languages"));
 			gtk_widget_set_tooltip_markup (m_combo,
 				_("Packages can be organized in:\n"
-				#ifdef SHOW_FIND_PANE
+/*
 				"<b>Search:</b> find a given package by name, summary or some "
 				"other attribute.\n"
-				#endif
+*/
 				"<b>Groups:</b> simple categorization of packages by purpose.\n"
 				"<b>Patterns:</b> assists in installing all packages necessary "
 				"for several working environments.\n"
@@ -1036,14 +1038,12 @@ public:
 	virtual bool installedPackagesOnly()
 	{ return m_queryWidget->installedPackagesOnly(); }
 
-	#ifdef SHOW_FIND_PANE
 	const char *searchName()
 	{
 		if (gtk_combo_box_get_active (GTK_COMBO_BOX (m_combo)) == 0)
 			return ((FindPane *) m_queryWidget)->searchName();
 		return NULL;
 	}
-	#endif
 
 	void select (int nb)
 	{
@@ -1056,12 +1056,9 @@ public:
 			}
 		}
 		else {
-			#ifdef SHOW_FIND_PANE
+			if (!show_find_pane) nb++;
 			switch (nb) {
 				case 0: m_queryWidget = new FindPane (m_onlineUpdate); break;
-			#else
-			switch (nb+1) {
-			#endif
 				case 1: m_queryWidget = new Categories (m_onlineUpdate); break;
 				case 2: m_queryWidget = new Collection (Ypp::Package::PATTERN_TYPE); break;
 				case 3: m_queryWidget = new Collection (Ypp::Package::LANGUAGE_TYPE); break;
@@ -1103,9 +1100,7 @@ guint m_timeout_id;
 bool m_disabledTab, m_highlightTab;
 UndoView *m_undoView;
 Ypp::PkgList m_packages, m_pool;
-#ifndef SHOW_FIND_PANE
 FindEntry *m_find;
-#endif
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
@@ -1144,11 +1139,12 @@ public:
 		gtk_widget_show_all (m_widget);
 		gtk_widget_hide (GTK_WIDGET (m_details));
 
-		#ifndef SHOW_FIND_PANE
-		m_find = new FindEntry (onlineUpdate, m_combo->getComboBox());
-		ygtk_notebook_set_corner_widget (YGTK_NOTEBOOK (m_notebook), m_find->getWidget());
-		m_find->setListener (this);
-		#endif
+		m_find = NULL;
+		if (!show_find_pane) {
+			m_find = new FindEntry (onlineUpdate, m_combo->getComboBox());
+			ygtk_notebook_set_corner_widget (YGTK_NOTEBOOK (m_notebook), m_find->getWidget());
+			m_find->setListener (this);
+		}
 
 		Ypp::Package::Type type = Ypp::Package::PACKAGE_TYPE;
 		if (m_onlineUpdate)
@@ -1164,9 +1160,7 @@ public:
 		delete m_undoView;
 		delete m_combo;
 		delete m_pane;
-		#ifndef SHOW_FIND_PANE
 		delete m_find;
-		#endif
 	}
 
 	void setUndoPage()
@@ -1217,9 +1211,8 @@ private:
 		}
 
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		#ifndef SHOW_FIND_PANE
-		m_find->writeQuery (query);
-		#endif
+		if (!show_find_pane)
+			m_find->writeQuery (query);
 		m_combo->writeQuery (query);
 		m_pool = Ypp::PkgQuery (m_packages, query);
 
@@ -1272,11 +1265,11 @@ private:
 					highlightPage (i, false);
 				m_highlightTab = false;
 			}
-			#ifdef SHOW_FIND_PANE
-			const char *name = m_combo->searchName();
-			#else
-			const char *name = m_find->searchName();
-			#endif
+			const char *name;
+			if (show_find_pane)
+				name = m_combo->searchName();
+			else
+				name = m_find->searchName();
 			if (name) {
 				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 				query->addNames (name, 0, true, false, false, false, false, true, true);
@@ -1342,16 +1335,22 @@ private:
 				case 2: col = ZyppModel::TO_REMOVE_COLUMN; break;
 			}
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
-			if (!m_onlineUpdate || nb == 0)
-				view->appendCheckColumn (col);
-			int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
-			view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
-			if (col == ZyppModel::TO_UPGRADE_COLUMN) {
-				view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
-				view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+			if (use_buttons) {
+				view->appendTextColumn (NULL, ZyppModel::NAME_SUMMARY_COLUMN, 350);
+				view->appendButtonColumn (NULL, col);
 			}
-			else
-				view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			else {
+				if (!m_onlineUpdate || nb == 0)
+					view->appendCheckColumn (col);
+				int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
+				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
+				if (col == ZyppModel::TO_UPGRADE_COLUMN) {
+					view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
+					view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+				}
+				else
+					view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			}
 			view->setListener (this);
 			page = GTK_WIDGET (view);
 		}

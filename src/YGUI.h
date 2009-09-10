@@ -78,6 +78,8 @@ private:
     // window-related arguments
     bool m_have_wm, m_no_border, m_fullscreen;
 
+	bool pkgSelectorParse (const char *arg);
+
 public:
     // Helpers for internal use [ visibility hidden ]
     bool setFullscreen() const { return m_fullscreen; }

@@ -1,3 +1,17 @@
+2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrendererbutton.h/c: a push-button for lists.
+
+	* src/ygtkcellrenderertextpixbuf.h/c: added stock icon
+	options, and fixed x/ypadding.
+
+	* src/YGUI.h/cc & src/YGPackageSelector.cc: pass arguments for
+	PkgSelector so we can let people experiment with new looks at
+	run-time. Try:
+	/usr/lib/YaST2/bin/y2base sw_single gtk --find-pane --buttons
+
+	* src/ygtkzyppview.h/cc: added button column.
+
 2009-09-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtknotebook.cc: handle right-to-left text flow:

@@ -15,6 +15,7 @@
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
 #include "ygtkrichtext.h"
+#include "ygtkcellrendererbutton.h"
 #include "YGi18n.h"
 #include "YGUtils.h"
 #include "YGDialog.h"
@@ -119,6 +120,10 @@ static GType _columnType (int col)
 		case ZyppModel::AVAILABLE_VERSION_COLUMN:
 		case ZyppModel::FOREGROUND_COLUMN:
 		case ZyppModel::BACKGROUND_COLUMN:
+		case ZyppModel::INSTALL_LABEL_COLUMN:
+		case ZyppModel::REMOVE_LABEL_COLUMN:
+		case ZyppModel::INSTALL_STOCK_COLUMN:
+		case ZyppModel::REMOVE_STOCK_COLUMN:
 			return G_TYPE_STRING;
 		case ZyppModel::TO_INSTALL_COLUMN:
 		case ZyppModel::TO_UPGRADE_COLUMN:
@@ -150,6 +155,10 @@ static void _getValueDefault (int col, GValue *value)
 		case ZyppModel::SUPPORT_COLUMN:
 		case ZyppModel::INSTALLED_VERSION_COLUMN:
 		case ZyppModel::AVAILABLE_VERSION_COLUMN:
+		case ZyppModel::INSTALL_LABEL_COLUMN:
+		case ZyppModel::REMOVE_LABEL_COLUMN:
+		case ZyppModel::INSTALL_STOCK_COLUMN:
+		case ZyppModel::REMOVE_STOCK_COLUMN:
 			g_value_set_string (value, g_strdup (""));
 			break;
 		case ZyppModel::FOREGROUND_COLUMN:
@@ -362,6 +371,7 @@ protected:
 		if (index == -2) {  // apply all label
 			switch (col) {
 				case ZyppModel::NAME_COLUMN:
+				case ZyppModel::NAME_SUMMARY_COLUMN:
 					g_value_set_string (value, g_strdup (segment->applyAll.c_str()));
 					break;
 				case ZyppModel::BACKGROUND_COLUMN: {
@@ -388,6 +398,14 @@ protected:
 					g_value_set_boolean (value, modified);
 					break;
 				}
+				case ZyppModel::INSTALL_LABEL_COLUMN:
+				case ZyppModel::REMOVE_LABEL_COLUMN:
+					g_value_set_string (value, g_strdup (_("All")));
+					break;
+				case ZyppModel::INSTALL_STOCK_COLUMN:
+				case ZyppModel::REMOVE_STOCK_COLUMN:
+					g_value_set_string (value, g_strdup (GTK_STOCK_SELECT_ALL));
+					break;
 				default:
 					_getValueDefault (col, value);
 					break;
@@ -542,6 +560,38 @@ protected:
 			case ZyppModel::XPAD_COLUMN: {
 				int xpad = package->isAuto() ? 10 : 0;
 				g_value_set_int (value, xpad);
+				break;
+			}
+			case ZyppModel::INSTALL_LABEL_COLUMN: {
+				const char *label = _("Install");
+/*				if (package->toModify())
+					label = _("Undo");
+				else if (package->hasUpgrade())
+					label = _("Upgrade");*/
+				if (package->hasUpgrade())
+					label = _("Upgrade");
+				g_value_set_string (value, g_strdup (label));
+				break;
+			}
+			case ZyppModel::REMOVE_LABEL_COLUMN: {
+				const char *label = _("Remove");
+/*				if (package->toModify())
+					label = _("Undo");*/
+				g_value_set_string (value, g_strdup (label));
+				break;
+			}
+			case ZyppModel::INSTALL_STOCK_COLUMN: {
+				const char *stock = GTK_STOCK_SAVE;
+/*				if (package->toModify())
+					stock = GTK_STOCK_UNDO;*/
+				g_value_set_string (value, g_strdup (stock));
+				break;
+			}
+			case ZyppModel::REMOVE_STOCK_COLUMN: {
+				const char *stock = GTK_STOCK_DELETE;
+/*				if (package->toModify())
+					stock = GTK_STOCK_UNDO;*/
+				g_value_set_string (value, g_strdup (stock));
 				break;
 			}
 			case ZyppModel::PTR_COLUMN:
@@ -733,11 +783,10 @@ struct YGtkPackageView::Impl
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		if (header)
 			gtk_tree_view_set_headers_visible (view, TRUE);
-		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
 			int height = MAX (34, YGUtils::getCharsHeight (m_view, 2));
 			gtk_cell_renderer_set_fixed_size (renderer, -1, height);
-		column = gtk_tree_view_column_new_with_attributes (
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
 			header, renderer, "pixbuf", col,
 			"cell-background", ZyppModel::BACKGROUND_COLUMN, NULL);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
@@ -749,11 +798,11 @@ struct YGtkPackageView::Impl
 	{
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
-		GtkTreeViewColumn *column;
-		column = gtk_tree_view_column_new_with_attributes (NULL,
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (NULL,
 			renderer, "active", modelCol, "visible", ZyppModel::CHECK_VISIBLE_COLUMN,
 			"sensitive", ZyppModel::SENSITIVE_COLUMN,
 			"cell-background", ZyppModel::BACKGROUND_COLUMN, NULL);
+		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
 		g_object_set_data (G_OBJECT (renderer), "col", GINT_TO_POINTER (modelCol));
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 			              G_CALLBACK (renderer_toggled_cb), this);
@@ -763,22 +812,56 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_append_column (view, column);
 	}
 
+	void appendButtonColumn (const char *header, int modelCol)
+	{
+		int labelCol, stockCol;
+		switch (modelCol) {
+			case ZyppModel::TO_INSTALL_COLUMN: case ZyppModel::TO_UPGRADE_COLUMN: default:
+				labelCol = ZyppModel::INSTALL_LABEL_COLUMN;
+				stockCol = ZyppModel::INSTALL_STOCK_COLUMN;
+				break;
+			case ZyppModel::TO_REMOVE_COLUMN:
+				labelCol = ZyppModel::REMOVE_LABEL_COLUMN;
+				stockCol = ZyppModel::REMOVE_STOCK_COLUMN;
+				break;
+		}
+
+		GtkTreeView *view = GTK_TREE_VIEW (m_view);
+		GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (header,
+			renderer, "active", modelCol, "visible", ZyppModel::CHECK_VISIBLE_COLUMN,
+			"sensitive", ZyppModel::SENSITIVE_COLUMN,
+			"cell-background", ZyppModel::BACKGROUND_COLUMN,
+			"text", labelCol, "stock-id", stockCol, NULL);
+		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
+		g_object_set_data (G_OBJECT (renderer), "col", GINT_TO_POINTER (modelCol));
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+			              G_CALLBACK (renderer_toggled_cb), this);
+		// it seems like GtkCellRendererToggle has no width at start, so fixed doesn't work
+		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+		gtk_tree_view_column_set_fixed_width (column, 120);
+		gtk_tree_view_append_column (view, column);
+	}
+
 	void appendTextColumn (const char *header, int col, int size, bool identAuto)
 	{
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		if (header)
 			gtk_tree_view_set_headers_visible (view, TRUE);
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-		g_object_set (G_OBJECT (renderer), "ellipsize",
-			size == -1 ? PANGO_ELLIPSIZE_END : PANGO_ELLIPSIZE_MIDDLE, NULL);
+		PangoEllipsizeMode ellipsize = PANGO_ELLIPSIZE_END;
+		if (size >= 0 && col != ZyppModel::NAME_SUMMARY_COLUMN)
+			ellipsize = PANGO_ELLIPSIZE_MIDDLE;
+		g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
 /*		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 		if (reverse) {  // work-around: Pango ignored alignment flag on RTL
 			gtk_widget_set_direction (m_view, GTK_TEXT_DIR_LTR);
 			g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
 		}*/
+		const char *colType = col == ZyppModel::NAME_SUMMARY_COLUMN ? "markup" : "text";
 		GtkTreeViewColumn *column;
 		column = gtk_tree_view_column_new_with_attributes (
-			header, renderer, "markup", col,
+			header, renderer, colType, col,
 			"sensitive", ZyppModel::SENSITIVE_COLUMN,
 			"style", ZyppModel::STYLE_COLUMN,
 			"weight", ZyppModel::WEIGHT_COLUMN,
@@ -793,6 +876,8 @@ struct YGtkPackageView::Impl
 			gtk_tree_view_column_set_fixed_width (column, size);
 		else
 			gtk_tree_view_column_set_expand (column, TRUE);
+		if (col == ZyppModel::NAME_SUMMARY_COLUMN)
+			gtk_tree_view_set_rules_hint (view, TRUE);
 //		gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 		gtk_tree_view_append_column (view, column);
 	}
@@ -957,7 +1042,12 @@ struct YGtkPackageView::Impl
 		gtk_tree_model_get_iter_from_string (model, &iter, path_str);
 		gtk_tree_model_get (model, &iter, ZyppModel::PTR_COLUMN, &package, -1);
 
-		gboolean active = gtk_cell_renderer_toggle_get_active (renderer);
+		gboolean active;
+		if (GTK_IS_CELL_RENDERER_TOGGLE (renderer))
+			active = gtk_cell_renderer_toggle_get_active (renderer);
+/*		else
+			active = ygtk_cell_renderer_toggle_get_active (renderer);*/
+else active = FALSE;  // FIXME
 		int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "col"));
 		if (package)
 			apply (package, col, !active);
@@ -1004,8 +1094,7 @@ struct YGtkPackageView::Impl
 					view, x, y, &bx, &by);
 				gtk_tree_view_get_path_at_pos (
 					view, x, y, NULL, &column, NULL, NULL);
-				int status_col = 0;
-				if (column == gtk_tree_view_get_column (view, status_col)) {
+				if (g_object_get_data (G_OBJECT (column), "status-tooltip")) {
 					if (package->toInstall()) {
 						if (package->isInstalled())
 							text = _("To re-install a different version");
@@ -1097,6 +1186,9 @@ void YGtkPackageView::appendIconColumn (const char *header, int col)
 
 void YGtkPackageView::appendCheckColumn (int col)
 { impl->appendCheckColumn (col); }
+
+void YGtkPackageView::appendButtonColumn (const char *header, int col)
+{ impl->appendButtonColumn (header, col); }
 
 void YGtkPackageView::appendTextColumn (const char *header, int col, int size, bool identAuto)
 { impl->appendTextColumn (header, col, size, identAuto); }

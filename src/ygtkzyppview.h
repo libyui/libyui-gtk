@@ -23,6 +23,7 @@ namespace ZyppModel {
 		// internal
 		STYLE_COLUMN, WEIGHT_COLUMN, SENSITIVE_COLUMN, CHECK_VISIBLE_COLUMN,
 		FOREGROUND_COLUMN, BACKGROUND_COLUMN, XPAD_COLUMN,
+		INSTALL_LABEL_COLUMN, REMOVE_LABEL_COLUMN, INSTALL_STOCK_COLUMN, REMOVE_STOCK_COLUMN,
 		// misc
 		PTR_COLUMN, TOTAL_COLUMNS
 	};
@@ -57,6 +58,7 @@ struct YGtkPackageView
 	void clear();
 
 	void appendCheckColumn (int col);
+	void appendButtonColumn (const char *header, int col);
 	void appendIconColumn (const char *header, int col);
 	void appendTextColumn (const char *header, int col, int size = -1, bool identAuto = false);
 	// (set all column headers to NULL in order to hide them.)

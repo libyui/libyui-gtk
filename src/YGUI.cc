@@ -133,6 +133,7 @@ void YGUI::checkInit()
 				 );
 			exit (0);
 		}
+		else if (pkgSelectorParse (argp)) ;
 /*
 		else
 			printf ("Warning: Unknown argument '--%s'\n", argp);

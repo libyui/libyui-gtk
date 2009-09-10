@@ -38,7 +38,7 @@ static const char *pkg_help[] = {
 	"AbiWord which carries the word 'office' in its description). You can also "
 	"choose to view software from a specific repository. Searching other attributes "
 	"is possible. For instance, you may perform a search on the installed package "
-	"containing a given file.</p>"),
+	"containing a given file. Press the search icon for the filter menu.</p>"),
 	_("<h2>Groups, Patterns, Languages</h2>"
 	"<p>Software for &product; is indexed so that you can find software for a specific "
 	"task when you don't know the name of the software you are looking for. Browse "
