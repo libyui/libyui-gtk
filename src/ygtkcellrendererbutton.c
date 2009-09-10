@@ -6,6 +6,7 @@
 // check the header file for information about this widget
 
 #include "ygtkcellrendererbutton.h"
+#include <gtk/gtk.h>
 
 #define INNER_BORDER 4
 #define OUTER_BORDER 1
@@ -76,22 +77,21 @@ static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
 	GdkRectangle *cell_area, GdkRectangle *expose_area, GtkCellRendererState flags)
 {
 	YGtkCellRendererButton *bcell = YGTK_CELL_RENDERER_BUTTON (cell);
-	GtkShadowType shadow = bcell->active ? GTK_SHADOW_IN : GTK_SHADOW_OUT;
+
 	gboolean has_focus = FALSE;
 	if (flags & GTK_CELL_RENDERER_SELECTED)
 		has_focus = GTK_WIDGET_HAS_FOCUS (widget);
 
-	GtkStateType state;
-	if (!cell->sensitive)
+	GtkStateType state = GTK_STATE_NORMAL;
+	if (!cell->sensitive || GTK_WIDGET_STATE (widget) == GTK_STATE_INSENSITIVE)
 		state = GTK_STATE_INSENSITIVE;
-	else if ((flags & GTK_CELL_RENDERER_PRELIT) == GTK_CELL_RENDERER_PRELIT &&
-	         GTK_WIDGET_STATE (widget) == GTK_STATE_PRELIGHT)
+	else if ((flags & GTK_CELL_RENDERER_PRELIT))
 		state = GTK_STATE_PRELIGHT;
-	else {
-		if (GTK_WIDGET_STATE (widget) == GTK_STATE_INSENSITIVE)
-			state = GTK_STATE_INSENSITIVE;
-		else
-			state = GTK_STATE_NORMAL;
+
+	GtkShadowType shadow = GTK_SHADOW_OUT;
+	if (bcell->active) {
+		shadow = GTK_SHADOW_IN;
+		state = GTK_STATE_ACTIVE;
 	}
 
 	int width, height;
@@ -102,8 +102,26 @@ static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
 	int y = cell_area->y + (cell_area->height - height)/2 + OUTER_BORDER;
 	height -= OUTER_BORDER*2;
 
+#if 0
+	static GtkWidget *button = 0;
+	if (!button) {
+		button = gtk_toggle_button_new();
+		GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		gtk_container_add (GTK_CONTAINER (window), button);
+		gtk_widget_show (button);
+		gtk_widget_realize (window);
+		button->allocation.x = x;
+		button->allocation.y = y;
+		button->allocation.width = width;
+		button->allocation.height = height;
+	}
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), bcell->active);
+	gtk_paint_box (button->style, window, state, shadow, expose_area, button,
+		"button", x, y, width, height);
+#else
 	gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
 		"button", x, y, width, height);
+#endif
 
 	int cell_area_x = cell_area->x, cell_area_y = cell_area->y;
 	if (bcell->active) {
