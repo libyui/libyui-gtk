@@ -6,6 +6,9 @@
 	* src/YGUI.h, src/YGMenuButton.cc & src/YGTable.cc: make
 	compilable with latest libyui.
 
+	* src/YGUI.h/cc & src/YGDialog.cc: ensure to be more generous
+	to sw_single window from the start.
+
 2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkcellrendererbutton.h/c: a push-button for lists.

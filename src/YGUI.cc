@@ -40,6 +40,7 @@ YGUI::YGUI (bool with_threads)
 	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
+    m_default_width = (m_default_height = 0);
 
     YGUI::setTextdomain( TEXTDOMAIN );
 
@@ -102,12 +103,13 @@ void YGUI::checkInit()
 	YCommandLine cmdLine;
 	int argc = cmdLine.argc();
 	char **argv = cmdLine.argv();
-
 	for (int i = 1; i < argc; i++) {
 		const char *argp = argv[i];
-		if (!argp) continue;
 		if (argp[0] != '-') {
-			//printf ("Warning: Unknown argument '%s'\n", argp);
+			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update")) {
+				m_default_width = 700;
+				m_default_height = 800;
+			}
 			continue;
 		}
 		argp++;
@@ -121,12 +123,11 @@ void YGUI::checkInit()
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
 			printf (
-				 "Command line options for the YaST2 Gtk UI:\n"
-				 "\n"
+				 "Command line options for the YaST2 Gtk UI:\n\n"
 				 "--no-wm       assume no window manager is running\n"
 				 "--noborder    no window manager border for main dialogs\n"
 				 "--fullscreen  use full screen for main dialogs\n"
-//				 "--geomtry WxH sets a default size of W per H to main dialogs\n"
+//				 "--geometry WxH sets a default size of W per H to main dialogs\n"
 				 "--nothreads   run without additional UI threads\n"
 				 "--help        prints this help text\n"
 				 "\n"
@@ -134,10 +135,6 @@ void YGUI::checkInit()
 			exit (0);
 		}
 		else if (pkgSelectorParse (argp)) ;
-/*
-		else
-			printf ("Warning: Unknown argument '--%s'\n", argp);
-*/
 	}
 
 	gtk_init (&argc, &argv);

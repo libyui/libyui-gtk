@@ -91,7 +91,13 @@ public:
 		    }
 
 		    if (_main_window) {
-		        gtk_window_set_default_size (window, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		    	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
+		    	if (YGUI::ui()->defaultWidth())
+		    		width = YGUI::ui()->defaultWidth();
+		    	if (YGUI::ui()->defaultHeight())
+		    		height = YGUI::ui()->defaultHeight();
+
+		        gtk_window_set_default_size (window, width, height);
 				if (YGUI::ui()->setFullscreen())
 					gtk_window_fullscreen (window);
 				else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
