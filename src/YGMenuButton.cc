@@ -86,7 +86,7 @@ class YGContextMenu : public YContextMenu, public YGWidget
 public:
 	YGContextMenu()
 	:  YContextMenu(),
-	   YGWidget (this, parent, GTK_TYPE_MENU, NULL)
+	   YGWidget (this, NULL, GTK_TYPE_MENU, NULL)
 	{
 		connect (getWidget(), "cancel", G_CALLBACK (cancel_cb), this);
 	}
@@ -104,12 +104,12 @@ public:
 	static void cancel_cb (GtkMenuShell *menu, YGContextMenu *pThis)
 	{ YGUI::ui()->sendEvent (new YCancelEvent()); }
 
-	YGWIDGET_IMPL_COMMON (YMenuButton)
+	YGWIDGET_IMPL_COMMON (YContextMenu)
 };
 
 bool YGApplication::openContextMenu (const YItemCollection &itemCollection)
 {
-	YQContextMenu *menu = new YGContextMenu();
+	YGContextMenu *menu = new YGContextMenu();
 	menu->addItems (itemCollection);
 	return true;
 }

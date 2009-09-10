@@ -222,7 +222,7 @@ public:
 #if YAST2_VERSION > 2018003
 	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTableView *pThis)
 	{
-		emitEvent (YEvent::ContextMenuActivated);
+		pThis->emitEvent (YEvent::ContextMenuActivated);
 	}
 #endif
 };
@@ -366,7 +366,7 @@ public:
 	{
 #if YAST2_VERSION > 2018003
 		if (pThis->notifyContextMenu())
-			return YGTableview::hack_right_click_cb (view, outreach, pThis);
+			return YGTableView::right_click_cb (view, outreach, pThis);
 #endif
 		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
 			// undetermined case -- more than one table exists

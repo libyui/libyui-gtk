@@ -47,9 +47,6 @@ public:
     YEvent *waitInput (unsigned long timeout_ms, bool block);
 
 	virtual YEvent *runPkgSelection (YWidget *packageSelector);
-#if YAST2_VERSION > 2018003
-	virtual bool openContextMenu (const YItemCollection &itemCollection);
-#endif
 
 	// used internally: for public use, see YApplication
 	void busyCursor();
@@ -240,6 +237,10 @@ public:
 	virtual bool richTextSupportsTable() IMPL_RET (true)
 #else
 	virtual bool richTextSupportsTable() IMPL_RET (false)
+#endif
+
+#if YAST2_VERSION > 2018003
+	virtual bool openContextMenu (const YItemCollection &itemCollection);
 #endif
 
 private:

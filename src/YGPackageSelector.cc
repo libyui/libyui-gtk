@@ -1336,6 +1336,7 @@ private:
 			}
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
 			if (use_buttons) {
+				//view->appendIconColumn (NULL, ZyppModel::ICON_COLUMN);
 				view->appendTextColumn (NULL, ZyppModel::NAME_SUMMARY_COLUMN, 350);
 				view->appendButtonColumn (NULL, col);
 			}
