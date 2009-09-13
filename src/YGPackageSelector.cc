@@ -254,6 +254,7 @@ public:
 
 	virtual bool availablePackagesOnly() { return false; }
 	virtual bool installedPackagesOnly() { return false; }
+	virtual ~QueryWidget() {}
 };
 
 class StoreView : public QueryWidget
@@ -539,7 +540,7 @@ public:
 		build (false, true, true, true);
 	}
 
-	~Repositories()
+	virtual ~Repositories()
 	{ Ypp::get()->setFavoriteRepository (NULL); }
 
 protected:
@@ -563,7 +564,8 @@ protected:
 			else
 				icon = GTK_STOCK_NETWORK;
 			gtk_tree_store_set (store, &iter, TEXT_COL, text.c_str(),
-				ICON_COL, icon, ENABLED_COL, repo->enabled, PTR_COL, repo, -1);
+				ICON_COL, icon, ENABLED_COL, repo->enabled, PTR_COL, repo,
+				TOOLTIP_COL, text.c_str(), -1);
 		}
 	}
 
@@ -1179,8 +1181,10 @@ public:
 
 	void setUndoPage()
 	{
-		if (!m_onlineUpdate)
+		if (!m_onlineUpdate) {
 			gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 3);
+			gtk_widget_hide (GTK_WIDGET (m_details));
+		}
 	}
 
 private:
@@ -1751,7 +1755,6 @@ static bool confirmPkgs (const char *title, const char *message,
 
 	bool confirm = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES);
 	gtk_widget_destroy (dialog);
-	delete view;
 	return confirm;
 }
 
@@ -1985,18 +1988,20 @@ public:
 		ygtk_wizard_set_extra_button (YGTK_WIZARD (getWidget()), m_tools->getWidget());
 
 		m_progressbar = gtk_progress_bar_new();
-		GtkWidget *align = gtk_alignment_new (0, .95, 1, 0);
-		gtk_container_add (GTK_CONTAINER (align), m_progressbar);
+		GtkWidget *empty = gtk_event_box_new();
+		gtk_widget_set_size_request (empty, -1, 40);
+		gtk_widget_show (empty);
 
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
-		gtk_box_pack_end (GTK_BOX (vbox), align, FALSE, TRUE, 0);
-		gtk_widget_show (align);
+		gtk_box_pack_end (GTK_BOX (vbox), empty, FALSE, TRUE, 0);
+		gtk_box_pack_end (GTK_BOX (vbox), m_progressbar, FALSE, TRUE, 0);
 		gtk_widget_show (vbox);
 		ygtk_wizard_set_child (YGTK_WIZARD (wizard), vbox);
 		Ypp::get()->setInterface (this);
 
 		m_notebook = new QueryNotebook (onlineUpdate, repoMgrEnabled());
 		gtk_box_pack_start (GTK_BOX (vbox), m_notebook->getWidget(), TRUE, TRUE, 0);
+		gtk_widget_hide (empty);
 
 		const char **help = onlineUpdate ? patch_help : pkg_help;
 		std::string str;

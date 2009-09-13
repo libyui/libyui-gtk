@@ -1,5 +1,13 @@
 2009-09-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/YGPackageSelector.cc: bug fix: repository selection not
+	unset on filter change.
+
+	* src/YGPackageSelector.cc: place startup progress-bar on the
+	same place as ycp's.
+
+2009-09-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGPackageSelector.cc: removed "filter by novelty" from
 	search (pass --novelty-filter to enable it) and moved it as
 	the Groups item "Fresh".
