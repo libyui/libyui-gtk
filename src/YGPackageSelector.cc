@@ -23,13 +23,15 @@
 #include "ygtktooltip.h"
 
 // experiments:
-static bool show_find_pane = false, use_buttons = false;
+static bool show_find_pane = false, use_buttons = false, show_novelty_filter = false;
 bool YGUI::pkgSelectorParse (const char *arg)
 {
 	if (!strcmp (arg, "find-pane"))
 		show_find_pane = true;
 	else if (!strcmp (arg, "buttons"))
 		use_buttons = true;
+	else if (!strcmp (arg, "novelty-filter"))
+		show_novelty_filter = true;
 	else return false;
 	return true;
 }
@@ -258,7 +260,7 @@ class StoreView : public QueryWidget
 {
 protected:
 	GtkWidget *m_view, *m_scroll, *m_box;
-	enum Column { TEXT_COL, ICON_COL, ENABLED_COL, PTR_COL, TOTAL_COLS };
+	enum Column { TEXT_COL, ICON_COL, ENABLED_COL, PTR_COL, TOOLTIP_COL, TOTAL_COLS };
 
 	virtual void doBuild (GtkTreeStore *store) = 0;
 	virtual void writeQuery (Ypp::PkgQuery::Query *query,
@@ -316,6 +318,7 @@ protected:
 		if (do_tooltip)
 			gtk_tree_view_set_tooltip_column (view, TEXT_COL);
 		gtk_tree_view_set_show_expanders (view, tree_mode);
+		gtk_tree_view_set_tooltip_column (view, TOOLTIP_COL);
 
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer;
@@ -332,7 +335,7 @@ protected:
 		gtk_tree_view_append_column (view, column);
 
 		GtkTreeStore *store = gtk_tree_store_new (TOTAL_COLS,
-			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER);
+			G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER, G_TYPE_STRING);
 		GtkTreeModel *model = GTK_TREE_MODEL (store);
 		gtk_tree_view_set_model (view, model);
 		g_object_unref (G_OBJECT (model));
@@ -347,7 +350,8 @@ protected:
 		block();
 		GtkTreeIter iter;
 		gtk_tree_store_append (store, &iter, NULL);
-		gtk_tree_store_set (store, &iter, TEXT_COL, _("All"), ENABLED_COL, TRUE, -1);
+		gtk_tree_store_set (store, &iter, TEXT_COL, _("All"), ENABLED_COL, TRUE,
+		                    TOOLTIP_COL, _("No filter"), -1);
 		doBuild (store);
 
 		selectFirstItem();
@@ -461,11 +465,15 @@ protected:
 			gtk_tree_store_append (store, &iter, NULL);
 			gtk_tree_store_set (store, &iter, TEXT_COL, _("Recommended"),
 				ICON_COL, GTK_STOCK_ABOUT,  PTR_COL, GINT_TO_POINTER (1),
-				ENABLED_COL, TRUE, -1);
+				ENABLED_COL, TRUE, TOOLTIP_COL, _("Recommended by an installed package"), -1);
 			gtk_tree_store_append (store, &iter, NULL);
 			gtk_tree_store_set (store, &iter, TEXT_COL, _("Suggested"),
 				ICON_COL, GTK_STOCK_ABOUT,  PTR_COL, GINT_TO_POINTER (2),
-				ENABLED_COL, TRUE, -1);
+				ENABLED_COL, TRUE, TOOLTIP_COL, _("Suggested by an installed package"), -1);
+			gtk_tree_store_append (store, &iter, NULL);
+			gtk_tree_store_set (store, &iter, TEXT_COL, _("Fresh"),
+				ICON_COL, GTK_STOCK_NEW,  PTR_COL, GINT_TO_POINTER (3),
+				ENABLED_COL, TRUE, TOOLTIP_COL, _("Uploaded in the last week"), -1);
 		}
 	}
 
@@ -477,6 +485,8 @@ protected:
 			query->setIsRecommended (true);
 		else if (nptr == 2)
 			query->setIsSuggested (true);
+		else if (nptr == 3)
+			query->setBuildAge (7);
 		else if (ptr) {
 			Ypp::Node *node = (Ypp::Node *) ptr;
 			if (m_rpmGroups || m_onlineUpdate)
@@ -698,6 +708,7 @@ public:
 		gtk_box_pack_start (GTK_BOX (name_box), m_name, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (name_box), button, FALSE, TRUE, 0);
 
+		for (int i = 0; i < 5; i++) m_radio[i] = 0;
 		GtkWidget *radio_box = gtk_vbox_new (FALSE, 0);
 		m_radio[0] = gtk_radio_button_new_with_label_from_widget (NULL, _("Name & summary"));
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (m_radio[0]), TRUE);
@@ -707,9 +718,11 @@ public:
 			m_radio[2] = gtk_radio_button_new_with_label_from_widget (radiob, _("File name"));
 			gtk_widget_set_tooltip_text (m_radio[2], find_entry_file_tooltip);
 			m_radio[3] = gtk_radio_button_new_with_label_from_widget (radiob, _("Author"));
-			m_radio[4] = gtk_radio_button_new_with_label_from_widget (radiob, _("Novelty (in days)"));
-			g_signal_connect (G_OBJECT (m_radio[4]), "toggled", G_CALLBACK (novelty_toggled_cb), this);
-			gtk_widget_set_tooltip_markup (m_radio[4], find_entry_novelty_tooltip);
+			if (show_novelty_filter) {
+				m_radio[4] = gtk_radio_button_new_with_label_from_widget (radiob, _("Novelty (in days)"));
+				g_signal_connect (G_OBJECT (m_radio[4]), "toggled", G_CALLBACK (novelty_toggled_cb), this);
+				gtk_widget_set_tooltip_markup (m_radio[4], find_entry_novelty_tooltip);
+			}
 		}
 		for (int i = 0; i < 5; i++)
 			if (m_radio [i])
@@ -875,8 +888,9 @@ public:
 				_("Filter by file"), GTK_STOCK_OPEN, find_entry_file_tooltip);
 			ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
 				_("Filter by author"), GTK_STOCK_ABOUT, NULL);
-			ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name), _("Filter by novelty (in days)"),
-				GTK_STOCK_NEW, find_entry_novelty_tooltip);
+			if (show_novelty_filter)
+				ygtk_find_entry_insert_item (YGTK_FIND_ENTRY (m_name),
+					_("Filter by novelty (in days)"), GTK_STOCK_NEW, find_entry_novelty_tooltip);
 		}
 		g_signal_connect (G_OBJECT (m_name), "changed",
 		                  G_CALLBACK (name_changed_cb), this);
