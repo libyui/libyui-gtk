@@ -7,11 +7,11 @@ ZENITY_BINARY=zenity
 Y2BASE_BINARY="/usr/lib/YaST2/bin/y2base -l /dev/stderr"
 
 DEFAULT_DIR=/usr/share/YaST2/clients
-RUN_QT=0
+FRONTEND="gtk"
 
 if [ $# -gt 0 ]; then
     if [ "$1" == "z" ]; then
-        DEFAULT_DIR=/usr/share/doc/packages/yast2-core/libyui/examples
+        DEFAULT_DIR=/usr/share/doc/packages/yast2-ycp-ui-bindings/examples
     fi
     if [ "$1" == "x" ]; then
         DEFAULT_DIR=.
@@ -30,7 +30,7 @@ if [ $# -gt 0 ]; then
         exit
     fi
     if [ "$1" == "qt" ]; then
-        RUN_QT=1
+        FRONTEND="qt"
     fi
 fi
 
@@ -43,10 +43,7 @@ while true; do
     module=`$ZENITY_BINARY --title "Yast Control Center" \
             --list --column "Available modules:" $module_list`;
     if [ "$module" ]; then
-        if [ $RUN_QT -eq 1 ]; then
-            $Y2BASE_BINARY "$DEFAULT_DIR/$module" qt &
-        fi
-        $Y2BASE_BINARY "$DEFAULT_DIR/$module" gtk
+        $Y2BASE_BINARY "$DEFAULT_DIR/$module" $FRONTEND
     else
         exit 0;
     fi
