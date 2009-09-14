@@ -1,7 +1,9 @@
-2009-09-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2009-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: disable install tab when
 	searching for files.
+
+	* src/YGPackageSelector.cc: change title only when done.
 
 2009-09-14 Katarina Machalkova <kmachalkova@suse.cz>
 	* src/YGUI.cc: initialize Gtk stuff in ctor if we're running

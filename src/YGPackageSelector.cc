@@ -1978,7 +1978,6 @@ public:
 			THEMEDIR "/icons/22x22/apps/yast-software.png");
 		const char *title = onlineUpdate ? _("Online Update") : _("Software Manager");
 		ygtk_wizard_set_header_text (wizard, title);
-		dialog->setTitle (title);
 		ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
 		ygtk_wizard_set_button_label (wizard,  wizard->abort_button,
@@ -2017,6 +2016,7 @@ public:
 		for (int i = 0; help[i]; i++)
 			str.append (help [i]);
 		ygtk_wizard_set_help_text (wizard, str.c_str());
+		dialog->setTitle (title);
 		m_button_timeout_id = g_timeout_add (7500, wizard_enable_button_cb, this);
 	}
 
