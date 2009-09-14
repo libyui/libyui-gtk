@@ -1210,13 +1210,11 @@ private:
 			for (int i = 0; i < 4; i++)
 				enablePage (i, true);
 		}
-		if (m_combo->availablePackagesOnly()) {
-			enablePage (1, false);
-			if (!m_onlineUpdate)
-				enablePage (2, false, 0);
+		if (availablePackagesOnly()) {
+			enablePage (m_onlineUpdate ? 1 : 2, false, 0);
 			m_disabledTab = true;
 		}
-		else if (m_combo->installedPackagesOnly()) {
+		else if (installedPackagesOnly()) {
 			int new_page = m_onlineUpdate ? 1 : 2;
 			enablePage (0, false, new_page);
 			m_disabledTab = true;
@@ -1327,6 +1325,16 @@ private:
 		m_details->setPackages (packages);
 		if (packages.size() > 0)
 			gtk_widget_show (GTK_WIDGET (m_details));
+	}
+
+	inline bool availablePackagesOnly()
+	{ return m_combo->availablePackagesOnly(); }
+
+	inline bool installedPackagesOnly()
+	{
+		if (m_find && m_find->installedPackagesOnly())
+			return true;
+		return m_combo->installedPackagesOnly();
 	}
 
 	// utilities
