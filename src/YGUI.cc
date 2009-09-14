@@ -44,6 +44,11 @@ YGUI::YGUI (bool with_threads)
 
     YGUI::setTextdomain( TEXTDOMAIN );
 
+	// If we're running without threads, initialize Gtk stuff
+	// This enables standalone libyui use Gtk interface
+	if (!with_threads)
+	    checkInit();
+
 	// without this none of the (default) threading action works ...
 	topmostConstructorHasFinished();
 }
