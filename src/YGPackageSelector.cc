@@ -1369,11 +1369,10 @@ private:
 			else {
 				if (!m_onlineUpdate || nb == 0)
 					view->appendCheckColumn (col);
-				int nameSize = (col == ZyppModel::TO_UPGRADE_COLUMN) ? -1 : 150;
-				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, nameSize);
+				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 160);
 				if (col == ZyppModel::TO_UPGRADE_COLUMN) {
-					view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, 150);
-					view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, 150);
+					view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, -1);
+					view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, -1);
 				}
 				else
 					view->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);

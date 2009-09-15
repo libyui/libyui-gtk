@@ -5,7 +5,11 @@
 
 	* src/YGPackageSelector.cc: change title only when done.
 
+	* src/YGPackageSelector.cc: change expand properties to
+	Upgrade tab columns.
+
 2009-09-14 Katarina Machalkova <kmachalkova@suse.cz>
+
 	* src/YGUI.cc: initialize Gtk stuff in ctor if we're running
 	without threads. This enables standalone libyui, where 
 	with_threads=false use Gtk interface (thanks mmeeks for help)
