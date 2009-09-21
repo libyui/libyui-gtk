@@ -35,7 +35,7 @@ static void errorMsg (const char *msg)
 #define BUSY_CURSOR_TIMEOUT 250
 
 YGUI::YGUI (bool with_threads)
-	: YUI (with_threads), m_done_init (false), busy_timeout (0), m_block (false)
+	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
 	IMPL
 	m_have_wm = true;

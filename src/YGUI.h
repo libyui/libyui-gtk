@@ -70,7 +70,6 @@ public:
 private:
     bool m_done_init;
     guint busy_timeout;  // for busy cursor
-    bool m_block;
     static gboolean busy_timeout_cb (gpointer data);
 
     // window-related arguments
