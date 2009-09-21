@@ -65,6 +65,40 @@ static void ygtk_text_view_populate_popup (GtkTextView *view, GtkMenu *menu)
 	gtk_widget_show_all (GTK_WIDGET (menu));
 }
 
+static inline gboolean is_space (gunichar ch)
+{ return g_unichar_isspace (ch) || ch == 0xfffc; }
+
+static gboolean ygtk_text_view_button_press_event (GtkWidget *widget, GdkEventButton *event)
+{	// on right-click, select word under cursor if there is no selection
+	if (event->button == 3) {
+		GtkTextView *view = GTK_TEXT_VIEW (widget);
+		GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
+		if (!gtk_text_buffer_get_has_selection (buffer)) {
+			gint buffer_x, buffer_y;
+			gtk_text_view_window_to_buffer_coords (view,
+				GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &buffer_x, &buffer_y);
+			GtkTextIter iter;
+			gtk_text_view_get_iter_at_location (view, &iter, buffer_x, buffer_y);
+
+			if (!is_space (gtk_text_iter_get_char (&iter))) {
+				GtkTextIter start, end = iter, temp = iter;
+				do {
+					start = temp;
+					if (!gtk_text_iter_backward_char (&temp))
+						break;
+				} while (!is_space (gtk_text_iter_get_char (&temp)));
+				do {
+					if (!gtk_text_iter_forward_char (&end))
+						break;
+				} while (!is_space (gtk_text_iter_get_char (&end)));
+
+				gtk_text_buffer_select_range (buffer, &start, &end);
+			}
+		}
+	}
+	return GTK_WIDGET_CLASS (ygtk_text_view_parent_class)->button_press_event (widget, event);
+}
+
 GtkWidget *ygtk_text_view_new (gboolean editable)
 { return g_object_new (YGTK_TYPE_TEXT_VIEW, "editable", editable, NULL); }
 
@@ -75,5 +109,6 @@ static void ygtk_text_view_class_init (YGtkTextViewClass *klass)
 
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->realize = ygtk_text_view_realize;
+	gtkwidget_class->button_press_event = ygtk_text_view_button_press_event;
 }
 

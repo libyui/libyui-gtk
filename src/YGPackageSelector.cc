@@ -36,9 +36,12 @@ bool YGUI::pkgSelectorParse (const char *arg)
 	return true;
 }
 
+void YGUI::pkgSelectorSize (int *width, int *height)
+{ *width = 700; *height = 800; }
+
 //** UI components -- split up for re-usability, but mostly for readability
 
-class FlexPane
+class FlexPane  // TODO: deprecate in favor of using GTK 2.16 new GtkOrientation API
 {
 GtkWidget *m_bin, *m_child1, *m_child2;
 bool m_isVertical, m_resize1, m_resize2, m_shrink1, m_shrink2;
@@ -1365,6 +1368,7 @@ private:
 				//view->appendIconColumn (NULL, ZyppModel::ICON_COLUMN);
 				view->appendTextColumn (NULL, ZyppModel::NAME_SUMMARY_COLUMN, 350);
 				view->appendButtonColumn (NULL, col);
+				view->setRulesHint (true);
 			}
 			else {
 				if (!m_onlineUpdate || nb == 0)

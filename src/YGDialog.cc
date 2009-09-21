@@ -23,8 +23,8 @@
    be a YGDialog and is swap-able.
 */
 
-#define DEFAULT_WIDTH  650
-#define DEFAULT_HEIGHT 600
+#define DEFAULT_WIDTH  700
+#define DEFAULT_HEIGHT 650
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -37,6 +37,7 @@ class YGWindow
 	// (ie. dump yast tree)
 	YWidget *m_child;
 	GdkCursor *m_busyCursor;
+	bool m_isBusy;
 
 public:
 	YGWindowCloseFn m_canClose;
@@ -52,6 +53,7 @@ public:
 		m_child = NULL;
 		m_canClose = NULL;
 		m_busyCursor = NULL;
+		m_isBusy = false;
 
 		{
 			std::stack<YDialog *> &stack = YDialog::_dialogStack;
@@ -135,17 +137,21 @@ public:
 
 	void normalCursor()
 	{
-		gdk_window_set_cursor (m_widget->window, NULL);
+		if (m_isBusy)
+			gdk_window_set_cursor (m_widget->window, NULL);
+		m_isBusy = false;
 	}
 
 	void busyCursor()
 	{
-		GdkDisplay *display = gtk_widget_get_display (m_widget);
 		if (!m_busyCursor) {
+			GdkDisplay *display = gtk_widget_get_display (m_widget);
 			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			gdk_cursor_ref (m_busyCursor);
 		}
-		gdk_window_set_cursor (m_widget->window, m_busyCursor);
+		if (!m_isBusy)
+			gdk_window_set_cursor (m_widget->window, m_busyCursor);
+		m_isBusy = true;
 	}
 
 	void setChild (YWidget *new_child)

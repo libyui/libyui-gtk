@@ -70,6 +70,7 @@ public:
 private:
     bool m_done_init;
     guint busy_timeout;  // for busy cursor
+    bool m_block;
     static gboolean busy_timeout_cb (gpointer data);
 
     // window-related arguments
@@ -77,6 +78,7 @@ private:
     int m_default_width, m_default_height;
 
 	bool pkgSelectorParse (const char *arg);
+	void pkgSelectorSize (int *width, int *height);
 
 public:
     // Helpers for internal use [ visibility hidden ]

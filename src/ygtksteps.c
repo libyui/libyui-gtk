@@ -26,15 +26,16 @@ static void ygtk_steps_init (YGtkSteps *steps)
 	gtk_box_set_spacing (GTK_BOX (steps), 8);
 	gtk_container_set_border_width (GTK_CONTAINER (steps), 4);
 
+	const gchar *check = "\u2714", *current = "\u25b6", *todo = "\u26ab";
+	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+		current = "\u25c0";
 	PangoContext *context = gtk_widget_get_pango_context (GTK_WIDGET (steps));
 	steps->check_mark_layout = pango_layout_new (context);
 	steps->current_mark_layout = pango_layout_new (context);
-
-	const gchar *check = "\u2714", *current = "<b>\u2192</b>";
-	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
-		current = "<b>\u2190</b>";
-	pango_layout_set_markup (steps->check_mark_layout, check, -1);
-	pango_layout_set_markup (steps->current_mark_layout, current, -1);
+	steps->todo_mark_layout = pango_layout_new (context);
+	pango_layout_set_text (steps->check_mark_layout, check, -1);
+	pango_layout_set_text (steps->current_mark_layout, current, -1);
+	pango_layout_set_text (steps->todo_mark_layout, todo, -1);
 	steps->current_mark_timeout_id = steps->current_mark_frame = 0;
 }
 
@@ -50,7 +51,9 @@ static void ygtk_steps_destroy (GtkObject *object)
 	steps->check_mark_layout = NULL;
 	if (steps->current_mark_layout)
 		g_object_unref (steps->current_mark_layout);
-	steps->current_mark_layout = NULL;
+	if (steps->todo_mark_layout)
+		g_object_unref (steps->todo_mark_layout);
+	steps->todo_mark_layout = NULL;
 	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
 }
 
@@ -88,34 +91,36 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	int n = 0;
 	for (i = children; i; i = i->next, n++) {
-		if (n <= steps->current_step) {
-			GtkWidget *label = i->data;
-			if (g_object_get_data (G_OBJECT (label), "is-header"))
-				continue;
-			PangoLayout *mark = (n == steps->current_step) ?
-				steps->current_mark_layout : steps->check_mark_layout;
-			int x = label->allocation.x, y = label->allocation.y;
-			if (reverse) {
-				PangoRectangle rect;
-				pango_layout_get_pixel_extents (mark, NULL, &rect);
-				x += label->allocation.width - rect.width - 4;
-			}
-			else
-				x += 4;
-			if (n == steps->current_step) {
-				int offset;
-				if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
-					offset = steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
-				else
-					offset = (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
-					      CURRENT_MARK_ANIMATION_OFFSET;
-				x += offset * (reverse ? 1 : -1);
-			}
-
-
-			cairo_move_to (cr, x, y);
-			pango_cairo_show_layout (cr, mark);
+		GtkWidget *label = i->data;
+		if (g_object_get_data (G_OBJECT (label), "is-header"))
+			continue;
+		PangoLayout *layout;
+		if (n < steps->current_step)
+			layout = steps->check_mark_layout;
+		else if (n == steps->current_step)
+			layout = steps->current_mark_layout;
+		else //if (n > steps->current_step)
+			layout = steps->todo_mark_layout;
+		int x = label->allocation.x, y = label->allocation.y;
+		if (reverse) {
+			PangoRectangle rect;
+			pango_layout_get_pixel_extents (layout, NULL, &rect);
+			x += label->allocation.width - rect.width - 4;
 		}
+		else
+			x += 4;
+		if (n == steps->current_step) {
+			int offset;
+			if (steps->current_mark_frame < CURRENT_MARK_FRAMES_NB/2)
+				offset = steps->current_mark_frame * CURRENT_MARK_ANIMATION_OFFSET;
+			else
+				offset = (CURRENT_MARK_FRAMES_NB - steps->current_mark_frame) *
+				      CURRENT_MARK_ANIMATION_OFFSET;
+			x += offset * (reverse ? 1 : -1);
+		}
+
+		cairo_move_to (cr, x, y);
+		pango_cairo_show_layout (cr, layout);
 	}
 	cairo_destroy (cr);
 	g_list_free (children);

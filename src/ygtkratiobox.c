@@ -121,6 +121,10 @@ static void ygtk_ratio_box_size_request (GtkWidget      *widget,
 		requisition->width += spacing;
 	else
 		requisition->height += spacing;
+
+	int border = GTK_CONTAINER (box)->border_width;
+	requisition->width += border*2;
+	requisition->height += border*2;
 }
 
 static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
@@ -144,11 +148,15 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 
 	gint spacing = children_nb ? box->spacing*(children_nb-1) : 0;
 
+	int border = GTK_CONTAINER (box)->border_width;
+	int x = allocation->x + border, y = allocation->y + border,
+	    width = allocation->width - border*2, height = allocation->height - border*2;
+
 	gint length;
 	if (orientation == GTK_ORIENTATION_HORIZONTAL)
-		length = allocation->width - spacing;
+		length = width - spacing;
 	else
-		length = allocation->height - spacing;
+		length = height - spacing;
 	gint child_pos = 0;
 
 	for (i = box->children; i; i = i->next) {
@@ -160,18 +168,20 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		gtk_widget_get_child_requisition (child->widget, &child_req);
 
 		gint child_length = (child->ratio * length) / ratios_sum;
+		if (!i->next)  // last takes rest (any residual length)
+			child_length = length - child_pos;
 
 		GtkAllocation child_alloc;
 		if (orientation == GTK_ORIENTATION_HORIZONTAL) {
-			child_alloc.x = allocation->x + child_pos;
-			child_alloc.y = allocation->y;
+			child_alloc.x = x + child_pos;
+			child_alloc.y = y;
 			child_alloc.width = child_length;
-			child_alloc.height = allocation->height;
+			child_alloc.height = height;
 		}
 		else { // GTK_ORIENTATION_VERTICAL
-			child_alloc.x = allocation->x;
-			child_alloc.y = allocation->y + child_pos;
-			child_alloc.width = allocation->width;
+			child_alloc.x = x;
+			child_alloc.y = y + child_pos;
+			child_alloc.width = width;
 			child_alloc.height = child_length;
 		}
 

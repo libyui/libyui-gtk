@@ -35,7 +35,7 @@ static void errorMsg (const char *msg)
 #define BUSY_CURSOR_TIMEOUT 250
 
 YGUI::YGUI (bool with_threads)
-	: YUI (with_threads), m_done_init (false), busy_timeout (0)
+	: YUI (with_threads), m_done_init (false), busy_timeout (0), m_block (false)
 {
 	IMPL
 	m_have_wm = true;
@@ -111,10 +111,8 @@ void YGUI::checkInit()
 	for (int i = 1; i < argc; i++) {
 		const char *argp = argv[i];
 		if (argp[0] != '-') {
-			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update")) {
-				m_default_width = 700;
-				m_default_height = 800;
-			}
+			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update"))
+				YGUI::pkgSelectorSize (&m_default_width, &m_default_height);
 			continue;
 		}
 		argp++;
@@ -220,8 +218,11 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (timeout)
 		g_source_remove (timeout);
 
-	if (block)  // if YCP keeps working for more than X time, set busy cursor
+	if (block) {  // if YCP keeps working for more than X time, set busy cursor
+		if (busy_timeout)
+			g_source_remove (busy_timeout);
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
+	}
 	return event;
 }
 
@@ -531,21 +532,21 @@ std::string YGApplication::glyph (const std::string &sym)
 {
 	bool reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 	if (sym == YUIGlyph_ArrowLeft)
-		return reverse ? "\u2192" : "\u2190";
+		return reverse ? "\u25b6" : "\u25c0";
 	if (sym == YUIGlyph_ArrowRight)
-		return reverse ? "\u2190" : "\u2192";
+		return reverse ? "\u25c0" : "\u25b6";
 	if (sym == YUIGlyph_ArrowUp)
-		return "\u2191";
+		return "\u25b2";
 	if (sym == YUIGlyph_ArrowDown)
-		return "\u2193";
+		return "\u25bc";
 	if (sym == YUIGlyph_CheckMark)
 		return "\u2714";
 	if (sym == YUIGlyph_BulletArrowRight)
 		return reverse ? "\u21e6" : "\u279c";
 	if (sym == YUIGlyph_BulletCircle)
-		return "\u274d";
+		return "\u26ab";
 	if (sym == YUIGlyph_BulletSquare)
-		return "\u274f";
+		return "\u25fe";
 	return "";
 }
 

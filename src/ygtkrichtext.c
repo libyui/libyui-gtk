@@ -686,39 +686,11 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 		g_object_ref (G_OBJECT (pixbuf));
 }
 
-static gboolean ygtk_rich_text_button_press_event (GtkWidget *widget, GdkEventButton *event)
-{	// if right-click on links, select the entire link, so the user can then easily copy it
-	if (event->button == 3) {
-		GtkTextView *view = GTK_TEXT_VIEW (widget);
-		GtkTextBuffer *buffer = gtk_text_view_get_buffer (view);
-		if (!gtk_text_buffer_get_has_selection (buffer)) {
-			gint buffer_x, buffer_y;
-			gtk_text_view_window_to_buffer_coords (view,
-				GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &buffer_x, &buffer_y);
-			GtkTextIter iter;
-			gtk_text_view_get_iter_at_location (view, &iter, buffer_x, buffer_y);
-			if (get_link_at_iter (view, &iter)) {
-				GtkTextIter start = iter, end = iter;
-				while (gtk_text_view_move_visually (view, &start, -1))
-					if (!get_link_at_iter (view, &start))
-						break;
-				gtk_text_view_move_visually (view, &start, +1);
-				while (gtk_text_view_move_visually (view, &end, +1))
-					if (!get_link_at_iter (view, &end))
-						break;
-				gtk_text_buffer_select_range (buffer, &start, &end);
-			}
-		}
-	}
-	return GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->button_press_event (widget, event);
-}
-
 static void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
 	gtkwidget_class->expose_event = ygtk_rich_text_expose_event;
-	gtkwidget_class->button_press_event = ygtk_rich_text_button_press_event;
 
 	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
 	gtkobject_class->destroy = ygtk_rich_text_destroy;

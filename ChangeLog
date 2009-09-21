@@ -1,3 +1,32 @@
+2009-09-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* tests/Layout-Truncated-Widget.ycp: uncovered difference
+	in our layout mechanism to qt's. We may want to address this
+	in the future.
+
+	* src/YGDialog.cc: increased default size.
+
+	* src/YGDialog.cc: don't tell GTK to change cursor to the one
+	already in use.
+
+	* src/YGPackageSelector.cc, src/YGUI.h/cc: moved statment of
+	software manager default size here.
+
+	* src/ygtkbargraph.h/c: make it inherit from GtkFrame, and
+	changed frame look.
+
+	* src/ygtkratiobox.c: make use of GtkContainer's border_width
+	and make last widget take rest of the size.
+
+	* src/ygtkrichtext.c & src/ygtktextview.c: instead of
+	selecting link on right-click, make it select any word under
+	the mouse cursor.
+
+	* src/ygtksteps.h/c: look more yast2-qt: adopted qt's mark
+	glyphs and added glyphs for todo tasks.
+
+	* src/ygtkzyppview.cc: touched up run Firefox as user logic.
+
 2009-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: disable install tab when

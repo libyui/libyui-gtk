@@ -31,23 +31,30 @@ inline bool CAN_OPEN_URL()
 { return g_file_test (BROWSER_PATH, G_FILE_TEST_IS_EXECUTABLE); }
 inline bool CAN_OPEN_DIRNAME()
 { return g_file_test (GNOME_OPEN_PATH, G_FILE_TEST_IS_EXECUTABLE); }
+
+void run (const std::string &cmd, bool as_user)
+{
+	std::string prepend, append;
+	if (as_user && getuid() == 0) {
+		char *username = getenv ("USER");
+		if (strcmp (username, "root") != 0) {
+			prepend.reserve (64);
+			prepend = "gnomesu -u ";
+			prepend += username;
+			prepend += " -c \"";
+			append = "\"";
+		}
+	}
+	system (((prepend + cmd + append) + " &").c_str());
+}
+
 void OPEN_URL (const char *uri)
 {
 	std::string command;
 	command.reserve (256);
 	command = BROWSER_PATH " --new-window ";
 	command += uri;
-
-	char *username = getenv ("USERNAME");
-	std::string gnomesu, gnomesu_end;  // we don't want to run the browser as root
-	if (username) {  // run as the user that owns the session
-		gnomesu.reserve (64);
-		gnomesu = "gnomesu -u ";
-		gnomesu += username;
-		gnomesu += " -c \"";
-		gnomesu_end = "\"";
-	}
-	system ((gnomesu + command + gnomesu_end + " &").c_str());
+	run (command, true);
 }
 void OPEN_DIRNAME (const char *uri)
 {
@@ -56,7 +63,7 @@ void OPEN_DIRNAME (const char *uri)
 	command = GNOME_OPEN_PATH " ";
 	command += uri;
 	command += " &";
-	system (command.c_str());
+	run (command, false);
 }
 
 static GdkPixbuf *loadPixbuf (const char *icon)
@@ -876,11 +883,12 @@ struct YGtkPackageView::Impl
 			gtk_tree_view_column_set_fixed_width (column, size);
 		else
 			gtk_tree_view_column_set_expand (column, TRUE);
-		if (col == ZyppModel::NAME_SUMMARY_COLUMN)
-			gtk_tree_view_set_rules_hint (view, TRUE);
 //		gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
 		gtk_tree_view_append_column (view, column);
 	}
+
+	void setRulesHint (bool hint)
+	{ gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (m_view), TRUE); }
 
 	GtkTreeSelection *getTreeSelection()
 	{ return gtk_tree_view_get_selection (GTK_TREE_VIEW (m_view)); }
@@ -1192,6 +1200,9 @@ void YGtkPackageView::appendButtonColumn (const char *header, int col)
 
 void YGtkPackageView::appendTextColumn (const char *header, int col, int size, bool identAuto)
 { impl->appendTextColumn (header, col, size, identAuto); }
+
+void YGtkPackageView::setRulesHint (bool hint)
+{ impl->setRulesHint (hint); }
 
 void YGtkPackageView::setListener (Listener *listener)
 { impl->m_listener = listener; }
