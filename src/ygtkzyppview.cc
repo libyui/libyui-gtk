@@ -674,7 +674,7 @@ struct YGtkPackageView::Impl
 {
 	Impl (GtkWidget *scroll, bool descriptiveTooltip)
 	: m_listener (NULL), m_popup_hack (NULL), m_descriptiveTooltip (descriptiveTooltip),
-	  m_model (NULL), m_modelId (0)
+	  m_model (NULL), m_modelId (0), m_activate_action (NONE_ACTION)
 	{
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -717,6 +717,7 @@ struct YGtkPackageView::Impl
 	bool m_descriptiveTooltip;
 	GtkTreeModel *m_model;
 	guint m_modelId;
+	Action m_activate_action;
 
 	// methods
 	void setList (Ypp::PkgList list, const char *applyAllLabel)
@@ -801,6 +802,20 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_append_column (view, column);
 	}
 
+	static Action columnAction (int col)
+	{
+		switch (col) {
+			case ZyppModel::TO_INSTALL_COLUMN:
+			case ZyppModel::TO_UPGRADE_COLUMN:
+			default:
+				return INSTALL_ACTION;
+			case ZyppModel::TO_REMOVE_COLUMN:
+				return REMOVE_ACTION;
+			case ZyppModel::TO_MODIFY_COLUMN:
+				return UNDO_ACTION;
+		}
+	}
+
 	void appendCheckColumn (int modelCol)
 	{
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
@@ -809,14 +824,19 @@ struct YGtkPackageView::Impl
 			renderer, "active", modelCol, "visible", ZyppModel::CHECK_VISIBLE_COLUMN,
 			"sensitive", ZyppModel::SENSITIVE_COLUMN,
 			"cell-background", ZyppModel::BACKGROUND_COLUMN, NULL);
-		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
-		g_object_set_data (G_OBJECT (renderer), "col", GINT_TO_POINTER (modelCol));
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 			              G_CALLBACK (renderer_toggled_cb), this);
+
 		// it seems like GtkCellRendererToggle has no width at start, so fixed doesn't work
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_fixed_width (column, 25);
 		gtk_tree_view_append_column (view, column);
+
+		Action action = columnAction (modelCol);
+		g_object_set_data (G_OBJECT (renderer), "action", GINT_TO_POINTER (action));
+		if (m_activate_action == NONE_ACTION)
+			m_activate_action = action;
+		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
 	}
 
 	void appendButtonColumn (const char *header, int modelCol)
@@ -835,19 +855,25 @@ struct YGtkPackageView::Impl
 
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
-		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (header,
-			renderer, "active", modelCol, "visible", ZyppModel::CHECK_VISIBLE_COLUMN,
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+			header, renderer, "active", modelCol,
+			"visible", ZyppModel::CHECK_VISIBLE_COLUMN,
 			"sensitive", ZyppModel::SENSITIVE_COLUMN,
 			"cell-background", ZyppModel::BACKGROUND_COLUMN,
 			"text", labelCol, "stock-id", stockCol, NULL);
-		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
-		g_object_set_data (G_OBJECT (renderer), "col", GINT_TO_POINTER (modelCol));
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 			              G_CALLBACK (renderer_toggled_cb), this);
+
 		// it seems like GtkCellRendererToggle has no width at start, so fixed doesn't work
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_fixed_width (column, 120);
 		gtk_tree_view_append_column (view, column);
+
+		Action action = columnAction (modelCol);
+		g_object_set_data (G_OBJECT (renderer), "action", GINT_TO_POINTER (action));
+		if (m_activate_action == NONE_ACTION)
+			m_activate_action = action;
+		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
 	}
 
 	void appendTextColumn (const char *header, int col, int size, bool identAuto)
@@ -1011,36 +1037,32 @@ struct YGtkPackageView::Impl
 		return package != NULL;
 	}
 
-	static void apply (Ypp::Package *package, int col, bool enable)
+	static void apply (Ypp::Package *package, Action action, bool enable)
 	{
 		if (enable)
-			switch (col) {
-				case ZyppModel::TO_INSTALL_COLUMN:
-				case ZyppModel::TO_UPGRADE_COLUMN:
-					package->install (0);
-					break;
-				case ZyppModel::TO_REMOVE_COLUMN:
-					package->remove();
-					break;
-				default: break;
+			switch (action) {
+				case INSTALL_ACTION: package->install (0); break;
+				case REMOVE_ACTION: package->remove(); break;
+				case UNDO_ACTION: package->undo(); break;
+				case NONE_ACTION: break;
 			}
 		else
 			package->undo();
 	}
 
 	static gboolean apply_iter_cb (GtkTreeModel *model,
-		GtkTreePath *path, GtkTreeIter *iter, gpointer col)
+		GtkTreePath *path, GtkTreeIter *iter, gpointer action)
 	{
 		Ypp::Package *package;
 		gboolean enable;
 		enable = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (model), "enable"));
 		gtk_tree_model_get (model, iter, ZyppModel::PTR_COLUMN, &package, -1);
 		if (package)
-			apply (package, GPOINTER_TO_INT (col), enable);
+			apply (package, (Action) GPOINTER_TO_INT (action), enable);
 		return FALSE;
 	}
 
-	static void renderer_toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
+	static void renderer_toggled_cb (GtkCellRenderer *renderer, gchar *path_str,
 			                         Impl *pThis)
 	{
 		Ypp::Package *package = 0;
@@ -1052,18 +1074,18 @@ struct YGtkPackageView::Impl
 
 		gboolean active;
 		if (GTK_IS_CELL_RENDERER_TOGGLE (renderer))
-			active = gtk_cell_renderer_toggle_get_active (renderer);
-/*		else
-			active = ygtk_cell_renderer_toggle_get_active (renderer);*/
-else active = FALSE;  // FIXME
-		int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "col"));
+			active = gtk_cell_renderer_toggle_get_active (GTK_CELL_RENDERER_TOGGLE (renderer));
+		else
+			active = ygtk_cell_renderer_button_get_active (YGTK_CELL_RENDERER_BUTTON (renderer));
+
+		Action action = (Action) GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "action"));
 		if (package)
-			apply (package, col, !active);
+			apply (package, action, !active);
 		else {
 			if (!gtk_tree_model_iter_next (model, &iter)) {  // on apply-all
 				g_object_set_data (G_OBJECT (model), "enable", GINT_TO_POINTER (!active));
 				Ypp::get()->startTransactions();
-				gtk_tree_model_foreach (model, apply_iter_cb, GINT_TO_POINTER (col));
+				gtk_tree_model_foreach (model, apply_iter_cb, GINT_TO_POINTER (action));
 				Ypp::get()->finishTransactions();
 			}
 		}
@@ -1073,8 +1095,12 @@ else active = FALSE;  // FIXME
 	                                  GtkTreeViewColumn *column, Impl *pThis)
 	{
 		Ypp::PkgList packages = pThis->getSelected();
-		if (packages.notInstalled() || packages.upgradable())
-			packages.install();
+		switch (pThis->m_activate_action) {
+			case INSTALL_ACTION: packages.install(); break;
+			case REMOVE_ACTION: packages.remove(); break;
+			case UNDO_ACTION: packages.undo(); break;
+			case NONE_ACTION: break;
+		}
 	}
 
 	static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
@@ -1204,6 +1230,9 @@ void YGtkPackageView::appendTextColumn (const char *header, int col, int size, b
 void YGtkPackageView::setRulesHint (bool hint)
 { impl->setRulesHint (hint); }
 
+void YGtkPackageView::setActivateAction (Action action)
+{ impl->m_activate_action = action; }
+
 void YGtkPackageView::setListener (Listener *listener)
 { impl->m_listener = listener; }
 
@@ -1244,16 +1273,16 @@ private:
 			gtk_box_pack_start (GTK_BOX (m_box), label, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_box), m_versions_box, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_box), button_box, FALSE, TRUE, 0);
+
+			Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).addListener (this);
 		}
 
 		~Versions()
-		{ m_packages.removeListener (this); }
+		{ Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).removeListener (this); }
 
 		void setPackages (Ypp::PkgList packages)
 		{
-			m_packages.removeListener (this);
 			m_packages = packages;
-			m_packages.addListener (this);
 
 			GList *children = gtk_container_get_children (GTK_CONTAINER (m_versions_box));
 			for (GList *i = children; i; i = i->next)
@@ -1355,9 +1384,11 @@ private:
 		}
 
 	private:
-		virtual void entryChanged  (const Ypp::PkgList list, int index, Ypp::Package *package)
-		{ setPackages (m_packages); /* refresh */ }
-
+		virtual void entryChanged (const Ypp::PkgList list, int index, Ypp::Package *package)
+		{
+			if (m_packages.contains (package))
+				setPackages (m_packages);  // refresh !
+		}
 		// won't happen:
 		virtual void entryInserted (const Ypp::PkgList list, int index, Ypp::Package *package) {}
 		virtual void entryDeleted  (const Ypp::PkgList list, int index, Ypp::Package *package) {}

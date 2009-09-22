@@ -63,6 +63,8 @@ struct YGtkPackageView
 	void appendTextColumn (const char *header, int col, int size = -1, bool identAuto = false);
 	// (set all column headers to NULL in order to hide them.)
 	void setRulesHint (bool hint);
+	enum Action { NONE_ACTION, INSTALL_ACTION, REMOVE_ACTION, UNDO_ACTION };
+	void setActivateAction (Action action);
 
 	struct Listener {
 		virtual void packagesSelected (Ypp::PkgList packages) = 0;

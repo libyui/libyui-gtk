@@ -144,9 +144,10 @@ static gboolean ygtk_cell_renderer_button_activate (GtkCellRenderer *cell,
 }
 
 GtkCellRenderer *ygtk_cell_renderer_button_new (void)
-{
-    return g_object_new (YGTK_TYPE_CELL_RENDERER_BUTTON, NULL);
-}
+{ return g_object_new (YGTK_TYPE_CELL_RENDERER_BUTTON, NULL); }
+
+gboolean ygtk_cell_renderer_button_get_active (YGtkCellRendererButton *cell)
+{ return cell->active; }
 
 static void ygtk_cell_renderer_button_class_init (YGtkCellRendererButtonClass *class)
 {

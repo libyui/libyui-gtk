@@ -41,6 +41,8 @@ typedef struct _YGtkCellRendererButtonClass
 GtkCellRenderer *ygtk_cell_renderer_button_new (void);
 GType ygtk_cell_renderer_button_get_type (void) G_GNUC_CONST;
 
+gboolean ygtk_cell_renderer_button_get_active (YGtkCellRendererButton *cell);
+
 G_END_DECLS
 #endif /*YGTK_CELL_RENDERER_BUTTON_H*/
 

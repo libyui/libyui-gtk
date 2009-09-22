@@ -1500,13 +1500,9 @@ guint inited : 2, _allInstalled : 2, _allNotInstalled : 2, _allUpgradable : 2,
       _allCanRemove : 2;
 int refcount;
 
-char id;
-
 	Impl (const Ypp::PkgList *lparent) : Listener()
 	, parent (NULL), inited (false), refcount (1)
 	{
-		static int idN = 0;
-		id = idN++;
 		if (lparent) {
 			parent = new PkgList (*lparent);
 			parent->addListener (this);
@@ -1538,7 +1534,9 @@ char id;
 	}
 
 	void addListener (Ypp::PkgList::Listener *listener)
-	{ listeners.push_back (listener); }
+	{
+		listeners.push_back (listener);
+	}
 
 	void removeListener (Ypp::PkgList::Listener *listener)
 	{ listeners.remove (listener); }
@@ -1802,11 +1800,11 @@ void Ypp::PkgList::undo()
 	Ypp::get()->finishTransactions();
 }
 
-void Ypp::PkgList::addListener (Ypp::PkgList::Listener *listener)
-{ impl->addListener (listener); }
+void Ypp::PkgList::addListener (Ypp::PkgList::Listener *listener) const
+{ const_cast <Impl *> (impl)->addListener (listener); }
 
-void Ypp::PkgList::removeListener (Ypp::PkgList::Listener *listener)
-{ impl->removeListener (listener); }
+void Ypp::PkgList::removeListener (Ypp::PkgList::Listener *listener) const
+{ const_cast <Impl *> (impl)->removeListener (listener); }
 
 //** Query
 

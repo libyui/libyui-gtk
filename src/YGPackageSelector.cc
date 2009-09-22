@@ -192,6 +192,7 @@ private:
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
 			view->appendCheckColumn (checkCol);
 			view->appendTextColumn (NULL, ZyppModel::NAME_COLUMN, -1, true);
+			view->setActivateAction (YGtkPackageView::UNDO_ACTION);
 			view->setList (list, NULL);
 			view->setListener (listener);
 			gtk_scrolled_window_set_shadow_type (

@@ -1,3 +1,14 @@
+2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.h/cc: fix: make double-click working on
+	remove and undo tabs.
+
+	* src/ygtkzyppview.cc: fix: refresh version control on
+	package change.
+
+	* src/yzyppwrapper.h/cc: PkgList::add/removeListener()
+	now (fake) const.
+
 2009-09-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* tests/Layout-Truncated-Widget.ycp: uncovered difference
