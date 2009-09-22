@@ -1,5 +1,10 @@
 2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzypptags.h/cc: -qt PK groups was not caughting
+	documentation and productivity branches.
+
+2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppview.h/cc: fix: make double-click working on
 	remove and undo tabs.
 

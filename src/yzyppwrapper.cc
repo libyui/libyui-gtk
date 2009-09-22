@@ -559,6 +559,9 @@ int m_installedPkgs, m_totalPkgs;
 					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
 				if (!license.empty())
 					text += br + "<b>" + _("License:") + "</b> " + license;
+#if 0
+				text += br + "<b>" + _("Category:") + "</b> " + package->group();
+#endif
 #if 0  // show "Installed at:" and "Last build:" info
 				bool hasCandidate = m_sel->hasCandidateObj();
 				if (isInstalled()) {

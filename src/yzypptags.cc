@@ -13,8 +13,8 @@
 #include "YGi18n.h"
 #define YUILogComponent "gtk-pkg"
 #include <YUILog.h>
-#include <zypp/sat/LookupAttr.h>
 #include "yzypptags.h"
+#include <string>
 
 /**
  * translations taken from packagekit
@@ -50,8 +50,8 @@ zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 	case PK_GROUP_ENUM_POWER_MANAGEMENT:	return _( "Power Management"	);
 	case PK_GROUP_ENUM_COMMUNICATION:	return _( "Communication"	);
 	case PK_GROUP_ENUM_NETWORK:		return _( "Network"		);
-	case PK_GROUP_ENUM_MAPS:		return _( "Maps"		);
-	case PK_GROUP_ENUM_REPOS:		return _( "Software Sources"	);
+	case PK_GROUP_ENUM_DOCUMENTATION:		return _( "Documentation"		);
+	case PK_GROUP_ENUM_UTILITIES:		return _( "Utilities"		);
 	case PK_GROUP_ENUM_UNKNOWN:		return _( "Unknown Group"	);
 	}
 	return _("Unknown Group");
@@ -89,8 +89,8 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 	case PK_GROUP_ENUM_POWER_MANAGEMENT:	return( "package_settings_power"	);
 	case PK_GROUP_ENUM_COMMUNICATION:	return( "yast-modem"			);
 	case PK_GROUP_ENUM_NETWORK:		return( "package_network"		);
-	case PK_GROUP_ENUM_MAPS:		return( "package_main"			);
-	case PK_GROUP_ENUM_REPOS:		return( "package_main"			);
+	case PK_GROUP_ENUM_DOCUMENTATION:		return( "package_documentation"			);
+	case PK_GROUP_ENUM_UTILITIES:		return( "package_utilities"			);
 	case PK_GROUP_ENUM_UNKNOWN:		return( "package_main"			);
 	}
 	return "";
@@ -100,8 +100,12 @@ zypp_tag_enum_to_icon (YPkgGroupEnum group)
 YPkgGroupEnum
 zypp_tag_convert (const std::string &groupu)
 {
-    std::string group = zypp::str::toLower(groupu);
+    std::string group (groupu);  // lower-case
+    for (unsigned int i = 0; i < group.length(); i++)
+    	if (group[i] >= 'A' && group[i] <= 'Z')
+    		group[i] = group[i] - 'A' + 'a';
 
+	// yast2-qt:
     if ( group.find( "amusements/teaching"	) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
     if ( group.find( "amusements"		) != string::npos ) return PK_GROUP_ENUM_GAMES;
     if ( group.find( "development"		) != string::npos ) return PK_GROUP_ENUM_PROGRAMMING;
@@ -127,6 +131,11 @@ zypp_tag_convert (const std::string &groupu)
     if ( group.find( "localization"		) != string::npos ) return PK_GROUP_ENUM_LOCALIZATION;
     if ( group.find( "system"			) != string::npos ) return PK_GROUP_ENUM_SYSTEM;
     if ( group.find( "scientific"		) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
+
+	// our own:
+    if ( group.find( "documentation"		) != string::npos ) return PK_GROUP_ENUM_DOCUMENTATION;
+    if ( group.find( "games"		) != string::npos ) return PK_GROUP_ENUM_GAMES;
+    if ( group.find( "productivity"		) != string::npos ) return PK_GROUP_ENUM_UTILITIES;
 
     return PK_GROUP_ENUM_UNKNOWN;
 }
