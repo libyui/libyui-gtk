@@ -1,4 +1,82 @@
 ------------------------------------------------------------------------
+r58711 | rpmcruz | 2009-09-22 15:09:13 +0100 (Ter, 22 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58710 | rpmcruz | 2009-09-22 15:05:14 +0100 (Ter, 22 Set 2009) | 2 lines
+
+	* src/yzypptags.h/cc: -qt PK groups was not caughting
+	documentation and productivity branches.
+------------------------------------------------------------------------
+r58699 | rpmcruz | 2009-09-22 01:40:28 +0100 (Ter, 22 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58698 | rpmcruz | 2009-09-22 01:22:57 +0100 (Ter, 22 Set 2009) | 8 lines
+
+	* src/ygtkzyppview.h/cc: fix: make double-click working on
+	remove and undo tabs.
+
+	* src/ygtkzyppview.cc: fix: refresh version control on
+	package change.
+
+	* src/yzyppwrapper.h/cc: PkgList::add/removeListener()
+	now (fake) const.
+------------------------------------------------------------------------
+r58697 | rpmcruz | 2009-09-21 19:31:28 +0100 (Seg, 21 Set 2009) | 1 line
+
+Unused variable.
+------------------------------------------------------------------------
+r58694 | rpmcruz | 2009-09-21 17:48:36 +0100 (Seg, 21 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58693 | rpmcruz | 2009-09-21 17:35:41 +0100 (Seg, 21 Set 2009) | 26 lines
+
+	* tests/Layout-Truncated-Widget.ycp: uncovered difference
+	in our layout mechanism to qt's. We may want to address this
+	in the future.
+
+	* src/YGDialog.cc: increased default size.
+
+	* src/YGDialog.cc: don't tell GTK to change cursor to the one
+	already in use.
+
+	* src/YGPackageSelector.cc, src/YGUI.h/cc: moved statment of
+	software manager default size here.
+
+	* src/ygtkbargraph.h/c: make it inherit from GtkFrame, and
+	changed frame look.
+
+	* src/ygtkratiobox.c: make use of GtkContainer's border_width
+	and make last widget take rest of the size.
+
+	* src/ygtkrichtext.c & src/ygtktextview.c: instead of
+	selecting link on right-click, make it select any word under
+	the mouse cursor.
+
+	* src/ygtksteps.h/c: look more yast2-qt: adopted qt's mark
+	glyphs and added glyphs for todo tasks.
+
+	* src/ygtkzyppview.cc: touched up run Firefox as user logic.
+------------------------------------------------------------------------
+r58681 | rpmcruz | 2009-09-18 18:37:51 +0100 (Sex, 18 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58659 | rpmcruz | 2009-09-15 16:03:09 +0100 (Ter, 15 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58652 | rpmcruz | 2009-09-15 05:20:13 +0100 (Ter, 15 Set 2009) | 2 lines
+
+	* src/YGPackageSelector.cc: change expand properties to
+	Upgrade tab columns.
+------------------------------------------------------------------------
+r58649 | rpmcruz | 2009-09-15 01:10:46 +0100 (Ter, 15 Set 2009) | 1 line
+
+Version bump.
+------------------------------------------------------------------------
 r58648 | rpmcruz | 2009-09-15 00:45:56 +0100 (Ter, 15 Set 2009) | 1 line
 
 10.3 and integrate folders no longer needed.
