@@ -161,6 +161,7 @@ struct Ypp
 		};
 		void addListener (Listener *listener) const;
 		void removeListener (Listener *listener) const;
+		// FIXME: listeners only works for getPackages() lists and PkgQuery ones.
 
 		struct Impl;
 		Impl *impl;

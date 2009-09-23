@@ -1247,10 +1247,11 @@ private:
 	struct Versions : public Ypp::PkgList::Listener {
 		GtkWidget *m_box, *m_versions_box, *m_button, *m_undo_button;
 		Ypp::PkgList m_packages;  // we keep a copy to test against modified...
+		bool m_onlineUpdate;
 
 		GtkWidget *getWidget() { return m_box; }
 
-		Versions()
+		Versions (bool onlineUpdate) : m_onlineUpdate (onlineUpdate)
 		{
 			GtkWidget *label = gtk_label_new (_("Versions:"));
 			YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -1281,11 +1282,17 @@ private:
 			gtk_box_pack_start (GTK_BOX (m_box), m_versions_box, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_box), button_box, FALSE, TRUE, 0);
 
-			Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).addListener (this);
+			// PkgList::addListeners() isn't currently working for ordinary PkgList
+			// other than getPackages(), thus this hack.
+			if (!m_onlineUpdate)
+				Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).addListener (this);
 		}
 
 		~Versions()
-		{ Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).removeListener (this); }
+		{
+			if (!m_onlineUpdate)
+				Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).removeListener (this);
+		}
 
 		void setPackages (Ypp::PkgList packages)
 		{
@@ -1544,7 +1551,7 @@ public:
 	: m_verMode (false)
 	{
 		m_scroll = scroll;
-		m_versions = new Versions();
+		m_versions = new Versions (onlineUpdate);
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 2);
 		setupScrollAsWhite (scroll, hbox);
 
@@ -1630,14 +1637,6 @@ public:
 				setText (m_provides, provides_str);
 			}
 
-			if (m_contents) {  // patches -- "apply to"
-				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-				query->addCollection (package);
-				m_contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
-				gtk_widget_show (gtk_widget_get_ancestor (
-					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
-			}
-
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons,
@@ -1646,6 +1645,14 @@ public:
 				gtk_image_set_from_pixbuf (GTK_IMAGE (m_icon), pixbuf);
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
+			}
+
+			if (m_contents) {  // patches -- "apply to"
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				query->addCollection (package);
+				m_contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
+				gtk_widget_show (gtk_widget_get_ancestor (
+					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
 			}
 		}
 		else {
