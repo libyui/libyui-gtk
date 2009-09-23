@@ -37,7 +37,7 @@ void run (const std::string &cmd, bool as_user)
 	std::string prepend, append;
 	if (as_user && getuid() == 0) {
 		char *username = getenv ("USER");
-		if (strcmp (username, "root") != 0) {
+		if (username && *username && strcmp (username, "root") != 0) {
 			prepend.reserve (64);
 			prepend = "gnomesu -u ";
 			prepend += username;
@@ -1259,10 +1259,17 @@ private:
 			m_versions_box = gtk_vbox_new (FALSE, 2);
 			m_button = gtk_button_new_with_label ("");
 			g_signal_connect (G_OBJECT (m_button), "clicked", G_CALLBACK (button_clicked_cb), this);
-			m_undo_button = gtk_button_new_with_label ("");
-			gtk_button_set_image (GTK_BUTTON (m_undo_button),
-				gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_BUTTON));
-			gtk_widget_set_tooltip_text (m_undo_button, _("Undo"));
+			GtkSettings *settings = gtk_settings_get_default();
+			gboolean show_button_images;
+			g_object_get (settings, "gtk-button-images", &show_button_images, NULL);
+			if (show_button_images) {
+				m_undo_button = gtk_button_new_with_label ("");
+				gtk_button_set_image (GTK_BUTTON (m_undo_button),
+					gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_BUTTON));
+				gtk_widget_set_tooltip_text (m_undo_button, _("Undo"));
+			}
+			else
+				m_undo_button = gtk_button_new_with_label (_("Undo"));
 			g_signal_connect (G_OBJECT (m_undo_button), "clicked", G_CALLBACK (undo_clicked_cb), this);
 			GtkWidget *button_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (button_box), gtk_label_new(""), TRUE, TRUE, 0);

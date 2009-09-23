@@ -747,7 +747,7 @@ public:
 		m_info_label = gtk_label_new ("");
 		gtk_label_set_line_wrap (GTK_LABEL (m_info_label), TRUE);
 		gtk_box_pack_start (GTK_BOX (m_info_box),
-			gtk_image_new_from_stock (GTK_STOCK_DIALOG_INFO, GTK_ICON_SIZE_MENU), FALSE, TRUE, 0);
+			gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_MENU), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_info_box), m_info_label, TRUE, TRUE, 0);
 
 		GtkWidget *separator1 = gtk_event_box_new();
@@ -902,6 +902,8 @@ public:
 		                  G_CALLBACK (name_changed_cb), this);
 		g_signal_connect (G_OBJECT (m_name), "menu-item-selected",
 		                  G_CALLBACK (name_item_changed_cb), this);
+		g_signal_connect (G_OBJECT (m_name), "realize",
+		                  G_CALLBACK (realize_cb), this);
 		gtk_widget_show (m_name);
 	}
 
@@ -997,6 +999,9 @@ private:
 		ygtk_find_entry_set_state (entry, TRUE);
 		pThis->notify();
 	}
+
+	static void realize_cb (GtkWidget *widget, FindEntry *pThis)
+	{ gtk_widget_grab_focus (widget); }
 };
 
 class FilterCombo : public QueryWidget
@@ -1186,8 +1191,12 @@ public:
 	void setUndoPage()
 	{
 		if (!m_onlineUpdate) {
-			gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 3);
-			gtk_widget_hide (GTK_WIDGET (m_details));
+			if (GTK_WIDGET_VISIBLE (m_undoView->getWidget())) {
+				if (gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook)) != 3) {
+					gtk_widget_hide (GTK_WIDGET (m_details));
+					gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 3);
+				}
+			}
 		}
 	}
 
@@ -2071,7 +2080,7 @@ public:
 					pThis->m_notebook->setUndoPage();
 					YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
 					ygtk_wizard_set_button_label (wizard,  wizard->next_button,
-								                  _("_Sure?"), GTK_STOCK_OK);
+								                  _("_Sure?"), GTK_STOCK_DIALOG_QUESTION);
 					pThis->m_button_timeout_id =
 						g_timeout_add (10*1000, wizard_confirm_button_cb, pThis);
 					return;

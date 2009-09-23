@@ -11,14 +11,13 @@
 #include "YGSelectionModel.h"
 #include "ygtkcellrenderertextpixbuf.h"
 #include "ygtktreeview.h"
-#include <time.h>
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget, public YGSelectionModel
 {
 protected:
 	int m_colsNb;
-	bool m_blockSelected;
+	guint m_blockTimeout;
 
 public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
@@ -28,7 +27,6 @@ public:
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
 		IMPL
-		m_blockSelected = false;
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -42,6 +40,14 @@ public:
 		gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_BROWSE);
 
 		// let the derivates do the event hooks. They have subtile differences.
+
+		m_blockTimeout = 0;  // GtkTreeSelection idiotically fires when showing widget
+		g_signal_connect (getWidget(), "map", G_CALLBACK (block_init_cb), this);
+	}
+
+	virtual ~YGTableView()
+	{
+		if (m_blockTimeout) g_source_remove (m_blockTimeout);
 	}
 
 	inline GtkTreeView *getView()
@@ -112,14 +118,14 @@ public:
 	static gboolean block_selected_timeout_cb (gpointer data)
 	{
 		YGTableView *pThis = (YGTableView *) data;
-		pThis->m_blockSelected = false;
+		pThis->m_blockTimeout = 0;
 		return FALSE;
 	}
 
 	void blockSelected()
 	{  // GtkTreeSelection only fires when idle; so set a timeout
-		m_blockSelected = true;
-		g_timeout_add_full (G_PRIORITY_LOW, 250, block_selected_timeout_cb, this, NULL);
+		if (m_blockTimeout) g_source_remove (m_blockTimeout);
+		m_blockTimeout = g_timeout_add_full (G_PRIORITY_LOW, 250, block_selected_timeout_cb, this, NULL);
 	}
 
 	// YGSelectionModel
@@ -169,6 +175,10 @@ public:
 		return 80;
 	}
 
+	// GTK callbacks
+	static void block_init_cb (GtkWidget *widget, YGTableView *pThis)
+	{ pThis->blockSelected(); }
+
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
@@ -187,7 +197,7 @@ public:
 
 	static void selection_changed_cb (GtkTreeSelection *selection, YGTableView *pThis)
 	{
-		if (pThis->m_blockSelected)
+		if (pThis->m_blockTimeout)
 			return;
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();
@@ -473,6 +483,7 @@ public:
 		createModel (types);
 		appendCheckColumn ("", 0);
 		appendIconTextColumn ("", YAlignUnchanged, 1, 2);
+		gtk_tree_view_set_search_column (getView(), 2);
 		setModel();
 
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);

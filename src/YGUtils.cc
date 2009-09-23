@@ -626,8 +626,8 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		if (gtk_style_lookup_icon_set (button->style, icon)) {
 			// we want to use GtkImage stock mode so it honors sensitive
 			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (button), image);
 			gtk_widget_show (image);
+			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 	}
 	else {

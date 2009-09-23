@@ -18,14 +18,21 @@ static void ygtk_notebook_init (YGtkNotebook *view)
 {
 }
 
+static void ygtk_notebook_destroy (GtkObject *object)
+{
+	YGtkNotebook *notebook = YGTK_NOTEBOOK (object);
+	ygtk_notebook_set_corner_widget (notebook, NULL);
+	GTK_OBJECT_CLASS (ygtk_notebook_parent_class)->destroy (object);
+}
+
 static void ygtk_notebook_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
-	GTK_WIDGET_CLASS (ygtk_notebook_parent_class)->size_request (widget, requisition);
 	YGtkNotebook *notebook = YGTK_NOTEBOOK (widget);
 	if (notebook->corner_widget) {
-		GtkRequisition child_req;  // many widgets like size_request asked
+		GtkRequisition child_req;  // many widgets require size_request asked
 		gtk_widget_size_request (notebook->corner_widget, &child_req);
 	}
+	GTK_WIDGET_CLASS (ygtk_notebook_parent_class)->size_request (widget, requisition);
 }
 
 static void ygtk_notebook_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
@@ -101,8 +108,11 @@ static void ygtk_notebook_switch_page (
 
 void ygtk_notebook_set_corner_widget (YGtkNotebook *ynotebook, GtkWidget *child)
 {
+	if (ynotebook->corner_widget)
+		gtk_widget_unparent (ynotebook->corner_widget);
+	if (child)
+		gtk_widget_set_parent (child, GTK_WIDGET (ynotebook));
 	ynotebook->corner_widget = child;
-	gtk_widget_set_parent (child, GTK_WIDGET (ynotebook));
 }
 
 GtkWidget *ygtk_notebook_new (void)
@@ -110,6 +120,9 @@ GtkWidget *ygtk_notebook_new (void)
 
 static void ygtk_notebook_class_init (YGtkNotebookClass *klass)
 {
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_notebook_destroy;
+
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->size_request = ygtk_notebook_size_request;
 	gtkwidget_class->size_allocate = ygtk_notebook_size_allocate;

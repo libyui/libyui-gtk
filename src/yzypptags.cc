@@ -105,38 +105,36 @@ zypp_tag_convert (const std::string &groupu)
     	if (group[i] >= 'A' && group[i] <= 'Z')
     		group[i] = group[i] - 'A' + 'a';
 
-	// yast2-qt:
-    if ( group.find( "amusements/teaching"	) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
-    if ( group.find( "amusements"		) != string::npos ) return PK_GROUP_ENUM_GAMES;
-    if ( group.find( "development"		) != string::npos ) return PK_GROUP_ENUM_PROGRAMMING;
-    if ( group.find( "hardware"			) != string::npos ) return PK_GROUP_ENUM_SYSTEM;
-    if ( group.find( "archiving"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
-    if ( group.find( "clustering"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
-    if ( group.find( "system/monitoring"	) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
-    if ( group.find( "databases"		) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
-    if ( group.find( "system/management"	) != string::npos ) return PK_GROUP_ENUM_ADMIN_TOOLS;
-    if ( group.find( "graphics"			) != string::npos ) return PK_GROUP_ENUM_GRAPHICS;
-    if ( group.find( "multimedia"		) != string::npos ) return PK_GROUP_ENUM_MULTIMEDIA;
-    if ( group.find( "network"			) != string::npos ) return PK_GROUP_ENUM_NETWORK;
-    if ( group.find( "office"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
-    if ( group.find( "text"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
-    if ( group.find( "editors"			) != string::npos ) return PK_GROUP_ENUM_OFFICE;
-    if ( group.find( "publishing"		) != string::npos ) return PK_GROUP_ENUM_PUBLISHING;
-    if ( group.find( "security"			) != string::npos ) return PK_GROUP_ENUM_SECURITY;
-    if ( group.find( "telephony"		) != string::npos ) return PK_GROUP_ENUM_COMMUNICATION;
-    if ( group.find( "gnome"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_GNOME;
-    if ( group.find( "kde"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_KDE;
-    if ( group.find( "xfce"			) != string::npos ) return PK_GROUP_ENUM_DESKTOP_XFCE;
-    if ( group.find( "gui/other"		) != string::npos ) return PK_GROUP_ENUM_DESKTOP_OTHER;
-    if ( group.find( "localization"		) != string::npos ) return PK_GROUP_ENUM_LOCALIZATION;
-    if ( group.find( "system"			) != string::npos ) return PK_GROUP_ENUM_SYSTEM;
-    if ( group.find( "scientific"		) != string::npos ) return PK_GROUP_ENUM_EDUCATION;
+	// yast2-qt: (modified to speed up)
+	if (group.compare (0, 22, "productivity/archiving") == 0) return PK_GROUP_ENUM_ADMIN_TOOLS;
+	if (group.compare (0, 23, "productivity/clustering") == 0) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if (group.compare (0, 22, "productivity/databases") == 0) return PK_GROUP_ENUM_ADMIN_TOOLS;
+	if (group.compare (0, 17, "system/monitoring") == 0) return PK_GROUP_ENUM_ADMIN_TOOLS;
+	if (group.compare (0, 17, "system/management") == 0) return PK_GROUP_ENUM_ADMIN_TOOLS;
+    if (group.compare (0, 23, "productivity/publishing") == 0) return PK_GROUP_ENUM_PUBLISHING;
+    if (group.compare (0, 22, "productivity/telephony") == 0) return PK_GROUP_ENUM_COMMUNICATION;
+    if (group.compare (0, 19, "amusements/teaching") == 0) return PK_GROUP_ENUM_EDUCATION;
+    if (group.compare (0, 17, "publishing/office") == 0) return PK_GROUP_ENUM_OFFICE;
+    if (group.compare (0, 18, "producitivity/text") == 0) return PK_GROUP_ENUM_OFFICE;
+    if (group.compare (0, 21, "producitivity/editors") == 0) return PK_GROUP_ENUM_OFFICE;
+    if (group.compare (0, 20, "producitivity/graphics") == 0) return PK_GROUP_ENUM_GRAPHICS;
+    if (group.compare (0, 10, "amusements") == 0) return PK_GROUP_ENUM_GAMES;
+    if (group.compare (0, 19, "system/localization") == 0) return PK_GROUP_ENUM_LOCALIZATION;
+    if (group.compare (0, 11, "development") == 0) return PK_GROUP_ENUM_PROGRAMMING;
+    if (group.compare (0, 21, "producitivity/network") == 0) return PK_GROUP_ENUM_NETWORK;
+    if (group.compare (0, 22, "producitivity/security") == 0) return PK_GROUP_ENUM_SECURITY;
+    if (group.compare (0, 16, "system/gui/gnome") == 0) return PK_GROUP_ENUM_DESKTOP_GNOME;
+    if (group.compare (0, 14, "system/gui/kde") == 0) return PK_GROUP_ENUM_DESKTOP_KDE;
+    if (group.compare (0, 15, "system/gui/xfce") == 0) return PK_GROUP_ENUM_DESKTOP_XFCE;
+    if (group.compare (0, 10, "system/gui") == 0) return PK_GROUP_ENUM_DESKTOP_OTHER;
+    if (group.compare (0, 8, "hardware") == 0) return PK_GROUP_ENUM_SYSTEM;
+    if (group.compare (0, 6, "system") == 0) return PK_GROUP_ENUM_SYSTEM;
+    if (group.find ("scientific") != string::npos) return PK_GROUP_ENUM_EDUCATION;
+    if (group.find ("multimedia") != string::npos) return PK_GROUP_ENUM_MULTIMEDIA;
 
 	// our own:
-    if ( group.find( "documentation"		) != string::npos ) return PK_GROUP_ENUM_DOCUMENTATION;
-    if ( group.find( "games"		) != string::npos ) return PK_GROUP_ENUM_GAMES;
-    if ( group.find( "productivity"		) != string::npos ) return PK_GROUP_ENUM_UTILITIES;
-
+    if (group.compare (0, 13, "documentation") == 0) return PK_GROUP_ENUM_DOCUMENTATION;
+    if (group.compare (0, 12, "productivity") == 0) return PK_GROUP_ENUM_UTILITIES;
     return PK_GROUP_ENUM_UNKNOWN;
 }
 

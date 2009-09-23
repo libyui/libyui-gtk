@@ -1,3 +1,29 @@
+2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDumbTab.cc: changed calling order of parent
+	class to reflect yast2-qt (to prevent any bug).
+
+	* src/YGTable.cc: bug fix: block GtkTreeSelection events not
+	only on init, but on only instances when the widget is
+	mapped. Fixes bootloader tab change misbehavior on 11.2.
+
+	* src/YGUtils.cc: bug fix: comply with desktop settings to
+	not show icons on buttons, as in 11.2.
+
+	* src/ygtknotebook.c: bug fix: delete corner child on
+	destructor. Fixes 11.2 sw_single crash on exit.
+
+	* src/yzypptags.cc: speed up sw_single initialization time.
+
+	* src/ygtkzyppview.cc: look fix: when icons on buttons are
+	disabled, show "Undo" as a label instead of as an icon.
+
+	* src/YGPackageSelector.cc: bug fix: only set Undo tab
+	to confirm when the user has not uncoupled it.
+
+	* src/YGPackageSelector.cc: give initial focus to search
+	entry.
+
 2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzypptags.h/cc: -qt PK groups was not caughting
