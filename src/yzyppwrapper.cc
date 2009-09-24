@@ -624,9 +624,16 @@ int m_installedPkgs, m_totalPkgs;
 			if (rich) {
 				StringTree tree (strcmp, '/', NULL);
 
+#if ZYPP_VERSION > 5024005
 				for (zypp::Package::FileList::iterator it = package->filelist().begin();
 					 it != package->filelist().end(); it++)
 					tree.add (*it, "");
+#else
+				std::list <std::string> files (package->filenames());
+				for (std::list <std::string>::iterator it = files.begin();
+					 it != files.end(); it++)
+					tree.add (*it, "");
+#endif
 
 				struct inner {
 					static std::string getPath (GNode *node)
@@ -676,9 +683,16 @@ int m_installedPkgs, m_totalPkgs;
 						         inner::traverse, (void *) &text);
 			}
 			else {
+#if ZYPP_VERSION > 5024005
 				for (zypp::Package::FileList::iterator  it = package->filelist().begin();
 					 it != package->filelist().end(); it++)
 					text += *it + " ";
+#else
+				std::list <std::string> files (package->filenames());
+				for (std::list <std::string>::iterator it = files.begin();
+					 it != files.end(); it++)
+					text += *it + " ";
+#endif
 			}
 		}
 		return text;

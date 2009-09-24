@@ -1,5 +1,10 @@
 2009-09-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzyppwrapper.cc: made compilable for 11.1 libzypp
+	version 5.24.5.
+
+2009-09-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppview.cc: bug fix: pass USERNAME for gnomesu
 	not USER.
 
