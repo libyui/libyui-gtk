@@ -1,4 +1,52 @@
 ------------------------------------------------------------------------
+r58734 | rpmcruz | 2009-09-24 02:45:34 +0100 (Qui, 24 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58733 | rpmcruz | 2009-09-24 02:34:05 +0100 (Qui, 24 Set 2009) | 2 lines
+
+	* src/ygtkzyppview.cc: bug fix: pkg-selector dir links
+	not working.
+------------------------------------------------------------------------
+r58730 | rpmcruz | 2009-09-23 23:36:15 +0100 (Qua, 23 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58729 | rpmcruz | 2009-09-23 23:21:04 +0100 (Qua, 23 Set 2009) | 2 lines
+
+	* src/ygtkzyppview.cc: speed fix: don't load packages at
+	initialization for online_update.
+------------------------------------------------------------------------
+r58718 | rpmcruz | 2009-09-23 13:30:41 +0100 (Qua, 23 Set 2009) | 1 line
+
+Milestone version.
+------------------------------------------------------------------------
+r58717 | rpmcruz | 2009-09-23 13:23:45 +0100 (Qua, 23 Set 2009) | 23 lines
+
+	* src/YGDumbTab.cc: changed calling order of parent
+	class to reflect yast2-qt (to prevent any bug).
+
+	* src/YGTable.cc: bug fix: block GtkTreeSelection events not
+	only on init, but on only instances when the widget is
+	mapped. Fixes bootloader tab change misbehavior on 11.2.
+
+	* src/YGUtils.cc: bug fix: comply with desktop settings to
+	not show icons on buttons, as in 11.2.
+
+	* src/ygtknotebook.c: bug fix: delete corner child on
+	destructor. Fixes 11.2 sw_single crash on exit.
+
+	* src/yzypptags.cc: speed up sw_single initialization time.
+
+	* src/ygtkzyppview.cc: look fix: when icons on buttons are
+	disabled, show "Undo" as a label instead of as an icon.
+
+	* src/YGPackageSelector.cc: bug fix: only set Undo tab
+	to confirm when the user has not uncoupled it.
+
+	* src/YGPackageSelector.cc: give initial focus to search
+	entry.
+------------------------------------------------------------------------
 r58711 | rpmcruz | 2009-09-22 15:09:13 +0100 (Ter, 22 Set 2009) | 1 line
 
 Milestone version.
