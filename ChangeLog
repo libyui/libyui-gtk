@@ -1,5 +1,10 @@
 2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkzyppview.cc: bug fix: pkg-selector dir links
+	not working.
+
+2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppview.cc: speed fix: don't load packages at
 	initialization for online_update.
 

@@ -62,7 +62,6 @@ void OPEN_DIRNAME (const char *uri)
 	command.reserve (256);
 	command = GNOME_OPEN_PATH " ";
 	command += uri;
-	command += " &";
 	run (command, false);
 }
 
