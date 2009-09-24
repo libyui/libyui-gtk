@@ -64,7 +64,8 @@ static void ygtk_notebook_size_allocate (GtkWidget *widget, GtkAllocation *alloc
 			child_alloc.x = allocation->x;
 		else
 			child_alloc.x = allocation->x + (allocation->width - child_alloc.width);
-		child_alloc.y = allocation->y + 3;
+		child_alloc.y = allocation->y +
+			MAX (0, (last_label->allocation.y-allocation->y) + last_label->allocation.height + 3 - child_req.height);
 
 		gtk_widget_size_allocate (ynotebook->corner_widget, &child_alloc);
 	}

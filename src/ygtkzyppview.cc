@@ -36,7 +36,7 @@ void run (const std::string &cmd, bool as_user)
 {
 	std::string prepend, append;
 	if (as_user && getuid() == 0) {
-		char *username = getenv ("USER");
+		char *username = getenv ("USERNAME");
 		if (username && *username && strcmp (username, "root") != 0) {
 			prepend.reserve (64);
 			prepend = "gnomesu -u ";
@@ -912,6 +912,15 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_append_column (view, column);
 	}
 
+	void appendEmptyColumn (int size)
+	{
+		GtkTreeView *view = GTK_TREE_VIEW (m_view);
+		GtkTreeViewColumn *column = gtk_tree_view_column_new ();
+		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+		gtk_tree_view_column_set_fixed_width (column, size);
+		gtk_tree_view_append_column (view, column);
+	}
+
 	void setRulesHint (bool hint)
 	{ gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (m_view), TRUE); }
 
@@ -1225,6 +1234,9 @@ void YGtkPackageView::appendButtonColumn (const char *header, int col)
 
 void YGtkPackageView::appendTextColumn (const char *header, int col, int size, bool identAuto)
 { impl->appendTextColumn (header, col, size, identAuto); }
+
+void YGtkPackageView::appendEmptyColumn (int size)
+{ impl->appendEmptyColumn (size); }
 
 void YGtkPackageView::setRulesHint (bool hint)
 { impl->setRulesHint (hint); }

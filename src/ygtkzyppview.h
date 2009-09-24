@@ -61,6 +61,7 @@ struct YGtkPackageView
 	void appendButtonColumn (const char *header, int col);
 	void appendIconColumn (const char *header, int col);
 	void appendTextColumn (const char *header, int col, int size = -1, bool identAuto = false);
+	void appendEmptyColumn (int size);
 	// (set all column headers to NULL in order to hide them.)
 	void setRulesHint (bool hint);
 	enum Action { NONE_ACTION, INSTALL_ACTION, REMOVE_ACTION, UNDO_ACTION };

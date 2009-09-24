@@ -1381,7 +1381,9 @@ private:
 				view->setRulesHint (true);
 			}
 			else {
-				if (!m_onlineUpdate || nb == 0)
+				if (m_onlineUpdate && nb > 0)
+					view->appendEmptyColumn (25);
+				else
 					view->appendCheckColumn (col);
 				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 160);
 				if (col == ZyppModel::TO_UPGRADE_COLUMN) {
