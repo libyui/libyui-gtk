@@ -625,8 +625,9 @@ int m_installedPkgs, m_totalPkgs;
 				StringTree tree (strcmp, '/', NULL);
 
 #if ZYPP_VERSION > 5024005
-				for (zypp::Package::FileList::iterator it = package->filelist().begin();
-					 it != package->filelist().end(); it++)
+				zypp::Package::FileList files = package->filelist();
+				for (zypp::Package::FileList::iterator it = files.begin();
+					 it != files.end(); it++)
 					tree.add (*it, "");
 #else
 				std::list <std::string> files (package->filenames());
@@ -684,8 +685,9 @@ int m_installedPkgs, m_totalPkgs;
 			}
 			else {
 #if ZYPP_VERSION > 5024005
-				for (zypp::Package::FileList::iterator  it = package->filelist().begin();
-					 it != package->filelist().end(); it++)
+				zypp::Package::FileList files = package->filelist();
+				for (zypp::Package::FileList::iterator it = files.begin();
+					 it != files.end(); it++)
 					text += *it + " ";
 #else
 				std::list <std::string> files (package->filenames());
