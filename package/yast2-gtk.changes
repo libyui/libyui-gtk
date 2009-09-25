@@ -3,13 +3,13 @@ Thu Sep 24 00:00:00 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.19.10
 - package manager got a face re-lift
-- bug fix 523694: fire the browser as the session's user.
-- bug fix 513085: table selection ignored for a few seconds.
-- bug fix 446524: complement our label mapping
-strategy with an array of translatable yast2 labels.
-- bug fix 471059: always use black color on the text
-against the white background regardless style.
-- bug fix 489016: don't show lock&remove options for patterns.
+- fire the browser as the session's user (bcn#523694).
+- table selection ignored for a few seconds (bnc#513085).
+- complement our label mapping strategy with an array
+of translatable yast2 labels (bnc#446524)
+- always use black color on the text against the white
+background regardless style (bnc#471059). 
+- don't show lock&remove options for patterns (bnc#489016).
 
 -------------------------------------------------------------------
 Thu Jun  4 15:23:35 CEST 2009 - mkudlvasr@novell.com
