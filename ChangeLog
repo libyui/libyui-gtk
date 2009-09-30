@@ -1,3 +1,8 @@
+2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.h/cc: map package text-view details
+	scrolling to the view-port they are installed on.
+
 2009-09-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzyppwrapper.cc: made compilable for 11.1 libzypp

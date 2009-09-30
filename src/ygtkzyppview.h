@@ -10,6 +10,7 @@
 
 #include "yzyppwrapper.h"
 #include <gtk/gtkscrolledwindow.h>
+#include <gtk/gtktreemodel.h>
 
 namespace ZyppModel {
 	enum Columns {

@@ -10,7 +10,6 @@
  */
 #define YUILogComponent "gtk"
 #include <config.h>
-#include <gtk/gtk.h>
 #include "ygtkzyppview.h"
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
@@ -22,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <list>
+#include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 //** Utilities
 
@@ -1610,6 +1611,8 @@ public:
 		gtk_widget_show_all (hbox);
 		g_signal_connect (G_OBJECT (scroll), "hierarchy-changed",
 		                  G_CALLBACK (hierarchy_changed_cb), this);
+		g_signal_connect (G_OBJECT (scroll), "realize",
+		                  G_CALLBACK (realize_cb), this);
 	}
 
 	~Impl()
@@ -1805,6 +1808,53 @@ private:
 			bool vertical = GTK_IS_HPANED (parent) || GTK_IS_HBOX (parent);
 			pThis->setVerticalMode (vertical);
 		}
+	}
+
+	static void move_cursor_cb (GtkTextView *view, GtkMovementStep step, gint count,
+	                            gboolean extend_selection, Impl *pThis)
+	{
+		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (pThis->m_scroll);
+		GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment (scroll);
+		int height = pThis->m_scroll->allocation.height;
+		gdouble increment;
+		switch (step)  {
+			case GTK_MOVEMENT_DISPLAY_LINES:
+				increment = height / 10.0;
+				break;
+			case GTK_MOVEMENT_PAGES:
+				increment = height * 0.9;
+				break;
+			case GTK_MOVEMENT_DISPLAY_LINE_ENDS:
+				increment = adj->upper - adj->lower;
+				break;
+			default:
+				increment = 0.0;
+				break;
+		}
+
+		gdouble value = adj->value + (count * increment);
+		value = MIN (value, adj->upper - adj->page_size);
+		value = MAX (value, adj->lower);
+		if (value != adj->value)
+			gtk_adjustment_set_value (adj, value);
+	}
+
+	static inline void fix_keybindings (Impl *pThis, GtkWidget *widget)
+	{
+		if (widget)
+			g_signal_connect (G_OBJECT (widget), "move-cursor",
+			                  G_CALLBACK (move_cursor_cb), pThis);
+	}
+
+	static void realize_cb (GtkWidget *widget, Impl *pThis)
+	{
+		fix_keybindings (pThis, pThis->m_description);
+		fix_keybindings (pThis, pThis->m_filelist);
+		fix_keybindings (pThis, pThis->m_changelog);
+		fix_keybindings (pThis, pThis->m_authors);
+		fix_keybindings (pThis, pThis->m_support);
+		fix_keybindings (pThis, pThis->m_requires);
+		fix_keybindings (pThis, pThis->m_provides);
 	}
 };
 
