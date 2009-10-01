@@ -191,11 +191,12 @@ public:
 	// for the Primitive Pools
 	PkgList *getPackages (Package::Type type);
 
+	Ypp::Node *mapCategory2Enum (YPkgGroupEnum group);
+
 private:
 	bool resolveProblems();
 	Node *addCategory (Ypp::Package::Type type, const std::string &str, const std::string &order);
 	void polishCategories (Ypp::Package::Type type);
-	Node *addCategory2 (Ypp::Package::Type type, ZyppSelectable sel);
 
 	void startTransactions();
 	void finishTransactions();
@@ -203,6 +204,7 @@ private:
 	friend class Ypp;
 	PkgList *packages [Package::TOTAL_TYPES];  // primitive pools
 	StringTree *categories [Package::TOTAL_TYPES], *categories2;
+	Ypp::Node *mapCategories2 [PK_GROUP_ENUM_SIZE];
 	std::vector <Repository *> repos;
 	const Repository *favoriteRepo;
 	int favoriteRepoPriority;
@@ -948,7 +950,26 @@ int m_installedPkgs, m_totalPkgs;
 	{ return m_category; }
 
 	virtual Ypp::Node *category2()
-	{ return m_category2; }
+	{
+		if (!m_category2) {
+			YPkgGroupEnum group = PK_GROUP_ENUM_UNKNOWN;
+			for (int i = 0; i < 2; i++) {
+				ZyppObject obj;
+				if (i == 0)
+					obj = m_sel->candidateObj();
+				else
+					obj = m_sel->installedObj();
+				ZyppPackage pkg = tryCastToZyppPkg (obj);
+				if (pkg) {
+					group = zypp_tag_convert (pkg->group());
+					if (group != PK_GROUP_ENUM_UNKNOWN)
+						break;
+				}
+			}
+			m_category2 = ypp->impl->mapCategory2Enum (group);
+		}
+		return m_category2;
+	}
 
 	virtual bool isInstalled()
 	{
@@ -1375,6 +1396,21 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 				ZyppPattern pattern2 = tryCastToZyppPattern (((PackageSel *) b->impl)->m_sel->theObj());
 				return strcmp (pattern1->order().c_str(), pattern2->order().c_str()) < 0;
 			}
+			static int pk_group_order (const char *a, const char *b)
+			{
+				const char *unknown = zypp_tag_group_enum_to_localised_text (PK_GROUP_ENUM_UNKNOWN);
+				if (!strcmp (a, unknown)) {
+					if (!strcmp (b, unknown))
+						return 0;
+					return 1;
+				}
+				if (!strcmp (b, unknown)) {
+					if (!strcmp (a, unknown))
+						return 0;
+					return -1;
+				}
+				return strcmp (a, b);
+			}
 		};
 
 		if (type == Package::LANGUAGE_TYPE) {
@@ -1394,9 +1430,20 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 					it = zyppPool().byKindBegin <zypp::Package>();
 					end = zyppPool().byKindEnd <zypp::Package>();
 					size = zyppPool().size(zypp::ResKind::package);
+
 					// for the categories
 					bindtextdomain ("rpm-groups", LOCALEDIR);
 					bind_textdomain_codeset ("rpm-groups", "utf8");
+					// layout all categories2 already and assign it to packages on request
+					categories2 = new StringTree (inner::pk_group_order, '/', NULL);
+					for (int i = 0; i < PK_GROUP_ENUM_SIZE; i++) {
+						YPkgGroupEnum group = (YPkgGroupEnum) i;
+						const char *name = zypp_tag_group_enum_to_localised_text (group);
+						const char *icon = zypp_tag_enum_to_icon (group);
+						Ypp::Node *node = categories2->add (name, "");
+						node->icon = icon;
+						mapCategories2 [i] = node;
+					}
 					break;
 				case Package::PATTERN_TYPE:
 					it = zyppPool().byKindBegin <zypp::Pattern>();
@@ -1432,7 +1479,6 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 						if (!zpackage)
 							continue;
 						category = addCategory (type, zpackage->group(), "");
-						category2 = addCategory2 (type, sel);
 						break;
 					}
 					case Package::PATTERN_TYPE:
@@ -1506,6 +1552,9 @@ Ypp::PkgList *Ypp::Impl::getPackages (Ypp::Package::Type type)
 	}
 	return packages[type];
 }
+
+Ypp::Node *Ypp::Impl::mapCategory2Enum (YPkgGroupEnum group)
+{ return mapCategories2 [group]; }
 
 //** PkgList
 
@@ -2258,49 +2307,6 @@ Ypp::Node *Ypp::Impl::addCategory (Ypp::Package::Type type, const std::string &c
 	if (category_str.empty())
 		category = _("Other");
 	return categories[type]->add (category, order);
-}
-
-Ypp::Node *Ypp::Impl::addCategory2 (Ypp::Package::Type type, ZyppSelectable sel)
-{
-	struct inner {
-		static int cmp (const char *a, const char *b)
-		{
-			int r = g_utf8_collate (a, b);
-			if (r != 0) {
-				const char *unknown = zypp_tag_group_enum_to_localised_text
-					(PK_GROUP_ENUM_UNKNOWN);
-				if (!strcmp (a, unknown))
-					return 1;
-				if (!strcmp (b, unknown))
-					return -1;
-			}
-			return r;
-		}
-	};
-
-	// different instances may be assigned different groups
-	YPkgGroupEnum group = PK_GROUP_ENUM_UNKNOWN;
-	for (int i = 0; i < 2; i++) {
-		ZyppObject obj;
-		if (i == 0)
-			obj = sel->candidateObj();
-		else
-			obj = sel->installedObj();
-		ZyppPackage pkg = tryCastToZyppPkg (obj);
-		if (pkg) {
-			group = zypp_tag_convert (pkg->group());
-			if (group != PK_GROUP_ENUM_UNKNOWN)
-				break;
-		}
-	}
-	const char *group_name = zypp_tag_group_enum_to_localised_text (group);
-	const char *group_icon = zypp_tag_enum_to_icon (group);
-
-	if (!categories2)
-		categories2 = new StringTree (inner::cmp, '/', NULL);
-	Ypp::Node *node = categories2->add (group_name, "");
-	node->icon = group_icon;
-	return node;
 }
 
 void Ypp::Impl::polishCategories (Ypp::Package::Type type)

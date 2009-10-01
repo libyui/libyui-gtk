@@ -2011,7 +2011,7 @@ public:
 
 		m_progressbar = gtk_progress_bar_new();
 		GtkWidget *empty = gtk_event_box_new();
-		gtk_widget_set_size_request (empty, -1, 40);
+		gtk_widget_set_size_request (empty, -1, 36);
 		gtk_widget_show (empty);
 
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);

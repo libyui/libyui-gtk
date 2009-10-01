@@ -1,5 +1,14 @@
 2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/yzypptags.h/cc: bug fix: a couple mapping errors
+	of PackageKit categories.
+
+	* src/yzyppwrapper.cc: speed fix: improved startup
+	speed by both mapping categories when needed and
+	improving the mapping performance as well.
+
+2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppview.h/cc: map package text-view details
 	scrolling to the view-port they are installed on.
 
