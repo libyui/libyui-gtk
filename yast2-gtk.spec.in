@@ -1,8 +1,18 @@
-@HEADER-COMMENT@
+Url:            http://en.opensuse.org/YaST2-GTK
 
-@HEADER@
+Name:		yast2-gtk
+Version:	@VERSION@
+Release:	0
+License:        LGPL v2.1 or later
+Group:		System/YaST
+BuildRoot:	%{_tmppath}/%{name}-%{version}-build
+Source0:	yast2-gtk-@VERSION@.tar.bz2
+prefix:		/usr
 Source2:        yast2-gtk-rpmlintrc
-BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-core-devel yast2-devtools gtk2-devel
+BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-devtools gtk2-devel
+BuildRequires:  yast2-core-devel >= 2.16.27
+BuildRequires:  yast2-libyui-devel
+Requires:       yast2-core >= 2.16.27
 Summary:        YaST2 - Gtk Graphical User Interface
 Provides:       yast2_ui
 Provides:       yast2_ui_pkg
@@ -32,4 +42,5 @@ rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
 %doc @docdir@
 %{_libdir}/YaST2/plugin/libpy2gtk.so.*
 %{_libdir}/YaST2/plugin/libpy2gtk.so
+%{_datadir}/YaST2/gtk
 
