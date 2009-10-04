@@ -33,7 +33,7 @@ set (YAST_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/YaST2)
 
 set (DATADIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/gtk/)
 set (LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/locale)
-set (THEMEDIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/theme)
+set (THEMEDIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/theme/current)
 
 # create config.h (see config.h.cmake)
 configure_file (${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
