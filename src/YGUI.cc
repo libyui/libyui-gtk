@@ -37,7 +37,7 @@ YUI *createUI( bool withThreads )
 {
 	static YGUI *ui = 0;
 	if (!ui)
-		_ui = new YGUI (withThreads);
+		ui = new YGUI (withThreads);
 	return ui;
 }
 
