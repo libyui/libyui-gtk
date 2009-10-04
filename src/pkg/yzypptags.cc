@@ -9,7 +9,6 @@
 /* Tags PackageKit translator */
 // check the header file for information about this translator
 
-#include <config.h>
 #include "YGi18n.h"
 #define YUILogComponent "gtk-pkg"
 #include <YUILog.h>

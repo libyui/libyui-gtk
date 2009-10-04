@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <config.h>
+#include "config.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 
@@ -155,11 +155,11 @@ public:
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YAlignment)
 	YGLAYOUT_SET_SIZE_IMPL (YAlignment)
 
-	virtual void setBackgroundPixmap (string filename)
+	virtual void setBackgroundPixmap (const std::string &_filename)
 	{
+		YAlignment::setBackgroundPixmap (_filename);
 		// YAlignment will prepend a path to the image
-		YAlignment::setBackgroundPixmap (filename);
-		filename = YAlignment::backgroundPixmap();
+		std::string filename (YAlignment::backgroundPixmap());
 
 		if (m_background_pixbuf)
 			g_object_unref (G_OBJECT (m_background_pixbuf));

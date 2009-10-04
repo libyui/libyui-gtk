@@ -9,7 +9,7 @@
   Textdomain "yast2-gtk"
  */
 #define YUILogComponent "gtk"
-#include <config.h>
+#include "config.h"
 #include "ygtkzyppview.h"
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"

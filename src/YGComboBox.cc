@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <config.h>
+#include "config.h"
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YComboBox.h"

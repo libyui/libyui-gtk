@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <config.h>
+#include "config.h"
 #include <gtk/gtk.h>
 #include <YTreeItem.h>
 #include "YGSelectionModel.h"

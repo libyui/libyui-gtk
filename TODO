@@ -39,11 +39,11 @@ Build procedure
 
 	YGRichText
 		should use GtkHtml when available, so that we get support for tables.
-	Difficulty: -- - Priority: Medium
 
-	libpy2gtk_pkg.so
-		subtract the package manager code into a plugin.
-	Difficulty: -- - Priority: Low
+		Road block: the problem here is that Webkit doesn't work well for our
+		package-selector use (outside a scrolled window). Does it make sense to
+		keep YGtkRichText for that sole purpose?
+	Difficulty: -- - Priority: Medium
 
 Test Framework
 

@@ -1,3 +1,7 @@
+2009-10-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Ported build system from autotools to cmake.
+
 2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/yzypptags.h/cc: bug fix: a couple mapping errors

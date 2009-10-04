@@ -6,7 +6,6 @@
   Textdomain "yast2-gtk"
  */
 
-#include <config.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -33,6 +32,14 @@ static void errorMsg (const char *msg)
 
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
+
+YUI *createUI( bool withThreads )
+{
+	static YGUI *ui = 0;
+	if (!ui)
+		_ui = new YGUI (withThreads);
+	return ui;
+}
 
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
@@ -339,9 +346,9 @@ YGApplication::YGApplication()
 	setIconBasePath (ICON_DIR);
 }
 
-void YGApplication::makeScreenShot (string filename)
+void YGApplication::makeScreenShot (const std::string &_filename)
 {
-	IMPL
+	std::string filename (_filename);
 	bool interactive = filename.empty();
 
 	GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());

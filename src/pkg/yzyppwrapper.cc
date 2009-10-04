@@ -9,7 +9,6 @@
 /* Ypp, zypp wrapper */
 // check the header file for information about this wrapper
 
-#include <config.h>
 #include "YGi18n.h"
 #include "yzyppwrapper.h"
 #include "yzypptags.h"
@@ -20,6 +19,7 @@
 #include <sstream>
 #define YUILogComponent "gtk-pkg"
 #include <YUILog.h>
+#include "config.h"
 
 #include <zypp/ZYppFactory.h>
 #include <zypp/ResObject.h>

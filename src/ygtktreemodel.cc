@@ -5,7 +5,6 @@
 /* YGtkTreeModel, C++ wrapper for gtk+ */
 // check the header file for information about this wrapper
 
-#include <config.h>
 #include <gtk/gtk.h>
 #include "ygtktreemodel.h"
 

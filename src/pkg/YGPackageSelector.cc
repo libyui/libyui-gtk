@@ -6,7 +6,7 @@
  */
 
 #define YUILogComponent "gtk"
-#include <config.h>
+#include "config.h"
 #include <string.h>
 #include "YGUI.h"
 #include "YGUtils.h"
@@ -23,21 +23,7 @@
 #include "ygtktooltip.h"
 
 // experiments:
-static bool show_find_pane = false, use_buttons = false, show_novelty_filter = false;
-bool YGUI::pkgSelectorParse (const char *arg)
-{
-	if (!strcmp (arg, "find-pane"))
-		show_find_pane = true;
-	else if (!strcmp (arg, "buttons"))
-		use_buttons = true;
-	else if (!strcmp (arg, "novelty-filter"))
-		show_novelty_filter = true;
-	else return false;
-	return true;
-}
-
-void YGUI::pkgSelectorSize (int *width, int *height)
-{ *width = 700; *height = 800; }
+extern bool show_find_pane, use_buttons, show_novelty_filter;
 
 //** UI components -- split up for re-usability, but mostly for readability
 
@@ -268,7 +254,7 @@ protected:
 	enum Column { TEXT_COL, ICON_COL, ENABLED_COL, PTR_COL, TOOLTIP_COL, TOTAL_COLS };
 
 	virtual void doBuild (GtkTreeStore *store) = 0;
-	virtual void writeQuery (Ypp::PkgQuery::Query *query,
+	virtual void writeQuerySel (Ypp::PkgQuery::Query *query,
 	                           const std::list <gpointer> &ptr) = 0;
 
 	StoreView()
@@ -306,7 +292,7 @@ public:
 			gtk_tree_path_free (path);
 		}
 		g_list_free (selected);
-		writeQuery (query, ptrs);
+		writeQuerySel (query, ptrs);
 	}
 
 protected:
@@ -482,7 +468,7 @@ protected:
 		}
 	}
 
-	virtual void writeQuery (Ypp::PkgQuery::Query *query, const std::list <gpointer> &ptrs)
+	virtual void writeQuerySel (Ypp::PkgQuery::Query *query, const std::list <gpointer> &ptrs)
 	{
 		gpointer ptr = ptrs.empty() ? NULL : ptrs.front();
 		int nptr = GPOINTER_TO_INT (ptr);
@@ -573,7 +559,7 @@ protected:
 		}
 	}
 
-	virtual void writeQuery (Ypp::PkgQuery::Query *query, const std::list <gpointer> &ptrs)
+	virtual void writeQuerySel (Ypp::PkgQuery::Query *query, const std::list <gpointer> &ptrs)
 	{
 		for (std::list <gpointer>::const_iterator it = ptrs.begin();
 		     it != ptrs.end(); it++) {
@@ -2139,6 +2125,9 @@ public:
 	YGWIDGET_IMPL_COMMON (YPackageSelector)
 };
 
-YPackageSelector *YGWidgetFactory::createPackageSelector (YWidget *parent, long mode)
-{ return new YGPackageSelector (parent, mode); }
+#include "pkg/YGPackageSelectorPluginImpl.h"
+
+YPackageSelector *
+YGPackageSelectorPluginImpl::createPackageSelector (YWidget *parent, long modeFlags)
+{ return new YGPackageSelector (parent, modeFlags); }
 

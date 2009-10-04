@@ -11,6 +11,7 @@
 
 #define YUILogComponent "gtk"
 #include <YUILog.h>
+#include "config.h"
 
 #define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
 
@@ -40,7 +41,7 @@ protected:
 	virtual YApplication *createApplication();
 
 public:
-    static void setTextdomain( const char * domain );
+    static void setTextdomain (const char *domain);
 
 	virtual void idleLoop (int fd_ycp);
 	// called by YDialog::waitInput() / pollEvent()...
@@ -217,7 +218,7 @@ public:
 	virtual void busyCursor() { YGUI::ui()->busyCursor(); }
 	virtual void normalCursor() { YGUI::ui()->normalCursor(); }
 
-	virtual void makeScreenShot (string filename);
+	virtual void makeScreenShot (const std::string &filename);
 	virtual void beep();
 
 	virtual int deviceUnits (YUIDimension dim, float layout_units);
