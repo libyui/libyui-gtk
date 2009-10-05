@@ -90,3 +90,11 @@ install (FILES ${gtk_yast_plugin_DATA} DESTINATION ${DATADIR})
 
 add_subdirectory (pkg)
 
+## test:
+
+link_directories (${CMAKE_BINARY_DIR}/src)
+add_executable (test test.cc)
+target_link_libraries (test libpy2gtk.so)
+target_link_libraries (test ${GTK2_LIBRARIES})
+target_link_libraries (test ${LIBYUI_LIBRARY})
+

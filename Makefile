@@ -14,5 +14,8 @@ package:
 	cd build ; make package_source
 	mv build/*.tar.bz2 build/package/* package
 
-.PHONY: all install clean package
+test:
+	build/src/test
+
+.PHONY: all install clean package test
 
