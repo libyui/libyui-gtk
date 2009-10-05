@@ -144,8 +144,6 @@ function(_GTK2_FIND_INCLUDE_DIR _var _hdr)
         pango-1.0
         pangomm-1.4
         sigc++-2.0
-        # ricardo:
-        gobject-2.0
     )
 
     set(_suffixes)
