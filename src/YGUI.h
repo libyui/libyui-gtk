@@ -5,27 +5,16 @@
 #ifndef YGUI_H
 #define YGUI_H
 
-#include <gtk/gtk.h>
-#include <YSimpleEventHandler.h>
-#include <map>
-
+#include "config.h"
+#include <YUI.h>
 #define YUILogComponent "gtk"
 #include <YUILog.h>
-#include "config.h"
-
-#define ICON_DIR   THEMEDIR "/icons/22x22/apps/"
+#include <YSimpleEventHandler.h>
+#include <map>
+#include <gtk/gtk.h>
 
 /* Comment the following line to disable debug messages */
-// #define IMPL_DEBUG
-#define LOC       fprintf (stderr, "%s (%s)\n", G_STRLOC, G_STRFUNC)
-#ifdef IMPL_DEBUG
-	#define IMPL      { LOC; }
-#else
-	#define IMPL      { }
-#endif
-#define IMPL_RET(a) { IMPL; return (a); }
-
-#include <YUI.h>
+#define RET(a) { return (a); }
 
 class YGUI: public YUI
 {
@@ -124,8 +113,7 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YMultiSelectionBox *createMultiSelectionBox (YWidget *parent, const string &label);
 
 	virtual YPackageSelector *createPackageSelector (YWidget * parent, long ModeFlags);
-	virtual YWidget *createPkgSpecial (YWidget * parent, const string & subwidgetName)
-		IMPL_RET (NULL)  // for ncurses
+	virtual YWidget *createPkgSpecial (YWidget * parent, const string & subwidgetName) RET (NULL)  // for ncurses
 
 	virtual YLayoutBox *createLayoutBox (YWidget *parent, YUIDimension dimension);
 #if YAST2_VERSION >= 2017006
@@ -149,54 +137,52 @@ class YGWidgetFactory : public YWidgetFactory
 class YGOptionalWidgetFactory : public YOptionalWidgetFactory
 {
 public:
-	virtual bool hasWizard() IMPL_RET (true)
+	virtual bool hasWizard() RET (true)
 	virtual YWizard *createWizard (YWidget *parent, const string &backButtonLabel,
 		const string &abortButtonLabel, const string &nextButtonLabel,
 		YWizardMode wizardMode);
 
-	virtual bool hasDumbTab() IMPL_RET (true)
+	virtual bool hasDumbTab() RET (true)
 	virtual YDumbTab *createDumbTab (YWidget *parent);
 
-	virtual bool hasSlider() IMPL_RET (true)
+	virtual bool hasSlider() RET (true)
 	virtual YSlider *createSlider (YWidget *parent, const string &label, int minVal,
 		int maxVal, int initialVal);
 
-	virtual bool hasDateField() IMPL_RET (true)
+	virtual bool hasDateField() RET (true)
 	virtual YDateField *createDateField (YWidget *parent, const string &label);
 
-	virtual bool hasTimeField() IMPL_RET (true)
+	virtual bool hasTimeField() RET (true)
 	virtual YTimeField *createTimeField (YWidget *parent, const string &label);
 
-    virtual bool hasTimezoneSelector() IMPL_RET (true)
+    virtual bool hasTimezoneSelector() RET (true)
 	virtual YTimezoneSelector *createTimezoneSelector (YWidget *parent, 
 		const string &pixmap,  const map <string, string> &timezones);
 
-	virtual bool hasBarGraph() IMPL_RET (true)
+	virtual bool hasBarGraph() RET (true)
 	virtual YBarGraph *createBarGraph (YWidget *parent);
 
-	virtual bool hasMultiProgressMeter() IMPL_RET (true)
+	virtual bool hasMultiProgressMeter() RET (true)
 	virtual YMultiProgressMeter *createMultiProgressMeter (YWidget *parent,
 		YUIDimension dim, const vector<float> &maxValues);
 
-	virtual bool hasPartitionSplitter() IMPL_RET (true)
+	virtual bool hasPartitionSplitter() RET (true)
 	virtual YPartitionSplitter *createPartitionSplitter (YWidget *parent,
 		int usedSize, int totalFreeSize, int newPartSize, int minNewPartSize,
 		int minFreeSize, const string &usedLabel, const string &freeLabel,
 		const string &newPartLabel, const string &freeFieldLabel,
 		const string &newPartFieldLabel);
 
-	virtual bool hasDownloadProgress() IMPL_RET (true)
+	virtual bool hasDownloadProgress() RET (true)
 	virtual YDownloadProgress *createDownloadProgress (YWidget *parent,
 		const string &label, const string & filename, YFileSize_t expectedFileSize);
 
-	virtual bool hasContextMenu() IMPL_RET (true)
+	virtual bool hasContextMenu() RET (true)
 
-	virtual bool hasSimplePatchSelector() IMPL_RET (false)
-	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags)
-		IMPL_RET (NULL)
-	virtual bool hasPatternSelector() IMPL_RET (false)
-	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags)
-		IMPL_RET (NULL)
+	virtual bool hasSimplePatchSelector() RET (false)
+	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags) RET (NULL)
+	virtual bool hasPatternSelector() RET (false)
+	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags) RET (NULL)
 };
 
 #include <YApplication.h>
@@ -231,17 +217,17 @@ public:
 	virtual int  defaultWidth();  // internally, use _defaultWidth / Height()
 	virtual int  defaultHeight();
 
-    virtual bool isTextMode()            IMPL_RET (false)
-	virtual bool leftHandedMouse()       IMPL_RET (false)
-	virtual bool hasImageSupport()       IMPL_RET (true)
-	virtual bool hasLocalImageSupport()  IMPL_RET (true)
-	virtual bool hasAnimationSupport()   IMPL_RET (true)
-	virtual bool hasIconSupport()        IMPL_RET (true)
-	virtual bool hasFullUtf8Support()    IMPL_RET (true)
+    virtual bool isTextMode()            RET (false)
+	virtual bool leftHandedMouse()       RET (false)
+	virtual bool hasImageSupport()       RET (true)
+	virtual bool hasLocalImageSupport()  RET (true)
+	virtual bool hasAnimationSupport()   RET (true)
+	virtual bool hasIconSupport()        RET (true)
+	virtual bool hasFullUtf8Support()    RET (true)
 #ifdef USE_WEBKIT
-	virtual bool richTextSupportsTable() IMPL_RET (true)
+	virtual bool richTextSupportsTable() RET (true)
 #else
-	virtual bool richTextSupportsTable() IMPL_RET (false)
+	virtual bool richTextSupportsTable() RET (false)
 #endif
 
 #if YAST2_VERSION > 2018003
@@ -253,6 +239,8 @@ private:
     std::map <std::string, int> screenShotNb;
     std::string screenShotNameTemplate;
 };
+
+#undef RET
 
 #endif /*YGUI_H*/
 

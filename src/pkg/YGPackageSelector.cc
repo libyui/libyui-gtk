@@ -2056,7 +2056,6 @@ public:
 	static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 	                              gint id_type, YGPackageSelector *pThis)
 	{
-		IMPL
 		const gchar *action = (gchar *) id;
 		yuiMilestone() << "Closing PackageSelector with '" << action << "'\n";
 		if (!strcmp (action, "accept")) {

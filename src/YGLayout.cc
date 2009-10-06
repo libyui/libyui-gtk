@@ -87,10 +87,7 @@ public:
 };
 
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
-{
-	IMPL
-	return new YGLayoutBox (parent, dimension);
-}
+{ return new YGLayoutBox (parent, dimension); }
 
 #if YAST2_VERSION >= 2017006
 #include <YButtonBox.h>
@@ -122,10 +119,7 @@ public:
 };
 
 YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)
-{
-	IMPL
-	return new YGButtonBox (parent);
-}
+{ return new YGButtonBox (parent); }
 
 #endif
 
@@ -203,10 +197,7 @@ public:
 
 YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType halign,
                                               YAlignmentType valign)
-{
-	IMPL
-	return new YGAlignment (parent, halign, valign);
-}
+{ return new YGAlignment (parent, halign, valign); }
 
 #include <YEmpty.h>
 
@@ -225,10 +216,7 @@ public:
 };
 
 YEmpty *YGWidgetFactory::createEmpty (YWidget *parent)
-{
-	IMPL
-	return new YGEmpty (parent);
-}
+{ return new YGEmpty (parent); }
 
 #include <YSpacing.h>
 
@@ -273,9 +261,7 @@ public:
 };
 
 YReplacePoint *YGWidgetFactory::createReplacePoint (YWidget *parent)
-{
-	return new YGReplacePoint (parent);
-}
+{ return new YGReplacePoint (parent); }
 
 #include <YSquash.h>
 
@@ -295,8 +281,5 @@ public:
 };
 
 YSquash *YGWidgetFactory::createSquash (YWidget *parent, bool hsquash, bool vsquash)
-{
-	IMPL
-	return new YGSquash (parent, hsquash, vsquash);
-}
+{ return new YGSquash (parent, hsquash, vsquash); }
 

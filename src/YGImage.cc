@@ -11,7 +11,7 @@
 #include "ygtkimage.h"
 #include <string.h>
 
-static bool endsWith (const std::string &str1, const char *str2)
+static inline bool endsWith (const std::string &str1, const char *str2)
 {
 	size_t len = strlen (str2);
 	if (str1.size() < len) return false;
@@ -25,7 +25,6 @@ public:
 	: YImage (NULL, filename, animated),
 	  YGWidget (this, parent, YGTK_TYPE_IMAGE, NULL)
 	{
-		IMPL
 		YGtkImage *image = YGTK_IMAGE (getWidget());
 		const char *stock = NULL;
 		if (endsWith (filename, "/msg_question.png"))
@@ -56,7 +55,5 @@ public:
 };
 
 YImage *YGWidgetFactory::createImage (YWidget *parent, const string &filename, bool animated)
-{
-	return new YGImage (parent, filename, animated);
-}
+{ return new YGImage (parent, filename, animated); }
 

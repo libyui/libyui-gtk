@@ -26,7 +26,6 @@ public:
 	                    YGTK_TYPE_TREE_VIEW, NULL)
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
-		IMPL
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -57,7 +56,6 @@ public:
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
-		IMPL
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer;
 
@@ -182,7 +180,6 @@ public:
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
-		IMPL
 		GtkTreeIter iter;
 		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
 			return;
@@ -222,7 +219,6 @@ public:
 	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	                        YGTableView *pThis)
 	{
-		IMPL
 		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
 		gint column = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "column"));
 		pThis->toggle (path, column);
@@ -253,7 +249,6 @@ public:
 #endif
 	, YGTableView (this, parent, string(), false, false)
 	{
-		IMPL
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
 #if YAST2_VERSION >= 2017005
@@ -314,7 +309,6 @@ public:
 
 	void setSortable (bool sortable)
 	{
-		IMPL
 		if (!sortable && !GTK_WIDGET_REALIZED (getWidget()))
 			return;
 		int n = 0;
@@ -462,10 +456,7 @@ public:
 };
 
 YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const string &label)
-{
-	IMPL
-	return new YGSelectionBox (parent, label);
-}
+{ return new YGSelectionBox (parent, label); }
 
 #include "YMultiSelectionBox.h"
 
@@ -524,7 +515,6 @@ public:
 	{ pThis->toggle (path, 0); }
 
 	// YGSelectionModel
-
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		setCellToggle (iter, 0, true);
@@ -541,18 +531,13 @@ public:
 	}
 
 	// YGWidget
-
 	virtual bool isShrinkable() { return shrinkable(); }
 	YGWIDGET_IMPL_COMMON (YMultiSelectionBox)
 	YGSELECTION_WIDGET_IMPL (YMultiSelectionBox)
 };
 
-YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent,
-                                                              const string &label)
-{
-	IMPL
-	return new YGMultiSelectionBox (parent, label);
-}
+YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent, const string &label)
+{ return new YGMultiSelectionBox (parent, label); }
 
 #include "YTree.h"
 #include "YTreeItem.h"

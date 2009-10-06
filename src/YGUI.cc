@@ -44,7 +44,6 @@ YUI *createUI( bool withThreads )
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
-	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
     m_default_width = (m_default_height = 0);
@@ -165,7 +164,6 @@ static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
 
 void YGUI::idleLoop (int fd_ycp)
 {
-	IMPL
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -188,7 +186,6 @@ void YGUI::idleLoop (int fd_ycp)
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
 {
-	IMPL
 	if (!pThis->pendingEvent())
 		pThis->sendEvent (new YTimeoutEvent());
 	return FALSE;
@@ -197,7 +194,6 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 // utility that implements both userInput() and pollInput()
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
-	IMPL
 	checkInit();
 	if (!YDialog::currentDialog (false))
 		return NULL;
@@ -341,9 +337,11 @@ void YGUI::askSaveLogs()
 
 //** YGApplication
 
+#define ICONDIR THEMEDIR "/icons/22x22/apps/"
+
 YGApplication::YGApplication()
 {
-	setIconBasePath (ICON_DIR);
+	setIconBasePath (ICONDIR);
 }
 
 void YGApplication::makeScreenShot (const std::string &_filename)
@@ -451,7 +449,6 @@ void YGApplication::beep()
 std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title)
 {
-	IMPL
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title.c_str(),
 		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -515,25 +512,15 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 
 std::string YGApplication::askForExistingDirectory (
 	const std::string &path, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
-	                              "", title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path, "", title); }
 
 std::string YGApplication::askForExistingFile (
 	const std::string &path, const std::string &filter, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title); }
 
 std::string YGApplication::askForSaveFileName (
 	const std::string &path, const std::string &filter, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title); }
 
 std::string YGApplication::glyph (const std::string &sym)
 {
@@ -808,7 +795,6 @@ void dumpYastHtml (YWidget *widget)
 		{ gtk_widget_destroy (GTK_WIDGET (dialog)); }
 	};
 
-	IMPL
 	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets HTML", NULL,
 		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 300);

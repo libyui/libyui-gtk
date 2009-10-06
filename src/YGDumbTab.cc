@@ -21,7 +21,6 @@ public:
 		: YDumbTab (NULL),
 		  YGWidget (this, parent, GTK_TYPE_NOTEBOOK, NULL)
 	{
-		IMPL
 		m_containee = gtk_event_box_new();
 		g_object_ref_sink (G_OBJECT (m_containee));
 		gtk_widget_show (m_containee);
@@ -37,7 +36,6 @@ public:
 
 	virtual ~YGDumbTab()
 	{
-		IMPL
 		gtk_widget_destroy (m_containee);
 		g_object_unref (G_OBJECT (m_containee));
 	}
@@ -107,7 +105,6 @@ public:
 
 	virtual YItem *selectedItem()
 	{
-		IMPL
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		int nb = gtk_notebook_get_current_page (notebook);
 		if (nb < 0) return NULL;
@@ -159,8 +156,5 @@ public:
 };
 
 YDumbTab *YGOptionalWidgetFactory::createDumbTab (YWidget *parent)
-{
-	IMPL
-	return new YGDumbTab (parent);
-}
+{ return new YGDumbTab (parent); }
 

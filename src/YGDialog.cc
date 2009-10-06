@@ -124,7 +124,6 @@ public:
 
 	~YGWindow()
 	{
-		IMPL
 		setChild (NULL);
 		if (m_busyCursor)
 			gdk_cursor_unref (m_busyCursor);
@@ -156,8 +155,7 @@ public:
 
 	void setChild (YWidget *new_child)
 	{
-		IMPL
-			GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
+		GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
 		if (child)
 		    gtk_container_remove (GTK_CONTAINER (m_widget), child);
 		if (new_child) {
@@ -196,7 +194,6 @@ private:
 	static gboolean close_window_cb (GtkWidget *widget, GdkEvent  *event,
 	                                 YGWindow  *pThis)
 	{
-		IMPL
 		// never let GTK+ destroy the window! just inform YCP, and let it
 		// do its thing.
 		pThis->close();
@@ -206,7 +203,6 @@ private:
 	static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
 		                            YGWindow *pThis)
 	{
-		IMPL
 		// if not main dialog, close it on escape
 		if (event->keyval == GDK_Escape &&
 		    /* not main window */ main_window != pThis) {
@@ -576,10 +572,7 @@ std::list <YWidget *> YGDialog::getClassWidgets (const char *className)
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)
-{
-	IMPL
-	return new YGDialog (dialogType, colorMode);
-}
+{ return new YGDialog (dialogType, colorMode); }
 
 YEvent *YGDialog::waitForEventInternal (int timeout_millisec)
 { return YGUI::ui()->waitInput (timeout_millisec, true); }

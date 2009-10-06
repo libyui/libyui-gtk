@@ -85,7 +85,6 @@ public:
 	: YWizard (NULL, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
 	, YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
 	{
-		IMPL
 		setBorder (0);
 		YGtkWizard *wizard = getWizard();
 
@@ -280,7 +279,6 @@ public:
 	static void action_triggered_cb (YGtkWizard *wizard, gpointer id,
 	                                 gint id_type, YGWizard *pThis)
 	{
-		IMPL
 		if ((GType) id_type == G_TYPE_STRING)
 			YGUI::ui()->sendEvent (new YMenuEvent ((char *) id));
 		else

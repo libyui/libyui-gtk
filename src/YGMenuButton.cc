@@ -56,7 +56,6 @@ public:
 	:  YMenuButton (NULL, label),
 	   YGWidget (this, parent, YGTK_TYPE_MENU_BUTTON, NULL)
 	{
-		IMPL
 		string str = YGUtils::mapKBAccel (label.c_str());
 		ygtk_menu_button_set_label (YGTK_MENU_BUTTON (getWidget()), str.c_str());
 	}
@@ -74,9 +73,7 @@ public:
 };
 
 YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const string &label)
-{
-	return new YGMenuButton (parent, label);
-}
+{ return new YGMenuButton (parent, label); }
 
 #if YAST2_VERSION > 2018003
 #include <YContextMenu.h>

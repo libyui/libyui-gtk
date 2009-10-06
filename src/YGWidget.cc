@@ -92,7 +92,6 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 
 YGWidget::~YGWidget()
 {
-	IMPL
 	delete m_signals;
 	m_signals = 0;
 	if (YGUI::ui()->eventPendingFor (m_ywidget))
@@ -221,10 +220,7 @@ void YGWidget::unblockSignals()
 { if (m_signals) m_signals->unblock(); }
 
 void YGWidget::setBorder (unsigned int border)
-{
-	IMPL
-	gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border);
-}
+{ gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border); }
 
 /* YGLabeledWidget follows */
 

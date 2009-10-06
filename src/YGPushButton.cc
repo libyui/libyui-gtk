@@ -20,7 +20,6 @@ public:
 	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
-		IMPL
 		m_customIcon = m_labelIcon = false;
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
@@ -60,7 +59,6 @@ public:
 	// YPushButton
 	virtual void setLabel (const string &label)
 	{
-		IMPL
 		YPushButton::setLabel (label);
 		string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
@@ -92,7 +90,6 @@ public:
 
 	virtual void setIcon (const string &icon)
 	{
-		IMPL
 		GtkButton *button = GTK_BUTTON (getWidget());
 		if (icon.empty()) {
 			m_customIcon = false;
@@ -201,7 +198,5 @@ public:
 };
 
 YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const string &label)
-{
-	return new YGPushButton (parent, label);
-}
+{ return new YGPushButton (parent, label); }
 
