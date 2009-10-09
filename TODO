@@ -35,6 +35,10 @@ Enhancements
 		Deprecate in favor of GTK 2.16 GtkOrientation API for GtkPaned.
 	Difficulty: Low - Priority: Low
 
+	Installer look
+		Port or adopt yast2-qt's installer style file.
+	Difficulty: High - Priority: Low
+
 Build procedure
 
 	YGRichText
@@ -43,12 +47,12 @@ Build procedure
 		Road block: the problem here is that Webkit doesn't work well for our
 		package-selector use (outside a scrolled window). Does it make sense to
 		keep YGtkRichText for that sole purpose?
-	Difficulty: -- - Priority: Medium
+	Difficulty: Medium - Priority: Medium
 
 Test Framework
 
 	Regression tests
 		setup LDTP to run through all the tests/ and provoke as many code-paths
 		as possible.
-	Difficulty: -- - Priority: Low
+	Difficulty: High (tiresome) - Priority: Low
 
