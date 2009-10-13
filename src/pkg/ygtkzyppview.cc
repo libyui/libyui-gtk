@@ -1864,12 +1864,13 @@ private:
 
 	static void slow_set_text (GtkWidget *text, const std::string &str)
 	{
-		g_object_set_data_full (G_OBJECT (text), "text", g_strdup (str.c_str()), g_free);
-		if (str.empty()) {
+		if (str.size() < 20*1000) {  // only for bigger text do the delay...
+			g_object_set_data_full (G_OBJECT (text), "text", NULL, NULL);
 			g_object_set_data (G_OBJECT (text), "touched", 0);
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), "", FALSE);
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
 		}
 		else {
+			g_object_set_data_full (G_OBJECT (text), "text", g_strdup (str.c_str()), g_free);
 			g_object_set_data (G_OBJECT (text), "touched", GINT_TO_POINTER (1));
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), "...", FALSE);
 			if (GTK_WIDGET_MAPPED (text))
@@ -1896,8 +1897,8 @@ private:
 	{
 		GtkWidget *text = ygtk_rich_text_new();
 		g_object_set_data (G_OBJECT (text), "is-slow", GINT_TO_POINTER (1));
-		g_signal_connect (G_OBJECT (text), "map",
-		                  G_CALLBACK (slow_text_map_cb), NULL);
+		g_signal_connect_after (G_OBJECT (text), "map",
+		                        G_CALLBACK (slow_text_map_cb), NULL);
 		return text;
 	}
 };

@@ -1,5 +1,11 @@
 2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkzyppview.cc: only apply speed up fix
+	for big text streams (above 20Kb) since it may
+	cause flicker.
+
+2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkzyppview.cc: speed up fix: quick hack
 	so we only set file-list text (which can be very long
 	and take many seconds on some packages: e.g. kernel-*)
