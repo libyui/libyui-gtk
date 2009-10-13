@@ -1578,8 +1578,8 @@ public:
 		                  G_CALLBACK (link_pressed_cb), this);
 		gtk_box_pack_start (GTK_BOX (vbox), m_description, FALSE, TRUE, 0);
 		if (!onlineUpdate) {
-			m_filelist = ygtk_rich_text_new();
-			m_changelog = ygtk_rich_text_new();
+			m_filelist = slow_ygtk_rich_text_new();
+			m_changelog = slow_ygtk_rich_text_new();
 			m_authors = ygtk_rich_text_new();
 			m_support = ygtk_rich_text_new();
 			m_requires = ygtk_rich_text_new();
@@ -1650,7 +1650,6 @@ public:
 				setText (m_requires, requires_str);
 				setText (m_provides, provides_str);
 			}
-
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (icons,
@@ -1772,7 +1771,10 @@ private:
 
 	static void setText (GtkWidget *text, const std::string &str)
 	{
-		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
+		if (g_object_get_data (G_OBJECT (text), "is-slow"))
+			slow_set_text (text, str);
+		else
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
 		GtkWidget *expander = gtk_widget_get_ancestor (text, GTK_TYPE_EXPANDER);
 		if (expander)
 			str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
@@ -1855,6 +1857,48 @@ private:
 		fix_keybindings (pThis, pThis->m_support);
 		fix_keybindings (pThis, pThis->m_requires);
 		fix_keybindings (pThis, pThis->m_provides);
+	}
+
+	// slow text hack: only set filelist if expander is shown
+	// TODO: call libzypp's filelist() only when used as well
+
+	static void slow_set_text (GtkWidget *text, const std::string &str)
+	{
+		g_object_set_data_full (G_OBJECT (text), "text", g_strdup (str.c_str()), g_free);
+		if (str.empty()) {
+			g_object_set_data (G_OBJECT (text), "touched", 0);
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), "", FALSE);
+		}
+		else {
+			g_object_set_data (G_OBJECT (text), "touched", GINT_TO_POINTER (1));
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), "...", FALSE);
+			if (GTK_WIDGET_MAPPED (text))
+				g_idle_add_full (G_PRIORITY_LOW, slow_set_text_cb, text, NULL);
+		}
+	}
+
+	static gboolean slow_set_text_cb (void *data)
+	{
+		slow_text_map_cb ((GtkWidget *) data);
+		return FALSE;
+	}
+
+	static void slow_text_map_cb (GtkWidget *text)
+	{
+		if (g_object_get_data (G_OBJECT (text), "touched")) {
+			const gchar *str = (gchar *) g_object_get_data (G_OBJECT (text), "text");
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str, FALSE);
+			g_object_set_data (G_OBJECT (text), "touched", 0);
+		}
+	}
+
+	static GtkWidget *slow_ygtk_rich_text_new()
+	{
+		GtkWidget *text = ygtk_rich_text_new();
+		g_object_set_data (G_OBJECT (text), "is-slow", GINT_TO_POINTER (1));
+		g_signal_connect (G_OBJECT (text), "map",
+		                  G_CALLBACK (slow_text_map_cb), NULL);
+		return text;
 	}
 };
 

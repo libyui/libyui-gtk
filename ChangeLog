@@ -1,3 +1,12 @@
+2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkzyppview.cc: speed up fix: quick hack
+	so we only set file-list text (which can be very long
+	and take many seconds on some packages: e.g. kernel-*)
+	when expander is open.
+	In the future, call zypp's filelist() when needed since
+	that can take a few seconds as well.
+
 2009-10-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Ported build system from autotools to cmake.
