@@ -1,3 +1,26 @@
+2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkzyppview.cc: improved speed up fix:
+	only query libzypp when respective expander is open.
+
+	* src/pkg/yzyppwrapper.cc: don't suffix "B" to
+	size string: it seems libzypp now does that.
+
+	* src/pkg/YGPackageSelector.cc: bug fix: honor
+	GtkStyle on whether to show repositories "Edit..."
+	button icon.
+
+	* src/CMakeLists.txt & src/pkg/CMakeLists.txt:
+	changes juridiction over a few widgets used
+	exclusively by the pkg component. (to cut on
+	py2gtk.so size)
+
+	* src/ygtkhtmlwrap.h/c: changed gpointer casting
+	to proper callback definition.
+
+	* src/ygtkrichtext.h/c: split up set_text() into
+	set_plain_text().
+
 2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkzyppview.cc: only apply speed up fix

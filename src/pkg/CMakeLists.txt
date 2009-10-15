@@ -1,11 +1,16 @@
 ## Makefile.am
 
 set (gtk_pkg_yast_plugin_SRCS
-	YGPackageSelector.cc
 	YGPackageSelectorPluginImpl.cc
+	YGPackageSelector.cc
 	ygtkzyppview.cc
 	yzypptags.cc
 	yzyppwrapper.cc
+
+	ygtkcellrendererbutton.c
+	ygtknotebook.c
+	ygtktreemodel.cc
+	ygtktooltip.c
 	)
 
 ## includes:

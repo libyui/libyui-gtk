@@ -169,7 +169,7 @@ public:
 	, YGScrolledWidget (this, parent, ygtk_html_wrap_get_type(), NULL)
 	{
 		ygtk_html_wrap_init (getWidget());
-		ygtk_html_wrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
+		ygtk_html_wrap_connect_link_clicked (getWidget(), link_clicked_cb, this);
 		setText (text, plainText);
 	}
 
@@ -222,13 +222,10 @@ public:
     }
 
 	// callbacks
-	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
-	{
-		YGUI::ui()->sendEvent (new YMenuEvent (url));
-	}
+	static void link_clicked_cb (GtkWidget *widget, const char *url, gpointer data)
+	{ YGUI::ui()->sendEvent (new YMenuEvent (url)); }
 
 	// YGWidget
-
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return shrinkable() ? 10 : 100; }
 

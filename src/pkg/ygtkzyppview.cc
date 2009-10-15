@@ -1251,6 +1251,9 @@ void YGtkPackageView::setListener (Listener *listener)
 Ypp::PkgList YGtkPackageView::getSelected()
 { return impl->getSelected(); }
 
+static const char *onlyInstalledMsg =
+	_("<i>Information only available for installed packages.</i>");
+
 //** Detail & control
 
 class YGtkDetailView::Impl
@@ -1553,9 +1556,8 @@ private:
 	};
 
 GtkWidget *m_scroll, *m_icon, *m_icon_frame, *m_description, *m_filelist, *m_changelog,
-	*m_authors, *m_support, *m_requires, *m_provides;
+          *m_authors, *m_support, *m_requires, *m_provides, *m_contents;
 Versions *m_versions;
-YGtkPackageView *m_contents;
 bool m_verMode;
 
 public:
@@ -1577,14 +1579,19 @@ public:
 		g_signal_connect (G_OBJECT (m_description), "link-clicked",
 		                  G_CALLBACK (link_pressed_cb), this);
 		gtk_box_pack_start (GTK_BOX (vbox), m_description, FALSE, TRUE, 0);
+
+		m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = m_contents = 0;
 		if (!onlineUpdate) {
-			m_filelist = slow_ygtk_rich_text_new();
-			m_changelog = slow_ygtk_rich_text_new();
+			m_filelist = ygtk_rich_text_new();
+			if (CAN_OPEN_DIRNAME())
+				g_signal_connect (G_OBJECT (m_filelist), "link-clicked",
+						          G_CALLBACK (dirname_pressed_cb), this);
+			m_changelog = ygtk_rich_text_new();
 			m_authors = ygtk_rich_text_new();
 			m_support = ygtk_rich_text_new();
+			GtkWidget *dependencies_box = gtk_hbox_new (TRUE, 0);
 			m_requires = ygtk_rich_text_new();
 			m_provides = ygtk_rich_text_new();
-			GtkWidget *dependencies_box = gtk_hbox_new (TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (dependencies_box), m_requires, TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (dependencies_box), m_provides, TRUE, TRUE, 0);
 
@@ -1593,18 +1600,14 @@ public:
 			appendExpander (vbox, _("Authors"), m_authors);
 			appendExpander (vbox, _("Dependencies"), dependencies_box);
 			appendExpander (vbox, "", m_support);
-			m_contents = NULL;
-			if (CAN_OPEN_DIRNAME())
-				g_signal_connect (G_OBJECT (m_filelist), "link-clicked",
-						          G_CALLBACK (dirname_pressed_cb), this);
 		}
 		else {
-			m_filelist = m_changelog = m_authors = m_support = m_requires = m_provides = NULL;
-			m_contents = ygtk_package_view_new (TRUE);
-			m_contents->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 150);
-			m_contents->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
-			gtk_widget_set_size_request (GTK_WIDGET (m_contents), -1, 150);
-			appendExpander (vbox, _("Applies to"), GTK_WIDGET (m_contents));
+			YGtkPackageView *contents;
+			m_contents = GTK_WIDGET (contents = ygtk_package_view_new (TRUE));
+			contents->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 150);
+			contents->appendTextColumn (_("Summary"), ZyppModel::SUMMARY_COLUMN);
+			gtk_widget_set_size_request (m_contents, -1, 150);
+			appendExpander (vbox, _("Applies to"), m_contents);
 		}
 		gtk_box_pack_start (GTK_BOX (hbox), vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), versions_box, FALSE, TRUE, 0);
@@ -1621,34 +1624,17 @@ public:
 	void setPackages (Ypp::PkgList packages)
 	{
 		gtk_widget_hide (m_icon_frame);
+		Ypp::Package *package = 0;
 		if (packages.size() == 1) {
-			Ypp::Package *package = packages.get (0);
+			package = packages.get (0);
 			std::string description = "<b>" + package->name() + "</b><br>";
 			description += package->description (HTML_MARKUP);
-			setText (m_description, description);
-			if (m_filelist)  setText (m_filelist, package->filelist (true));
-			if (m_changelog) setText (m_changelog, package->changelog());
-			if (m_authors)   setText (m_authors, package->authors (true));
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (m_description), description.c_str());
 			if (m_support) {
-				GtkWidget *expander = gtk_widget_get_ancestor (m_support, GTK_TYPE_EXPANDER);
 				std::string label ("<b>" + std::string (_("Supportability:")) + "</b> ");
 				label += package->support();
-				gtk_expander_set_label (GTK_EXPANDER (expander), label.c_str());
-				setText (m_support, package->supportText (true));
-			}
-			if (m_requires && m_provides) {
-				std::string requires_str = _("Requires:");
-				std::string provides_str = _("Provides:");
-				requires_str += "<br><blockquote>";
-				requires_str += package->requires (true);
-				YGUtils::replace (provides_str, "\n", 1, "<br>");
-				requires_str += "</blockquote>";
-				provides_str += "<br><blockquote>";
-				provides_str += package->provides (true);
-				YGUtils::replace (requires_str, "\n", 1, "<br>");
-				provides_str += "</blockquote>";
-				setText (m_requires, requires_str);
-				setText (m_provides, provides_str);
+				gtk_expander_set_label (GTK_EXPANDER (m_support->parent), label.c_str());
+				ygtk_rich_text_set_text (YGTK_RICH_TEXT (m_support), package->supportText (true).c_str());
 			}
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
@@ -1659,36 +1645,32 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
 			}
-
-			if (m_contents) {  // patches -- "apply to"
-				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-				query->addCollection (package);
-				m_contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
-				gtk_widget_show (gtk_widget_get_ancestor (
-					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
-			}
+			gtk_widget_show (m_support->parent);
+			setPassiveUpdate (m_filelist, filelist_cb, package);
+			setPassiveUpdate (m_changelog, changelog_cb, package);
+			setPassiveUpdate (m_authors, authors_cb, package);
+			setPassiveUpdate (m_requires, requires_cb, package);
+			setPassiveUpdate (m_provides, provides_cb, package);
+			setPassiveUpdate (m_contents, contents_cb, package);
 		}
 		else {
 			std::string description;
 			if (packages.size() > 0) {
-				description = "Selected:";
+				description = _("Selected:");
 				description += "<ul>";
 				for (int i = 0; packages.get (i); i++)
 					description += "<li>" + packages.get (i)->name() + "</li>";
 				description += "</ul>";
 			}
-			setText (m_description, description);
-			if (m_filelist)  setText (m_filelist, "");
-			if (m_changelog) setText (m_changelog, "");
-			if (m_authors)   setText (m_authors, "");
-			if (m_support)   setText (m_support, "");
-			if (m_requires)  setText (m_requires, "");
-			if (m_provides)  setText (m_provides, "");
-			if (m_contents) {
-				gtk_widget_hide (gtk_widget_get_ancestor (
-					GTK_WIDGET (m_contents), GTK_TYPE_EXPANDER));
-				m_contents->clear();
-			}
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (m_description), description.c_str());
+			if (m_support)
+				gtk_widget_hide (m_support->parent);
+			setPassiveUpdate (m_filelist, NULL, NULL);
+			setPassiveUpdate (m_changelog, NULL, NULL);
+			setPassiveUpdate (m_authors, NULL, NULL);
+			setPassiveUpdate (m_requires, NULL, NULL);
+			setPassiveUpdate (m_provides, NULL, NULL);
+			setPassiveUpdate (m_contents, NULL, NULL);
 		}
 
 		m_versions->setPackages (packages);
@@ -1760,24 +1742,14 @@ private:
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), box);
 	}
 
-	static void appendExpander (GtkWidget *box, const char *label, GtkWidget *child)
+	static GtkWidget *appendExpander (GtkWidget *box, const char *label, GtkWidget *child)
 	{
 		std::string str = std::string ("<b>") + label + "</b>";
 		GtkWidget *expander = gtk_expander_new (str.c_str());
 		gtk_expander_set_use_markup (GTK_EXPANDER (expander), TRUE);
 		gtk_container_add (GTK_CONTAINER (expander), child);
 		gtk_box_pack_start (GTK_BOX (box), expander, FALSE, TRUE, 0);
-	}
-
-	static void setText (GtkWidget *text, const std::string &str)
-	{
-		if (g_object_get_data (G_OBJECT (text), "is-slow"))
-			slow_set_text (text, str);
-		else
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
-		GtkWidget *expander = gtk_widget_get_ancestor (text, GTK_TYPE_EXPANDER);
-		if (expander)
-			str.empty() ? gtk_widget_hide (expander) : gtk_widget_show (expander);
+		return expander;
 	}
 
 	// callbacks
@@ -1812,6 +1784,59 @@ private:
 		}
 	}
 
+	static void filelist_cb (GtkWidget *widget, gpointer pkg)
+	{
+		std::string str (((Ypp::Package *) pkg)->filelist (true));
+		if (str.empty())
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), onlyInstalledMsg);
+		else
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), str.c_str());
+	}
+
+	static void changelog_cb (GtkWidget *widget, gpointer pkg)
+	{
+		std::string str (((Ypp::Package *) pkg)->changelog());
+		if (str.empty())
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), onlyInstalledMsg);
+		else
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), str.c_str());
+	}
+
+	static void authors_cb (GtkWidget *widget, gpointer pkg)
+	{
+		std::string str (((Ypp::Package *) pkg)->authors (true));
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), str.c_str());
+	}
+
+	static void requires_cb (GtkWidget *widget, gpointer pkg)
+	{
+		std::string str = _("Requires:");
+		str += "<br><blockquote>";
+		str += ((Ypp::Package *) pkg)->requires (true);
+		YGUtils::replace (str, "\n", 1, "<br>");
+		str += "</blockquote>";
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), str.c_str());
+	}
+
+	static void provides_cb (GtkWidget *widget, gpointer pkg)
+	{
+		std::string str = _("Provides:");
+		str += "<br><blockquote>";
+		str += ((Ypp::Package *) pkg)->provides (true);
+		YGUtils::replace (str, "\n", 1, "<br>");
+		str += "</blockquote>";
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), str.c_str());
+	}
+
+	static void contents_cb (GtkWidget *widget, gpointer pkg)
+	{
+		YGtkPackageView *contents = YGTK_PACKAGE_VIEW (widget);
+		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+		query->addCollection ((Ypp::Package *) pkg);
+		contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
+	}
+
+	// fix cursor keys support
 	static void move_cursor_cb (GtkTextView *view, GtkMovementStep step, gint count,
 	                            gboolean extend_selection, Impl *pThis)
 	{
@@ -1859,47 +1884,36 @@ private:
 		fix_keybindings (pThis, pThis->m_provides);
 	}
 
-	// slow text hack: only set filelist if expander is shown
-	// TODO: call libzypp's filelist() only when used as well
+	// make the widget request data when/if necessary; speeds up expander children
+	typedef void (*UpdateCb) (GtkWidget *widget, gpointer data);
 
-	static void slow_set_text (GtkWidget *text, const std::string &str)
+	static void ygtk_widget_passive_update (GtkWidget *widget, UpdateCb update_cb, gpointer data)
 	{
-		if (str.size() < 20*1000) {  // only for bigger text do the delay...
-			g_object_set_data_full (G_OBJECT (text), "text", NULL, NULL);
-			g_object_set_data (G_OBJECT (text), "touched", 0);
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str(), FALSE);
-		}
-		else {
-			g_object_set_data_full (G_OBJECT (text), "text", g_strdup (str.c_str()), g_free);
-			g_object_set_data (G_OBJECT (text), "touched", GINT_TO_POINTER (1));
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), "...", FALSE);
-			if (GTK_WIDGET_MAPPED (text))
-				g_idle_add_full (G_PRIORITY_LOW, slow_set_text_cb, text, NULL);
-		}
+		g_object_set_data (G_OBJECT (widget), "update-cb", (gpointer) update_cb);
+		g_object_set_data (G_OBJECT (widget), "user-data", data);
+		if (GTK_WIDGET_MAPPED (widget) || !update_cb)
+			ygtk_widget_passive_update_cb (widget);
+		else
+			g_signal_connect (G_OBJECT (widget), "map",
+				              G_CALLBACK (ygtk_widget_passive_update_cb), NULL);
 	}
 
-	static gboolean slow_set_text_cb (void *data)
+	static void ygtk_widget_passive_update_cb (GtkWidget *widget)
 	{
-		slow_text_map_cb ((GtkWidget *) data);
-		return FALSE;
+		g_signal_handlers_disconnect_by_func (widget, (gpointer) ygtk_widget_passive_update_cb, NULL);
+		UpdateCb update_cb = (UpdateCb) g_object_get_data (G_OBJECT (widget), "update-cb");
+		gpointer data = g_object_get_data (G_OBJECT (widget), "user-data");
+		if (update_cb)  // could be set to null to disable
+			update_cb (widget, data);
 	}
 
-	static void slow_text_map_cb (GtkWidget *text)
-	{
-		if (g_object_get_data (G_OBJECT (text), "touched")) {
-			const gchar *str = (gchar *) g_object_get_data (G_OBJECT (text), "text");
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str, FALSE);
-			g_object_set_data (G_OBJECT (text), "touched", 0);
+	static void setPassiveUpdate (GtkWidget *widget, UpdateCb update_cb, Ypp::Package *pkg)
+	{  // convinience method
+		if (widget) {
+			ygtk_widget_passive_update (widget, update_cb, (gpointer) pkg);
+			GtkWidget *expander = gtk_widget_get_ancestor (widget, GTK_TYPE_EXPANDER);
+			pkg ? gtk_widget_show (expander) : gtk_widget_hide (expander);
 		}
-	}
-
-	static GtkWidget *slow_ygtk_rich_text_new()
-	{
-		GtkWidget *text = ygtk_rich_text_new();
-		g_object_set_data (G_OBJECT (text), "is-slow", GINT_TO_POINTER (1));
-		g_signal_connect_after (G_OBJECT (text), "map",
-		                        G_CALLBACK (slow_text_map_cb), NULL);
-		return text;
 	}
 };
 

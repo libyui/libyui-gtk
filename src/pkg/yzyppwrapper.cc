@@ -2227,11 +2227,11 @@ std::vector <Disk::Partition *> partitions;
 					partition->delta = point.pkg_size - point.used_size;
 					partition->total = point.total_size;
 					partition->used_str =
-						zypp::ByteCount (partition->used, zypp::ByteCount::K).asString() + "B";
+						zypp::ByteCount (partition->used, zypp::ByteCount::K).asString();
 					partition->delta_str =
-						zypp::ByteCount (partition->delta, zypp::ByteCount::K).asString() + "B";
+						zypp::ByteCount (partition->delta, zypp::ByteCount::K).asString();
 					partition->total_str =
-						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString() + "B";
+						zypp::ByteCount (partition->total, zypp::ByteCount::K).asString();
 					partitions.push_back (partition);
 				}
 			}

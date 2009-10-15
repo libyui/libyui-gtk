@@ -22,8 +22,8 @@ void ygtk_html_wrap_init (GtkWidget *widget);  // if you use g_object_new(), cal
 void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode);
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top /* or bottom */);
 
-// callback of type: void (GtkWidget *htmlwrap, const gchar *url, gpointer data)
-void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data);
+typedef void (*LinkClickedCb) (GtkWidget *htmlwrap, const gchar *url, gpointer data);
+void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, LinkClickedCb callback, gpointer data);
 
 // not supported on plain text
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text);

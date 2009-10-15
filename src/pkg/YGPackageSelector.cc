@@ -512,11 +512,16 @@ public:
 	{
 		if (repoMgrEnabled) {
 			GtkWidget *align, *button, *box, *image, *label;
-			image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
+			box = gtk_hbox_new (FALSE, 6);
+			GtkSettings *settings = gtk_settings_get_default();
+			gboolean button_images;
+			g_object_get (settings, "gtk-button-images", &button_images, NULL);
+			if (button_images) {
+				image = gtk_image_new_from_stock (GTK_STOCK_EDIT, GTK_ICON_SIZE_MENU);
+				gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
+			}
 			label = gtk_label_new (_("Edit..."));
 			YGUtils::setWidgetFont (label, PANGO_STYLE_NORMAL, PANGO_WEIGHT_NORMAL, PANGO_SCALE_SMALL);
-			box = gtk_hbox_new (FALSE, 6);
-			gtk_box_pack_start (GTK_BOX (box), image, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box), label, TRUE, TRUE, 0);
 			button = gtk_button_new();
 			gtk_container_add (GTK_CONTAINER (button), box);
@@ -1136,7 +1141,7 @@ public:
 		m_pane = new FlexPane();
 		m_pane->pack (m_notebook, true, false);
 		m_pane->pack (GTK_WIDGET (m_details), false, false);
-		m_pane->setPosition (-175, -500);
+		m_pane->setPosition (-200, -500);
 
 		m_combo = new FilterCombo (onlineUpdate, repoMgrEnabled);
 		m_combo->setListener (this);

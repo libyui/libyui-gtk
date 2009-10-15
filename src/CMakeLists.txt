@@ -24,7 +24,6 @@ set (gtk_yast_plugin_SRCS
 	YGWidget.cc
 	YGWizard.cc
 	ygdkmngloader.c
-	ygtkcellrendererbutton.c
 	ygtkcellrenderertextpixbuf.c
 	ygtkbargraph.c
 	ygtkfieldentry.c
@@ -33,15 +32,12 @@ set (gtk_yast_plugin_SRCS
 	ygtklinklabel.c
 	ygtkfindentry.c
 	ygtkfixed.c
-	ygtknotebook.c
 	ygtkimage.c
 	ygtkratiobox.c
 	ygtkrichtext.c
 	ygtksteps.c
 	ygtktextview.c
 	ygtktimezonepicker.c
-	ygtktreemodel.cc
-	ygtktooltip.c
 	ygtktreeview.c
 	ygtkwizard.c
 	)

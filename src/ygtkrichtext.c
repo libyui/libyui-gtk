@@ -548,18 +548,16 @@ static void ygtk_rich_text_set_rtl (YGtkRichText *rtext)
 	} while (!gtk_text_iter_is_end (&iter));
 }
 
-void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)
+void ygtk_rich_text_set_plain_text (YGtkRichText* rtext, const gchar* text)
 {
-	GtkTextBuffer *buffer;
-	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_set_text (buffer, text, -1);
+}
 
-	if (plain_mode) {
-		gtk_text_buffer_set_text (buffer, text, -1);
-		return;
-	}
-
-	// remove any possible existing text
-	gtk_text_buffer_set_text (buffer, "", 0);
+void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text)
+{
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_set_text (buffer, "", 0);  // remove any existing text
 
 	GRTParseState state;
 	GRTParseState_init (&state, buffer);
