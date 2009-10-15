@@ -23,7 +23,21 @@
 #include "ygtktooltip.h"
 
 // experiments:
-extern bool show_find_pane, use_buttons, show_novelty_filter;
+static bool show_find_pane = false, use_buttons = false, show_novelty_filter = false;
+bool YGUI::pkgSelectorParse (const char *arg)
+{
+	if (!strcmp (arg, "find-pane"))
+		show_find_pane = true;
+	else if (!strcmp (arg, "buttons"))
+		use_buttons = true;
+	else if (!strcmp (arg, "novelty-filter"))
+		show_novelty_filter = true;
+	else return false;
+	return true;
+}
+
+void YGUI::pkgSelectorSize (int *width, int *height)
+{ *width = 700; *height = 800; }
 
 //** UI components -- split up for re-usability, but mostly for readability
 
@@ -2128,9 +2142,5 @@ public:
 	YGWIDGET_IMPL_COMMON (YPackageSelector)
 };
 
-#include "pkg/YGPackageSelectorPluginImpl.h"
-
-YPackageSelector *
-YGPackageSelectorPluginImpl::createPackageSelector (YWidget *parent, long modeFlags)
-{ return new YGPackageSelector (parent, modeFlags); }
-
+YPackageSelector *YGWidgetFactory::createPackageSelector (YWidget *parent, long mode)
+{ return new YGPackageSelector (parent, mode); }

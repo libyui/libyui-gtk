@@ -1,0 +1,32 @@
+# -*- makefile -*- Automake include file
+# $Id: autodocs-ycp.ami 57644 2009-06-19 08:38:11Z mvidner $
+
+# Builds source documentation for YCP sources
+# Uses ycpdoc
+# PARAMETERS:
+#   AUTODOCS_YCP: Files that the ycp autodocs is built from
+#   		  Optional - the default is $(srcdir)/../../src/*.ycp
+#   AUTODOCS_PM: Files that the perl autodocs is built from
+#   		  Optional - the default is $(srcdir)/../../src/*.pm
+#   AUTODOCS_SUBDIR: To install the result to $(docdir)/SUBDIR/autodocs
+#		Optional - the default is no subdir, $(docdir)/autodocs
+#   AUTODOCS_STRIP: Strip it from filenames. The remaining / are replaced by __
+#		Optional - the default is $(srcdir)/../../src
+
+htmldir = $(docdir)/$(AUTODOCS_SUBDIR)/autodocs
+
+html_DATA = index.html $(filter-out index.html, $(wildcard *.html))
+CLEANFILES = $(html_DATA) pod2htm*.tmp
+
+AUTODOCS_YCP ?= $(wildcard $(srcdir)/../../src/*.ycp)
+AUTODOCS_PM  ?= $(wildcard $(srcdir)/../../src/*.pm)
+AUTODOCS_STRIP ?= $(srcdir)/../../src
+
+index.html: $(AUTODOCS_YCP) $(AUTODOCS_PM)
+#including *.pm, for the index
+	${YCPDOC} -d. -s$(AUTODOCS_STRIP) $(AUTODOCS_YCP)
+	for i in $(AUTODOCS_PM); do \
+		b=$${i##$(AUTODOCS_STRIP)}; b=$${b#/}; b=$${b//\//__}; b=$${b%.pm}; \
+		pod2html --title=$$b --infile=$$i --outfile=$$b.html; \
+		echo "<a href='$$b.html'>$${b/__/::}</a>" > $$b.mod.html; \
+	done

@@ -33,14 +33,6 @@ static void errorMsg (const char *msg)
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 
-YUI *createUI( bool withThreads )
-{
-	static YGUI *ui = 0;
-	if (!ui)
-		ui = new YGUI (withThreads);
-	return ui;
-}
-
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {

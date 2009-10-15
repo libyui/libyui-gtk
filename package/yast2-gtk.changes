@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Fri Oct 16 00:00:00 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.19.16
+- improved speed up fix: only query libzypp when
+respective expander is open.
+- bug fix: don't over-suffix "B" to size strings.
+- popup confirm dialog, rather than having the user to
+double-click apply button.
+- don't disable installed tab on repositories view.
+- disable version action button if the action is already
+undertaken.
+
+-------------------------------------------------------------------
 Fri Oct 02 00:00:00 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.19.15
