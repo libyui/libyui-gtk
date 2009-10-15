@@ -113,7 +113,7 @@ public:
 		query->setToModify (true);
 		m_changes = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
 
-		GtkWidget *view = createView (m_changes, listener);
+		GtkWidget *view = createView (listener);
 
 		GtkWidget *uncouple_button = gtk_button_new_with_label (_("Uncouple"));
 		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_BUTTON);
@@ -135,8 +135,7 @@ public:
 	~UndoView()
 	{ g_object_unref (m_vbox); }
 
-private:
-	static GtkWidget *createView (const Ypp::PkgList changes, YGtkPackageView::Listener *listener)
+	GtkWidget *createView (YGtkPackageView::Listener *listener)
 	{
 		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
 		for (int i = 0; i < 3; i++) {
@@ -166,7 +165,7 @@ private:
 					break;
 				default: break;
 			}
-			Ypp::PkgQuery list (changes, query);
+			Ypp::PkgQuery list (m_changes, query);
 
 			GtkWidget *label_box, *icon, *label;
 			label = gtk_label_new (str);
@@ -192,6 +191,7 @@ private:
 		return hbox;
 	}
 
+private:
 	static void uncouple_clicked_cb (GtkButton *button, UndoView *pThis)
 	{
 		gtk_widget_hide (pThis->m_vbox);
@@ -206,7 +206,7 @@ private:
 		g_signal_connect (G_OBJECT (dialog), "response",
 		                  G_CALLBACK (close_response_cb), pThis);
 
-		GtkWidget *view = createView (pThis->m_changes, NULL);
+		GtkWidget *view = pThis->createView (NULL);
 		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), view);
 		gtk_widget_show_all (dialog);
 	}
@@ -1179,16 +1179,29 @@ public:
 		delete m_find;
 	}
 
-	void setUndoPage()
+	bool confirmChanges()
 	{
-		if (!m_onlineUpdate) {
-			if (GTK_WIDGET_VISIBLE (m_undoView->getWidget())) {
-				if (gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook)) != 3) {
-					gtk_widget_hide (GTK_WIDGET (m_details));
-					gtk_notebook_set_current_page (GTK_NOTEBOOK (m_notebook), 3);
-				}
-			}
-		}
+		if (m_onlineUpdate) return true;
+		if (gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook)) == 3) return true;
+
+		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
+			"%s", _("Apply changes?"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+			_("Please review the changes to perfom."));
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
+			GTK_STOCK_APPLY, GTK_RESPONSE_YES, NULL);
+		gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 500);
+		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
+
+		GtkWidget *view = m_undoView->createView (NULL);
+		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view);
+		gtk_widget_show_all (dialog);
+
+		gint response = gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+		return response == GTK_RESPONSE_YES;
 	}
 
 private:
@@ -1752,11 +1765,11 @@ static bool confirmPkgs (const char *title, const char *message,
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GtkDialogFlags (0), icon, GTK_BUTTONS_NONE, "%s", title);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", message);
-	gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_NO, GTK_RESPONSE_NO,
-		GTK_STOCK_YES, GTK_RESPONSE_YES, NULL);
+	gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
+		GTK_STOCK_APPLY, GTK_RESPONSE_YES, NULL);
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 480);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 500);
 	gtk_widget_show_all (dialog);
 
 	YGtkPackageView *view = ygtk_package_view_new (TRUE);
@@ -1814,7 +1827,7 @@ static bool acceptText (Ypp::Package *package, const std::string &title,
 	gtk_box_pack_start (vbox, scroll, TRUE, TRUE, 6);
 
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 450);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 500);
 	gtk_widget_show_all (dialog);
 
 	gint ret = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -1950,7 +1963,7 @@ static bool resolveProblems (const std::list <Ypp::Problem *> &problems)
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll);
 
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 480);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 500);
 	gtk_widget_show_all (dialog);
 
 	bool apply = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_APPLY);
@@ -2045,16 +2058,6 @@ public:
 		return FALSE;
 	}
 
-	static gboolean wizard_confirm_button_cb (gpointer data)
-	{
-		YGPackageSelector *pThis = (YGPackageSelector *) data;
-		pThis->m_button_timeout_id = 0;
-		YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
-		ygtk_wizard_set_button_label (wizard,  wizard->next_button,
-					                  _("A_pply"), GTK_STOCK_APPLY);
-		return FALSE;
-	}
-
     static bool confirm_cb (void *pThis)
     { return confirmExit(); }
 
@@ -2068,15 +2071,9 @@ public:
 				if (pThis->confirmUnsupported())
 					if (!askConfirmUnsupported())
 						return;
-				if (Ypp::get()->isModified() && !pThis->m_button_timeout_id) {
-					pThis->m_notebook->setUndoPage();
-					YGtkWizard *wizard = YGTK_WIZARD (pThis->getWidget());
-					ygtk_wizard_set_button_label (wizard,  wizard->next_button,
-								                  _("_Sure?"), GTK_STOCK_DIALOG_QUESTION);
-					pThis->m_button_timeout_id =
-						g_timeout_add (10*1000, wizard_confirm_button_cb, pThis);
-					return;
-				}
+				if (Ypp::get()->isModified())
+					if (!pThis->m_notebook->confirmChanges())
+						return;
 			}
 			YGUI::ui()->sendEvent (new YMenuEvent ("accept"));
 		}

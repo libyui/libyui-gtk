@@ -1,5 +1,11 @@
 2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/YGPackageSelector.cc: bug fix 547075
+	(or part of): popup confirm dialog, rather than
+	having the user to double-click apply button.
+
+2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkzyppview.cc: improved speed up fix:
 	only query libzypp when respective expander is open.
 
