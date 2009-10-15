@@ -1452,8 +1452,8 @@ private:
 
 		void syncButton()
 		{
-			gtk_widget_hide (m_undo_button);
 			const char *label = 0, *stock = 0;
+			bool modified = false;
 			if (m_packages.size() == 1) {
 				Ypp::Package *package = m_packages.get (0);
 				const Ypp::Package::Version *version = getVersion();
@@ -1462,7 +1462,7 @@ private:
 					label = _("Remove");
 					stock = GTK_STOCK_DELETE;
 					if (package->toRemove())
-						gtk_widget_show (m_undo_button);
+						modified = true;
 				}
 				else {
 					if (installed) {
@@ -1488,12 +1488,12 @@ private:
 					if (!package->toInstall (&toInstall))
 						toInstall = 0;
 					if (toInstall == version)
-						gtk_widget_show (m_undo_button);
+						modified = true;
 				}
 			}
 			else {
 				if (m_packages.modified())
-					gtk_widget_show (m_undo_button);
+					modified = true;
 				if (m_packages.upgradable()) {
 					label = _("Upgrade");
 					stock = GTK_STOCK_GO_UP;
@@ -1509,7 +1509,7 @@ private:
 				else if (m_packages.modified()) {
 					label = _("Undo");
 					stock = GTK_STOCK_UNDO;
-					gtk_widget_hide (m_undo_button);
+					modified = false;
 				}
 			}
 			if (label) {
@@ -1521,6 +1521,8 @@ private:
 			}
 			else
 				gtk_widget_hide (m_button);
+			gtk_widget_set_sensitive (m_button, !modified);
+			modified ? gtk_widget_show (m_undo_button) : gtk_widget_hide (m_undo_button);
 		}
 
 		static void version_toggled_cb (GtkToggleButton *radio, Versions *pThis)

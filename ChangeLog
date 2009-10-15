@@ -4,6 +4,15 @@
 	(or part of): popup confirm dialog, rather than
 	having the user to double-click apply button.
 
+	* src/pkg/YGPackageSelector.cc: don't disable
+	installed tab on repositories view.
+
+	* src/pkg/YGPackageSelector.cc: removed Uncouple
+	button.
+
+	* src/pkg/YGPackageSelector.cc: disable version
+	action button if the action is already undertaken.
+
 2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkzyppview.cc: improved speed up fix:

@@ -115,6 +115,13 @@ public:
 
 		GtkWidget *view = createView (listener);
 
+		m_vbox = gtk_vbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (m_vbox), 6);
+		gtk_box_pack_start (GTK_BOX (m_vbox), view, TRUE, TRUE, 0);
+#if 0
+// FIXME: temporarily disable uncouple button
+// issues: * too visible (also the labeling/icon are a bit off)
+//         * undo window should not overlap (or at least placed at the side on start)
 		GtkWidget *uncouple_button = gtk_button_new_with_label (_("Uncouple"));
 		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_BUTTON);
 		gtk_button_set_image (GTK_BUTTON (uncouple_button), icon);
@@ -123,11 +130,8 @@ public:
 		gtk_widget_set_tooltip_text (uncouple_button, _("Open in new window"));
 		g_signal_connect (G_OBJECT (uncouple_button), "clicked",
 		                  G_CALLBACK (uncouple_clicked_cb), this);
-
-		m_vbox = gtk_vbox_new (FALSE, 6);
-		gtk_container_set_border_width (GTK_CONTAINER (m_vbox), 6);
-		gtk_box_pack_start (GTK_BOX (m_vbox), view, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_vbox), uncouple_align, FALSE, TRUE, 0);
+#endif
 		gtk_widget_show_all (m_vbox);
 		g_object_ref_sink (m_vbox);
 	}
@@ -574,8 +578,6 @@ protected:
 		gpointer ptr = ptrs.size() == 1 ? ptrs.front() : NULL;
 		Ypp::get()->setFavoriteRepository ((Ypp::Repository *) ptr);
 	}
-
-	virtual bool availablePackagesOnly() { return true; }
 
 	static void setup_button_clicked_cb (GtkButton *button, Repositories *pThis)
 	{ YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
