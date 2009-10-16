@@ -21,9 +21,12 @@
 #include "ygtktreeview.h"
 #include "ygtkzyppview.h"
 #include "ygtktooltip.h"
+#include "ygtknotebook.h"
 
-// experiments:
-static bool show_find_pane = false, use_buttons = false, show_novelty_filter = false;
+//** Argument parsing
+
+static bool show_find_pane = false, use_buttons = false, show_novelty_filter = false,
+            show_uncouple_button = false, undo_sidebar = true;
 bool YGUI::pkgSelectorParse (const char *arg)
 {
 	if (!strcmp (arg, "find-pane"))
@@ -32,15 +35,20 @@ bool YGUI::pkgSelectorParse (const char *arg)
 		use_buttons = true;
 	else if (!strcmp (arg, "novelty-filter"))
 		show_novelty_filter = true;
+	else if (!strcmp (arg, "uncouple-button"))
+		show_uncouple_button = true;
+	else if (!strcmp (arg, "undo-tab"))
+		undo_sidebar = false;
 	else return false;
 	return true;
 }
 
 void YGUI::pkgSelectorSize (int *width, int *height)
-{ *width = 700; *height = 800; }
+{ *width = 750; *height = 850; }
 
 //** UI components -- split up for re-usability, but mostly for readability
 
+#if 0  // FIXME: disabled to cope with undo_sidebar
 class FlexPane  // TODO: deprecate in favor of using GTK 2.16 new GtkOrientation API
 {
 GtkWidget *m_bin, *m_child1, *m_child2;
@@ -112,40 +120,41 @@ private:
 	static void size_allocate_cb (GtkWidget *bin, GtkAllocation *alloc, FlexPane *pThis)
 	{ pThis->setup(); }
 };
+#endif
 
 class UndoView
-{
+{  // TODO: turn this class into a factory
 GtkWidget *m_vbox;
 Ypp::PkgList m_changes;
 
 public:
 	GtkWidget *getWidget() { return m_vbox; }
 
-	UndoView (YGtkPackageView::Listener *listener)
+	UndoView (YGtkPackageView::Listener *listener, bool horizontal)
 	{
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 		query->setToModify (true);
 		m_changes = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
 
-		GtkWidget *view = createView (listener);
+		GtkWidget *view = createView (listener, horizontal);
 
 		m_vbox = gtk_vbox_new (FALSE, 6);
-		gtk_container_set_border_width (GTK_CONTAINER (m_vbox), 6);
 		gtk_box_pack_start (GTK_BOX (m_vbox), view, TRUE, TRUE, 0);
-#if 0
-// FIXME: temporarily disable uncouple button
-// issues: * too visible (also the labeling/icon are a bit off)
-//         * undo window should not overlap (or at least placed at the side on start)
-		GtkWidget *uncouple_button = gtk_button_new_with_label (_("Uncouple"));
-		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (uncouple_button), icon);
-		GtkWidget *uncouple_align = gtk_alignment_new (1, .5, 0, 1);
-		gtk_container_add (GTK_CONTAINER (uncouple_align), uncouple_button);
-		gtk_widget_set_tooltip_text (uncouple_button, _("Open in new window"));
-		g_signal_connect (G_OBJECT (uncouple_button), "clicked",
-		                  G_CALLBACK (uncouple_clicked_cb), this);
-		gtk_box_pack_start (GTK_BOX (m_vbox), uncouple_align, FALSE, TRUE, 0);
-#endif
+
+		if (show_uncouple_button) {
+// FIXME:
+//  * too visible (also the labeling/icon are a bit off)
+//  * undo window should not overlap (or at least placed at the side on start)
+			GtkWidget *uncouple_button = gtk_button_new_with_label (_("Uncouple"));
+			GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_DISCONNECT, GTK_ICON_SIZE_BUTTON);
+			gtk_button_set_image (GTK_BUTTON (uncouple_button), icon);
+			GtkWidget *uncouple_align = gtk_alignment_new (1, .5, 0, 1);
+			gtk_container_add (GTK_CONTAINER (uncouple_align), uncouple_button);
+			gtk_widget_set_tooltip_text (uncouple_button, _("Open in new window"));
+			g_signal_connect (G_OBJECT (uncouple_button), "clicked",
+				              G_CALLBACK (uncouple_clicked_cb), this);
+			gtk_box_pack_start (GTK_BOX (m_vbox), uncouple_align, FALSE, TRUE, 0);
+		}
 		gtk_widget_show_all (m_vbox);
 		g_object_ref_sink (m_vbox);
 	}
@@ -153,9 +162,9 @@ public:
 	~UndoView()
 	{ g_object_unref (m_vbox); }
 
-	GtkWidget *createView (YGtkPackageView::Listener *listener)
+	GtkWidget *createView (YGtkPackageView::Listener *listener, bool horizontal)
 	{
-		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
+		GtkWidget *box = horizontal ? gtk_hbox_new (TRUE, 6) : gtk_vbox_new (TRUE, 6);
 		for (int i = 0; i < 3; i++) {
 			const char *str = 0, *stock = 0;
 			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
@@ -201,12 +210,12 @@ public:
 			gtk_scrolled_window_set_shadow_type (
 				GTK_SCROLLED_WINDOW (view), GTK_SHADOW_IN);
 
-			GtkWidget *box = gtk_vbox_new (FALSE, 6);
-			gtk_box_pack_start (GTK_BOX (box), label_box, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box), GTK_WIDGET (view), TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (hbox), box, TRUE, TRUE, 0);
+			GtkWidget *pkg_box = gtk_vbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (pkg_box), label_box, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (pkg_box), GTK_WIDGET (view), TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (box), pkg_box, TRUE, TRUE, 0);
 		}
-		return hbox;
+		return box;
 	}
 
 private:
@@ -217,14 +226,14 @@ private:
 			YGDialog::currentWindow(), GTK_DIALOG_DESTROY_WITH_PARENT,
 			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
 		gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);
-		gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 250, 600);
 		gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
 		g_signal_connect (G_OBJECT (dialog), "delete-event",
 		                  G_CALLBACK (uncouple_delete_event_cb), pThis);
 		g_signal_connect (G_OBJECT (dialog), "response",
 		                  G_CALLBACK (close_response_cb), pThis);
 
-		GtkWidget *view = pThis->createView (NULL);
+		GtkWidget *view = pThis->createView (NULL, false);
 		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), view);
 		gtk_widget_show_all (dialog);
 	}
@@ -1118,19 +1127,17 @@ private:
 	}
 };
 
-#include "ygtknotebook.h"
-
-class QueryNotebook : public QueryListener, YGtkPackageView::Listener
+class QueryNotebook : public QueryListener, YGtkPackageView::Listener, Ypp::PkgList::Listener
 {
 GtkWidget *m_widget, *m_notebook;
 bool m_onlineUpdate;
 FilterCombo *m_combo;
 YGtkDetailView *m_details;
-FlexPane *m_pane;
 GtkWidget *m_oldPage;
 guint m_timeout_id;
 bool m_disabledTab, m_highlightTab;
 UndoView *m_undoView;
+GtkWidget *m_undoBox;
 Ypp::PkgList m_packages, m_pool;
 FindEntry *m_find;
 
@@ -1138,8 +1145,8 @@ public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	QueryNotebook (bool onlineUpdate, bool repoMgrEnabled)
-	: m_onlineUpdate (onlineUpdate), m_timeout_id (0), m_disabledTab (true), m_highlightTab (false),
-	  m_undoView (NULL)
+	: m_onlineUpdate (onlineUpdate), m_timeout_id (0), m_disabledTab (true),
+	  m_highlightTab (false), m_undoView (NULL)
 	{
 		m_notebook = ygtk_notebook_new();
 		gtk_widget_show (m_notebook);
@@ -1151,25 +1158,56 @@ public:
 		else
 			appendPage (2, _("Installed"), GTK_STOCK_HARDDISK);
 		if (!onlineUpdate)
+			m_undoView = new UndoView (this, !undo_sidebar);
+		if (!onlineUpdate && !undo_sidebar)
 			appendPage (3, _("_Undo"), GTK_STOCK_UNDO);
 
+		GtkRequisition selector_req;
+		YGUI::ui()->pkgSelectorSize (&selector_req.width, &selector_req.height);
+
+		GtkWidget *pkg_widget = m_notebook;
+		if (!onlineUpdate && undo_sidebar) {
+			m_undoBox = gtk_vbox_new (FALSE, 6);
+			GtkWidget *title = gtk_label_new (_("Pending Changes:"));
+			gtk_label_set_ellipsize (GTK_LABEL (title), PANGO_ELLIPSIZE_END);
+			gtk_misc_set_alignment (GTK_MISC (title), 0, 0);
+			YGUtils::setWidgetFont (title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, 1);
+			gtk_box_pack_start (GTK_BOX (m_undoBox), title, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_undoBox), m_undoView->getWidget(), TRUE, TRUE, 0);
+
+			GtkWidget *undo_pane = gtk_hpaned_new();
+			gtk_paned_pack1 (GTK_PANED (undo_pane), m_notebook, TRUE, FALSE);
+			gtk_paned_pack2 (GTK_PANED (undo_pane), m_undoBox, FALSE, TRUE);
+			pkg_widget = undo_pane;
+
+			// give undo widget its request size while enabling pane 'shrink' prop
+			GtkRequisition undo_req;
+			gtk_widget_size_request (m_undoView->getWidget(), &undo_req);
+			int pos = (selector_req.width - 150 - (6*4)) - (undo_req.width + 35);
+			gtk_paned_set_position (GTK_PANED (undo_pane), pos);
+		}
+
 		m_details = YGTK_DETAIL_VIEW (ygtk_detail_view_new (onlineUpdate));
-		m_pane = new FlexPane();
-		m_pane->pack (m_notebook, true, false);
-		m_pane->pack (GTK_WIDGET (m_details), false, false);
-		m_pane->setPosition (-200, -500);
+		GtkWidget *details_pane = gtk_vpaned_new();
+		gtk_paned_pack1 (GTK_PANED (details_pane), pkg_widget, TRUE, FALSE);
+		gtk_paned_pack2 (GTK_PANED (details_pane), GTK_WIDGET (m_details), FALSE, FALSE);
+		gtk_paned_set_position (GTK_PANED (details_pane), selector_req.height - 280);
 
 		m_combo = new FilterCombo (onlineUpdate, repoMgrEnabled);
 		m_combo->setListener (this);
 		m_combo->select (0);
 		GtkWidget *hpane = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (hpane), m_combo->getWidget(), FALSE, TRUE);
-		gtk_paned_pack2 (GTK_PANED (hpane), m_pane->getWidget(), TRUE, FALSE);
-		gtk_paned_set_position (GTK_PANED (hpane), 170);
+		gtk_paned_pack2 (GTK_PANED (hpane), details_pane, TRUE, FALSE);
+		gtk_paned_set_position (GTK_PANED (hpane), 150);
 
 		m_widget = hpane;
 		gtk_widget_show_all (m_widget);
 		gtk_widget_hide (GTK_WIDGET (m_details));
+		if (!onlineUpdate && undo_sidebar) {
+			gtk_widget_hide (m_undoBox);
+			Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).addListener (this);
+		}
 
 		m_find = NULL;
 		if (!show_find_pane) {
@@ -1191,27 +1229,26 @@ public:
 			g_source_remove (m_timeout_id);
 		delete m_undoView;
 		delete m_combo;
-		delete m_pane;
 		delete m_find;
 	}
 
 	bool confirmChanges()
 	{
-		if (m_onlineUpdate) return true;
+		if (m_onlineUpdate || undo_sidebar) return true;
 		if (gtk_notebook_get_current_page (GTK_NOTEBOOK (m_notebook)) == 3) return true;
 
 		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION, GTK_BUTTONS_NONE,
 			"%s", _("Apply changes?"));
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-			_("Please review the changes to perfom."));
+			"%s", _("Please review the changes to perfom."));
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
 			GTK_STOCK_APPLY, GTK_RESPONSE_YES, NULL);
 		gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 500);
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 
-		GtkWidget *view = m_undoView->createView (NULL);
+		GtkWidget *view = m_undoView->createView (NULL, true);
 		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view);
 		gtk_widget_show_all (dialog);
 
@@ -1360,6 +1397,22 @@ private:
 			gtk_widget_show (GTK_WIDGET (m_details));
 	}
 
+	static gboolean remove_listener (gpointer data)
+	{
+		QueryNotebook *pThis = (QueryNotebook *) data;
+		Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).removeListener (pThis);
+		return FALSE;
+	}
+	virtual void entryChanged  (const Ypp::PkgList list, int, Ypp::Package *)
+	{
+		gtk_widget_show (m_undoBox);
+		// Ypp is iterating listeners, so we cannot remove this from list here
+		g_idle_add (remove_listener, this);
+	}
+	virtual void entryInserted (const Ypp::PkgList, int, Ypp::Package *) {}
+	virtual void entryDeleted  (const Ypp::PkgList, int, Ypp::Package *) {}
+
+	// methods
 	inline bool availablePackagesOnly()
 	{ return m_combo->availablePackagesOnly(); }
 
@@ -1405,7 +1458,7 @@ private:
 					view->appendEmptyColumn (25);
 				else
 					view->appendCheckColumn (col);
-				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 160);
+				view->appendTextColumn (_("Name"), ZyppModel::NAME_COLUMN, 140);
 				if (col == ZyppModel::TO_UPGRADE_COLUMN) {
 					view->appendTextColumn (_("Installed"), ZyppModel::INSTALLED_VERSION_COLUMN, -1);
 					view->appendTextColumn (_("Available"), ZyppModel::AVAILABLE_VERSION_COLUMN, -1);
@@ -1417,8 +1470,8 @@ private:
 			page = GTK_WIDGET (view);
 		}
 		else {
-			m_undoView = new UndoView (this);
 			page = m_undoView->getWidget();
+			gtk_container_set_border_width (GTK_CONTAINER (page), 6);
 		}
 		gtk_notebook_append_page (GTK_NOTEBOOK (m_notebook), page, hbox);
 	}
@@ -2006,7 +2059,9 @@ public:
 		bool onlineUpdate = onlineUpdateMode();
 		YGDialog *dialog = YGDialog::currentDialog();
 		dialog->setCloseCallback (confirm_cb, this);
-		dialog->setMinSize (700, 800);  // enlarge
+		int width, height;
+		YGUI::ui()->pkgSelectorSize (&width, &height);
+		dialog->setMinSize (width, height);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
@@ -2144,3 +2199,4 @@ public:
 
 YPackageSelector *YGWidgetFactory::createPackageSelector (YWidget *parent, long mode)
 { return new YGPackageSelector (parent, mode); }
+

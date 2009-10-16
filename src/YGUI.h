@@ -67,9 +67,9 @@ private:
     int m_default_width, m_default_height;
 
 	bool pkgSelectorParse (const char *arg);
+public:
 	void pkgSelectorSize (int *width, int *height);
 
-public:
     // Helpers for internal use [ visibility hidden ]
     bool setFullscreen() const { return m_fullscreen; }
     bool hasWM() const         { return m_have_wm; }

@@ -58,7 +58,7 @@ static void ygtk_notebook_size_allocate (GtkWidget *widget, GtkAllocation *alloc
 		}
 
 		GtkAllocation child_alloc;
-		child_alloc.width = MIN (allocation->width - allocation->x - tabs_width, child_req.width);
+		child_alloc.width = MAX (0, MIN (allocation->width - tabs_width, child_req.width));
 		child_alloc.height = child_req.height;
 		if (reverse)
 			child_alloc.x = allocation->x;

@@ -1,5 +1,15 @@
 2009-10-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtknotebook.cc: bug fix: corner widget (search
+	entry on the pkg-manager) could get truncated.
+
+	* src/YGPackageSelector.cc: bug fix 547075: revert
+	undo tab to side-bar. The widget used is still the
+	same though.
+	New options: --undo-tab and --uncouple-button.
+
+2009-10-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkzyppview.cc: fixes crash on online_update
 	(on applies-to property).
 
