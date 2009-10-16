@@ -1637,6 +1637,7 @@ public:
 				label += package->support();
 				gtk_expander_set_label (GTK_EXPANDER (m_support->parent), label.c_str());
 				ygtk_rich_text_set_text (YGTK_RICH_TEXT (m_support), package->supportText (true).c_str());
+				gtk_widget_show (m_support->parent);
 			}
 			gtk_image_clear (GTK_IMAGE (m_icon));
 			GtkIconTheme *icons = gtk_icon_theme_get_default();
@@ -1647,7 +1648,6 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 				gtk_widget_show (m_icon_frame);
 			}
-			gtk_widget_show (m_support->parent);
 			setPassiveUpdate (m_filelist, filelist_cb, package);
 			setPassiveUpdate (m_changelog, changelog_cb, package);
 			setPassiveUpdate (m_authors, authors_cb, package);

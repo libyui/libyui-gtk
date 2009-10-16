@@ -1,3 +1,8 @@
+2009-10-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.cc: fixes crash on online_update
+	(on applies-to property).
+
 2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: bug fix 547075

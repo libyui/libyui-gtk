@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Oct 16 15:44:01 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.19.17
+- fixes crash on online_update (on applies-to property).
+
+-------------------------------------------------------------------
 Fri Oct 16 00:00:00 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.19.16
