@@ -1168,7 +1168,8 @@ public:
 		GtkWidget *pkg_widget = m_notebook;
 		if (!onlineUpdate && undo_sidebar) {
 			m_undoBox = gtk_vbox_new (FALSE, 6);
-			GtkWidget *title = gtk_label_new (_("Pending Changes:"));
+			// FIXME: use string _("Pending Changes:") after 11.2
+			GtkWidget *title = gtk_label_new (_("Changes:"));
 			gtk_label_set_ellipsize (GTK_LABEL (title), PANGO_ELLIPSIZE_END);
 			gtk_misc_set_alignment (GTK_MISC (title), 0, 0);
 			YGUtils::setWidgetFont (title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, 1);
