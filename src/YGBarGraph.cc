@@ -2,8 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
+#include <config.h>
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "ygtkbargraph.h"
@@ -39,7 +38,7 @@ public:
 
 	static GdkColor ycolorToGdk (const YColor &ycolor)
 	{
-		GdkColor color = { 0, guint16(ycolor.red() << 8), guint16(ycolor.green() << 8), guint16(ycolor.blue() << 8) };
+		GdkColor color = { 0, ycolor.red() << 8, ycolor.green() << 8, ycolor.blue() << 8 };
 		return color;
 	}
 

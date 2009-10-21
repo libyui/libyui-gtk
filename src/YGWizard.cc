@@ -2,9 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
-#include "YGUI.h"
+#include <config.h>
+#include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "ygtkwizard.h"
@@ -85,6 +84,7 @@ public:
 	: YWizard (NULL, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
 	, YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
 	{
+		IMPL
 		setBorder (0);
 		YGtkWizard *wizard = getWizard();
 
@@ -118,7 +118,6 @@ public:
 		m_abort_button = new YGWButton (this, wizard->abort_button, abortButtonLabel);
 		m_next_button  = new YGWButton (this, wizard->next_button, nextButtonLabel);
 		m_notes_button = new YGWButton (this, wizard->release_notes_button, string());
-		ygtk_wizard_set_default_button (wizard, wizard->next_button);
 
 		//** All event are sent through this signal together with an id
 		g_signal_connect (G_OBJECT (getWidget()), "action-triggered",
@@ -279,6 +278,7 @@ public:
 	static void action_triggered_cb (YGtkWizard *wizard, gpointer id,
 	                                 gint id_type, YGWizard *pThis)
 	{
+		IMPL
 		if ((GType) id_type == G_TYPE_STRING)
 			YGUI::ui()->sendEvent (new YMenuEvent ((char *) id));
 		else

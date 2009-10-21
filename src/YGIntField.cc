@@ -2,7 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
+#include <config.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -114,7 +114,9 @@ public:
 
 YIntField *YGWidgetFactory::createIntField (YWidget *parent, const string &label,
                                             int minValue, int maxValue, int initialValue)
-{ return new YGIntField (parent, label, minValue, maxValue, initialValue); }
+{
+	return new YGIntField (parent, label, minValue, maxValue, initialValue);
+}
 
 #include "YSlider.h"
 
@@ -136,5 +138,8 @@ public:
 
 YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const string &label,
                                                 int minValue, int maxValue, int initialValue)
-{ return new YGSlider (parent, label, minValue, maxValue, initialValue); }
+{
+	IMPL
+	return new YGSlider (parent, label, minValue, maxValue, initialValue);
+}
 

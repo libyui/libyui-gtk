@@ -4,16 +4,19 @@
 
 /* A simplification of libzypp's API.
 
-   To get a list of packages, setup a Query object and create a PkgQuery with
+   To get a list of packages, setup a Query object and create a Pool with
    it. Package has a set of manipulation methods, the results of which are
-   then reported to PkgList listeners, which you can choose to act on your
+   then reported to Pool listeners, which you can choose to act on your
    interface, if you want them reflected on the viewer.
-   Iterate PkgList using integers (it's actually a vector).
+   Iterate the pool using Pool::Iter. If you want to keep references to them
+   around for the UI, you probably want to look at paths.
 
    You must register an object that implements Interface, as some transactions
    are bound by user decisions. Ypp is a singleton; first call to get() will
    initialize it; you should call finish() when you're done to de-allocate
    caches.
+   The only thing you should free is Pool objects. A Query will be freed by
+   the Pool object you pass it to.
 */
 
 #ifndef ZYPP_WRAPPER_H
@@ -59,15 +62,12 @@ struct Ypp
 		std::string filelist (bool rich);
 		std::string changelog();
 		std::string authors (bool rich);
-		std::string support();
-		std::string supportText (bool rich);
+		std::string support (bool rich);
 		std::string icon();
 		bool isRecommended() const;
 		bool isSuggested() const;
 		int buildAge() const;  // if < 0 , unsupported or error
 		bool isUnsupported() const;
-		int severity() const;
-		static std::string severityStr (int id);
 
 		std::string provides (bool rich) const;
 		std::string requires (bool rich) const;
@@ -79,17 +79,15 @@ struct Ypp
 			void *impl;
 		};
 		const Version *getInstalledVersion();
-			// available versions order is not specified
-			// however the most recent version is ensured to be placed as nb==0
 		const Version *getAvailableVersion (int nb);
-		  // convenience -- null if not from repo:
+		  // convenience -- null if not:
 		const Version *fromRepository (const Repository *repo);
 
 		bool isInstalled();
 		bool hasUpgrade();
 		bool isLocked();
 
-		bool toInstall (const Version **version = 0);
+		bool toInstall (const Version **repo = 0);
 		bool toRemove();
 		bool toModify();
 		bool isAuto(); /* installing/removing cause of dependency */
@@ -98,10 +96,8 @@ struct Ypp
 		                                        // null for most recent version
 		void remove();
 		void undo();
-		void lock (bool lock);
-
-		bool canRemove();
 		bool canLock();
+		void lock (bool lock);
 
 		struct Impl;
 		Impl *impl;
@@ -109,77 +105,53 @@ struct Ypp
 		~Package();
 	};
 
-	// when installing/removing/... a few packages at a time, you should use this pair,
-	// so that the problem resolver gets only kicked after they are all queued
+	// when installing/removing/... a few packages at a time, you should use this methods,
+	// so that problem resolver gets only kicked after they are all queued
 	void startTransactions();
 	void finishTransactions();
 
-	// Listing
-	// this class and all proper subclassed are refcounted
-	struct PkgList {  // NOTE: this is actually implemented as a vector
-		Package *get (int index) const;
-		bool highlight (Ypp::Package *pkg) const;  // applicable to some subclasses only
-		int size() const;
+	// Pool
+	struct Pool {
+		typedef void * Iter;
+		virtual Iter getFirst() = 0;
+		virtual Iter getNext (Iter it) = 0;
+		virtual Iter getParent (Iter it) = 0;
+		virtual Iter getChild (Iter it) = 0;
+		virtual bool isPlainList() const = 0;
+		bool empty() { return !getFirst(); }
+		int size();
 
-		void reserve (int size);
-		void append (Package *package);
-		void sort (bool (* order) (const Package *, const Package *) = 0);
-		void remove (int index);
-		void copy (const PkgList list);  // will only copy entry for which match() == true
+		typedef std::list <int> Path;
+		Iter fromPath (const Path &path);
+		Path toPath (Iter it);
 
-		bool contains (const Package *package) const;
-		int find (const Package *package) const;  // -1 if not found
-		Package *find (const std::string &name) const;
+		virtual std::string getName (Iter it) = 0;
+		virtual Package *get (Iter it) = 0; /* may be NULL */
+		virtual bool highlight (Iter it) = 0;
 
-		// NOTE: checks if both lists point to the same memory space, not equal contents
-		bool operator == (const PkgList &other) const;
-
-		// common properties
-		// NOTE: there is a hit first time one of these methods is used
-		bool installed() const;
-		bool notInstalled() const;
-		bool upgradable() const;
-		bool modified() const;
-		bool locked() const;
-		bool unlocked() const;
-		bool canRemove() const;
-		bool canLock() const;
-
-		// actions
-		// NOTE: can take time (depending on size); show busy cursor
-		void install(); // or upgrade
-		void remove();
-		void lock (bool toLock);
-		void undo();
-
-		// a Listener can be plugged for when an entry gets modified
-		// -- Inserted and Deleted are only available for particular subclasses
 		struct Listener {
-			virtual void entryChanged  (const PkgList list, int index, Package *package) = 0;
-			virtual void entryInserted (const PkgList list, int index, Package *package) = 0;
-			virtual void entryDeleted  (const PkgList list, int index, Package *package) = 0;
+			virtual void entryInserted (Iter iter, Package *package) = 0;
+			virtual void entryDeleted  (Iter iter, Package *package) = 0;
+			virtual void entryChanged  (Iter iter, Package *package) = 0;
 		};
-		void addListener (Listener *listener) const;
-		void removeListener (Listener *listener) const;
-		// FIXME: listeners only works for getPackages() lists and PkgQuery ones.
+		void setListener (Listener *listener);
 
 		struct Impl;
 		Impl *impl;
-		PkgList();
-		PkgList (Impl *);  // sub-class (to share refcount)
-		PkgList (const PkgList &other);
-		PkgList & operator = (const PkgList &other);
-		virtual ~PkgList();
+		Pool (Impl *impl);
+		virtual ~Pool();
 	};
 
-	// listing of packages as filtered
-	struct PkgQuery : public PkgList {
+	// plain listing of packages as filtered
+	// this is a live pool -- entries can be inserted and removed
+	struct QueryPool : public Pool {
 		struct Query {
 			Query();
+			void addType (Package::Type type);
 			void addNames (std::string name, char separator = 0, bool use_name = true,
 				bool use_summary = true, bool use_description = false,
 				bool use_filelist = false, bool use_authors = false,
-				bool whole_word = false, bool whole_string = false);
+				bool full_word_match = false);
 			void addCategory (Ypp::Node *category);
 			void addCategory2 (Ypp::Node *category);
 			void addCollection (const Ypp::Package *package);
@@ -187,13 +159,10 @@ struct Ypp
 			void setIsInstalled (bool installed);
 			void setHasUpgrade (bool upgradable);
 			void setToModify (bool modify);
-			void setToInstall (bool install);
-			void setToRemove (bool remove);
 			void setIsRecommended (bool recommended);
 			void setIsSuggested (bool suggested);
 			void setBuildAge (int days);
 			void setIsUnsupported (bool unsupported);
-			void setSeverity (int severity);
 			void setClear();
 
 			~Query();
@@ -201,15 +170,44 @@ struct Ypp
 			Impl *impl;
 		};
 
-		PkgQuery (const PkgList list, Query *query);
-		PkgQuery (Package::Type type, Query *query);  // shortcut
+		// startEmpty is an optimization when you know the pool won't have
+		// elements at creations.
+		QueryPool (Query *query, bool startEmpty = false);
+
+		virtual Pool::Iter getFirst();
+		virtual Pool::Iter getNext (Pool::Iter it);
+		virtual Pool::Iter getParent (Pool::Iter it) { return NULL; }
+		virtual Pool::Iter getChild (Pool::Iter it)  { return NULL; }
+		virtual bool isPlainList() const { return true; }
+
+		virtual Package *get (Pool::Iter it);
+		virtual std::string getName (Pool::Iter it)
+		{ return get (it)->name(); }
+
+		virtual bool highlight (Pool::Iter it);
 
 		struct Impl;
 		Impl *impl;
 	};
 
-	// list primitives
-	const PkgList getPackages (Package::Type type);
+	// Pool of categories with the packages as leaves -- only for 1D categories
+	// this is a dead pool -- entries can be changed, but not inserted or removed
+	struct TreePool : public Pool {
+		TreePool (Ypp::Package::Type type);
+
+		virtual Pool::Iter getFirst();
+		virtual Pool::Iter getNext (Pool::Iter it);
+		virtual Pool::Iter getParent (Pool::Iter it);
+		virtual Pool::Iter getChild (Pool::Iter it);
+		virtual bool isPlainList() const { return false; }
+
+		virtual std::string getName (Pool::Iter it);
+		virtual Package *get (Pool::Iter it); /* may be NULL */
+		virtual bool highlight (Pool::Iter it) { return false; }
+
+		struct Impl;
+		Impl *impl;
+	};
 
 	// Resolver
 	struct Problem {
@@ -232,10 +230,15 @@ struct Ypp
 		virtual void notifyMessage (Package *package, const std::string &message) = 0;
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
-		virtual bool allowRestrictedRepo (const PkgList list) = 0;
-		virtual void loading (float progress) = 0;
+		virtual bool allowRestrictedRepo (const std::list <std::pair <const Package *, const Repository *> > &pkgs) = 0;
 	};
 	void setInterface (Interface *interface);
+
+	struct PkgListener {
+		virtual void packageModified (Package *package) = 0;
+	};
+	void addPkgListener (PkgListener *listener);
+	void removePkgListener (PkgListener *listener);
 
 	// Repositories
 	struct Repository {
@@ -247,6 +250,8 @@ struct Ypp
 	const Repository *favoriteRepository();
 
 	// Misc
+	Package *findPackage (Package::Type type, const std::string &name);
+
 	Node *getFirstCategory (Package::Type type);
 	Node *getFirstCategory2 (Package::Type type);
 

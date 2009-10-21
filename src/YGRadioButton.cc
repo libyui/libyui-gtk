@@ -2,8 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
+#include <config.h>
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -52,6 +51,7 @@ public:
 	:  YRadioButton (NULL, label),
 	   YGWidget (this, parent, getCheckRadioButtonType(), NULL)
 	{
+		IMPL
 		if (!is_horizontal_box (parent))
 			setStretchable (YD_HORIZ, true);
 		setLabel (label);
@@ -66,16 +66,21 @@ public:
 	{
 		// NOTE: we can't just set a gtk_widget_modify() at the initialization
 		// because each gtk_button_set_label() creates a new label
+		IMPL
 		string str = YGUtils::mapKBAccel(text.c_str());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YRadioButton::setLabel (text);
 	}
 
 	virtual bool value()
-	{ return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (getWidget())); }
+	{
+		IMPL
+		return gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (getWidget()));
+	}
 
 	virtual void setValue (bool checked)
 	{
+		IMPL
 		BlockEvents block (this);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (getWidget()), checked);
 		if (checked) {
@@ -100,6 +105,7 @@ public:
 YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string &label,
                                                   bool isChecked)
 {
+	IMPL
 	YRadioButton *button = new YGRadioButton (parent, label, isChecked);
 
 	// libyui instructs us to do it here due to vfuncs craziness
@@ -139,6 +145,7 @@ public:
 	:  YCheckBox (NULL, label),
 	   YGWidget (this, parent, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
+		IMPL
 		if (!is_horizontal_box (parent))
 			setStretchable (YD_HORIZ, true);
 		setLabel (label);
@@ -151,6 +158,7 @@ public:
 	// YCheckButton
 	virtual void setLabel (const string &text)
 	{
+		IMPL
 		string str = YGUtils::mapKBAccel(text);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YCheckBox::setLabel (text);
@@ -158,6 +166,7 @@ public:
 
 	virtual YCheckBoxState value()
 	{
+		IMPL
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
 
 		if (gtk_toggle_button_get_inconsistent (button))
@@ -167,6 +176,7 @@ public:
 
 	virtual void setValue (YCheckBoxState value)
 	{
+		IMPL
 		BlockEvents block (this);
 		GtkToggleButton *button = GTK_TOGGLE_BUTTON (getWidget());
 		switch (value) {
@@ -198,5 +208,8 @@ public:
 
 YCheckBox *YGWidgetFactory::createCheckBox (YWidget *parent, const string &label,
                                             bool isChecked)
-{ return new YGCheckBox (parent, label, isChecked); }
+{
+	IMPL
+	return new YGCheckBox (parent, label, isChecked);
+}
 

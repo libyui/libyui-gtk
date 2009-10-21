@@ -46,8 +46,7 @@ GType ygtk_rich_text_get_type (void) G_GNUC_CONST;
 
 /* Sets some text to YGtkRichText, may be HTML or plain text, as indicated by
    rich_text. */
-void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text);
-void ygtk_rich_text_set_plain_text (YGtkRichText* rtext, const gchar* text);
+void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode);
 
 // To be used together with an entry box to search for text
 gboolean ygtk_rich_text_mark_text (YGtkRichText *rtext, const gchar *text);

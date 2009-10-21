@@ -2,9 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
-#include "YGUI.h"
+#include <config.h>
+#include <YGUI.h>
 #include <YPushButton.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -20,10 +19,12 @@ public:
 	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
+		IMPL
 		m_customIcon = m_labelIcon = false;
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
+		g_signal_connect (G_OBJECT (getWidget()), "expose-event", G_CALLBACK (treat_icon_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -40,7 +41,7 @@ public:
 				case 7: stock = GTK_STOCK_PREFERENCES; break;  // Expert
 				case 8: stock = GTK_STOCK_GO_BACK; break;
 				case 9: stock = GTK_STOCK_CANCEL; break;
-				case 10: stock = GTK_STOCK_OK; break;  // Next/Finish/OK
+//				case 10: stock = GTK_STOCK_GO_FORWARD; break;
 				default: break;
 			}
 #if YAST2_VERSION >= 2017006
@@ -59,6 +60,7 @@ public:
 	// YPushButton
 	virtual void setLabel (const string &label)
 	{
+		IMPL
 		YPushButton::setLabel (label);
 		string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
@@ -90,6 +92,7 @@ public:
 
 	virtual void setIcon (const string &icon)
 	{
+		IMPL
 		GtkButton *button = GTK_BUTTON (getWidget());
 		if (icon.empty()) {
 			m_customIcon = false;
@@ -146,7 +149,7 @@ public:
 		}
 		return true;
 	}
-#if 0
+#if 1
 	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
 	                               YGPushButton *pThis)
 	{
@@ -198,5 +201,7 @@ public:
 };
 
 YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const string &label)
-{ return new YGPushButton (parent, label); }
+{
+	return new YGPushButton (parent, label);
+}
 

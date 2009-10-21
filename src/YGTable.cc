@@ -2,22 +2,22 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
-#include "YGUI.h"
+#include <config.h>
+#include <YGUI.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include "YSelectionWidget.h"
 #include "YGSelectionModel.h"
 #include "ygtkcellrenderertextpixbuf.h"
-#include "ygtktreeview.h"
+#include "ygtkscrolledwindow.h"
+#include <time.h>
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget, public YGSelectionModel
 {
 protected:
 	int m_colsNb;
-	guint m_blockTimeout;
+	time_t m_blockTime;  // GtkTreeSelection signals act weird
 
 public:
 	YGTableView (YWidget *ywidget, YWidget *parent, const string &label,
@@ -26,6 +26,8 @@ public:
 	                    YGTK_TYPE_TREE_VIEW, NULL)
 	, YGSelectionModel ((YSelectionWidget *) ywidget, ordinaryModel, isTree)
 	{
+		IMPL
+		m_blockTime = time (NULL);
 		if (ordinaryModel) {
 			appendIconTextColumn ("", YAlignUnchanged, YGSelectionModel::ICON_COLUMN,
 			                      YGSelectionModel::LABEL_COLUMN);
@@ -39,14 +41,6 @@ public:
 		gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_BROWSE);
 
 		// let the derivates do the event hooks. They have subtile differences.
-
-		m_blockTimeout = 0;  // GtkTreeSelection idiotically fires when showing widget
-		g_signal_connect (getWidget(), "map", G_CALLBACK (block_init_cb), this);
-	}
-
-	virtual ~YGTableView()
-	{
-		if (m_blockTimeout) g_source_remove (m_blockTimeout);
 	}
 
 	inline GtkTreeView *getView()
@@ -56,6 +50,7 @@ public:
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
+		IMPL
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer;
 
@@ -113,24 +108,12 @@ public:
 
 	virtual bool immediateEvent() { return true; }
 
-	static gboolean block_selected_timeout_cb (gpointer data)
-	{
-		YGTableView *pThis = (YGTableView *) data;
-		pThis->m_blockTimeout = 0;
-		return FALSE;
-	}
-
-	void blockSelected()
-	{  // GtkTreeSelection only fires when idle; so set a timeout
-		if (m_blockTimeout) g_source_remove (m_blockTimeout);
-		m_blockTimeout = g_timeout_add_full (G_PRIORITY_LOW, 250, block_selected_timeout_cb, this, NULL);
-	}
-
 	// YGSelectionModel
+
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		if (!gtk_tree_selection_iter_is_selected (getSelection(), iter)) {
-			blockSelected();
+			m_blockTime = time (NULL);
 			GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 			gtk_tree_view_expand_to_path (getView(), path);
 
@@ -145,7 +128,7 @@ public:
 	virtual void doUnselectAll()
 	{
 		if (gtk_tree_selection_count_selected_rows (getSelection())) {
-			blockSelected();
+			m_blockTime = time (NULL);
 			gtk_tree_selection_unselect_all (getSelection());
 		}
 	}
@@ -173,13 +156,11 @@ public:
 		return 80;
 	}
 
-	// GTK callbacks
-	static void block_init_cb (GtkWidget *widget, YGTableView *pThis)
-	{ pThis->blockSelected(); }
-
+protected:
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
+		IMPL
 		GtkTreeIter iter;
 		if (!gtk_tree_model_get_iter (getModel(), &iter, path))
 			return;
@@ -194,7 +175,7 @@ public:
 
 	static void selection_changed_cb (GtkTreeSelection *selection, YGTableView *pThis)
 	{
-		if (pThis->m_blockTimeout)
+		if (time (NULL) - pThis->m_blockTime <= 2)
 			return;
 		if (!pThis->toggleMode()) {
 			GtkTreeSelection *selection = pThis->getSelection();
@@ -219,18 +200,12 @@ public:
 	static void toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	                        YGTableView *pThis)
 	{
+		IMPL
 		GtkTreePath *path = gtk_tree_path_new_from_string (path_str);
 		gint column = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "column"));
 		pThis->toggle (path, column);
 		gtk_tree_path_free (path);
 	}
-
-#if YAST2_VERSION > 2018003
-	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTableView *pThis)
-	{
-		pThis->emitEvent (YEvent::ContextMenuActivated);
-	}
-#endif
 };
 
 #include "YTable.h"
@@ -249,6 +224,7 @@ public:
 #endif
 	, YGTableView (this, parent, string(), false, false)
 	{
+		IMPL
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
 #if YAST2_VERSION >= 2017005
@@ -275,7 +251,7 @@ public:
 
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
-		connect (getWidget(), "right-click", G_CALLBACK (hack_right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
 		connect (getWidget(), "key-press-event", G_CALLBACK (key_press_event_cb), this);
 	}
 
@@ -309,6 +285,7 @@ public:
 
 	void setSortable (bool sortable)
 	{
+		IMPL
 		if (!sortable && !GTK_WIDGET_REALIZED (getWidget()))
 			return;
 		int n = 0;
@@ -366,12 +343,8 @@ public:
 		YGUI::ui()->sendEvent (event);
 	}
 
-	static void hack_right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
+	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
 	{
-#if YAST2_VERSION > 2018003
-		if (pThis->notifyContextMenu())
-			return YGTableView::right_click_cb (view, outreach, pThis);
-#endif
 		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
 			// undetermined case -- more than one table exists
 			YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1) {
@@ -444,9 +417,6 @@ public:
 	{
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
-#if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
-#endif
 	}
 
 	virtual bool isShrinkable() { return shrinkable(); }
@@ -456,7 +426,10 @@ public:
 };
 
 YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const string &label)
-{ return new YGSelectionBox (parent, label); }
+{
+	IMPL
+	return new YGSelectionBox (parent, label);
+}
 
 #include "YMultiSelectionBox.h"
 
@@ -474,15 +447,11 @@ public:
 		createModel (types);
 		appendCheckColumn ("", 0);
 		appendIconTextColumn ("", YAlignUnchanged, 1, 2);
-		gtk_tree_view_set_search_column (getView(), 2);
 		setModel();
 
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
 		// Let the user toggle, using space/enter or double click (not an event).
 		connect (getWidget(), "row-activated", G_CALLBACK (multi_activated_cb), this);
-#if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
-#endif
 	}
 
 	// YMultiSelectionBox
@@ -515,6 +484,7 @@ public:
 	{ pThis->toggle (path, 0); }
 
 	// YGSelectionModel
+
 	virtual void doSelectItem (GtkTreeIter *iter)
 	{
 		setCellToggle (iter, 0, true);
@@ -531,13 +501,18 @@ public:
 	}
 
 	// YGWidget
+
 	virtual bool isShrinkable() { return shrinkable(); }
 	YGWIDGET_IMPL_COMMON (YMultiSelectionBox)
 	YGSELECTION_WIDGET_IMPL (YMultiSelectionBox)
 };
 
-YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent, const string &label)
-{ return new YGMultiSelectionBox (parent, label); }
+YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent,
+                                                              const string &label)
+{
+	IMPL
+	return new YGMultiSelectionBox (parent, label);
+}
 
 #include "YTree.h"
 #include "YTreeItem.h"
@@ -553,9 +528,6 @@ public:
 		connect (getWidget(), "row-expanded", G_CALLBACK (row_expanded_cb), this);
 		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
-#if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
-#endif
 	}
 
 	// YTree

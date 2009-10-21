@@ -60,19 +60,18 @@ libpy2gtk_la_SOURCES = \
 	ygdkmngloader.c \
 	ygtkimage.c \
 	ygtkcellrenderertextpixbuf.c \
-	ygtktreeview.c \
+	ygtkscrolledwindow.c \
+	ygtktogglebutton.c \
 	ygtkhtmlwrap.c \
 	ygtktimezonepicker.c \
+	ygtkhandlebox.c \
 	ygtklinklabel.c \
+	ygtktooltip.c \
 	ygtktextview.c \
 	ygtkrichtext.c \
-	ygtknotebook.c \
-	ygtktooltip.c \
-	ygtktreemodel.cc \
-	ygtkcellrendererbutton.c \
-	ygtkzyppview.cc \
 	yzyppwrapper.cc \
-	yzypptags.cc
+	yzypptags.cc \
+	ygtkzyppwrapper.cc
 # should (maybe?) only append ygtkrichtext.c if WITH_GTKHTML or WEBKIT isn't set
 
 dummy_SOURCES = dummy.cc
@@ -101,6 +100,8 @@ dist_share_DATA = \
 	icons/pkg-unlocked.png \
 	icons/pkg-installed-upgradable-locked.png \
 	icons/pkg-locked.png \
+	icons/pkg-tiles-mode.xpm \
+	icons/pkg-list-mode.xpm \
 	icons/harddisk.png \
 	icons/harddisk-full.png
 EXTRA_DIST = $(dist_share_DATA) \

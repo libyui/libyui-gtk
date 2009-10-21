@@ -1,58 +1,33 @@
 /* List of missing features, actual bugs and other issues */
 
-Bugs
+= Regression testing =
 
-	tests/Layout-TruncatedWidget.ycp
-		unlike yast2-qt, we trigger recalculation events on widget property
-		changes like the label or the button text.
-	Difficulty: High - Priority: Low
+* Setup LDTP to run through all the tests/ and provoke as many
+  code-paths as possible
 
-	Honor YDialog's YWizardDialog directive
-		see bug 457758. We also want to make multiple Wizard instances
-		share the same help window. Overall, move a bunch of YGWizard
-		stuff into YGDialog domain.
-	Difficulty: Medium - Priority: Low
+= Look and feel =
 
-Enhancements
+* YGRichText: should use GtkHtml when available, so that we get support for
+  tables.
 
-	Package manager search syntax
-		add proper Google syntax support. Consider also adding regex (add
-		radio boxes to entry's context menu).
-	Difficulty: Medium - Priority: Low
+* YGTextEntry / YGMultiLineEdit: Add undo/redo support. The backend code should
+  be shared. We probably want to make an interface for it that is then implemented
+  by those two GTK widgets. Work out a patch for GTK+.
 
-	YGTextEntry / YGMultiLineEdit
-		Add undo/redo support. (Possibly work out a patch for GTK+.)
-	Difficulty: Low - Priority: Medium
+= Package Selector =
+(this little monster diserves a section of its own. =))
 
-	YGtkFindEntry
-		Deprecate YGtkFindEntry usage in favor of GTK 2.16 GtkEntry new
-		APIs. Notice the requirements for the Package Manager: change
-		icon to reflect that of the context menu, and show arrow next
-		to the search icon.
-	Difficulty: Low - Priority: Low
+* Search syntax: add proper Google syntax support. Consider also adding regex
+  support when Glib ships with it (add radio boxes to entry's context menu).
 
-	YGPackageSelector.cc: FlexPane class
-		Deprecate in favor of GTK 2.16 GtkOrientation API for GtkPaned.
-	Difficulty: Low - Priority: Low
+= Yast-Core =
 
-	Installer look
-		Port or adopt yast2-qt's installer style file.
-	Difficulty: High - Priority: Low
+* Stock icons for buttons (at least the wizard ones)
+    Currently the support is limited to English because it's done by comparing
+    the strings to a list of stock icon ones.
 
-Build procedure
-
-	YGRichText
-		should use GtkHtml when available, so that we get support for tables.
-
-		Road block: the problem here is that Webkit doesn't work well for our
-		package-selector use (outside a scrolled window). Does it make sense to
-		keep YGtkRichText for that sole purpose?
-	Difficulty: Medium - Priority: Medium
-
-Test Framework
-
-	Regression tests
-		setup LDTP to run through all the tests/ and provoke as many code-paths
-		as possible.
-	Difficulty: High (tiresome) - Priority: Low
+* Button order
+	Should be possible to specify button order. eg: [Ok] [Cancel] vs [Cancel] [Ok]
+	We could hack this through if we had stock images support (may depend
+	on the way they are implemented).
 

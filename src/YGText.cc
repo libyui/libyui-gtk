@@ -2,9 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
-#include "YGUI.h"
+#include <config.h>
+#include <YGUI.h>
 #include <string>
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -20,6 +19,7 @@ public:
 		                    YGTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR,
 		                    "editable", editable, NULL)
 	{
+		IMPL
 		setPolicy (GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
 		maxChars = -1;
 		connect (getBuffer(), "changed", G_CALLBACK (text_changed_cb), this);
@@ -29,10 +29,14 @@ public:
 	{ return gtk_text_view_get_buffer (GTK_TEXT_VIEW (getWidget())); }
 
 	int getCharsNb()
-	{ return gtk_text_buffer_get_char_count (getBuffer()); }
+	{
+		IMPL
+		return gtk_text_buffer_get_char_count (getBuffer());
+	}
 
 	void setCharsNb (int max_chars)
 	{
+		IMPL
 		maxChars = max_chars;
 		if (maxChars != -1 && getCharsNb() > maxChars)
 			truncateText (maxChars);
@@ -49,17 +53,19 @@ public:
 
 	void setText (const string &text)
 	{
+		IMPL
 		BlockEvents block (this);
 		gtk_text_buffer_set_text (getBuffer(), text.c_str(), -1);
 	}
 
-	std::string getText()
+	string getText()
 	{
+		IMPL
 		GtkTextIter start_it, end_it;
 		gtk_text_buffer_get_bounds (getBuffer(), &start_it, &end_it);
 
 		gchar* text = gtk_text_buffer_get_text (getBuffer(), &start_it, &end_it, FALSE);
-		std::string str (text);
+		string str (text);
 		g_free (text);
 		return str;
 	}
@@ -114,6 +120,11 @@ public:
 		return 30;
 	}
 
+	virtual void doSetEnabled (bool enabled)
+	{
+		gtk_text_view_set_editable(GTK_TEXT_VIEW (getWidget()), enabled);
+	}
+
 	YGLABEL_WIDGET_IMPL (YMultiLineEdit)
 };
 
@@ -133,6 +144,7 @@ public:
 	{}
 
 	// YLogView
+
 	virtual void displayLogText (const string &text)
 	{
 		setText (text);
@@ -140,6 +152,7 @@ public:
 	}
 
 	// YGWidget
+
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{
 		if (dim == YD_VERT) {
@@ -168,8 +181,9 @@ public:
 	: YRichText (NULL, text, plainText)
 	, YGScrolledWidget (this, parent, ygtk_html_wrap_get_type(), NULL)
 	{
+		IMPL
 		ygtk_html_wrap_init (getWidget());
-		ygtk_html_wrap_connect_link_clicked (getWidget(), link_clicked_cb, this);
+		ygtk_html_wrap_connect_link_clicked (getWidget(), G_CALLBACK (link_clicked_cb), this);
 		setText (text, plainText);
 	}
 
@@ -222,10 +236,13 @@ public:
     }
 
 	// callbacks
-	static void link_clicked_cb (GtkWidget *widget, const char *url, gpointer data)
-	{ YGUI::ui()->sendEvent (new YMenuEvent (url)); }
+	static void link_clicked_cb (GtkWidget *widget, const char *url, YGRichText *pThis)
+	{
+		YGUI::ui()->sendEvent (new YMenuEvent (url));
+	}
 
 	// YGWidget
+
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return shrinkable() ? 10 : 100; }
 

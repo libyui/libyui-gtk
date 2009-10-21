@@ -2,8 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
+#include <config.h>
 #include "YGUI.h"
 #include "YGDialog.h"
 #include "YGUtils.h"
@@ -23,8 +22,8 @@
    be a YGDialog and is swap-able.
 */
 
-#define DEFAULT_WIDTH  700
-#define DEFAULT_HEIGHT 650
+#define DEFAULT_WIDTH  650
+#define DEFAULT_HEIGHT 600
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -37,7 +36,6 @@ class YGWindow
 	// (ie. dump yast tree)
 	YWidget *m_child;
 	GdkCursor *m_busyCursor;
-	bool m_isBusy;
 
 public:
 	YGWindowCloseFn m_canClose;
@@ -53,7 +51,6 @@ public:
 		m_child = NULL;
 		m_canClose = NULL;
 		m_busyCursor = NULL;
-		m_isBusy = false;
 
 		{
 			std::stack<YDialog *> &stack = YDialog::_dialogStack;
@@ -93,13 +90,7 @@ public:
 		    }
 
 		    if (_main_window) {
-		    	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
-		    	if (YGUI::ui()->defaultWidth())
-		    		width = YGUI::ui()->defaultWidth();
-		    	if (YGUI::ui()->defaultHeight())
-		    		height = YGUI::ui()->defaultHeight();
-
-		        gtk_window_set_default_size (window, width, height);
+		        gtk_window_set_default_size (window, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 				if (YGUI::ui()->setFullscreen())
 					gtk_window_fullscreen (window);
 				else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
@@ -124,6 +115,7 @@ public:
 
 	~YGWindow()
 	{
+		IMPL
 		setChild (NULL);
 		if (m_busyCursor)
 			gdk_cursor_unref (m_busyCursor);
@@ -136,26 +128,23 @@ public:
 
 	void normalCursor()
 	{
-		if (m_isBusy)
-			gdk_window_set_cursor (m_widget->window, NULL);
-		m_isBusy = false;
+		gdk_window_set_cursor (m_widget->window, NULL);
 	}
 
 	void busyCursor()
 	{
+		GdkDisplay *display = gtk_widget_get_display (m_widget);
 		if (!m_busyCursor) {
-			GdkDisplay *display = gtk_widget_get_display (m_widget);
 			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			gdk_cursor_ref (m_busyCursor);
 		}
-		if (!m_isBusy)
-			gdk_window_set_cursor (m_widget->window, m_busyCursor);
-		m_isBusy = true;
+		gdk_window_set_cursor (m_widget->window, m_busyCursor);
 	}
 
 	void setChild (YWidget *new_child)
 	{
-		GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
+		IMPL
+			GtkWidget *child = gtk_bin_get_child (GTK_BIN (m_widget));
 		if (child)
 		    gtk_container_remove (GTK_CONTAINER (m_widget), child);
 		if (new_child) {
@@ -194,6 +183,7 @@ private:
 	static gboolean close_window_cb (GtkWidget *widget, GdkEvent  *event,
 	                                 YGWindow  *pThis)
 	{
+		IMPL
 		// never let GTK+ destroy the window! just inform YCP, and let it
 		// do its thing.
 		pThis->close();
@@ -203,6 +193,7 @@ private:
 	static gboolean key_pressed_cb (GtkWidget *widget, GdkEventKey *event,
 		                            YGWindow *pThis)
 	{
+		IMPL
 		// if not main dialog, close it on escape
 		if (event->keyval == GDK_Escape &&
 		    /* not main window */ main_window != pThis) {
@@ -447,7 +438,7 @@ void YGDialog::highlight (YWidget *ywidget)
 
 			cairo_t *cr = gdk_cairo_create (widget->window);
 			cairo_rectangle (cr, x, y, w, h);
-			cairo_set_source_rgb (cr, 0xff/255.0, 0x88/255.0, 0);
+			cairo_set_source_rgb (cr, (0xff/255.0), (0x88)/255.0, 0);
 			cairo_fill (cr);
 			cairo_destroy (cr);
 			return FALSE;
@@ -572,7 +563,10 @@ std::list <YWidget *> YGDialog::getClassWidgets (const char *className)
 }
 
 YDialog *YGWidgetFactory::createDialog (YDialogType dialogType, YDialogColorMode colorMode)
-{ return new YGDialog (dialogType, colorMode); }
+{
+	IMPL
+	return new YGDialog (dialogType, colorMode);
+}
 
 YEvent *YGDialog::waitForEventInternal (int timeout_millisec)
 { return YGUI::ui()->waitInput (timeout_millisec, true); }

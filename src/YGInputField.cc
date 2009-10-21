@@ -2,9 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
-#include "YGUI.h"
+#include <config.h>
+#include <YGUI.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "ygtkfieldentry.h"
@@ -96,6 +95,7 @@ public:
 	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
+		IMPL
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_add_field (field, ':');
 		ygtk_field_entry_add_field (field, ':');
@@ -120,6 +120,7 @@ public:
 
 	virtual string value()
 	{
+		IMPL
 		const gchar *hours, *mins;
 		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
 		hours = ygtk_field_entry_get_field_text (entry, 0);
@@ -140,7 +141,10 @@ public:
 };
 
 YTimeField *YGOptionalWidgetFactory::createTimeField (YWidget *parent, const string &label)
-{ return new YGTimeField (parent, label); }
+{
+	IMPL
+	return new YGTimeField (parent, label);
+}
 
 #include "YDateField.h"
 #include "ygtkmenubutton.h"
@@ -154,6 +158,7 @@ public:
 	: YDateField (NULL, label),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ, YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
+		IMPL
 		ygtk_field_entry_add_field (getField(), '-');
 		ygtk_field_entry_add_field (getField(), '-');
 		ygtk_field_entry_add_field (getField(), '-');
@@ -199,6 +204,7 @@ public:
 
 	virtual string value()
 	{
+		IMPL
 		const gchar *year, *month, *day;
 		year  = ygtk_field_entry_get_field_text (getField(), 0);
 		month = ygtk_field_entry_get_field_text (getField(), 1);
@@ -274,7 +280,10 @@ public:
 };
 
 YDateField *YGOptionalWidgetFactory::createDateField (YWidget *parent, const string &label)
-{ return new YGDateField (parent, label); }
+{
+	IMPL
+	return new YGDateField (parent, label);
+}
 
 #include "YTimezoneSelector.h"
 #include "ygtktimezonepicker.h"
@@ -287,6 +296,7 @@ public:
 	: YTimezoneSelector (NULL, pixmap, timezones),
 	  YGWidget (this, parent, YGTK_TYPE_TIME_ZONE_PICKER, NULL)
 	{
+		IMPL
 		setStretchable (YD_HORIZ, true);
 		setStretchable (YD_VERT,  true);
 		ygtk_time_zone_picker_set_map (YGTK_TIME_ZONE_PICKER (getWidget()),
@@ -335,5 +345,7 @@ public:
 
 YTimezoneSelector *YGOptionalWidgetFactory::createTimezoneSelector (YWidget *parent,
 	const std::string &pixmap, const std::map <std::string, std::string> &timezones)
-{ return new YGTimezoneSelector (parent, pixmap, timezones); }
+{
+	return new YGTimezoneSelector (parent, pixmap, timezones);
+}
 

@@ -2,8 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
+#include <config.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
 
@@ -87,7 +86,10 @@ public:
 };
 
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
-{ return new YGLayoutBox (parent, dimension); }
+{
+	IMPL
+	return new YGLayoutBox (parent, dimension);
+}
 
 #if YAST2_VERSION >= 2017006
 #include <YButtonBox.h>
@@ -119,7 +121,10 @@ public:
 };
 
 YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)
-{ return new YGButtonBox (parent); }
+{
+	IMPL
+	return new YGButtonBox (parent);
+}
 
 #endif
 
@@ -149,11 +154,11 @@ public:
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YAlignment)
 	YGLAYOUT_SET_SIZE_IMPL (YAlignment)
 
-	virtual void setBackgroundPixmap (const std::string &_filename)
+	virtual void setBackgroundPixmap (string filename)
 	{
-		YAlignment::setBackgroundPixmap (_filename);
 		// YAlignment will prepend a path to the image
-		std::string filename (YAlignment::backgroundPixmap());
+		YAlignment::setBackgroundPixmap (filename);
+		filename = YAlignment::backgroundPixmap();
 
 		if (m_background_pixbuf)
 			g_object_unref (G_OBJECT (m_background_pixbuf));
@@ -197,7 +202,10 @@ public:
 
 YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType halign,
                                               YAlignmentType valign)
-{ return new YGAlignment (parent, halign, valign); }
+{
+	IMPL
+	return new YGAlignment (parent, halign, valign);
+}
 
 #include <YEmpty.h>
 
@@ -216,7 +224,10 @@ public:
 };
 
 YEmpty *YGWidgetFactory::createEmpty (YWidget *parent)
-{ return new YGEmpty (parent); }
+{
+	IMPL
+	return new YGEmpty (parent);
+}
 
 #include <YSpacing.h>
 
@@ -261,7 +272,9 @@ public:
 };
 
 YReplacePoint *YGWidgetFactory::createReplacePoint (YWidget *parent)
-{ return new YGReplacePoint (parent); }
+{
+	return new YGReplacePoint (parent);
+}
 
 #include <YSquash.h>
 
@@ -281,5 +294,8 @@ public:
 };
 
 YSquash *YGWidgetFactory::createSquash (YWidget *parent, bool hsquash, bool vsquash)
-{ return new YGSquash (parent, hsquash, vsquash); }
+{
+	IMPL
+	return new YGSquash (parent, hsquash, vsquash);
+}
 

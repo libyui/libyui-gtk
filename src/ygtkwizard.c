@@ -66,7 +66,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 		GTK_WIDGET (dialog), GTK_STOCK_HELP, GTK_ICON_SIZE_MENU, NULL);
 	gtk_window_set_icon (GTK_WINDOW (dialog), icon);
 	g_object_unref (G_OBJECT (icon));
-	gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 350);
 
 	// help text
 	dialog->help_box = gtk_scrolled_window_new (NULL, NULL);
@@ -491,12 +491,16 @@ static GtkWidget *button_new (YGtkWizard *wizard)
 
 static GtkWidget *create_help_button()
 {
-	GtkWidget *button, *image;
+	GtkWidget *button, *image = 0;
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
-	gtk_button_set_image (GTK_BUTTON (button), image);
+	GdkPixbuf *pixbuf = gtk_widget_render_icon (button, GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON, NULL);
+	if (pixbuf) {
+		image = gtk_image_new_from_pixbuf (pixbuf);
+		g_object_unref (G_OBJECT (pixbuf));
+		gtk_button_set_image (GTK_BUTTON (button), image);
+	}
 	return button;
 }
 
@@ -608,7 +612,6 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_widget_set_size_request (wizard->m_buttons, 0, -1);
 	g_signal_connect_after (G_OBJECT (wizard->m_buttons), "size-allocate",
 	                        G_CALLBACK (buttons_size_allocate_cb), buttons_group);
-	wizard->m_default_button = NULL;
 
 	//** The menu and the navigation widgets will be created when requested.
 	// space for them
@@ -641,10 +644,8 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->realize (widget);
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
-	if (wizard->m_default_button) {
-		gtk_widget_grab_default (wizard->m_default_button);
-		gtk_widget_grab_focus (wizard->m_default_button);
-	}
+	gtk_widget_grab_default (wizard->next_button);
+	gtk_widget_grab_focus (wizard->next_button);
 }
 
 static void ygtk_wizard_map (GtkWidget *widget)
@@ -670,8 +671,10 @@ static void destroy_hash (GHashTable **hash, gboolean is_tree)
 	*hash = NULL;
 }
 
-static void ygtk_wizard_finalize (GObject *object)
+static void ygtk_wizard_destroy (GtkObject *object)
 {
+	GTK_OBJECT_CLASS (ygtk_wizard_parent_class)->destroy (object);
+
 	YGtkWizard *wizard = YGTK_WIZARD (object);
 	wizard->help_button = NULL;  // dialog unmap will try to access this
 	destroy_hash (&wizard->menu_ids, FALSE);
@@ -681,7 +684,6 @@ static void ygtk_wizard_finalize (GObject *object)
 		ygtk_help_text_destroy (wizard->m_help);
 		wizard->m_help = NULL;
 	}
-	G_OBJECT_CLASS (ygtk_wizard_parent_class)->finalize (object);
 }
 
 GtkWidget *ygtk_wizard_new (void)
@@ -700,13 +702,10 @@ static void tree_item_selected_cb (GtkTreeView *tree_view, YGtkWizard *wizard)
 		g_signal_emit (wizard, action_triggered_signal, 0, id, G_TYPE_STRING);
 }
 
-void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *child)
+void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget)
 {
-	if (wizard->m_child)
-		gtk_container_remove (GTK_CONTAINER (wizard->m_pane), wizard->m_child);
-	wizard->m_child = child;
-	if (child)
-		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, TRUE);
+	wizard->m_child = widget;
+	gtk_paned_pack2 (GTK_PANED (wizard->m_pane), widget, TRUE, TRUE);
 }
 
 static gboolean ygtk_wizard_set_information_expose_cb (GtkWidget *widget, GdkEventExpose *event,
@@ -900,9 +899,6 @@ void ygtk_wizard_set_button_ptr_id (YGtkWizard *wizard, GtkWidget *button, gpoin
 	g_object_set_data (G_OBJECT (button), "ptr-id", id);
 }
 
-void ygtk_wizard_set_default_button (YGtkWizard *wizard, GtkWidget *button)
-{ wizard->m_default_button = button; }
-
 void ygtk_wizard_enable_button (YGtkWizard *wizard, GtkWidget *button, gboolean enable)
 {
 	gtk_widget_set_sensitive (button, enable);
@@ -1079,8 +1075,8 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	widget_class->realize = ygtk_wizard_realize;
 	widget_class->map = ygtk_wizard_map;
 
-	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
-	gobject_class->finalize = ygtk_wizard_finalize;
+	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
+	gtkobject_class->destroy = ygtk_wizard_destroy;
 
 	action_triggered_signal = g_signal_new ("action-triggered",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,

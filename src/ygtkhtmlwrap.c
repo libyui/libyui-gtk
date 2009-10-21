@@ -182,7 +182,7 @@ gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
 }
 
 static WebKitNavigationResponse ygtk_webkit_navigation_requested_cb (
-	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, LinkClickedCb callback)
+	WebKitWebView *view, WebKitWebFrame *frame, WebKitNetworkRequest *request, void (*callback) (GtkWidget *widget, const gchar *uri, gpointer d))
 {
 	const gchar *uri = webkit_network_request_get_uri (request);
 	// look for set_text to see why we need to cut the uri in some cases
@@ -194,7 +194,7 @@ static WebKitNavigationResponse ygtk_webkit_navigation_requested_cb (
 	return WEBKIT_NAVIGATION_RESPONSE_IGNORE;
 }
 
-void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, LinkClickedCb callback, gpointer data)
+void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
 {
 	g_object_set_data (G_OBJECT (widget), "pointer", data);
 	g_signal_connect (G_OBJECT (widget), "navigation-requested",
@@ -279,9 +279,9 @@ gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
 	return gtk_html_engine_search_next (GTK_HTML (widget));
 }
 
-void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, LinkClickedCb callback, gpointer data)
+void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
 {
-	g_signal_connect (G_OBJECT (widget), "link-clicked", G_CALLBACK (callback), data);
+	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
 void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename)
@@ -304,11 +304,7 @@ void ygtk_html_wrap_init (GtkWidget *widget)
 
 void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean plain_mode)
 {
-	YGtkRichText *rtext = YGTK_RICH_TEXT (widget);
-	if (plain_mode)
-		ygtk_rich_text_set_plain_text (rtext, text);
-	else
-		ygtk_rich_text_set_text (rtext, text);
+	ygtk_rich_text_set_text (YGTK_RICH_TEXT (widget), text, plain_mode);
 }
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
@@ -328,9 +324,9 @@ gboolean ygtk_html_wrap_search_next (GtkWidget *widget, const gchar *text)
 	return ygtk_rich_text_forward_mark (YGTK_RICH_TEXT (widget), text);
 }
 
-void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, LinkClickedCb callback, gpointer data)
+void ygtk_html_wrap_connect_link_clicked (GtkWidget *widget, GCallback callback, gpointer data)
 {
-	g_signal_connect (G_OBJECT (widget), "link-clicked", G_CALLBACK (callback), data);
+	g_signal_connect (G_OBJECT (widget), "link-clicked", callback, data);
 }
 
 void ygtk_html_wrap_set_background (GtkWidget *widget, GdkPixbuf *pixbuf, const gchar *filename)

@@ -171,8 +171,6 @@ static YGtkTooltip *ygtk_tooltip_create (const gchar *text, const gchar *stock)
 	tooltip = ygtk_tooltip_new();
 	label = gtk_label_new (text);
 	gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
-	gtk_label_set_line_wrap (GTK_LABEL (label), TRUE);
-	gtk_widget_set_size_request (label, 200, -1);
 	box = gtk_hbox_new (FALSE, 6);
 	if (stock) {
 		image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);

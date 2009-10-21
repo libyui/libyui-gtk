@@ -9,7 +9,7 @@
 #ifndef YGTK_BAR_GRAPH_H
 #define YGTK_BAR_GRAPH_H
 
-#include <gtk/gtkframe.h>
+#include "ygtkratiobox.h"
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_BAR_GRAPH            (ygtk_bar_graph_get_type ())
@@ -29,14 +29,14 @@ typedef struct _YGtkBarGraphClass  YGtkBarGraphClass;
 
 struct _YGtkBarGraph
 {
-	GtkFrame parent;
+	YGtkRatioHBox parent;
 	// members:
 	guint flat : 2;
 };
 
 struct _YGtkBarGraphClass
 {
-	GtkFrameClass parent_class;
+	YGtkRatioHBoxClass parent_class;
 };
 
 GtkWidget *ygtk_bar_graph_new (void);

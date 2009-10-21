@@ -2,8 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#define YUILogComponent "gtk"
-#include "config.h"
+#include <config.h>
 #include <gtk/gtk.h>
 #include <YTreeItem.h>
 #include "YGSelectionModel.h"

@@ -6,18 +6,15 @@
 // check the header file for information about this widget
 
 #include <config.h>
-#include "ygtkratiobox.h"
 #include "ygtkbargraph.h"
 #include <gtk/gtk.h>
 
-G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, GTK_TYPE_FRAME)
+G_DEFINE_TYPE (YGtkBarGraph, ygtk_bar_graph, YGTK_TYPE_RATIO_HBOX)
 
 static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 {
-	GtkWidget *box = ygtk_ratio_hbox_new (0);
-	gtk_widget_show (box);
-	gtk_container_add (GTK_CONTAINER (bar), box);
-	ygtk_bar_graph_set_style (bar, TRUE);
+//	ygtk_ratio_box_set_homogeneous (YGTK_RATIO_BOX (bar), TRUE);
+	gtk_container_set_border_width (GTK_CONTAINER (bar), 12);
 }
 
 static void ygtk_bar_graph_size_request (GtkWidget *widget, GtkRequisition *requisition)
@@ -33,7 +30,7 @@ GtkWidget *ygtk_bar_graph_new (void)
 
 void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 {
-	YGtkRatioBox *box = YGTK_RATIO_BOX (GTK_BIN (bar)->child);
+	YGtkRatioBox *box = YGTK_RATIO_BOX (bar);
 
 	// Remove the ones in excess
 	guint i;
@@ -59,8 +56,8 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 
 static GtkWidget *ygtk_bar_graph_get_label (YGtkBarGraph *bar, int index, GtkWidget **b)
 {
-	YGtkRatioBox *hbox = YGTK_RATIO_BOX (GTK_BIN (bar)->child);
-	GtkWidget *box = ((YGtkRatioBoxChild *) g_list_nth_data (hbox->children, index))->widget;
+	GtkWidget *box = ((YGtkRatioBoxChild *) g_list_nth_data (
+		YGTK_RATIO_BOX (bar)->children, index))->widget;
 	if (b) *b = box;
 	return gtk_bin_get_child (GTK_BIN (box));
 }
@@ -95,8 +92,7 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 
 	// Set proportion
 	gtk_widget_set_size_request (box, 0, -1);
-	YGtkRatioBox *hbox = YGTK_RATIO_BOX (GTK_BIN (bar)->child);
-	ygtk_ratio_box_set_child_packing (hbox, box, MAX (value, 1));
+	ygtk_ratio_box_set_child_packing (YGTK_RATIO_BOX (bar), box, MAX (value, 1));
 
 	// Set background color
 	// The Tango palette
@@ -139,8 +135,6 @@ void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *labe
 void ygtk_bar_graph_set_style (YGtkBarGraph *bar, gboolean flat)
 {
 	bar->flat = flat;
-	GtkShadowType shadow = flat ? GTK_SHADOW_OUT : GTK_SHADOW_NONE;
-	gtk_frame_set_shadow_type (GTK_FRAME (bar), shadow);
 }
 
 void ygtk_bar_graph_customize_bg (YGtkBarGraph *bar, int index, GdkColor *color)

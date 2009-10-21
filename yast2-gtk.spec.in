@@ -1,3 +1,22 @@
+#
+# spec file for package yast2-gtk (Version 2.17.1)
+#
+# Copyright (c) 2008 SUSE LINUX Products GmbH, Nuernberg, Germany.
+#
+# All modifications and additions to the file contributed by third parties
+# remain the property of their copyright owners, unless otherwise agreed
+# upon. The license for this file, and modifications and additions to the
+# file, is the same license as for the pristine package itself (unless the
+# license for the pristine package is not an Open Source License, in which
+# case the license is the MIT License). An "Open Source License" is a
+# license that conforms to the Open Source Definition (Version 1.9)
+# published by the Open Source Initiative.
+
+# Please submit bugfixes or comments via http://bugs.opensuse.org/
+#
+
+# norootforbuild
+
 Url:            http://en.opensuse.org/YaST2-GTK
 
 Name:		yast2-gtk
@@ -43,4 +62,3 @@ rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
 %{_libdir}/YaST2/plugin/libpy2gtk.so.*
 %{_libdir}/YaST2/plugin/libpy2gtk.so
 %{_datadir}/YaST2/gtk
-
