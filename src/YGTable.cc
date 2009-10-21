@@ -597,7 +597,7 @@ public:
 		GtkTreeIter iter;
 		if (gtk_tree_selection_get_selected (selection, NULL, &iter))
 			pThis->expand (&iter);
-		YGTable::selection_changed_cb (selection, pThis);
+		YGTableView::selection_changed_cb (selection, pThis);
 	}
 
 	virtual unsigned int getMinSize (YUIDimension dim)
