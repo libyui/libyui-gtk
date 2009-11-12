@@ -156,7 +156,6 @@ public:
 		return 80;
 	}
 
-protected:
 	// toggled by user (through clicking on the renderer or some other action)
 	void toggle (GtkTreePath *path, gint column)
 	{
@@ -597,7 +596,7 @@ public:
 		GtkTreeIter iter;
 		if (gtk_tree_selection_get_selected (selection, NULL, &iter))
 			pThis->expand (&iter);
-		YGTable::selection_changed_cb (selection, pThis);
+		YGTableView::selection_changed_cb (selection, pThis);
 	}
 
 	virtual unsigned int getMinSize (YUIDimension dim)

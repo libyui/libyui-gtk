@@ -1,3 +1,8 @@
+Wed Nov 11 14:45:12 CET 2009 - mkudlvasr@novell.com
+
+- backport PackageSelector and zyppwrapper changes from 11.2
+- Version 2.17.15
+
 -------------------------------------------------------------------
 Mon Aug  3 12:03:16 CEST 2009 - tgoettlicher@suse.de
 
