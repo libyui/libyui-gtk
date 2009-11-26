@@ -2,7 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#include <config.h>
+#define YUILogComponent "gtk"
+#include "config.h"
 #include <stdarg.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -67,7 +68,7 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 {
 	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 
-	if (type == GTK_TYPE_WINDOW)
+	if (type == GTK_TYPE_WINDOW || type == GTK_TYPE_MENU)
 		m_adj_size = m_widget;
 	else {
 		m_adj_size = ygtk_adj_size_new();
@@ -91,7 +92,6 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 
 YGWidget::~YGWidget()
 {
-	IMPL
 	delete m_signals;
 	m_signals = 0;
 	if (YGUI::ui()->eventPendingFor (m_ywidget))
@@ -193,6 +193,10 @@ void YGWidget::emitEvent (YEvent::EventReason reason, EventFlags flags)
 		}
 	};
 
+#if YAST2_VERSION > 2018003
+	if (reason == YEvent::ContextMenuActivated && !m_ywidget->notifyContextMenu())
+		;  // cancel
+#endif
 	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify()) {
 		YWidgetEvent *event = new YWidgetEvent (m_ywidget, reason);
 		if (flags & DELAY_EVENT)
@@ -216,10 +220,7 @@ void YGWidget::unblockSignals()
 { if (m_signals) m_signals->unblock(); }
 
 void YGWidget::setBorder (unsigned int border)
-{
-	IMPL
-	gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border);
-}
+{ gtk_container_set_border_width (GTK_CONTAINER (m_adj_size), border); }
 
 /* YGLabeledWidget follows */
 

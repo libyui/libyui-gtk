@@ -2,7 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#include <config.h>
+#define YUILogComponent "gtk"
+#include "config.h"
 #include <YGUI.h>
 #include "YGUtils.h"
 #include "YComboBox.h"

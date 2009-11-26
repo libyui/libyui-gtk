@@ -8,11 +8,15 @@
 #include <config.h>
 #include "ygtkcellrenderertextpixbuf.h"
 
+extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
+
 #define PIXBUF_TEXT_SPACING 4
 
 enum {
 	PROP_0,
-	PROP_PIXBUF
+	PROP_PIXBUF,
+	PROP_STOCK_ID,
+	PROP_STOCK_SIZE,
 };
 
 G_DEFINE_TYPE (YGtkCellRendererTextPixbuf, ygtk_cell_renderer_text_pixbuf, GTK_TYPE_CELL_RENDERER_TEXT)
@@ -21,19 +25,28 @@ static void ygtk_cell_renderer_text_pixbuf_init (YGtkCellRendererTextPixbuf *tpc
 {
 	GtkCellRenderer *cell = GTK_CELL_RENDERER (tpcell);
 	cell->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE;
-	cell->xalign = 0.0;
+	cell->xpad = cell->ypad = 0;
+	cell->xalign = 0;
 	cell->yalign = 0.5;
-	cell->xpad = 0;
-	cell->ypad = 0;
+	tpcell->stock_size = GTK_ICON_SIZE_MENU;
+}
+
+static void unset_image_properties (YGtkCellRendererTextPixbuf *cell)
+{
+	if (cell->stock_id) {
+		g_free (cell->stock_id);
+		cell->stock_id = NULL;
+	}
+	if (cell->pixbuf) {
+		g_object_unref (cell->pixbuf);
+		cell->pixbuf = NULL;
+	}
 }
 
 static void ygtk_cell_renderer_text_pixbuf_finalize (GObject *object)
 {
 	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
-	if (tpcell->pixbuf) {
-		g_object_unref (G_OBJECT (tpcell->pixbuf));
-		tpcell->pixbuf = NULL;
-	}
+	unset_image_properties (tpcell);
 	G_OBJECT_CLASS (ygtk_cell_renderer_text_pixbuf_parent_class)->finalize (object);
 }
 
@@ -45,6 +58,12 @@ static void ygtk_cell_renderer_text_pixbuf_get_property (GObject *object,
 		switch (param_id) {
 			case PROP_PIXBUF:
 				g_value_set_object (value, G_OBJECT (tpcell->pixbuf));
+				break;
+			case PROP_STOCK_ID:
+				g_value_set_string (value, tpcell->stock_id);
+				break;
+			case PROP_STOCK_SIZE:
+				g_value_set_uint (value, tpcell->stock_size);
 				break;
 		}
 	}
@@ -60,9 +79,15 @@ static void ygtk_cell_renderer_text_pixbuf_set_property (GObject *object,
 		YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (object);
 		switch (param_id) {
 			case PROP_PIXBUF:
-				if (tpcell->pixbuf)
-					g_object_unref (G_OBJECT (tpcell->pixbuf));
+				unset_image_properties (tpcell);
 				tpcell->pixbuf = (GdkPixbuf *) g_value_dup_object (value);
+				break;
+			case PROP_STOCK_ID:
+				unset_image_properties (tpcell);
+				tpcell->stock_id = g_value_dup_string (value);
+				break;
+			case PROP_STOCK_SIZE:
+				tpcell->stock_size = g_value_get_uint (value);
 				break;
 		}
 	}
@@ -79,42 +104,82 @@ static PangoLayout *create_layout (YGtkCellRendererTextPixbuf *tpcell, GtkWidget
 	return NULL;
 }
 
-#define XPAD 1
-#define YPAD 0
+static void ensure_pixbuf (YGtkCellRendererTextPixbuf *cell, GtkWidget *widget)
+{
+	if (cell->stock_id && !cell->pixbuf)
+		cell->pixbuf = gtk_widget_render_icon (widget, cell->stock_id, cell->stock_size, NULL);
+}
+
+static void ygtk_cell_renderer_text_pixbuf_get_size_full (GtkCellRenderer *cell,
+	GtkWidget *widget, GdkRectangle *cell_area, gint *_xoffset, gint *_yoffset,
+	gint *_width, gint *_height, gint *_pixbuf_xoffset, gint *_pixbuf_yoffset,
+	gint *_pixbuf_width, gint *_pixbuf_height, gint *_text_xoffset, gint *_text_yoffset)
+{
+	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (cell);
+	ensure_pixbuf (tpcell, widget);
+
+	int pixbuf_width = 0, pixbuf_height = 0;
+	if (tpcell->pixbuf) {
+		pixbuf_width = gdk_pixbuf_get_width (tpcell->pixbuf);
+		pixbuf_height = gdk_pixbuf_get_height (tpcell->pixbuf);
+	}
+
+	PangoLayout *layout = create_layout (tpcell, widget);
+	int text_width = 0, text_height = 0;
+	if (layout) {
+		PangoRectangle rect;
+		pango_layout_get_pixel_extents (layout, NULL, &rect);
+		text_width = rect.x + rect.width;
+		text_height = rect.y + rect.height;
+	}
+
+	int width, height;
+	width = pixbuf_width + text_width;
+	if (pixbuf_width && text_width)
+		width += PIXBUF_TEXT_SPACING;
+	height = MAX (pixbuf_height, text_height);
+
+	if (cell_area) {
+		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+		gfloat xalign = cell->xalign, yalign = cell->yalign;
+		if (reverse)
+			xalign = 1.0 - xalign;
+
+		int cell_width = cell_area->width - cell->xpad*2,
+		    cell_height = cell_area->height - cell->ypad*2;
+		int xoffset = (xalign * (cell_width - width)) + cell->xpad;
+		int yoffset = (yalign * (cell_height - height)) + cell->ypad;
+		if (_xoffset) *_xoffset = xoffset;
+		if (_yoffset) *_yoffset = yoffset;
+
+		int text_x = xoffset, text_y;
+		if (pixbuf_width && !reverse)
+			text_x += (pixbuf_width + PIXBUF_TEXT_SPACING);
+		text_y = (yalign * (cell_height - text_height)) + cell->ypad;
+
+		int pixbuf_x = xoffset, pixbuf_y;
+		if (text_width && reverse)
+			pixbuf_x += (text_width + PIXBUF_TEXT_SPACING);
+		pixbuf_y = (yalign * (cell_height - pixbuf_height)) + cell->ypad;
+
+		if (_pixbuf_xoffset) *_pixbuf_xoffset = pixbuf_x;
+		if (_pixbuf_yoffset) *_pixbuf_yoffset = pixbuf_y;
+		if (_pixbuf_width) *_pixbuf_width = pixbuf_width;
+		if (_pixbuf_height) *_pixbuf_height = pixbuf_height;
+		if (_text_xoffset) *_text_xoffset = text_x;
+		if (_text_yoffset) *_text_yoffset = text_y;
+	}
+
+	if (_width) *_width = width + (cell->xpad * 2);
+	if (_height) *_height = height + (cell->ypad * 2);
+}
 
 static void ygtk_cell_renderer_text_pixbuf_get_size (GtkCellRenderer *cell,
 	GtkWidget *widget, GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
 	gint *width, gint *height)
 {
-	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (cell);
-	YGtkCellRendererTextPixbuf *tpcell = YGTK_CELL_RENDERER_TEXT_PIXBUF (cell);
-
-	// will be calculated at expose, as both pixbuf and text have their offsets...
-	if (xoffset) *xoffset = 0;
-	if (yoffset) *yoffset = 0;
-	if (!width || !height)
-		return;
-	*width = 0;
-	*height = 0;
-
-	if (tpcell->pixbuf) {
-		*width += gdk_pixbuf_get_width (tpcell->pixbuf);
-		*height = MAX (*height, gdk_pixbuf_get_height (tpcell->pixbuf));
-	}
-	if (tcell->text) {
-		if (tpcell->pixbuf)
-			*width += PIXBUF_TEXT_SPACING;
-
-		PangoLayout *layout = create_layout (tpcell, widget);
-		int lw, lh;
-		pango_layout_get_pixel_size (layout, &lw, &lh);
-		*width += lw;
-		*height = MAX (*height, lh);
-
-		g_object_unref (G_OBJECT (layout));
-	}
-	*width += (cell->xpad+XPAD)*2;
-	*height += (cell->ypad+YPAD)*2;
+	ygtk_cell_renderer_text_pixbuf_get_size_full (cell, widget, cell_area,
+		xoffset, yoffset, width, height, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
@@ -142,55 +207,28 @@ static void ygtk_cell_renderer_text_pixbuf_render (GtkCellRenderer *cell,
 			state = GTK_STATE_NORMAL;
 	}
 
-	// positioning
-
-	gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
-	gfloat xalign = cell->xalign, yalign = cell->yalign;
-	if (reverse)
-		xalign = 1.0 - xalign;
-
-	GdkPixbuf *pixbuf = tpcell->pixbuf;
-	int pixbuf_width = 0, pixbuf_height = 0;
-	if (pixbuf) {
-		pixbuf_width = gdk_pixbuf_get_width (pixbuf);
-		pixbuf_height = gdk_pixbuf_get_height (pixbuf);
-	}
-
-	PangoLayout *layout = create_layout (tpcell, widget);
-	int text_width = 0, text_height = 0;
-	if (layout) {
-		PangoRectangle rect;
-		pango_layout_get_pixel_extents (layout, NULL, &rect);
-		text_width = rect.width;
-		text_height = rect.height;
-	}
-
-	int spacing = (text_width && pixbuf_width) ? PIXBUF_TEXT_SPACING : 0;
-	int offset_x = xalign * (cell_area->width - (text_width + pixbuf_width + spacing));
-
-	int text_x = offset_x, text_y;
-	if (pixbuf_width && !reverse)
-		text_x += (pixbuf_width + spacing);
-	text_y = yalign * (cell_area->height - text_height);
-
-	int pixbuf_x = offset_x, pixbuf_y;
-	if (text_width && reverse)
-		pixbuf_x += (text_width + spacing);
-	pixbuf_y = yalign * (cell_area->height - pixbuf_height);
+	int text_xoffset, text_yoffset, pixbuf_xoffset, pixbuf_yoffset, pixbuf_width,
+	    pixbuf_height;
+	ygtk_cell_renderer_text_pixbuf_get_size_full (cell, widget, cell_area,
+		NULL, NULL, NULL, NULL, &pixbuf_xoffset, &pixbuf_yoffset, &pixbuf_width,
+		&pixbuf_height, &text_xoffset, &text_yoffset);
 
 	// paint
-	int x = cell_area->x + cell->xpad+XPAD, y = cell_area->y + cell->ypad+YPAD;
-	if (pixbuf) {
+	ensure_pixbuf (tpcell, widget);
+	if (tpcell->pixbuf) {
+		int x = cell_area->x + pixbuf_xoffset, y = cell_area->y + pixbuf_yoffset;
 		cairo_t *cr = gdk_cairo_create (window);
-		gdk_cairo_set_source_pixbuf (cr, pixbuf, pixbuf_x+x, pixbuf_y+y);
-		cairo_rectangle (cr, pixbuf_x+x, pixbuf_y+y, pixbuf_width, pixbuf_height);
+		gdk_cairo_set_source_pixbuf (cr, tpcell->pixbuf, x, y);
+		cairo_rectangle (cr, x, y, pixbuf_width, pixbuf_height);
 		cairo_fill (cr);
 		cairo_destroy (cr);
 	}
+	PangoLayout *layout = create_layout (tpcell, widget);
 	if (layout) {
+		int x = cell_area->x + text_xoffset, y = cell_area->y + text_yoffset;
 		GtkStyle *style = gtk_widget_get_style (widget);
 		gtk_paint_layout (style, window, state, TRUE, expose_area, widget,
-			              "cellrenderertext", text_x+x, text_y+y, layout);
+			              "cellrenderertext", x, y, layout);
 		g_object_unref (G_OBJECT (layout));
 	}
 }
@@ -211,8 +249,14 @@ static void ygtk_cell_renderer_text_pixbuf_class_init (YGtkCellRendererTextPixbu
 	cell_class->get_size = ygtk_cell_renderer_text_pixbuf_get_size;
 	cell_class->render   = ygtk_cell_renderer_text_pixbuf_render;
 
+	GParamFlags readwrite_flag =
+		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB;
 	g_object_class_install_property (object_class, PROP_PIXBUF,
-		g_param_spec_object ("pixbuf", "Image", "Side image", GDK_TYPE_PIXBUF,
-		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
+		g_param_spec_object ("pixbuf", "Image", "Side image", GDK_TYPE_PIXBUF, readwrite_flag));
+	g_object_class_install_property (object_class, PROP_STOCK_ID,
+		g_param_spec_string ("stock-id", "Stock ID", "Stock icon to render", NULL, readwrite_flag));
+	g_object_class_install_property (object_class, PROP_STOCK_SIZE,
+		g_param_spec_uint ("stock-size", "Size", "GtkIconSize of the rendered icon",
+		0, G_MAXUINT, GTK_ICON_SIZE_MENU, readwrite_flag));
 }
 

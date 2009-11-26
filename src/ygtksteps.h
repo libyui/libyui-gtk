@@ -39,7 +39,7 @@ typedef struct _YGtkSteps
 
 	// private:
 	gint current_step;
-	PangoLayout *check_mark_layout, *current_mark_layout;
+	PangoLayout *check_mark_layout, *current_mark_layout, *todo_mark_layout;
 	// for current_mark little animation
 	guint current_mark_timeout_id, current_mark_frame;
 	

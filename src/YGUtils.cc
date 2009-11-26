@@ -1,11 +1,16 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
+/*
+  Textdomain "yast2-gtk"
+ */
 
-#include <config.h>
+#define YUILogComponent "gtk"
+#include "config.h"
 #include <string.h>
-#include "YGUI.h"
 #include "YGUtils.h"
+#include "YGUI.h"
+#include "YGi18n.h"
 
 static inline void skipSpace (const char *instr, int *i)
 { while (g_ascii_isspace (instr[*i])) (*i)++; }
@@ -395,15 +400,15 @@ static gboolean scroll_down_cb (void *pData)
 	gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
 	return FALSE;
 }
+
 void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
-	// for some widgets, we need to change adjustment before moving down...
-	gtk_adjustment_set_value (vadj, vadj->lower);
-	if (!top) {
+	if (top)
+		gtk_adjustment_set_value (vadj, vadj->lower);
+	else
 		// since we usually want to call this together with a text change, we
 		// must wait till that gets in effect
-		g_timeout_add_full (G_PRIORITY_LOW, 25, scroll_down_cb, vadj, NULL);
-	}
+		g_idle_add_full (G_PRIORITY_LOW, scroll_down_cb, vadj, NULL);
 }
 
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)
@@ -568,6 +573,9 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
+		firstTime = false;
+
+		// match GTK stock labels to yast ones
 		GSList *list = gtk_stock_list_ids();
 		for (GSList *i = list; i; i = i->next) {
 			gchar *id = (gchar *) i->data;
@@ -585,7 +593,20 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 			g_free (id);
 		}
 		g_slist_free (list);
-		firstTime = false;
+
+		stockMap [_("Apply")] = GTK_STOCK_APPLY;
+		stockMap [_("Accept")] = GTK_STOCK_APPLY;
+		stockMap [_("OK")] = GTK_STOCK_OK;
+		stockMap [_("Cancel")] = GTK_STOCK_CANCEL;
+		stockMap [_("Yes")] = GTK_STOCK_YES;
+		stockMap [_("No")] = GTK_STOCK_NO;
+		stockMap [_("Add")] = GTK_STOCK_ADD;
+		stockMap [_("Edit")] = GTK_STOCK_EDIT;
+		stockMap [_("Delete")] = GTK_STOCK_DELETE;
+		stockMap [_("Up")] = GTK_STOCK_GO_UP;
+		stockMap [_("Down")] = GTK_STOCK_GO_DOWN;
+		stockMap [_("Enable")] = GTK_STOCK_YES;
+		stockMap [_("Disable")] = GTK_STOCK_NO;
 	}
 
 	std::string id = cutUnderline (label);
@@ -605,8 +626,8 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		if (gtk_style_lookup_icon_set (button->style, icon)) {
 			// we want to use GtkImage stock mode so it honors sensitive
 			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (button), image);
 			gtk_widget_show (image);
+			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 	}
 	else {

@@ -14,6 +14,8 @@
    YGtkFindEntry is a convinience widget that has a find icon, with an
    optional menu, at the left, and an erase icon at the right. It can
    interact with an option image menu, and does auto-completion.
+
+   TODO: deprecate in favor of using GtkEntry 2.16 new APIs.
 */
 
 #ifndef YGTK_FIND_ENTRY_H

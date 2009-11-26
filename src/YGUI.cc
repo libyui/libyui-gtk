@@ -6,7 +6,6 @@
   Textdomain "yast2-gtk"
  */
 
-#include <config.h>
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -34,14 +33,27 @@ static void errorMsg (const char *msg)
 #define DEFAULT_MACRO_FILE_NAME  "macro.ycp"
 #define BUSY_CURSOR_TIMEOUT 250
 
+YUI *createUI( bool withThreads )
+{
+	static YGUI *ui = 0;
+	if (!ui)
+		ui = new YGUI (withThreads);
+	return ui;
+}
+
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
-	IMPL
 	m_have_wm = true;
 	m_no_border = m_fullscreen = false;
+    m_default_width = (m_default_height = 0);
 
     YGUI::setTextdomain( TEXTDOMAIN );
+
+	// If we're running without threads, initialize Gtk stuff
+	// This enables standalone libyui use Gtk interface
+	if (!with_threads)
+	    checkInit();
 
 	// without this none of the (default) threading action works ...
 	topmostConstructorHasFinished();
@@ -84,7 +96,12 @@ static void print_log (const gchar *domain, GLogLevelFlags level, const gchar *m
 	// intern the domain - that can be allocated (or belong to a transient
 	// plugin's address space).
 	const char *component = domain ? g_intern_string (domain) : "yast2-gtk";
-	YUILog::instance()->log (ylevel, component, "yast2-gtk", 0, "") << message;
+	YUILog::instance()->log (ylevel, component, "yast2-gtk", 0, "") << message << std::endl;
+#if 0  // uncomment to put a stop to gdb
+	static int bugStop = 0;
+	if (bugStop-- <= 0)
+		abort();
+#endif
 }
 
 void YGUI::checkInit()
@@ -97,12 +114,11 @@ void YGUI::checkInit()
 	YCommandLine cmdLine;
 	int argc = cmdLine.argc();
 	char **argv = cmdLine.argv();
-
 	for (int i = 1; i < argc; i++) {
 		const char *argp = argv[i];
-		if (!argp) continue;
 		if (argp[0] != '-') {
-			//printf ("Warning: Unknown argument '%s'\n", argp);
+			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update"))
+				YGUI::pkgSelectorSize (&m_default_width, &m_default_height);
 			continue;
 		}
 		argp++;
@@ -116,22 +132,18 @@ void YGUI::checkInit()
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
 			printf (
-				 "Command line options for the YaST2 Gtk UI:\n"
-				 "\n"
+				 "Command line options for the YaST2 Gtk UI:\n\n"
 				 "--no-wm       assume no window manager is running\n"
 				 "--noborder    no window manager border for main dialogs\n"
 				 "--fullscreen  use full screen for main dialogs\n"
-//				 "--geomtry WxH sets a default size of W per H to main dialogs\n"
+//				 "--geometry WxH sets a default size of W per H to main dialogs\n"
 				 "--nothreads   run without additional UI threads\n"
 				 "--help        prints this help text\n"
 				 "\n"
 				 );
 			exit (0);
 		}
-/*
-		else
-			printf ("Warning: Unknown argument '--%s'\n", argp);
-*/
+		else if (pkgSelectorParse (argp)) ;
 	}
 
 	gtk_init (&argc, &argv);
@@ -152,7 +164,6 @@ static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
 
 void YGUI::idleLoop (int fd_ycp)
 {
-	IMPL
 	// The rational for this is that we need somewhere to run
 	// the magic 'main' thread, that can process thread unsafe
 	// incoming CORBA messages for us
@@ -175,7 +186,6 @@ void YGUI::idleLoop (int fd_ycp)
 
 static gboolean user_input_timeout_cb (YGUI *pThis)
 {
-	IMPL
 	if (!pThis->pendingEvent())
 		pThis->sendEvent (new YTimeoutEvent());
 	return FALSE;
@@ -184,7 +194,6 @@ static gboolean user_input_timeout_cb (YGUI *pThis)
 // utility that implements both userInput() and pollInput()
 YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 {
-	IMPL
 	checkInit();
 	if (!YDialog::currentDialog (false))
 		return NULL;
@@ -212,8 +221,11 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	if (timeout)
 		g_source_remove (timeout);
 
-	if (block)  // if YCP keeps working for more than X time, set busy cursor
+	if (block) {  // if YCP keeps working for more than X time, set busy cursor
+		if (busy_timeout)
+			g_source_remove (busy_timeout);
 		busy_timeout = g_timeout_add (BUSY_CURSOR_TIMEOUT, busy_timeout_cb, this);
+	}
 	return event;
 }
 
@@ -325,14 +337,16 @@ void YGUI::askSaveLogs()
 
 //** YGApplication
 
+#define ICONDIR THEMEDIR "/icons/22x22/apps/"
+
 YGApplication::YGApplication()
 {
-	setIconBasePath (ICON_DIR);
+	setIconBasePath (ICONDIR);
 }
 
-void YGApplication::makeScreenShot (string filename)
+void YGApplication::makeScreenShot (const std::string &_filename)
 {
-	IMPL
+	std::string filename (_filename);
 	bool interactive = filename.empty();
 
 	GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());
@@ -435,7 +449,6 @@ void YGApplication::beep()
 std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title)
 {
-	IMPL
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title.c_str(),
 		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -499,45 +512,35 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 
 std::string YGApplication::askForExistingDirectory (
 	const std::string &path, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path,
-	                              "", title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, path, "", title); }
 
 std::string YGApplication::askForExistingFile (
 	const std::string &path, const std::string &filter, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN, path, filter, title); }
 
 std::string YGApplication::askForSaveFileName (
 	const std::string &path, const std::string &filter, const std::string &title)
-{
-	IMPL
-	return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title);
-}
+{ return askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE, path, filter, title); }
 
 std::string YGApplication::glyph (const std::string &sym)
 {
 	bool reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 	if (sym == YUIGlyph_ArrowLeft)
-		return reverse ? "\u2192" : "\u2190";
+		return reverse ? "\u25b6" : "\u25c0";
 	if (sym == YUIGlyph_ArrowRight)
-		return reverse ? "\u2190" : "\u2192";
+		return reverse ? "\u25c0" : "\u25b6";
 	if (sym == YUIGlyph_ArrowUp)
-		return "\u2191";
+		return "\u25b2";
 	if (sym == YUIGlyph_ArrowDown)
-		return "\u2193";
+		return "\u25bc";
 	if (sym == YUIGlyph_CheckMark)
 		return "\u2714";
 	if (sym == YUIGlyph_BulletArrowRight)
 		return reverse ? "\u21e6" : "\u279c";
 	if (sym == YUIGlyph_BulletCircle)
-		return "\u274d";
+		return "\u26ab";
 	if (sym == YUIGlyph_BulletSquare)
-		return "\u274f";
+		return "\u25fe";
 	return "";
 }
 
@@ -792,7 +795,6 @@ void dumpYastHtml (YWidget *widget)
 		{ gtk_widget_destroy (GTK_WIDGET (dialog)); }
 	};
 
-	IMPL
 	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets HTML", NULL,
 		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 300);

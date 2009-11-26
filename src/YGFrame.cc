@@ -2,7 +2,8 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#include <config.h>
+#define YUILogComponent "gtk"
+#include "config.h"
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -20,9 +21,8 @@ GtkWidget *m_containee;
 public:
 	YGBaseFrame (YWidget *ywidget, YWidget *parent)
 	: YGWidget (ywidget, parent,
-	            GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
+	            GTK_TYPE_FRAME, /*"shadow-type", GTK_SHADOW_NONE, */NULL)
 	{
-		IMPL
 		m_containee = gtk_alignment_new (0, 0, 1, 1);
 		gtk_alignment_set_padding (GTK_ALIGNMENT (m_containee),
 			0, 0, CHILD_INDENTATION, 0);
@@ -87,10 +87,8 @@ public:
 	}
 
 	// YFrame
-
 	virtual void setLabel (const string &_str)
 	{
-		IMPL
 		GtkWidget *label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
 		string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (GTK_LABEL (label), str.c_str());
@@ -100,17 +98,13 @@ public:
 	YGWIDGET_IMPL_CONTAINER (YFrame)
 
 	// YGWidget
-
 	virtual string getDebugLabel() const
 	{ return label(); }
 };
 
 
 YFrame *YGWidgetFactory::createFrame (YWidget *parent, const string &label)
-{
-	IMPL
-	return new YGFrame (parent, label);
-}
+{ return new YGFrame (parent, label); }
 
 #include "YCheckBoxFrame.h"
 
@@ -121,7 +115,6 @@ public:
 	: YCheckBoxFrame (NULL, label, checked),
 	  YGBaseFrame (this, parent)
 	{
-		IMPL
 		GtkWidget *button = gtk_check_button_new_with_mnemonic("");
 		YGUtils::setWidgetFont (gtk_bin_get_child (GTK_BIN (button)), PANGO_STYLE_NORMAL,
 		                        PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
@@ -134,7 +127,6 @@ public:
 	}
 
 	// YCheckBoxFrame
-
 	virtual void setLabel (const string &_str)
 	{
 		GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
@@ -159,7 +151,6 @@ public:
     }
 
 	// YGWidget
-
 	virtual void doSetEnabled (bool enabled)
 	{
         GtkWidget *frame = getWidget();
@@ -185,10 +176,7 @@ private:
     }
 };
 
-YCheckBoxFrame *YGWidgetFactory::createCheckBoxFrame (YWidget *parent, const string &label,
-                                                      bool checked)
-{
-	IMPL
-	return new YGCheckBoxFrame (parent, label, checked);
-}
+YCheckBoxFrame *YGWidgetFactory::createCheckBoxFrame (
+	YWidget *parent, const string &label, bool checked)
+{ return new YGCheckBoxFrame (parent, label, checked); }
 

@@ -105,7 +105,7 @@ typedef struct _YGtkWizard
 	/* Widgets we need to access. */
 	GtkWidget *tree_view, *steps, *menu,
 	          *back_button, *abort_button, *next_button, *help_button,
-	          *release_notes_button;
+	          *release_notes_button, *m_default_button;
 
 	/* The help text. */
 	YGtkHelpText *m_help;
@@ -150,6 +150,7 @@ void ygtk_wizard_set_button_str_id (YGtkWizard *wizard, GtkWidget *button,
                                     const char *id);
 void ygtk_wizard_set_button_ptr_id (YGtkWizard *wizard, GtkWidget *button,
                                      gpointer id);
+void ygtk_wizard_set_default_button (YGtkWizard *wizard, GtkWidget *button);  // before realize
 
 void ygtk_wizard_set_extra_button (YGtkWizard *wizard, GtkWidget *widget);
 

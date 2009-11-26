@@ -74,7 +74,7 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 static void ygtk_tree_view_size_allocate (GtkWidget *widget, GtkAllocation *alloc)
 {
 	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->size_allocate (widget, alloc);
-
+#if 0  // this doesn't work so well on gtk 2.18.1
 	GtkTreeView *view = GTK_TREE_VIEW (widget);
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 	GList *paths;
@@ -86,6 +86,7 @@ static void ygtk_tree_view_size_allocate (GtkWidget *widget, GtkAllocation *allo
 	}
 	g_list_foreach (paths, (GFunc) gtk_tree_path_free, 0);
 	g_list_free (paths);
+#endif
 }
 
 

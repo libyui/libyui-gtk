@@ -6,8 +6,9 @@
   Textdomain "yast2-gtk"
  */
 
-#include <config.h>
-#include <YGUI.h>
+#define YUILogComponent "gtk"
+#include "config.h"
+#include "YGUI.h"
 #include "YGWidget.h"
 #include "YGi18n.h"
 
@@ -51,7 +52,6 @@ public:
 	// YProgressBar
 	virtual void setValue (int value)
 	{
-		IMPL
 		YProgressBar::setValue (value);
 		GtkProgressBar *bar = GTK_PROGRESS_BAR (getWidget());
 		float fraction = CLAMP ((float) value / maxValue(), 0, 1);
@@ -121,10 +121,7 @@ public:
 
 YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *parent,
 		const string &label, const string &filename, YFileSize_t expectedFileSize)
-{
-	IMPL
-	return new YGDownloadProgress (parent, label, filename, expectedFileSize);
-}
+{ return new YGDownloadProgress (parent, label, filename, expectedFileSize); }
 
 #include "ygtkratiobox.h"
 #include "YMultiProgressMeter.h"
@@ -187,9 +184,7 @@ public:
 
 YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget *parent,
 		YUIDimension dim, const vector <float> &maxValues)
-{
-	return new YGMultiProgressMeter (parent, dim, maxValues);
-}
+{ return new YGMultiProgressMeter (parent, dim, maxValues); }
 
 #include "YBusyIndicator.h"
 
@@ -258,8 +253,5 @@ public:
 };
 
 YBusyIndicator *YGWidgetFactory::createBusyIndicator (YWidget *parent, const string &label, int timeout)
-{
-	IMPL
-	return new YGBusyIndicator (parent, label, timeout);
-}
+{ return new YGBusyIndicator (parent, label, timeout); }
 

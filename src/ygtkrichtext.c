@@ -24,13 +24,10 @@ static GdkColor link_color = { 0, 0, 0, 0xeeee };
 // utilities
 // Looks at all tags covering the position of iter in the text view,
 // and returns the link the text points to, in case that text is a link.
-static const char *get_link (GtkTextView *text_view, gint x, gint y)
+static const char *get_link_at_iter (GtkTextView *text_view, GtkTextIter *iter)
 {
-	GtkTextIter iter;
-	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
-
 	char *link = NULL;
-	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
+	GSList *tags = gtk_text_iter_get_tags (iter), *tagp;
 	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
 		GtkTextTag *tag = (GtkTextTag*) tagp->data;
 		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
@@ -42,23 +39,27 @@ static const char *get_link (GtkTextView *text_view, gint x, gint y)
 		g_slist_free (tags);
 	return link;
 }
+static const char *get_link (GtkTextView *text_view, gint win_x, gint win_y)
+{
+	gint buffer_x, buffer_y;
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+		GTK_TEXT_WINDOW_WIDGET, win_x, win_y, &buffer_x, &buffer_y);
+	GtkTextIter iter;
+	gtk_text_view_get_iter_at_location (text_view, &iter, buffer_x, buffer_y);
+	return get_link_at_iter (text_view, &iter);
+}
 
 // callbacks
 // Links can also be activated by clicking.
 static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 {
-	GtkTextIter start, end;
-	GtkTextBuffer *buffer;
-	GdkEventButton *event;
-	gint x, y;
-
 	if (ev->type != GDK_BUTTON_RELEASE)
 		return FALSE;
-
-	event = (GdkEventButton *)ev;
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+	GdkEventButton *event = (GdkEventButton *) ev;
 	if (event->button != 1)
 		return FALSE;
-
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
 
 	// We shouldn't follow a link if the user is selecting something.
@@ -66,10 +67,7 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
 		return FALSE;
 
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
-
-	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
+	const char *link = get_link (GTK_TEXT_VIEW (text_view), event->x, event->y);
 	if (link)  // report link
 		g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
 	return FALSE;
@@ -180,12 +178,9 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 		    wy >= widget->allocation.height)
 			return;
 	}
-	gint bx, by;
-	gtk_text_view_window_to_buffer_coords (view, GTK_TEXT_WINDOW_WIDGET,
-	                                       wx, wy, &bx, &by);
 
 	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (view, bx, by) != NULL;
+	gboolean hovering = get_link (view, wx, wy) != NULL;
 
 	if (hovering != hovering_over_link) {
 		hovering_over_link = hovering;
@@ -382,8 +377,8 @@ rt_start_element (GMarkupParseContext *context,
 
 		// for tags like <br/>, GMarkup will pass them through the end
 		// tag callback too, so we'll deal with them there
-		else if (!g_ascii_strcasecmp (element_name, "br"))
-			;
+		else if (!g_ascii_strcasecmp (element_name, "br")) ;
+		else if (!g_ascii_strcasecmp (element_name, "hr")) ;
 
 		else
 		{
@@ -553,18 +548,16 @@ static void ygtk_rich_text_set_rtl (YGtkRichText *rtext)
 	} while (!gtk_text_iter_is_end (&iter));
 }
 
-void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)
+void ygtk_rich_text_set_plain_text (YGtkRichText* rtext, const gchar* text)
 {
-	GtkTextBuffer *buffer;
-	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_set_text (buffer, text, -1);
+}
 
-	if (plain_mode) {
-		gtk_text_buffer_set_text (buffer, text, -1);
-		return;
-	}
-
-	// remove any possible existing text
-	gtk_text_buffer_set_text (buffer, "", 0);
+void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text)
+{
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_set_text (buffer, "", 0);  // remove any existing text
 
 	GRTParseState state;
 	GRTParseState_init (&state, buffer);
@@ -691,7 +684,7 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 		g_object_ref (G_OBJECT (pixbuf));
 }
 
-void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
+static void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;

@@ -2,8 +2,9 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#include <config.h>
-#include <YGUI.h>
+#define YUILogComponent "gtk"
+#include "config.h"
+#include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "YDumbTab.h"
@@ -20,10 +21,9 @@ public:
 		: YDumbTab (NULL),
 		  YGWidget (this, parent, GTK_TYPE_NOTEBOOK, NULL)
 	{
-		IMPL
 		m_containee = gtk_event_box_new();
-		gtk_widget_show (m_containee);
 		g_object_ref_sink (G_OBJECT (m_containee));
+		gtk_widget_show (m_containee);
 
 		m_last_tab = 0;
 		// GTK+ keeps the notebook size set to the biggset page. We can't
@@ -34,9 +34,8 @@ public:
 		connect (getWidget(), "switch-page", G_CALLBACK (changed_tab_cb), this);
 	}
 
-	~YGDumbTab()
+	virtual ~YGDumbTab()
 	{
-		IMPL
 		gtk_widget_destroy (m_containee);
 		g_object_unref (G_OBJECT (m_containee));
 	}
@@ -84,11 +83,11 @@ public:
 
 	virtual void deleteAllItems()
 	{
-		YDumbTab::deleteAllItems();
 		GList *children = gtk_container_get_children (GTK_CONTAINER (getWidget()));
 		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (getWidget()), (GtkWidget *) i->data);
 		g_list_free (children);
+		YDumbTab::deleteAllItems();
 	}
 
 	// to re-use the same widget in all tabs (m_fixed), we will remove and
@@ -100,15 +99,12 @@ public:
 
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		int nb = gtk_notebook_get_current_page (notebook);
-		GtkWidget *tab = gtk_notebook_get_nth_page (notebook, nb);
-
-		gtk_container_add (GTK_CONTAINER (tab), m_containee);
-		m_last_tab = tab;
+		m_last_tab = gtk_notebook_get_nth_page (notebook, nb);
+		gtk_container_add (GTK_CONTAINER (m_last_tab), m_containee);
 	}
 
 	virtual YItem *selectedItem()
 	{
-		IMPL
 		GtkNotebook *notebook = GTK_NOTEBOOK (getWidget());
 		int nb = gtk_notebook_get_current_page (notebook);
 		if (nb < 0) return NULL;
@@ -126,6 +122,7 @@ public:
 			gtk_notebook_set_current_page (GTK_NOTEBOOK (getWidget()), page);
 			syncTabPage();
 		}
+		YDumbTab::selectItem (item, selected);
 	}
 
 	virtual void shortcutChanged()
@@ -150,6 +147,7 @@ public:
 		GtkWidget *child = gtk_notebook_get_nth_page (notebook, tab_nb);
 		YItem *item = (YItem *) g_object_get_data (G_OBJECT (child), "yitem");
 
+		pThis->YDumbTab::selectItem (item);
 		YGUI::ui()->sendEvent (new YMenuEvent (item));
 		pThis->syncTabPage();
 	}
@@ -158,8 +156,5 @@ public:
 };
 
 YDumbTab *YGOptionalWidgetFactory::createDumbTab (YWidget *parent)
-{
-	IMPL
-	return new YGDumbTab (parent);
-}
+{ return new YGDumbTab (parent); }
 
