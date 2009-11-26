@@ -1812,7 +1812,7 @@ private:
 
 class SearchEntry : public _QueryWidget
 {
-GtkWidget *m_widget, *m_entry;
+GtkWidget *m_widget, *m_entry, *m_combo;
 bool m_clearIcon;
 
 public:
@@ -1822,8 +1822,9 @@ public:
 		g_signal_connect (G_OBJECT (m_entry), "realize",
 		                  G_CALLBACK (grab_focus_cb), NULL);
 		gtk_widget_set_size_request (m_entry, 50, -1);
-		GtkWidget *entry_hbox = gtk_hbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (entry_hbox), gtk_label_new (_("Find:")), FALSE, TRUE, 0);
+		GtkWidget *entry_hbox = gtk_hbox_new (FALSE, 2), *find_label;
+		find_label = gtk_label_new (_("Find:"));
+		gtk_box_pack_start (GTK_BOX (entry_hbox), find_label, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (entry_hbox), m_entry, TRUE, TRUE, 0);
 
 		m_clearIcon = false;
@@ -1832,11 +1833,28 @@ public:
 		g_signal_connect (G_OBJECT (m_entry), "icon-press",
 		                  G_CALLBACK (icon_press_cb), this);
 
+		m_combo = gtk_combo_box_new_text();
+		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Name & Summary"));
+		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Description"));
+		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("File List"));
+		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Author"));
+		gtk_combo_box_set_active (GTK_COMBO_BOX (m_combo), 0);
+		g_signal_connect (G_OBJECT (m_combo), "changed",
+		                  G_CALLBACK (combo_changed_cb), this);
+
+		GtkWidget *opt_hbox = gtk_hbox_new (FALSE, 2), *empty = gtk_event_box_new();
+		gtk_box_pack_start (GTK_BOX (opt_hbox), empty, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (opt_hbox), gtk_label_new (_("by")), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (opt_hbox), m_combo, TRUE, TRUE, 0);
+
+		GtkSizeGroup *group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+		gtk_size_group_add_widget (group, find_label);
+		gtk_size_group_add_widget (group, empty);
+		g_object_unref (G_OBJECT (group));
+
 		m_widget = gtk_vbox_new (FALSE, 4);
-		GtkWidget *expander = gtk_expander_new (_("Options"));
-		gtk_container_add (GTK_CONTAINER (expander), gtk_label_new ("TO DO"));
 		gtk_box_pack_start (GTK_BOX (m_widget), entry_hbox, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_widget), expander, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_widget), opt_hbox, FALSE, TRUE, 0);
 	}
 
 	virtual GtkWidget *getWidget() { return m_widget; }
@@ -1849,7 +1867,10 @@ public:
 	{
 		const gchar *name = gtk_entry_get_text (GTK_ENTRY (m_entry));
 		if (*name) {
-			query->addNames (name, ' ');
+			int opt = gtk_combo_box_get_active (GTK_COMBO_BOX (m_combo));
+			bool whole_word = opt >= 2;
+			query->addNames (name, ' ', opt == 0, opt == 0, opt == 1, opt == 2,
+				opt == 3, whole_word);
 			return true;
 		}
 		return false;
@@ -1871,6 +1892,12 @@ public:
 					GTK_ENTRY_ICON_SECONDARY, _("Clear"));
 			pThis->m_clearIcon = icon;
 		}
+	}
+
+	static void combo_changed_cb (GtkComboBox *combo, SearchEntry *pThis)
+	{
+		pThis->notify();
+		gtk_widget_grab_focus (pThis->m_entry);
 	}
 
 	static void icon_press_cb (GtkEntry *entry, GtkEntryIconPosition pos,
@@ -2232,7 +2259,7 @@ public:
 		gtk_box_pack_start (GTK_BOX (view_vbox), view_pane, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (view_vbox), type_hbox, FALSE, TRUE, 0);
 
-		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 6);
+		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 12);
 		m_query[0] = new SearchEntry();
 		gtk_box_pack_start (GTK_BOX (side_vbox), m_query[0]->getWidget(), FALSE, TRUE, 0);
 
