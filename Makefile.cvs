@@ -6,18 +6,18 @@ LIB = $(shell y2tool get-lib)
 
 PREFIX = /usr
 
-configure: all
-	./configure --prefix=$(PREFIX) --libdir=$(PREFIX)/$(LIB)
+configure: 
+	mkdir build ;\
+	cd build ;\
+	cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DLIB=$(LIB) .. && make
 
-all:
-	y2tool y2autoconf
-	y2tool y2automake
-	autoreconf --force --install
+# use "VERBOSE=1 make" to read full gcc argument
 
 install: configure
-	make
-	make install
+	cd build ;\
+	make && make install
 
-reconf: all
-	./config.status --recheck
-	./config.status
+reconf: 
+	cd build ;\
+	cmake rebuild_cache
+

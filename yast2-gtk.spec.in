@@ -1,39 +1,21 @@
-#
-# spec file for package yast2-gtk (Version 2.17.1)
-#
-# Copyright (c) 2008 SUSE LINUX Products GmbH, Nuernberg, Germany.
-#
-# All modifications and additions to the file contributed by third parties
-# remain the property of their copyright owners, unless otherwise agreed
-# upon. The license for this file, and modifications and additions to the
-# file, is the same license as for the pristine package itself (unless the
-# license for the pristine package is not an Open Source License, in which
-# case the license is the MIT License). An "Open Source License" is a
-# license that conforms to the Open Source Definition (Version 1.9)
-# published by the Open Source Initiative.
+@HEADERCOMMENT@
 
-# Please submit bugfixes or comments via http://bugs.opensuse.org/
-#
 
-# norootforbuild
-
-Url:            http://en.opensuse.org/YaST2-GTK
-
-Name:		yast2-gtk
-Version:	@VERSION@
-Release:	0
-License:        LGPL v2.1 or later
-Group:		System/YaST
-BuildRoot:	%{_tmppath}/%{name}-%{version}-build
-Source0:	yast2-gtk-@VERSION@.tar.bz2
-prefix:		/usr
-Source2:        yast2-gtk-rpmlintrc
-BuildRequires:  blocxx-devel gcc-c++ libxcrypt-devel libzypp-devel yast2-devtools gtk2-devel
-BuildRequires:  yast2-core-devel >= 2.16.27
-BuildRequires:  yast2-libyui-devel
-Requires:       yast2-core >= 2.16.27
-Summary:        YaST2 - Gtk Graphical User Interface
-Provides:       yast2_ui
+@HEADER@
+Url:      http://en.opensuse.org/YaST2-GTK
+Summary:  YaST2 - GTK+ Graphical User Interface
+Group:	System/YaST
+License: GPL v2.1 or later
+BuildRequires:  cmake
+BuildRequires:  gcc-c++ blocxx-devel libxcrypt-devel
+BuildRequires:  gtk2-devel
+BuildRequires:  yast2-devtools >= 2.16.3
+BuildRequires:  yast2-libyui-devel >= 2.18.8
+BuildRequires:  libzypp-devel >= 6.3.0 
+Requires:       yast2-libyui >= 2.18.8
+Requires:       yast2_theme >= 2.16.1
+Requires:  	    libzypp >= 6.3.0 
+Provides:       yast2_ui yast2-ui-gtk
 Provides:       yast2_ui_pkg
 
 %description
@@ -44,21 +26,37 @@ the X Window System.
 
 Authors:
 --------
-    Ricardo Cruz
-    Michael Meeks
+    Ricardo Cruz <rpmcruz@alunos.dcc.fc.up.pt>
+    Michael Meeks <mmeeks@novell.com>
 
-@PREP@
+%prep
+%setup
 
-@BUILD@
+%build
+mkdir build
+cd build
+export CFLAGS="$RPM_OPT_FLAGS"
+export CXXFLAGS="$CFLAGS"
+cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+      -DLIB=%{_lib} \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_SKIP_RPATH=1 \
+      ..
+make %{?jobs:-j %jobs} VERBOSE=1
 
-@INSTALL@
-rm $RPM_BUILD_ROOT%{_libdir}/YaST2/plugin/libpy2gtk.la
+%install
+cd build
+make install DESTDIR=$RPM_BUILD_ROOT
+cd ..
 
-@CLEAN@
+%clean
+rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr (-, root, root)
-%doc @docdir@
-%{_libdir}/YaST2/plugin/libpy2gtk.so.*
-%{_libdir}/YaST2/plugin/libpy2gtk.so
-%{_datadir}/YaST2/gtk
+%dir %_libdir/YaST2
+%_libdir/YaST2/plugin/
+%_prefix/share/YaST2/gtk/
+
+%changelog
+

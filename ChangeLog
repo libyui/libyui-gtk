@@ -1,11 +1,453 @@
-2009-07-18  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2009-10-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
-	* src/yzyppwrapper.cc: bug fix 504424: don't crash on empty
-	Package::group().
+	* Reverted to development state.
 
-2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
+	* src/YGPackageSelector.cc: some UI changes to
+	try out.
 
-	* Version 2.17.13
+2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: bug fix 547075
+	(or part of): popup confirm dialog, rather than
+	having the user to double-click apply button.
+
+	* src/pkg/YGPackageSelector.cc: don't disable
+	installed tab on repositories view.
+
+	* src/pkg/YGPackageSelector.cc: removed Uncouple
+	button.
+
+	* src/pkg/YGPackageSelector.cc: disable version
+	action button if the action is already undertaken.
+
+2009-10-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkzyppview.cc: improved speed up fix:
+	only query libzypp when respective expander is open.
+
+	* src/pkg/yzyppwrapper.cc: don't suffix "B" to
+	size string: it seems libzypp now does that.
+
+	* src/pkg/YGPackageSelector.cc: bug fix: honor
+	GtkStyle on whether to show repositories "Edit..."
+	button icon.
+
+	* src/CMakeLists.txt & src/pkg/CMakeLists.txt:
+	changes juridiction over a few widgets used
+	exclusively by the pkg component. (to cut on
+	py2gtk.so size)
+
+	* src/ygtkhtmlwrap.h/c: changed gpointer casting
+	to proper callback definition.
+
+	* src/ygtkrichtext.h/c: split up set_text() into
+	set_plain_text().
+
+2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkzyppview.cc: only apply speed up fix
+	for big text streams (above 20Kb) since it may
+	cause flicker.
+
+2009-10-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkzyppview.cc: speed up fix: quick hack
+	so we only set file-list text (which can be very long
+	and take many seconds on some packages: e.g. kernel-*)
+	when expander is open.
+	In the future, call zypp's filelist() when needed since
+	that can take a few seconds as well.
+
+2009-10-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Ported build system from autotools to cmake.
+
+2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzypptags.h/cc: bug fix: a couple mapping errors
+	of PackageKit categories.
+
+	* src/yzyppwrapper.cc: speed fix: improved startup
+	speed by both mapping categories when needed and
+	improving the mapping performance as well.
+
+2009-09-30 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.h/cc: map package text-view details
+	scrolling to the view-port they are installed on.
+
+2009-09-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.cc: made compilable for 11.1 libzypp
+	version 5.24.5.
+
+2009-09-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.cc: bug fix: pass USERNAME for gnomesu
+	not USER.
+
+	* src/YGPackageSelector.cc & src/ygtkzyppview.cc/h: look fix:
+	reserve empty space for online_update installed tab.
+
+	* src/ygtknotebook.c: bug fix: search entry wasn't well aligned
+	under some settings.
+
+2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.cc: bug fix: pkg-selector dir links
+	not working.
+
+2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.cc: speed fix: don't load packages at
+	initialization for online_update.
+
+2009-09-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDumbTab.cc: changed calling order of parent
+	class to reflect yast2-qt (to prevent any bug).
+
+	* src/YGTable.cc: bug fix: block GtkTreeSelection events not
+	only on init, but on only instances when the widget is
+	mapped. Fixes bootloader tab change misbehavior on 11.2.
+
+	* src/YGUtils.cc: bug fix: comply with desktop settings to
+	not show icons on buttons, as in 11.2.
+
+	* src/ygtknotebook.c: bug fix: delete corner child on
+	destructor. Fixes 11.2 sw_single crash on exit.
+
+	* src/yzypptags.cc: speed up sw_single initialization time.
+
+	* src/ygtkzyppview.cc: look fix: when icons on buttons are
+	disabled, show "Undo" as a label instead of as an icon.
+
+	* src/YGPackageSelector.cc: bug fix: only set Undo tab
+	to confirm when the user has not uncoupled it.
+
+	* src/YGPackageSelector.cc: give initial focus to search
+	entry.
+
+2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzypptags.h/cc: -qt PK groups was not caughting
+	documentation and productivity branches.
+
+2009-09-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.h/cc: fix: make double-click working on
+	remove and undo tabs.
+
+	* src/ygtkzyppview.cc: fix: refresh version control on
+	package change.
+
+	* src/yzyppwrapper.h/cc: PkgList::add/removeListener()
+	now (fake) const.
+
+2009-09-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* tests/Layout-Truncated-Widget.ycp: uncovered difference
+	in our layout mechanism to qt's. We may want to address this
+	in the future.
+
+	* src/YGDialog.cc: increased default size.
+
+	* src/YGDialog.cc: don't tell GTK to change cursor to the one
+	already in use.
+
+	* src/YGPackageSelector.cc, src/YGUI.h/cc: moved statment of
+	software manager default size here.
+
+	* src/ygtkbargraph.h/c: make it inherit from GtkFrame, and
+	changed frame look.
+
+	* src/ygtkratiobox.c: make use of GtkContainer's border_width
+	and make last widget take rest of the size.
+
+	* src/ygtkrichtext.c & src/ygtktextview.c: instead of
+	selecting link on right-click, make it select any word under
+	the mouse cursor.
+
+	* src/ygtksteps.h/c: look more yast2-qt: adopted qt's mark
+	glyphs and added glyphs for todo tasks.
+
+	* src/ygtkzyppview.cc: touched up run Firefox as user logic.
+
+2009-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: disable install tab when
+	searching for files.
+
+	* src/YGPackageSelector.cc: change title only when done.
+
+	* src/YGPackageSelector.cc: change expand properties to
+	Upgrade tab columns.
+
+2009-09-14 Katarina Machalkova <kmachalkova@suse.cz>
+
+	* src/YGUI.cc: initialize Gtk stuff in ctor if we're running
+	without threads. This enables standalone libyui, where 
+	with_threads=false use Gtk interface (thanks mmeeks for help)
+
+2009-09-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: bug fix: repository selection not
+	unset on filter change.
+
+	* src/YGPackageSelector.cc: place startup progress-bar on the
+	same place as ycp's.
+
+2009-09-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: removed "filter by novelty" from
+	search (pass --novelty-filter to enable it) and moved it as
+	the Groups item "Fresh".
+
+2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.c: bug fix: on resize find and erase
+	icons disapear (unrealize not implemented).
+
+2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrendererbutton.c: look more like a button
+	when pressed.
+
+	* src/YGUI.h, src/YGMenuButton.cc & src/YGTable.cc: make
+	compilable with latest libyui.
+
+	* src/YGUI.h/cc & src/YGDialog.cc: ensure to be more generous
+	to sw_single window from the start.
+
+2009-09-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrendererbutton.h/c: a push-button for lists.
+
+	* src/ygtkcellrenderertextpixbuf.h/c: added stock icon
+	options, and fixed x/ypadding.
+
+	* src/YGUI.h/cc & src/YGPackageSelector.cc: pass arguments for
+	PkgSelector so we can let people experiment with new looks at
+	run-time. Try:
+	/usr/lib/YaST2/bin/y2base sw_single gtk --find-pane --buttons
+
+	* src/ygtkzyppview.h/cc: added button column.
+
+2009-09-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtknotebook.cc: handle right-to-left text flow:
+	thank Michael for the reminder.
+
+	* src/ygtkzyppview.cc: bug fix 523694: find a way to
+	fire the browser as the session's user.
+
+	* src/yzyppwrapper.cc: bug fix: online_update: was reporting
+	available patches as already installed on version box.
+
+2009-09-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.cc: select installed version radio
+	button for the remove tab.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.h/cc: added severity() description
+	to Package structure.
+
+	* src/YGPackageSelector.cc: split online_update list by
+	severity.
+
+	* src/ygtkzyppview.cc: bug fix: show "applies to" list.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc: bug fix 513085: block selection was too
+	ambitious.
+
+	* src/YGUtils.cc: fixed flicker from scrolling text
+	widgets like LogView.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppview.h/cc & src/YGPackageSelector.cc: use
+	"xpad" instead of italic fonts for 'auto' packages.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: map stock icons for enable/disable.
+
+	* src/ygtkfindentry.c: look: center-align menu arrow.
+
+	* src/ygtkzyppview.cc: bug fix: "upgrade all" was alternating
+	the check boxes instead of simply setting all true.
+
+2009-09-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtktooltip.h/c: re-added tooltip window.
+
+	* src/ygtknotebook.h/c: sub-notebook that allows a widget to be
+	installed at the empty top-right corner.
+
+	* src/YGPackageSelector.cc: replaced find pane by a find entry
+	at the tab-book corner.
+
+	* src/yzyppwrapper.h/cc: bug fix: highlight broken for sub-queries:
+	now pass Package to highlight() instead of index.
+
+	* src/yzyppwrapper.h/cc: replaced explicit PkgList::refreshProps()
+	for an implicit call when a package in the list is modified.
+
+2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: fixes for online_update.
+
+	* src/ygtkzyppwrapper.cc: touched up Patch contents box.
+
+	* src/yzyppwrapper.h/cc: got rid of setPkgListener. Instead
+	use the listeners from PkgList.
+
+	* src/yzyppwrapper.cc: some fixes on support of patches:
+	installed status and version rank.
+
+2009-09-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: use a common pool for all tabs
+	so to make it a snap to change tabs.
+
+	* src/ygtkzyppview.h/cc: turned Package & Detail views into
+	GTK widgets so we don't have to bother with mem management.
+
+	* src/ygtkwizard.c: gtk_object_destroy() -> g_object_finalize();
+	not sure what the difference is, but latter seems more used.
+
+	* src/yzyppwrapper.h/cc: allow multiple listeners for PkgList.
+	bug fix: versions on the detail box now reflect any pkg changes.
+
+2009-09-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/icons/pkg-tiles-mode.xpm & pkg-list-mode.xpm:
+	removed.
+
+	* src/YGPackageSelector.cc: when exact package found,
+	highlight respective tab.
+
+	* src/YGPackageSelector.cc: replaced the undo tab by the
+	confirmation dialog widgetry.
+
+	* src/ygtkwizard.c: enlarged help window.
+
+	* src/ygtkzyppview.h/cc: switched remove tab default toggles.
+
+	* src/yzyppwrapper.h/cc: added whole_string option to
+	PkgQuery::Query.
+
+	* src/ygtkzyppview.h/cc: re-aligned description and version
+	control boxes.
+
+	* src/yzyppwrapper/cc: reduced busy tolerance from 50ms to 30ms
+	for 500 loops.
+
+	* src/YGPackageSelector.cc: set tooltips on tab labels.
+
+2009-09-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtktreemodel.h/cc: nice wrapper for GtkTreeModel.
+
+	* src/yzyppview.h/cc: moved PackagesView and PackageDetails
+	here. Re-worked the model: in particular, added support for
+	multiple lists and apply all entry.
+
+	* src/YGPackageSelector.cc: made use of new PackagesView
+	functionality: in particular, split out undo tab. 
+
+	* src/YGPackageSelector.cc: added confirmation dialog on
+	apply.
+
+	* src/YGPackageSelector.cc: added progress bar.
+
+	* src/yzyppwrapper.h/.cc: PkgList now a vector: much nicer
+	for the multiple lists enable model.
+
+	* src/yzyppwrapper.h/.cc: added progress bar signal.
+
+	* src/ygtkwizard.c: fixed set_child().
+
+	* src/YGMenuButton.cc: implemented new YGContextMenu.
+
+	* src/YGUI.h: respective hook for YGContextMenu.
+
+	* src/YGTable.cc: respective context-menu signals.
+
+	* src/YGWidget.cc: emitEvent(): contain context-menu signals
+	to flags notifyContextMenu().
+
+	* src/YGUtils.cc: bug fix 446524: complement our label mapping
+	strategy with an array of translatable yast2 labels.
+
+	* src/ygtksteps.c: bug fix 471059: ignore style: force black
+	color on the text (since our background is white).
+
+	* src/ygtkwizard.c: use stock image for help button: copes
+	with style change.
+
+	* src/yzyppwrapper.h/.c: added canRemove() property to
+	packages, and extended PkgList.
+
+	* src/yzyppview.cc: bug fix 489016: don't show lock&remove
+	buttons for patterns.
+
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/yzyppwrapper.h/.cc: split up Package::support()
+
+	* src/YGPackageSelector.cc: touched up support expander on details.
+
+	* src/YGPackageSelector.cc: made list-details box move horizontal
+	on large widescreens.
+
+	* src/pkg-selector-help.h: touched to reflect UI changes.
+
+	* src/YGPackageSelector.cc: split selector-help in small pieces.
+
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/YGPackageSelector.cc: gray-out tabs for which the query
+	is not applicable (e.g. can't find for files on available view
+	for technical limitations).
+
+	* src/YGPackageSelector.cc: replaced old pattern suggestion tooltip
+	for a label in the search pane.
+
+2009-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGPackageSelector.cc: show installed and candidate versions
+	for the upgrades view.
+
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/yzyppwrapper.h/.cc: commented out installed and last build info
+	from the description box. (maybe show as tooltips for the versions enum?)
+
+2009-08-28 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtktreeview.h/.c: moved from ygtkscrolledwindow.h to its
+	rightful file.
+
+	* src/yzyppwrapper.h/.cc: some big re-work: most interestingly,
+	integrated PkgList from YGPackageSelector.cc into the Pool structure.
+
+	* src/ygtkzyppwrapper.h/.cc: more column properties.
+
+	* src/YGPackageSelector.cc: preliminrary major changes to the UI as
+	discussed with the other devs. Special thanks to Christian Jager
+	<christian.jaeger@rub.de>.
+
+2009-03-18 Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* tests/ButtonOrder.ycp added test to see button order heuristic
+	behaviour (bnc#479874)
 
 2009-03-11 Martin Kudlvasr  <mkudlvasr@novell.com>
 
@@ -20,22 +462,18 @@
 	* add tests/MultiLine.ycp for bnc#459657
 	* src/YGText.cc: overload doSetEnabled for YGMultiLineEdit
 
-2009-02-19 Martin Kudlvasr  <mkudlvasr@novell.com>
+2009-02-26  Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* change src/YGDialog.cc to maximize window when screen width <= 800 OR
 	* screen height <= 600. There was AND previously.
-	* fixes bnc#462476
-	* Version 2.17.12
 
-2009-02-17 Martin Kudlvasr  <mkudlvasr@novell.com>
+2009-02-13  Michael Meeks  <michael.meeks@novell.com>
 
-	* backport of mmeeks changes in trunk (r55491),
-	fixes (475275)
-	* Version 2.17.11
+	* src/YGUtils.cc (ygutils_convert_to_xhtml): handle
+	mangled entities appearing in URLs around the place:
+	bug 475275.
 
-2009-02-12  Martin Kudlvasr  <mkudlvasr@novell.com>
-
-	* Version 2.17.10
+	* src/test.cc (testXHtmlConvert): upd. regression tests.
 
 2009-01-26  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
