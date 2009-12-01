@@ -287,17 +287,22 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 	return ret;
 }
 
-string YGUtils::mapKBAccel (const string &src)
+std::string YGUtils::mapKBAccel (const std::string &src)
 {
-	// we won't use use replace since we also want to escape _ to __
 	std::string::size_type length = src.length(), i;
 	string str;
 	str.reserve (length);
 	for (i = 0; i < length; i++) {
 		if (src[i] == '_')
 			str += "__";
-		else if (src[i] == '&')
-			str += '_';
+		else if (src[i] == '&') {
+			if (i+1 < length && src[i+1] == '&') {
+				str += '&';  // escaping
+				i++;
+			}
+			else
+				str += '_';
+		}
 		else
 			str += src[i];
 	}

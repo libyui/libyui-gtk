@@ -14,8 +14,8 @@ class YGPackageSelectorPluginImpl : public YGPackageSelectorPluginIf
 {
 public:
 	virtual YPackageSelector *createPackageSelector (YWidget *parent, long modeFlags);
-	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags) { return 0; }
-	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags) { return 0; }
+	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags);
+	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags);
 };
 
 #endif /*YGPACKAGE_SELECTOR_PLUGIN_IMPL_H*/

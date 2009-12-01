@@ -10,7 +10,7 @@
 
 // Instead of traditional looking frames, we use Gnome convention for the
 // frame's look. That is: don't draw a frame, use bold header and pad the child.
-#define CHILD_INDENTATION 20
+#define CHILD_INDENTATION 12
 
 class YGBaseFrame : public YGWidget
 {

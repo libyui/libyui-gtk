@@ -121,19 +121,21 @@ public:
 	{
 		struct inner {
 			static void realize_cb (GtkWidget *widget)
-			{ gtk_widget_grab_focus (widget); }
+			{
+				GtkWidget *window = gtk_widget_get_toplevel (widget);
+				gtk_widget_grab_default (widget);
+				gtk_widget_grab_focus (widget);
+			}
 		};
 
 		YPushButton::setDefaultButton (isDefault);
 		if (isDefault) {
 			GtkWidget *button = getWidget();
 			GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
-			gtk_widget_grab_default (button);
 			if (GTK_WIDGET_REALIZED (button))
-				gtk_widget_grab_focus (button);
-			else
-				g_signal_connect (G_OBJECT (button), "realize",
-				                  G_CALLBACK (inner::realize_cb), this);
+				inner::realize_cb (button);
+			g_signal_connect (G_OBJECT (button), "realize",
+			                  G_CALLBACK (inner::realize_cb), this);
 		}
 	}
 
@@ -146,6 +148,7 @@ public:
 		}
 		return true;
 	}
+
 #if 0
 	static gboolean treat_icon_cb (GtkWidget *widget, GdkEventExpose *event,
 	                               YGPushButton *pThis)

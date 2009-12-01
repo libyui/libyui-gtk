@@ -680,6 +680,7 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_set_search_column (view, NAME_PROP);
 		gtk_tree_view_set_fixed_height_mode (view, TRUE);
 		gtk_tree_view_set_headers_visible (view, FALSE);
+		gtk_tree_view_set_enable_tree_lines (view, TRUE);
 
 		GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 		gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
@@ -957,6 +958,7 @@ struct YGtkPackageView::Impl
 			gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_resizable (column, TRUE);
+//		gtk_tree_view_column_set_reorderable (column, TRUE);
 		if (size >= 0)
 			gtk_tree_view_column_set_fixed_width (column, size);
 		else

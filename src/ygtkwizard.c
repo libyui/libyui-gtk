@@ -642,8 +642,10 @@ static void ygtk_wizard_realize (GtkWidget *widget)
 	GTK_WIDGET_CLASS (ygtk_wizard_parent_class)->realize (widget);
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 	if (wizard->m_default_button) {
-		gtk_widget_grab_default (wizard->m_default_button);
-		gtk_widget_grab_focus (wizard->m_default_button);
+		GtkWidget *window = gtk_widget_get_toplevel (widget);
+		if (GTK_IS_WINDOW (window))
+			if (!gtk_window_get_default_widget (GTK_WINDOW (window)))
+				gtk_widget_grab_default (wizard->m_default_button);
 	}
 }
 

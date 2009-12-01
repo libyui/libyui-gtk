@@ -179,10 +179,10 @@ public:
 
 	virtual bool hasContextMenu() RET (true)
 
-	virtual bool hasSimplePatchSelector() RET (false)
-	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags) RET (NULL)
-	virtual bool hasPatternSelector() RET (false)
-	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags) RET (NULL)
+	virtual bool hasSimplePatchSelector() RET (true)
+	virtual YWidget *createSimplePatchSelector (YWidget *parent, long modeFlags);
+	virtual bool hasPatternSelector() RET (true)
+	virtual YWidget *createPatternSelector (YWidget *parent, long modeFlags);
 };
 
 #include <YApplication.h>

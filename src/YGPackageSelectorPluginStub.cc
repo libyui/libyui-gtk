@@ -85,10 +85,9 @@ YPackageSelector* YGWidgetFactory::createPackageSelector (YWidget* parent, long 
     return NULL;
 }
 
-#if 0
 // YOptionalWidgetFactory
 
-YPackageSelector* YGOptionalWidgetFactory::createPatternSelector (YWidget* parent, long modeFlags)
+YWidget* YGOptionalWidgetFactory::createPatternSelector (YWidget* parent, long modeFlags)
 {
 	YGPackageSelectorPluginStub *plugin = YGPackageSelectorPluginStub::get();
 	if (plugin)
@@ -96,12 +95,11 @@ YPackageSelector* YGOptionalWidgetFactory::createPatternSelector (YWidget* paren
     return NULL;
 }
 
-YPackageSelector* YGOptionalWidgetFactory::createSimplePatchSelector (YWidget* parent, long modeFlags)
+YWidget* YGOptionalWidgetFactory::createSimplePatchSelector (YWidget* parent, long modeFlags)
 {
 	YGPackageSelectorPluginStub *plugin = YGPackageSelectorPluginStub::get();
 	if (plugin)
     	return plugin->createSimplePatchSelector (parent, modeFlags);
     return NULL;
 }
-#endif
 

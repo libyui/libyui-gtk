@@ -3,7 +3,11 @@
  ********************************************************************/
 
 /* A label with embed links. Because we only need a link at the end, that's
-   only what we support. */
+   only what we support.
+
+   In the future, we may want to use GtkLabel's new link support instead of
+   this custom widget.
+*/
 
 #ifndef YGTK_LINK_LABEL_H
 #define YGTK_LINK_LABEL_H

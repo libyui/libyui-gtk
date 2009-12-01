@@ -1,9 +1,22 @@
-2009-10-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2009-12-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: bug fix 559226: Allow '&' to be escaped.
+
+	* src/YGPushButton.cc: bug fix 558900. Default button
+	state forgotten.
+
+	* src/YGTable.cc: bug fix 548058: Default button
+	state forgotten.
+
+	* src/YGPackageSelector.cc: partial bug fix for 548437:
+	honor a couple of the flags.
+
+2009-11-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: added support for
 	search based on description, filelist and author.
 
-2009-10-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+2009-11-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* Reverted to development state.
 

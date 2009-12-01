@@ -7,6 +7,7 @@
 
 #define YUILogComponent "gtk"
 #include "config.h"
+#include <YPackageSelector.h>
 #include <string.h>
 #include "YGUI.h"
 #include "YGUtils.h"
@@ -1902,7 +1903,10 @@ public:
 
 	static void icon_press_cb (GtkEntry *entry, GtkEntryIconPosition pos,
 	                            GdkEvent *event, SearchEntry *pThis)
-	{ gtk_entry_set_text (entry, ""); }
+	{
+		gtk_entry_set_text (entry, "");
+		gtk_widget_grab_focus (GTK_WIDGET (entry));
+	}
 
 	static void grab_focus_cb (GtkWidget *widget)
 	{ gtk_widget_grab_focus (widget); }
@@ -2225,8 +2229,14 @@ Ypp::Package::Type m_type;
 public:
 	GtkWidget *getWidget() { return m_widget; }
 
-	UI() : m_type (Ypp::Package::PACKAGE_TYPE)
+	UI (YPackageSelector *sel)
 	{
+		if (sel->onlineUpdateMode())
+			m_type = Ypp::Package::PATCH_TYPE;
+		else if (!sel->searchMode())
+			m_type = Ypp::Package::PATTERN_TYPE;
+		else
+			m_type = Ypp::Package::PACKAGE_TYPE;
 		YGtkPackageView *view = ygtk_package_view_new (TRUE);
 		view->setListener (this);
 		m_view = GTK_WIDGET (view);
@@ -2238,10 +2248,17 @@ public:
 		gtk_paned_pack2 (GTK_PANED (view_pane), m_details->getWidget(), FALSE, TRUE);
 
 		GtkWidget *combo = gtk_combo_box_new_text();
-		gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Package"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Pattern"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Language"));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
+		if (sel->onlineUpdateMode()) {
+			gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Patch"));
+			gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
+		}
+		else {
+			gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Package"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Pattern"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Language"));
+			int i = sel->searchMode() ? 0 : 1;
+			gtk_combo_box_set_active (GTK_COMBO_BOX (combo), i);
+		}
 		g_signal_connect (G_OBJECT (combo), "changed",
 		                  G_CALLBACK (type_changed_cb), this);
 
@@ -2369,7 +2386,6 @@ private:
 	}
 };
 
-#include <YPackageSelector.h>
 #include "pkg-selector-help.h"
 
 class YGPackageSelector : public YPackageSelector, public YGWidget, public Ypp::Interface
@@ -2425,7 +2441,7 @@ public:
 /*		m_notebook = new QueryNotebook (onlineUpdate, repoMgrEnabled());
 		gtk_box_pack_start (GTK_BOX (vbox), m_notebook->getWidget(), TRUE, TRUE, 0);
 */
-		UI *ui = new UI();
+		UI *ui = new UI (this);
 		gtk_box_pack_start (GTK_BOX (vbox), ui->getWidget(), TRUE, TRUE, 0);
 		gtk_widget_hide (empty);
 
@@ -2528,5 +2544,22 @@ public:
 
 YPackageSelector *
 YGPackageSelectorPluginImpl::createPackageSelector (YWidget *parent, long modeFlags)
-{ return new YGPackageSelector (parent, modeFlags); }
+{
+	modeFlags &= YPkg_SearchMode;
+	return new YGPackageSelector (parent, modeFlags);
+}
+
+YWidget *
+YGPackageSelectorPluginImpl::createPatternSelector (YWidget *parent, long modeFlags)
+{
+	modeFlags ^= YPkg_SearchMode;
+	return new YGPackageSelector (parent, modeFlags);
+}
+
+YWidget *
+YGPackageSelectorPluginImpl::createSimplePatchSelector (YWidget *parent, long modeFlags)
+{
+	modeFlags &= YPkg_OnlineUpdateMode;
+	return new YGPackageSelector (parent, modeFlags);
+}
 

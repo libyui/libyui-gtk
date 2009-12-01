@@ -236,6 +236,7 @@ public:
 #include "YTable.h"
 #include "YGDialog.h"
 #include <gdk/gdkkeysyms.h>
+#include <string.h>
 
 class YGTable : public YTable, public YGTableView
 {
@@ -321,6 +322,9 @@ public:
 				int index = (n*2)+1;
 				if (!sortable)
 					index = -1;
+				gtk_tree_sortable_set_sort_func (
+					GTK_TREE_SORTABLE (getModel()), index, tree_sort_cb,
+					GINT_TO_POINTER (index), NULL);
 				gtk_tree_view_column_set_sort_column_id (column, index);
 			}
 			else
@@ -418,6 +422,18 @@ public:
 		return FALSE;
 	}
 
+	static gint tree_sort_cb (GtkTreeModel *model, GtkTreeIter *a, GtkTreeIter *b,
+	                           gpointer _index)
+	{
+		int index = GPOINTER_TO_INT (_index);
+		gchar *str_a, *str_b;
+		gtk_tree_model_get (model, a, index, &str_a, -1);
+		gtk_tree_model_get (model, b, index, &str_b, -1);
+		int ret = strcmp (str_a, str_b);
+		g_free (str_a);
+		g_free (str_b);
+		return ret;
+	}
 };
 
 #if YAST2_VERSION >= 2017005
