@@ -49,6 +49,7 @@ namespace YGUtils
 	GdkPixbuf *setOpacity (const GdkPixbuf *src, int opacity, bool touchAlpha);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
+	const char *mapStockIcon (const std::string &label);
 	const char *setStockIcon (GtkWidget *button, const std::string &label,
 	                          const char *fallbackIcon);
 };
@@ -60,6 +61,7 @@ extern "C" {
 
 	void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
 
+	const char *ygutils_mapStockIcon (const char *label);
 	const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
 	                                  const char *fallbackIcon);
 

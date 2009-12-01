@@ -27,6 +27,7 @@
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
+extern const char *ygutils_mapStockIcon (const char *label);
 extern const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
@@ -942,7 +943,15 @@ gboolean ygtk_wizard_add_menu_entry (YGtkWizard *wizard, const char *parent_id,
 	if (!parent)
 		return FALSE;
 
-	GtkWidget *entry = gtk_menu_item_new_with_mnemonic (text);
+	GtkWidget *entry;
+	const char *icon = ygutils_mapStockIcon (text);
+	if (icon) {
+		GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_MENU);
+		entry = gtk_image_menu_item_new_with_mnemonic (text);
+		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (entry), image);
+	}
+	else
+		entry = gtk_menu_item_new_with_mnemonic (text);
 	gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
 	gtk_widget_show (entry);
 

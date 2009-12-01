@@ -11,6 +11,9 @@
 	* src/YGPackageSelector.cc: partial bug fix for 548437:
 	honor a couple of the flags.
 
+	* src/YGUtils.h/cc & src/ygtkwizard.c: map stock icons
+	to menu items (try autoyast).
+
 2009-11-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGPackageSelector.cc: added support for

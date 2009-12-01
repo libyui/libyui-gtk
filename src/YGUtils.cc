@@ -573,8 +573,7 @@ static void stripEnd (std::string &str, char ch)
 		str.erase (str.size()-1, 1);
 }
 
-const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
-                                   const char *fallbackIcon)
+const char *YGUtils::mapStockIcon (const std::string &label)
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
 	if (firstTime) {
@@ -591,6 +590,8 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 					_id = GTK_STOCK_GO_FORWARD;
 				else if (!strcmp (id, GTK_STOCK_MEDIA_PREVIOUS) || !strcmp (id, GTK_STOCK_MEDIA_REWIND))
 					_id = GTK_STOCK_GO_BACK;
+				else if (!strcmp (id, GTK_STOCK_MEDIA_RECORD))
+					_id = GTK_STOCK_SAVE;
 				stockMap[cutUnderline (item.label)] = _id;
 			}
 			// some may not have a stock item because they can't be set on a label
@@ -612,6 +613,7 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		stockMap [_("Down")] = GTK_STOCK_GO_DOWN;
 		stockMap [_("Enable")] = GTK_STOCK_YES;
 		stockMap [_("Disable")] = GTK_STOCK_NO;
+		stockMap [_("Exit")] = GTK_STOCK_QUIT;
 	}
 
 	std::string id = cutUnderline (label);
@@ -621,17 +623,21 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 
 	std::map <std::string, std::string>::const_iterator it;
 	it = stockMap.find (id);
-	bool foundIcon = it != stockMap.end();
-	const char *icon = NULL;
-	if (foundIcon)
-		icon = it->second.c_str();
-	else if (id.size() < 22)
+	if (it != stockMap.end())
+		return it->second.c_str();
+	return NULL;
+}
+
+const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
+                                   const char *fallbackIcon)
+{
+	const char *icon = mapStockIcon (label);
+	if (!icon && label.size() < 22)
 		icon = fallbackIcon;
 	if (icon) {
 		if (gtk_style_lookup_icon_set (button->style, icon)) {
 			// we want to use GtkImage stock mode so it honors sensitive
 			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
-			gtk_widget_show (image);
 			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 	}
@@ -640,9 +646,8 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 		if (image)
 			gtk_widget_hide (image);
 	}
-	return foundIcon ? icon : NULL;
+	return icon;
 }
-
 
 /*
  * construct a help string by dropping the title, and mentioning
@@ -711,6 +716,9 @@ ygutils_headerize_help (const char *help_text, gboolean *cut)
 	g_free (text);
 	return g_string_free (str, FALSE);
 }
+
+const char *ygutils_mapStockIcon (const char *label)
+{ return YGUtils::mapStockIcon (label); }
 
 const char *ygutils_setStockIcon (GtkWidget *button, const char *label, const char *fallback)
 { return YGUtils::setStockIcon (button, label, fallback); }
