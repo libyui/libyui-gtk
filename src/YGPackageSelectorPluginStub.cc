@@ -25,7 +25,7 @@ bool YGUI::pkgSelectorParse (const char *arg)
 }
 
 void YGUI::pkgSelectorSize (int *width, int *height)
-{ *width = 700; *height = 800; }
+{ *width = 700; *height = 750; }
 
 class YGPackageSelectorPluginStub : public YPackageSelectorPlugin
 {

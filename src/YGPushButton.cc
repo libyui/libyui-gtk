@@ -122,7 +122,6 @@ public:
 		struct inner {
 			static void realize_cb (GtkWidget *widget)
 			{
-				GtkWidget *window = gtk_widget_get_toplevel (widget);
 				gtk_widget_grab_default (widget);
 				gtk_widget_grab_focus (widget);
 			}

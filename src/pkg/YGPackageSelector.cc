@@ -2403,7 +2403,9 @@ public:
 		bool onlineUpdate = onlineUpdateMode();
 		YGDialog *dialog = YGDialog::currentDialog();
 		dialog->setCloseCallback (confirm_cb, this);
-		dialog->setMinSize (700, 800);  // enlarge
+		int width, height;
+		YGUI::ui()->pkgSelectorSize (&width, &height);
+		dialog->setMinSize (width, height);
 
 		YGtkWizard *wizard = YGTK_WIZARD (getWidget());
 		ygtk_wizard_set_header_icon (wizard,
@@ -2523,6 +2525,7 @@ public:
 			if (GTK_WIDGET_VISIBLE (m_progressbar)) {
 				gtk_widget_hide (m_progressbar);
 				while (g_main_context_iteration (NULL, FALSE)) ;
+				//gtk_widget_set_sensitive (getWidget(), TRUE);
 			}
 			YGUI::ui()->normalCursor();
 		}
@@ -2530,6 +2533,7 @@ public:
 			if (progress == 0)
 				YGUI::ui()->busyCursor();
 			else {  // progress=0 may be to trigger cursor only
+				//gtk_widget_set_sensitive (getWidget(), FALSE);
 				gtk_widget_show (m_progressbar);
 				gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (m_progressbar), progress);
 			}
@@ -2545,21 +2549,21 @@ public:
 YPackageSelector *
 YGPackageSelectorPluginImpl::createPackageSelector (YWidget *parent, long modeFlags)
 {
-	modeFlags &= YPkg_SearchMode;
+	modeFlags |= YPkg_SearchMode;
 	return new YGPackageSelector (parent, modeFlags);
 }
 
 YWidget *
 YGPackageSelectorPluginImpl::createPatternSelector (YWidget *parent, long modeFlags)
 {
-	modeFlags ^= YPkg_SearchMode;
+	modeFlags &= YPkg_SearchMode;
 	return new YGPackageSelector (parent, modeFlags);
 }
 
 YWidget *
 YGPackageSelectorPluginImpl::createSimplePatchSelector (YWidget *parent, long modeFlags)
 {
-	modeFlags &= YPkg_OnlineUpdateMode;
+	modeFlags |= YPkg_OnlineUpdateMode;
 	return new YGPackageSelector (parent, modeFlags);
 }
 

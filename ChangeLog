@@ -3,6 +3,9 @@
 	* src/YGUtils.cc: bug fix 549943: HTML to XHTML
 	conversor was tripping in the breakline.
 
+	* src/YGPackageSelector.cc: fix online update
+	launch.
+
 2009-12-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: bug fix 559226: Allow '&' to be escaped.
