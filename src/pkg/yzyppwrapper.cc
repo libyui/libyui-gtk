@@ -558,7 +558,7 @@ int m_installedPkgs, m_totalPkgs;
 		ZyppObject object = m_sel->theObj();
 		std::string text = object->description(), br = "<br>";
 		if (markup == GTK_MARKUP && type == Ypp::Package::PACKAGE_TYPE) {
-			YGUtils::escapeMarkup (text);
+			text = YGUtils::escapeMarkup (text);
 			text += "\n";
 			const Ypp::Package::Version *version;
 			version = getInstalledVersion();
@@ -592,7 +592,7 @@ int m_installedPkgs, m_totalPkgs;
 					while (text.length() > 0 && text [text.length()-1] == '\n')
 						text.erase (text.length()-1);
 
-					YGUtils::escapeMarkup (text);
+					text = YGUtils::escapeMarkup (text);
 					YGUtils::replace (text, "\n\n", 2, "<br>");  // break every double line
 					text += br;
 				}
@@ -772,8 +772,8 @@ int m_installedPkgs, m_totalPkgs;
 				 it != changelogList.end(); it++) {
 				std::string date (it->date().form ("%d %B %Y")), author (it->author()),
 					        changes (it->text());
-				YGUtils::escapeMarkup (author);
-				YGUtils::escapeMarkup (changes);
+				author = YGUtils::escapeMarkup (author);
+				changes = YGUtils::escapeMarkup (changes);
 				YGUtils::replace (changes, "\n", 1, "<br>");
 				if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
 					author.erase (0, 2);                  // "- author". wtf?
@@ -790,14 +790,14 @@ int m_installedPkgs, m_totalPkgs;
 		ZyppPackage package = tryCastToZyppPkg (object);
 		if (package) {
 			std::string packager = package->packager(), vendor = package->vendor(), authors;
-			YGUtils::escapeMarkup (packager);
-			YGUtils::escapeMarkup (vendor);
+			packager = YGUtils::escapeMarkup (packager);
+			vendor = YGUtils::escapeMarkup (vendor);
 			const std::list <std::string> &authorsList = package->authors();
 			for (std::list <std::string>::const_iterator it = authorsList.begin();
 				 it != authorsList.end(); it++) {
 				std::string author (*it);
 				if (markup != NO_MARKUP)
-					YGUtils::escapeMarkup (author);
+					author = YGUtils::escapeMarkup (author);
 				if (!authors.empty()) {
 					if (markup == HTML_MARKUP)
 						authors += "<br>";
@@ -828,7 +828,7 @@ int m_installedPkgs, m_totalPkgs;
 			if (i != std::string::npos) {
 				std::string str = description.substr (i);
 				if (markup != NO_MARKUP)
-					YGUtils::escapeMarkup (str);
+					str = YGUtils::escapeMarkup (str);
 				if (markup == HTML_MARKUP)
 					YGUtils::replace (str, "\n", 1, "<br>");
 				authors += str;
@@ -870,7 +870,7 @@ int m_installedPkgs, m_totalPkgs;
 			zypp::VendorSupportOption opt = package->vendorSupport();
 			std::string str (zypp::asUserStringDescription (opt));
 			if (markup != HTML_MARKUP)
-				YGUtils::escapeMarkup (str);
+				return YGUtils::escapeMarkup (str);
 			return str;
 		}
 		return "";
@@ -975,7 +975,7 @@ int m_installedPkgs, m_totalPkgs;
 			text += it->asString();
 		}
 		if (markup != HTML_MARKUP)
-			YGUtils::escapeMarkup (text);
+			return YGUtils::escapeMarkup (text);
 		return text;
 	}
 
@@ -991,7 +991,7 @@ int m_installedPkgs, m_totalPkgs;
 			text += it->asString();
 		}
 		if (markup != NO_MARKUP)
-			YGUtils::escapeMarkup (text);
+			return YGUtils::escapeMarkup (text);
 		return text;
 	}
 

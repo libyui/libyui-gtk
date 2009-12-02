@@ -458,7 +458,7 @@ protected:
 				std::string str = package->name();
 				std::string summary = package->summary();
 				if (!summary.empty()) {
-					YGUtils::escapeMarkup (summary);
+					summary = YGUtils::escapeMarkup (summary);
 					str += "\n<small>" + summary + "</small>";
 				}
 				g_value_set_string (value, g_strdup (str.c_str()));

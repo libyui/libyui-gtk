@@ -268,9 +268,12 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 
 		else {  // Normal text
 			if (!pre_mode && g_ascii_isspace (instr[i])) {
-				if (!was_space)
-					g_string_append_c (outp, ' ');
-				was_space = TRUE;
+				// completely ignore breaklines unlike other whitespace
+				if (instr[i] != '\n') {
+					if (!was_space)
+						g_string_append_c (outp, ' ');
+					was_space = TRUE;
+				}
 			}
 			else {
 				was_space = FALSE;
@@ -419,42 +422,27 @@ void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top)
 { YGUtils::scrollWidget (vadj, top); }
 
-void YGUtils::escapeMarkup (std::string &str)
+std::string YGUtils::escapeMarkup (const std::string &ori)
 {
-	bool modify = false;
-	std::string::size_type i;
-	for (i = 0; i < str.length() && !modify; i++) {
-		switch (str[i]) {
+	std::string::size_type length = ori.length(), i;
+	std::string ret;
+	ret.reserve (length * 1.5);
+	for (i = 0; i < length; i++)
+		switch (ori[i]) {
 			case '<':
+				ret += "&lt;";
+				break;
 			case '>':
+				ret += "&gt;";
+				break;
 			case '&':
-				modify = true;
+				ret += "&amp;";
 				break;
 			default:
+				ret += ori[i];
 				break;
 		}
-	}
-	if (modify) {
-		std::string ori (str);
-		str.clear();
-		str.reserve (ori.length()+50);
-		for (i = 0; i < ori.length(); i++) {
-			switch (ori[i]) {
-				case '<':
-					str += "&lt;";
-					break;
-				case '>':
-					str += "&gt;";
-					break;
-				case '&':
-					str += "&amp;";
-					break;
-				default:
-					str += ori[i];
-					break;
-			}
-		}
-	}
+	return ret;
 }
 
 int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)

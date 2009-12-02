@@ -29,7 +29,7 @@ namespace YGUtils
 	std::string truncate (const std::string &str, int length, int pos);
 
 	/* Escapes markup text (eg. changes '<' by '\<'). */
-	void escapeMarkup (std::string &str);
+	std::string escapeMarkup (const std::string &str);
 
 	/* Adds functionality to scroll widgets to top or bottom. */
 	void scrollWidget (GtkAdjustment *vadj, bool top);

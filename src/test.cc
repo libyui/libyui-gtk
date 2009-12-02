@@ -131,8 +131,7 @@ bool testMarkupEscape()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string out (aTests[i].in);
-		YGUtils::escapeMarkup (out);
+		string out (YGUtils::escapeMarkup (aTests[i].in));
 		if (out != aTests[i].out) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out.c_str(), aTests[i].out);

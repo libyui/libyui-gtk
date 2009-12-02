@@ -482,7 +482,7 @@ protected:
 			const Ypp::Repository *repo = Ypp::get()->getRepository (i);
 			gtk_tree_store_append (store, &iter, NULL);
 			std::string text = repo->name, url (repo->url);
-			YGUtils::escapeMarkup (url);
+			url = YGUtils::escapeMarkup (url);
 			text += "\n<small>" + url + "</small>";
 			const gchar *icon;
 			if (repo->url.empty())
