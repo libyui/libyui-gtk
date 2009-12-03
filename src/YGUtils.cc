@@ -126,7 +126,7 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 	GQueue *tag_queue = g_queue_new();
 	int i = 0;
 
-	gboolean was_space = TRUE, pre_mode = FALSE;
+	gboolean allow_space = FALSE, pre_mode = FALSE;
 	skipSpace (instr, &i);
 
 	// we must add an outer tag to make GMarkup happy
@@ -239,6 +239,8 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 
 			if (is_close || is_open_close)
 				g_string_free (tag, TRUE);
+
+			allow_space = is_close;  // don't allow space after opening a tag
 		}
 
 		else if (instr[i] == '&') {  // Entity
@@ -263,20 +265,17 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 				else
 					g_string_append_c (outp, instr[i]);
 			}
-			was_space = FALSE;
+			allow_space = TRUE;
 		}
 
 		else {  // Normal text
 			if (!pre_mode && g_ascii_isspace (instr[i])) {
-				// completely ignore breaklines unlike other whitespace
-				if (instr[i] != '\n') {
-					if (!was_space)
-						g_string_append_c (outp, ' ');
-					was_space = TRUE;
-				}
+				if (allow_space)
+					g_string_append_c (outp, ' ');
+				allow_space = FALSE;  // one space is enough
 			}
 			else {
-				was_space = FALSE;
+				allow_space = TRUE;
 				g_string_append_c (outp, instr[i]);
 			}
 		}

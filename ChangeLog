@@ -1,3 +1,10 @@
+2009-12-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: proper fix for bug 549943: we
+	can't blindly ignore break-lines as white-space.
+	How yast2-qt renders HTML is by ignoring white-space
+	after a tag has been open (and only on open).
+
 2009-12-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: bug fix 549943: HTML to XHTML
