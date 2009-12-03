@@ -57,7 +57,7 @@ public:
 	}
 
 	// YPushButton
-	virtual void setLabel (const string &label)
+	virtual void setLabel (const std::string &label)
 	{
 		YPushButton::setLabel (label);
 		string str = YGUtils::mapKBAccel (label);

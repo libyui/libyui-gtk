@@ -55,12 +55,16 @@ public:
 	YGMenuButton (YWidget *parent, const string &label)
 	:  YMenuButton (NULL, label),
 	   YGWidget (this, parent, YGTK_TYPE_MENU_BUTTON, NULL)
+	{ setLabel (label); }
+
+	// YMenuButton
+	virtual void setLabel (const std::string &label)
 	{
 		string str = YGUtils::mapKBAccel (label.c_str());
 		ygtk_menu_button_set_label (YGTK_MENU_BUTTON (getWidget()), str.c_str());
+		YMenuButton::setLabel (label);
 	}
 
-	// YMenuButton
 	virtual void rebuildMenuTree()
 	{
 		GtkWidget *menu = gtk_menu_new();

@@ -126,14 +126,9 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		YGUtils::setFilter (getEntry(), validChars);
 	}
 
-	// Events notifications
+	// callbacks
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
-
-	YGLABEL_WIDGET_IMPL (YComboBox)
-	YGSELECTION_WIDGET_IMPL (YComboBox)
-
-	// callbacks
 
 	static gboolean realize_cb (GtkWidget *widget, GdkEventExpose *event,
 	                            YGComboBox *pThis)
@@ -147,6 +142,9 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 		g_signal_handlers_disconnect_by_func (widget, (gpointer) realize_cb, pThis);
 		return FALSE;
 	}
+
+	YGLABEL_WIDGET_IMPL (YComboBox)
+	YGSELECTION_WIDGET_IMPL (YComboBox)
 };
 
 YComboBox *YGWidgetFactory::createComboBox (YWidget *parent, const string &label, bool editable)

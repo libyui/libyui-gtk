@@ -341,8 +341,6 @@ public:
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return 30; }
 
-	YGWIDGET_IMPL_COMMON (YTable)
-
 	// YGSelectionModel
 
 	virtual void doAddItem (YItem *_item)
@@ -357,8 +355,6 @@ public:
     	else
 			yuiError() << "Can only add YTableItems to a YTable.\n";
     }
-
-	YGSELECTION_WIDGET_IMPL (YTable)
 
 	// callbacks
 
@@ -434,6 +430,9 @@ public:
 		g_free (str_b);
 		return ret;
 	}
+
+	YGLABEL_WIDGET_IMPL (YTable)
+	YGSELECTION_WIDGET_IMPL (YTable)
 };
 
 #if YAST2_VERSION >= 2017005
@@ -467,7 +466,7 @@ public:
 
 	virtual bool isShrinkable() { return shrinkable(); }
 
-	YGWIDGET_IMPL_COMMON (YSelectionBox)
+	YGLABEL_WIDGET_IMPL (YSelectionBox)
 	YGSELECTION_WIDGET_IMPL (YSelectionBox)
 };
 
@@ -548,7 +547,8 @@ public:
 
 	// YGWidget
 	virtual bool isShrinkable() { return shrinkable(); }
-	YGWIDGET_IMPL_COMMON (YMultiSelectionBox)
+
+	YGLABEL_WIDGET_IMPL (YMultiSelectionBox)
 	YGSELECTION_WIDGET_IMPL (YMultiSelectionBox)
 };
 
