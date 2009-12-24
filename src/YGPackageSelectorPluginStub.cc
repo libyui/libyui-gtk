@@ -11,17 +11,57 @@
 #include <YEvent.h>
 #include <string.h>
 
-bool show_find_pane = false, use_buttons = false, show_novelty_filter = false;
+bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = false,
+	status_side = false, status_tabs = true, status_tabs_as_actions = false,
+	undo_side = false, undo_tab = true, undo_old_style = false, status_col = false,
+	action_col = true, action_col_as_button = true, action_col_as_check = false,
+	version_col = true, single_line_rows = false, details_start_hide = true,
+	toolbar_top = false, toolbar_yast = false;
+
+struct Arg {
+	const char *arg;
+	bool *var;
+};
+Arg arguments[] = {
+	{ "search-entry-side", &search_entry_side },
+	{ "search-entry-top", &search_entry_top },
+	{ "dynamic-sidebar", &dynamic_sidebar },
+	{ "status-side", &status_side },
+	{ "status-tabs", &status_tabs },
+	{ "status-tabs-as-actions", &status_tabs_as_actions },
+	{ "undo-side", &undo_side },
+	{ "undo-tab", &undo_tab },
+	{ "undo-old-style", &undo_old_style },
+	{ "status-col", &status_col },
+	{ "action-col", &action_col },
+	{ "action-col-as-button", &action_col_as_button },
+	{ "action-col-as-check", &action_col_as_check },
+	{ "version-col", &version_col },
+	{ "single-line-rows", &single_line_rows },
+	{ "details-start-hide", &details_start_hide },
+	{ "toolbar-top", &toolbar_top },
+	{ "toolbar-yast", &toolbar_yast },
+};
+static const int arguments_nb = sizeof (arguments) / sizeof (Arg);
+
 bool YGUI::pkgSelectorParse (const char *arg)
 {
-	if (!strcmp (arg, "find-pane"))
-		show_find_pane = true;
-	else if (!strcmp (arg, "buttons"))
-		use_buttons = true;
-	else if (!strcmp (arg, "novelty-filter"))
-		show_novelty_filter = true;
-	else return false;
-	return true;
+	if (!strcmp (arg, "help-pkg")) {
+		printf ("sw_single gtk [OPTIONS]:\n");
+		for (int i = 0; i < arguments_nb; i++)
+			printf ("\t%s=y/n\t\t(default: %c)\n",
+				arguments[i].arg, *arguments[i].var ? 'y' : 'n');
+		exit (0);
+	}
+	for (int i = 0; i < arguments_nb; i++) {
+		int arg_len = strlen (arguments[i].arg);
+		if (!strncmp (arg, arguments[i].arg, arg_len) && arg[arg_len] == '=') {
+			*arguments[i].var = arg[arg_len+1] == 'y';
+fprintf (stderr, "found '%s' as '%s' = '%d'\n", arg, arguments[i].arg, *arguments[i].var);
+			return true;
+		}
+	}
+	return false;
 }
 
 void YGUI::pkgSelectorSize (int *width, int *height)

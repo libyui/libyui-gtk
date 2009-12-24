@@ -24,27 +24,30 @@
 #include "ygtkpackageview.h"
 #include "ygtkdetailview.h"
 #include "ygtkdiskview.h"
+#include "ygtknotebook.h"
 
 // experiments:
-extern bool show_find_pane, use_buttons, show_novelty_filter;
+extern bool search_entry_side, search_entry_top, dynamic_sidebar,
+	status_side, status_tabs, status_tabs_as_actions, undo_side, undo_tab,
+	undo_old_style, status_col, action_col, action_col_as_button,
+	action_col_as_check, version_col, single_line_rows, details_start_hide,
+	toolbar_top, toolbar_yast;
 
 //** UI components -- split up for re-usability, but mostly for readability
 
-#if 0
 class UndoView
 {
-GtkWidget *m_vbox;
 Ypp::PkgList m_changes;
 
 public:
-	GtkWidget *getWidget() { return m_vbox; }
+//	GtkWidget *getWidget() { return m_vbox; }
 
-	UndoView (YGtkPackageView::Listener *listener)
+	UndoView()
 	{
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
 		query->setToModify (true);
 		m_changes = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
-
+#if 0
 		GtkWidget *view = createView (listener);
 
 		m_vbox = gtk_vbox_new (FALSE, 6);
@@ -66,38 +69,41 @@ public:
 #endif
 		gtk_widget_show_all (m_vbox);
 		g_object_ref_sink (m_vbox);
+#endif
 	}
 
+#if 0
 	~UndoView()
 	{ g_object_unref (m_vbox); }
+#endif
 
-	GtkWidget *createView (YGtkPackageView::Listener *listener)
+	GtkWidget *createView (YGtkPackageView::Listener *listener, bool horizontal)
 	{
-		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
+		GtkWidget *main_box = horizontal ? gtk_hbox_new (TRUE, 6) : gtk_vbox_new (TRUE, 6);
 		for (int i = 0; i < 3; i++) {
 			const char *str = 0, *stock = 0;
 			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-			int checkCol = 0;
+			const char *prop;
 			switch (i) {
 				case 0:
 					str = _("To install:");
 					stock = GTK_STOCK_ADD;
 					query->setToInstall (true);
 					query->setIsInstalled (false);
-					checkCol = TO_INSTALL_PROP;
+					prop = "to-install";
 					break;
 				case 1:
 					str = _("To upgrade:");
 					stock = GTK_STOCK_GO_UP;
 					query->setToInstall (true);
 					query->setIsInstalled (true);
-					checkCol = TO_UPGRADE_PROP;
+					prop = "to-upgrade";
 					break;
 				case 2:
 					str = _("To remove:");
 					stock = GTK_STOCK_REMOVE;
 					query->setToRemove (true);
-					checkCol = TO_REMOVE_PROP;
+					prop = "to-remove";
 					break;
 				default: break;
 			}
@@ -111,8 +117,9 @@ public:
 			gtk_box_pack_start (GTK_BOX (label_box), icon, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
 			YGtkPackageView *view = ygtk_package_view_new (FALSE);
-			view->appendCheckColumn (checkCol);
-			view->appendTextColumn (NULL, NAME_PROP, -1, true);
+			view->setVisible ("available-version", false);
+/*			view->appendCheckColumn (checkCol);
+			view->appendTextColumn (NULL, NAME_PROP, -1, true);*/
 			view->setActivateAction (YGtkPackageView::UNDO_ACTION);
 			view->setList (list, NULL);
 			view->setListener (listener);
@@ -122,11 +129,11 @@ public:
 			GtkWidget *box = gtk_vbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (box), label_box, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (box), GTK_WIDGET (view), TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (hbox), box, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (main_box), box, TRUE, TRUE, 0);
 		}
-		return hbox;
+		return main_box;
 	}
-
+#if 0
 private:
 	static void uncouple_clicked_cb (GtkButton *button, UndoView *pThis)
 	{
@@ -142,7 +149,7 @@ private:
 		g_signal_connect (G_OBJECT (dialog), "response",
 		                  G_CALLBACK (close_response_cb), pThis);
 
-		GtkWidget *view = pThis->createView (NULL);
+		GtkWidget *view = pThis->createView (NULL, true);
 		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog))), view);
 		gtk_widget_show_all (dialog);
 	}
@@ -159,8 +166,175 @@ private:
 		gtk_widget_show (pThis->m_vbox);
 		gtk_widget_destroy (GTK_WIDGET (dialog));
 	}
+#endif
 };
 
+class ChangesPane : public Ypp::PkgList::Listener
+{
+	struct Entry {
+		GtkWidget *m_box, *m_label, *m_button;
+		GtkWidget *getWidget() { return m_box; }
+
+		Entry (Ypp::Package *package)
+		{
+			m_label = gtk_label_new ("");
+			gtk_misc_set_alignment (GTK_MISC (m_label), 0, 0.5);
+			gtk_label_set_ellipsize (GTK_LABEL (m_label), PANGO_ELLIPSIZE_END);
+			m_button = gtk_button_new();
+			gtk_widget_set_tooltip_text (m_button, _("Undo"));
+			GtkWidget *undo_image = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_MENU);
+			gtk_button_set_image (GTK_BUTTON (m_button), undo_image);
+			m_box = gtk_hbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (m_box), m_label, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_box), m_button, FALSE, FALSE, 0);
+			gtk_widget_show_all (m_box);
+			modified (package);
+			g_signal_connect (G_OBJECT (m_button), "clicked",
+			                  G_CALLBACK (undo_clicked_cb), package);
+		}
+
+		void modified (Ypp::Package *package)
+		{
+			const Ypp::Package::Version *version = 0;
+			std::string text, action;
+			if (package->toInstall (&version)) {
+				if (package->isInstalled()) {
+					if (version->cmp > 0)
+						action = _("upgrade");
+					else if (version->cmp < 0)
+						action = _("downgrade");
+					else
+						action = _("re-install");
+				}
+				else if (package->type() == Ypp::Package::PATCH_TYPE)
+					action = _("patch");
+				else
+					action = _("install");
+			}
+			else
+				action = _("remove");
+			text = action + " " + package->name();
+			if (package->isAuto()) {
+				text = "\t" + text;
+				gtk_widget_hide (m_button);
+			}
+			else
+				gtk_widget_show (m_button);
+			gtk_label_set_text (GTK_LABEL (m_label), text.c_str());
+			std::string tooltip = action + " " + package->name();
+			if (version)
+				tooltip += std::string (_("\nfrom")) + " <i>" + version->repo->name + "</i>";
+			gtk_widget_set_tooltip_markup (m_label, tooltip.c_str());
+		}
+
+		static void undo_clicked_cb (GtkButton *button, Ypp::Package *package)
+		{
+			package->undo();
+		}
+	};
+
+GtkWidget *m_box, *m_entries_box;
+Ypp::PkgList m_pool;
+GList *m_entries;
+
+public:
+	GtkWidget *getWidget()
+	{ return m_box; }
+
+	ChangesPane()
+	: m_entries (NULL)
+	{
+		GtkWidget *heading = gtk_label_new (_("Changes:"));
+		YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
+		m_entries_box = gtk_vbox_new (FALSE, 4);
+
+		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll),
+		                                       m_entries_box);
+		GtkWidget *port = gtk_bin_get_child (GTK_BIN (scroll));
+		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
+
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
+		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), scroll, TRUE, TRUE, 0);
+
+		ygtk_wizard_set_information_expose_hook (vbox, &vbox->allocation);
+		ygtk_wizard_set_information_expose_hook (m_entries_box, &m_entries_box->allocation);
+
+		int width = YGUtils::getCharsWidth (vbox, 32);
+		gtk_widget_set_size_request (vbox, width, -1);
+		gtk_widget_show_all (vbox);
+
+		m_box = gtk_handle_box_new();
+		gtk_container_add (GTK_CONTAINER (m_box), vbox);
+		gtk_handle_box_set_handle_position (GTK_HANDLE_BOX (m_box), GTK_POS_TOP);
+		gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_box), GTK_POS_RIGHT);
+
+		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+		query->setToModify (true);
+/*		if (pkg_selector->onlineUpdateMode())
+			query->addType (Ypp::Package::PATCH_TYPE);*/
+		m_pool = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
+		// initialize list -- there could already be packages modified
+		for (int i = 0; i < m_pool.size(); i++)
+			ChangesPane::entryInserted (m_pool, i, m_pool.get (i));
+		m_pool.addListener (this);
+	}
+
+	~ChangesPane()
+	{
+		for (GList *i = m_entries; i; i = i->next)
+			delete (Entry *) i->data;
+		g_list_free (m_entries);
+	}
+
+	void startHack()  // call after init, after you did a show_all in the dialog
+	{
+		UpdateVisible();
+		// ugly: signal modified for all entries to allow them to hide undo buttons
+		GList *i;
+		int index;
+		for (index = 0, i = m_entries; index < m_pool.size() && i;
+		     index++, i = i->next)
+			((Entry *) i->data)->modified (m_pool.get (index));
+	}
+
+	void UpdateVisible()
+	{
+		if (details_start_hide)
+			m_entries != NULL ? gtk_widget_show (m_box) : gtk_widget_hide (m_box);
+	}
+
+	virtual void entryInserted (const Ypp::PkgList list, int index, Ypp::Package *package)
+	{
+		Entry *entry = new Entry (package);
+		gtk_box_pack_start (GTK_BOX (m_entries_box), entry->getWidget(), FALSE, TRUE, 0);
+		m_entries = g_list_insert (m_entries, entry, index);
+		UpdateVisible();
+	}
+
+	virtual void entryDeleted  (const Ypp::PkgList list, int index, Ypp::Package *package)
+	{
+		GList *i = g_list_nth (m_entries, index);
+		Entry *entry = (Entry *) i->data;
+		gtk_container_remove (GTK_CONTAINER (m_entries_box), entry->getWidget());
+		delete entry;
+		m_entries = g_list_delete_link (m_entries, i);
+		UpdateVisible();
+	}
+
+	virtual void entryChanged  (const Ypp::PkgList list, int index, Ypp::Package *package)
+	{
+		Entry *entry = (Entry *) g_list_nth_data (m_entries, index);
+		entry->modified (package);
+	}
+};
+
+#if 0
 struct QueryListener {
 	virtual void queryNotify() = 0;
 	virtual void queryNotifyDelay() = 0;
@@ -1807,6 +1981,8 @@ struct _QueryWidget
 		timeout_id = g_timeout_add (500, inner::timeout_cb, this);
 	}
 
+	bool modified;  // flag for internal use
+
 private:
 	_QueryListener *m_listener;
 };
@@ -1817,16 +1993,17 @@ GtkWidget *m_widget, *m_entry, *m_combo;
 bool m_clearIcon;
 
 public:
-	SearchEntry() : _QueryWidget()
+	SearchEntry (bool combo_props) : _QueryWidget()
 	{
 		m_entry = gtk_entry_new();
 		g_signal_connect (G_OBJECT (m_entry), "realize",
 		                  G_CALLBACK (grab_focus_cb), NULL);
 		gtk_widget_set_size_request (m_entry, 50, -1);
 		GtkWidget *entry_hbox = gtk_hbox_new (FALSE, 2), *find_label;
-		find_label = gtk_label_new (_("Find:"));
+		find_label = gtk_label_new_with_mnemonic (_("_Find:"));
 		gtk_box_pack_start (GTK_BOX (entry_hbox), find_label, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (entry_hbox), m_entry, TRUE, TRUE, 0);
+		gtk_label_set_mnemonic_widget (GTK_LABEL (find_label), m_entry);
 
 		m_clearIcon = false;
 		g_signal_connect (G_OBJECT (m_entry), "changed",
@@ -1834,28 +2011,34 @@ public:
 		g_signal_connect (G_OBJECT (m_entry), "icon-press",
 		                  G_CALLBACK (icon_press_cb), this);
 
-		m_combo = gtk_combo_box_new_text();
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Name & Summary"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Description"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("File List"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Author"));
-		gtk_combo_box_set_active (GTK_COMBO_BOX (m_combo), 0);
-		g_signal_connect (G_OBJECT (m_combo), "changed",
-		                  G_CALLBACK (combo_changed_cb), this);
+		m_combo = 0;
+		if (combo_props) {
+			m_combo = gtk_combo_box_new_text();
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Name & Summary"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Description"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("File List"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_combo), _("Author"));
+			gtk_combo_box_set_active (GTK_COMBO_BOX (m_combo), 0);
+			g_signal_connect (G_OBJECT (m_combo), "changed",
+				              G_CALLBACK (combo_changed_cb), this);
 
-		GtkWidget *opt_hbox = gtk_hbox_new (FALSE, 2), *empty = gtk_event_box_new();
-		gtk_box_pack_start (GTK_BOX (opt_hbox), empty, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (opt_hbox), gtk_label_new (_("by")), FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (opt_hbox), m_combo, TRUE, TRUE, 0);
+			GtkWidget *opt_hbox = gtk_hbox_new (FALSE, 2), *empty = gtk_event_box_new();
+			gtk_box_pack_start (GTK_BOX (opt_hbox), empty, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (opt_hbox), gtk_label_new (_("by")), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (opt_hbox), m_combo, TRUE, TRUE, 0);
 
-		GtkSizeGroup *group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-		gtk_size_group_add_widget (group, find_label);
-		gtk_size_group_add_widget (group, empty);
-		g_object_unref (G_OBJECT (group));
+			GtkSizeGroup *group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+			gtk_size_group_add_widget (group, find_label);
+			gtk_size_group_add_widget (group, empty);
+			g_object_unref (G_OBJECT (group));
 
-		m_widget = gtk_vbox_new (FALSE, 4);
-		gtk_box_pack_start (GTK_BOX (m_widget), entry_hbox, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_widget), opt_hbox, FALSE, TRUE, 0);
+			m_widget = gtk_vbox_new (FALSE, 4);
+			gtk_box_pack_start (GTK_BOX (m_widget), entry_hbox, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_widget), opt_hbox, FALSE, TRUE, 0);
+		}
+		else
+			m_widget = entry_hbox;
+		gtk_widget_show_all (m_widget);
 	}
 
 	virtual GtkWidget *getWidget() { return m_widget; }
@@ -1868,7 +2051,9 @@ public:
 	{
 		const gchar *name = gtk_entry_get_text (GTK_ENTRY (m_entry));
 		if (*name) {
-			int opt = gtk_combo_box_get_active (GTK_COMBO_BOX (m_combo));
+			int opt = 0;
+			if (m_combo)
+				opt = gtk_combo_box_get_active (GTK_COMBO_BOX (m_combo));
 			bool whole_word = opt >= 2;
 			query->addNames (name, ' ', opt == 0, opt == 0, opt == 1, opt == 2,
 				opt == 3, whole_word);
@@ -1964,15 +2149,19 @@ public:
 		m_type2 = false;
 		m_view = tree_view_new();
 		GtkWidget *scroll = scrolled_window_new (m_view);
-
+#if 0
 		GtkWidget *combo = gtk_combo_box_new_text();
 		gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Categories"));
 		gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Repositories"));
 		gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
 		g_signal_connect (G_OBJECT (combo), "changed",
 		                  G_CALLBACK (combo_changed_cb), this);
+#endif
+		GtkWidget *combo = gtk_label_new_with_mnemonic ("Ca_tegories:");
+		gtk_misc_set_alignment (GTK_MISC (combo), 0, 0);
+		gtk_label_set_mnemonic_widget (GTK_LABEL (combo), m_view);
 
-		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 4); //0);
 		gtk_box_pack_start (GTK_BOX (vbox), combo, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), scroll, TRUE, TRUE, 0);
 		m_widget = vbox;
@@ -1995,6 +2184,8 @@ public:
 		store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_POINTER);
 		m_model = GTK_TREE_MODEL (store);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("All packages"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, NULL, -1);
 		Ypp::Node *category;
 		if (m_type2)
@@ -2003,6 +2194,8 @@ public:
 			category = Ypp::get()->getFirstCategory (type);
 		for (; category; category = category->next()) {
 			gtk_list_store_append (store, &iter);
+			if (!dynamic_sidebar)
+				gtk_list_store_set (store, &iter, 0, category->name.c_str(), -1);
 			gtk_list_store_set (store, &iter, 1, TRUE, 2, category, -1);
 		}
 		GtkTreeModel *filter_model = gtk_tree_model_filter_new (m_model, NULL);
@@ -2044,7 +2237,7 @@ public:
 			} while (gtk_tree_model_iter_next (model, &iter));
 	}
 
-	virtual bool begsUpdate() { return true; }
+	virtual bool begsUpdate() { return dynamic_sidebar; }
 
 	virtual bool writeQuery (Ypp::PkgQuery::Query *query)
 	{
@@ -2080,21 +2273,38 @@ public:
 	StatusView() : _QueryWidget()
 	{
 		m_view = tree_view_new();
-		m_widget = scrolled_window_new (m_view);
+
+		GtkWidget *label = gtk_label_new_with_mnemonic ("_Statuses:");
+		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+		gtk_label_set_mnemonic_widget (GTK_LABEL (label), m_view);
+		GtkWidget *scroll = scrolled_window_new (m_view);
+		m_widget = gtk_vbox_new (FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (m_widget), label, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (m_widget), scroll, TRUE, TRUE, 0);
 
 		GtkListStore *store;
 		GtkTreeIter iter;
 		store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_INT);
 		m_model = GTK_TREE_MODEL (store);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("All packages"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, 0, -1);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("Available"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, 1, -1);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("Installed"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, 2, -1);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("Upgrades"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, 3, -1);
 		gtk_list_store_append (store, &iter);
+		if (!dynamic_sidebar)
+			gtk_list_store_set (store, &iter, 0, _("Summary"), -1);
 		gtk_list_store_set (store, &iter, 1, TRUE, 2, 4, -1);
 
 		GtkTreeModel *filter_model = gtk_tree_model_filter_new (m_model, NULL);
@@ -2147,7 +2357,7 @@ public:
 		list_store_set_text_count (store, &iter, _("Modified"), modifiedNb);
 	}
 
-	virtual bool begsUpdate() { return true; }
+	virtual bool begsUpdate() { return dynamic_sidebar; }
 
 	virtual bool writeQuery (Ypp::PkgQuery::Query *query)
 	{
@@ -2194,6 +2404,9 @@ public:
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_widget),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_widget), vbox);
+
+		g_signal_connect (G_OBJECT (vbox), "expose-event",
+		                  G_CALLBACK (expose_cb), NULL);
 	}
 
 	void setPackage (Ypp::Package *package)
@@ -2216,37 +2429,220 @@ public:
 		else
 			gtk_widget_hide (m_pkg_view);
 	}
+
+	static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
+	{
+		cairo_t *cr = gdk_cairo_create (widget->window);
+		GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
+		gdk_cairo_set_source_color (cr, &color);
+		cairo_rectangle (cr, event->area.x, event->area.y,
+				         event->area.width, event->area.height);
+		cairo_fill (cr);
+		cairo_destroy (cr);
+		return FALSE;
+	}
+};
+
+class Toolbar
+{
+GtkWidget *m_toolbar;
+GtkWidget *m_install_button, *m_upgrade_button, *m_remove_button;
+Ypp::PkgList m_packages;
+
+public:
+	GtkWidget *getWidget() { return m_toolbar; }
+
+	Toolbar (bool yast_style)
+	{
+		if (yast_style) {
+			m_toolbar = gtk_hbox_new (FALSE, 6);
+			m_install_button = gtk_button_new_with_label (_("Install"));
+			gtk_button_set_image (GTK_BUTTON (m_install_button),
+				gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON));
+			gtk_box_pack_start (GTK_BOX (m_toolbar), m_install_button, FALSE, TRUE, 0);
+			m_upgrade_button = gtk_button_new_with_label (_("Upgrade"));
+			gtk_button_set_image (GTK_BUTTON (m_upgrade_button),
+				gtk_image_new_from_stock (GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON));
+			gtk_box_pack_start (GTK_BOX (m_toolbar), m_upgrade_button, FALSE, TRUE, 0);
+			m_remove_button = gtk_button_new_with_label (_("Remove"));
+			gtk_button_set_image (GTK_BUTTON (m_remove_button),
+				gtk_image_new_from_stock (GTK_STOCK_REMOVE, GTK_ICON_SIZE_BUTTON));
+			gtk_box_pack_start (GTK_BOX (m_toolbar), m_remove_button, FALSE, TRUE, 0);
+		}
+		else {
+			m_toolbar = gtk_toolbar_new();
+			m_install_button = GTK_WIDGET (gtk_tool_button_new (
+				gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_LARGE_TOOLBAR), _("Install")));
+			gtk_tool_item_set_is_important (GTK_TOOL_ITEM (m_install_button), TRUE);
+			gtk_toolbar_insert (GTK_TOOLBAR (m_toolbar), GTK_TOOL_ITEM (m_install_button), -1);
+			m_upgrade_button = GTK_WIDGET (gtk_tool_button_new (
+				gtk_image_new_from_stock (GTK_STOCK_GO_UP, GTK_ICON_SIZE_LARGE_TOOLBAR), _("Upgrade")));
+			gtk_tool_item_set_is_important (GTK_TOOL_ITEM (m_upgrade_button), TRUE);
+			gtk_toolbar_insert (GTK_TOOLBAR (m_toolbar), GTK_TOOL_ITEM (m_upgrade_button), -1);
+			m_remove_button = GTK_WIDGET (gtk_tool_button_new (
+				gtk_image_new_from_stock (GTK_STOCK_REMOVE, GTK_ICON_SIZE_LARGE_TOOLBAR), _("Remove")));
+			gtk_tool_item_set_is_important (GTK_TOOL_ITEM (m_remove_button), TRUE);
+			gtk_toolbar_insert (GTK_TOOLBAR (m_toolbar), GTK_TOOL_ITEM (m_remove_button), -1);
+		}
+
+		g_signal_connect (G_OBJECT (m_install_button), "clicked",
+			              G_CALLBACK (install_clicked_cb), this);
+		g_signal_connect (G_OBJECT (m_upgrade_button), "clicked",
+			              G_CALLBACK (upgrade_clicked_cb), this);
+		g_signal_connect (G_OBJECT (m_remove_button), "clicked",
+			              G_CALLBACK (remove_clicked_cb), this);
+
+		setPackages (Ypp::PkgList());
+	}
+
+	void setPackages (Ypp::PkgList list)
+	{
+		m_packages = list;
+		if (list.size() == 0) {
+			gtk_widget_set_sensitive (m_install_button, FALSE);
+			gtk_widget_set_sensitive (m_upgrade_button, FALSE);
+			gtk_widget_set_sensitive (m_remove_button, FALSE);
+		}
+		else {
+			bool installed = list.installed();
+			gtk_widget_set_sensitive (m_install_button, !installed);
+			gtk_widget_set_sensitive (m_remove_button, installed);
+			gtk_widget_set_sensitive (m_upgrade_button, list.upgradable());
+		}
+	}
+
+	static void install_clicked_cb (GtkWidget *button, Toolbar *pThis)
+	{
+		pThis->m_packages.install();
+	}
+
+	static void upgrade_clicked_cb (GtkWidget *button, Toolbar *pThis)
+	{
+		pThis->m_packages.install();
+	}
+
+	static void remove_clicked_cb (GtkWidget *button, Toolbar *pThis)
+	{
+		pThis->m_packages.remove();
+	}
 };
 
 class UI : public YGtkPackageView::Listener, _QueryListener, Ypp::Disk::Listener
 {
-GtkWidget *m_widget, *m_view, *m_disk_label;
-_QueryWidget *m_query[3];
+GtkWidget *m_widget, *m_disk_label;
+YGtkPackageView *m_all_view, *m_installed_view, *m_available_view, *m_upgrades_view;
+std::list <_QueryWidget *> m_query;
 DetailBox *m_details;
 DiskView *m_disk;
 Ypp::Package::Type m_type;
+Toolbar *m_toolbar;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
 
 	UI (YPackageSelector *sel)
 	{
+		m_toolbar = 0;
+
 		if (sel->onlineUpdateMode())
 			m_type = Ypp::Package::PATCH_TYPE;
 		else if (!sel->searchMode())
 			m_type = Ypp::Package::PATTERN_TYPE;
 		else
 			m_type = Ypp::Package::PACKAGE_TYPE;
-		YGtkPackageView *view = ygtk_package_view_new (TRUE);
-		view->setListener (this);
-		m_view = GTK_WIDGET (view);
-		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (view), GTK_SHADOW_IN);
+
+		m_all_view = m_installed_view = m_available_view = m_upgrades_view = NULL;
+
+		_QueryWidget *search_entry = 0;
+		if (search_entry_top)
+			search_entry = new SearchEntry (false);
+		m_query.push_back (search_entry);
+		gtk_widget_set_size_request (search_entry->getWidget(), 160, -1);
+
+		UndoView *undo_view = 0;
+		if (undo_side || undo_tab)
+			undo_view = new UndoView();
+
+		GtkWidget *packages_box;
+		if (status_tabs) {
+			m_installed_view = ygtk_package_view_new (TRUE);
+			m_installed_view->setListener (this);
+			m_available_view = ygtk_package_view_new (TRUE);
+			m_available_view->setListener (this);
+			m_upgrades_view = ygtk_package_view_new (TRUE);
+			m_upgrades_view->setListener (this);
+
+			packages_box = ygtk_notebook_new();
+			const char **labels;
+			if (status_tabs_as_actions) {
+				const char *t[] = { _("_Install"), _("_Upgrade"), _("_Remove"), _("Undo") };
+				labels = t;
+			}
+			else {
+				const char *t[] = { _("_Available"), _("_Upgrades"), _("_Installed"), _("Summary") };
+				labels = t;
+			}
+			gtk_notebook_append_page (GTK_NOTEBOOK (packages_box),
+				GTK_WIDGET (m_available_view), gtk_label_new_with_mnemonic (labels[0]));
+			gtk_notebook_append_page (GTK_NOTEBOOK (packages_box),
+				GTK_WIDGET (m_upgrades_view), gtk_label_new_with_mnemonic (labels[1]));
+			gtk_notebook_append_page (GTK_NOTEBOOK (packages_box),
+				GTK_WIDGET (m_installed_view), gtk_label_new_with_mnemonic (labels[2]));
+
+			if (undo_tab) {
+				GtkWidget *box = gtk_event_box_new();
+				gtk_container_add (GTK_CONTAINER (box), undo_view->createView (this, true));
+				gtk_container_set_border_width (GTK_CONTAINER (box), 6);
+				gtk_notebook_append_page (GTK_NOTEBOOK (packages_box),
+					box, gtk_label_new_with_mnemonic (labels[3]));
+			}
+
+			if (search_entry)
+				// FIXME: only the entry itself is shown, without the "Find:" label
+				ygtk_notebook_set_corner_widget (
+					YGTK_NOTEBOOK (packages_box), search_entry->getWidget());
+		}
+		else {
+			m_all_view = ygtk_package_view_new (TRUE);
+			m_all_view->setListener (this);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (m_all_view), GTK_SHADOW_IN);
+
+			packages_box = gtk_vbox_new (FALSE, 4);
+			GtkWidget *header_box = gtk_hbox_new (FALSE, 6);
+			GtkWidget *header = gtk_label_new_with_mnemonic (_("_Listing:"));
+			gtk_misc_set_alignment (GTK_MISC (header), 0, .5);
+			gtk_label_set_mnemonic_widget (GTK_LABEL (header), GTK_WIDGET (m_all_view));
+			gtk_box_pack_start (GTK_BOX (header_box), header, TRUE, TRUE, 0);
+			if (search_entry)
+				gtk_box_pack_start (GTK_BOX (header_box), search_entry->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (packages_box), header_box, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (packages_box), GTK_WIDGET (m_all_view), TRUE, TRUE, 0);
+		}
+
+		GtkWidget *packages_button_box = gtk_vbox_new (FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (packages_button_box), packages_box, TRUE, TRUE, 0);
+		if (!toolbar_top && toolbar_yast)
+			gtk_box_pack_start (GTK_BOX (packages_button_box), (m_toolbar = new Toolbar (true))->getWidget(), FALSE, TRUE, 0);
+
+		GtkWidget *packages_pane = gtk_hpaned_new();
+		gtk_paned_pack1 (GTK_PANED (packages_pane), packages_button_box, TRUE, FALSE);
+		GtkWidget *undo_widget;
+		if (undo_side) {
+			if (undo_old_style)
+				undo_widget = (new ChangesPane())->getWidget();
+			else
+				undo_widget = undo_view->createView (this, false);
+			gtk_paned_pack2 (GTK_PANED (packages_pane), undo_widget, FALSE, FALSE);
+			gtk_paned_set_position (GTK_PANED (packages_pane), 350);
+		}
 
 		GtkWidget *view_pane = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (view_pane), m_view, TRUE, FALSE);
+		gtk_paned_pack1 (GTK_PANED (view_pane), packages_pane, TRUE, FALSE);
 		m_details = new DetailBox();
 		gtk_paned_pack2 (GTK_PANED (view_pane), m_details->getWidget(), FALSE, TRUE);
+		gtk_paned_set_position (GTK_PANED (view_pane), 500);
 
+#if 0
 		GtkWidget *combo = gtk_combo_box_new_text();
 		if (sel->onlineUpdateMode()) {
 			gtk_combo_box_append_text (GTK_COMBO_BOX (combo), _("Patch"));
@@ -2275,40 +2671,65 @@ public:
 		GtkWidget *view_vbox = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (view_vbox), view_pane, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (view_vbox), type_hbox, FALSE, TRUE, 0);
-
+#endif
 		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 12);
-		m_query[0] = new SearchEntry();
-		gtk_box_pack_start (GTK_BOX (side_vbox), m_query[0]->getWidget(), FALSE, TRUE, 0);
+		if (search_entry_side) {
+			_QueryWidget *search_entry = new SearchEntry (true);
+			m_query.push_back (search_entry);
+			gtk_box_pack_start (GTK_BOX (side_vbox), search_entry->getWidget(), FALSE, TRUE, 0);
+		}
 
-		m_query[1] = new CategoryView();
-		m_query[2] = new StatusView();
+		_QueryWidget *categories = new CategoryView();
+		m_query.push_back (categories);
 
 		GtkWidget *cat_pane = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (cat_pane), m_query[1]->getWidget(), TRUE, FALSE);
-		gtk_paned_pack2 (GTK_PANED (cat_pane), m_query[2]->getWidget(), TRUE, FALSE);
+		gtk_paned_pack1 (GTK_PANED (cat_pane), categories->getWidget(), TRUE, FALSE);
+		if (status_side) {
+			_QueryWidget *statuses = new StatusView();
+			m_query.push_back (statuses);
+			gtk_paned_pack2 (GTK_PANED (cat_pane), statuses->getWidget(), TRUE, FALSE);
+		}
 		gtk_box_pack_start (GTK_BOX (side_vbox), cat_pane, TRUE, TRUE, 0);
 
 		GtkWidget *side_pane = gtk_hpaned_new();
-		gtk_paned_pack1 (GTK_PANED (side_pane), side_vbox, FALSE, FALSE);
-		gtk_paned_pack2 (GTK_PANED (side_pane), view_vbox, TRUE, FALSE);
+		gtk_paned_pack1 (GTK_PANED (side_pane), side_vbox, FALSE, TRUE);
+		gtk_paned_pack2 (GTK_PANED (side_pane), view_pane, TRUE, FALSE);
 		gtk_paned_set_position (GTK_PANED (side_pane), 150);
 
-		for (int i = 0; i < 3; i++) {
-			m_query[i]->updateType (m_type);
-			m_query[i]->setListener (this);
+		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+		     it != m_query.end(); it++) {
+			(*it)->updateType (m_type);
+			(*it)->setListener (this);
 		}
 		refresh();
 		updateDisk();
 		Ypp::get()->getDisk()->addListener (this);
-		m_widget = side_pane;
+
+		if (toolbar_top) {
+			m_toolbar = new Toolbar (false);
+			m_widget = gtk_vbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (m_widget), m_toolbar->getWidget(), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (m_widget), side_pane, TRUE, TRUE, 0);
+		}
+		else
+			m_widget = side_pane;
+
 		gtk_widget_show_all (m_widget);
-		gtk_widget_hide (m_details->getWidget());
+
+		if (details_start_hide) {
+			gtk_widget_hide (m_details->getWidget());
+			if (undo_old_style)
+				gtk_widget_hide (undo_widget);
+		}
+		else
+			m_details->setPackage (NULL);
 	}
 
 	~UI()
 	{
-		for (int i = 0; i < 3; i++)
-			delete m_query[i];
+		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+		     it != m_query.end(); it++)
+			delete *it;
 		delete m_disk;
 	}
 
@@ -2316,10 +2737,11 @@ private:
 	void updateWidget (_QueryWidget *widget)
 	{
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		for (int i = 0; i < 3; i++) {
-			if (m_query[i] == widget)
+		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+		     it != m_query.end(); it++) {
+			if (*it == widget)
 				continue;
-			m_query[i]->writeQuery (query);
+			(*it)->writeQuery (query);
 		}
 
 		Ypp::PkgQuery list (m_type, query);
@@ -2328,30 +2750,53 @@ private:
 
 	virtual void refresh()
 	{
-		bool widgetModified[3] = { false };
 		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		for (int i = 0; i < 3; i++)
-			widgetModified[i] = m_query[i]->writeQuery (query);
+		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+		     it != m_query.end(); it++)
+			(*it)->modified = (*it)->writeQuery (query);
 
 		Ypp::PkgQuery list (m_type, query);
-		((YGtkPackageView *) m_view)->setList (list, NULL);
+		if (m_all_view)
+			m_all_view->setList (list, NULL);
 
-		for (int i = 0; i < 3; i++)
-			if (m_query[i]->begsUpdate()) {
-				if (widgetModified[i])
-					updateWidget (m_query[i]);
+		if (m_installed_view) {
+			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+			query->setIsInstalled (true);
+			Ypp::PkgQuery _list (list, query);
+			m_installed_view->setList (_list, NULL);
+		}
+		if (m_available_view) {
+			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+			query->setIsInstalled (false);
+			Ypp::PkgQuery _list (list, query);
+			m_available_view->setList (_list, NULL);
+		}
+		if (m_upgrades_view) {
+			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+			query->setHasUpgrade (true);
+			Ypp::PkgQuery _list (list, query);
+			m_upgrades_view->setList (_list, NULL);
+		}
+
+		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+		     it != m_query.end(); it++)
+			if ((*it)->begsUpdate()) {
+				if ((*it)->modified)
+					updateWidget (*it);
 				else
-					m_query[i]->updateList (list);
+					(*it)->updateList (list);
 			}
 	}
 
 	virtual void packagesSelected (Ypp::PkgList packages)
 	{
 		m_details->setPackage (packages.size() ? packages.get (0) : NULL);
+		m_toolbar->setPackages (packages);
 	}
 
 	virtual void updateDisk()
 	{
+#if 0
 		Ypp::Disk *disk = Ypp::get()->getDisk();
 		const Ypp::Disk::Partition *part = 0;
 		for (int i = 0; disk->getPartition (i); i++) {
@@ -2375,13 +2820,15 @@ private:
 		}
 		else
 			gtk_label_set_text (GTK_LABEL (m_disk_label), "");
+#endif
 	}
 
 	static void type_changed_cb (GtkComboBox *combo, UI *pThis)
 	{
 		pThis->m_type = (Ypp::Package::Type) gtk_combo_box_get_active (combo);
-		for (int i = 0; i < 3; i++)
-			pThis->m_query[i]->updateType (pThis->m_type);
+		for (std::list <_QueryWidget *>::const_iterator it = pThis->m_query.begin();
+		     it != pThis->m_query.end(); it++)
+			(*it)->updateType (pThis->m_type);
 		pThis->refresh();
 	}
 };
@@ -2425,8 +2872,10 @@ public:
 		                  G_CALLBACK (wizard_action_cb), this);
 		ygtk_wizard_enable_button (wizard, wizard->next_button, FALSE);
 
+#if 0
 		m_tools = new ToolsBox();
 		ygtk_wizard_set_extra_button (YGTK_WIZARD (getWidget()), m_tools->getWidget());
+#endif
 
 		m_progressbar = gtk_progress_bar_new();
 		GtkWidget *empty = gtk_event_box_new();
@@ -2462,7 +2911,9 @@ public:
 		if (m_button_timeout_id)
 			g_source_remove (m_button_timeout_id);
 //		delete m_notebook;
+#if 0
 		delete m_tools;
+#endif
 		Ypp::finish();
 	}
 

@@ -30,6 +30,7 @@ static void ygtk_ext_entry_destroy (GtkObject *object)
 
 static void ygtk_ext_entry_map (GtkWidget *widget)
 {
+fprintf (stderr, "ext entry - map\n");
 	if (GTK_WIDGET_REALIZED (widget) && !GTK_WIDGET_MAPPED (widget)) {
 		GTK_WIDGET_CLASS (ygtk_ext_entry_parent_class)->map (widget);
 		YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
@@ -42,6 +43,7 @@ static void ygtk_ext_entry_map (GtkWidget *widget)
 
 static void ygtk_ext_entry_unmap (GtkWidget *widget)
 {
+fprintf (stderr, "ext entry - unmap\n");
 	if (GTK_WIDGET_MAPPED (widget)) {
 		YGtkExtEntry *entry = YGTK_EXT_ENTRY (widget);
 		if (entry->left_window)
@@ -328,6 +330,7 @@ static void generate_find_icon (YGtkFindEntry *entry)
 
 static void ygtk_find_entry_realize (GtkWidget *widget)
 {
+fprintf (stderr, "find entry - realize\n");
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->realize (widget);
 
 	YGtkExtEntry *eentry = YGTK_EXT_ENTRY (widget);
@@ -348,6 +351,7 @@ static void ygtk_find_entry_realize (GtkWidget *widget)
 
 static void ygtk_find_entry_unrealize (GtkWidget *widget)
 {
+fprintf (stderr, "find entry - unrealize\n");
 	GTK_WIDGET_CLASS (ygtk_find_entry_parent_class)->unrealize (widget);
 
 	YGtkFindEntry *fentry = YGTK_FIND_ENTRY (widget);

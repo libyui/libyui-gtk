@@ -88,11 +88,8 @@ static void ygtk_notebook_map (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_notebook_parent_class)->map (widget);
 	YGtkNotebook *notebook = YGTK_NOTEBOOK (widget);
-	if (notebook->corner_widget) {
-		GtkWidget *corner = notebook->corner_widget;
-		if (corner && GTK_WIDGET_VISIBLE (corner) && !GTK_WIDGET_MAPPED (corner))
-			gtk_widget_map (corner);
-	}
+	if (notebook->corner_widget)
+		gtk_widget_map (notebook->corner_widget);
 }
 
 static void ygtk_notebook_switch_page (

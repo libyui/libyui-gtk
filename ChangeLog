@@ -1,3 +1,9 @@
+2009-12-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: added a bunch of flags
+	for experimental purposes. Try:
+		/usr/lib/YaST2/bin/y2base sw_single gtk --help-pkg
+
 2009-12-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: proper fix for bug 549943: we
