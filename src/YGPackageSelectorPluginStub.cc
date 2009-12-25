@@ -43,7 +43,7 @@ Arg arguments[] = {
 	{ "details-start-hide", &details_start_hide },
 	{ "toolbar-top", &toolbar_top },
 	{ "toolbar-yast", &toolbar_yast },
-//	{ "arrange-by", &arrange_by },
+	{ "arrange-by", &arrange_by },
 };
 static const int arguments_nb = sizeof (arguments) / sizeof (Arg);
 

@@ -3,6 +3,9 @@
 	* src/pkg/YGPackageSelector.cc: fixed crash when
 	search-entry-top=n (which was default).
 
+	* src/pkg/YGPackageSelector.cc: added --arrange-by
+	flag as suggested by Christian Jaeger's mockup.
+
 2009-12-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: added a bunch of flags

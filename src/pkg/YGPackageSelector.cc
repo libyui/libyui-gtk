@@ -2529,7 +2529,7 @@ public:
 
 class UI : public YGtkPackageView::Listener, _QueryListener, Ypp::Disk::Listener
 {
-GtkWidget *m_widget, *m_disk_label;
+GtkWidget *m_widget, *m_disk_label, *m_arrange_combo;
 YGtkPackageView *m_all_view, *m_installed_view, *m_available_view, *m_upgrades_view;
 std::list <_QueryWidget *> m_query;
 DetailBox *m_details;
@@ -2543,6 +2543,7 @@ public:
 	UI (YPackageSelector *sel)
 	{
 		m_toolbar = 0;
+		m_arrange_combo = 0;
 
 		if (sel->onlineUpdateMode())
 			m_type = Ypp::Package::PATCH_TYPE;
@@ -2563,6 +2564,20 @@ public:
 		UndoView *undo_view = 0;
 		if (undo_side || undo_tab)
 			undo_view = new UndoView();
+
+		GtkWidget *arrange_box = 0;
+		if (arrange_by) {
+			arrange_box = gtk_hbox_new (FALSE, 4);
+			gtk_box_pack_start (GTK_BOX (arrange_box), gtk_label_new (_("Software arranged by")), FALSE, TRUE, 0);
+			m_arrange_combo = gtk_combo_box_new_text();
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_arrange_combo), _("Groups"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_arrange_combo), _("Repositories"));
+			gtk_combo_box_append_text (GTK_COMBO_BOX (m_arrange_combo), _("Status"));
+			gtk_combo_box_set_active (GTK_COMBO_BOX (m_arrange_combo), 0);
+			gtk_box_pack_start (GTK_BOX (arrange_box), m_arrange_combo, FALSE, TRUE, 0);
+			g_signal_connect (G_OBJECT (m_arrange_combo), "changed",
+			                  G_CALLBACK (arrange_combo_changed_cb), this);
+		}
 
 		GtkWidget *packages_box;
 		if (status_tabs) {
@@ -2611,10 +2626,16 @@ public:
 
 			packages_box = gtk_vbox_new (FALSE, 4);
 			GtkWidget *header_box = gtk_hbox_new (FALSE, 6);
-			GtkWidget *header = gtk_label_new_with_mnemonic (_("_Listing:"));
-			gtk_misc_set_alignment (GTK_MISC (header), 0, .5);
-			gtk_label_set_mnemonic_widget (GTK_LABEL (header), GTK_WIDGET (m_all_view));
-			gtk_box_pack_start (GTK_BOX (header_box), header, TRUE, TRUE, 0);
+			if (arrange_box) {
+				gtk_box_pack_start (GTK_BOX (header_box), arrange_box, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (header_box), gtk_event_box_new(), TRUE, TRUE, 0);
+			}
+			else {
+				GtkWidget *header = gtk_label_new_with_mnemonic (_("_Listing:"));
+				gtk_misc_set_alignment (GTK_MISC (header), 0, .5);
+				gtk_label_set_mnemonic_widget (GTK_LABEL (header), GTK_WIDGET (m_all_view));
+				gtk_box_pack_start (GTK_BOX (header_box), header, TRUE, TRUE, 0);
+			}
 			if (search_entry)
 				gtk_box_pack_start (GTK_BOX (header_box), search_entry->getWidget(), FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (packages_box), header_box, FALSE, TRUE, 0);
@@ -2622,6 +2643,8 @@ public:
 		}
 
 		GtkWidget *packages_button_box = gtk_vbox_new (FALSE, 4);
+		if (status_tabs && arrange_box)
+			gtk_box_pack_start (GTK_BOX (packages_button_box), arrange_box, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (packages_button_box), packages_box, TRUE, TRUE, 0);
 		if (!toolbar_top && toolbar_yast)
 			gtk_box_pack_start (GTK_BOX (packages_button_box), (m_toolbar = new Toolbar (true))->getWidget(), FALSE, TRUE, 0);
@@ -2708,15 +2731,13 @@ public:
 		updateDisk();
 		Ypp::get()->getDisk()->addListener (this);
 
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
 		if (toolbar_top) {
 			m_toolbar = new Toolbar (false);
-			m_widget = gtk_vbox_new (FALSE, 6);
-			gtk_box_pack_start (GTK_BOX (m_widget), m_toolbar->getWidget(), FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_widget), side_pane, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), m_toolbar->getWidget(), FALSE, TRUE, 0);
 		}
-		else
-			m_widget = side_pane;
-
+		gtk_box_pack_start (GTK_BOX (vbox), side_pane, TRUE, TRUE, 0);
+		m_widget = vbox;
 		gtk_widget_show_all (m_widget);
 
 		if (details_start_hide) {
@@ -2755,48 +2776,111 @@ private:
 
 	virtual void refresh()
 	{
-		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
-		     it != m_query.end(); it++)
-			(*it)->modified = (*it)->writeQuery (query);
-
-		Ypp::PkgQuery list (m_type, query);
 		if (m_all_view)
-			m_all_view->setList (list, NULL);
+			m_all_view->clear();
+		if (m_installed_view)
+			m_installed_view->clear();
+		if (m_available_view)
+			m_available_view->clear();
+		if (m_upgrades_view)
+			m_upgrades_view->clear();
 
-		if (m_installed_view) {
-			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-			query->setIsInstalled (true);
-			Ypp::PkgQuery _list (list, query);
-			m_installed_view->setList (_list, NULL);
-		}
-		if (m_available_view) {
-			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-			query->setIsInstalled (false);
-			Ypp::PkgQuery _list (list, query);
-			m_available_view->setList (_list, NULL);
-		}
-		if (m_upgrades_view) {
-			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-			query->setHasUpgrade (true);
-			Ypp::PkgQuery _list (list, query);
-			m_upgrades_view->setList (_list, NULL);
-		}
+		// for arrange_by
+		const char *header = 0;
+		Ypp::Node *category;
 
-		for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
-		     it != m_query.end(); it++)
-			if ((*it)->begsUpdate()) {
-				if ((*it)->modified)
-					updateWidget (*it);
-				else
-					(*it)->updateList (list);
+		for (int cycle = 0; true; cycle++) {  // for arrange_by
+			Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+			for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+				 it != m_query.end(); it++)
+				(*it)->modified = (*it)->writeQuery (query);
+
+			if (arrange_by) {
+				int arrange = gtk_combo_box_get_active (GTK_COMBO_BOX (m_arrange_combo));
+				if (arrange == 0) {  // groups
+					if (cycle == 0)
+						category = Ypp::get()->getFirstCategory2 (Ypp::Package::PACKAGE_TYPE);
+					else
+						category = category->next();
+					if (!category)
+						break;
+					header = category->name.c_str();
+					query->addCategory2 (category);
+				}
+				else if (arrange == 1) {  // repositories
+					const Ypp::Repository *repo = Ypp::get()->getRepository (cycle);
+					if (repo) {
+						header = repo->name.c_str();
+						query->addRepository (repo);
+					}
+					else
+						break;
+				}
+				else if (arrange == 2) {  // statuses
+					if (cycle == 0) {
+						header = _("Available");
+						query->setIsInstalled (false);
+					}
+					else if (cycle == 1) {
+						header = _("Upgrades");
+						query->setHasUpgrade (true);
+					}
+					else if (cycle == 2) {
+						header = _("Installed");
+						query->setIsInstalled (true);
+					}
+					else if (cycle == 3) {
+						header = _("Modified");
+						query->setToModify (true);
+					}
+					else
+						break;
+				}
 			}
+
+			Ypp::PkgQuery list (m_type, query);
+			if (m_all_view)
+//				m_all_view->setList (list, NULL);
+				m_all_view->packList (header, list, NULL);
+
+			if (m_installed_view) {
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				query->setIsInstalled (true);
+				Ypp::PkgQuery _list (list, query);
+				m_installed_view->packList (header, _list, NULL);
+			}
+			if (m_available_view) {
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				query->setIsInstalled (false);
+				Ypp::PkgQuery _list (list, query);
+				m_available_view->packList (header, _list, NULL);
+			}
+			if (m_upgrades_view) {
+				Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
+				query->setHasUpgrade (true);
+				Ypp::PkgQuery _list (list, query);
+				m_upgrades_view->packList (header, _list, _("Upgrade all"));
+			}
+
+			for (std::list <_QueryWidget *>::const_iterator it = m_query.begin();
+				 it != m_query.end(); it++)
+				if ((*it)->begsUpdate()) {
+					if ((*it)->modified)
+						updateWidget (*it);
+					else
+						(*it)->updateList (list);
+				}
+
+			if (!arrange_by)
+				break;
+		}
 	}
 
 	virtual void packagesSelected (Ypp::PkgList packages)
 	{
 		m_details->setPackage (packages.size() ? packages.get (0) : NULL);
-		m_toolbar->setPackages (packages);
+		if (m_toolbar)
+			m_toolbar->setPackages (packages);
 	}
 
 	virtual void updateDisk()
@@ -2834,6 +2918,11 @@ private:
 		for (std::list <_QueryWidget *>::const_iterator it = pThis->m_query.begin();
 		     it != pThis->m_query.end(); it++)
 			(*it)->updateType (pThis->m_type);
+		pThis->refresh();
+	}
+
+	static void arrange_combo_changed_cb (GtkComboBox *combo, UI *pThis)
+	{
 		pThis->refresh();
 	}
 };

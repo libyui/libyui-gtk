@@ -1994,6 +1994,17 @@ struct Ypp::PkgQuery::Query::Impl
 	bool clear;
 	Ypp::Package *highlight;
 
+#if 0
+	template <typename T>
+	struct PropKey {
+		T property;
+		T value;
+	};
+	std::list <PropKey <bool> > boolKeys;
+	std::list <PropKey <int > > intKeys;
+	std::list <PropKey <std::string > > strKeys;
+#endif
+
 	Impl() : clear (false), highlight (NULL)
 	{}
 
@@ -2028,6 +2039,28 @@ struct Ypp::PkgQuery::Query::Impl
 		if (clear)
 			return false;
 		bool match = true;
+#if 0
+		for (std::list <PropKey <bool> >::const_iterator it = boolKeys.begin();
+		     it != boolKeys.end(); it++) {
+			const PropKey <bool> &key = *it;
+			if (package->getPropertyBool (key.property) != key.value)
+				return false;
+		}
+		for (std::list <PropKey <int> >::const_iterator it = intKeys.begin();
+		     it != intKeys.end(); it++) {
+			const PropKey <int> &key = *it;
+			if (package->getPropertyInt (key.property) != key.value)
+				return false;
+		}
+		bool str_match = false;
+		for (std::list <PropKey <std::string> >::const_iterator it = strKeys.begin();
+		     it != strKeys.end(); it++) {
+			const PropKey <std::string> &key = *it;
+			std::string pkg_value = package->getPropertyStr (key.property);
+			if (pkg_value != key.value)
+				return false;
+		}
+#endif
 		if (match && (isInstalled.defined || hasUpgrade.defined)) {
 			// only one of the specified status must match
 			bool status_match = false;
