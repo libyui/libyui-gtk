@@ -12,11 +12,12 @@
 #include <string.h>
 
 bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = false,
-	status_side = false, status_tabs = true, status_tabs_as_actions = false,
-	undo_side = false, undo_tab = true, undo_old_style = false, status_col = false,
-	action_col = true, action_col_as_button = true, action_col_as_check = false,
-	version_col = true, single_line_rows = false, details_start_hide = true,
-	toolbar_top = false, toolbar_yast = false;
+	categories_side = true, status_side = false, status_tabs = true,
+	status_tabs_as_actions = false, undo_side = false, undo_tab = true,
+	undo_old_style = false, status_col = false, action_col = true,
+	action_col_as_button = true, action_col_as_check = false, version_col = true,
+	single_line_rows = false, details_start_hide = true, toolbar_top = false,
+	toolbar_yast = false, arrange_by = false;
 
 struct Arg {
 	const char *arg;
@@ -26,6 +27,7 @@ Arg arguments[] = {
 	{ "search-entry-side", &search_entry_side },
 	{ "search-entry-top", &search_entry_top },
 	{ "dynamic-sidebar", &dynamic_sidebar },
+	{ "categories-side", &categories_side },
 	{ "status-side", &status_side },
 	{ "status-tabs", &status_tabs },
 	{ "status-tabs-as-actions", &status_tabs_as_actions },
@@ -41,6 +43,7 @@ Arg arguments[] = {
 	{ "details-start-hide", &details_start_hide },
 	{ "toolbar-top", &toolbar_top },
 	{ "toolbar-yast", &toolbar_yast },
+//	{ "arrange-by", &arrange_by },
 };
 static const int arguments_nb = sizeof (arguments) / sizeof (Arg);
 

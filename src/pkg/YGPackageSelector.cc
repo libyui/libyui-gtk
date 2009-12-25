@@ -28,10 +28,10 @@
 
 // experiments:
 extern bool search_entry_side, search_entry_top, dynamic_sidebar,
-	status_side, status_tabs, status_tabs_as_actions, undo_side, undo_tab,
-	undo_old_style, status_col, action_col, action_col_as_button,
-	action_col_as_check, version_col, single_line_rows, details_start_hide,
-	toolbar_top, toolbar_yast;
+	categories_side, status_side, status_tabs, status_tabs_as_actions,
+	undo_side, undo_tab, undo_old_style, status_col, action_col,
+	action_col_as_button, action_col_as_check, version_col, single_line_rows,
+	details_start_hide, toolbar_top, toolbar_yast, arrange_by;
 
 //** UI components -- split up for re-usability, but mostly for readability
 
@@ -2554,10 +2554,11 @@ public:
 		m_all_view = m_installed_view = m_available_view = m_upgrades_view = NULL;
 
 		_QueryWidget *search_entry = 0;
-		if (search_entry_top)
+		if (search_entry_top) {
 			search_entry = new SearchEntry (false);
-		m_query.push_back (search_entry);
-		gtk_widget_set_size_request (search_entry->getWidget(), 160, -1);
+			m_query.push_back (search_entry);
+			gtk_widget_set_size_request (search_entry->getWidget(), 160, -1);
+		}
 
 		UndoView *undo_view = 0;
 		if (undo_side || undo_tab)
@@ -2597,10 +2598,11 @@ public:
 					box, gtk_label_new_with_mnemonic (labels[3]));
 			}
 
-			if (search_entry)
+			if (search_entry) {
 				// FIXME: only the entry itself is shown, without the "Find:" label
 				ygtk_notebook_set_corner_widget (
 					YGTK_NOTEBOOK (packages_box), search_entry->getWidget());
+			}
 		}
 		else {
 			m_all_view = ygtk_package_view_new (TRUE);
@@ -2679,11 +2681,12 @@ public:
 			gtk_box_pack_start (GTK_BOX (side_vbox), search_entry->getWidget(), FALSE, TRUE, 0);
 		}
 
-		_QueryWidget *categories = new CategoryView();
-		m_query.push_back (categories);
-
 		GtkWidget *cat_pane = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (cat_pane), categories->getWidget(), TRUE, FALSE);
+		if (categories_side) {
+			_QueryWidget *categories = new CategoryView();
+			m_query.push_back (categories);
+			gtk_paned_pack1 (GTK_PANED (cat_pane), categories->getWidget(), TRUE, FALSE);
+		}
 		if (status_side) {
 			_QueryWidget *statuses = new StatusView();
 			m_query.push_back (statuses);
@@ -2723,6 +2726,8 @@ public:
 		}
 		else
 			m_details->setPackage (NULL);
+		if (!categories_side && !search_entry_side && !status_side)
+			gtk_widget_hide (side_vbox);
 	}
 
 	~UI()
