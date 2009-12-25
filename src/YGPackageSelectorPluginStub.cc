@@ -52,7 +52,7 @@ bool YGUI::pkgSelectorParse (const char *arg)
 	if (!strcmp (arg, "help-pkg")) {
 		printf ("sw_single gtk [OPTIONS]:\n");
 		for (int i = 0; i < arguments_nb; i++)
-			printf ("\t%s=y/n\t\t(default: %c)\n",
+			printf ("\t--%s=y/n\t\t(default: %c)\n",
 				arguments[i].arg, *arguments[i].var ? 'y' : 'n');
 		exit (0);
 	}
