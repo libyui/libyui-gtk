@@ -12,9 +12,9 @@
 #include <string.h>
 
 bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = false,
-	categories_side = true, status_side = false, status_tabs = true,
-	status_tabs_as_actions = false, undo_side = false, undo_tab = true,
-	undo_old_style = false, status_col = false, action_col = true,
+	categories_side = true, categories_top = false, status_side = false,
+	status_tabs = true, status_tabs_as_actions = false, undo_side = false,
+	undo_tab = true, undo_old_style = false, status_col = false, action_col = true,
 	action_col_as_button = true, action_col_as_check = false, version_col = true,
 	single_line_rows = false, details_start_hide = true, toolbar_top = false,
 	toolbar_yast = false, arrange_by = false;
@@ -28,6 +28,7 @@ Arg arguments[] = {
 	{ "search-entry-top", &search_entry_top },
 	{ "dynamic-sidebar", &dynamic_sidebar },
 	{ "categories-side", &categories_side },
+	{ "categories-top", &categories_top },
 	{ "status-side", &status_side },
 	{ "status-tabs", &status_tabs },
 	{ "status-tabs-as-actions", &status_tabs_as_actions },
