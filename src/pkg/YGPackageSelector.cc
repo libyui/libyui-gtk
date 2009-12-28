@@ -2317,7 +2317,7 @@ public:
 		gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 		gtk_label_set_mnemonic_widget (GTK_LABEL (label), m_combo);
 
-		m_widget = gtk_hbox_new (FALSE, 4);
+		m_widget = gtk_hbox_new (FALSE, 2);
 		gtk_box_pack_start (GTK_BOX (m_widget), label, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (m_widget), m_combo, TRUE, TRUE, 0);
 		g_signal_connect (G_OBJECT (m_combo), "changed",
