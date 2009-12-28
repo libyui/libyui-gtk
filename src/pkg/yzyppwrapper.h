@@ -177,7 +177,6 @@ struct Ypp
 		virtual ~PkgList();
 	};
 
-#if 1
 	// listing of packages as filtered
 	struct PkgQuery : public PkgList {
 		struct Query {
@@ -213,7 +212,6 @@ struct Ypp
 		struct Impl;
 		Impl *impl;
 	};
-#endif
 
 	struct PkgSort : public PkgList {
 		PkgSort (PkgList list, const std::string &prop, bool ascending);

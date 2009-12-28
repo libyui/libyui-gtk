@@ -141,7 +141,6 @@ static void ygtk_help_dialog_realize (GtkWidget *widget)
 
 	// set close as default widget
 	gtk_widget_grab_default (dialog->close_button);
-	gtk_widget_grab_focus (dialog->close_button);
 }
 
 static void ygtk_help_dialog_close (YGtkHelpDialog *dialog)

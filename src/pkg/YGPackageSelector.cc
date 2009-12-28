@@ -2553,7 +2553,7 @@ public:
 				std::string label;
 				if (getuid() == 0) {
 					const char *username = getenv ("USERNAME");
-					if (!username || !*username)
+					if (!username || !(*username))
 						username = "root";
 					label = _("_Open (as ");
 					label += username;
@@ -2589,7 +2589,7 @@ public:
 		const char *username = 0;
 		if (getuid() == 0) {
 			username = getenv ("USERNAME");
-			if (!*username)
+			if (username && !(*username))
 				username = 0;
 		}
 

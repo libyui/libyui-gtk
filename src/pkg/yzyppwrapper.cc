@@ -615,7 +615,7 @@ int m_installedPkgs, m_totalPkgs;
 #endif
 				std::string url = package->url(), license = package->license();
 				if (!url.empty())
-					text += br + "<b>" + _("Website:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
+					text += br + "<b>" + _("Web site:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
 				if (!license.empty())
 					text += br + "<b>" + _("License:") + "</b> " + license;
 #if 0
