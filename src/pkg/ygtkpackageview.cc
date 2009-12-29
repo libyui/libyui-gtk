@@ -1110,7 +1110,8 @@ struct YGtkPackageView::Impl
 		}
 		if (!empty)
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
-		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
+		inner::appendItem (menu, NULL, NULL, GTK_STOCK_SELECT_ALL,
+		                   true, inner::select_all_cb, this);
 
 		GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show Column"));
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
