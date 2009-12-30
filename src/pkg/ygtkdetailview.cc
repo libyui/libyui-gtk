@@ -645,8 +645,7 @@ private:
 	static void contents_cb (GtkWidget *widget, gpointer pkg)
 	{
 		YGtkPackageView *contents = YGTK_PACKAGE_VIEW (widget);
-		Ypp::PkgQuery::Query *query = new Ypp::PkgQuery::Query();
-		query->addCollection ((Ypp::Package *) pkg);
+		Ypp::QueryBase *query = new Ypp::QueryCollection ((Ypp::Package *) pkg);
 		contents->setList (Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query), 0);
 	}
 

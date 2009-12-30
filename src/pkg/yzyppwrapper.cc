@@ -334,6 +334,34 @@ std::string Ypp::Package::severityStr (int id)
 std::string Ypp::Package::provides (MarkupType markup) const { return impl->provides (markup); }
 std::string Ypp::Package::requires (MarkupType markup) const { return impl->requires (markup); }
 
+bool Ypp::Package::getPropertyBool (const std::string &prop)
+{
+	if (prop == "is-installed")
+		return isInstalled();
+	if (prop == "has-upgrade")
+		return hasUpgrade();
+	if (prop == "to-modify")
+		return toModify();
+	if (prop == "is-recommended")
+		return isRecommended();
+	if (prop == "is-suggested")
+		return isSuggested();
+	if (prop == "is-supported")
+		return isSupported();
+	if (prop == "to-install")
+		return toInstall();
+	yuiError() << "No boolean property: " << prop << std::endl;
+	return false;
+}
+
+int Ypp::Package::getPropertyInt (const std::string &prop)
+{
+	if (prop == "severity")
+		return severity();
+	yuiError() << "No integer property: " << prop << std::endl;
+	return 0;
+}
+
 std::string Ypp::Package::getPropertyStr (const std::string &prop, MarkupType markup)
 {
 	if (prop == "name")
@@ -348,6 +376,8 @@ std::string Ypp::Package::getPropertyStr (const std::string &prop, MarkupType ma
 		return support();
 	if (prop == "size")
 		return size();
+	if (prop == "authors")
+		return authors (markup);
 	if (prop == "available-version") {
 		const Ypp::Package::Version *version = getAvailableVersion (0);
 		if (version)
@@ -365,28 +395,6 @@ std::string Ypp::Package::getPropertyStr (const std::string &prop, MarkupType ma
 	}
 	yuiError() << "No string property: " << prop << std::endl;
 	return "";
-}
-
-int Ypp::Package::getPropertyInt (const std::string &prop)
-{
-	if (prop == "severity")
-		return severity();
-	yuiError() << "No integer property: " << prop << std::endl;
-	return 0;
-}
-
-bool Ypp::Package::getPropertyBool (const std::string &prop)
-{
-	if (prop == "is-recommended")
-		return isRecommended();
-	if (prop == "is-suggested")
-		return isSuggested();
-	if (prop == "is-supported")
-		return isSupported();
-	if (prop == "to-install")
-		return toInstall();
-	yuiError() << "No boolean property: " << prop << std::endl;
-	return false;
 }
 
 const Ypp::Package::Version *Ypp::Package::getInstalledVersion()
@@ -1936,311 +1944,174 @@ void Ypp::PkgList::addListener (Ypp::PkgList::Listener *listener) const
 void Ypp::PkgList::removeListener (Ypp::PkgList::Listener *listener) const
 { const_cast <Impl *> (impl)->removeListener (listener); }
 
-//** PkgQuery
+//** QueryBase
 
-struct Ypp::PkgQuery::Query::Impl
+struct Ypp::QueryAnd::Impl
+{ std::list <QueryBase *> m_queries; };
+
+Ypp::QueryAnd::QueryAnd()
+{ impl = new Impl(); }
+
+Ypp::QueryAnd::~QueryAnd()
 {
-	template <typename T>
-	struct Key
-	{
-		Key() : defined (false) {}
-		void set (T v)
-		{
-			defined = true;
-			value = v;
-		}
-		bool is (const T &v) const
-		{
-			if (!defined) return true;
-			return value == v;
-		}
-		bool defined;
-		T value;
-	};
+	for (std::list <QueryBase *>::const_iterator it = impl->m_queries.begin();
+	      it != impl->m_queries.end(); it++)
+		delete (*it);
+}
 
-	template <typename T>
-	struct Keys
-	{
-		Keys() : defined (false) {}
-		void add (T v)
-		{
-			defined = true;
-			values.push_back (v);
-		}
-		bool is (const T &v) const
-		{
-			if (!defined) return true;
-			typename std::list <T>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++)
-				if (*it == v)
-					return true;
+void Ypp::QueryAnd::add (Ypp::QueryBase *query)
+{ impl->m_queries.push_back (query); }
+
+bool Ypp::QueryAnd::match (Ypp::Package *package)
+{
+	for (std::list <QueryBase *>::const_iterator it = impl->m_queries.begin();
+	      it != impl->m_queries.end(); it++)
+		if (!(*it)->match (package))
 			return false;
-		}
-		bool defined;
-		std::list <T> values;
-	};
+	return true;
+}
 
-	Keys <std::string> names;
-	unsigned int use_name : 1, use_summary : 1, use_description : 1, use_filelist : 1,
-	    use_authors : 1, whole_word : 1, whole_string : 1;
-	Keys <Node *> categories, categories2;
-	Keys <const Package *> collections;
-	Keys <const Repository *> repositories;
-	Key <bool> isInstalled, hasUpgrade, toModify, toInstall, toRemove;
-	Key <bool> isRecommended, isSuggested;
-	Key <int>  buildAge;
-	Key <bool> isSupported;
-	Key <int> severity;
-	bool clear;
-	Ypp::Package *highlight;
+struct Ypp::QueryOr::Impl
+{ std::list <QueryBase *> m_queries; };
 
-#if 0
-	template <typename T>
-	struct PropKey {
-		T property;
-		T value;
-	};
-	std::list <PropKey <bool> > boolKeys;
-	std::list <PropKey <int > > intKeys;
-	std::list <PropKey <std::string > > strKeys;
-#endif
+Ypp::QueryOr::QueryOr()
+{ impl = new Impl(); }
 
-	Impl() : clear (false), highlight (NULL)
-	{}
+Ypp::QueryOr::~QueryOr()
+{
+	for (std::list <QueryBase *>::const_iterator it = impl->m_queries.begin();
+	      it != impl->m_queries.end(); it++)
+		delete (*it);
+}
 
-	bool match (Package *package) const
+void Ypp::QueryOr::add (Ypp::QueryBase *query)
+{ impl->m_queries.push_back (query); }
+
+bool Ypp::QueryOr::match (Ypp::Package *package)
+{
+	for (std::list <QueryBase *>::const_iterator it = impl->m_queries.begin();
+	      it != impl->m_queries.end(); it++)
+		if ((*it)->match (package))
+			return true;
+	return false;
+}
+
+struct Ypp::QueryProperty::Impl
+{ virtual bool match (Ypp::Package *) = 0; };
+
+struct QueryBool : public Ypp::QueryProperty::Impl
+{
+	std::string property;
+	bool value;
+
+	QueryBool (const std::string &property, bool value)
+	: property (property), value (value) {}
+
+	virtual bool match (Ypp::Package *package)
+	{ return package->getPropertyBool (property) == value; }
+};
+
+struct QueryInt : public Ypp::QueryProperty::Impl
+{
+	std::string property;
+	int value;
+
+	QueryInt (const std::string &property, int value)
+	: property (property), value (value) {}
+
+	virtual bool match (Ypp::Package *package)
+	{ return package->getPropertyInt (property) == value; }
+};
+
+struct QueryStr : public Ypp::QueryProperty::Impl
+{
+	std::string property;
+	std::string value;
+	bool case_sensitive, whole_word;
+
+	QueryStr (const std::string &property, const std::string &value,
+	          bool case_sensitive, bool whole_word)
+	: property (property), value (value), case_sensitive (case_sensitive),
+	  whole_word (whole_word) {}
+
+	virtual bool match (Ypp::Package *package)
 	{
-		struct inner {
-			static bool strstr (const char *str1, const char *str2,
-			                    bool case_sensitive, bool whole_word, bool whole_string)
-			{
-				const char *i;
-				if (whole_string) {
-					if (case_sensitive)
-						return strcmp (str1, str2) == 0;
-					return strcasecmp (str1, str2) == 0;
-				}
-				if (case_sensitive)
-					i = ::strstr (str1, str2);
-				else
-					i = ::strcasestr (str1, str2);
-				if (whole_word && i) {  // check boundries
-					if (i != str1 && isalpha (i[-1]))
-						return false;
-					int len = strlen (str2);
-					if (i [len] && isalpha (i [len]))
-						return false;
-					return true;
-				}
-				return i;
-			}
-		};
-
-		if (clear)
-			return false;
-		bool match = true;
-#if 0
-		for (std::list <PropKey <bool> >::const_iterator it = boolKeys.begin();
-		     it != boolKeys.end(); it++) {
-			const PropKey <bool> &key = *it;
-			if (package->getPropertyBool (key.property) != key.value)
-				return false;
+		std::string pkg_value = package->getPropertyStr (property);
+		if (whole_word) {
+			if (case_sensitive)
+				return strcmp (pkg_value.c_str(), value.c_str()) == 0;
+			return strcasecmp (pkg_value.c_str(), value.c_str()) == 0;
 		}
-		for (std::list <PropKey <int> >::const_iterator it = intKeys.begin();
-		     it != intKeys.end(); it++) {
-			const PropKey <int> &key = *it;
-			if (package->getPropertyInt (key.property) != key.value)
-				return false;
-		}
-		bool str_match = false;
-		for (std::list <PropKey <std::string> >::const_iterator it = strKeys.begin();
-		     it != strKeys.end(); it++) {
-			const PropKey <std::string> &key = *it;
-			std::string pkg_value = package->getPropertyStr (key.property);
-			if (pkg_value != key.value)
-				return false;
-		}
-#endif
-		if (match && (isInstalled.defined || hasUpgrade.defined)) {
-			// only one of the specified status must match
-			bool status_match = false;
-			if (isInstalled.defined)
-				status_match = isInstalled.is (package->isInstalled());
-			if (!status_match && hasUpgrade.defined)
-				status_match = hasUpgrade.is (package->hasUpgrade());
-			match = status_match;
-		}
-		if (match && toModify.defined)
-			match = toModify.is (package->toModify());
-		if (match && toInstall.defined)
-			match = toInstall.is (package->toInstall());
-		if (match && toRemove.defined)
-			match = toRemove.is (package->toRemove());
-		if (match && isRecommended.defined)
-			match = isRecommended.is (package->isRecommended());
-		if (match && isSuggested.defined)
-			match = isSuggested.is (package->isSuggested());
-		if (match && buildAge.defined) {
-			int age = package->buildAge();
-			if (age < 0 || age > buildAge.value)
-				match = false;
-		}
-		if (match && isSupported.defined)
-			match = isSupported.is (package->isSupported());
-		if (match && severity.defined)
-			match = severity.is (package->severity());
-		if (match && names.defined) {
-			const std::list <std::string> &values = names.values;
-			std::list <std::string>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++) {
-				const char *key = it->c_str();
-				bool str_match = false;
-				if (use_name)
-					str_match = inner::strstr (package->name().c_str(), key,
-					                           false, whole_word, whole_string);
-				if (!str_match && use_summary)
-					str_match = inner::strstr (package->summary().c_str(), key,
-					                           false, whole_word, whole_string);
-				if (!str_match && use_description)
-					str_match = inner::strstr (package->description (NO_MARKUP).c_str(), key,
-					                           false, whole_word, whole_string);
-				if (!str_match && use_filelist)
-					str_match = inner::strstr (package->filelist (NO_MARKUP).c_str(), key,
-					                           false, whole_word, whole_string);
-				if (!str_match && use_authors)
-					str_match = inner::strstr (package->authors (NO_MARKUP).c_str(), key,
-					                           false, whole_word, whole_string);
-				if (!str_match) {
-					match = false;
-					break;
-				}
-			}
-			if (match && !highlight && use_name) {
-				if (values.size() == 1 && !strcasecmp (values.front().c_str(), package->name().c_str()))
-					const_cast <Impl *> (this)->highlight = package;
-			}
-		}
-		if (match && categories.defined) {
-			Ypp::Node *pkg_category = package->category();
-			const std::list <Ypp::Node *> &values = categories.values;
-			std::list <Ypp::Node *>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++) {
-				GNode *node = (GNode *) (*it)->impl;
-				if (g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
-					break;
-			}
-			match = it != values.end();
-		}
-		if (match && categories2.defined) {
-			Ypp::Node *pkg_category = package->category2();
-			const std::list <Ypp::Node *> &values = categories2.values;
-			std::list <Ypp::Node *>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++) {
-				GNode *node = (GNode *) (*it)->impl;
-				if (g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
-					break;
-			}
-			match = it != values.end();
-		}
-		if (match && repositories.defined) {
-			const std::list <const Repository *> &values = repositories.values;
-			std::list <const Repository *>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++) {
-				bool match = false;
-				for (int i = 0; package->getAvailableVersion (i); i++) {
-					const Ypp::Package::Version *version = package->getAvailableVersion (i);
-					if (version->repo == *it) {
-						// filter if available isn't upgrade
-						if (package->isInstalled() && hasUpgrade.defined && hasUpgrade.value) {
-							if (version->cmp > 0)
-								match = true;
-						}
-						else
-							match = true;
-						break;
-					}
-				}
-				if (match)
-					break;
-			}
-			match = it != values.end();
-		}
-		if (match && collections.defined) {
-			const std::list <const Ypp::Package *> &values = collections.values;
-			std::list <const Ypp::Package *>::const_iterator it;
-			for (it = values.begin(); it != values.end(); it++)
-				if (package->fromCollection (*it))
-					break;
-			match = it != values.end();
-		}
-		return match;
+		if (case_sensitive)
+			return strstr (pkg_value.c_str(), value.c_str()) != NULL;
+		return strcasestr (pkg_value.c_str(), value.c_str()) != NULL;
 	}
 };
 
-Ypp::PkgQuery::Query::Query()
-{ impl = new Impl(); }
-Ypp::PkgQuery::Query::~Query()
+Ypp::QueryProperty::QueryProperty (const std::string &property, bool value)
+{ impl = new QueryBool (property, value); }
+
+Ypp::QueryProperty::QueryProperty (const std::string &property, int value)
+{ impl = new QueryInt (property, value); }
+
+Ypp::QueryProperty::QueryProperty (const std::string &property, const std::string &value, bool case_sensitive, bool whole_word)
+{ impl = new QueryStr (property, value, case_sensitive, whole_word); }
+
+Ypp::QueryProperty::~QueryProperty()
 { delete impl; }
 
-void Ypp::PkgQuery::Query::addNames (std::string value, char separator, bool use_name,
-	bool use_summary, bool use_description, bool use_filelist, bool use_authors,
-	bool whole_word, bool whole_string)
+bool Ypp::QueryProperty::match (Ypp::Package *package)
+{ return impl->match (package); }
+
+struct Ypp::QueryCategory::Impl {
+	const Node *category;
+	bool category2;
+	Impl (const Node *category, bool category2)
+	: category (category), category2 (category2) {}
+};
+
+Ypp::QueryCategory::QueryCategory (const Ypp::Node *category, bool category2)
+{ impl = new Impl (category, category2); }
+
+Ypp::QueryCategory::~QueryCategory()
+{ delete impl; }
+
+bool Ypp::QueryCategory::match (Ypp::Package *package)
 {
-	if (separator) {
-		const gchar delimiter[2] = { separator, '\0' };
-		gchar **names = g_strsplit (value.c_str(), delimiter, -1);
-		for (gchar **i = names; *i; i++)
-			impl->names.add (*i);
-		g_strfreev (names);
-	}
-	else
-		impl->names.add (value);
-	impl->use_name = use_name;
-	impl->use_summary = use_summary;
-	impl->use_description = use_description;
-	impl->use_filelist = use_filelist;
-	impl->use_authors = use_authors;
-	impl->whole_word = whole_word;
-	impl->whole_string = whole_string;
+	GNode *node = (GNode *) impl->category->impl;
+	Node *pkg_category = impl->category2 ? package->category2() : package->category();
+	if (g_node_find (node, G_PRE_ORDER, G_TRAVERSE_ALL, pkg_category))
+		return true;
+	return false;
 }
-void Ypp::PkgQuery::Query::addCategory (Ypp::Node *value)
-{ impl->categories.add (value); }
-void Ypp::PkgQuery::Query::addCategory2 (Ypp::Node *value)
-{ impl->categories2.add (value); }
-void Ypp::PkgQuery::Query::addCollection (const Ypp::Package *value)
-{ impl->collections.add (value); }
-void Ypp::PkgQuery::Query::addRepository (const Repository *value)
-{ impl->repositories.add (value); }
-void Ypp::PkgQuery::Query::setIsInstalled (bool value)
-{ impl->isInstalled.set (value); }
-void Ypp::PkgQuery::Query::setHasUpgrade (bool value)
-{ impl->hasUpgrade.set (value); }
-void Ypp::PkgQuery::Query::setToModify (bool value)
-{ impl->toModify.set (value); }
-void Ypp::PkgQuery::Query::setToInstall (bool value)
-{ impl->toInstall.set (value); }
-void Ypp::PkgQuery::Query::setToRemove (bool value)
-{ impl->toRemove.set (value); }
-void Ypp::PkgQuery::Query::setIsRecommended (bool value)
-{ impl->isRecommended.set (value); }
-void Ypp::PkgQuery::Query::setIsSuggested (bool value)
-{ impl->isSuggested.set (value); }
-void Ypp::PkgQuery::Query::setBuildAge (int value)
-{ impl->buildAge.set (value); }
-void Ypp::PkgQuery::Query::setIsSupported (bool value)
-{ impl->isSupported.set (value); }
-void Ypp::PkgQuery::Query::setSeverity (int value)
-{ impl->severity.set (value); }
-void Ypp::PkgQuery::Query::setClear()
-{ impl->clear = true; }
+
+Ypp::QueryRepository::QueryRepository (const Ypp::Repository *_repo)
+{ repo = _repo; }
+
+bool Ypp::QueryRepository::match (Ypp::Package *package)
+{
+	for (int i = 0; package->getAvailableVersion (i); i++) {
+		const Package::Version *version = package->getAvailableVersion (i);
+		if (version->repo == repo)
+			return true;
+	}
+	return false;
+}
+
+Ypp::QueryCollection::QueryCollection (const Ypp::Package *_collection)
+{ collection = _collection; }
+
+bool Ypp::QueryCollection::match (Ypp::Package *package)
+{ return package->fromCollection (collection); }
+
+//** PkgQuery
 
 struct Ypp::PkgQuery::Impl : public Ypp::PkgList::Impl
 {
-Query *query;
+QueryBase *query;
 
-	Impl (const PkgList parent, Query *query)
-	: PkgList::Impl (&parent), query (query)
-	{}
+	Impl (const PkgList parent, QueryBase *query)
+	: PkgList::Impl (&parent), query (query) {}
 
 	~Impl()
 	{ delete query; }
@@ -2248,22 +2119,22 @@ Query *query;
 	virtual bool liveList() const
 	{ return true; }
 
-	virtual bool match (Package *pkg) const
-	{ return query ? query->impl->match (pkg) : true; }
+	virtual bool match (Package *package) const
+	{ return query->match (package); }
 
 	virtual bool highlight (Package *pkg) const
 	{
-		if (query && query->impl->highlight == pkg)
-			return true;
+/*		if (old_query->impl->highlight == pkg)
+			return true;*/
 		return parent->highlight (pkg);  // this might be a sub-query
 	}
 };
 
-Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::PkgQuery::Query *query)
+Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::QueryBase *query)
 : PkgList ((impl = new PkgQuery::Impl (list, query)))
 { copy (list); }
 
-Ypp::PkgQuery::PkgQuery (Ypp::Package::Type type, Ypp::PkgQuery::Query *query)
+Ypp::PkgQuery::PkgQuery (Ypp::Package::Type type, Ypp::QueryBase *query)
 : PkgList ((impl = new PkgQuery::Impl (Ypp::get()->getPackages (type), query)))
 { copy (Ypp::get()->getPackages (type)); }
 

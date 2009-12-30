@@ -73,9 +73,9 @@ struct Ypp
 		std::string provides (MarkupType markup) const;
 		std::string requires (MarkupType markup) const;
 
-		std::string getPropertyStr (const std::string &prop, MarkupType markup = NO_MARKUP);
-		int getPropertyInt (const std::string &prop);
 		bool getPropertyBool (const std::string &prop);
+		int getPropertyInt (const std::string &prop);
+		std::string getPropertyStr (const std::string &prop, MarkupType markup = NO_MARKUP);
 
 		struct Version {
 			std::string number, arch;
@@ -178,36 +178,62 @@ struct Ypp
 	};
 
 	// listing of packages as filtered
+	struct QueryBase {
+		virtual ~QueryBase() {}
+		virtual bool match (Package *) = 0;
+	};
+	struct QueryAnd : public QueryBase {
+		QueryAnd();
+		void add (QueryBase *query);
+
+		virtual ~QueryAnd();
+		virtual bool match (Package *);
+		struct Impl;
+		Impl *impl;
+	};
+	struct QueryOr : public QueryBase {
+		QueryOr();
+		void add (QueryBase *query);
+
+		virtual ~QueryOr();
+		virtual bool match (Package *);
+		struct Impl;
+		Impl *impl;
+	};
+	struct QueryProperty : public QueryBase {
+		QueryProperty (const std::string &property, bool value);
+		QueryProperty (const std::string &property, int value);
+		QueryProperty (const std::string &property, const std::string &value, bool case_sensitive, bool whole_word);
+
+		virtual ~QueryProperty();
+		virtual bool match (Package *);
+		struct Impl;
+		Impl *impl;
+	};
+	struct QueryCategory : public QueryBase {
+		QueryCategory (const Node *category, bool category2);
+
+		virtual ~QueryCategory();
+		virtual bool match (Package *);
+		struct Impl;
+		Impl *impl;
+	};
+	struct QueryRepository : public QueryBase {
+		QueryRepository (const Repository *repository);
+
+		virtual bool match (Package *);
+		const Repository *repo;
+	};
+	struct QueryCollection : public QueryBase {
+		QueryCollection (const Ypp::Package *collection);
+
+		virtual bool match (Package *);
+		const Ypp::Package *collection;
+	};
+
 	struct PkgQuery : public PkgList {
-		struct Query {
-			Query();
-			void addNames (std::string name, char separator = 0, bool use_name = true,
-				bool use_summary = true, bool use_description = false,
-				bool use_filelist = false, bool use_authors = false,
-				bool whole_word = false, bool whole_string = false);
-			void addCategory (Ypp::Node *category);
-			void addCategory2 (Ypp::Node *category);
-			void addCollection (const Ypp::Package *package);
-			void addRepository (const Ypp::Repository *repository);
-			void setIsInstalled (bool installed);
-			void setHasUpgrade (bool upgradable);
-			void setToModify (bool modify);
-			void setToInstall (bool install);
-			void setToRemove (bool remove);
-			void setIsRecommended (bool recommended);
-			void setIsSuggested (bool suggested);
-			void setBuildAge (int days);
-			void setIsSupported (bool supported);
-			void setSeverity (int severity);
-			void setClear();
-
-			~Query();
-			struct Impl;
-			Impl *impl;
-		};
-
-		PkgQuery (const PkgList list, Query *query);
-		PkgQuery (Package::Type type, Query *query);  // shortcut
+		PkgQuery (const PkgList list, QueryBase *query);
+		PkgQuery (Package::Type type, QueryBase *query);  // shortcut
 
 		struct Impl;
 		Impl *impl;

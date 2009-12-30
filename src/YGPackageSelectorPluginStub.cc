@@ -13,11 +13,11 @@
 
 bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = false,
 	categories_side = true, categories_top = false, status_side = false,
-	status_tabs = true, status_tabs_as_actions = false, undo_side = false,
-	undo_tab = true, undo_old_style = false, status_col = false, action_col = true,
-	action_col_as_button = true, action_col_as_check = false, version_col = true,
-	single_line_rows = false, details_start_hide = true, toolbar_top = false,
-	toolbar_yast = false, arrange_by = false;
+	status_top = false, status_tabs = true, status_tabs_as_actions = false,
+	undo_side = false, undo_tab = true, undo_old_style = false, status_col = false,
+	action_col = true, action_col_as_button = true, action_col_as_check = false,
+	version_col = true, single_line_rows = false, details_start_hide = true,
+	toolbar_top = false, toolbar_yast = false, arrange_by = false;
 
 struct Arg {
 	const char *arg;
@@ -30,6 +30,7 @@ Arg arguments[] = {
 	{ "categories-side", &categories_side },
 	{ "categories-top", &categories_top },
 	{ "status-side", &status_side },
+	{ "status-top", &status_top },
 	{ "status-tabs", &status_tabs },
 	{ "status-tabs-as-actions", &status_tabs_as_actions },
 	{ "undo-side", &undo_side },
@@ -61,7 +62,7 @@ bool YGUI::pkgSelectorParse (const char *arg)
 		int arg_len = strlen (arguments[i].arg);
 		if (!strncmp (arg, arguments[i].arg, arg_len) && arg[arg_len] == '=') {
 			*arguments[i].var = arg[arg_len+1] == 'y';
-fprintf (stderr, "found '%s' as '%s' = '%d'\n", arg, arguments[i].arg, *arguments[i].var);
+//fprintf (stderr, "found '%s' as '%s' = '%d'\n", arg, arguments[i].arg, *arguments[i].var);
 			return true;
 		}
 	}
