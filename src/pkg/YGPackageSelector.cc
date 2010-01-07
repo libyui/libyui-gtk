@@ -2845,6 +2845,10 @@ public:
 	: m_link_popup (NULL)
 	{
 		m_text = ygtk_rich_text_new();
+/*
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (m_text),
+			_("<i>Write a little introductory text here</i>"));
+*/
 		YGtkPackageView *view = ygtk_package_view_new (TRUE);
 		m_pkg_view = GTK_WIDGET (view);
 		//gtk_widget_set_size_request (m_pkg_view, -1, 200);
