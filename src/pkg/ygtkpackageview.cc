@@ -20,7 +20,7 @@
 #include <string.h>
 
 extern bool status_col, action_col, action_col_as_button, action_col_as_check,
-	version_col, single_line_rows;
+	action_col_label, version_col, colorful_rows, single_line_rows;
 
 //** Icons resources
 
@@ -116,8 +116,8 @@ enum Property {
 	TO_INSTALL_PROP, TO_UPGRADE_PROP, TO_REMOVE_PROP, TO_MODIFY_PROP,
 	// internal
 	STYLE_PROP, WEIGHT_PROP, SENSITIVE_PROP, CHECK_VISIBLE_PROP,
-	FOREGROUND_PROP, BACKGROUND_PROP, XPAD_PROP,
-	INSTALL_LABEL_PROP, REMOVE_LABEL_PROP, INSTALL_STOCK_PROP, REMOVE_STOCK_PROP,
+	FOREGROUND_PROP, VERSION_FOREGROUND_PROP, BACKGROUND_PROP, XPAD_PROP,
+	ACTION_LABEL_PROP, ACTION_STOCK_PROP,
 	// misc
 	PTR_PROP, TOTAL_PROPS
 };
@@ -136,11 +136,10 @@ static GType _columnType (int col)
 		case INSTALLED_VERSION_PROP:
 		case AVAILABLE_VERSION_PROP:
 		case FOREGROUND_PROP:
+		case VERSION_FOREGROUND_PROP:
 		case BACKGROUND_PROP:
-		case INSTALL_LABEL_PROP:
-		case REMOVE_LABEL_PROP:
-		case INSTALL_STOCK_PROP:
-		case REMOVE_STOCK_PROP:
+		case ACTION_LABEL_PROP:
+		case ACTION_STOCK_PROP:
 			return G_TYPE_STRING;
 		case TO_INSTALL_PROP:
 		case TO_UPGRADE_PROP:
@@ -173,13 +172,12 @@ static void _getValueDefault (int col, GValue *value)
 		case SIZE_PROP:
 		case INSTALLED_VERSION_PROP:
 		case AVAILABLE_VERSION_PROP:
-		case INSTALL_LABEL_PROP:
-		case REMOVE_LABEL_PROP:
-		case INSTALL_STOCK_PROP:
-		case REMOVE_STOCK_PROP:
+		case ACTION_LABEL_PROP:
+		case ACTION_STOCK_PROP:
 			g_value_set_string (value, g_strdup (""));
 			break;
 		case FOREGROUND_PROP:
+		case VERSION_FOREGROUND_PROP:
 		case BACKGROUND_PROP:
 			g_value_set_string (value, NULL);
 			break;
@@ -412,12 +410,10 @@ protected:
 					g_value_set_boolean (value, modified);
 					break;
 				}
-				case INSTALL_LABEL_PROP:
-				case REMOVE_LABEL_PROP:
+				case ACTION_LABEL_PROP:
 					g_value_set_string (value, g_strdup (_("All")));
 					break;
-				case INSTALL_STOCK_PROP:
-				case REMOVE_STOCK_PROP:
+				case ACTION_STOCK_PROP:
 					g_value_set_string (value, g_strdup (GTK_STOCK_SELECT_ALL));
 					break;
 				default:
@@ -516,15 +512,32 @@ protected:
 				g_value_set_boolean (value, sensitive);
 				break;
 			}
-/*
 			case STYLE_PROP: {
-				PangoStyle style = PANGO_STYLE_NORMAL;
-				if (package->isAuto())
-					style = PANGO_STYLE_ITALIC;
-				g_value_set_int (value, style);
+				if (colorful_rows) {
+					PangoStyle style = PANGO_STYLE_NORMAL;
+					if (package->isAuto())
+						style = PANGO_STYLE_ITALIC;
+					g_value_set_int (value, style);
+				}
+				else
+					_getValueDefault (col, value);
 				break;
 			}
-*/
+			case VERSION_FOREGROUND_PROP:
+			case FOREGROUND_PROP: {
+				if (colorful_rows) {
+					const char *color = NULL;
+					if (!package->isInstalled())
+						color = "darkgray";
+					if (col == VERSION_FOREGROUND_PROP)
+						if (package->hasUpgrade())
+							color = "blue";
+					g_value_set_string (value, color);
+				}
+				else
+					_getValueDefault (col, value);
+				break;
+			}
 			case WEIGHT_PROP: {
 				bool highlight = segment->list.highlight (package);
 				int weight = highlight ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
@@ -536,35 +549,25 @@ protected:
 				g_value_set_int (value, xpad);
 				break;
 			}
-			case INSTALL_LABEL_PROP: {
-				const char *label = _("Add");
-/*				if (package->toModify())
+			case ACTION_LABEL_PROP: {
+				const char *label;
+				if (package->toModify())
 					label = _("Undo");
-				else if (package->hasUpgrade())
-					label = _("Upgrade");*/
-				if (package->hasUpgrade())
-					label = _("Upgrade");
+				else if (package->isInstalled())
+					label = _("Remove");
+				else
+					label = _("Add");
 				g_value_set_string (value, g_strdup (label));
 				break;
 			}
-			case REMOVE_LABEL_PROP: {
-				const char *label = _("Remove");
-/*				if (package->toModify())
-					label = _("Undo");*/
-				g_value_set_string (value, g_strdup (label));
-				break;
-			}
-			case INSTALL_STOCK_PROP: {
-				const char *stock = GTK_STOCK_ADD;
-/*				if (package->toModify())
-					stock = GTK_STOCK_UNDO;*/
-				g_value_set_string (value, g_strdup (stock));
-				break;
-			}
-			case REMOVE_STOCK_PROP: {
-				const char *stock = GTK_STOCK_REMOVE;
-/*				if (package->toModify())
-					stock = GTK_STOCK_UNDO;*/
+			case ACTION_STOCK_PROP: {
+				const char *stock;
+				if (package->toModify())
+					stock = GTK_STOCK_UNDO;
+				else if (package->isInstalled())
+					stock = GTK_STOCK_REMOVE;
+				else
+					stock = GTK_STOCK_ADD;
 				g_value_set_string (value, g_strdup (stock));
 				break;
 			}
@@ -891,49 +894,50 @@ struct YGtkPackageView::Impl
 
 	void appendButtonColumn (const char *header, const std::string &prop)
 	{
-		int modelCol = translateProperty (prop);
-		int labelCol, stockCol;
-		switch (modelCol) {
-			case TO_INSTALL_PROP: case TO_UPGRADE_PROP: default:
-				labelCol = INSTALL_LABEL_PROP;
-				stockCol = INSTALL_STOCK_PROP;
-				break;
-			case TO_REMOVE_PROP:
-				labelCol = REMOVE_LABEL_PROP;
-				stockCol = REMOVE_STOCK_PROP;
-				break;
-		}
+		int labelCol = ACTION_LABEL_PROP, stockCol = ACTION_STOCK_PROP;
 
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
 		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-			header, renderer, "active", modelCol,
+			header, renderer,// "active", modelCol,
 			"visible", CHECK_VISIBLE_PROP,
 			"sensitive", SENSITIVE_PROP,
 			"cell-background", BACKGROUND_PROP,
-			"text", labelCol,
-//			"stock-id", stockCol,
 			NULL);
+		if (action_col_label)
+			gtk_tree_view_column_add_attribute (column, renderer, "text", labelCol);
+		gboolean button_images;
+		g_object_get (G_OBJECT (gtk_settings_get_default()), "gtk-button-images", &button_images, NULL);
+		bool show_icon = !action_col_label || button_images;
+		if (show_icon)
+			gtk_tree_view_column_add_attribute (column, renderer, "stock-id", stockCol);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 			              G_CALLBACK (renderer_toggled_cb), this);
 
 		PangoRectangle rect;
 		int width = 0;
-		const char *text[] = { _("Add"), _("Remove") };
-		for (int i = 0; i < 2; i++) {
-			PangoLayout *layout = gtk_widget_create_pango_layout (m_view, text[i]);
-			pango_layout_get_pixel_extents (layout, NULL, &rect);
-			width = MAX (width, rect.width);
-			g_object_unref (G_OBJECT (layout));
+		if (action_col_label) {
+			const char *text[] = { _("Add"), _("Remove") };
+			for (int i = 0; i < 2; i++) {
+				PangoLayout *layout = gtk_widget_create_pango_layout (m_view, text[i]);
+				pango_layout_get_pixel_extents (layout, NULL, &rect);
+				width = MAX (width, rect.width);
+				g_object_unref (G_OBJECT (layout));
+			}
 		}
 		width += 16;
-//		width += 20;  // icon
+		if (show_icon) {
+			int icon_width;
+			gtk_icon_size_lookup_for_settings (gtk_widget_get_settings (m_view),
+				GTK_ICON_SIZE_MENU, &icon_width, NULL);
+			width += icon_width;
+		}
 
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 		gtk_tree_view_column_set_fixed_width (column, width);
 		gtk_tree_view_append_column (view, column);
 
-		Action action = columnAction (modelCol);
+		Action action = columnAction (TO_INSTALL_PROP);
 		g_object_set_data (G_OBJECT (renderer), "action", GINT_TO_POINTER (action));
 		if (m_activate_action == NONE_ACTION)
 			m_activate_action = action;
@@ -967,9 +971,12 @@ struct YGtkPackageView::Impl
 			"sensitive", SENSITIVE_PROP,
 			"style", STYLE_PROP,
 			"weight", WEIGHT_PROP,
-			"foreground", FOREGROUND_PROP,
 			"cell-background", BACKGROUND_PROP,
 			NULL);
+		int foregroundCol = FOREGROUND_PROP;
+		if (col == AVAILABLE_VERSION_PROP)
+			foregroundCol = VERSION_FOREGROUND_PROP;
+		gtk_tree_view_column_add_attribute (column, renderer, "foreground", foregroundCol);
 		g_object_set_data_full (G_OBJECT (column), "property", g_strdup (prop.c_str()), g_free);
 		if (identAuto)
 			gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
@@ -1166,15 +1173,18 @@ struct YGtkPackageView::Impl
 
 	static void apply (Ypp::Package *package, Action action, bool enable)
 	{
-		if (enable)
+		if (package->toModify())
+			package->undo();
+		else
+//		if (enable)
 			switch (action) {
 				case INSTALL_ACTION: package->install (0); break;
 				case REMOVE_ACTION: package->remove(); break;
 				case UNDO_ACTION: package->undo(); break;
 				case NONE_ACTION: break;
 			}
-		else
-			package->undo();
+/*		else
+			package->undo();*/
 	}
 
 	static gboolean apply_iter_cb (GtkTreeModel *model,

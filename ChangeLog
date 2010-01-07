@@ -1,3 +1,21 @@
+2010-01-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/yzyppwrapper.h/cc: added API to read changes log.
+
+	* src/pkg/YGPackageSelector.cc: improved look of --undo-old-style.
+
+	* src/pkg/YGPackageSelector.cc: as requested by Atri,
+	added previous changes to the changes sidebar. See flag
+	--undo-log-all and --undo-log-changed.
+
+	* src/pkg/ygtkpackageview.cc: changed action button label/stock
+	behavior.
+
+	* src/pkg/ygtkpackageview.cc: as suggested by Atri, added
+	flag --action-col-label to allow disabling action button labels.
+
+	* src/pkg/ygtkpackageview.cc: added --colorful-rows.
+
 2009-12-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: added --status-top

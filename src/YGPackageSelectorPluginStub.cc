@@ -14,10 +14,12 @@
 bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = false,
 	categories_side = true, categories_top = false, status_side = false,
 	status_top = false, status_tabs = true, status_tabs_as_actions = false,
-	undo_side = false, undo_tab = true, undo_old_style = false, status_col = false,
-	action_col = true, action_col_as_button = true, action_col_as_check = false,
-	version_col = true, single_line_rows = false, details_start_hide = true,
-	toolbar_top = false, toolbar_yast = false, arrange_by = false;
+	undo_side = false, undo_tab = true, undo_old_style = false, undo_log_all = false,
+	undo_log_changed = false, status_col = false, action_col = true,
+	action_col_as_button = true, action_col_as_check = false, action_col_label = true,
+	version_col = true, single_line_rows = false, colorful_rows = false,
+	details_start_hide = true, toolbar_top = false, toolbar_yast = false,
+	arrange_by = false;
 
 struct Arg {
 	const char *arg;
@@ -36,12 +38,16 @@ Arg arguments[] = {
 	{ "undo-side", &undo_side },
 	{ "undo-tab", &undo_tab },
 	{ "undo-old-style", &undo_old_style },
+	{ "undo-log-all", &undo_log_all },
+	{ "undo-log-changed", &undo_log_changed },
 	{ "status-col", &status_col },
 	{ "action-col", &action_col },
 	{ "action-col-as-button", &action_col_as_button },
 	{ "action-col-as-check", &action_col_as_check },
+	{ "action-col-label", &action_col_label },
 	{ "version-col", &version_col },
 	{ "single-line-rows", &single_line_rows },
+	{ "colorful-rows", &colorful_rows },
 	{ "details-start-hide", &details_start_hide },
 	{ "toolbar-top", &toolbar_top },
 	{ "toolbar-yast", &toolbar_yast },

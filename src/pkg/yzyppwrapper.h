@@ -258,6 +258,29 @@ struct Ypp
 		void *impl;
 	};
 
+	// Log
+	struct Log {
+		struct Entry {
+			enum Action { INSTALL_ACTION, REMOVE_ACTION };
+			Action action;
+			std::string date;
+			std::string package_str;
+			std::string version_str;
+
+			// attemps to match the strings: could be null
+			Package *package;
+			const Package::Version *version;  // only may be set for INSTALL
+		};
+
+		Entry *getEntry (int nb);
+
+		struct Impl;
+		Impl *impl;
+		Log();
+		~Log();
+	};
+	Log *getLog();
+
 	// Module
 	static Ypp *get();
 	static void finish();

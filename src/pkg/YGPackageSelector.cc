@@ -29,9 +29,9 @@
 // experiments:
 extern bool search_entry_side, search_entry_top, dynamic_sidebar, categories_side,
 	categories_top, status_side, status_top, status_tabs, status_tabs_as_actions,
-	undo_side, undo_tab, undo_old_style, status_col, action_col, action_col_as_button,
-	action_col_as_check, version_col, single_line_rows, details_start_hide,
-	toolbar_top, toolbar_yast, arrange_by;
+	undo_side, undo_tab, undo_old_style, undo_log_all, undo_log_changed, status_col,
+	action_col, action_col_as_button, action_col_as_check, version_col,
+	single_line_rows, details_start_hide, toolbar_top, toolbar_yast, arrange_by;
 
 //** UI components -- split up for re-usability, but mostly for readability
 
@@ -168,6 +168,43 @@ private:
 #endif
 };
 
+static void small_button_style_set_cb (GtkWidget *button, GtkStyle *prev_style)
+{
+	// based on gedit
+	int width, height;
+	gtk_icon_size_lookup_for_settings (gtk_widget_get_settings (button),
+		GTK_ICON_SIZE_MENU, &width, &height);
+	gtk_widget_set_size_request (button, width+2, height+2);
+}
+
+static GtkWidget *create_small_button (const char *stock_icon, const char *tooltip)
+{
+	static bool first_time = true;
+	if (first_time) {
+		first_time = false;
+		gtk_rc_parse_string (
+			"style \"small-button-style\"\n"
+			"{\n"
+			"  GtkWidget::focus-padding = 0\n"
+			"  GtkWidget::focus-line-width = 0\n"
+			"  xthickness = 0\n"
+			"  ythickness = 0\n"
+			"}\n"
+			"widget \"*.small-button\" style \"small-button-style\"");
+	}
+
+	GtkWidget *button = gtk_button_new();
+	gtk_widget_set_name (button, "small-button");
+	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
+	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
+	gtk_widget_set_tooltip_text (button, tooltip);
+	GtkWidget *image = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_MENU);
+	gtk_button_set_image (GTK_BUTTON (button), image);
+	g_signal_connect (G_OBJECT (button), "style-set",
+	                  G_CALLBACK (small_button_style_set_cb), NULL);
+	return button;
+}
+
 class ChangesPane : public Ypp::PkgList::Listener
 {
 	struct Entry {
@@ -179,13 +216,10 @@ class ChangesPane : public Ypp::PkgList::Listener
 			m_label = gtk_label_new ("");
 			gtk_misc_set_alignment (GTK_MISC (m_label), 0, 0.5);
 			gtk_label_set_ellipsize (GTK_LABEL (m_label), PANGO_ELLIPSIZE_END);
-			m_button = gtk_button_new();
-			gtk_widget_set_tooltip_text (m_button, _("Undo"));
-			GtkWidget *undo_image = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_MENU);
-			gtk_button_set_image (GTK_BUTTON (m_button), undo_image);
+			m_button = create_small_button (GTK_STOCK_UNDO, _("Undo"));
 			m_box = gtk_hbox_new (FALSE, 6);
 			gtk_box_pack_start (GTK_BOX (m_box), m_label, TRUE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (m_box), m_button, FALSE, FALSE, 0);
+			gtk_box_pack_start (GTK_BOX (m_box), m_button, FALSE, TRUE, 0);
 			gtk_widget_show_all (m_box);
 			modified (package);
 			g_signal_connect (G_OBJECT (m_button), "clicked",
@@ -232,46 +266,120 @@ class ChangesPane : public Ypp::PkgList::Listener
 		}
 	};
 
-GtkWidget *m_box, *m_entries_box;
+	struct LogEntry {
+		GtkWidget *m_box, *m_label, *m_button;
+		Ypp::Log::Entry::Action m_action;
+		GtkWidget *getWidget() { return m_box; }
+
+		LogEntry (Ypp::Package *package, Ypp::Log::Entry::Action action)
+		: m_action (action)
+		{
+			std::string label = action == Ypp::Log::Entry::INSTALL_ACTION ?
+				_("install") : _("remove");
+			label += " " + package->name();
+			m_label = gtk_label_new (label.c_str());
+			gtk_misc_set_alignment (GTK_MISC (m_label), 0, 0.5);
+			gtk_label_set_ellipsize (GTK_LABEL (m_label), PANGO_ELLIPSIZE_END);
+			if (canUndo (package, action)) {
+				m_button = create_small_button (GTK_STOCK_UNDO, _("Undo"));
+				m_box = gtk_hbox_new (FALSE, 6);
+				gtk_box_pack_start (GTK_BOX (m_box), m_label, TRUE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (m_box), m_button, FALSE, TRUE, 0);
+				g_signal_connect (G_OBJECT (m_button), "clicked",
+					              G_CALLBACK (undo_clicked_cb), package);
+			}
+			else
+				m_box = m_label;
+			gtk_widget_show_all (m_box);
+		}
+
+		static void undo_clicked_cb (GtkButton *button, Ypp::Package *package)
+		{
+#if 0
+			if (m_action == Ypp::Log::Entry::INSTALL_ACTION)
+				package->remove();
+			else
+				package->install (0);
+#endif
+			if (package->isInstalled())
+				package->remove();
+			else
+				package->install (0);
+			gtk_widget_hide (GTK_WIDGET (button));
+		}
+
+		static bool canUndo (Ypp::Package *package, Ypp::Log::Entry::Action action)
+		{
+			return (action == Ypp::Log::Entry::INSTALL_ACTION && package->isInstalled())
+				|| (action == Ypp::Log::Entry::REMOVE_ACTION && !package->isInstalled());
+		}
+	};
+
+GtkWidget *m_handle_box, *m_empty_label, *m_entries_box;
 Ypp::PkgList m_pool;
 GList *m_entries;
 
 public:
 	GtkWidget *getWidget()
-	{ return m_box; }
+	{ return m_handle_box; }
 
 	ChangesPane()
 	: m_entries (NULL)
 	{
-		GtkWidget *heading = gtk_label_new (_("Changes:"));
+		GtkWidget *heading = gtk_label_new (_("To perform now:"));
 		YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
 		gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
-		m_entries_box = gtk_vbox_new (FALSE, 4);
+		m_entries_box = gtk_vbox_new (FALSE, 2);
 
-		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll),
-		                                       m_entries_box);
-		GtkWidget *port = gtk_bin_get_child (GTK_BIN (scroll));
-		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
+		m_empty_label = gtk_label_new (_("Package changes will\nbe listed here."));
+		YGUtils::setWidgetFont (m_empty_label, PANGO_STYLE_ITALIC, PANGO_WEIGHT_NORMAL, PANGO_SCALE_MEDIUM);
+		gtk_label_set_justify (GTK_LABEL (m_empty_label), GTK_JUSTIFY_CENTER);
+		gtk_misc_set_alignment (GTK_MISC (m_empty_label), 0.5, 0.5);
 
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
 		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
 		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), scroll, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), m_empty_label, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), m_entries_box, TRUE, TRUE, 0);
 
+		struct inner {
+			static gboolean expose_cb (GtkWidget *widget, GdkEventExpose *event)
+			{
+				cairo_t *cr = gdk_cairo_create (widget->window);
+				GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
+				gdk_cairo_set_source_color (cr, &color);
+				cairo_rectangle (cr, event->area.x, event->area.y,
+						         event->area.width, event->area.height);
+				cairo_fill (cr);
+				cairo_destroy (cr);
+				return FALSE;
+			}
+		};
+		g_signal_connect (G_OBJECT (vbox), "expose-event",
+			              G_CALLBACK (inner::expose_cb), NULL);
+
+		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), vbox);
+		GtkWidget *port = gtk_bin_get_child (GTK_BIN (scroll));
+		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
+
+/*
 		ygtk_wizard_set_information_expose_hook (vbox, &vbox->allocation);
 		ygtk_wizard_set_information_expose_hook (m_entries_box, &m_entries_box->allocation);
-
+*/
 		int width = YGUtils::getCharsWidth (vbox, 32);
 		gtk_widget_set_size_request (vbox, width, -1);
 		gtk_widget_show_all (vbox);
 
-		m_box = gtk_handle_box_new();
-		gtk_container_add (GTK_CONTAINER (m_box), vbox);
-		gtk_handle_box_set_handle_position (GTK_HANDLE_BOX (m_box), GTK_POS_TOP);
-		gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_box), GTK_POS_RIGHT);
+		GtkWidget *frame = gtk_frame_new (NULL);
+		gtk_container_add (GTK_CONTAINER (frame), scroll);
+
+		m_handle_box = gtk_handle_box_new();
+		gtk_container_add (GTK_CONTAINER (m_handle_box), frame);
+		gtk_handle_box_set_handle_position (GTK_HANDLE_BOX (m_handle_box), GTK_POS_TOP);
+		gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_handle_box), GTK_POS_RIGHT);
 
 		Ypp::QueryBase *query = new Ypp::QueryProperty ("to-modify", true);
 /*		if (pkg_selector->onlineUpdateMode())
@@ -281,6 +389,25 @@ public:
 		for (int i = 0; i < m_pool.size(); i++)
 			ChangesPane::entryInserted (m_pool, i, m_pool.get (i));
 		m_pool.addListener (this);
+
+		if (undo_log_all || undo_log_changed) {
+			GtkWidget *log_box = gtk_vbox_new (FALSE, 2);
+			GtkWidget *heading = gtk_label_new (_("Past changes:"));
+			YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+			gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
+			gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (vbox), log_box, TRUE, TRUE, 0);
+
+			for (int i = 0; Ypp::get()->getLog()->getEntry (i); i++) {
+				Ypp::Log::Entry *entry = Ypp::get()->getLog()->getEntry (i);
+				if (entry->package)
+					if (undo_log_all || LogEntry::canUndo (entry->package, entry->action)) {
+						// FIXME: free these stuff
+						LogEntry *log_entry = new LogEntry (entry->package, entry->action);
+						gtk_box_pack_start (GTK_BOX (log_box), log_entry->getWidget(), FALSE, TRUE, 0);
+					}
+			}
+		}
 	}
 
 	~ChangesPane()
@@ -293,6 +420,7 @@ public:
 	void startHack()  // call after init, after you did a show_all in the dialog
 	{
 		UpdateVisible();
+
 		// ugly: signal modified for all entries to allow them to hide undo buttons
 		GList *i;
 		int index;
@@ -303,8 +431,10 @@ public:
 
 	void UpdateVisible()
 	{
-		if (details_start_hide)
-			m_entries != NULL ? gtk_widget_show (m_box) : gtk_widget_hide (m_box);
+		if (details_start_hide && !(undo_log_all || undo_log_changed))
+			m_entries ? gtk_widget_show (m_handle_box) : gtk_widget_hide (m_handle_box);
+		if (m_entries)
+			gtk_widget_hide (m_empty_label);
 	}
 
 	virtual void entryInserted (const Ypp::PkgList list, int index, Ypp::Package *package)
@@ -3078,13 +3208,16 @@ public:
 
 		GtkWidget *packages_pane = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (packages_pane), packages_button_box, TRUE, FALSE);
+		ChangesPane *changes_pane = 0;
 		GtkWidget *undo_widget;
 		if (undo_side) {
-			if (undo_old_style)
-				undo_widget = (new ChangesPane())->getWidget();
+			if (undo_old_style) {
+				changes_pane = new ChangesPane();
+				undo_widget = changes_pane->getWidget();
+			}
 			else
 				undo_widget = undo_view->createView (this, false);
-			gtk_paned_pack2 (GTK_PANED (packages_pane), undo_widget, FALSE, FALSE);
+			gtk_paned_pack2 (GTK_PANED (packages_pane), undo_widget, FALSE, TRUE);
 			gtk_paned_set_position (GTK_PANED (packages_pane), 350);
 		}
 
@@ -3167,15 +3300,14 @@ public:
 		m_widget = vbox;
 		gtk_widget_show_all (m_widget);
 
-		if (details_start_hide) {
+		if (details_start_hide)
 			gtk_widget_hide (m_details->getWidget());
-			if (undo_old_style)
-				gtk_widget_hide (undo_widget);
-		}
 		else
 			m_details->setPackage (NULL);
 		if (!categories_side && !search_entry_side && !status_side)
 			gtk_widget_hide (side_vbox);
+		if (changes_pane)
+			changes_pane->startHack();
 	}
 
 	~UI()

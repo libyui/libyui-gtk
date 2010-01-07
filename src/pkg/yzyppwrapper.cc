@@ -1,10 +1,7 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-
-/*
-  Textdomain "yast2-gtk"
- */
+/* Textdomain "yast2-gtk" */
 
 /* Ypp, zypp wrapper */
 // check the header file for information about this wrapper
@@ -37,7 +34,6 @@
 #include "YGUtils.h"
 
 //** Zypp shortcuts
-
 typedef zypp::ResPoolProxy ZyppPool;
 inline ZyppPool zyppPool() { return zypp::getZYpp()->poolProxy(); }
 typedef zypp::ui::Selectable::Ptr ZyppSelectable;
@@ -55,11 +51,10 @@ inline ZyppPattern tryCastToZyppPattern (ZyppObject obj)
 { return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
 
 //** Utilities
-
 // converts a set of tree representation in a form of a strings to a tree structure.
 // String tree representations are, for instance, filenames: /dir1/dir2/file
 struct StringTree {
-	typedef int (*Compare)(const char *, const char *);
+	typedef int (* Compare)(const char *, const char *);
 	Compare compare;
 	char delim;
 	const char *trans_domain;
@@ -208,7 +203,6 @@ private:
 	std::vector <Repository *> repos;
 	const Repository *favoriteRepo;
 	int favoriteRepoPriority;
-	Disk *disk;
 	Interface *interface;
 	GSList *pkg_listeners;
 	bool inTransaction;
@@ -2225,6 +2219,20 @@ std::vector <Disk::Partition *> partitions;
 	}
 };
 
+//** Disk
+
+static Ypp::Disk *_disk;
+
+Ypp::Disk *Ypp::getDisk()
+{
+	if (!_disk)
+		_disk = new Disk();
+	return _disk;
+}
+
+void finish_disk()
+{ delete _disk; _disk = 0; }
+
 Ypp::Disk::Disk()
 { impl = new Impl(); }
 Ypp::Disk::~Disk()
@@ -2243,6 +2251,8 @@ Ypp::Node *Ypp::getFirstCategory (Ypp::Package::Type type)
 		return impl->categories[type]->getFirst();
 	return NULL;
 }
+
+//** Categories
 
 Ypp::Node *Ypp::getFirstCategory2 (Ypp::Package::Type type)
 {
@@ -2325,7 +2335,7 @@ void Ypp::Impl::polishCategories (Ypp::Package::Type type)
 //** Ypp top methods & internal connections
 
 Ypp::Impl::Impl()
-: favoriteRepo (NULL), disk (NULL), interface (NULL),
+: favoriteRepo (NULL), interface (NULL),
   pkg_listeners (NULL), inTransaction (false), transactions (NULL)
 {
 	for (int i = 0; i < Package::TOTAL_TYPES; i++) {
@@ -2355,7 +2365,6 @@ Ypp::Impl::~Impl()
 
 	// don't delete pools as they don't actually belong to Ypp, just listeners
 	g_slist_free (pkg_listeners);
-	delete disk;
 }
 
 const Ypp::Repository *Ypp::Impl::getRepository (int nb)
@@ -2422,13 +2431,6 @@ zypp::RepoInfo Ypp::Impl::getRepoInfo (const Repository *repo)
 	// error
 	zypp::RepoInfo i;
 	return i;
-}
-
-Ypp::Disk *Ypp::Impl::getDisk()
-{
-	if (!disk)
-		disk = new Disk();
-	return disk;
 }
 
 bool Ypp::Impl::acceptLicense (Ypp::Package *package, const std::string &license)
@@ -2582,10 +2584,131 @@ void Ypp::Impl::finishTransactions()
 	g_slist_free (transactions);
 	transactions = NULL;
 	inTransaction = false;
-	if (disk)
-		disk->impl->packageModified();
+	if (_disk)
+		_disk->impl->packageModified();
 	interface->loading (1);
 }
+
+//** Log
+
+#include <zypp/parser/HistoryLogReader.h>
+typedef zypp::HistoryItem::Ptr ZyppHistoryItem;
+typedef zypp::HistoryItemInstall *ZyppHistoryItemInstall;
+typedef zypp::HistoryItemRemove *ZyppHistoryItemRemove;
+inline ZyppHistoryItemInstall tryCastToZyppHistoryItemInstall (ZyppHistoryItem item)
+{ return dynamic_cast <zypp::HistoryItemInstall *> (item.get()); }
+inline ZyppHistoryItemRemove tryCastToZyppHistoryItemRemove (ZyppHistoryItem item)
+{ return dynamic_cast <zypp::HistoryItemRemove *> (item.get()); }
+
+struct Ypp::Log::Impl
+{
+	std::vector <Log::Entry *> entries;
+	Impl();
+	~Impl();
+	void parse (const ZyppHistoryItem &item);
+};
+
+struct HistoryParseHandler {
+	Ypp::Log::Impl *log;
+	HistoryParseHandler (Ypp::Log::Impl *log) : log (log) {}
+
+	bool operator()(const ZyppHistoryItem &item) {
+		log->parse (item);
+		return true;
+	}
+};
+
+Ypp::Log::Impl::Impl()
+{
+	entries.reserve (512);
+	HistoryParseHandler handler (this);
+	const char *filename = "/var/log/zypp/history";
+	zypp::parser::HistoryLogReader reader (filename, boost::ref (handler));
+	try {
+		reader.readAll();
+	}
+	catch (const zypp::Exception &e) {
+		yuiWarning () << "Error: Could not load log file" << filename << ": "
+			<< e.asUserHistory() << std::endl;
+	}
+}
+
+Ypp::Log::Impl::~Impl()
+{
+	for (std::vector <Log::Entry *>::iterator it = entries.begin();
+	      it != entries.end(); it++)
+		delete *it;
+}
+
+void Ypp::Log::Impl::parse (const ZyppHistoryItem &item)
+{
+	Entry::Action action;
+	if (item->action.toEnum() == zypp::HistoryActionID::INSTALL_e)
+		action = Entry::INSTALL_ACTION;
+	else if (item->action.toEnum() == zypp::HistoryActionID::REMOVE_e)
+		action = Entry::REMOVE_ACTION;
+	else
+		return;
+
+	Entry *entry = new Entry();
+	entry->action = action;
+	entry->date = item->date;
+	if (action == Entry::INSTALL_ACTION) {
+		ZyppHistoryItemInstall _item = tryCastToZyppHistoryItemInstall (item);
+		if (_item) {
+			entry->package_str = _item->name;
+			entry->version_str = _item->edition.asString();
+		}
+	}
+	else {
+		ZyppHistoryItemRemove _item = tryCastToZyppHistoryItemRemove (item);
+		if (_item) {
+			entry->package_str = _item->name;
+			entry->version_str = _item->edition.asString();
+		}
+	}
+//fprintf (stderr, "parse: %s\n", entry->package_str.c_str());
+	entry->package = Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE).find (entry->package_str);
+	entry->version = NULL;
+	if (entry->package) {
+		const Package::Version *version = entry->package->getInstalledVersion();
+		if (version && version->number == entry->version_str)
+			entry->version = version;
+		for (int i = 0; entry->package->getAvailableVersion (i); i++) {
+			version = entry->package->getAvailableVersion (i);
+			if (version->number == entry->version_str)
+				entry->version = version;
+		}
+	}
+	entries.push_back (entry);
+}
+
+Ypp::Log::Log()
+{ impl = new Impl(); }
+
+Ypp::Log::~Log()
+{ delete impl; }
+
+Ypp::Log::Entry *Ypp::Log::getEntry (int nb)
+{
+	if (nb >= (signed) impl->entries.size())
+		return NULL;
+	return impl->entries[impl->entries.size()-nb-1];  // reverse order
+}
+
+static Ypp::Log *_log = 0;
+
+Ypp::Log *Ypp::getLog()
+{
+	if (!_log)
+		_log = new Log();
+	return _log;
+}
+
+void finish_log()
+{ delete _log; _log = 0; }
+
+//** Top
 
 Ypp::Ypp()
 {
@@ -2599,6 +2722,8 @@ Ypp::~Ypp()
 {
 	setFavoriteRepository (NULL);
 	delete impl;
+	finish_log();
+	finish_disk();
 }
 
 const Ypp::Repository *Ypp::getRepository (int nb)
@@ -2622,9 +2747,6 @@ void Ypp::setFavoriteRepository (const Ypp::Repository *repo)
 
 const Ypp::Repository *Ypp::favoriteRepository()
 { return impl->favoriteRepo; }
-
-Ypp::Disk *Ypp::getDisk()
-{ return impl->getDisk(); }
 
 void Ypp::setInterface (Ypp::Interface *interface)
 {
