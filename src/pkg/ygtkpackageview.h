@@ -35,7 +35,7 @@ struct YGtkPackageView
 	bool isVisible (const std::string &property);
 
 	void setRulesHint (bool hint);
-	enum Action { NONE_ACTION, INSTALL_ACTION, REMOVE_ACTION, UNDO_ACTION };
+	enum Action { NONE_ACTION, INSTALL_ACTION, REMOVE_ACTION, UNDO_ACTION, TOGGLE_ACTION };
 	void setActivateAction (Action action);
 
 	struct Listener {

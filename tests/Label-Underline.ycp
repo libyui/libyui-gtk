@@ -1,0 +1,31 @@
+// Underline Example - bug 559226
+//
+// Escape literal '&'
+
+{
+    import "Wizard";
+    import "Popup";
+    import "Label";
+
+    Wizard::CreateDialog ();
+    Wizard::SetContentsButtons ("Default button demo",
+	`VBox(
+	    `PushButton("&One"),
+	    `PushButton("&Tw&o"),
+	    `PushButton("Escape&&"),
+	    `PushButton("&Escape &&2"),
+	    `PushButton("&Escape &&2&&&&"),
+	    `PushButton("Escape &&&2&&&&"),
+	    `PushButton("_gtk1"),
+	    `PushButton("__gtk2")
+	),
+	"Help",
+	Label::BackButton(),
+	Label::NextButton()
+    );
+
+
+	Wizard::UserInput();
+    Wizard::CloseDialog();
+}
+

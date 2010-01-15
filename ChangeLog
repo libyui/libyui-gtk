@@ -1,3 +1,31 @@
+2010-01-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: added repositories combo and
+	view widgets together with a simplifification of the pairing
+	categories and status code.
+
+	* src/pkg/YGPackageSelector.cc: added GtkVBox subclass widget
+	to fine-tune handling of GtkExpander children, as well as
+	call to easily link multiple GtkVPaned widgets.
+
+	* src/pkg/YGPackageSelector.cc: added StackWidget to
+	support deck of widgets, optionally under a combo-box or
+	a note-book.
+
+	* src/pkg/YGPackageSelector.cc: added StartupMenu widget
+	that mimics the initial menu of Suse studio.
+
+	* src/pkg/ygtkpackageview.h/cc: changed action check
+	behavior.
+
+	* src/YGPackageSelectorPluginStub.cc: added flags:
+	sidebar: --expander-sidebar, --flex-sidebar, --grid-sidebar,
+	--layered-sidebar, --layered-tabs-sidebar, --startup-menu,
+	--big-icons-sidebar, --icons-sidebar, --repositories-side,
+	and --repositories-top
+	row colorization: --italicize-changed-row, and
+	--golden-changed-row.
+
 2010-01-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/yzyppwrapper.h/cc: added API to read changes log.

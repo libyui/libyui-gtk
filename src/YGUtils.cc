@@ -291,6 +291,7 @@ gchar *ygutils_convert_to_xhtml (const char *instr)
 
 std::string YGUtils::mapKBAccel (const std::string &src)
 {
+	// conversion pairs: ('_', '__') ('&&', '&') ('&', '_')
 	std::string::size_type length = src.length(), i;
 	string str;
 	str.reserve (length);

@@ -20,7 +20,8 @@
 #include <string.h>
 
 extern bool status_col, action_col, action_col_as_button, action_col_as_check,
-	action_col_label, version_col, colorful_rows, single_line_rows;
+	action_col_label, version_col, colorful_rows, italicize_changed_row,
+	golden_changed_row, single_line_rows;
 
 //** Icons resources
 
@@ -114,6 +115,7 @@ enum Property {
 	SIZE_PROP, INSTALLED_VERSION_PROP, AVAILABLE_VERSION_PROP,
 	// checks
 	TO_INSTALL_PROP, TO_UPGRADE_PROP, TO_REMOVE_PROP, TO_MODIFY_PROP,
+	IS_INSTALLED_PROP,
 	// internal
 	STYLE_PROP, WEIGHT_PROP, SENSITIVE_PROP, CHECK_VISIBLE_PROP,
 	FOREGROUND_PROP, VERSION_FOREGROUND_PROP, BACKGROUND_PROP, XPAD_PROP,
@@ -145,6 +147,7 @@ static GType _columnType (int col)
 		case TO_UPGRADE_PROP:
 		case TO_REMOVE_PROP:
 		case TO_MODIFY_PROP:
+		case IS_INSTALLED_PROP:
 		case SENSITIVE_PROP:
 		case CHECK_VISIBLE_PROP:
 			return G_TYPE_BOOLEAN;
@@ -185,6 +188,7 @@ static void _getValueDefault (int col, GValue *value)
 		case TO_UPGRADE_PROP:
 		case TO_REMOVE_PROP:
 		case TO_MODIFY_PROP:
+		case IS_INSTALLED_PROP:
 			g_value_set_boolean (value, FALSE);
 			break;
 		case STYLE_PROP:
@@ -507,15 +511,25 @@ protected:
 			case TO_MODIFY_PROP:
 				g_value_set_boolean (value, package->toModify());
 				break;
+			case IS_INSTALLED_PROP:  // if is-installed at the end
+				bool installed;
+				if (package->toInstall())
+					installed = true;
+				else if (package->toRemove())
+					installed = false;
+				else
+					installed = package->isInstalled();
+				g_value_set_boolean (value, installed);
+				break;
 			case SENSITIVE_PROP: {
 				bool sensitive = !package->isLocked();
 				g_value_set_boolean (value, sensitive);
 				break;
 			}
 			case STYLE_PROP: {
-				if (colorful_rows) {
+				if (italicize_changed_row) {
 					PangoStyle style = PANGO_STYLE_NORMAL;
-					if (package->isAuto())
+					if (package->toModify())
 						style = PANGO_STYLE_ITALIC;
 					g_value_set_int (value, style);
 				}
@@ -525,17 +539,23 @@ protected:
 			}
 			case VERSION_FOREGROUND_PROP:
 			case FOREGROUND_PROP: {
+				const char *color = 0;
 				if (colorful_rows) {
-					const char *color = NULL;
 					if (!package->isInstalled())
 						color = "darkgray";
 					if (col == VERSION_FOREGROUND_PROP)
 						if (package->hasUpgrade())
 							color = "blue";
-					g_value_set_string (value, color);
 				}
-				else
-					_getValueDefault (col, value);
+				g_value_set_string (value, color);
+				break;
+			}
+			case BACKGROUND_PROP: {
+				const char *color = 0;
+				if (golden_changed_row)
+					if (package->toModify())
+						color = "yellow";
+				g_value_set_string (value, color);
 				break;
 			}
 			case WEIGHT_PROP: {
@@ -668,6 +688,8 @@ static Property translateProperty (const std::string &prop)
 		return SIZE_PROP;
 	if (prop == "to-install")
 		return TO_INSTALL_PROP;
+	if (prop == "is-installed")
+		return IS_INSTALLED_PROP;
 	return (Property) 0;
 }
 
@@ -706,10 +728,10 @@ struct YGtkPackageView::Impl
 		clear();
 
 		if (action_col) {
-			if (action_col_as_button)
+			if (action_col_as_check)
+				appendCheckColumn ("is-installed"); //("to-install");
+			else //if (action_col_as_button)
 				appendButtonColumn (NULL, "to-install");
-			else // if (action_col_as_check)
-				appendCheckColumn ("to-install");
 		}
 		if (status_col)
 			appendIconColumn (NULL, "icon");
@@ -864,6 +886,8 @@ struct YGtkPackageView::Impl
 				return REMOVE_ACTION;
 			case TO_MODIFY_PROP:
 				return UNDO_ACTION;
+			case IS_INSTALLED_PROP:
+				return TOGGLE_ACTION;
 		}
 	}
 
@@ -1181,6 +1205,12 @@ struct YGtkPackageView::Impl
 				case INSTALL_ACTION: package->install (0); break;
 				case REMOVE_ACTION: package->remove(); break;
 				case UNDO_ACTION: package->undo(); break;
+				case TOGGLE_ACTION:
+					if (package->isInstalled())
+						package->remove();
+					else
+						package->install(0);
+					break;
 				case NONE_ACTION: break;
 			}
 /*		else
@@ -1236,6 +1266,12 @@ struct YGtkPackageView::Impl
 			case INSTALL_ACTION: packages.install(); break;
 			case REMOVE_ACTION: packages.remove(); break;
 			case UNDO_ACTION: packages.undo(); break;
+			case TOGGLE_ACTION:
+				if (packages.installed())
+					packages.remove();
+				else
+					packages.install();
+				break;
 			case NONE_ACTION: break;
 		}
 	}

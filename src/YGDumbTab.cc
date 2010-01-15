@@ -31,7 +31,7 @@ public:
 		// the notebook reduce its size.
 		ygtk_adj_size_set_only_expand (YGTK_ADJ_SIZE (m_adj_size), TRUE);
 
-		connect (getWidget(), "switch-page", G_CALLBACK (changed_tab_cb), this);
+		connect (getWidget(), "switch-page", G_CALLBACK (switch_page_cb), this);
 	}
 
 	virtual ~YGDumbTab()
@@ -141,8 +141,8 @@ public:
 	}
 
 	// callbacks
-	static void changed_tab_cb (GtkNotebook *notebook, GtkNotebookPage *page,
-	                            gint tab_nb, YGDumbTab *pThis)
+	static void switch_page_cb (GtkNotebook *notebook, GtkNotebookPage *page,
+	                              guint tab_nb, YGDumbTab *pThis)
 	{
 		GtkWidget *child = gtk_notebook_get_nth_page (notebook, tab_nb);
 		YItem *item = (YItem *) g_object_get_data (G_OBJECT (child), "yitem");
