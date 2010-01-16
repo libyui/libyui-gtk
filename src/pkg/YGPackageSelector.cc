@@ -340,7 +340,7 @@ public:
 	GtkWidget *getWidget()
 	{ return m_handle_box; }
 
-	ChangesPane()
+	ChangesPane (bool show_handle)
 	: m_entries (NULL)
 	{
 		GtkWidget *heading = gtk_label_new (_("To perform now:"));
@@ -358,7 +358,6 @@ public:
 		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), m_empty_label, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), m_entries_box, TRUE, TRUE, 0);
-
 		g_signal_connect (G_OBJECT (vbox), "expose-event",
 			              G_CALLBACK (paint_white_expose_cb), NULL);
 
@@ -377,41 +376,50 @@ public:
 		gtk_widget_set_size_request (vbox, width, -1);
 		gtk_widget_show_all (vbox);
 
-		GtkWidget *frame = gtk_frame_new (NULL);
-		gtk_container_add (GTK_CONTAINER (frame), scroll);
+		if (show_handle) {
+			GtkWidget *frame = gtk_frame_new (NULL);
+			gtk_container_add (GTK_CONTAINER (frame), scroll);
 
-		m_handle_box = gtk_handle_box_new();
-		gtk_container_add (GTK_CONTAINER (m_handle_box), frame);
-		gtk_handle_box_set_handle_position (GTK_HANDLE_BOX (m_handle_box), GTK_POS_TOP);
-		gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_handle_box), GTK_POS_RIGHT);
+			m_handle_box = gtk_handle_box_new();
+			gtk_container_add (GTK_CONTAINER (m_handle_box), frame);
+			gtk_handle_box_set_handle_position (GTK_HANDLE_BOX (m_handle_box), GTK_POS_TOP);
+			gtk_handle_box_set_snap_edge (GTK_HANDLE_BOX (m_handle_box), GTK_POS_RIGHT);
+		}
+		else
+			m_handle_box = scroll;
 
 		Ypp::QueryBase *query = new Ypp::QueryProperty ("to-modify", true);
-/*		if (pkg_selector->onlineUpdateMode())
-			query->addType (Ypp::Package::PATCH_TYPE);*/
+//		if (pkg_selector->onlineUpdateMode())
 		m_pool = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
 		// initialize list -- there could already be packages modified
 		for (int i = 0; i < m_pool.size(); i++)
 			ChangesPane::entryInserted (m_pool, i, m_pool.get (i));
 		m_pool.addListener (this);
 
-		if (undo_log_all || undo_log_changed) {
-			GtkWidget *log_box = gtk_vbox_new (FALSE, 2);
-			GtkWidget *heading = gtk_label_new (_("Past changes:"));
-			YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
-			gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
-			gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (vbox), log_box, TRUE, TRUE, 0);
+		if (undo_log_all || undo_log_changed)
+			gtk_box_pack_start (GTK_BOX (vbox), createPastChangesWidget(), TRUE, TRUE, 0);
+	}
 
-			for (int i = 0; Ypp::get()->getLog()->getEntry (i); i++) {
-				Ypp::Log::Entry *entry = Ypp::get()->getLog()->getEntry (i);
-				if (entry->package)
-					if (undo_log_all || LogEntry::canUndo (entry->package, entry->action)) {
-						// FIXME: free these stuff
-						LogEntry *log_entry = new LogEntry (entry->package, entry->action);
-						gtk_box_pack_start (GTK_BOX (log_box), log_entry->getWidget(), FALSE, TRUE, 0);
-					}
-			}
+	GtkWidget *createPastChangesWidget()
+	{
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
+		GtkWidget *log_box = gtk_vbox_new (FALSE, 2);
+		GtkWidget *heading = gtk_label_new (_("Past changes:"));
+		YGUtils::setWidgetFont (heading, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		gtk_misc_set_alignment (GTK_MISC (heading), 0, 0.5);
+		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), log_box, TRUE, TRUE, 0);
+
+		for (int i = 0; Ypp::get()->getLog()->getEntry (i); i++) {
+			Ypp::Log::Entry *entry = Ypp::get()->getLog()->getEntry (i);
+			if (entry->package)
+				if (undo_log_all || LogEntry::canUndo (entry->package, entry->action)) {
+					// FIXME: free these stuff
+					LogEntry *log_entry = new LogEntry (entry->package, entry->action);
+					gtk_box_pack_start (GTK_BOX (log_box), log_entry->getWidget(), FALSE, TRUE, 0);
+				}
 		}
+		return vbox;
 	}
 
 	~ChangesPane()
@@ -3281,17 +3289,20 @@ public:
 	}
 };
 
+// undo box
+
 class UndoBox : public Ypp::PkgList::Listener
 {
-GtkWidget *m_undo_box, *m_undo_package, *m_undo_details;
+GtkWidget *m_undo_box, *m_undo_package, *m_undo_details, *m_title;
 Ypp::PkgList m_pool;
 Ypp::Package *m_package;
+bool m_closed;
 
 public:
 	GtkWidget *getWidget()
 	{ return m_undo_box; }
 
-	UndoBox()
+	UndoBox() : m_closed (false)
 	{
 		Ypp::QueryBase *query = new Ypp::QueryProperty ("to-modify", true);
 //		if (pkg_selector->onlineUpdateMode())
@@ -3303,10 +3314,16 @@ public:
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
 		gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);
 		gtk_container_add (GTK_CONTAINER (m_undo_box), vbox);
-		GtkWidget *title = gtk_label_new (_("Software changes"));
-		gtk_misc_set_alignment (GTK_MISC (title), 0, .5);
-		YGUtils::setWidgetFont (title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
-		gtk_box_pack_start (GTK_BOX (vbox), title, FALSE, TRUE, 0);
+		m_title = gtk_label_new (_("Software changes"));
+		gtk_misc_set_alignment (GTK_MISC (m_title), .5, .5);
+		YGUtils::setWidgetFont (m_title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		GtkWidget *close_button = create_small_button (GTK_STOCK_CLOSE, _("Close"));
+		g_signal_connect (G_OBJECT (close_button), "clicked",
+		                  G_CALLBACK (close_clicked_cb), this);
+		GtkWidget *title_box = gtk_hbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (title_box), m_title, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (title_box), close_button, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), title_box, FALSE, TRUE, 0);
 		GtkWidget *package_box = gtk_hbox_new (FALSE, 4);
 		m_undo_package = gtk_label_new ("");
 		gtk_misc_set_alignment (GTK_MISC (m_undo_package), 0, .5);
@@ -3319,10 +3336,17 @@ public:
 		m_undo_details = gtk_label_new ("");
 		gtk_misc_set_alignment (GTK_MISC (m_undo_details), 0, .5);
 		gtk_box_pack_start (GTK_BOX (vbox), m_undo_details, FALSE, TRUE, 0);
-		GtkWidget *details_button = gtk_link_button_new (_("View details..."));
-		GtkWidget *details_align = gtk_alignment_new (1, .5, 0, 0);
-		gtk_container_add (GTK_CONTAINER (details_align), details_button);
-		gtk_box_pack_start (GTK_BOX (vbox), details_align, FALSE, TRUE, 0);
+		char *details_str = g_strdup_printf ("<a href=\"details\">%s</a>", _("View details..."));
+		GtkWidget *details_label = gtk_label_new (details_str);
+		gtk_label_set_use_markup (GTK_LABEL (details_label), TRUE);
+		g_free (details_str);
+		gtk_label_set_track_visited_links (GTK_LABEL (details_label), FALSE);
+		gtk_misc_set_alignment (GTK_MISC (details_label), 1, .5);
+		gtk_box_pack_start (GTK_BOX (vbox), details_label, FALSE, TRUE, 0);
+		g_signal_connect (G_OBJECT (details_label), "activate-link",
+		                  G_CALLBACK (details_link_cb), this);
+
+		// TODO: start by showing available disk space
 	}
 
 	~UndoBox()
@@ -3335,6 +3359,7 @@ public:
 
 	void setPackage (Ypp::Package *package)
 	{
+		if (m_closed) return;
 		m_package = package;
 
 		std::string action;
@@ -3364,6 +3389,7 @@ public:
 		Ypp::Disk *disk = Ypp::get()->getDisk();
 		for (int i = 0; disk->getPartition (i); i++) {
 			const Ypp::Disk::Partition *part = disk->getPartition (i);
+			// FIXME: check for '/' in a soft manner, /usr/ as a hard check
 			if (part->path == "/usr" || part->path == "/usr/" || part->path == "/")
 				delta_str = part->delta_str;
 		}
@@ -3389,12 +3415,71 @@ public:
 	{ setPackage (package); }
 
 	virtual void entryDeleted  (const Ypp::PkgList list, int index, Ypp::Package *package)
-	{ gtk_widget_hide (m_undo_box); }
+	{ if (package == m_package) gtk_widget_hide (m_undo_box); }
 
 	virtual void entryChanged  (const Ypp::PkgList list, int index, Ypp::Package *package) {}
 
 	static void undo_clicked_cb (GtkButton *button, UndoBox *pThis)
 	{ pThis->m_package->undo(); }
+
+	static void close_clicked_cb (GtkButton *button, UndoBox *pThis)
+	{ gtk_widget_hide (pThis->m_undo_box); pThis->m_closed = true; }
+
+	static GtkWidget *createViewPort (GtkWidget *child)
+	{
+		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
+		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
+		                                GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (scroll), child);
+		GtkWidget *port = gtk_bin_get_child (GTK_BIN (scroll));
+		gtk_viewport_set_shadow_type (GTK_VIEWPORT (port), GTK_SHADOW_NONE);
+		return scroll;
+	}
+
+	static void past_expander_expanded_cb (GObject *object,
+		GParamSpec *param_spec, ChangesPane *changes)
+	{
+		GtkExpander *expander = GTK_EXPANDER (object);
+		gboolean expanded = gtk_expander_get_expanded (expander);
+		if (expanded && !g_object_get_data (object, "has-expanded")) {
+			g_object_set_data (object, "has-expanded", GINT_TO_POINTER (1));
+			GtkWidget *widget = createViewPort (changes->createPastChangesWidget());
+			gtk_widget_show_all (widget);
+			gtk_container_add (GTK_CONTAINER (object), widget);
+		}
+		GtkWidget *widget = GTK_WIDGET (object);
+		gtk_box_set_child_packing (GTK_BOX (gtk_widget_get_parent (widget)),
+			widget, expanded, TRUE, 0, GTK_PACK_START);
+	}
+
+	static gboolean details_link_cb (GtkLabel *label, gchar *uri, UndoBox *pThis)
+	{
+		ChangesPane *changes = new ChangesPane (false);
+
+		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_NONE,
+			"%s", _("Review of changes"));
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
+		gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);
+		gtk_window_set_default_size (GTK_WINDOW (dialog), 550, 500);
+		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
+
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (vbox), changes->getWidget(), TRUE, TRUE, 0);
+		GtkWidget *expander = gtk_expander_new (_("Past changes"));
+		g_signal_connect (G_OBJECT (expander), "notify::expanded",
+			              G_CALLBACK (past_expander_expanded_cb), changes);
+		gtk_box_pack_start (GTK_BOX (vbox), expander, FALSE, TRUE, 0);
+
+		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vbox);
+		gtk_widget_show_all (dialog);
+		changes->startHack();
+
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+		delete changes;
+		return TRUE;
+	}
 };
 
 class UI : public YGtkPackageView::Listener, _QueryListener, Ypp::Disk::Listener
@@ -3546,7 +3631,7 @@ public:
 		GtkWidget *undo_widget;
 		if (undo_side) {
 			if (undo_old_style) {
-				changes_pane = new ChangesPane();
+				changes_pane = new ChangesPane (true);
 				undo_widget = changes_pane->getWidget();
 			}
 			else

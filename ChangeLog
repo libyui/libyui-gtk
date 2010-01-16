@@ -7,6 +7,9 @@
 
 	* src/ygtkwizard.h/c: added method for custom menu-bar.
 
+	* src/pkg/YGPackageSelector.cc: made "view changes"
+	working, and sticked a close button as well.
+
 2010-01-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: added repositories combo and
