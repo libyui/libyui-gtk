@@ -920,19 +920,17 @@ void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
 {
 	if (!wizard->menu) {
 		wizard->menu = gtk_menu_bar_new();
-		gtk_container_add (GTK_CONTAINER (wizard->m_menu_box), wizard->menu);
-		// we probably want to hide the title, so the menu is more visible
-		gtk_widget_hide (wizard->m_title);
+		ygtk_wizard_set_custom_menu (wizard, wizard->menu);
+		gtk_widget_show (wizard->menu);
 	}
 
 	GtkWidget *entry = gtk_menu_item_new_with_mnemonic (text);
-	gtk_menu_shell_append (GTK_MENU_SHELL (wizard->menu), entry);
-
 	GtkWidget *submenu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (entry), submenu);
+	gtk_menu_shell_append (GTK_MENU_SHELL (wizard->menu), entry);
+	gtk_widget_show_all (entry);
 
 	g_hash_table_insert (wizard->menu_ids, g_strdup (id), submenu);
-	gtk_widget_show_all (wizard->m_menu_box);
 }
 
 gboolean ygtk_wizard_add_menu_entry (YGtkWizard *wizard, const char *parent_id,
@@ -970,13 +968,12 @@ gboolean ygtk_wizard_add_sub_menu (YGtkWizard *wizard, const char *parent_id,
 		return FALSE;
 
 	GtkWidget *entry = gtk_menu_item_new_with_mnemonic (text);
-	gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
-
 	GtkWidget *submenu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (entry), submenu);
+	gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
+	gtk_widget_show_all (entry);
 
 	g_hash_table_insert (wizard->menu_ids, g_strdup (id), submenu);
-	gtk_widget_show_all (entry);
 	return TRUE;
 }
 
@@ -1002,6 +999,14 @@ void ygtk_wizard_clear_menu (YGtkWizard *wizard)
 		GtkWidget *child = (GtkWidget *) i->data;
 		gtk_container_remove (GTK_CONTAINER (wizard->menu), child);
 	}
+}
+
+void ygtk_wizard_set_custom_menu (YGtkWizard *wizard, GtkWidget *menu_bar)
+{
+	gtk_container_add (GTK_CONTAINER (wizard->m_menu_box), menu_bar);
+	gtk_widget_show (wizard->m_menu_box);
+	// we probably want to hide the title, so the menu is more visible
+	gtk_widget_hide (wizard->m_title);
 }
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)

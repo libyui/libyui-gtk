@@ -33,7 +33,8 @@ extern bool search_entry_side, search_entry_top, dynamic_sidebar,
 	categories_side,
 	repositories_side, categories_top, repositories_top, status_side, status_top,
 	status_tabs, status_tabs_as_actions,
-	undo_side, undo_tab, undo_old_style, undo_log_all, undo_log_changed, status_col,
+	undo_side, undo_tab, undo_old_style, undo_log_all, undo_log_changed, undo_box,
+	status_col,
 	action_col, action_col_as_button, action_col_as_check, version_col,
 	single_line_rows, details_start_hide, toolbar_top, toolbar_yast, arrange_by;
 
@@ -42,8 +43,8 @@ extern bool search_entry_side, search_entry_top, dynamic_sidebar,
 static gboolean paint_white_expose_cb (GtkWidget *widget, GdkEventExpose *event)
 {
 	cairo_t *cr = gdk_cairo_create (widget->window);
-	GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
-	gdk_cairo_set_source_color (cr, &color);
+	GdkColor white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+	gdk_cairo_set_source_color (cr, &white);
 	cairo_rectangle (cr, event->area.x, event->area.y,
 			         event->area.width, event->area.height);
 	cairo_fill (cr);
@@ -353,7 +354,7 @@ public:
 		gtk_misc_set_alignment (GTK_MISC (m_empty_label), 0.5, 0.5);
 
 		GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
-		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox), 4);  // FIXME: are these inner borders?
 		gtk_box_pack_start (GTK_BOX (vbox), heading, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), m_empty_label, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), m_entries_box, TRUE, TRUE, 0);
@@ -1676,6 +1677,104 @@ private:
 };
 #endif
 
+static void errorMsg (const std::string &header, const std::string &message)
+{
+	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+		"%s", header.c_str());
+	gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
+		"%s", message.c_str());
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+}
+
+static void import_file_cb (GtkMenuItem *item)
+{
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new (_("Import Package List"),
+		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_OPEN,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
+		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL);
+
+	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+	if (ret == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		if (!Ypp::get()->importList (filename)) {
+			std::string error = _("Couldn't load package list from: ");
+			error += filename;
+			errorMsg (_("Import Failed"), error);
+		}
+		g_free (filename);
+	}
+	gtk_widget_destroy (dialog);
+}
+
+static void export_file_cb (GtkMenuItem *item)
+{
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new (_("Export Package List"),
+		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_SAVE,
+		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
+		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
+
+	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+	if (ret == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		if (!Ypp::get()->exportList (filename)) {
+			std::string error = _("Couldn't save package list to: ");
+			error += filename;
+			errorMsg (_("Export Failed"), error);
+		}
+		g_free (filename);
+	}
+	gtk_widget_destroy (dialog);
+}
+
+static void create_solver_testcase_cb (GtkMenuItem *item)
+{
+	const char *dirname = "/var/log/YaST2/solverTestcase";
+	std::string msg = _("Use this to generate extensive logs to help tracking down "
+	                  "bugs in the dependency resolver.\nThe logs will be stored in "
+	                  "directory: ");
+	msg += dirname;
+
+	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
+		"%s", _("Create Dependency Resolver Test Case"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", msg.c_str());
+	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+
+	if (ret == GTK_RESPONSE_OK) {
+	    if (Ypp::get()->createSolverTestcase (dirname)) {
+			GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
+				GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
+				GTK_BUTTONS_YES_NO, "%s", _("Success"));
+			msg = _("Dependency resolver test case written to");
+			msg += " <tt>";
+			msg += dirname;
+			msg += "</tt>\n";
+			msg += _("Prepare <tt>y2logs.tgz tar</tt> archive to attach to Bugzilla?");
+			gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
+                                                                                "%s", msg.c_str());
+			ret = gtk_dialog_run (GTK_DIALOG (dialog));
+			gtk_widget_destroy (dialog);
+			if (ret == GTK_RESPONSE_YES)
+				YGUI::ui()->askSaveLogs();
+	    }
+	    else {
+	    	msg = _("Failed to create dependency resolver test case.\n"
+				"Please check disk space and permissions for");
+			msg += " <tt>";
+			msg += dirname;
+			msg += "</tt>";
+			errorMsg ("Error", msg.c_str());
+	    }
+	}
+}
+
 class ToolsBox
 {
 GtkWidget *m_box;
@@ -1709,105 +1808,6 @@ public:
 		m_box = gtk_hbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_box), button, FALSE, TRUE, 0);
 		gtk_widget_show_all (m_box);
-	}
-
-private:
-	static void errorMsg (const std::string &header, const std::string &message)
-	{
-		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-			"%s", header.c_str());
-		gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
-			"%s", message.c_str());
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
-	}
-
-	static void import_file_cb (GtkMenuItem *item, ToolsBox *pThis)
-	{
-		GtkWidget *dialog;
-		dialog = gtk_file_chooser_dialog_new (_("Import Package List"),
-			YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_OPEN,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
-			GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL);
-
-		int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-		if (ret == GTK_RESPONSE_ACCEPT) {
-			char *filename;
-			filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			if (!Ypp::get()->importList (filename)) {
-				std::string error = _("Couldn't load package list from: ");
-				error += filename;
-				errorMsg (_("Import Failed"), error);
-			}
-			g_free (filename);
-		}
-		gtk_widget_destroy (dialog);
-	}
-
-	static void export_file_cb (GtkMenuItem *item, ToolsBox *pThis)
-	{
-		GtkWidget *dialog;
-		dialog = gtk_file_chooser_dialog_new (_("Export Package List"),
-			YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_SAVE,
-			GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
-			GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
-
-		int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-		if (ret == GTK_RESPONSE_ACCEPT) {
-			char *filename;
-			filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-			if (!Ypp::get()->exportList (filename)) {
-				std::string error = _("Couldn't save package list to: ");
-				error += filename;
-				errorMsg (_("Export Failed"), error);
-			}
-			g_free (filename);
-		}
-		gtk_widget_destroy (dialog);
-	}
-
-	static void create_solver_testcase_cb (GtkMenuItem *item)
-	{
-		const char *dirname = "/var/log/YaST2/solverTestcase";
-		std::string msg = _("Use this to generate extensive logs to help tracking down "
-		                  "bugs in the dependency resolver.\nThe logs will be stored in "
-		                  "directory: ");
-		msg += dirname;
-
-		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-			GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
-			"%s", _("Create Dependency Resolver Test Case"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", msg.c_str());
-		int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
-
-		if (ret == GTK_RESPONSE_OK) {
-		    if (Ypp::get()->createSolverTestcase (dirname)) {
-				GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-					GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
-					GTK_BUTTONS_YES_NO, "%s", _("Success"));
-				msg = _("Dependency resolver test case written to");
-				msg += " <tt>";
-				msg += dirname;
-				msg += "</tt>\n";
-				msg += _("Prepare <tt>y2logs.tgz tar</tt> archive to attach to Bugzilla?");
-				gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
-                                                                                    "%s", msg.c_str());
-				ret = gtk_dialog_run (GTK_DIALOG (dialog));
-				gtk_widget_destroy (dialog);
-				if (ret == GTK_RESPONSE_YES)
-					YGUI::ui()->askSaveLogs();
-		    }
-		    else {
-		    	msg = _("Failed to create dependency resolver test case.\n"
-					"Please check disk space and permissions for");
-				msg += " <tt>";
-				msg += dirname;
-				msg += "</tt>";
-				errorMsg ("Error", msg.c_str());
-		    }
-		}
 	}
 };
 
@@ -2931,6 +2931,8 @@ static GtkWidget *gtk_vpaned_append (GtkWidget *vpaned, GtkWidget *child)
 	return vpaned;
 }
 
+// expander box
+
 static void ygtk_expander_box_size_allocate (GtkWidget *vbox, GtkAllocation *alloc)
 {
 	GtkContainer *container = GTK_CONTAINER (vbox);
@@ -2996,6 +2998,47 @@ static GtkWidget *gtk_expander_vbox_new (int spacing)
 	return widget;
 }
 
+// tooltip box
+
+typedef struct YGtkTooltipBox
+{ GtkEventBox parent; } YGtkTooltipBox;
+
+typedef struct YGtkTooltipBoxClass
+{ GtkEventBoxClass parent_class; } YGtkTooltipBoxClass;
+
+G_DEFINE_TYPE (YGtkTooltipBox, ygtk_tooltip_box, GTK_TYPE_EVENT_BOX)
+
+static void ygtk_tooltip_box_init (YGtkTooltipBox *tooltip)
+{
+	GdkColor yellow = { 0, 246 << 8, 246 << 8, 187 << 8 };
+	gtk_widget_modify_bg (GTK_WIDGET (tooltip), GTK_STATE_NORMAL, &yellow);
+}
+
+static gboolean ygtk_tooltip_box_expose_event (GtkWidget *tooltip, GdkEventExpose *event)
+{
+	gtk_paint_flat_box (tooltip->style, tooltip->window,
+		GTK_STATE_NORMAL, GTK_SHADOW_OUT, NULL, tooltip,
+		"tooltip", 0, 0, tooltip->allocation.width,
+		tooltip->allocation.height);
+	GtkWidget *child = GTK_BIN (tooltip)->child;
+	if (child)
+		gtk_container_propagate_expose (GTK_CONTAINER (tooltip), child, event);
+	return TRUE;
+}
+
+static void ygtk_tooltip_box_class_init (YGtkTooltipBoxClass *klass)
+{
+	ygtk_tooltip_box_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->expose_event = ygtk_tooltip_box_expose_event;
+}
+
+static GtkWidget *ygtk_tooltip_box_new (void)
+{ return (GtkWidget *) g_object_new (ygtk_tooltip_box_get_type(), NULL); }
+
+// stack (or deck) widget
+
 class StackWidget
 {
 GtkWidget *m_combo, *m_placeholder, *m_widget;
@@ -3014,7 +3057,7 @@ public:
 		else {
 			m_combo = gtk_combo_box_new_text();
 			m_placeholder = gtk_event_box_new();
-			m_widget = gtk_vbox_new (FALSE, 2);
+			m_widget = gtk_vbox_new (FALSE, 0);
 			gtk_box_pack_start (GTK_BOX (m_widget), m_combo, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_widget), m_placeholder, TRUE, TRUE, 0);
 			g_signal_connect (G_OBJECT (m_combo), "changed",
@@ -3071,7 +3114,7 @@ public:
 		m_list_widget = list_widget;
 
 		m_widget = gtk_vbox_new (FALSE, 12);
-		gtk_container_set_border_width (GTK_CONTAINER (m_widget), 12);
+		gtk_container_set_border_width (GTK_CONTAINER (m_widget), 12);  // FIXME: are these the inner borders?
 		g_signal_connect (G_OBJECT (m_widget), "expose-event",
 			              G_CALLBACK (paint_white_expose_cb), NULL);
 
@@ -3238,6 +3281,122 @@ public:
 	}
 };
 
+class UndoBox : public Ypp::PkgList::Listener
+{
+GtkWidget *m_undo_box, *m_undo_package, *m_undo_details;
+Ypp::PkgList m_pool;
+Ypp::Package *m_package;
+
+public:
+	GtkWidget *getWidget()
+	{ return m_undo_box; }
+
+	UndoBox()
+	{
+		Ypp::QueryBase *query = new Ypp::QueryProperty ("to-modify", true);
+//		if (pkg_selector->onlineUpdateMode())
+		m_pool = Ypp::PkgQuery (Ypp::Package::PACKAGE_TYPE, query);
+		// TODO: there could already be packages modified
+		m_pool.addListener (this);
+
+		m_undo_box = ygtk_tooltip_box_new();
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
+		gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);
+		gtk_container_add (GTK_CONTAINER (m_undo_box), vbox);
+		GtkWidget *title = gtk_label_new (_("Software changes"));
+		gtk_misc_set_alignment (GTK_MISC (title), 0, .5);
+		YGUtils::setWidgetFont (title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD, PANGO_SCALE_MEDIUM);
+		gtk_box_pack_start (GTK_BOX (vbox), title, FALSE, TRUE, 0);
+		GtkWidget *package_box = gtk_hbox_new (FALSE, 4);
+		m_undo_package = gtk_label_new ("");
+		gtk_misc_set_alignment (GTK_MISC (m_undo_package), 0, .5);
+		GtkWidget *undo_button = gtk_button_new_from_stock (GTK_STOCK_UNDO);
+		g_signal_connect (G_OBJECT (undo_button), "clicked",
+		                  G_CALLBACK (undo_clicked_cb), this);
+		gtk_box_pack_start (GTK_BOX (package_box), m_undo_package, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (package_box), undo_button, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), package_box, FALSE, TRUE, 6);
+		m_undo_details = gtk_label_new ("");
+		gtk_misc_set_alignment (GTK_MISC (m_undo_details), 0, .5);
+		gtk_box_pack_start (GTK_BOX (vbox), m_undo_details, FALSE, TRUE, 0);
+		GtkWidget *details_button = gtk_link_button_new (_("View details..."));
+		GtkWidget *details_align = gtk_alignment_new (1, .5, 0, 0);
+		gtk_container_add (GTK_CONTAINER (details_align), details_button);
+		gtk_box_pack_start (GTK_BOX (vbox), details_align, FALSE, TRUE, 0);
+	}
+
+	~UndoBox()
+	{
+		m_pool.removeListener (this);
+	}
+
+	void startHack()  // call after init, after you did a show_all in the dialog
+	{ gtk_widget_hide (m_undo_box); }
+
+	void setPackage (Ypp::Package *package)
+	{
+		m_package = package;
+
+		std::string action;
+		if (package->toInstall()) {
+			if (package->isInstalled())
+				action = _("upgrade");
+			else
+				action = _("add");
+		}
+		else //if (package->toRemove())
+			action = _("remove");
+
+		gchar *package_str = g_strdup_printf ("%s %s", action.c_str(), package->name().c_str());
+		gtk_label_set_text (GTK_LABEL (m_undo_package), package_str);
+		g_free (package_str);
+
+		const Ypp::PkgList packages (Ypp::get()->getPackages (Ypp::Package::PACKAGE_TYPE));
+		int added = 0, removed = 0;
+		for (int i = 0; i < packages.size(); i++) {
+			if (packages.get (i)->toInstall())
+				added++;
+			if (packages.get (i)->toRemove())
+				removed++;
+		}
+
+		std::string delta_str;
+		Ypp::Disk *disk = Ypp::get()->getDisk();
+		for (int i = 0; disk->getPartition (i); i++) {
+			const Ypp::Disk::Partition *part = disk->getPartition (i);
+			if (part->path == "/usr" || part->path == "/usr/" || part->path == "/")
+				delta_str = part->delta_str;
+		}
+
+		gchar *added_str = 0, *removed_str = 0;
+		if (added)
+			added_str = g_strdup_printf (_("Added %d packages\n"), added);
+		if (removed)
+			removed_str = g_strdup_printf (_("Removed %d packages\n"), removed);
+
+		gchar *details = g_strdup_printf (_("%s%sTotalling: %s"), added_str ? added_str : "", removed_str ? removed_str : "", delta_str.c_str());
+		gtk_label_set_text (GTK_LABEL (m_undo_details), details);
+		g_free (details);
+		if (added_str)
+			g_free (added_str);
+		if (removed_str)
+			g_free (removed_str);
+
+		gtk_widget_show (m_undo_box);
+	}
+
+	virtual void entryInserted (const Ypp::PkgList list, int index, Ypp::Package *package)
+	{ setPackage (package); }
+
+	virtual void entryDeleted  (const Ypp::PkgList list, int index, Ypp::Package *package)
+	{ gtk_widget_hide (m_undo_box); }
+
+	virtual void entryChanged  (const Ypp::PkgList list, int index, Ypp::Package *package) {}
+
+	static void undo_clicked_cb (GtkButton *button, UndoBox *pThis)
+	{ pThis->m_package->undo(); }
+};
+
 class UI : public YGtkPackageView::Listener, _QueryListener, Ypp::Disk::Listener
 {
 GtkWidget *m_widget, *m_disk_label, *m_arrange_combo;
@@ -3248,6 +3407,7 @@ DiskView *m_disk;
 StartupMenu *m_startup_menu;
 Ypp::Package::Type m_type;
 Toolbar *m_toolbar;
+UndoBox *m_undo_box;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
@@ -3503,6 +3663,12 @@ public:
 			gtk_box_pack_start (GTK_BOX (side_vbox), vpaned, TRUE, TRUE, 0);
 		}
 
+		m_undo_box = 0;
+		if (undo_box) {
+			m_undo_box = new UndoBox();
+			gtk_box_pack_start (GTK_BOX (side_vbox), m_undo_box->getWidget(), FALSE, TRUE, 0);
+		}
+
 		GtkWidget *side_pane = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (side_pane), side_vbox, FALSE, TRUE);
 		gtk_paned_pack2 (GTK_PANED (side_pane), view_pane, TRUE, FALSE);
@@ -3525,6 +3691,8 @@ public:
 			gtk_widget_hide (side_vbox);
 		if (changes_pane)
 			changes_pane->startHack();
+		if (m_undo_box)
+			m_undo_box->startHack();
 
 		if (startup_menu) {
 			m_startup_menu = new StartupMenu (m_widget);
@@ -3549,6 +3717,7 @@ public:
 			delete *it;
 		delete m_disk;
 		delete m_startup_menu;
+		delete m_undo_box;
 	}
 
 private:
@@ -3765,7 +3934,41 @@ public:
 
 #if 0
 		m_tools = new ToolsBox();
-		ygtk_wizard_set_extra_button (YGTK_WIZARD (getWidget()), m_tools->getWidget());
+		ygtk_wizard_set_extra_button (wizard, m_tools->getWidget());
+#endif
+
+#if 0
+		GtkWidget *menu_bar = gtk_menu_bar_new(), *item, *submenu, *subitem;
+		item = gtk_menu_item_new_with_label (_("File"));
+			submenu = gtk_menu_new();
+			gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
+			subitem = gtk_menu_item_new_with_label (_("Import..."));
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+			g_signal_connect (G_OBJECT (subitem), "activate",
+				              G_CALLBACK (import_file_cb), this);
+			subitem = gtk_menu_item_new_with_label (_("Export..."));
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+			g_signal_connect (G_OBJECT (subitem), "activate",
+				              G_CALLBACK (export_file_cb), this);
+			subitem = gtk_separator_menu_item_new();
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+			subitem = gtk_image_menu_item_new_from_stock (GTK_STOCK_SAVE, NULL);
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+			subitem = gtk_image_menu_item_new_from_stock (GTK_STOCK_QUIT, NULL);
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), item);
+		item = gtk_menu_item_new_with_label (_("View"));
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), item);
+		item = gtk_menu_item_new_with_label (_("Tools"));
+			submenu = gtk_menu_new();
+			gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
+			subitem = gtk_menu_item_new_with_label (_("Generate Dependency Testcase..."));
+			gtk_menu_shell_append (GTK_MENU_SHELL (submenu), subitem);
+			g_signal_connect (G_OBJECT (subitem), "activate",
+				              G_CALLBACK (create_solver_testcase_cb), this);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), item);
+		gtk_widget_show_all (menu_bar);
+		ygtk_wizard_set_custom_menu (wizard, menu_bar);
 #endif
 
 		m_progressbar = gtk_progress_bar_new();

@@ -1,3 +1,12 @@
+2010-01-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: added --undo-box flag.
+
+	* src/pkg/YGPackageSelector.cc: added menu-bar (not
+	enabled by default yet).
+
+	* src/ygtkwizard.h/c: added method for custom menu-bar.
+
 2010-01-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: added repositories combo and

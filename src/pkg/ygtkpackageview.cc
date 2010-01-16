@@ -728,10 +728,10 @@ struct YGtkPackageView::Impl
 		clear();
 
 		if (action_col) {
-			if (action_col_as_check)
-				appendCheckColumn ("is-installed"); //("to-install");
-			else //if (action_col_as_button)
+			if (action_col_as_button)
 				appendButtonColumn (NULL, "to-install");
+			else //if (action_col_as_check)
+				appendCheckColumn ("is-installed"); //("to-install");
 		}
 		if (status_col)
 			appendIconColumn (NULL, "icon");
