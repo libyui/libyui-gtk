@@ -2582,7 +2582,7 @@ public:
 		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll), GTK_SHADOW_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), m_view);
 
-		if (layered_sidebar)
+		if (layered_sidebar || layered_tabs_sidebar)
 			m_widget = scroll;
 		else if (expander_sidebar) {
 			m_widget = gtk_expander_new_with_mnemonic (m_model->getLabel());
@@ -3688,7 +3688,7 @@ public:
 		StackWidget *stack1 = 0, *stack2 = 0;
 		if (expander_sidebar)
 			vbox = gtk_expander_vbox_new (2);
-		if (layered_sidebar) {
+		if (layered_sidebar || layered_tabs_sidebar) {
 			stack1 = new StackWidget();
 			stack2 = new StackWidget();
 		}
@@ -3741,7 +3741,7 @@ public:
 			gtk_box_pack_start (GTK_BOX (side_vbox), vpaned, TRUE, TRUE, 0);
 		if (vbox)
 			gtk_box_pack_start (GTK_BOX (side_vbox), vbox, TRUE, TRUE, 0);
-		if (layered_sidebar) {
+		if (layered_sidebar || layered_tabs_sidebar) {
 			GtkWidget *vpaned = gtk_vpaned_new();
 			gtk_paned_pack1 (GTK_PANED (vpaned), stack1->getWidget(), TRUE, FALSE);
 			gtk_paned_pack2 (GTK_PANED (vpaned), stack2->getWidget(), TRUE, FALSE);
