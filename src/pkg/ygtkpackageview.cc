@@ -707,6 +707,8 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_set_fixed_height_mode (view, TRUE);
 		gtk_tree_view_set_headers_visible (view, FALSE);
 		gtk_tree_view_set_enable_tree_lines (view, TRUE);
+		// FIXME: do we want rules_hint really?
+		gtk_tree_view_set_rules_hint (view, TRUE);
 
 		GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 		gtk_tree_selection_set_mode (selection, GTK_SELECTION_MULTIPLE);
