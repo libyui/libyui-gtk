@@ -13,7 +13,8 @@
 
 bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = true,
 	expander_sidebar = false, flex_sidebar = false, grid_sidebar = false,
-	layered_sidebar = false, layered_tabs_sidebar = false, startup_menu = false,
+	layered_sidebar = false, layered_tabs_sidebar = false, plug_sidebar = false,
+	startup_menu = false,
 	big_icons_sidebar = false, icons_sidebar = false,
 	categories_side = true, repositories_side = true, categories_top = false,
 	repositories_top = false,
@@ -41,6 +42,7 @@ Arg arguments[] = {
 	{ "grid-sidebar", &grid_sidebar },
 	{ "layered-sidebar", &layered_sidebar },
 	{ "layered-tabs-sidebar", &layered_tabs_sidebar },
+	{ "plug-sidebar", &plug_sidebar },
 	{ "startup-menu", &startup_menu },
 	{ "big-icons-sidebar", &big_icons_sidebar },
 	{ "icons-sidebar", &icons_sidebar },

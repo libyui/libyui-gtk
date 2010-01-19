@@ -29,8 +29,8 @@
 // experiments:
 extern bool search_entry_side, search_entry_top, dynamic_sidebar,
 	expander_sidebar, flex_sidebar, grid_sidebar, layered_sidebar,
-	layered_tabs_sidebar, startup_menu, big_icons_sidebar, icons_sidebar,
-	categories_side,
+	layered_tabs_sidebar, plug_sidebar, startup_menu, big_icons_sidebar,
+	icons_sidebar, categories_side,
 	repositories_side, categories_top, repositories_top, status_side, status_top,
 	status_tabs, status_tabs_as_actions,
 	undo_side, undo_tab, undo_old_style, undo_log_all, undo_log_changed, undo_box,
@@ -2593,6 +2593,17 @@ public:
 			gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 			gtk_label_set_mnemonic_widget (GTK_LABEL (label), m_view);
 
+			if (plug_sidebar) {
+				GtkWidget *label_box = gtk_hbox_new (FALSE, 2);
+//				GtkWidget *button = create_small_button (GTK_STOCK_REMOVE, _("Remove"));
+				GtkWidget *button = create_small_button (GTK_STOCK_CLOSE, _("Close"));
+				g_signal_connect (G_OBJECT (button), "clicked",
+				                  G_CALLBACK (close_clicked_cb), this);
+				gtk_box_pack_start (GTK_BOX (label_box), label, TRUE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (label_box), button, FALSE, TRUE, 0);
+				label = label_box;
+			}
+
 			m_widget = gtk_vbox_new (FALSE, 4);
 			gtk_box_pack_start (GTK_BOX (m_widget), label, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (m_widget), scroll, TRUE, TRUE, 0);
@@ -2641,6 +2652,11 @@ public:
 	{
 		if (gtk_tree_selection_get_selected (selection, NULL, NULL))
 			pThis->notify();
+	}
+
+	static void close_clicked_cb (GtkButton *button, _QueryWidget *pThis)
+	{
+		gtk_widget_hide (pThis->getWidget());
 	}
 };
 
@@ -3493,6 +3509,7 @@ StartupMenu *m_startup_menu;
 Ypp::Package::Type m_type;
 Toolbar *m_toolbar;
 UndoBox *m_undo_box;
+GtkWidget *m_plug_box;
 
 public:
 	GtkWidget *getWidget() { return m_widget; }
@@ -3686,55 +3703,107 @@ public:
 		_QueryWidget *category_view;
 		GtkWidget *vpaned = 0, *vbox = 0;
 		StackWidget *stack1 = 0, *stack2 = 0;
-		if (expander_sidebar)
-			vbox = gtk_expander_vbox_new (2);
-		if (layered_sidebar || layered_tabs_sidebar) {
-			stack1 = new StackWidget();
-			stack2 = new StackWidget();
-		}
-
-		if (categories_side) {
-			_QueryWidget *view = new PropertyView (new CategoryModel());
-			category_view = view;
-			m_query.push_back (view);
-			if (expander_sidebar) {
-				gtk_expander_set_expanded (GTK_EXPANDER (view->getWidget()), TRUE);
-				gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
-			}
-			else if (grid_sidebar)
-				;
-			else if (stack1)
-				stack1->append (_("Categories"), view->getWidget());
-			else
-				vpaned = gtk_vpaned_append (vpaned, view->getWidget());
-		}
-		if (repositories_side) {
-			_QueryWidget *view = new PropertyView (new RepositoryModel());
-			m_query.push_back (view);
+		m_plug_box = 0;
+		if (!plug_sidebar) {
 			if (expander_sidebar)
-				gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
-			else if (stack1)
-				stack1->append (_("Repositories"), view->getWidget());
-			else
-				vpaned = gtk_vpaned_append (vpaned, view->getWidget());
-		}
-		if (status_side) {
-			_QueryWidget *view = new PropertyView (new StatusModel());
-			m_query.push_back (view);
-			if (expander_sidebar) {
-				gtk_expander_set_expanded (GTK_EXPANDER (view->getWidget()), TRUE);
-				gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
+				vbox = gtk_expander_vbox_new (2);
+			if (layered_sidebar || layered_tabs_sidebar) {
+				stack1 = new StackWidget();
+				stack2 = new StackWidget();
 			}
-			else if (stack2)
-				stack2->append (_("Status"), view->getWidget());
-			else
-				vpaned = gtk_vpaned_append (vpaned, view->getWidget());
+
+			if (categories_side) {
+				_QueryWidget *view = new PropertyView (new CategoryModel());
+				category_view = view;
+				m_query.push_back (view);
+				if (expander_sidebar) {
+					gtk_expander_set_expanded (GTK_EXPANDER (view->getWidget()), TRUE);
+					gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
+				}
+				else if (grid_sidebar)
+					;
+				else if (stack1)
+					stack1->append (_("Categories"), view->getWidget());
+				else
+					vpaned = gtk_vpaned_append (vpaned, view->getWidget());
+			}
+			if (repositories_side) {
+				_QueryWidget *view = new PropertyView (new RepositoryModel());
+				m_query.push_back (view);
+				if (expander_sidebar)
+					gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
+				else if (stack1)
+					stack1->append (_("Repositories"), view->getWidget());
+				else
+					vpaned = gtk_vpaned_append (vpaned, view->getWidget());
+			}
+			if (status_side) {
+				_QueryWidget *view = new PropertyView (new StatusModel());
+				m_query.push_back (view);
+				if (expander_sidebar) {
+					gtk_expander_set_expanded (GTK_EXPANDER (view->getWidget()), TRUE);
+					gtk_box_pack_start (GTK_BOX (vbox), view->getWidget(), FALSE, TRUE, 0);
+				}
+				else if (stack2)
+					stack2->append (_("Status"), view->getWidget());
+				else
+					vpaned = gtk_vpaned_append (vpaned, view->getWidget());
+			}
+			if (grid_sidebar && category_view && vpaned) {
+				GtkWidget *hpaned = gtk_hpaned_new();
+				gtk_paned_pack1 (GTK_PANED (hpaned), category_view->getWidget(), TRUE, FALSE);
+				gtk_paned_pack2 (GTK_PANED (hpaned), vpaned, TRUE, FALSE);
+				vpaned = hpaned;
+			}
 		}
-		if (grid_sidebar && category_view && vpaned) {
-			GtkWidget *hpaned = gtk_hpaned_new();
-			gtk_paned_pack1 (GTK_PANED (hpaned), category_view->getWidget(), TRUE, FALSE);
-			gtk_paned_pack2 (GTK_PANED (hpaned), vpaned, TRUE, FALSE);
-			vpaned = hpaned;
+		else {  // plug_sidebar
+			m_plug_box = gtk_vbox_new (FALSE, 6);
+
+			struct inner {
+				static void add_filter (_QueryWidget *widget, UI *pThis)
+				{
+					pThis->m_query.push_back (widget);
+					widget->updateType (Ypp::Package::PACKAGE_TYPE);
+					widget->setListener (pThis);
+					pThis->refresh();
+
+					gtk_widget_set_size_request (widget->getWidget(), -1, 200);
+					gtk_widget_show_all (widget->getWidget());
+					gtk_box_pack_start (GTK_BOX (pThis->m_plug_box), widget->getWidget(), FALSE, TRUE, 0);
+				}
+				static void add_categories_cb (GtkMenuItem *item, UI *pThis)
+				{ add_filter (new PropertyView (new CategoryModel()), pThis); }
+				static void add_repositories_cb (GtkMenuItem *item, UI *pThis)
+				{ add_filter (new PropertyView (new RepositoryModel()), pThis); }
+				static void add_status_cb (GtkMenuItem *item, UI *pThis)
+				{ add_filter (new PropertyView (new StatusModel()), pThis); }
+			};
+
+			GtkWidget *add_button = ygtk_menu_button_new_with_label (_("filter"));
+			GtkWidget *add_box = gtk_hbox_new (FALSE, 4);
+//			gtk_box_pack_start (GTK_BOX (add_box), gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_BUTTON), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (add_box), gtk_label_new (_("Add:")), FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (add_box), add_button, TRUE, TRUE, 0);
+
+			m_plug_box = gtk_vbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (side_vbox), m_plug_box, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (side_vbox), add_box, FALSE, TRUE, 0);
+
+			GtkWidget *popup = gtk_menu_new(), *item;
+			item = gtk_menu_item_new_with_label (_("Categories"));
+			g_signal_connect (G_OBJECT (item), "activate",
+			                  G_CALLBACK (inner::add_categories_cb), this);
+			gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+			item = gtk_menu_item_new_with_label (_("Repositories"));
+			g_signal_connect (G_OBJECT (item), "activate",
+			                  G_CALLBACK (inner::add_repositories_cb), this);
+			gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+			item = gtk_menu_item_new_with_label (_("Status"));
+			g_signal_connect (G_OBJECT (item), "activate",
+			                  G_CALLBACK (inner::add_status_cb), this);
+			gtk_menu_shell_append (GTK_MENU_SHELL (popup), item);
+			ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (add_button), popup);
+			gtk_widget_show_all (popup);
 		}
 
 		if (vpaned)
