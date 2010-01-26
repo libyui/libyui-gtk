@@ -236,6 +236,9 @@ std::string m_name, m_summary;
 	virtual std::string support()             { return ""; }
 	virtual std::string supportText (MarkupType markup) { return ""; }
 	virtual std::string size()                { return ""; }
+	virtual std::string license()             { return ""; }
+	virtual std::string installedDate()       { return ""; }
+	virtual std::string candidateDate()       { return ""; }
 	virtual std::string icon() = 0;
 	virtual bool isRecommended() const       { return false; }
 	virtual bool isSuggested() const         { return false; }
@@ -303,6 +306,9 @@ std::string Ypp::Package::authors (MarkupType markup)     { return impl->authors
 std::string Ypp::Package::support()               { return impl->support(); }
 std::string Ypp::Package::supportText (MarkupType markup) { return impl->supportText (markup); }
 std::string Ypp::Package::size() { return impl->size(); }
+std::string Ypp::Package::license() { return impl->license(); }
+std::string Ypp::Package::installedDate() { return impl->installedDate(); }
+std::string Ypp::Package::candidateDate() { return impl->candidateDate(); }
 std::string Ypp::Package::icon()                  { return impl->icon(); }
 bool Ypp::Package::isRecommended() const          { return impl->isRecommended(); }
 bool Ypp::Package::isSuggested() const            { return impl->isSuggested(); }
@@ -366,6 +372,10 @@ std::string Ypp::Package::getPropertyStr (const std::string &prop, MarkupType ma
 		return description (markup);
 	if (prop == "filelist")
 		return filelist (markup);
+	if (prop == "requires")
+		return requires (NO_MARKUP);
+	if (prop == "provides")
+		return provides (NO_MARKUP);
 	if (prop == "support")
 		return support();
 	if (prop == "size")
@@ -599,6 +609,12 @@ int m_installedPkgs, m_totalPkgs;
 					text += br;
 				}
 
+				ZyppPackage package = tryCastToZyppPkg (object);
+				std::string url = package->url();
+				if (!url.empty())
+					text += std::string ("<b>") + _("Web site:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
+
+#if 0
 				if (!isInstalled() && (isRecommended() || isSuggested())) {
 					text += "<font color=\"#715300\">";
 					if (isRecommended())
@@ -607,35 +623,6 @@ int m_installedPkgs, m_totalPkgs;
 						text += _("(As this package complements some installed packages, it is <b>suggested</b> it be installed.)");
 					text += "</font>" + br;
 				}
-
-				// specific
-				ZyppPackage package = tryCastToZyppPkg (object);
-#if ZYPP_VERSION >= 5013001
-				text += br + "<b>" + _("Size:") + "</b> " + object->installSize().asString();
-#else
-				text += br + "<b>" + _("Size:") + "</b> " + object->installsize().asString();
-#endif
-				std::string url = package->url(), license = package->license();
-				if (!url.empty())
-					text += br + "<b>" + _("Web site:") + "</b> <a href=\"" + url + "\">" + url + "</a>";
-				if (!license.empty())
-					text += br + "<b>" + _("License:") + "</b> " + license;
-#if 0
-				text += br + "<b>" + _("Category:") + "</b> " + package->group();
-#endif
-#if 0  // show "Installed at:" and "Last build:" info
-				bool hasCandidate = m_sel->hasCandidateObj();
-				if (isInstalled()) {
-					text += br + "<b>" + _("Installed at:") + "</b> " + m_sel->installedObj()->installtime().form("%x");
-					if (!hasUpgrade())
-						hasCandidate = false;  // only for upgrades
-					if (hasCandidate)
-						text += "&nbsp;&nbsp;&nbsp;";
-				}
-				else if (hasCandidate)
-					text += br;
-				if (hasCandidate)
-					text += std::string ("<b>") + _("Last build:") + "</b> " + m_sel->candidateObj()->buildtime().form("%x");
 #endif
 				break;
 			}
@@ -880,6 +867,15 @@ int m_installedPkgs, m_totalPkgs;
 
 	virtual std::string size()
 	{ return m_sel->theObj()->installSize().asString(); }
+
+	virtual std::string license()
+	{ return tryCastToZyppPkg (m_sel->theObj())->license(); }
+
+	virtual std::string installedDate()
+	{ return isInstalled() ? m_sel->installedObj()->installtime().form("%x") : ""; }
+
+	virtual std::string candidateDate()
+	{ return m_sel->hasCandidateObj() ? m_sel->candidateObj()->buildtime().form("%x") : ""; }
 
 	virtual std::string icon()
 	{
@@ -1828,6 +1824,18 @@ static bool pkgorder (Ypp::Package *a, Ypp::Package *b)
 void Ypp::PkgList::sort (bool (* compare) (Package *, Package *))
 { std::sort (impl->pool.begin(), impl->pool.end(), compare ? compare : pkgorder); }
 
+static std::string _prop;  // HACK
+static bool int_prop_order (Ypp::Package *a, Ypp::Package *b)
+{ return a->getPropertyInt (_prop) < b->getPropertyInt (_prop); }
+static bool str_prop_order (Ypp::Package *a, Ypp::Package *b)
+{ return a->getPropertyStr (_prop) < b->getPropertyStr (_prop); }
+
+void Ypp::PkgList::sort_by_property (const std::string &prop, bool as_int)
+{
+	_prop = prop;
+	sort (as_int ? int_prop_order : str_prop_order);
+}
+
 void Ypp::PkgList::remove (int i)
 { impl->remove (i); }
 
@@ -1876,22 +1884,22 @@ Ypp::Package *Ypp::PkgList::find (const std::string &name) const
 bool Ypp::PkgList::operator == (const Ypp::PkgList &other) const
 { return this->impl == other.impl; }
 
-bool Ypp::PkgList::installed() const
+bool Ypp::PkgList::isInstalled() const
 { impl->buildProps(); return impl->_allInstalled; }
 
-bool Ypp::PkgList::notInstalled() const
+bool Ypp::PkgList::isNotInstalled() const
 { impl->buildProps(); return impl->_allNotInstalled; }
 
-bool Ypp::PkgList::upgradable() const
+bool Ypp::PkgList::hasUpgrade() const
 { impl->buildProps(); return impl->_allUpgradable; }
 
-bool Ypp::PkgList::modified() const
+bool Ypp::PkgList::toModify() const
 { impl->buildProps(); return impl->_allModified; }
 
-bool Ypp::PkgList::locked() const
+bool Ypp::PkgList::isLocked() const
 { impl->buildProps(); return impl->_allLocked; }
 
-bool Ypp::PkgList::unlocked() const
+bool Ypp::PkgList::isUnlocked() const
 { impl->buildProps(); return impl->_allUnlocked; }
 
 bool Ypp::PkgList::canLock() const
@@ -1899,6 +1907,9 @@ bool Ypp::PkgList::canLock() const
 
 bool Ypp::PkgList::canRemove() const
 { impl->buildProps(); return impl->_allCanRemove; }
+
+void Ypp::PkgList::refreshProps()
+{ impl->inited = false; }
 
 void Ypp::PkgList::install()
 {
@@ -2131,21 +2142,6 @@ Ypp::PkgQuery::PkgQuery (const Ypp::PkgList list, Ypp::QueryBase *query)
 Ypp::PkgQuery::PkgQuery (Ypp::Package::Type type, Ypp::QueryBase *query)
 : PkgList ((impl = new PkgQuery::Impl (Ypp::get()->getPackages (type), query)))
 { copy (Ypp::get()->getPackages (type)); }
-
-//** PkgSort
-
-static std::string _prop;  // hack
-static bool _ascend;
-
-static bool prop_order (Ypp::Package *a, Ypp::Package *b)
-{
-	int r = strcasecmp (a->getPropertyStr (_prop).c_str(), b->getPropertyStr (_prop).c_str());
-	return _ascend ? r < 0 : r >= 0;
-}
-
-Ypp::PkgSort::PkgSort (PkgList list, const std::string &prop, bool ascend)
-: PkgList()
-{ copy (list); _prop = prop; _ascend = ascend; sort (prop_order); }
 
 //** Misc
 

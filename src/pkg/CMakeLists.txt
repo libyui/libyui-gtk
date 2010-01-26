@@ -11,6 +11,7 @@ set (gtk_pkg_yast_plugin_SRCS
 	ygtkdiskview.cc
 
 	ygtkcellrendererbutton.c
+	ygtkcellrenderersidebutton.c
 	ygtknotebook.c
 	ygtktreemodel.cc
 	ygtktooltip.c

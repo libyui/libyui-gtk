@@ -14,6 +14,7 @@
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
 #include "ygtkcellrendererbutton.h"
+#include "ygtkcellrenderersidebutton.h"
 #include "YGi18n.h"
 #include "YGUtils.h"
 #include <gtk/gtk.h>
@@ -105,29 +106,39 @@ struct PackageIcons {
 	}
 };
 
+//** General utilities
+
+const char *getRepositoryStockIcon (const std::string &url)
+{
+	const gchar *icon;
+	if (url.empty())
+		icon = GTK_STOCK_MISSING_IMAGE;
+	else if (url.compare (0, 2, "cd", 2) == 0 || url.compare (0, 3, "dvd", 3) == 0)
+		icon = GTK_STOCK_CDROM;
+	else if (url.compare (0, 3, "iso", 3) == 0)
+		icon = GTK_STOCK_FILE;
+	else
+		icon = GTK_STOCK_NETWORK;
+	return icon;
+}
+
 //** Model
 
-enum Property {
-	// pixbuf
-	ICON_PROP,
-	// text
-	NAME_PROP, SUMMARY_PROP, NAME_SUMMARY_PROP, REPOSITORY_PROP, SUPPORT_PROP,
-	SIZE_PROP, INSTALLED_VERSION_PROP, AVAILABLE_VERSION_PROP,
-	// checks
-	TO_INSTALL_PROP, TO_UPGRADE_PROP, TO_REMOVE_PROP, TO_MODIFY_PROP,
-	IS_INSTALLED_PROP,
-	// internal
+enum ImplProperty {
+	// booleans
+	HAS_UPGRADE_PROP = TOTAL_PROPS, TO_UPGRADE_PROP,
+	// char
 	STYLE_PROP, WEIGHT_PROP, SENSITIVE_PROP, CHECK_VISIBLE_PROP,
 	FOREGROUND_PROP, VERSION_FOREGROUND_PROP, BACKGROUND_PROP, XPAD_PROP,
-	ACTION_LABEL_PROP, ACTION_STOCK_PROP,
+	ACTION_LABEL_PROP, ACTION_STOCK_PROP, REPOSITORY_STOCK_PROP,
 	// misc
-	PTR_PROP, TOTAL_PROPS
+	PTR_PROP, TOTAL_IMPL_PROPS
 };
 
 static GType _columnType (int col)
 {
 	switch (col) {
-		case ICON_PROP:
+		case STATUS_ICON_PROP:
 			return GDK_TYPE_PIXBUF;
 		case NAME_PROP:
 		case SUMMARY_PROP:
@@ -137,17 +148,17 @@ static GType _columnType (int col)
 		case SIZE_PROP:
 		case INSTALLED_VERSION_PROP:
 		case AVAILABLE_VERSION_PROP:
+		case VERSION_PROP:
 		case FOREGROUND_PROP:
 		case VERSION_FOREGROUND_PROP:
 		case BACKGROUND_PROP:
 		case ACTION_LABEL_PROP:
 		case ACTION_STOCK_PROP:
+		case REPOSITORY_STOCK_PROP:
 			return G_TYPE_STRING;
-		case TO_INSTALL_PROP:
+		case INSTALLED_CHECK_PROP:
+		case HAS_UPGRADE_PROP:
 		case TO_UPGRADE_PROP:
-		case TO_REMOVE_PROP:
-		case TO_MODIFY_PROP:
-		case IS_INSTALLED_PROP:
 		case SENSITIVE_PROP:
 		case CHECK_VISIBLE_PROP:
 			return G_TYPE_BOOLEAN;
@@ -164,7 +175,7 @@ static GType _columnType (int col)
 static void _getValueDefault (int col, GValue *value)
 {
 	switch (col) {
-		case ICON_PROP:
+		case STATUS_ICON_PROP:
 			g_value_set_object (value, NULL);
 			break;
 		case NAME_PROP:
@@ -175,6 +186,7 @@ static void _getValueDefault (int col, GValue *value)
 		case SIZE_PROP:
 		case INSTALLED_VERSION_PROP:
 		case AVAILABLE_VERSION_PROP:
+		case VERSION_PROP:
 		case ACTION_LABEL_PROP:
 		case ACTION_STOCK_PROP:
 			g_value_set_string (value, g_strdup (""));
@@ -182,13 +194,12 @@ static void _getValueDefault (int col, GValue *value)
 		case FOREGROUND_PROP:
 		case VERSION_FOREGROUND_PROP:
 		case BACKGROUND_PROP:
+		case REPOSITORY_STOCK_PROP:
 			g_value_set_string (value, NULL);
 			break;
-		case TO_INSTALL_PROP:
+		case INSTALLED_CHECK_PROP:
+		case HAS_UPGRADE_PROP:
 		case TO_UPGRADE_PROP:
-		case TO_REMOVE_PROP:
-		case TO_MODIFY_PROP:
-		case IS_INSTALLED_PROP:
 			g_value_set_boolean (value, FALSE);
 			break;
 		case STYLE_PROP:
@@ -326,7 +337,7 @@ protected:
 	{ return block.sumSize(); }
 
 	virtual int columnsNb() const
-	{ return TOTAL_PROPS; }
+	{ return TOTAL_IMPL_PROPS; }
 
 	virtual bool showEmptyEntry() const
 	{ return true; }
@@ -406,14 +417,6 @@ protected:
 				case FOREGROUND_PROP:
 					g_value_set_string (value, g_strdup ("black"));
 					break;
-				case TO_INSTALL_PROP:
-				case TO_UPGRADE_PROP:
-				case TO_REMOVE_PROP:
-				case TO_MODIFY_PROP: {
-					bool modified = segment->list.modified();
-					g_value_set_boolean (value, modified);
-					break;
-				}
 				case ACTION_LABEL_PROP:
 					g_value_set_string (value, g_strdup (_("All")));
 					break;
@@ -429,7 +432,7 @@ protected:
 
 		Ypp::Package *package = segment->list.get (index);
 		switch (col) {
-			case ICON_PROP: {
+			case STATUS_ICON_PROP: {
 				GdkPixbuf *pixbuf = 0;
 				if (package->type() == Ypp::Package::PATTERN_TYPE) {
 					std::string filename (package->icon());
@@ -472,10 +475,21 @@ protected:
 				if (package->toInstall (&version)) ;
 				if (!version)
 					version = package->getInstalledVersion();
-				std::string repo;
-				if (version && version->repo)
-					repo = version->repo->name;
-				g_value_set_string (value, g_strdup (repo.c_str()));
+				std::string str;
+				if (version && version->repo) {
+					str = version->repo->name;
+					str += "\n<small>" + version->repo->url + "</small>";
+				}
+				g_value_set_string (value, g_strdup (str.c_str()));
+				break;
+			}
+			case REPOSITORY_STOCK_PROP: {
+				const Ypp::Package::Version *version;
+				version = package->getAvailableVersion (0);
+				const char *stock = 0;
+				if (version)
+					stock = getRepositoryStockIcon (version->repo->url);
+				g_value_set_string (value, g_strdup (stock));
 				break;
 			}
 			case SUPPORT_PROP:
@@ -496,22 +510,34 @@ protected:
 					g_value_set_string (value, g_strdup (version->number.c_str()));
 				break;
 			}
-			case TO_INSTALL_PROP:
-				g_value_set_boolean (value, package->toInstall());
-				break;
-			case TO_UPGRADE_PROP: {
-				const Ypp::Package::Version *version = 0;
-				if (package->toInstall (&version))
-					g_value_set_boolean (value, version->cmp > 0);
+			case VERSION_PROP: {
+				std::string str;
+				const Ypp::Package::Version *version;
+				version = package->getInstalledVersion();
+				if (version)
+					str += version->number;
+				str += "\n";
+				const Ypp::Repository *repo = Ypp::get()->favoriteRepository();
+				if (repo)
+					version = package->fromRepository (repo);
+				else
+					version = package->getAvailableVersion (0);
+				if (version) {
+					// TODO: maybe hide when installed == candidate
+					str += "<small>";
+					if (version->cmp < 0)
+						str += "<span color=\"blue\">";
+					else if (version->cmp > 0)
+						str += "<span color=\"red\">";
+					str += version->number;
+					if (version->cmp != 0)
+						str += "</span>";
+					str += "</small>";
+				}
+				g_value_set_string (value, g_strdup (str.c_str()));
 				break;
 			}
-			case TO_REMOVE_PROP:
-				g_value_set_boolean (value, package->toRemove());
-				break;
-			case TO_MODIFY_PROP:
-				g_value_set_boolean (value, package->toModify());
-				break;
-			case IS_INSTALLED_PROP:  // if is-installed at the end
+			case INSTALLED_CHECK_PROP:  // if is-installed at the end
 				bool installed;
 				if (package->toInstall())
 					installed = true;
@@ -520,6 +546,12 @@ protected:
 				else
 					installed = package->isInstalled();
 				g_value_set_boolean (value, installed);
+				break;
+			case HAS_UPGRADE_PROP:
+				g_value_set_boolean (value, package->hasUpgrade());
+				break;
+			case TO_UPGRADE_PROP:
+				g_value_set_boolean (value, package->hasUpgrade() && package->toInstall());
 				break;
 			case SENSITIVE_PROP: {
 				bool sensitive = !package->isLocked();
@@ -543,10 +575,10 @@ protected:
 				if (colorful_rows) {
 					if (!package->isInstalled())
 						color = "darkgray";
-					if (col == VERSION_FOREGROUND_PROP)
-						if (package->hasUpgrade())
-							color = "blue";
 				}
+/*				if (col == VERSION_FOREGROUND_PROP)
+					if (package->hasUpgrade())
+						color = "blue";*/
 				g_value_set_string (value, color);
 				break;
 			}
@@ -554,7 +586,7 @@ protected:
 				const char *color = 0;
 				if (golden_changed_row)
 					if (package->toModify())
-						color = "yellow";
+						color = "#f4f4b7";
 				g_value_set_string (value, color);
 				break;
 			}
@@ -634,7 +666,7 @@ struct EmptyModel : public YGtkTreeModel
 {
 	virtual bool showEmptyEntry() const { return false; }
 	virtual int rowsNb() { return 1; }
-	virtual int columnsNb() const { return TOTAL_PROPS; }
+	virtual int columnsNb() const { return TOTAL_IMPL_PROPS; }
 	virtual GType columnType (int col) const { return _columnType (col); }
 
 	virtual void getValue (int row, int col, GValue *value)
@@ -659,39 +691,6 @@ struct EmptyModel : public YGtkTreeModel
 };
 
 //** View
-
-struct Column {
-	const char *header;
-	std::string prop;
-	bool visibleDefault, allowHide, sortable;
-};
-static const Column columns[] = {
-	{ "Name", "name", true, false, true },
-	{ "Version", "available-version", true, true, false },
-	{ "Repository", "repository", false, true, false },
-	{ "Support", "support", false, true, false },
-	{ "Size", "size", false, true, true },
-};
-static int columns_size = sizeof (columns) / sizeof (Column);
-
-static Property translateProperty (const std::string &prop)
-{
-	if (prop == "name")
-		return single_line_rows ? NAME_PROP : NAME_SUMMARY_PROP;
-	if (prop == "available-version")
-		return AVAILABLE_VERSION_PROP;
-	if (prop == "repository")
-		return REPOSITORY_PROP;
-	if (prop == "support")
-		return SUPPORT_PROP;
-	if (prop == "size")
-		return SIZE_PROP;
-	if (prop == "to-install")
-		return TO_INSTALL_PROP;
-	if (prop == "is-installed")
-		return IS_INSTALLED_PROP;
-	return (Property) 0;
-}
 
 struct YGtkPackageView::Impl
 {
@@ -728,24 +727,6 @@ struct YGtkPackageView::Impl
 		gtk_container_add (GTK_CONTAINER (scroll), m_view);
 		gtk_widget_show_all (scroll);
 		clear();
-
-		if (action_col) {
-			if (action_col_as_button)
-				appendButtonColumn (NULL, "to-install");
-			else //if (action_col_as_check)
-				appendCheckColumn ("is-installed"); //("to-install");
-		}
-		if (status_col)
-			appendIconColumn (NULL, "icon");
-
-		for (int i = 0; i < columns_size; i++) {
-			const Column *column = &columns[i];
-			bool visible = column->visibleDefault;
-			if (column->prop == "available-version")
-				visible = version_col;
-			appendTextColumn (column->header, column->prop,
-				visible, column->sortable);
-		}
 	}
 
 	~Impl()
@@ -837,70 +818,85 @@ struct YGtkPackageView::Impl
 		return packages;
 	}
 
-	GtkTreeViewColumn *getColumn (const std::string &property)
+	void appendTextColumn (const char *header, int property, bool visible, int size, bool identAuto)
 	{
-		GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (m_view));
-		for (GList *i = columns; i; i = i->next) {
-			gchar *col_prop = (gchar *) g_object_get_data (G_OBJECT (i->data), "property");
-			if (col_prop && property == col_prop)
-				return (GtkTreeViewColumn *) i->data;
-		}
-		return NULL;
-	}
-
-	std::string getColumnProp (GtkTreeViewColumn *column)
-	{
-		gchar *prop = (gchar *) g_object_get_data (G_OBJECT (column), "property");
-		return prop;
-	}
-
-	void setVisible (const std::string &property, bool visible)
-	{ gtk_tree_view_column_set_visible (getColumn (property), visible); }
-
-	bool isVisible (const std::string &property)
-	{ return gtk_tree_view_column_get_visible (getColumn (property)); }
-
-	void appendIconColumn (const char *header, const std::string &prop)
-	{
-		int col = ICON_PROP;  // 'prop' is ignored
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		if (header)
 			gtk_tree_view_set_headers_visible (view, TRUE);
-		GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
-			int height = MAX (34, YGUtils::getCharsHeight (m_view, 2));
-			gtk_cell_renderer_set_fixed_size (renderer, -1, height);
-		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-			header, renderer, "pixbuf", col,
-			"cell-background", BACKGROUND_PROP, NULL);
-		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-		gtk_tree_view_column_set_fixed_width (column, 38);
-		gtk_tree_view_append_column (view, column);
-	}
 
-	static Action columnAction (int col)
-	{
-		switch (col) {
-			case TO_INSTALL_PROP:
-			case TO_UPGRADE_PROP:
-			default:
-				return INSTALL_ACTION;
-			case TO_REMOVE_PROP:
-				return REMOVE_ACTION;
-			case TO_MODIFY_PROP:
-				return UNDO_ACTION;
-			case IS_INSTALLED_PROP:
-				return TOGGLE_ACTION;
+		const char *text_type = "text";
+		if (property == NAME_SUMMARY_PROP || property == VERSION_PROP ||
+		    property == REPOSITORY_PROP)
+			text_type = "markup";
+		GtkCellRenderer *renderer;
+		if (property == VERSION_PROP) {
+			renderer = ygtk_cell_renderer_side_button_new();
+			g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_GO_UP, NULL);
 		}
+		else if (property == REPOSITORY_PROP)
+			renderer = ygtk_cell_renderer_text_pixbuf_new();
+		else
+			renderer = gtk_cell_renderer_text_new();
+		PangoEllipsizeMode ellipsize = PANGO_ELLIPSIZE_END;
+		if (size >= 0 && property != NAME_SUMMARY_PROP)
+			ellipsize = PANGO_ELLIPSIZE_MIDDLE;
+		g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
+/*		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+		if (reverse) {  // work-around: Pango ignored alignment flag on RTL
+			gtk_widget_set_direction (m_view, GTK_TEXT_DIR_LTR);
+			g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
+		}*/
+		GtkTreeViewColumn *column;
+		column = gtk_tree_view_column_new_with_attributes (
+			header, renderer, text_type, property,
+			"sensitive", SENSITIVE_PROP,
+			"style", STYLE_PROP,
+			"weight", WEIGHT_PROP,
+			"cell-background", BACKGROUND_PROP,
+			NULL);
+		int foregroundCol = FOREGROUND_PROP;
+		if (property == VERSION_PROP) {
+			foregroundCol = VERSION_FOREGROUND_PROP;
+			gtk_tree_view_column_add_attribute (column, renderer,
+				"button-visible", HAS_UPGRADE_PROP);
+			gtk_tree_view_column_add_attribute (column, renderer,
+				"active", TO_UPGRADE_PROP);
+			g_signal_connect (G_OBJECT (renderer), "toggled",
+					          G_CALLBACK (upgrade_toggled_cb), this);
+		}
+		else if (property == REPOSITORY_PROP)
+			gtk_tree_view_column_add_attribute (column, renderer,
+				"stock-id", REPOSITORY_STOCK_PROP);
+		gtk_tree_view_column_add_attribute (column, renderer, "foreground", foregroundCol);
+		if (identAuto)
+			gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
+		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+		gtk_tree_view_column_set_resizable (column, TRUE);
+//		gtk_tree_view_column_set_reorderable (column, TRUE);
+		if (size >= 0)
+			gtk_tree_view_column_set_fixed_width (column, size);
+		else
+			gtk_tree_view_column_set_expand (column, TRUE);
+		gtk_tree_view_column_set_visible (column, visible);
+//		if (sortable)
+		gtk_tree_view_column_set_clickable (column, true);
+			g_signal_connect (G_OBJECT (column), "clicked",
+			                  G_CALLBACK (column_clicked_cb), this);
+		if (property == NAME_PROP || property == NAME_SUMMARY_PROP) {
+			gtk_tree_view_column_set_sort_indicator (column, TRUE);
+			gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
+		}
+//		gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
+		gtk_tree_view_append_column (view, column);
+		g_object_set_data (G_OBJECT (column), "property", GINT_TO_POINTER (property+1));
 	}
 
-	void appendCheckColumn (const std::string &prop)
+	void appendCheckColumn (int property)
 	{
-		int modelCol = translateProperty (prop);
-
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
 		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (NULL,
-			renderer, "active", modelCol, "visible", CHECK_VISIBLE_PROP,
+			renderer, "active", property, "visible", CHECK_VISIBLE_PROP,
 			"sensitive", SENSITIVE_PROP,
 			"cell-background", BACKGROUND_PROP, NULL);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
@@ -911,14 +907,15 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_column_set_fixed_width (column, 25);
 		gtk_tree_view_append_column (view, column);
 
-		Action action = columnAction (modelCol);
+		Action action = TOGGLE_ACTION;
 		g_object_set_data (G_OBJECT (renderer), "action", GINT_TO_POINTER (action));
 		if (m_activate_action == NONE_ACTION)
 			m_activate_action = action;
 		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
+		g_object_set_data (G_OBJECT (column), "property", GINT_TO_POINTER (property+1));
 	}
 
-	void appendButtonColumn (const char *header, const std::string &prop)
+	void appendButtonColumn (const char *header, int property)
 	{
 		int labelCol = ACTION_LABEL_PROP, stockCol = ACTION_STOCK_PROP;
 
@@ -963,66 +960,26 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_column_set_fixed_width (column, width);
 		gtk_tree_view_append_column (view, column);
 
-		Action action = columnAction (TO_INSTALL_PROP);
+		Action action = INSTALL_ACTION;
 		g_object_set_data (G_OBJECT (renderer), "action", GINT_TO_POINTER (action));
 		if (m_activate_action == NONE_ACTION)
 			m_activate_action = action;
 		g_object_set_data (G_OBJECT (column), "status-tooltip", GINT_TO_POINTER (1));
 	}
 
-	void appendTextColumn (const char *header, const std::string &prop, bool visible, bool sortable, bool identAuto = false)
+	void appendIconColumn (const char *header, int property)
 	{
-		int col = translateProperty (prop);
-		int size = 100;
-		if (col == NAME_PROP || col == NAME_SUMMARY_PROP)
-			size = -1;
-
 		GtkTreeView *view = GTK_TREE_VIEW (m_view);
 		if (header)
 			gtk_tree_view_set_headers_visible (view, TRUE);
-		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-		PangoEllipsizeMode ellipsize = PANGO_ELLIPSIZE_END;
-		if (size >= 0 && col != NAME_SUMMARY_PROP)
-			ellipsize = PANGO_ELLIPSIZE_MIDDLE;
-		g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
-/*		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
-		if (reverse) {  // work-around: Pango ignored alignment flag on RTL
-			gtk_widget_set_direction (m_view, GTK_TEXT_DIR_LTR);
-			g_object_set (renderer, "alignment", PANGO_ALIGN_RIGHT, NULL);
-		}*/
-		const char *colType = col == NAME_SUMMARY_PROP ? "markup" : "text";
-		GtkTreeViewColumn *column;
-		column = gtk_tree_view_column_new_with_attributes (
-			header, renderer, colType, col,
-			"sensitive", SENSITIVE_PROP,
-			"style", STYLE_PROP,
-			"weight", WEIGHT_PROP,
-			"cell-background", BACKGROUND_PROP,
-			NULL);
-		int foregroundCol = FOREGROUND_PROP;
-		if (col == AVAILABLE_VERSION_PROP)
-			foregroundCol = VERSION_FOREGROUND_PROP;
-		gtk_tree_view_column_add_attribute (column, renderer, "foreground", foregroundCol);
-		g_object_set_data_full (G_OBJECT (column), "property", g_strdup (prop.c_str()), g_free);
-		if (identAuto)
-			gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
+		GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+			int height = MAX (34, YGUtils::getCharsHeight (m_view, 2));
+			gtk_cell_renderer_set_fixed_size (renderer, -1, height);
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+			header, renderer, "pixbuf", property,
+			"cell-background", BACKGROUND_PROP, NULL);
 		gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-		gtk_tree_view_column_set_resizable (column, TRUE);
-//		gtk_tree_view_column_set_reorderable (column, TRUE);
-		if (size >= 0)
-			gtk_tree_view_column_set_fixed_width (column, size);
-		else
-			gtk_tree_view_column_set_expand (column, TRUE);
-		gtk_tree_view_column_set_visible (column, visible);
-		gtk_tree_view_column_set_clickable (column, sortable);
-		if (sortable)
-			g_signal_connect (G_OBJECT (column), "clicked",
-			                  G_CALLBACK (column_clicked_cb), this);
-		if (col == NAME_PROP || col == NAME_SUMMARY_PROP) {
-			gtk_tree_view_column_set_sort_indicator (column, TRUE);
-			gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
-		}
-//		gtk_tree_view_insert_column (view, column, reverse ? 0 : -1);
+		gtk_tree_view_column_set_fixed_width (column, 38);
 		gtk_tree_view_append_column (view, column);
 	}
 
@@ -1034,12 +991,6 @@ struct YGtkPackageView::Impl
 		gtk_tree_view_column_set_fixed_width (column, size);
 		gtk_tree_view_append_column (view, column);
 	}
-
-	void removeColumn (const char *header)
-	{ gtk_tree_view_remove_column (GTK_TREE_VIEW (m_view), getColumn (header)); }
-
-	bool hasColumn (const char *header)
-	{ return getColumn (header); }
 
 	void setRulesHint (bool hint)
 	{ gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (m_view), TRUE); }
@@ -1101,68 +1052,66 @@ struct YGtkPackageView::Impl
 			{ pThis->selectAll(); }
 			static void show_column_cb (GtkCheckMenuItem *item, Impl *pThis)
 			{
-				GList *siblings = gtk_container_get_children (GTK_CONTAINER (
-					gtk_widget_get_parent (GTK_WIDGET (item)))), *i;
-				for (i = siblings; i; i = i->next)
-					if (i->data == item)
-						break;
-				int index = g_list_position (siblings, i) + 1;
-				g_list_free (siblings);
-				bool visible = gtk_check_menu_item_get_active (item);
+				int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item), "column"));
 				GtkTreeViewColumn *column = gtk_tree_view_get_column (
-					GTK_TREE_VIEW (pThis->m_view), index);
+					GTK_TREE_VIEW (pThis->m_view), col);
+				bool visible = gtk_check_menu_item_get_active (item);
 				gtk_tree_view_column_set_visible (column, visible);
 			}
 		};
 
 		Ypp::PkgList packages = getSelected();
-		bool empty = true, canLock = packages.canLock(), unlocked = packages.unlocked();
+		bool empty = true, canLock = packages.canLock(), unlocked = packages.isUnlocked();
 		bool locked = !unlocked && canLock;
-		if (packages.notInstalled())
+		if (packages.isNotInstalled())
 			inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE,
 			                   !locked, inner::install_cb, this), empty = false;
-		if (packages.upgradable())
+		if (packages.hasUpgrade())
 			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GOTO_TOP,
 			                   !locked, inner::install_cb, this), empty = false;
-		if (packages.installed() && packages.canRemove())
+		if (packages.isInstalled() && packages.canRemove())
 			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
 			                   !locked, inner::remove_cb, this), empty = false;
-		if (packages.modified())
+		if (packages.toModify())
 			inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
 			                   true, inner::undo_cb, this), empty = false;
 		if (canLock) {
 			static const char *lock_tooltip =
 				"<b>Package lock:</b> prevents the package status from being modified by "
 				"the solver (that is, it won't honour dependencies or collections ties.)";
-			if (packages.locked())
-				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), "pkg-unlocked.png",
+// TODO: use lock and lock-open for the icons here
+			if (packages.isLocked())
+				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip), GTK_STOCK_DIALOG_AUTHENTICATION,//"pkg-unlocked.png",
 				                   true, inner::unlock_cb, this), empty = false;
 			if (unlocked)
-				inner::appendItem (menu, _("_Lock"), _(lock_tooltip), "pkg-locked.png",
+				inner::appendItem (menu, _("_Lock"), _(lock_tooltip), GTK_STOCK_DIALOG_AUTHENTICATION,//"pkg-locked.png",
 				                   true, inner::lock_cb, this), empty = false;
 		}
 		if (!empty)
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 		inner::appendItem (menu, NULL, NULL, GTK_STOCK_SELECT_ALL,
 		                   true, inner::select_all_cb, this);
-
-		GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show Column"));
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
+		GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show column"));
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 		GtkWidget *submenu = gtk_menu_new();
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
-		for (int i = 0; i < columns_size; i++) {
-			const Column *column = &columns[i];
-			if (column->header) {
-				GtkWidget *item = gtk_check_menu_item_new_with_label (column->header);
+		GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (m_view));
+		int n = 0;
+		for (GList *i = columns; i; i = i->next, n++) {
+			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
+			const gchar *header = gtk_tree_view_column_get_title (column);
+			if (header) {
+				GtkWidget *item = gtk_check_menu_item_new_with_label (header);
+				g_object_set_data (G_OBJECT (item), "column", GINT_TO_POINTER (n));
 				gtk_menu_shell_append (GTK_MENU_SHELL (submenu), item);
-				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), isVisible (column->prop));
-				if (column->allowHide)
-					g_signal_connect (G_OBJECT (item), "toggled",
-						G_CALLBACK (inner::show_column_cb), this);
-				else
-					gtk_widget_set_sensitive (item, FALSE);
+				gboolean visible = gtk_tree_view_column_get_visible (column);
+				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), visible);
+				g_signal_connect (G_OBJECT (item), "toggled",
+					G_CALLBACK (inner::show_column_cb), this);
 			}
 		}
+		g_list_free (columns);
 
 		gtk_menu_attach_to_widget (GTK_MENU (menu), m_view, NULL);
 		gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  button, event_time);
@@ -1231,6 +1180,18 @@ struct YGtkPackageView::Impl
 		return FALSE;
 	}
 
+	static void upgrade_toggled_cb (
+		GtkCellRenderer *renderer, gchar *path_str, Impl *pThis)
+	{
+		Ypp::Package *package = 0;
+		GtkTreeView *view = GTK_TREE_VIEW (pThis->m_view);
+		GtkTreeModel *model = gtk_tree_view_get_model (view);
+		GtkTreeIter iter;
+		gtk_tree_model_get_iter_from_string (model, &iter, path_str);
+		gtk_tree_model_get (model, &iter, PTR_PROP, &package, -1);
+		package->install (0);
+	}
+
 	static void renderer_toggled_cb (GtkCellRenderer *renderer, gchar *path_str,
 			                         Impl *pThis)
 	{
@@ -1269,7 +1230,7 @@ struct YGtkPackageView::Impl
 			case REMOVE_ACTION: packages.remove(); break;
 			case UNDO_ACTION: packages.undo(); break;
 			case TOGGLE_ACTION:
-				if (packages.installed())
+				if (packages.isInstalled())
 					packages.remove();
 				else
 					packages.install();
@@ -1343,7 +1304,7 @@ struct YGtkPackageView::Impl
 				if (!filename.empty())
 					pixbuf = YGUtils::loadPixbuf (filename.c_str());
 				if (!pixbuf)
-					gtk_tree_model_get (model, &iter, ICON_PROP, &pixbuf, -1);
+					gtk_tree_model_get (model, &iter, STATUS_ICON_PROP, &pixbuf, -1);
 				if (pixbuf) {
 					gtk_tooltip_set_icon (tooltip, pixbuf);
 					g_object_unref (G_OBJECT (pixbuf));
@@ -1356,7 +1317,49 @@ struct YGtkPackageView::Impl
 
 	static void column_clicked_cb (GtkTreeViewColumn *column, Impl *pThis)
 	{
-fprintf (stderr, "column clicked\n");
+		int property = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (column), "property"))-1;
+		const char *prop = 0;
+		bool as_int = false;
+		switch (property) {
+			case NAME_PROP:
+			case NAME_SUMMARY_PROP:
+				prop = "name";
+				break;
+			case VERSION_PROP:
+				prop = "installed-version";
+				break;
+			case REPOSITORY_PROP:
+				prop = "repository";
+				as_int = true;
+				break;
+			case SUPPORT_PROP:
+				prop = "support";
+				as_int = true;
+				break;
+			case SIZE_PROP:
+				prop = "size";
+				as_int = true;
+				break;
+			case INSTALLED_CHECK_PROP:
+				prop = "installed";
+				as_int = true;
+				break;
+			default: break;
+		}
+
+		if (prop) {
+fprintf (stderr, "sort list by %s as int? %d\n", prop, as_int);
+			Ypp::PkgList list (pThis->m_list);
+			pThis->clear();
+
+			list.sort_by_property (prop, as_int);
+			pThis->setList (list, NULL);
+
+			gtk_tree_view_column_set_sort_indicator (column, TRUE);
+			gtk_tree_view_column_set_sort_order (column, GTK_SORT_ASCENDING);
+		}
+
+#if 0
 		GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (pThis->m_view));
 		for (GList *i = columns; i; i = i->next) {
 			GtkTreeViewColumn *col = (GtkTreeViewColumn *) i->data;
@@ -1382,6 +1385,7 @@ fprintf (stderr, "column indicator: %d\n", gtk_tree_view_column_get_sort_indicat
 		if (prop != "name")
 			l = Ypp::PkgSort (pThis->m_list, prop.c_str(), sort == GTK_SORT_ASCENDING);
 		pThis->setListImpl (l, NULL);
+#endif
 	}
 };
 
@@ -1420,11 +1424,20 @@ void YGtkPackageView::packList (const char *header, Ypp::PkgList list, const cha
 void YGtkPackageView::clear()
 { impl->clear(); }
 
-void YGtkPackageView::setVisible (const std::string &property, bool visible)
-{ impl->setVisible (property, visible); }
+void YGtkPackageView::appendTextColumn (const char *header, int property, bool visible, int size, bool identAuto)
+{ return impl->appendTextColumn (header, property, visible, size, identAuto); }
 
-bool YGtkPackageView::isVisible (const std::string &property)
-{ return impl->isVisible (property); }
+void YGtkPackageView::appendCheckColumn (int property)
+{ return impl->appendCheckColumn (property); }
+
+void YGtkPackageView::appendButtonColumn (const char *header, int property)
+{ return impl->appendButtonColumn (header, property); }
+
+void YGtkPackageView::appendIconColumn (const char *header, int property)
+{ return impl->appendIconColumn (header, property); }
+
+void YGtkPackageView::appendEmptyColumn (int size)
+{ return impl->appendEmptyColumn (size); }
 
 void YGtkPackageView::setRulesHint (bool hint)
 { impl->setRulesHint (hint); }

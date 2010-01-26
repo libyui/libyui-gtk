@@ -1,3 +1,14 @@
+2010-01-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/yzyppwrapper.h/cc: changed PkgList property
+	method names to reflect those of Package, and made
+	refreshProps() public.
+
+	* src/pkg/ygtkpackageview.h/cc: reverted API so that
+	columns are again added by the user-code.
+
+	* src/pkg/ygtkpackagedetails.h/cc: some general polishing.
+
 2010-01-19 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: added --plug-sidebar flag.

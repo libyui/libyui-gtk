@@ -11,21 +11,21 @@
 #include <YEvent.h>
 #include <string.h>
 
-bool search_entry_side = true, search_entry_top = false, dynamic_sidebar = true,
+bool search_entry_side = false, search_entry_top = true, dynamic_sidebar = true,
 	expander_sidebar = false, flex_sidebar = false, grid_sidebar = false,
-	layered_sidebar = false, layered_tabs_sidebar = false, plug_sidebar = false,
+	layered_sidebar = true, layered_tabs_sidebar = false, plug_sidebar = false,
 	startup_menu = false,
-	big_icons_sidebar = false, icons_sidebar = false,
+	big_icons_sidebar = true, icons_sidebar = false,
 	categories_side = true, repositories_side = true, categories_top = false,
 	repositories_top = false,
 	status_side = true, status_top = false, status_tabs = false,
 	status_tabs_as_actions = false, undo_side = false, undo_tab = true,
 	undo_old_style = false, undo_log_all = false, undo_log_changed = false,
-	undo_box = false,
+	undo_box = true,
 	status_col = false, action_col = true,
 	action_col_as_button = false, action_col_as_check = false, action_col_label = true,
 	version_col = true, single_line_rows = false, colorful_rows = false,
-	italicize_changed_row = false, golden_changed_row = false,
+	italicize_changed_row = false, golden_changed_row = true,
 	details_start_hide = false, toolbar_top = false, toolbar_yast = false,
 	arrange_by = false;
 

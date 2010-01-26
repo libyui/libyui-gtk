@@ -63,6 +63,9 @@ struct Ypp
 		std::string supportText (MarkupType markup);
 		std::string size();
 		std::string icon();
+		std::string license();
+		std::string installedDate();
+		std::string candidateDate();
 		bool isRecommended() const;
 		bool isSuggested() const;
 		int buildAge() const;  // if < 0 , unsupported or error
@@ -129,6 +132,7 @@ struct Ypp
 		void reserve (int size);
 		void append (Package *package);
 		void sort (bool (* order) (Package *, Package *) = 0);
+		void sort_by_property (const std::string &prop, bool as_int);
 		void remove (int index);
 		void copy (const PkgList list);  // will only copy entry for which match() == true
 
@@ -139,16 +143,18 @@ struct Ypp
 		// NOTE: checks if both lists point to the same memory space, not equal contents
 		bool operator == (const PkgList &other) const;
 
-		// common properties
+		// common properties (nomenclature used from Ypp::Package)
 		// NOTE: there is a hit first time one of these methods is used
-		bool installed() const;
-		bool notInstalled() const;
-		bool upgradable() const;
-		bool modified() const;
-		bool locked() const;
-		bool unlocked() const;
+		// FIXME: we might move these methods into some "ListProps" structure
+		bool isInstalled() const;
+		bool isNotInstalled() const;
+		bool hasUpgrade() const;
+		bool toModify() const;
+		bool isLocked() const;
+		bool isUnlocked() const;
 		bool canRemove() const;
 		bool canLock() const;
+		void refreshProps();
 
 		// actions
 		// NOTE: can take time (depending on size); show busy cursor
@@ -237,10 +243,6 @@ struct Ypp
 
 		struct Impl;
 		Impl *impl;
-	};
-
-	struct PkgSort : public PkgList {
-		PkgSort (PkgList list, const std::string &prop, bool ascending);
 	};
 
 	// list primitives

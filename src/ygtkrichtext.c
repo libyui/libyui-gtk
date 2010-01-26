@@ -320,8 +320,7 @@ rt_start_element (GMarkupParseContext *context,
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "color")) {
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-				                                       "foreground", attribute_values[0],
-				                                       NULL);
+					"foreground", attribute_values[0], NULL);
 				state->default_color = FALSE;
 			}
 			else
@@ -331,8 +330,7 @@ rt_start_element (GMarkupParseContext *context,
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "href")) {
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-				                                       "underline", PANGO_UNDERLINE_SINGLE,
-				                                       NULL);
+					"underline", PANGO_UNDERLINE_SINGLE, NULL);
 				if (state->default_color)
 					g_object_set (tag->tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag->tag), "link", g_strdup (attribute_values[0]));
@@ -361,7 +359,6 @@ rt_start_element (GMarkupParseContext *context,
 			HTMLList_init (list, !g_ascii_strcasecmp (element_name, "ol"));
 			state->html_list = g_list_append (state->html_list, list);
 		}
-
 		else if (!g_ascii_strcasecmp (element_name, "img")) {
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "src")) {
@@ -374,8 +371,7 @@ rt_start_element (GMarkupParseContext *context,
 			else
 				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
 		}
-
-		// for tags like <br/>, GMarkup will pass them through the end
+		// tags like <br/>, GMarkup will pass them through the end
 		// tag callback too, so we'll deal with them there
 		else if (!g_ascii_strcasecmp (element_name, "br")) ;
 		else if (!g_ascii_strcasecmp (element_name, "hr")) ;
@@ -386,6 +382,15 @@ rt_start_element (GMarkupParseContext *context,
 				;
 			else
 				g_warning ("Unknown tag '%s'", element_name);
+		}
+	}
+	else if (attribute_names[0]) {  // tags that may have extra attributes
+		if (!g_ascii_strcasecmp (element_name, "p")) {
+			if (!g_ascii_strcasecmp (attribute_names[0], "bgcolor"))
+				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+					"paragraph-background", attribute_values[0], NULL);
+			else
+				g_warning ("Unknown p attribute: '%s'", attribute_names[0]);
 		}
 	}
 
