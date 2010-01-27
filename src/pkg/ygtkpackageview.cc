@@ -21,7 +21,8 @@
 #include <string.h>
 
 extern bool status_col, action_col, action_col_as_button, action_col_as_check,
-	action_col_label, version_col, colorful_rows, italicize_changed_row,
+	save_delete_buttons,
+	action_col_label, version_col, colorful_rows, embold_installed_row, italicize_changed_row,
 	golden_changed_row, single_line_rows;
 
 //** Icons resources
@@ -591,8 +592,14 @@ protected:
 				break;
 			}
 			case WEIGHT_PROP: {
+#if 0
 				bool highlight = segment->list.highlight (package);
 				int weight = highlight ? PANGO_WEIGHT_BOLD : PANGO_WEIGHT_NORMAL;
+#endif
+				int weight = PANGO_WEIGHT_NORMAL;
+				if (embold_installed_row)
+					if (package->isInstalled())
+						weight = PANGO_WEIGHT_BOLD;
 				g_value_set_int (value, weight);
 				break;
 			}
@@ -617,9 +624,9 @@ protected:
 				if (package->toModify())
 					stock = GTK_STOCK_UNDO;
 				else if (package->isInstalled())
-					stock = GTK_STOCK_REMOVE;
+					stock = save_delete_buttons ? GTK_STOCK_DELETE : GTK_STOCK_REMOVE;
 				else
-					stock = GTK_STOCK_ADD;
+					stock = save_delete_buttons ? GTK_STOCK_SAVE : GTK_STOCK_ADD;
 				g_value_set_string (value, g_strdup (stock));
 				break;
 			}

@@ -2165,7 +2165,7 @@ public:
 
 		gtk_entry_set_icon_from_stock (GTK_ENTRY (m_entry),
 			GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
-		gtk_entry_set_icon_activatable (GTK_ENTRY (editable), GTK_ENTRY_ICON_PRIMARY, TRUE);
+		gtk_entry_set_icon_activatable (GTK_ENTRY (m_entry), GTK_ENTRY_ICON_PRIMARY, TRUE);
 
 		m_clearIcon = false;
 		g_signal_connect (G_OBJECT (m_entry), "changed",
@@ -2364,8 +2364,8 @@ public:
 
 	void appendRow (GtkTreeIter *iter)
 	{
-		gtk_list_store_append (m_store, &iter);
-		gtk_list_store_set (m_store, &iter, 0, "", 1, TRUE, 2, 0, 3, NULL, 4, TRUE, -1);
+		gtk_list_store_append (m_store, iter);
+		gtk_list_store_set (m_store, iter, 0, "", 1, TRUE, 2, 0, 3, NULL, 4, TRUE, -1);
 	}
 };
 
@@ -2545,7 +2545,7 @@ public:
 				else
 					gtk_list_store_set (m_store, &iter, 0, repo->name.c_str(), -1);
 			}
-			gtk_list_store_set (m_store, &iter, 1, TRUE, 2, repo, ,
+			gtk_list_store_set (m_store, &iter, 1, TRUE, 2, repo,
 				ENABLED_COLUMN, repo->enabled, -1);
 
 			const gchar *icon = getRepositoryStockIcon (repo->url);
@@ -3734,7 +3734,12 @@ public:
 		}
 		else {
 			m_all_view = ygtk_package_view_new (TRUE);
-			m_all_view->appendCheckColumn (INSTALLED_CHECK_PROP);
+			if (action_col) {
+				if (action_col_as_button)
+					m_all_view->appendButtonColumn (NULL, INSTALLED_CHECK_PROP);
+				else  // action_col_as_check
+					m_all_view->appendCheckColumn (INSTALLED_CHECK_PROP);
+			}
 			m_all_view->appendTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 			m_all_view->appendTextColumn (_("Version"), VERSION_PROP, true, 120);
 			m_all_view->appendTextColumn (_("Size"), SIZE_PROP, true, 80);
