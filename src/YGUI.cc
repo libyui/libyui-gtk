@@ -153,6 +153,12 @@ void YGUI::checkInit()
 	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
 		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
 #endif
+
+	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (THEMEDIR "/icons/32x32/apps/yast.png");
+	if (pixbuf) {  // default window icon
+		gtk_window_set_default_icon (pixbuf);
+		g_object_unref (G_OBJECT (pixbuf));
+	}
 }
 
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
