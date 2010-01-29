@@ -1,3 +1,7 @@
+2010-01-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc: bug fix 567505: definite fix.
+
 2010-01-19  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: bug fix 567505: simply backported SVN code.

@@ -295,16 +295,20 @@ public:
 	{
 		GtkTreeIter iter;
 		if (getIter (cell->parent(), &iter))
-			setCell (&iter, cell);
+			setCell (&iter, cell->column(), cell);
 	}
 
-	void setCell (GtkTreeIter *iter, const YTableCell *cell)
+	void setCell (GtkTreeIter *iter, int column, const YTableCell *cell)
 	{
-		int index = cell->column() * 2;
-   		setCellIcon (iter, index, cell->iconName());
-   		std::string label (cell->label());
-   		if (label == "X")
-   			label = YUI::app()->glyph (YUIGlyph_CheckMark);
+		int index = column * 2;
+		std::string icon, label;
+		if (cell) {
+			icon = cell->iconName();
+			label = cell->label();
+	   		if (label == "X")
+	   			label = YUI::app()->glyph (YUIGlyph_CheckMark);
+		}
+   		setCellIcon (iter, index, icon);
    		setCellLabel (iter, index+1, label);
 	}
 
@@ -350,7 +354,7 @@ public:
 			GtkTreeIter iter;
 			addRow (&iter, _item, true);
    			for (int i = 0; i < columns(); i++)
-   				setCell (&iter, item->cell (i));
+   				setCell (&iter, i, item->cell (i));
     	}
     	else
 			yuiError() << "Can only add YTableItems to a YTable.\n";
