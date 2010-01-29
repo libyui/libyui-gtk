@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Jan 29 13:00:00 CET 2009 - mkudlvasr@novell.com
+
+- crash on firewall tool (bnc#567505)
+- Version 2.17.16
+
+
+-------------------------------------------------------------------
 Wed Nov 11 14:45:12 CET 2009 - mkudlvasr@novell.com
 
 - backport PackageSelector and zyppwrapper changes from 11.2
