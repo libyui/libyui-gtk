@@ -1,5 +1,9 @@
 2010-01-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkwizard.h/c: touched up steps look.
+
+2010-01-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGTable.cc: bug fix 567505: crash when cell is
 	unset: see firewall tool.
 

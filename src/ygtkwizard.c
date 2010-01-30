@@ -613,11 +613,13 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	//** The menu and the navigation widgets will be created when requested.
 	// space for them
 	wizard->m_menu_box = gtk_event_box_new();
+	wizard->m_info_box = gtk_event_box_new();
 
 	wizard->m_pane = gtk_hpaned_new();
 	gtk_widget_show (wizard->m_pane);
 
 	wizard->m_contents_box = gtk_hbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), wizard->m_info_box, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), wizard->m_pane, TRUE, TRUE, 0);
 	gtk_widget_show (wizard->m_contents_box);
 
@@ -628,13 +630,9 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 0);
 	gtk_widget_show (vbox);
 
-	wizard->m_contents_buttons_box = gtk_hbox_new (FALSE, 6);
-	gtk_box_pack_start (GTK_BOX (wizard->m_contents_buttons_box), vbox, TRUE, TRUE, 0);
-	gtk_widget_show (wizard->m_contents_buttons_box);
-
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_menu_box, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_contents_buttons_box, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)
@@ -711,33 +709,13 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *child)
 		gtk_paned_pack2 (GTK_PANED (wizard->m_pane), child, TRUE, TRUE);
 }
 
-static gboolean ygtk_wizard_set_information_expose_cb (GtkWidget *widget, GdkEventExpose *event,
-                                                        GtkAllocation *alloc)
+void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget)
 {
-	cairo_t *cr = gdk_cairo_create (widget->window);
-	int x = alloc->x, y = alloc->y, w = alloc->width, h = alloc->height;
-	cairo_pattern_t *pattern = cairo_pattern_create_linear (x, y, x, y+h);
-	cairo_pattern_add_color_stop_rgba (pattern, 0, 1, 1, 1, 1);
-	cairo_pattern_add_color_stop_rgba (pattern, 1, 1, 1, 1, 0);
-	cairo_set_source (cr, pattern);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_fill (cr);
-	cairo_pattern_destroy (pattern);
-	cairo_destroy (cr);
-	return FALSE;
-}
-
-void ygtk_wizard_set_information_expose_hook (GtkWidget *widget, GtkAllocation *alloc)
-{
-	g_signal_connect (G_OBJECT (widget), "expose-event",
-	                  G_CALLBACK (ygtk_wizard_set_information_expose_cb), alloc);
-}
-
-void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget,
-                                         gboolean complete_side)
-{
-	GtkWidget *box = complete_side ? wizard->m_contents_buttons_box : wizard->m_contents_box;
-	gtk_box_pack_start (GTK_BOX (box), widget, FALSE, TRUE, 0);
+	GtkWidget *hbox = gtk_hbox_new (FALSE, 2), *sep = gtk_vseparator_new();
+	gtk_box_pack_start (GTK_BOX (hbox), widget, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (hbox), sep, FALSE, TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (wizard->m_info_box), hbox);
+	gtk_widget_show_all (wizard->m_info_box);
 }
 
 void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget)
@@ -749,12 +727,7 @@ void ygtk_wizard_enable_steps (YGtkWizard *wizard)
 {
 	g_return_if_fail (wizard->steps == NULL);
 	wizard->steps = ygtk_steps_new();
-	gtk_widget_show (wizard->steps);
-	GtkWidget *box = gtk_event_box_new();  // so that expose affects only this window
-	gtk_container_add (GTK_CONTAINER (box), wizard->steps);
-	gtk_widget_show (box);
-	ygtk_wizard_set_information_widget (wizard, box, TRUE);
-	ygtk_wizard_set_information_expose_hook (wizard->steps, &wizard->steps->allocation);
+	ygtk_wizard_set_information_widget (wizard, wizard->steps);
 }
 
 void ygtk_wizard_enable_tree (YGtkWizard *wizard)

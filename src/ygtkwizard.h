@@ -99,8 +99,8 @@ typedef struct _YGtkWizard
 	GHashTable *steps_ids;  /* gchar* -> guint         */
 
 	/* For layout */
-	GtkWidget *m_menu_box, *m_title, *m_contents_box, *m_contents_buttons_box,
-	          *m_control_bar, *m_child, *m_pane, *m_buttons;
+	GtkWidget *m_menu_box, *m_title, *m_contents_box, *m_control_bar,
+		*m_child, *m_pane, *m_buttons, *m_info_box;
 
 	/* Widgets we need to access. */
 	GtkWidget *tree_view, *steps, *menu,
@@ -131,8 +131,7 @@ void ygtk_wizard_enable_tree  (YGtkWizard *wizard);
 // convinience method that removes the current child, if set, and swaps it by
 // the given one (you may pass NULL to just remove current child)
 void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *widget);
-void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget, gboolean full_side);
-void ygtk_wizard_set_information_expose_hook (GtkWidget *widget, GtkAllocation *alloc);
+void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget);
 void ygtk_wizard_set_control_widget (YGtkWizard *wizard, GtkWidget *widget);
 
 // commands
