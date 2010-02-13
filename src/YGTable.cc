@@ -79,7 +79,7 @@ public:
 		}
 		if (xalign != -1) {
 			g_object_set (renderer, "xalign", xalign, NULL);
-			gtk_tree_view_column_set_alignment (column, xalign);
+			//gtk_tree_view_column_set_alignment (column, xalign);
 		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);

@@ -100,7 +100,7 @@ typedef struct _YGtkWizard
 
 	/* For layout */
 	GtkWidget *m_menu_box, *m_title, *m_contents_box, *m_control_bar,
-		*m_child, *m_pane, *m_buttons, *m_info_box;
+		*m_child, *m_status_box, *m_pane, *m_buttons, *m_info_box;
 
 	/* Widgets we need to access. */
 	GtkWidget *tree_view, *steps, *menu,
@@ -162,6 +162,7 @@ gboolean ygtk_wizard_add_sub_menu (YGtkWizard *wizard, const char *parent_id,
 gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_id);
 void ygtk_wizard_clear_menu (YGtkWizard *wizard);
 void ygtk_wizard_set_custom_menu (YGtkWizard *wizard, GtkWidget *menu_bar, gboolean hide_header);
+void ygtk_wizard_set_status_bar (YGtkWizard *wizard, GtkWidget *status_bar);
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text);
 void ygtk_wizard_add_step (YGtkWizard *wizard, const char* text, const char *id);

@@ -93,13 +93,16 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	}
 
 	// bottom part (search entry + close button)
-	GtkWidget *bottom_box;
-	bottom_box = gtk_hbox_new (FALSE, 0);
 	dialog->search_entry = ygtk_find_entry_new();
 	gtk_widget_set_size_request (dialog->search_entry, 140, -1);
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
 	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
 
+	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (_("_Find:"));
+	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
+	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
+	bottom_box = gtk_hbox_new (FALSE, 2);
+	gtk_box_pack_start (GTK_BOX (bottom_box), label, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 0);
 	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
 
@@ -116,7 +119,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 #endif
 
 	// glue it
-	dialog->vbox = gtk_vbox_new (FALSE, 12);
+	dialog->vbox = gtk_vbox_new (FALSE, 6);
 #ifdef SET_HELP_HISTORY
 	GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 	gtk_box_pack_start (GTK_BOX (hbox), gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON), FALSE, TRUE, 0);
@@ -614,6 +617,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	// space for them
 	wizard->m_menu_box = gtk_event_box_new();
 	wizard->m_info_box = gtk_event_box_new();
+	wizard->m_status_box = gtk_event_box_new();
 
 	wizard->m_pane = gtk_hpaned_new();
 	gtk_widget_show (wizard->m_pane);
@@ -627,12 +631,18 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	vbox = gtk_vbox_new (FALSE, 12);
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);  // content's border
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
+#if 0
+	GtkWidget *hsep = gtk_hseparator_new();
+	gtk_box_pack_start (GTK_BOX (vbox), hsep, FALSE, TRUE, 0);
+	gtk_widget_show (hsep);
+#endif
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_buttons, FALSE, TRUE, 0);
 	gtk_widget_show (vbox);
 
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_menu_box, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_status_box, FALSE, TRUE, 0);
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)
@@ -981,6 +991,12 @@ void ygtk_wizard_set_custom_menu (YGtkWizard *wizard, GtkWidget *menu_bar, gbool
 	// we probably want to hide the title, so the menu is more visible
 	if (hide_header)
 		gtk_widget_hide (wizard->m_title);
+}
+
+void ygtk_wizard_set_status_bar (YGtkWizard *wizard, GtkWidget *status_bar)
+{
+	gtk_container_add (GTK_CONTAINER (wizard->m_status_box), status_bar);
+	gtk_widget_show (wizard->m_status_box);
 }
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text)

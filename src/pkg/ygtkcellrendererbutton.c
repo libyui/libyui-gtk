@@ -28,6 +28,7 @@ static void ygtk_cell_renderer_button_init (YGtkCellRendererButton *bcell)
 	GtkCellRenderer *cell = GTK_CELL_RENDERER (bcell);
 	cell->xpad = BORDER;
 	cell->ypad = BORDER;
+	cell->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE;
 }
 
 static void ygtk_cell_renderer_button_get_property (GObject *object,
@@ -102,26 +103,8 @@ static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
 	int y = cell_area->y + (cell_area->height - height)/2 + OUTER_BORDER;
 	height -= OUTER_BORDER*2;
 
-#if 0
-	static GtkWidget *button = 0;
-	if (!button) {
-		button = gtk_toggle_button_new();
-		GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-		gtk_container_add (GTK_CONTAINER (window), button);
-		gtk_widget_show (button);
-		gtk_widget_realize (window);
-		button->allocation.x = x;
-		button->allocation.y = y;
-		button->allocation.width = width;
-		button->allocation.height = height;
-	}
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), bcell->active);
-	gtk_paint_box (button->style, window, state, shadow, expose_area, button,
-		"button", x, y, width, height);
-#else
 	gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
 		"button", x, y, width, height);
-#endif
 
 	int cell_area_x = cell_area->x, cell_area_y = cell_area->y;
 	if (bcell->active) {

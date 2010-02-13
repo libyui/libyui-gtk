@@ -17,8 +17,8 @@ static const char *pkg_help[] = {
 	"<li>-debuginfo: needed for software beta-testing.</li>"
 	"<li>-fr, -dr, -pl (language siglas): translation files (your language package will "
 	"be marked for installation automatically).</li>"
-	"</ul>"
-	"<p>You will find both packages installed on your system, and packages that are made "
+	"</ul>"),
+	_("<p>You will find both packages installed on your system, and packages that are made "
 	"available through the configured repositories.</p>"
 	"<blockquote>A repository is a packages media; it can either be local (such as the "
 	"&product; CDs), or a remote internet server. You can find utilities to setup "
@@ -66,18 +66,15 @@ static const char *pkg_help[] = {
 	"<p>Changes will be performed once you decide to click the 'Apply' "
 	"button in the lower-right corner. If you want to leave the software manager "
 	"without performing any changes, simply press 'Cancel'.</p>"),
-	_("<hr/><p>Developed for &product; by:</p>"
-	"<blockquote>Ricardo Cruz &lt;rpmcruz@alunos.dcc.fc.up.pt&gt;</blockquote>" 
-	"<p>Co-designed by Christian Jaeger.</p>"),
+	"<p>http://en.opensuse.org/YaST2-GTK</p>",
 	0
 };
 
 static const char *patch_help[] = {
 	_("<h1>Purpose</h1>"
 	"<p>This tool gives you control on overviewing and picking patches. You may also "
-	"reverse patches that have been applied to the system.</p>"
-	""
-	"<h1>Usage</h1>"
+	"reverse patches that have been applied to the system.</p>"),
+	_("<h1>Usage</h1>"
 	"<h2>Categories</h2>"
 	"<p>Patches are grouped as follows:</p>"
 	"<ul>"
@@ -86,8 +83,8 @@ static const char *patch_help[] = {
 	"<li>Recommended: fixes non-security related flaws (e.g. data corruption, "
 	"performance slowdown)</li>"
 	"<li>Optional: ones that only apply to few users.</li>"
-	"</ul>"
-	"<p>Only patches that apply to your system will be visible. &product; developers "
+	"</ul>"),
+	_("<p>Only patches that apply to your system will be visible. &product; developers "
 	"are very restrained in pushing patches; you can be sure that all patches are "
 	"of signficant severity.</p>"
 	"<p>If you are looking for applications enhancements, you should check for upgrades "

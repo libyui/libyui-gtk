@@ -19,7 +19,6 @@ struct YGtkTreeModel
 	// if 'showEmptyEntry' will call getValue(row=-1) for the empty entry
 	virtual bool showEmptyEntry() const = 0;
 
-	// implement setListener() to signal model changes, if dynamic
 	struct Listener {
 		virtual void rowChanged (int row) = 0;
 		virtual void rowInserted (int row) = 0;

@@ -25,8 +25,7 @@ public:
 
 		GtkEntry *entry = ygtk_field_entry_get_field_widget (field, 0);
 		gtk_entry_set_activates_default (entry, TRUE);
-		if (passwordMode)
-			gtk_entry_set_visibility (entry, FALSE);
+		gtk_entry_set_visibility (entry, !passwordMode);
 
 		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
 	}

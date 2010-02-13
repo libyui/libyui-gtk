@@ -445,6 +445,13 @@ std::string YGUtils::escapeMarkup (const std::string &ori)
 	return ret;
 }
 
+bool YGUtils::endsWith (const std::string &str, const std::string &key)
+{
+	if (str.size() < key.size())
+		return false;
+	return str.compare (str.size()-key.size(), key.size(), key) == 0;
+}
+
 int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 {
 	PangoContext *context = gtk_widget_get_pango_context (widget);
@@ -533,6 +540,36 @@ GdkPixbuf *YGUtils::setOpacity (const GdkPixbuf *src, int opacity, bool touchAlp
 			*(dest_pixels++) = pixel_clamp (*(src_pixels++) + rgb_shift);
 			if (has_alpha)
 				*(dest_pixels++) = pixel_clamp (*(src_pixels++) - alpha_shift);
+		}
+	}
+	return dest;
+}
+
+GdkPixbuf *YGUtils::setGray (const GdkPixbuf *src)
+{
+	int width = gdk_pixbuf_get_width (src), height = gdk_pixbuf_get_height (src);
+	gboolean has_alpha = gdk_pixbuf_get_has_alpha (src);
+
+	GdkPixbuf *dest = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (src),
+		has_alpha, gdk_pixbuf_get_bits_per_sample (src), width, height);
+
+	guchar *src_pixels_orig = gdk_pixbuf_get_pixels (src);
+	guchar *dest_pixels_orig = gdk_pixbuf_get_pixels (dest);
+
+	int src_rowstride = gdk_pixbuf_get_rowstride (src);
+	int dest_rowstride = gdk_pixbuf_get_rowstride (dest);
+	int i, j;
+	for (i = 0; i < height; i++) {
+		guchar *src_pixels = src_pixels_orig + (i * src_rowstride);
+		guchar *dest_pixels = dest_pixels_orig + (i * dest_rowstride);
+		for (j = 0; j < width; j++) {
+			int clr = (src_pixels[0] + src_pixels[1] + src_pixels[2]) / 3;
+			*(dest_pixels++) = clr;
+			*(dest_pixels++) = clr;
+			*(dest_pixels++) = clr;
+			src_pixels += 3;
+			if (has_alpha)
+				*(dest_pixels++) = *(src_pixels++);
 		}
 	}
 	return dest;
@@ -746,4 +783,15 @@ def set_busy_cursor (window):
     window.set_cursor (__LEFT_PTR_WATCH)
 #endif
 
+
+gboolean YGUtils::empty_row_is_separator_cb (
+	GtkTreeModel *model, GtkTreeIter *iter, gpointer _text_col)
+{
+	int text_col = GPOINTER_TO_INT (_text_col);
+	gchar *str;
+	gtk_tree_model_get (model, iter, text_col, &str, -1);
+	bool ret = !str || !(*str);
+	g_free (str);
+	return ret;
+}
 

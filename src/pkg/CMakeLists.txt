@@ -5,16 +5,22 @@ set (gtk_pkg_yast_plugin_SRCS
 	YGPackageSelector.cc
 	yzypptags.cc
 	yzyppwrapper.cc
-
-	ygtkpackageview.cc
-	ygtkdetailview.cc
-	ygtkdiskview.cc
+	ygtkpkglistview.cc
+	ygtkpkgsearchentry.cc
+	ygtkpkgfilterview.cc
+	ygtkpkgrpmgroupsview.cc
+	ygtkpkgquerycombo.cc
+	ygtkpkgpatternview.cc
+	ygtkpkglanguageview.cc
+	ygtkpkgundolist.cc
+	ygtkpkgmenubar.cc
+	ygtkpkgstatusbar.cc
+	ygtkpkgproductdialog.cc
+	ygtkpkgdetailview.cc
 
 	ygtkcellrendererbutton.c
 	ygtkcellrenderersidebutton.c
-	ygtknotebook.c
 	ygtktreemodel.cc
-	ygtktooltip.c
 	)
 
 ## includes:

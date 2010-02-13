@@ -317,14 +317,23 @@ rt_start_element (GMarkupParseContext *context,
 	// Special tags that must be inserted manually
 	if (!tag->tag) {
 		if (!g_ascii_strcasecmp (element_name, "font")) {
-			if (attribute_names[0] &&
-			    !g_ascii_strcasecmp (attribute_names[0], "color")) {
-				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-					"foreground", attribute_values[0], NULL);
-				state->default_color = FALSE;
+			int i;
+			for (i = 0; attribute_names[i]; i++) {
+				const char *attrb = attribute_names[i];
+				const char *value = attribute_values[i];
+				if (!g_ascii_strcasecmp (attrb, "color")) {
+					tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+						"foreground", value, NULL);
+					state->default_color = FALSE;
+				}
+				// not from html -- we use this internally
+				else if (!g_ascii_strcasecmp (attrb, "bgcolor")) {
+					tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+						"background", value, NULL);
+				}
+				else
+					g_warning ("Unknown font attribute: '%s'", attrb);
 			}
-			else
-				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
 		else if (!g_ascii_strcasecmp (element_name, "a")) {
 			if (attribute_names[0] &&
@@ -362,10 +371,18 @@ rt_start_element (GMarkupParseContext *context,
 		else if (!g_ascii_strcasecmp (element_name, "img")) {
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "src")) {
-				GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (attribute_values[0], NULL);
-				if (pixbuf) {
-					gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
-					g_object_unref (G_OBJECT (pixbuf));
+				const char *filename = attribute_values[0];
+				if (filename) {
+					GdkPixbuf *pixbuf;
+					if (filename[0] == '/')
+						pixbuf = gdk_pixbuf_new_from_file (filename, NULL);
+					else
+						pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
+							filename, 64, 0, NULL);
+					if (pixbuf) {
+						gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
+						g_object_unref (G_OBJECT (pixbuf));
+					}
 				}
 			}
 			else
@@ -386,6 +403,8 @@ rt_start_element (GMarkupParseContext *context,
 	}
 	else if (attribute_names[0]) {  // tags that may have extra attributes
 		if (!g_ascii_strcasecmp (element_name, "p")) {
+			// not from html (basic html only supports background color in
+			// tables), but we use this internally
 			if (!g_ascii_strcasecmp (attribute_names[0], "bgcolor"))
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
 					"paragraph-background", attribute_values[0], NULL);

@@ -42,26 +42,6 @@ set (gtk_yast_plugin_SRCS
 	ygtkwizard.c
 	)
 
-# if you tell cmake to install the icons/ directory
-# it will make room for the .svn dir as well...
-set (gtk_yast_plugin_DATA
-	icons/harddisk.png
-	icons/harddisk-full.png
-	icons/pkg-available.png
-	icons/pkg-available-locked.png
-	icons/pkg-installed.png
-	icons/pkg-install.png
-	icons/pkg-install-auto.png
-	icons/pkg-installed-locked.png
-	icons/pkg-installed-upgradable.png
-	icons/pkg-installed-upgradable-locked.png
-	icons/pkg-remove.png
-	icons/pkg-remove-auto.png
-	icons/pkg-locked.png
-	icons/pkg-unlocked.png
-	icons/pkg-upgrade.png
-	)
-
 ## includes:
 
 include_directories (${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
@@ -82,7 +62,6 @@ set_target_properties (py2gtk PROPERTIES LINK_FLAGS "--no-undefined")
 ## install:
 
 install (TARGETS py2gtk LIBRARY DESTINATION ${UI_PLUGIN_DIR})
-install (FILES ${gtk_yast_plugin_DATA} DESTINATION ${DATADIR})
 
 add_subdirectory (pkg)
 

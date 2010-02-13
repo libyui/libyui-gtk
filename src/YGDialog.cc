@@ -23,7 +23,7 @@
    be a YGDialog and is swap-able.
 */
 
-#define DEFAULT_WIDTH  700
+#define DEFAULT_WIDTH  750
 #define DEFAULT_HEIGHT 650
 
 class YGWindow;

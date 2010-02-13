@@ -31,6 +31,9 @@ namespace YGUtils
 	/* Escapes markup text (eg. changes '<' by '\<'). */
 	std::string escapeMarkup (const std::string &str);
 
+	/* Check if 'str' ends with 'suffix'. */
+	bool endsWith (const std::string &str, const std::string &suffix);
+
 	/* Adds functionality to scroll widgets to top or bottom. */
 	void scrollWidget (GtkAdjustment *vadj, bool top);
 
@@ -48,10 +51,17 @@ namespace YGUtils
 	/* Shifts colors in a GdkPixbuf. */
 	GdkPixbuf *setOpacity (const GdkPixbuf *src, int opacity, bool touchAlpha);
 
+	/* Gray out some pixbuf. */
+	GdkPixbuf *setGray (const GdkPixbuf *src);
+
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
 	const char *mapStockIcon (const std::string &label);
 	const char *setStockIcon (GtkWidget *button, const std::string &label,
 	                          const char *fallbackIcon);
+
+	/* For empty model rows, render a separator (can be used for GtkTreeView and GtkComboBox */
+	gboolean empty_row_is_separator_cb (
+		GtkTreeModel *model, GtkTreeIter *iter, gpointer text_col);
 };
 
 extern "C" {

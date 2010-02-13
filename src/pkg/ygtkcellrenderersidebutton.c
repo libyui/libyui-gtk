@@ -20,8 +20,7 @@ static guint toggle_cell_signal = 0;
 G_DEFINE_TYPE (YGtkCellRendererSideButton, ygtk_cell_renderer_side_button, GTK_TYPE_CELL_RENDERER_TEXT)
 
 static void ygtk_cell_renderer_side_button_init (YGtkCellRendererSideButton *bcell)
-{
-}
+{ GTK_CELL_RENDERER (bcell)->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE; }
 
 static void free_pixbuf (YGtkCellRendererSideButton *cell)
 {
@@ -117,6 +116,8 @@ static void ygtk_cell_renderer_side_button_render (
 	gint icon_width, icon_height;
 	if (bcell->button_visible) {
 		gtk_icon_size_lookup (GTK_ICON_SIZE_BUTTON, &icon_width, &icon_height);
+		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+			text_area.x += icon_width + 8;
 		text_area.width -= icon_width + 8 + 4;
 	}
 	GTK_CELL_RENDERER_CLASS (ygtk_cell_renderer_side_button_parent_class)->render (
@@ -135,11 +136,13 @@ static void ygtk_cell_renderer_side_button_render (
 		}
 
 		GdkRectangle button_area = *cell_area;
-		button_area.x = cell_area->x + cell_area->width - icon_width - 8;
+		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+			button_area.x = cell_area->x + 2;
+		else
+			button_area.x = cell_area->x + cell_area->width - icon_width - 8;
 		button_area.width = icon_width + 4;
 		button_area.height = icon_height + 4;
 		button_area.y = cell_area->y + ((cell_area->height - button_area.height) / 2);
-
 		gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
 			"button", button_area.x, button_area.y, button_area.width, button_area.height);
 
@@ -164,8 +167,26 @@ static gboolean ygtk_cell_renderer_side_button_activate (
 	GtkCellRenderer *cell, GdkEvent *event, GtkWidget *widget, const gchar *path,
 	GdkRectangle *background_area, GdkRectangle *cell_area, GtkCellRendererState flags)
 {
-	g_signal_emit (cell, toggle_cell_signal, 0, path);
-	return TRUE;
+// FIXME: only emit signal if the button (and not the text) has been pressed
+fprintf (stderr, "cell_area->x: %d\n", cell_area->x);
+	YGtkCellRendererSideButton *bcell = YGTK_CELL_RENDERER_SIDE_BUTTON (cell);
+	if (bcell->button_visible) {
+		GdkEventButton *_event = (GdkEventButton *) event;
+		gint icon_width, icon_height;
+		gtk_icon_size_lookup (GTK_ICON_SIZE_BUTTON, &icon_width, &icon_height);
+fprintf (stderr, "button pressed at: %f\n", _event->x);
+		int icon_x, x = _event->x - cell_area->x;
+		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
+			icon_x = 2;
+		else
+			icon_x = cell_area->width - (icon_width+12);
+		icon_width += 8;
+		if (x >= icon_x && x <= icon_x + icon_width) {
+			g_signal_emit (cell, toggle_cell_signal, 0, path);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 GtkCellRenderer *ygtk_cell_renderer_side_button_new (void)

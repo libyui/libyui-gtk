@@ -1,3 +1,36 @@
+2010-02-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.cc: increased default width by 50 px.
+
+	* src/YGPackageSelectorPluginStub.cc: got rid of the
+	flags.
+
+	* src/YGUtils.h/cc: new utilities: compare end of
+	two strings, set a pixbuf gray, implement a generic
+	callback so to render a separator when an empty row
+	is used in a combo-box or a tree-view.
+
+	* src/ygtkrichtext.cc: if "<img src=" is a relative
+	path, then use GtkIconTheme. Also added a bgcolor
+	attribute to "<font>" for internal use.
+
+	* src/pkg/yzyppwrapper.h/cc: re-wrote our wrapper.
+	Makes it easier to integrate crude zypp code.
+
+	* src/pkg/ygtkcellrendererbutton.c &
+	ygtkcellrenderersidebutton.c: fixes.
+
+	* src/pkg/YGPackageSelector.cc: bunch of cleanups and
+	some UI changes.
+
+	* src/pkg/ygtkpkgdetailview.h/cc, src/pkg/ygtkpkglistview.h/cc,
+	src/pkg/ygtkpkgfilterview.h/cc, src/pkg/ygtkpkgundolist.h/cc,
+	src/pkg/ygtkpkgmenubar.h/cc, src/pkg/ygtkpkgstatusbar.h/cc,
+	src/pkg/ygtkpkgpatternview.h/cc, src/pkg/ygtkpkglanguageview.h/cc,
+	src/pkg/ygtkpkgproductdialog.h/cc, src/pkg/ygtkpkgquerycombo.h/cc,
+	src/pkg/ygtkpkgsearchentry.h/cc: modified and added a bunch
+	of widgets.
+
 2010-01-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.h/c: touched up steps look.

@@ -2,108 +2,160 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-/* A simplification of libzypp's API.
+/* Simplifies, unifies and extends libzypp's API.
 
-   To get a list of packages, setup a Query object and create a PkgQuery with
-   it. Package has a set of manipulation methods, the results of which are
-   then reported to PkgList listeners, which you can choose to act on your
-   interface, if you want them reflected on the viewer.
-   Iterate PkgList using integers (it's actually a vector).
+   Several classes are available to wrap around common Zypp objects
+   in order to simplify or extend them. These methods can be interwined
+   with direct libzypp use, but you should call Ypp::notifySelModified()
+   to broadcast any change to a selectable.
 
-   You must register an object that implements Interface, as some transactions
-   are bound by user decisions. Ypp is a singleton; first call to get() will
-   initialize it; you should call finish() when you're done to de-allocate
-   caches.
+   Use Ypp::QueryPool to iterate through the Selectable pool.
+   It extends zypp::PoolQuery by adding the possibility to add
+   custom criterias for filtering, to be apply endogenously.
+
+   If you need to iterate through it several times, you can create
+   a Ypp::List out of it. This random-access list can be manually
+   manipulated with several available methods such as for sorting.
+   The list is ref-counted so you can easily and freely hold it at
+   several widgets.
+   In order to inspect several common properties of a group of packages,
+   pass a list to Ypp::ListProps.
+
+   Usage example (unlock all packages):
+
+       Ypp::PoolQuery query (Ypp::Selectable::PACKAGE_TYPE);
+       query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::IS_LOCKED));
+
+       Ypp::List list (query);
+       list.unlock();
+
+   You are advised to register an Ypp::Interface implementation as some
+   transactions are bound by user decisions. Call Ypp::init() and
+   Ypp::finish() when you begin or are done (respectively) using these
+   methods.
+   Use Ypp::addSelListener() to be notified of any 'selectable' change.
 */
 
 #ifndef ZYPP_WRAPPER_H
 #define ZYPP_WRAPPER_H
 
+#include <zypp/ZYppFactory.h>
+#include <zypp/ResObject.h>
+#include <zypp/ResKind.h>
+#include <zypp/ResPoolProxy.h>
+#include <zypp/PoolQuery.h>
+#include <zypp/ui/Selectable.h>
+#include <zypp/Patch.h>
+#include <zypp/Package.h>
+#include <zypp/Pattern.h>
+#include <zypp/Product.h>
+#include <zypp/Repository.h>
+#include <zypp/RepoManager.h>
+#include <zypp/sat/LocaleSupport.h>
 #include <string>
 #include <list>
+#include "yzypptags.h"
 
-enum MarkupType {
-	HTML_MARKUP, GTK_MARKUP, NO_MARKUP
-};
+typedef zypp::ResPool             _ZyppPool;
+typedef zypp::ResPoolProxy        ZyppPool;
+inline ZyppPool zyppPool() { return zypp::getZYpp()->poolProxy(); }
+inline _ZyppPool _zyppPool() { return zypp::getZYpp()->pool(); }
+typedef zypp::ResObject::constPtr ZyppResObject;
+typedef zypp::ResObject*          ZyppResObjectPtr;
+typedef zypp::ui::Selectable::Ptr ZyppSelectable;
+typedef zypp::ui::Selectable*     ZyppSelectablePtr;
+typedef zypp::Package::constPtr   ZyppPackage;
+typedef zypp::Patch::constPtr     ZyppPatch;
+typedef zypp::Pattern::constPtr   ZyppPattern;
+typedef zypp::Repository          ZyppRepository;
+typedef zypp::PoolQuery           ZyppQuery;
+typedef zypp::sat::SolvAttr       ZyppAttribute;
+typedef zypp::ByteCount           Size_t;
 
-struct Ypp
+inline ZyppPackage castZyppPackage (ZyppResObject obj)
+{ return zypp::dynamic_pointer_cast <const zypp::Package> (obj); }
+inline ZyppPatch castZyppPatch (ZyppResObject obj)
+{ return zypp::dynamic_pointer_cast <const zypp::Patch> (obj); }
+inline ZyppPattern castZyppPattern (ZyppResObject obj)
+{ return zypp::dynamic_pointer_cast <const zypp::Pattern> (obj); }
+
+namespace Ypp
 {
-	struct Repository;
+	struct List;
 
-	// Utilities
-	struct Node {
-		std::string name, order;
-		const char *icon;
-		Node *next();
-		Node *child();
-		void *impl;
+	// Repositories setup
+
+	struct Repository {
+		// merges zypp::Repository and zypp::RepoInfo -- the first are
+		// the actual repository structure (which includes only the
+		// enabled ones), the others are from the setup file.
+
+		Repository (zypp::Repository repo);
+		Repository (zypp::RepoInfo repo);
+		std::string name();
+		std::string url();
+		bool enabled();
+		bool isOutdated();
+		bool isSystem();
+
+		bool operator == (const Repository &other) const;
+
+		ZyppRepository &zyppRepo() { return m_repo; }
+
+		private:
+			ZyppRepository m_repo;
+			zypp::RepoInfo m_repo_info;
+			bool m_onlyInfo;
 	};
 
-	// Entries
-	struct Package {
+	// Selectable & related funcs
+
+	struct Version {
+		Version (ZyppResObject obj);
+
+		std::string number();
+		std::string arch();
+		Repository repository();
+
+		Size_t size();
+		Size_t downloadSize();
+
+		bool operator < (Version &other);
+		bool operator > (Version &other);
+		bool operator == (Version &other);
+
+		ZyppResObject zyppObj() { return m_resobj; }
+
+		private:
+			ZyppResObject m_resobj;
+	};
+
+	struct Selectable {
 		enum Type {
-			PACKAGE_TYPE, PATTERN_TYPE, LANGUAGE_TYPE, PATCH_TYPE, TOTAL_TYPES
+			PACKAGE, PATTERN, LANGUAGE, PATCH, ALL
 		};
+		static zypp::ResKind asKind (Type type);
+		static Type asType (zypp::ResKind kind);
 
-		Type type() const;
-		const std::string &name() const;
-		const std::string &summary();
-		Node *category();
-		Node *category2();
-		bool containsPackage (const Ypp::Package *package) const;
-		bool fromCollection (const Ypp::Package *collection) const
-		{ return collection->containsPackage (this); }
-		void containsStats (int *installed, int *total) const;
+		Selectable (ZyppSelectable sel);
+		Selectable (zypp::Locale locale);
 
-		std::string description (MarkupType markup);
-		std::string filelist (MarkupType markup);
-		std::string changelog();
-		std::string authors (MarkupType markup);
-		std::string support();
-		std::string supportText (MarkupType markup);
-		std::string size();
-		std::string icon();
-		std::string license();
-		std::string installedDate();
-		std::string candidateDate();
-		bool isRecommended() const;
-		bool isSuggested() const;
-		int buildAge() const;  // if < 0 , unsupported or error
-		bool isSupported() const;
-		int severity() const;
-		static std::string severityStr (int id);
+		Type type();
+		std::string name();
+		std::string summary();
+		std::string description (bool as_html);
 
-		std::string provides (MarkupType markup) const;
-		std::string requires (MarkupType markup) const;
-
-		bool getPropertyBool (const std::string &prop);
-		int getPropertyInt (const std::string &prop);
-		std::string getPropertyStr (const std::string &prop, MarkupType markup = NO_MARKUP);
-
-		struct Version {
-			std::string number, arch;
-			const Repository *repo;
-			int cmp /* relatively to installed -- ignore if not installed */;
-			void *impl;
-		};
-		const Version *getInstalledVersion();
-			// available versions order is not specified
-			// however the most recent version is ensured to be placed as nb==0
-		const Version *getAvailableVersion (int nb);
-		  // convenience -- null if not from repo:
-		const Version *fromRepository (const Repository *repo);
+		bool userVisible();
 
 		bool isInstalled();
 		bool hasUpgrade();
 		bool isLocked();
-
-		bool toInstall (const Version **version = 0);
+		bool toInstall();
 		bool toRemove();
 		bool toModify();
-		bool isAuto(); /* installing/removing cause of dependency */
+		bool toModifyAuto();
 
-		void install (const Version *version);  // if installed, will re-install
-		                                        // null for most recent version
+		void install();  // installs candidate
 		void remove();
 		void undo();
 		void lock (bool lock);
@@ -111,144 +163,74 @@ struct Ypp
 		bool canRemove();
 		bool canLock();
 
-		struct Impl;
-		Impl *impl;
-		Package (Impl *impl);
-		~Package();
+		Version installed();
+		Version candidate();
+		void setCandidate (Version &version);
+		int availableSize();
+		Version available (int n);
+		Version anyVersion();
+
+		bool operator == (const Selectable &other) const;
+		bool operator != (const Selectable &other) const;
+
+		ZyppSelectable zyppSel() { return m_sel; }
+		zypp::Locale zyppLocale() { return m_locale; }
+
+		private:
+			Type m_type;
+			ZyppSelectable m_sel;
+			zypp::Locale m_locale;
 	};
 
-	// when installing/removing/... a few packages at a time, you should use this pair,
-	// so that the problem resolver gets only kicked after they are all queued
-	void startTransactions();
-	void finishTransactions();
+	struct Collection {
+		Collection (Selectable &sel);
+		bool contains (Selectable &sel);
+		void stats (int *installed, int *total);
 
-	// Listing
-	// this class and all proper subclassed are refcounted
-	struct PkgList {  // NOTE: this is actually implemented as a vector
-		Package *get (int index) const;
-		bool highlight (Ypp::Package *pkg) const;  // applicable to some subclasses only
-		int size() const;
+		Ypp::List *getContent();  // cached
 
-		void reserve (int size);
-		void append (Package *package);
-		void sort (bool (* order) (Package *, Package *) = 0);
-		void sort_by_property (const std::string &prop, bool as_int);
-		void remove (int index);
-		void copy (const PkgList list);  // will only copy entry for which match() == true
+		Selectable &asSelectable() { return m_sel; }
 
-		bool contains (const Package *package) const;
-		int find (const Package *package) const;  // -1 if not found
-		Package *find (const std::string &name) const;
-
-		// NOTE: checks if both lists point to the same memory space, not equal contents
-		bool operator == (const PkgList &other) const;
-
-		// common properties (nomenclature used from Ypp::Package)
-		// NOTE: there is a hit first time one of these methods is used
-		// FIXME: we might move these methods into some "ListProps" structure
-		bool isInstalled() const;
-		bool isNotInstalled() const;
-		bool hasUpgrade() const;
-		bool toModify() const;
-		bool isLocked() const;
-		bool isUnlocked() const;
-		bool canRemove() const;
-		bool canLock() const;
-		void refreshProps();
-
-		// actions
-		// NOTE: can take time (depending on size); show busy cursor
-		void install(); // or upgrade
-		void remove();
-		void lock (bool toLock);
-		void undo();
-
-		// a Listener can be plugged for when an entry gets modified
-		// -- Inserted and Deleted are only available for particular subclasses
-		struct Listener {
-			virtual void entryChanged  (const PkgList list, int index, Package *package) = 0;
-			virtual void entryInserted (const PkgList list, int index, Package *package) = 0;
-			virtual void entryDeleted  (const PkgList list, int index, Package *package) = 0;
-		};
-		void addListener (Listener *listener) const;
-		void removeListener (Listener *listener) const;
-		// FIXME: listeners only works for getPackages() lists and PkgQuery ones.
-
-		struct Impl;
-		Impl *impl;
-		PkgList();
-		PkgList (Impl *);  // sub-class (to share refcount)
-		PkgList (const PkgList &other);
-		PkgList & operator = (const PkgList &other);
-		virtual ~PkgList();
+		private:
+			Selectable m_sel;
 	};
 
-	// listing of packages as filtered
-	struct QueryBase {
-		virtual ~QueryBase() {}
-		virtual bool match (Package *) = 0;
-	};
-	struct QueryAnd : public QueryBase {
-		QueryAnd();
-		void add (QueryBase *query);
+	struct Package {
+		Package (Selectable &sel);
+		int support();
+		static int supportTotal();
+		static std::string supportSummary (int support);
+		static std::string supportDescription (int support);
 
-		virtual ~QueryAnd();
-		virtual bool match (Package *);
-		struct Impl;
-		Impl *impl;
-	};
-	struct QueryOr : public QueryBase {
-		QueryOr();
-		void add (QueryBase *query);
+		YPkgGroupEnum group();
+		std::string rpm_group();
 
-		virtual ~QueryOr();
-		virtual bool match (Package *);
-		struct Impl;
-		Impl *impl;
-	};
-	struct QueryProperty : public QueryBase {
-		QueryProperty (const std::string &property, bool value);
-		QueryProperty (const std::string &property, int value);
-		QueryProperty (const std::string &property, const std::string &value, bool case_sensitive, bool whole_word);
-
-		virtual ~QueryProperty();
-		virtual bool match (Package *);
-		struct Impl;
-		Impl *impl;
-	};
-	struct QueryCategory : public QueryBase {
-		QueryCategory (const Node *category, bool category2);
-
-		virtual ~QueryCategory();
-		virtual bool match (Package *);
-		struct Impl;
-		Impl *impl;
-	};
-	struct QueryRepository : public QueryBase {
-		QueryRepository (const Repository *repository);
-
-		virtual bool match (Package *);
-		const Repository *repo;
-	};
-	struct QueryCollection : public QueryBase {
-		QueryCollection (const Ypp::Package *collection);
-
-		virtual bool match (Package *);
-		const Ypp::Package *collection;
+		private:
+			Selectable m_sel;
 	};
 
-	struct PkgQuery : public PkgList {
-		PkgQuery (const PkgList list, QueryBase *query);
-		PkgQuery (Package::Type type, QueryBase *query);  // shortcut
+	struct Patch {
+		Patch (Selectable &sel);
+		int priority();
+		static int priorityTotal();
+		static const char *prioritySummary (int priority);
+		static const char *priorityIcon (int priority);
 
-		struct Impl;
-		Impl *impl;
+		private:
+			Selectable m_sel;
 	};
 
-	// list primitives
-	const PkgList getPackages (Package::Type type);
+	struct SelListener {
+		// a selectable modification has ripple effects; we don't bother
+		// detecting them
+		virtual void selectableModified() = 0;
+	};
 
-	// Resolver
+	void addSelListener (SelListener *listener);
+	void removeSelListener (SelListener *listener);
+
+	void notifySelModified();
+
 	struct Problem {
 		std::string description, details;
 		struct Solution {
@@ -260,85 +242,231 @@ struct Ypp
 		void *impl;
 	};
 
-	// Log
-	struct Log {
-		struct Entry {
-			enum Action { INSTALL_ACTION, REMOVE_ACTION };
-			Action action;
-			std::string date;
-			std::string package_str;
-			std::string version_str;
+	bool runSolver();  // manual run -- if resolved (or user canceled)
+	void setAutoSolver (bool enabled);  // enabled by default
+	bool isAutoSolver();
 
-			// attemps to match the strings: could be null
-			Package *package;
-			const Package::Version *version;  // only may be set for INSTALL
-		};
-
-		Entry *getEntry (int nb);
-
-		struct Impl;
-		Impl *impl;
-		Log();
-		~Log();
-	};
-	Log *getLog();
-
-	// Module
-	static Ypp *get();
-	static void finish();
+	// suspends solver while installing/removing a few packages at a time
+	void startTransactions();
+	void finishTransactions();
 
 	struct Interface {
-		virtual bool acceptLicense (Package *package, const std::string &license) = 0;
-		virtual void notifyMessage (Package *package, const std::string &message) = 0;
+		virtual bool acceptLicense (Selectable &sel, const std::string &license) = 0;
+		virtual bool displayMessage (Selectable &sel, const std::string &message) = 0;
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
-		virtual bool allowRestrictedRepo (const PkgList list) = 0;
-		virtual void loading (float progress) = 0;
 	};
+
 	void setInterface (Interface *interface);
 
-	// Repositories
-	struct Repository {
-		std::string name, url, alias /*internal use*/;
-		bool enabled;
+	// Pool selectables
+
+	struct Match {
+		virtual bool match (Selectable &sel) = 0;
+		virtual ~Match() {}
 	};
-	const Repository *getRepository (int nb);
-	void setFavoriteRepository (const Repository *repo);  /* 0 to disable restrictions */
-	const Repository *favoriteRepository();
 
-	// Misc
-	Node *getFirstCategory (Package::Type type);
-	Node *getFirstCategory2 (Package::Type type);
+	struct StrMatch : public Match {
+		// exclusive match -- zypp only supports or'ed strings
+		// you can combine attributes (inclusive)
+		enum Attribute {
+			NAME = 0x1, SUMMARY = 0x2, DESCRIPTION = 0x4
+		};  // use regular zypp methods for other attributes
+		StrMatch (int attrbs);
+		void add (const std::string &str);
+		virtual bool match (Selectable &sel);
 
-	struct Disk {
-		struct Partition {
-			std::string path, used_str, delta_str, free_str, total_str;
-			long long used, delta, total;
-		};
-		const Partition *getPartition (int nb);
-
-		struct Listener {
-			virtual void updateDisk() = 0;
-		};
-		void addListener (Listener *listener);
-
-		Disk();
-		~Disk();
+		virtual ~StrMatch();
 		struct Impl;
 		Impl *impl;
 	};
-	Disk *getDisk();
 
-	bool isModified();  // any change made?
+	struct StatusMatch : public Match {
+		enum Status {
+			IS_INSTALLED, NOT_INSTALLED, HAS_UPGRADE, IS_LOCKED, TO_MODIFY
+		};
+		StatusMatch (Status status);
+		virtual bool match (Selectable &sel);
 
-	bool importList (const char *filename);
-	bool exportList (const char *filename);
-	bool createSolverTestcase (const char *dirname);
+		private: Status m_status;
+	};
 
-	Ypp();
-	~Ypp();
-	struct Impl;
-	Impl *impl;
+	struct PKGroupMatch : public Match {
+		PKGroupMatch (YPkgGroupEnum group);
+		virtual bool match (Selectable &sel);
+
+		private: YPkgGroupEnum m_group;
+	};
+
+	struct RpmGroupMatch : public Match {
+		RpmGroupMatch (const std::string &group);
+		virtual bool match (Selectable &sel);
+
+		private: std::string m_group;
+	};
+
+	struct CollectionMatch : public Match {
+		CollectionMatch (Collection &col);
+		virtual bool match (Selectable &sel);
+
+		private: Collection m_collection;
+	};
+
+	struct SupportMatch : public Match {
+		SupportMatch (int n) : m_n (n) {}
+		virtual bool match (Selectable &sel)
+		{ return Package (sel).support() == m_n; }
+		private: int m_n;
+	};  // we should replace some of these stuff by generic properties
+
+	struct PriorityMatch : public Match {
+		PriorityMatch (int n) : m_n (n) {}
+		virtual bool match (Selectable &sel)
+		{ return Patch (sel).priority() == m_n; }
+		private: int m_n;
+	};
+
+	struct Query {
+		virtual void addCriteria (Match *match) = 0;  // to be free'd by Query
+		virtual bool hasNext() = 0;
+		virtual Selectable next() = 0;
+		virtual int guessSize() = 0;  // only knows for sure after iterating
+	};
+
+	struct PoolQuery : public Query {
+		PoolQuery (Selectable::Type type);  // for languages, use LangQuery
+		~PoolQuery();
+
+		enum MatchType {
+			CONTAINS, EXACT, GLOB, REGEX
+		};
+		enum StringAttribute {
+			NAME, SUMMARY, DESCRIPTION, FILELIST, PROVIDES, REQUIRES,
+		};
+		void setStringMode (bool caseSensitive, MatchType type);
+		void addStringAttribute (StringAttribute attrb);
+		void addStringOr (const std::string &str);
+
+		void addRepository (Repository &repository);
+
+		virtual void addCriteria (Match *match);  // exclusive
+
+		virtual bool hasNext();  // only after setup
+		virtual Selectable next();
+		virtual int guessSize();
+
+		ZyppQuery &zyppQuery();
+		Selectable::Type poolType();
+
+		struct Impl;
+		Impl *impl;
+		private:  // prevent copy
+			PoolQuery (const PoolQuery&); PoolQuery &operator= (const PoolQuery&);
+	};
+
+	struct LangQuery : public Query {
+		LangQuery();
+		~LangQuery();
+
+		virtual void addCriteria (Match *match) {} /* not yet supported */
+		virtual bool hasNext();
+		virtual Selectable next();
+		virtual int guessSize();
+
+		struct Impl;
+		Impl *impl;
+
+		private:  // prevent copy
+			LangQuery (const LangQuery&); LangQuery &operator= (const LangQuery&);
+	};
+
+	// Aggregators
+
+	struct List {
+		List (Query &query);
+		List (int reserve);
+		~List();
+		List clone();
+
+		Selectable &get (int index);
+		int size();
+
+		int count (Match *match);
+		int find (const std::string &name);
+		int find (Selectable &sel);
+
+		void reserve (int size);
+		void append (Selectable sel);
+
+		void install();
+		void remove();
+		void lock (bool lock);
+		void undo();
+
+		enum SortAttribute {
+			IS_INSTALLED_SORT, NAME_SORT, SIZE_SORT, REPOSITORY_SORT, SUPPORT_SORT
+		};
+		void sort (SortAttribute attrb, bool ascendent);
+		void reverse();
+
+		bool operator == (const Ypp::List &other) const;
+		bool operator != (const Ypp::List &other) const;
+
+		struct Impl;
+		Impl *impl;
+		List (const List&);  // ref-counted
+		List &operator= (const List&);
+	};
+
+	struct ListProps {
+		ListProps (List &list);
+		~ListProps();
+
+		bool isInstalled() const;
+		bool isNotInstalled() const;
+		bool hasUpgrade() const;
+		bool toModify() const;
+		bool isLocked() const;
+		bool isUnlocked() const;
+		bool canRemove() const;
+		bool canLock() const;
+
+		int isInstalledNb() const;
+		int isNotInstalledNb() const;
+		int hasUpgradeNb() const;
+		int isLockedNb() const;
+		int toModifyNb() const;
+
+		struct Impl;
+		Impl *impl;
+		private:  // prevent copy
+			ListProps (const ListProps&); ListProps &operator= (const ListProps&);
+
+	};
+
+	// Misc utilities
+
+	struct Busy {
+		// pass 0 as size to only show busy cursor
+		Busy (int size);
+		~Busy();
+		void inc();
+
+		struct Impl;
+		Impl *impl;
+		private:  // prevent copy
+			Busy (const Busy&); Busy &operator= (const Busy&);
+	};
+
+	struct BusyListener {
+		virtual void loading (float progress) = 0;
+	};
+
+	void setBusyListener (BusyListener *listener);
+
+	void init();  // ensures the floor is clean
+	void finish();  // ensures the floor is clean
+	bool isModified();  // anything changed?
 };
 
 #endif /*ZYPP_WRAPPER_H*/
