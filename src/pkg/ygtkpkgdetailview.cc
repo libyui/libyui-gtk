@@ -15,6 +15,7 @@
 #include "YGPackageSelector.h"
 #include "ygtkrichtext.h"
 #include "ygtkpkgsearchentry.h"
+#include "ygtkpkglistview.h"
 #include <YStringTree.h>
 
 #define BROWSER_BIN "/usr/bin/firefox"
@@ -22,6 +23,9 @@
 
 static const char *onlyInstalledMsg =
 	_("<i>Information only available for installed packages.</i>");
+
+static const char *keywordOpenTag = "<font color=\"#000000\" bgcolor=\"#ffff00\">";
+static const char *keywordCloseTag = "</font>";
 
 struct DetailWidget {
 	virtual ~DetailWidget() {}
@@ -115,6 +119,20 @@ struct DetailDescription : public DetailWidget {
 		if (list.size() == 1) {
 			Ypp::Selectable &sel = list.get (0);
 			str = sel.description (true);
+
+			YGtkPkgSearchEntry *search = YGPackageSelector::get()->getSearchEntry();
+			if (search->getAttribute() == Ypp::PoolQuery::DESCRIPTION) {
+				std::list <std::string> keywords;
+				keywords = YGPackageSelector::get()->getSearchEntry()->getText();
+				highlightMarkup (str, keywords, keywordOpenTag, keywordCloseTag,
+					strlen (keywordOpenTag), strlen (keywordCloseTag));
+			}
+
+			if (sel.type() == Ypp::Selectable::PACKAGE) {
+				std::string url (Ypp::Package (sel).url());
+				str += std::string ("<p><b>") + _("Web site:") + "</b> <a href=\"" +
+					url + "\">" + url + "</a></p>";
+			}
 		}
 		else {
 			if (list.size() > 0) {
@@ -125,6 +143,7 @@ struct DetailDescription : public DetailWidget {
 			}
 		}
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
+fprintf (stderr, "description text: %s\n\n\n", str.c_str());
 	}
 
 	static void link_clicked_cb (YGtkRichText *text, const gchar *link, DetailDescription *pThis)
@@ -296,6 +315,12 @@ struct DetailsExpander : public DetailExpander {
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
 };
+
+typedef zypp::ResPoolProxy::const_iterator	ZyppPoolIterator;
+inline ZyppPoolIterator zyppSrcPkgBegin()
+{ return zyppPool().byKindBegin<zypp::SrcPackage>();	}
+inline ZyppPoolIterator zyppSrcPkgEnd()
+{ return zyppPool().byKindEnd<zypp::SrcPackage>();	}
 
 struct VersionExpander : public DetailExpander {
 	GtkWidget *box, *versions_box, *button, *undo_button;
@@ -755,10 +780,10 @@ struct DependenciesExpander : public DetailExpander {
 				if (dep == 0 || dep == 2)
 					ret += "<a href=\"" + str + "\">";
 				if (highlight)
-					ret += "<font color=\"#000000\" bgcolor=\"#ffff00\">";
+					ret += keywordOpenTag;
 				ret += str;
 				if (highlight)
-					ret += "</font>";
+					ret += keywordCloseTag;
 				if (dep == 0 || dep == 2)
 					ret += "</a>";
 			}
@@ -869,10 +894,10 @@ struct FilelistExpander : public DetailExpander {
 
 								bool highlight = (basename == keyword);
 								if (highlight)
-									text += "<font color=\"#000000\" bgcolor=\"#ffff00\">";
+									text += keywordOpenTag;
 								text += basename;
 								if (highlight)
-									text += "</font>";
+									text += keywordCloseTag;
 							 }
 
 						text += "</blockquote>";

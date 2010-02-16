@@ -1,3 +1,15 @@
+2010-02-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkpkglistview.h/cc: added tags as parameters to
+	highlightMarkup().
+
+	* src/ygtkpkgdetailview.cc: highlight description attribute.
+
+	* src/yzyppwrapper.h/cc: moved website text from
+	Selectable::description() to Package::url()
+
+	* src/ygtkpkglistview.cc: version as red for orphan too.
+
 2010-02-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: increased default width by 50 px.

@@ -202,6 +202,8 @@ namespace Ypp
 		static std::string supportSummary (int support);
 		static std::string supportDescription (int support);
 
+		std::string url();
+
 		YPkgGroupEnum group();
 		std::string rpm_group();
 

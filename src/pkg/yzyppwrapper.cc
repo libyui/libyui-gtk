@@ -157,12 +157,6 @@ std::string Ypp::Selectable::description (bool as_html)
 					YGUtils::replace (text, "\n\n", 2, "<br>");
 				text += br;
 			}
-
-			ZyppPackage package = castZyppPackage (m_sel->theObj());
-			std::string url = package->url();
-			if (!url.empty() && as_html)
-				text += std::string ("<p><b>") + _("Web site:") + "</b> <a href=\"" +
-					url + "\">" + url + "</a></p>";
 			break;
 		}
 		case PATCH: {
@@ -584,6 +578,12 @@ std::string Ypp::Package::supportSummary (int support)
 
 std::string Ypp::Package::supportDescription (int support)
 { return zypp::asUserStringDescription (asSupportOpt (support)); }
+
+std::string Ypp::Package::url()
+{
+	ZyppPackage package = castZyppPackage (m_sel.zyppSel()->theObj());
+	return package->url();
+}
 
 YPkgGroupEnum Ypp::Package::group()
 {

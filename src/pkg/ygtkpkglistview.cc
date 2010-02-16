@@ -81,7 +81,7 @@ protected:
 		switch (col) {
 			case NAME_PROP: {
 				std::string str (sel.name());
-				highlightMarkup (str, m_keywords);
+				highlightMarkupSpan (str, m_keywords);
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -93,7 +93,7 @@ protected:
 					summary = YGUtils::escapeMarkup (summary);
 					str += "\n<small>" + summary + "</small>";
 				}
-				highlightMarkup (str, m_keywords);
+				highlightMarkupSpan (str, m_keywords);
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -142,7 +142,8 @@ protected:
 				std::string str;
 				str.reserve (128);
 				int cmp = 0;
-				if (sel.availableSize() > 0) {
+				bool hasAvailable = sel.availableSize() > 0;
+				if (hasAvailable) {
 					Ypp::Version candidate = sel.candidate();
 					if (sel.isInstalled()) {
 						Ypp::Version installed = sel.installed();
@@ -156,9 +157,15 @@ protected:
 					str += "<span color=\"blue\">";
 				else if (cmp < 0)
 					str += "<span color=\"red\">";
+
 				if (cmp == 0) {
-					if (sel.isInstalled())
+					if (sel.isInstalled()) {
+						if (!hasAvailable)  // red for orphan too
+							str += "<span color=\"red\">";
 						str += sel.installed().number();
+						if (!hasAvailable)
+							str += "</span>";
+					}
 					else
 						str += sel.candidate().number();
 				}
@@ -168,6 +175,7 @@ protected:
 					str += sel.installed().number();
 					str += "</small>";
 				}
+fprintf (stderr, "version: %s\n", str.c_str());
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -853,11 +861,9 @@ const char *getRepositoryStockIcon (Ypp::Repository &repo)
 	return icon;
 }
 
-void highlightMarkup (std::string &text, const std::list <std::string> &keywords)
+void highlightMarkup (std::string &text, const std::list <std::string> &keywords,
+                      const char *openTag, const char *closeTag, int openTagLen, int closeTagLen)
 {
-	static const char openTag[] = "<span fgcolor=\"#000000\" bgcolor=\"#ffff00\">";
-	static const char closeTag[] = "</span>";
-
 	if (keywords.empty()) return;
 	for (std::list <std::string>::const_iterator it = keywords.begin();
 	     it != keywords.end(); it++) {
@@ -867,8 +873,15 @@ void highlightMarkup (std::string &text, const std::list <std::string> &keywords
 			int pos = c - text.c_str(), len = keyword.size();
 			text.insert (pos+len, closeTag);
 			text.insert (pos, openTag);
-			c = text.c_str() + pos + len + sizeof (openTag) + sizeof (closeTag) - 2;
+			c = text.c_str() + pos + len + openTagLen + closeTagLen - 2;
 		}
 	}
+}
+
+void highlightMarkupSpan (std::string &text, const std::list <std::string> &keywords)
+{
+	static const char openTag[] = "<span fgcolor=\"#000000\" bgcolor=\"#ffff00\">";
+	static const char closeTag[] = "</span>";
+	highlightMarkup (text, keywords, openTag, closeTag, sizeof (openTag), sizeof (closeTag));
 }
 
