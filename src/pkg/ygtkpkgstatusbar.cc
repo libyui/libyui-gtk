@@ -279,7 +279,7 @@ struct DiskChange {
 		gtk_label_set_selectable (GTK_LABEL (text), TRUE);
 
 		hbox = gtk_hbox_new (FALSE, 4);
-		gtk_box_pack_start (GTK_BOX (hbox), gtk_label_new (_("Size available:")), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), gtk_label_new (_("Space available:")), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), combo, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), text, FALSE, TRUE, 0);
 	}

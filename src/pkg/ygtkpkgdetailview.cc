@@ -130,8 +130,9 @@ struct DetailDescription : public DetailWidget {
 
 			if (sel.type() == Ypp::Selectable::PACKAGE) {
 				std::string url (Ypp::Package (sel).url());
-				str += std::string ("<p><b>") + _("Web site:") + "</b> <a href=\"" +
-					url + "\">" + url + "</a></p>";
+				if (!url.empty())
+					str += std::string ("<p><b>") + _("Web site:") + "</b> <a href=\"" +
+						url + "\">" + url + "</a></p>";
 			}
 		}
 		else {
@@ -266,8 +267,10 @@ struct DetailExpander : public DetailWidget {
 
 	virtual void refreshList (Ypp::List list)
 	{
-		dirty = true;
-		updateList();
+		if (gtk_expander_get_expanded (GTK_EXPANDER (expander)))
+			showRefreshList (list);
+		else
+			dirty = true;
 	}
 
 	static void expanded_cb (GObject *object, GParamSpec *param_spec, DetailExpander *pThis)
@@ -278,6 +281,7 @@ struct DetailExpander : public DetailWidget {
 
 	// use this method to only request data when/if necessary; so to speed up expander children
 	virtual void showList (Ypp::List list) = 0;
+	virtual void showRefreshList (Ypp::List list) = 0;
 	virtual bool onlySingleList() = 0;  // show only when list.size()==1
 };
 
@@ -314,6 +318,8 @@ struct DetailsExpander : public DetailExpander {
 				zsel->candidateObj()->buildtime().form ("%x");
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
+
+	virtual void showRefreshList (Ypp::List list) {}
 };
 
 typedef zypp::ResPoolProxy::const_iterator	ZyppPoolIterator;
@@ -349,8 +355,8 @@ struct VersionExpander : public DetailExpander {
 		versions_box = gtk_vbox_new (FALSE, 2);
 
 		GtkWidget *button_box = gtk_hbox_new (FALSE, 6);
-		gtk_box_pack_end (GTK_BOX (button_box), button, FALSE, TRUE, 0);
 		gtk_box_pack_end (GTK_BOX (button_box), undo_button, FALSE, TRUE, 0);
+		gtk_box_pack_end (GTK_BOX (button_box), button, FALSE, TRUE, 0);
 
 		box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (box), versions_box, TRUE, TRUE, 0);
@@ -539,6 +545,9 @@ struct VersionExpander : public DetailExpander {
 		updateButton();
 	}
 
+	virtual void showRefreshList (Ypp::List list)
+	{ updateButton(); }
+
 	static void button_clicked_cb (GtkButton *button, VersionExpander *pThis)
 	{
 		if (pThis->list.size() == 1) {
@@ -554,7 +563,6 @@ struct VersionExpander : public DetailExpander {
 				sel.setCandidate (version);
 				sel.install();
 			}
-			Ypp::notifySelModified();
 		}
 		else {
 			Ypp::ListProps props (pThis->list);
@@ -716,6 +724,9 @@ struct DependenciesExpander : public DetailExpander {
 		gtk_widget_show_all (vbox);
 	}
 
+	virtual void showRefreshList (Ypp::List list)
+	{ showList (list); }
+
 	struct VersionDependencies {
 		VersionDependencies (Ypp::Version version)
 		: m_version (version) {}
@@ -818,6 +829,8 @@ struct FilelistExpander : public DetailExpander {
 		else
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg);
 	}
+
+	virtual void showRefreshList (Ypp::List list) {}
 
 	static void dirname_pressed_cb (GtkWidget *text, const gchar *link, FilelistExpander *pThis)
 	{
@@ -933,6 +946,8 @@ struct ChangelogExpander : public DetailExpander {
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg);
 	}
 
+	virtual void showRefreshList (Ypp::List list) {}
+
 	static std::string changelog (Ypp::Selectable &sel)
 	{
 		std::string text;
@@ -978,6 +993,8 @@ struct AuthorsExpander : public DetailExpander {
 		else
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
+
+	virtual void showRefreshList (Ypp::List list) {}
 
 	static std::string authors (Ypp::Selectable &sel)
 	{
@@ -1071,6 +1088,8 @@ struct ContentsExpander : public DetailExpander {
 		query.addCriteria (new Ypp::CollectionMatch (col));
 		view->setQuery (query);
 	}
+
+	virtual void showRefreshList (Ypp::List list) {}
 };
 
 struct YGtkPkgDetailView::Impl : public Ypp::SelListener

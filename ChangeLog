@@ -1,3 +1,11 @@
+2010-02-17 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc & src/pkg/ygtkpkglistview.h/cc:
+	experimented with highlight; touched up a bit.
+
+	* src/pkg/ygtkpkgdetailview.cc: version expander not working
+	as expected when candidate chosen.
+
 2010-02-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkpkglistview.h/cc: added tags as parameters to

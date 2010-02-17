@@ -175,7 +175,6 @@ protected:
 					str += sel.installed().number();
 					str += "</small>";
 				}
-fprintf (stderr, "version: %s\n", str.c_str());
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -266,7 +265,7 @@ struct YGtkPkgListView::Impl {
 		descriptiveTooltip (descriptiveTooltip), sort_attrb (default_sort_attrb),
 		ascendent (true), userModified (false) {}
 
-	void setList (Ypp::List _list, int _attrb, bool _ascendent, bool userSorted)
+	void setList (Ypp::List _list, int _attrb, bool _ascendent, bool userSorted, const std::list <std::string> &keywords)
 	{
 		if (userSorted) userModified = true;
 		if (_list != list || sort_attrb != _attrb || ascendent != _ascendent) {
@@ -281,10 +280,10 @@ struct YGtkPkgListView::Impl {
 			ascendent = _ascendent;
 		}
 
-		GtkTreeModel *model = ygtk_zypp_model_new (list.clone(), m_keywords);
+		GtkTreeModel *model = ygtk_zypp_model_new (list.clone(), keywords);
 		gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 		g_object_unref (G_OBJECT (model));
-		setHighlight (m_keywords);
+		m_keywords = keywords;
 
 		if (userModified) {
 			GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (view));
@@ -303,6 +302,7 @@ struct YGtkPkgListView::Impl {
 		gtk_tree_view_set_search_column (GTK_TREE_VIEW (view), NAME_PROP);
 	}
 
+#if 0
 	void setHighlight (const std::list <std::string> &keywords)
 	{
 		if (m_keywords.empty() && keywords.empty())
@@ -313,6 +313,7 @@ struct YGtkPkgListView::Impl {
 		zmodel->setHighlight (keywords);
 		gtk_widget_queue_draw (view);
 	}
+#endif
 };
 
 static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListView *pThis)
@@ -541,7 +542,7 @@ static void column_clicked_cb (GtkTreeViewColumn *column, YGtkPkgListView *pThis
 	bool ascendent = true;
 	if (gtk_tree_view_column_get_sort_indicator (column))
 		ascendent = gtk_tree_view_column_get_sort_order (column) == GTK_SORT_DESCENDING;
-	pThis->impl->setList (pThis->impl->list, attrb, ascendent, true);
+	pThis->impl->setList (pThis->impl->list, attrb, ascendent, true, pThis->impl->m_keywords);
 }
 
 static void set_sort_column (YGtkPkgListView *pThis, GtkTreeViewColumn *column, int property)
@@ -604,14 +605,16 @@ GtkWidget *YGtkPkgListView::getView()
 void YGtkPkgListView::setQuery (Ypp::Query &query)
 { setList (Ypp::List (query)); }
 
-void YGtkPkgListView::setList (Ypp::List query)
+void YGtkPkgListView::setList (Ypp::List list)
 {
-	Ypp::List list (query);
-	impl->setList (list, impl->sort_attrb, impl->ascendent, false);
+	std::list <std::string> keywords;
+	impl->setList (list, impl->sort_attrb, impl->ascendent, false, keywords);
 }
 
-void YGtkPkgListView::setHighlight (const std::list <std::string> &keywords)
+void YGtkPkgListView::setList (Ypp::List list, const std::list <std::string> &keywords)
 {
+	impl->setList (list, impl->sort_attrb, impl->ascendent, false, keywords);
+
 	int index = keywords.size() == 1 ? impl->list.find (keywords.front()) : -1;
 	if (index != -1) {
 		GtkTreeView *view = GTK_TREE_VIEW (impl->view);
@@ -624,8 +627,6 @@ void YGtkPkgListView::setHighlight (const std::list <std::string> &keywords)
 	}
 	else if (GTK_WIDGET_REALIZED (impl->view))
 		gtk_tree_view_scroll_to_point (GTK_TREE_VIEW (impl->view), -1, 0);
-
-	impl->setHighlight (keywords);
 }
 
 void YGtkPkgListView::addTextColumn (const char *header, int property, bool visible, int size, bool identAuto)

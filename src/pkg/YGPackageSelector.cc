@@ -143,7 +143,7 @@ struct SuffixFilter : public Ypp::Match {
 			m_combo->add (_("Support"));
 			m_combo->add ("");
 			m_combo->add (_("Patterns"));
-			m_combo->add (_("Language"));
+			m_combo->add (_("Languages"));
 
 			int active = 5;
 			if (YGPackageSelector::get()->repoMode())
@@ -474,14 +474,11 @@ struct SuffixFilter : public Ypp::Match {
 		Ypp::List list (query);
 		m_list->setList (list);
 
-		YGUI::ui()->normalCursor();
 		if (YGPackageSelector::get()->breath()) return;
+		m_list->setList (list, keywords);
 
-		m_list->setHighlight (keywords);
+		if (YGPackageSelector::get()->breath()) return;
 		refreshToolbox();
-
-		if (YGPackageSelector::get()->breath()) return;
-
 		refreshFilters (list);
 	}
 
