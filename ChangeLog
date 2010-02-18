@@ -1,3 +1,8 @@
+2010-02-18  Martin Kudlvasr  <mkudlvasr@novell.com>
+
+	* tests/Firewall_bnc567505.ycp: add Ricardo's test for bnc#567505
+	* Version 2.17.16
+
 2010-01-29  Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: bug fix 567505: definite fix.

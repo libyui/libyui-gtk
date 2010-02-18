@@ -1,9 +1,8 @@
 -------------------------------------------------------------------
-Fri Jan 29 13:00:00 CET 2009 - mkudlvasr@novell.com
+Thu Feb 18 17:28:19 CET 2010 - mkudlvasr@suse.cz
 
-- crash on firewall tool (bnc#567505)
+- fix by rpmcruz: crash on firewall tool (bnc#567505)
 - Version 2.17.16
-
 
 -------------------------------------------------------------------
 Wed Nov 11 14:45:12 CET 2009 - mkudlvasr@novell.com
