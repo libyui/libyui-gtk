@@ -639,6 +639,33 @@ const char *Ypp::Patch::prioritySummary (int priority)
 	return 0;
 }
 
+// Disk
+
+std::vector <std::string> Ypp::getPartitionList()
+{
+	ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
+	std::vector <std::string> partitions;
+	partitions.reserve (diskUsage.size());
+	for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
+		const ZyppDu &point = *it;
+		if (!point.readonly)
+			partitions.push_back (point.dir);
+	}
+	std::sort (partitions.begin(), partitions.end());
+	return partitions;
+}
+
+const ZyppDu Ypp::getPartition (const std::string &mount_point)
+{
+	ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
+	for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
+		const ZyppDu &point = *it;
+		if (mount_point == point.dir)
+			return point;
+	}
+	return *zypp::getZYpp()->diskUsage().begin();  // error
+}
+
 // Busy
 
 static Ypp::BusyListener *g_busy_listener = 0;

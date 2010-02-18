@@ -76,9 +76,6 @@ G_BEGIN_DECLS
 typedef struct _YGtkColoredLabel
 {
 	GtkLabel parent;
-
-	// private
-	GtkShadowType shadow;
 } YGtkColoredLabel;
 
 typedef struct _YGtkColoredLabelClass
@@ -93,8 +90,6 @@ GType ygtk_colored_label_get_type (void) G_GNUC_CONST;
 // gtk_widget_modify_bg() instead), where colors range is [0, 255]
 void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkColor *color);
 void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkColor *color);
-
-void ygtk_colored_label_set_shadow (YGtkColoredLabel *label, gboolean set_shadow);
 
 G_END_DECLS
 #endif /*YGTK_COLORED_LABEL*/

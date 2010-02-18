@@ -25,7 +25,8 @@ struct YGtkPkgListView {
 
 	void setQuery (Ypp::Query &query);
 	void setList (Ypp::List list);
-	void setList (Ypp::List list, const std::list <std::string> &keywords);
+
+	void setHighlight (const std::list <std::string> &keywords);
 
 	void addTextColumn (const char *header, int property, bool visible, int size, bool identAuto = false);
 	void addCheckColumn (int checkProperty);

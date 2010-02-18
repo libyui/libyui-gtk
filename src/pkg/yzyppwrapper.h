@@ -71,6 +71,8 @@ typedef zypp::Repository          ZyppRepository;
 typedef zypp::PoolQuery           ZyppQuery;
 typedef zypp::sat::SolvAttr       ZyppAttribute;
 typedef zypp::ByteCount           Size_t;
+typedef zypp::DiskUsageCounter::MountPoint    ZyppDu;
+typedef zypp::DiskUsageCounter::MountPointSet ZyppDuSet;
 
 inline ZyppPackage castZyppPackage (ZyppResObject obj)
 { return zypp::dynamic_pointer_cast <const zypp::Package> (obj); }
@@ -445,6 +447,11 @@ namespace Ypp
 			ListProps (const ListProps&); ListProps &operator= (const ListProps&);
 
 	};
+
+	// Disk
+
+	std::vector <std::string> getPartitionList();
+	const ZyppDu getPartition (const std::string &mount_point);
 
 	// Misc utilities
 

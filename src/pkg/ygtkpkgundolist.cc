@@ -90,20 +90,30 @@ void YGtkPkgUndoList::removeListener (Listener *listener)
 #include "ygtkpkglistview.h"
 
 struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
-	GtkWidget *box, *disk_label, *download_label;
+	GtkWidget *vbox, *disk_label, *download_label, *warn_label;
 
 	GtkWidget *getWidget()
-	{ return box; }
+	{ return vbox; }
 
 	ChangeSizeInfo()
 	{
-		box = gtk_hbox_new (FALSE, 6);
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		GtkWidget *line;
 		line = createSizeWidget (_("Disk space required:"), &disk_label);
-		gtk_box_pack_start (GTK_BOX (box), line, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (box), gtk_label_new ("/"), FALSE, TRUE, 0);
-		line = createSizeWidget (_("Download size"), &download_label);
-		gtk_box_pack_start (GTK_BOX (box), line, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), line, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), gtk_label_new ("/"), FALSE, TRUE, 0);
+		line = createSizeWidget (_("Download size:"), &download_label);
+		gtk_box_pack_start (GTK_BOX (hbox), line, FALSE, TRUE, 0);
+		gtk_widget_show_all (hbox);
+
+		warn_label = gtk_label_new ("");
+		gtk_misc_set_alignment (GTK_MISC (warn_label), 0, .5);
+		gtk_label_set_selectable (GTK_LABEL (warn_label), TRUE);
+
+		vbox = gtk_vbox_new (FALSE, 6);
+		gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (vbox), warn_label, FALSE, TRUE, 0);
+		gtk_widget_show (vbox);
 
 		undoChanged (YGPackageSelector::get()->undoList());
 		YGPackageSelector::get()->undoList()->addListener (this);
@@ -132,6 +142,24 @@ struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
 
 		gtk_label_set_text (GTK_LABEL (disk_label), disk.asString().c_str());
 		gtk_label_set_text (GTK_LABEL (download_label), download.asString().c_str());
+
+		gtk_widget_hide (warn_label);
+		ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
+		for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
+			const ZyppDu &point = *it;
+			if (!point.readonly && point.freeAfterCommit() < 0) {
+				char *str = g_strdup_printf (
+					_("%sPartition %s is %s over-capacity (%s filled out of %s).%s"),
+					"<b><span color=\"red\">",
+					point.dir.c_str(), point.freeAfterCommit().asString().c_str(),
+					point.usedAfterCommit().asString().c_str(),
+					point.totalSize().asString().c_str(), "</span></b>");
+				gtk_label_set_markup (GTK_LABEL (warn_label), str);
+				g_free (str);
+				gtk_widget_show (warn_label);
+				break;
+			}
+		}
 	}
 
 	static GtkWidget *createSizeWidget (const char *label, GtkWidget **widget)
@@ -190,6 +218,7 @@ static GtkWidget *create_close_when_done_check()
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check_box), active);
 	g_signal_connect (G_OBJECT (check_box), "toggled",
 	                  G_CALLBACK (close_when_done_toggled_cb), NULL);
+	gtk_widget_show (check_box);
 	return check_box;
 }
 
@@ -204,8 +233,9 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CANCEL, GTK_RESPONSE_NO,
 			GTK_STOCK_APPLY, GTK_RESPONSE_YES, NULL);
 	else {
-		gtk_message_dialog_set_image (GTK_MESSAGE_DIALOG (dialog),
-			gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_DIALOG));
+		GtkWidget *image = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_DIALOG);
+		gtk_widget_show (image);
+		gtk_message_dialog_set_image (GTK_MESSAGE_DIALOG (dialog), image);
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_YES, NULL);
 	}
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
@@ -226,10 +256,9 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	gtk_box_pack_start (GTK_BOX (vbox), change_size.getWidget(), FALSE, TRUE, 0);
 	if (onApply)
 		gtk_box_pack_start (GTK_BOX (vbox), create_close_when_done_check(), FALSE, TRUE, 0);
-
+	gtk_widget_show (vbox);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vbox);
 
-	gtk_widget_show_all (dialog);
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 	return ret == GTK_RESPONSE_YES;

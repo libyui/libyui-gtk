@@ -54,8 +54,7 @@ static GType _columnType (int col)
 
 struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 {
-	YGtkZyppModel (Ypp::List list, const std::list <std::string> &keywords)
-	: m_list (list), m_keywords (keywords)
+	YGtkZyppModel (Ypp::List list) : m_list (list)
 	{ addSelListener (this); }
 
 	~YGtkZyppModel()
@@ -229,8 +228,8 @@ protected:
 	}
 };
 
-static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list, const std::list <std::string> &keywords)
-{ return ygtk_tree_model_new (new YGtkZyppModel (list, keywords)); }
+static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list)
+{ return ygtk_tree_model_new (new YGtkZyppModel (list)); }
 
 static Ypp::Selectable *ygtk_zypp_model_get_sel (GtkTreeModel *model, gchar *path_str)
 {
@@ -280,10 +279,10 @@ struct YGtkPkgListView::Impl {
 			ascendent = _ascendent;
 		}
 
-		GtkTreeModel *model = ygtk_zypp_model_new (list.clone(), keywords);
+		GtkTreeModel *model = ygtk_zypp_model_new (list.clone());
 		gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 		g_object_unref (G_OBJECT (model));
-		m_keywords = keywords;
+		setHighlight (keywords);
 
 		if (userModified) {
 			GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (view));
@@ -302,18 +301,15 @@ struct YGtkPkgListView::Impl {
 		gtk_tree_view_set_search_column (GTK_TREE_VIEW (view), NAME_PROP);
 	}
 
-#if 0
 	void setHighlight (const std::list <std::string> &keywords)
 	{
-		if (m_keywords.empty() && keywords.empty())
-			return;
+		if (m_keywords.empty() && keywords.empty()) return;
 		m_keywords = keywords;
 		GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (view));
 		YGtkZyppModel *zmodel = (YGtkZyppModel *) ygtk_tree_model_get_model (model);
 		zmodel->setHighlight (keywords);
 		gtk_widget_queue_draw (view);
 	}
-#endif
 };
 
 static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListView *pThis)
@@ -611,9 +607,9 @@ void YGtkPkgListView::setList (Ypp::List list)
 	impl->setList (list, impl->sort_attrb, impl->ascendent, false, keywords);
 }
 
-void YGtkPkgListView::setList (Ypp::List list, const std::list <std::string> &keywords)
+void YGtkPkgListView::setHighlight (const std::list <std::string> &keywords)
 {
-	impl->setList (list, impl->sort_attrb, impl->ascendent, false, keywords);
+	impl->setHighlight (keywords);
 
 	int index = keywords.size() == 1 ? impl->list.find (keywords.front()) : -1;
 	if (index != -1) {

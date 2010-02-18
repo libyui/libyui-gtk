@@ -46,9 +46,6 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries)
 		GtkWidget *label = ygtk_colored_label_new();
 		gtk_label_set_justify (GTK_LABEL (label), GTK_JUSTIFY_CENTER);
 
-		YGtkColoredLabel *color_label = YGTK_COLORED_LABEL (label);
-		ygtk_colored_label_set_shadow (color_label, !bar->flat);
-
 		// we need a GtkEventBox or something, so we may assign a tooltip to it
 		GtkWidget *lbox = gtk_event_box_new();
 		gtk_container_add (GTK_CONTAINER (lbox), label);
@@ -165,24 +162,47 @@ static void ygtk_bar_graph_class_init (YGtkBarGraphClass *klass)
 
 //** YGtkColoredLabel
 
+#include <stdlib.h>
+
 G_DEFINE_TYPE (YGtkColoredLabel, ygtk_colored_label, GTK_TYPE_LABEL)
 
 static void ygtk_colored_label_init (YGtkColoredLabel *label)
-{
-	label->shadow = GTK_SHADOW_NONE;
-}
+{}
+
+static inline double pixel_clamp (double val)
+{ return MAX (0, MIN (1, val)); }
 
 static gboolean ygtk_colored_label_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
-	GtkStyle *style = gtk_widget_get_style (widget);
 	GtkAllocation *alloc = &widget->allocation;
-	GtkShadowType shadow = YGTK_COLORED_LABEL (widget)->shadow;
-	if (shadow == GTK_SHADOW_NONE)
-		gtk_paint_flat_box (style, widget->window, GTK_STATE_NORMAL, shadow, &event->area,
-			                widget, NULL, alloc->x, alloc->y, alloc->width, alloc->height);
-	else
-		gtk_paint_box (style, widget->window, GTK_STATE_NORMAL, shadow, &event->area,
-			           widget, NULL, alloc->x, alloc->y, alloc->width, alloc->height);
+
+	GdkColor *bg_color = &widget->style->bg[GTK_STATE_NORMAL];
+	double red = (bg_color->red >> 8) / 255.;
+	double green = (bg_color->green >> 8) / 255.;
+	double blue = (bg_color->blue >> 8) / 255.;
+
+	cairo_t *cr = gdk_cairo_create (event->window);
+	cairo_translate (cr, alloc->x, alloc->y);
+	cairo_scale (cr, alloc->width, alloc->height);
+
+	double x, y, w, h;
+	x = alloc->x;
+	y = alloc->y;
+	w = alloc->width;
+	h = alloc->height;
+	cairo_pattern_t *grad = cairo_pattern_create_linear (0, 0, 0, 1);
+
+	cairo_pattern_add_color_stop_rgba (grad, 0, pixel_clamp (red+.3), pixel_clamp (green+.3), pixel_clamp (blue+.3), 1);
+	cairo_pattern_add_color_stop_rgba (grad, 0.70, red, green, blue, 1);
+	cairo_pattern_add_color_stop_rgba (grad, 1, pixel_clamp (red-.2), pixel_clamp (green-.2), pixel_clamp (blue-.2), 1);
+
+	cairo_rectangle (cr, 0, 0, 1, 1);
+	cairo_set_source (cr, grad);
+	cairo_fill (cr);
+
+	cairo_pattern_destroy (grad);
+	cairo_destroy (cr);
+
 	GTK_WIDGET_CLASS (ygtk_colored_label_parent_class)->expose_event (widget, event);
 	return FALSE;
 }
@@ -195,11 +215,6 @@ void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkColor *color
 
 void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkColor *color)
 { gtk_widget_modify_fg (GTK_WIDGET (label), GTK_STATE_NORMAL, color); }
-
-void ygtk_colored_label_set_shadow (YGtkColoredLabel *label, gboolean set_shadow)
-{
-	label->shadow = set_shadow ? GTK_SHADOW_OUT : GTK_SHADOW_NONE;
-}
 
 static void ygtk_colored_label_class_init (YGtkColoredLabelClass *klass)
 {

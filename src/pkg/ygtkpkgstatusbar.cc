@@ -206,34 +206,6 @@ struct StatChange {
 	}
 };
 
-typedef zypp::DiskUsageCounter::MountPoint    ZyppDu;
-typedef zypp::DiskUsageCounter::MountPointSet ZyppDuSet;
-
-static std::vector <std::string> getPartitionList()
-{
-	ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
-	std::vector <std::string> partitions;
-	partitions.reserve (diskUsage.size());
-	for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
-		const ZyppDu &point = *it;
-		if (!point.readonly)
-			partitions.push_back (point.dir);
-	}
-	std::sort (partitions.begin(), partitions.end());
-	return partitions;
-}
-
-static const ZyppDu getPartition (const std::string &mount_point)
-{
-	ZyppDuSet diskUsage = zypp::getZYpp()->diskUsage();
-	for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
-		const ZyppDu &point = *it;
-		if (mount_point == point.dir)
-			return point;
-	}
-	return *zypp::getZYpp()->diskUsage().begin();  // error
-}
-
 #define MIN_FREE_MB_WARN	400
 #define MIN_PERCENT_WARN	90
 
@@ -245,7 +217,7 @@ struct DiskChange {
 	DiskChange (bool small)
 	{
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
-		std::vector <std::string> partitions = getPartitionList();
+		std::vector <std::string> partitions = Ypp::getPartitionList();
 		int active = -1;
 		for (unsigned int i = 0; i < partitions.size(); i++) {
 			const std::string &part = partitions[i];
@@ -291,7 +263,7 @@ struct DiskChange {
 		GtkTreeModel *model = gtk_combo_box_get_model (GTK_COMBO_BOX (combo));
 		gchar *mount_point;
 		gtk_tree_model_get (model, &iter, 0, &mount_point, -1);
-		const ZyppDu part = getPartition (mount_point);
+		const ZyppDu part = Ypp::getPartition (mount_point);
 		g_free (mount_point);
 
 		int percent = part.total_size ? ((100 * part.pkg_size) / part.total_size) : 0;
@@ -299,7 +271,7 @@ struct DiskChange {
 
 		const char *format = "%s";
 		if (percent > MIN_PERCENT_WARN && free < MIN_FREE_MB_WARN)
-			format = "<span foreground=\"red\"><b>%s<b></span>";
+			format = "<b><span foreground=\"red\"><b>%s<b></span></b>";
 		char *str = g_strdup_printf (format, part.freeAfterCommit().asString().c_str());
 		gtk_label_set_markup (GTK_LABEL (text), str);
 		g_free (str);

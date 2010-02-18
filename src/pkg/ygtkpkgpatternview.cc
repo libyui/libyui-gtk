@@ -196,7 +196,7 @@ static void insert_pattern (
 static void insert_category (GtkTreeStore *store, Ypp::Selectable &sel, ZyppPattern pattern)
 {
 	GtkTreeIter iter;
-	std::string text ("<b>" + pattern->category() + "</b>");
+	std::string text ("<big><b>" + pattern->category() + "</b></big>");
 
 	if (!find_name (store, NULL, &iter, text)) {
 		insert_node (store, NULL, &iter, pattern->order());

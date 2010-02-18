@@ -474,8 +474,9 @@ struct SuffixFilter : public Ypp::Match {
 		Ypp::List list (query);
 		m_list->setList (list);
 
+		YGUI::ui()->normalCursor();
 		if (YGPackageSelector::get()->breath()) return;
-		m_list->setList (list, keywords);
+		m_list->setHighlight (keywords);
 
 		if (YGPackageSelector::get()->breath()) return;
 		refreshToolbox();

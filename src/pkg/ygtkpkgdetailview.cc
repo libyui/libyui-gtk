@@ -580,18 +580,21 @@ struct VersionExpander : public DetailExpander {
 	static void undo_clicked_cb (GtkButton *button, VersionExpander *pThis)
 	{ pThis->list.undo(); }
 
+	static gboolean sel_modified_idle_cb (gpointer data)
+	{ Ypp::notifySelModified(); return FALSE; }
+
 	static void version_toggled_cb (GtkToggleButton *button, VersionExpander *pThis)
 	{
 		if (gtk_toggle_button_get_active (button)) {
-			pThis->updateButton();
-
 			ZyppSelectable zsel;
 			ZyppResObject zobj;
 			pThis->getSelected (&zsel, &zobj);
 			if (!zsel->toInstall()) {
-				zsel->setCandidate (zobj);
-				Ypp::notifySelModified();
+				zsel->setCandidate (zobj);  // delay sel modified for snappy feel
+				g_idle_add_full (G_PRIORITY_LOW, sel_modified_idle_cb, pThis, NULL);
 			}
+
+			pThis->updateButton();
 		}
 	}
 
