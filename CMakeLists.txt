@@ -31,7 +31,7 @@ set (CMAKE_MODULE_PATH "${CMAKE_INSTALL_PREFIX}/share/YaST2/data/devtools/cmake/
 include (YastCommon)
 set (YAST_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/YaST2)
 
-set (DATADIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/gtk/)
+#set (DATADIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/gtk/)
 set (LOCALEDIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/locale)
 set (THEMEDIR ${CMAKE_INSTALL_PREFIX}/share/YaST2/theme/current)
 

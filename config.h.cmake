@@ -1,5 +1,4 @@
 /* Important paths */
-#cmakedefine DATADIR "${DATADIR}"
 #cmakedefine THEMEDIR "${THEMEDIR}"
 #cmakedefine LOCALEDIR "${LOCALEDIR}"
 
