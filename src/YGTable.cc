@@ -227,9 +227,7 @@ public:
 
 #if YAST2_VERSION > 2018003
 	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTableView *pThis)
-	{
-		pThis->emitEvent (YEvent::ContextMenuActivated);
-	}
+	{ pThis->emitEvent (YEvent::ContextMenuActivated); }
 #endif
 };
 

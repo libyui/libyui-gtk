@@ -12,6 +12,10 @@
 
 static void selected_item_cb (GtkMenuItem *menuitem, YItem *item)
 {
+	// HACK: gtk_menu_get_active() doesn't work properly
+	GtkWidget *menu = gtk_widget_get_ancestor (GTK_WIDGET (menuitem), GTK_TYPE_MENU);
+	g_object_set_data (G_OBJECT (menu), "active", menuitem);
+
 	YGUI::ui()->sendEvent (new YMenuEvent (item));
 }
 
@@ -27,6 +31,11 @@ static void doCreateMenu (GtkWidget *parent, YItemIterator begin, YItemIterator 
 				image = gtk_image_new_from_pixbuf (pixbuf);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
+		}
+		else {
+			const char *stock = YGUtils::mapStockIcon (str);
+			if (stock)
+				image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
 		}
 
 		if (image) {
@@ -89,7 +98,8 @@ public:
 	:  YContextMenu(),
 	   YGWidget (this, NULL, GTK_TYPE_MENU, NULL)
 	{
-		connect (getWidget(), "cancel", G_CALLBACK (cancel_cb), this);
+		// "cancel" signal doesnt seem to work properly
+		connect (getWidget(), "deactivate", G_CALLBACK (deactivate_cb), this);
 	}
 
 	// YContextMenu
@@ -102,8 +112,17 @@ public:
 	}
 
 	// callbacks
-	static void cancel_cb (GtkMenuShell *menu, YGContextMenu *pThis)
-	{ YGUI::ui()->sendEvent (new YCancelEvent()); }
+	static gboolean cancel_cb (gpointer data)
+	{
+		if (!g_object_get_data (G_OBJECT (data), "active"))
+			YGUI::ui()->sendEvent (new YCancelEvent());
+		return FALSE;
+	}
+
+	static void deactivate_cb (GtkMenuShell *menu, YGContextMenu *pThis)
+	{  // ugly: we need to make sure a selection was made before this callback called
+		g_idle_add_full (G_PRIORITY_LOW, cancel_cb, menu, NULL);
+	}
 
 	YGWIDGET_IMPL_COMMON (YContextMenu)
 };

@@ -639,6 +639,7 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 		stockMap [_("Enable")] = GTK_STOCK_YES;
 		stockMap [_("Disable")] = GTK_STOCK_NO;
 		stockMap [_("Exit")] = GTK_STOCK_QUIT;
+		stockMap [_("Resize")] = GTK_STOCK_FULLSCREEN;
 	}
 
 	std::string id = cutUnderline (label);

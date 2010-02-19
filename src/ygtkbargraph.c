@@ -23,7 +23,7 @@ static void ygtk_bar_graph_init (YGtkBarGraph *bar)
 static void ygtk_bar_graph_size_request (GtkWidget *widget, GtkRequisition *requisition)
 {
 	GTK_WIDGET_CLASS (ygtk_bar_graph_parent_class)->size_request (widget, requisition);
-	requisition->height += 6;  // give room for the labels
+	requisition->height += 18;  // give room for the labels
 }
 
 GtkWidget *ygtk_bar_graph_new (void)

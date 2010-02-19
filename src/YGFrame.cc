@@ -10,7 +10,7 @@
 
 // Instead of traditional looking frames, we use Gnome convention for the
 // frame's look. That is: don't draw a frame, use bold header and pad the child.
-#define CHILD_INDENTATION 12
+#define CHILD_INDENTATION 8
 
 class YGBaseFrame : public YGWidget
 {
@@ -21,7 +21,7 @@ GtkWidget *m_containee;
 public:
 	YGBaseFrame (YWidget *ywidget, YWidget *parent)
 	: YGWidget (ywidget, parent,
-	            GTK_TYPE_FRAME, /*"shadow-type", GTK_SHADOW_NONE, */NULL)
+	            GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
 		m_containee = gtk_alignment_new (0, 0, 1, 1);
 		gtk_alignment_set_padding (GTK_ALIGNMENT (m_containee),
