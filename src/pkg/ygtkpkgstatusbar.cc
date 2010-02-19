@@ -64,11 +64,12 @@ struct LastChange {
 
 	LastChange()
 	{
+#if 0
 		icon = gtk_image_new();
 		gtk_widget_set_size_request (icon, 16, 16);
+#endif
 		text = gtk_label_new ("");
 		gtk_misc_set_alignment (GTK_MISC (text), 0, .5);
-		gtk_label_set_ellipsize (GTK_LABEL (text), PANGO_ELLIPSIZE_END);
 		undo_button = create_small_button (GTK_STOCK_UNDO, _("Undo"));
 		g_signal_connect (G_OBJECT (undo_button), "clicked",
 		                  G_CALLBACK (undo_clicked_cb), this);
@@ -81,7 +82,9 @@ struct LastChange {
 		                  G_CALLBACK (more_link_cb), this);
 
 		hbox = gtk_hbox_new (FALSE, 6);
+#if 0
 		gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
+#endif
 		gtk_box_pack_start (GTK_BOX (hbox), text, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), undo_button, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), more, FALSE, TRUE, 0);
@@ -92,13 +95,14 @@ struct LastChange {
 		int auto_count;
 		Ypp::Selectable *sel = list->front (&auto_count);
 		if (sel) {
+#if 0
 			const char *stock = getStatusStockIcon (*sel);
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
 				stock, 16, GtkIconLookupFlags (0), NULL);
-			GdkPixbuf *_pixbuf = YGUtils::setGray (pixbuf);
-			gtk_image_set_from_pixbuf (GTK_IMAGE (icon), _pixbuf);
+			//GdkPixbuf *_pixbuf = YGUtils::setGray (pixbuf);
+			gtk_image_set_from_pixbuf (GTK_IMAGE (icon), pixbuf);
 			g_object_unref (G_OBJECT (pixbuf));
-			g_object_unref (G_OBJECT (_pixbuf));
+#endif
 
 			const char *action;
 			if (sel->toInstall()) {
@@ -128,18 +132,17 @@ struct LastChange {
 			else
 				format = "<b>%s</b> %s";
 			gchar *str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
-			gtk_label_set_text (GTK_LABEL (text), str);
-			gtk_widget_set_sensitive (text, TRUE);
+			gtk_label_set_markup (GTK_LABEL (text), str);
 			gtk_widget_set_sensitive (undo_button, TRUE);
 			g_free (str);
 		}
 		else {
+#if 0
 			gtk_image_clear (GTK_IMAGE (icon));
-			gtk_label_set_text (GTK_LABEL (text), _("<i>No changes to perform</i>"));
-			gtk_widget_set_sensitive (text, FALSE);
+#endif
+			gtk_label_set_markup (GTK_LABEL (text), _("<i>No changes to perform</i>"));
 			gtk_widget_set_sensitive (undo_button, FALSE);
 		}
-		gtk_label_set_use_markup (GTK_LABEL (text), TRUE);
 	}
 
 	static gboolean more_link_cb (GtkLabel *label, gchar *uri, LastChange *pThis)
@@ -152,6 +155,7 @@ struct LastChange {
 	}
 };
 
+#if 0
 struct StatChange {
 	GtkWidget *hbox, *to_install, *to_upgrade, *to_remove;
 
@@ -205,6 +209,7 @@ struct StatChange {
 		g_free (str);
 	}
 };
+#endif
 
 #define MIN_FREE_MB_WARN	400
 #define MIN_PERCENT_WARN	90
@@ -214,7 +219,7 @@ struct DiskChange {
 
 	GtkWidget *getWidget() { return hbox; }
 
-	DiskChange (bool small)
+	DiskChange()
 	{
 		GtkListStore *store = gtk_list_store_new (1, G_TYPE_STRING);
 		std::vector <std::string> partitions = Ypp::getPartitionList();
@@ -237,8 +242,6 @@ struct DiskChange {
 		gtk_widget_set_name (combo, "small-widget");
 		gtk_combo_box_set_focus_on_click (GTK_COMBO_BOX (combo), FALSE);
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
-		if (small)
-			g_object_set (G_OBJECT (renderer), "scale", .70, NULL);
 		gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (combo), renderer, TRUE);
 		gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (combo), renderer, "text", 0, NULL);
 		gtk_combo_box_set_active (GTK_COMBO_BOX (combo), active);
@@ -284,38 +287,19 @@ struct DiskChange {
 struct YGtkPkgStatusBar::Impl : public YGtkPkgUndoList::Listener {
 	GtkWidget *box;
 	LastChange *last;
-	StatChange *stat;
 	DiskChange *disk;
 
 	GtkWidget *getWidget() { return box; }
 
-	Impl (YGtkPkgUndoList *undo, bool real_bar)
+	Impl (YGtkPkgUndoList *undo)
 	{
 		last = new LastChange();
-		stat = new StatChange();
-		disk = new DiskChange (real_bar);
+		disk = new DiskChange();
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (hbox), last->getWidget(), TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), gtk_vseparator_new(), FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), stat->getWidget(), FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), gtk_vseparator_new(), FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), disk->getWidget(), FALSE, TRUE, 0);
-
-		if (real_bar) {
-			GtkWidget *status = gtk_statusbar_new();
-			gtk_box_pack_start (GTK_BOX (hbox), status, FALSE, TRUE, 0);
-			gtk_widget_set_size_request (status, 25, -1);
-			gtk_widget_set_size_request (last->getWidget(), -1, 0);
-			gtk_widget_set_size_request (stat->getWidget(), -1, 0);
-			gtk_widget_set_size_request (disk->getWidget(), -1, 0);
-
-			box = gtk_vbox_new (FALSE, 1);
-			gtk_box_pack_start (GTK_BOX (box), gtk_hseparator_new(), FALSE, TRUE, 0);
-			gtk_box_pack_start (GTK_BOX (box), hbox, TRUE, TRUE, 0);
-		}
-		else
-			box = hbox;
+		gtk_box_pack_start (GTK_BOX (hbox), last->getWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_end (GTK_BOX (hbox), disk->getWidget(), FALSE, TRUE, 0);
+		box = hbox;
 		gtk_widget_show_all (box);
 
 		undoChanged (undo);
@@ -325,7 +309,6 @@ struct YGtkPkgStatusBar::Impl : public YGtkPkgUndoList::Listener {
 	~Impl()
 	{
 		delete last;
-		delete stat;
 		delete disk;
 		YGPackageSelector::get()->undoList()->removeListener (this);
 	}
@@ -333,13 +316,12 @@ struct YGtkPkgStatusBar::Impl : public YGtkPkgUndoList::Listener {
 	virtual void undoChanged (YGtkPkgUndoList *list)
 	{
 		last->undoChanged (list);
-		stat->undoChanged (list);
 		disk->undoChanged (list);
 	}
 };
 
-YGtkPkgStatusBar::YGtkPkgStatusBar (YGtkPkgUndoList *undo, bool real_bar)
-: impl (new Impl (undo, real_bar))
+YGtkPkgStatusBar::YGtkPkgStatusBar (YGtkPkgUndoList *undo)
+: impl (new Impl (undo))
 {}
 
 YGtkPkgStatusBar::~YGtkPkgStatusBar()

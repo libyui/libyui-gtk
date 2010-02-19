@@ -14,7 +14,7 @@ struct YGtkPkgUndoList;
 
 struct YGtkPkgStatusBar
 {
-	YGtkPkgStatusBar (YGtkPkgUndoList *undo, bool realStatusBar);
+	YGtkPkgStatusBar (YGtkPkgUndoList *undo);
 	~YGtkPkgStatusBar();
 
 	GtkWidget *getWidget();

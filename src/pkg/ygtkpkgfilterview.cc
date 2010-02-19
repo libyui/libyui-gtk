@@ -251,6 +251,7 @@ YGtkPkgPKGroupModel::YGtkPkgPKGroupModel()
 	for (int i = YPKG_GROUP_UNKNOWN; i < YPKG_GROUP_TOTAL; i++) {
 		if (i == YPKG_GROUP_MULTIVERSION /* && zypp::sat::Pool::instance().multiversionEmpty() */)
 			continue;
+		if (i == YPKG_GROUP_ORPHANED) continue;
 		std::string name = zypp_tag_group_enum_to_localised_text ((YPkgGroupEnum) i);
 		const char *icon = zypp_tag_enum_to_icon ((YPkgGroupEnum) i);
 		if (i == YPKG_GROUP_RECENT)
@@ -313,6 +314,8 @@ YGtkPkgRepositoryModel::YGtkPkgRepositoryModel()
 			addRow (icon, label.c_str(), false, GINT_TO_POINTER (0));
 		}
 	}
+
+	addRow ("gtk-missing-image", _("None"), true, GINT_TO_POINTER (1));
 }
 
 YGtkPkgRepositoryModel::~YGtkPkgRepositoryModel()
@@ -320,7 +323,11 @@ YGtkPkgRepositoryModel::~YGtkPkgRepositoryModel()
 
 void YGtkPkgRepositoryModel::updateRow (Ypp::List list, int row, gpointer data)
 {
-	if (data) {
+	if (GPOINTER_TO_INT (data) == 1) {  // 'none'
+		Ypp::PKGroupMatch match (YPKG_GROUP_ORPHANED);
+		setRowCount (row, list.count (&match));
+	}
+	else if (data) {
 		Ypp::Repository &repo = impl->repos[row-1];
 		bool isSystem = repo.isSystem();
 		int count = 0;
@@ -338,16 +345,20 @@ void YGtkPkgRepositoryModel::updateRow (Ypp::List list, int row, gpointer data)
 				}
 			}
 		}
-		
 		setRowCount (row, count);
 	}
+	// else - disabled repos
 }
 
 bool YGtkPkgRepositoryModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data)
 {
-	Ypp::Repository &repo = impl->repos[row-1];
-	query.addRepository (repo);
-	impl->selected = &repo;
+	if (data) {
+		Ypp::Repository &repo = impl->repos[row-1];
+		query.addRepository (repo);
+		impl->selected = &repo;
+	}
+	else  // 'none'
+		query.addCriteria (new Ypp::PKGroupMatch (YPKG_GROUP_ORPHANED));
 	return true;
 }
 

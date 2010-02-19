@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Fri Feb 19 16:51:03 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.0
+- Many UI fixes and improvements to the software manager and
+online update.
+- software manager code now resides in its own library, linked
+only when needed.
+- several bug fixes.
+
+-------------------------------------------------------------------
 Tue Oct 27 05:23:28 UTC 2009 - coolo@novell.com
 
 - cherry pick gcc 4.4 issues

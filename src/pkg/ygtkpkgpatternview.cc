@@ -450,7 +450,6 @@ bool YGtkPkgPatternView::writeQuery (Ypp::PoolQuery &query)
 	if (gtk_tree_selection_get_selected (selection, &model, &iter)) {
 		Ypp::Selectable sel (get_iter_selectable (model, &iter));
 		Ypp::Collection collection (sel);
-fprintf (stderr, "add criteria match: %s\n", sel.name().c_str());
 		query.addCriteria (new Ypp::CollectionMatch (collection));
 		return true;
 	}

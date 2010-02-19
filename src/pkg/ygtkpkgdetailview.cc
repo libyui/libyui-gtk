@@ -144,7 +144,6 @@ struct DetailDescription : public DetailWidget {
 			}
 		}
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
-fprintf (stderr, "description text: %s\n\n\n", str.c_str());
 	}
 
 	static void link_clicked_cb (YGtkRichText *text, const gchar *link, DetailDescription *pThis)
@@ -801,8 +800,6 @@ struct DependenciesExpander : public DetailExpander {
 				if (dep == 0 || dep == 2)
 					ret += "</a>";
 			}
-if (!ret.empty())
-fprintf (stderr, "dep (%d) text: %s\n\n\n", dep, ret.c_str());
 			return ret;
 		}
 
@@ -923,7 +920,6 @@ struct FilelistExpander : public DetailExpander {
 
 			inner::traverse (tree.root(), text);
 		}
-fprintf (stderr, "filelist: %s\n\n\n", text.c_str());
 		return text;
 	}
 };
@@ -970,7 +966,6 @@ struct ChangelogExpander : public DetailExpander {
 				text += date + " (" + author + "):<br><blockquote>" + changes + "</blockquote>";
 			}
 		}
-fprintf (stderr, "changelog: %s\n\n\n", text.c_str());
 		return text;
 	}
 };
@@ -1054,7 +1049,6 @@ struct AuthorsExpander : public DetailExpander {
 				}
 			}
 		}
-fprintf (stderr, "authors: %s\n\n\n", text.c_str());
 		return text;
 	}
 };

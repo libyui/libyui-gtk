@@ -1,3 +1,11 @@
+2010-02-19 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgstatusbar.cc: got rid of "To install:"
+	and other statistical info.
+
+	* src/ygtkpkgfilterview.cc: moved orphaned to from
+	pkg-groups to repositories.
+
 2010-02-18 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkglistview.h/cc: partial reversal on the

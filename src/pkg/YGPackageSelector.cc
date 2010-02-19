@@ -176,7 +176,7 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_paned_pack2 (GTK_PANED (hpaned), createMainArea(), TRUE, FALSE);
 		gtk_paned_set_position (GTK_PANED (hpaned), 200);
 
-		m_status = new YGtkPkgStatusBar (m_undo, false);
+		m_status = new YGtkPkgStatusBar (m_undo);
 
 		m_widget = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_widget), hpaned, TRUE, TRUE, 0);
@@ -626,11 +626,6 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 
 	impl->m_menu = new YGtkPkgMenuBar();
 	ygtk_wizard_set_custom_menu (wizard, impl->m_menu->getWidget(), FALSE);
-
-/*
-	impl->m_status = new YGtkPkgStatusBar (impl->m_undo, true);
-	ygtk_wizard_set_status_bar (wizard, impl->m_status->getWidget());
-*/
 
 	std::string str;
 	str.reserve (6820);

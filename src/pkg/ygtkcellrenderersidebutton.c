@@ -167,14 +167,11 @@ static gboolean ygtk_cell_renderer_side_button_activate (
 	GtkCellRenderer *cell, GdkEvent *event, GtkWidget *widget, const gchar *path,
 	GdkRectangle *background_area, GdkRectangle *cell_area, GtkCellRendererState flags)
 {
-// FIXME: only emit signal if the button (and not the text) has been pressed
-fprintf (stderr, "cell_area->x: %d\n", cell_area->x);
 	YGtkCellRendererSideButton *bcell = YGTK_CELL_RENDERER_SIDE_BUTTON (cell);
 	if (bcell->button_visible) {
 		GdkEventButton *_event = (GdkEventButton *) event;
 		gint icon_width, icon_height;
 		gtk_icon_size_lookup (GTK_ICON_SIZE_BUTTON, &icon_width, &icon_height);
-fprintf (stderr, "button pressed at: %f\n", _event->x);
 		int icon_x, x = _event->x - cell_area->x;
 		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
 			icon_x = 2;
