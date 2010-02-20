@@ -37,7 +37,7 @@ add_library (py2gtk_pkg SHARED ${gtk_pkg_yast_plugin_SRCS})
 
 ## libraries:
 
-target_link_libraries (py2gtk_pkg libpy2gtk.so)
+target_link_libraries (py2gtk_pkg libpy2gtk.so.2)
 target_link_libraries (py2gtk_pkg ${GTK2_LIBRARIES})
 target_link_libraries (py2gtk_pkg ${LIBYUI_LIBRARY})
 target_link_libraries (py2gtk_pkg ${ZYPP_LIBRARY})
