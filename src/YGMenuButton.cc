@@ -112,16 +112,18 @@ public:
 	}
 
 	// callbacks
-	static gboolean cancel_cb (gpointer data)
-	{
-		if (!g_object_get_data (G_OBJECT (data), "active"))
-			YGUI::ui()->sendEvent (new YCancelEvent());
-		return FALSE;
-	}
-
 	static void deactivate_cb (GtkMenuShell *menu, YGContextMenu *pThis)
 	{  // ugly: we need to make sure a selection was made before this callback called
-		g_idle_add_full (G_PRIORITY_LOW, cancel_cb, menu, NULL);
+		g_idle_add_full (G_PRIORITY_LOW, cancel_cb, pThis, NULL);
+	}
+
+	static gboolean cancel_cb (gpointer data)
+	{
+		YGContextMenu *pThis = (YGContextMenu *) data;
+		if (!g_object_get_data (G_OBJECT (pThis->getWidget()), "active"))
+			YGUI::ui()->sendEvent (new YCancelEvent());
+		delete pThis;
+		return FALSE;
 	}
 
 	YGWIDGET_IMPL_COMMON (YContextMenu)
