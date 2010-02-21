@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Feb 22 16:26:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.10
+- revert user change when he clicks Cancel on the dependency
+solver.
+
+-------------------------------------------------------------------
 Fri Feb 21 19:00:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.1 - 2.21.9
