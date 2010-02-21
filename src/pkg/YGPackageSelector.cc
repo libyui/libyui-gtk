@@ -488,7 +488,7 @@ struct SuffixFilter : public Ypp::Match {
 	virtual YGtkPkgQueryWidget *createQueryWidget (YGtkPkgQueryCombo *combo, int index)
 	{
 		Ypp::Busy busy (0);
-		YGtkPkgFilterModel *model;
+		YGtkPkgFilterModel *model = 0;
 		if (YGPackageSelector::get()->onlineUpdateMode()) {
 			switch (index) {
 				case 0: model = new YGtkPkgPriorityModel(); break;

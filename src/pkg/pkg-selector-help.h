@@ -11,16 +11,16 @@ static const char *pkg_help[] = {
 	"if needed. The user need not be concerned about such underlying <i>dependencies</i>. "
 	"Likewise, the plugins and other non-essential data of a given application may "
 	"be shipped in their own packages, so the user may install them only if needed.</p>"),
-	_("<p>Common suffices for complementory packages:</p>"
+	_("<p>Common suffixes for complementory packages:</p>"
 	"<ul>"
 	"<li><b>-plugin-</b>: extends the application with extra functionality.</li>"
 	"<li><b>-devel</b>: headers for software development.</li>"
-	"<li><b>-debuginfo</b>: debug symbols for for software testing.</li>"
+	"<li><b>-debuginfo</b>: debug symbols for software testing.</li>"
 	"<li><b>-fr</b>, <b>-pl</b> or other language siglas: translation files (your language "
 	"will be marked for installation automatically when needed).</li>"
 	"</ul>"),
 	_("<p>Both the packages that are installed on your system, and the packages "
-	"that are available by the <i>repositories</i> you have configured will be listed "
+	"that are available from the <i>repositories</i> you have configured will be listed "
 	"together. <i>Status</i> filters are available in the right-bottom box.</p>"),
 	_("<blockquote>A repository is a packages media; it can either be local (such as the "
 	"installation CD), or a remote internet server. You can find an utility to setup "

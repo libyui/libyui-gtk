@@ -1,3 +1,19 @@
+2010-02-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgdetailview.cc: added (void) before
+	system() call to quiet warning.
+
+	* src/CMakeLists.txt: added py2gtk dependency to test
+	target.
+
+	* src/pkg/CMakeLists.txt: added py2gtk dependency to
+	py2gtk_pkg target.
+
+	* src/pkg/ygtkpkgstatusbar.cc: small UI polish.
+
+	* src/pkg/pkg-selector-help.h: Atri Bhattacharya
+	spotted a couple of typos.
+
 2010-02-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/pkg-selector-help.h: updated help text.

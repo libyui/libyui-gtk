@@ -16,15 +16,10 @@
 #include "yzyppwrapper.h"
 #include <gtk/gtk.h>
 
-static void small_button_style_set_cb (GtkWidget *button, GtkStyle *prev_style)
-{  // based on gedit
-	int width, height;
-	gtk_icon_size_lookup_for_settings (gtk_widget_get_settings (button),
-		GTK_ICON_SIZE_MENU, &width, &height);
-	gtk_widget_set_size_request (button, width+2, height+2);
-}
+static void small_size_request_cb (GtkWidget *widget, GtkRequisition *req)
+{ req->width += 4; }
 
-static void setup_small_widget_style()
+static void set_small_widget (GtkWidget *widget)
 {
 	static bool first_time = true;
 	if (first_time) {
@@ -39,22 +34,10 @@ static void setup_small_widget_style()
 			"}\n"
 			"widget \"*.small-widget\" style \"small-widget-style\"");
 	}
-}
 
-static GtkWidget *create_small_button (const char *stock_icon, const char *tooltip)
-{
-	setup_small_widget_style();
-
-	GtkWidget *button = gtk_button_new();
-	gtk_widget_set_name (button, "small-widget");
-	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-	gtk_button_set_relief (GTK_BUTTON (button), GTK_RELIEF_NONE);
-	gtk_widget_set_tooltip_text (button, tooltip);
-	GtkWidget *image = gtk_image_new_from_stock (stock_icon, GTK_ICON_SIZE_MENU);
-	gtk_button_set_image (GTK_BUTTON (button), image);
-	g_signal_connect (G_OBJECT (button), "style-set",
-	                  G_CALLBACK (small_button_style_set_cb), NULL);
-	return button;
+	gtk_widget_set_name (widget, "small-widget");
+	g_signal_connect (G_OBJECT (widget), "size-request",
+	                  G_CALLBACK (small_size_request_cb), NULL);
 }
 
 struct LastChange {
@@ -64,16 +47,16 @@ struct LastChange {
 
 	LastChange()
 	{
-#if 0
 		icon = gtk_image_new();
 		gtk_widget_set_size_request (icon, 16, 16);
-#endif
+
 		text = gtk_label_new ("");
 		gtk_misc_set_alignment (GTK_MISC (text), 0, .5);
-		undo_button = create_small_button (GTK_STOCK_UNDO, _("Undo"));
+		undo_button = gtk_button_new_from_stock (GTK_STOCK_UNDO);
+		set_small_widget (undo_button);
 		g_signal_connect (G_OBJECT (undo_button), "clicked",
 		                  G_CALLBACK (undo_clicked_cb), this);
-		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("more"));
+		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("see all changes"));
 		GtkWidget *more = gtk_label_new (str);
 		g_free (str);
 		gtk_label_set_use_markup (GTK_LABEL (more), TRUE);
@@ -82,9 +65,7 @@ struct LastChange {
 		                  G_CALLBACK (more_link_cb), this);
 
 		hbox = gtk_hbox_new (FALSE, 6);
-#if 0
 		gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
-#endif
 		gtk_box_pack_start (GTK_BOX (hbox), text, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), undo_button, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), more, FALSE, TRUE, 0);
@@ -95,15 +76,13 @@ struct LastChange {
 		int auto_count;
 		Ypp::Selectable *sel = list->front (&auto_count);
 		if (sel) {
-#if 0
 			const char *stock = getStatusStockIcon (*sel);
 			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
 				stock, 16, GtkIconLookupFlags (0), NULL);
 			//GdkPixbuf *_pixbuf = YGUtils::setGray (pixbuf);
 			gtk_image_set_from_pixbuf (GTK_IMAGE (icon), pixbuf);
 			g_object_unref (G_OBJECT (pixbuf));
-#endif
-
+#if 1
 			const char *action;
 			if (sel->toInstall()) {
 				action = _("install");
@@ -132,14 +111,23 @@ struct LastChange {
 			else
 				format = "<b>%s</b> %s";
 			gchar *str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
+#else
+			const char *format;
+			if (auto_count > 1)
+				format = _("%s, plus %d dependencies");
+			else if (auto_count == 1)
+				format = _("%s, plus 1 dependency");
+			else
+				format = "%s";
+			gchar *str = g_strdup_printf (format, sel->name().c_str(), auto_count);
+#endif
+
 			gtk_label_set_markup (GTK_LABEL (text), str);
 			gtk_widget_set_sensitive (undo_button, TRUE);
 			g_free (str);
 		}
 		else {
-#if 0
 			gtk_image_clear (GTK_IMAGE (icon));
-#endif
 			gtk_label_set_markup (GTK_LABEL (text), _("<i>No changes to perform</i>"));
 			gtk_widget_set_sensitive (undo_button, FALSE);
 		}
@@ -238,7 +226,7 @@ struct DiskChange {
 
 		combo = gtk_combo_box_new_with_model (GTK_TREE_MODEL (store));
 		g_object_unref (G_OBJECT (store));
-		setup_small_widget_style();
+		set_small_widget (combo);
 		gtk_widget_set_name (combo, "small-widget");
 		gtk_combo_box_set_focus_on_click (GTK_COMBO_BOX (combo), FALSE);
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();

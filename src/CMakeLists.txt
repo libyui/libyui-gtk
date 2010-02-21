@@ -69,6 +69,7 @@ add_subdirectory (pkg)
 
 link_directories (${CMAKE_BINARY_DIR}/src)
 add_executable (test test.cc)
+add_dependencies (test py2gtk)
 target_link_libraries (test libpy2gtk.so)
 target_link_libraries (test ${GTK2_LIBRARIES})
 target_link_libraries (test ${LIBYUI_LIBRARY})
