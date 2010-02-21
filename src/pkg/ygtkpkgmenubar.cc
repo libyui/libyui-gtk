@@ -407,10 +407,10 @@ static void webpinSearch()
 }
 
 static void manualResolvePackageDependencies()
-{ Ypp::runSolver(); }
+{ Ypp::runSolver (true); }
 
 static void auto_check_cb (GtkCheckMenuItem *item)
-{ Ypp::setAutoSolver (gtk_check_menu_item_get_active (item)); }
+{ Ypp::setEnableSolver (gtk_check_menu_item_get_active (item)); }
 
 static void show_devel_pkgs_cb (GtkCheckMenuItem *item)
 {
@@ -570,7 +570,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("Check Now"), NULL,
 			G_CALLBACK (manualResolvePackageDependencies), this);
-		append_check_menu_item (submenu, _("Autocheck"), Ypp::isAutoSolver(),
+		append_check_menu_item (submenu, _("Autocheck"), Ypp::isSolverEnabled(),
 			G_CALLBACK (auto_check_cb), this);
 	item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));

@@ -339,7 +339,8 @@ void Ypp::Selectable::install()
 			break;
 		}
 	}
-	notifySelModified();
+
+	if (!runSolver()) undo();
 }
 
 void Ypp::Selectable::remove()
@@ -387,7 +388,8 @@ void Ypp::Selectable::remove()
 			break;
 		}
 	}
-	notifySelModified();
+
+	if (!runSolver()) undo();
 }
 
 void Ypp::Selectable::undo()
@@ -407,7 +409,8 @@ void Ypp::Selectable::lock (bool lock)
 	else
 		status = isInstalled() ? zypp::ui::S_KeepInstalled : zypp::ui::S_NoInst;
 	m_sel->setStatus (status);
-	notifySelModified();
+
+	if (!runSolver()) undo();
 }
 
 bool Ypp::Selectable::canRemove()
@@ -447,7 +450,7 @@ Ypp::Version Ypp::Selectable::candidate()
 void Ypp::Selectable::setCandidate (Ypp::Version &version)
 {
 	m_sel->setCandidate (version.zyppObj());
-	notifySelModified();
+	runSolver();
 }
 
 int Ypp::Selectable::availableSize()
@@ -739,21 +742,11 @@ void Ypp::addSelListener (Ypp::SelListener *listener)
 void Ypp::removeSelListener (Ypp::SelListener *listener)
 { g_sel_listeners.remove (listener); }
 
-static void fireSelModified()
+void Ypp::notifySelModified()
 {
 	for (std::list <Ypp::SelListener *>::iterator it = g_sel_listeners.begin();
 		 it != g_sel_listeners.end(); it++)
 		(*it)->selectableModified();
-}
-
-void Ypp::notifySelModified()
-{
-	if (!g_transacting) {
-		if (g_autoSolver)
-			Ypp::runSolver();
-		else
-			fireSelModified();
-	}
 }
 
 void Ypp::setInterface (Ypp::Interface *interface)
@@ -765,8 +758,14 @@ void Ypp::setInterface (Ypp::Interface *interface)
 Ypp::Problem::Solution *Ypp::Problem::getSolution (int nb)
 { return (Solution *) g_slist_nth_data ((GSList *) impl, nb); }
 
-bool Ypp::runSolver()
+bool Ypp::runSolver (bool force)
 {
+	if (g_transacting) return true;
+	if (!g_autoSolver && !force) {
+		notifySelModified();
+		return true;
+	}
+
 	if (g_busy_listener)
 		g_busy_listener->loading (0);
 
@@ -824,27 +823,26 @@ bool Ypp::runSolver()
 	if (!resolved)
 		zResolver->undo();
 
-	fireSelModified();
+	notifySelModified();
 	if (g_busy_listener)
 		g_busy_listener->loading (1);
 	return resolved;
 }
 
-void Ypp::setAutoSolver (bool enabled)
+void Ypp::setEnableSolver (bool enabled)
 {
 	g_autoSolver = enabled;
-	if (enabled)
-		runSolver();
+	if (enabled) runSolver();
 }
 
-bool Ypp::isAutoSolver()
+bool Ypp::isSolverEnabled()
 { return g_autoSolver; }
 
 void Ypp::startTransactions()
 { g_transacting = true; }
 
-void Ypp::finishTransactions()
-{ g_transacting = false; notifySelModified(); }
+bool Ypp::finishTransactions()
+{ g_transacting = false; return runSolver(); }
 
 // Query
 

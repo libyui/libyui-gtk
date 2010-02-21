@@ -580,7 +580,7 @@ struct VersionExpander : public DetailExpander {
 	{ pThis->list.undo(); }
 
 	static gboolean sel_modified_idle_cb (gpointer data)
-	{ Ypp::notifySelModified(); return FALSE; }
+	{ Ypp::runSolver(); return FALSE; }
 
 	static void version_toggled_cb (GtkToggleButton *button, VersionExpander *pThis)
 	{

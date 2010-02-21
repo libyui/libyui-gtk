@@ -233,6 +233,8 @@ namespace Ypp
 	void addSelListener (SelListener *listener);
 	void removeSelListener (SelListener *listener);
 
+	// you shouldn't need to call notifySelModified() directly, but instead call
+	// e.g. runSolver()
 	void notifySelModified();
 
 	struct Problem {
@@ -246,13 +248,16 @@ namespace Ypp
 		void *impl;
 	};
 
-	bool runSolver();  // manual run -- if resolved (or user canceled)
-	void setAutoSolver (bool enabled);  // enabled by default
-	bool isAutoSolver();
+	// runSolver() gets called automatically when you install/remove/... a
+	// a package using the Ypp::Selectable API
+	bool runSolver (bool force = false); // returns whether succesful
+	void setEnableSolver (bool enabled);  // true by default
+	bool isSolverEnabled();
 
-	// suspends solver while installing/removing a few packages at a time
+	// temporarily suspends run-solver while installing/removing a few packages at a time
+	// -- used by Ypp::List
 	void startTransactions();
-	void finishTransactions();
+	bool finishTransactions();  // returns return of runSolver()
 
 	struct Interface {
 		virtual bool acceptLicense (Selectable &sel, const std::string &license) = 0;
