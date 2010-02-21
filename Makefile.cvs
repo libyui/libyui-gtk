@@ -9,7 +9,7 @@ PREFIX = /usr
 configure: 
 	mkdir build ;\
 	cd build ;\
-	cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DLIB=$(LIB) .. && make
+	cmake -DCMAKE_INSTALL_PREFIX=$(PREFIX) -DLIB=$(LIB) .. && VERBOSE=1 make
 
 # use "VERBOSE=1 make" to read full gcc argument
 
