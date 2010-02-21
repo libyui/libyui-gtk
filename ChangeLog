@@ -14,6 +14,10 @@
 	* src/pkg/pkg-selector-help.h: Atri Bhattacharya
 	spotted a couple of typos.
 
+	* yast2-gtk.spec.in: commented out line %_prefix/share/YaST2/gtk/
+	(we no longer install icons there) -- should make the build
+	work.
+
 2010-02-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/pkg-selector-help.h: updated help text.
