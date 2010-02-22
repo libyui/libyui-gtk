@@ -56,7 +56,7 @@ struct LastChange {
 		set_small_widget (undo_button);
 		g_signal_connect (G_OBJECT (undo_button), "clicked",
 		                  G_CALLBACK (undo_clicked_cb), this);
-		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("see all changes"));
+		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("view all changes"));
 		GtkWidget *more = gtk_label_new (str);
 		g_free (str);
 		gtk_label_set_use_markup (GTK_LABEL (more), TRUE);

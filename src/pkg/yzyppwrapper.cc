@@ -1161,7 +1161,8 @@ void Ypp::List::install()
 	for (std::vector <Selectable>::iterator it = impl->vector.begin();
 	     it != impl->vector.end(); it++)
 		it->install();
-	finishTransactions();
+	if (!finishTransactions())
+		undo();
 }
 
 void Ypp::List::remove()
@@ -1170,7 +1171,8 @@ void Ypp::List::remove()
 	for (std::vector <Selectable>::iterator it = impl->vector.begin();
 	     it != impl->vector.end(); it++)
 		it->remove();
-	finishTransactions();
+	if (!finishTransactions())
+		undo();
 }
 
 void Ypp::List::lock (bool lock)
@@ -1179,7 +1181,8 @@ void Ypp::List::lock (bool lock)
 	for (std::vector <Selectable>::iterator it = impl->vector.begin();
 	     it != impl->vector.end(); it++)
 		it->lock (lock);
-	finishTransactions();
+	if (!finishTransactions())
+		undo();
 }
 
 void Ypp::List::undo()
