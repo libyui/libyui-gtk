@@ -1,6 +1,14 @@
 -------------------------------------------------------------------
 Fri Feb 22 17:02:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
+- 2.21.12
+- html renderer: <li> element and headers ending with colon were
+not being given right-to-left treatment for languages like Arabic
+(bnc#581800).
+
+-------------------------------------------------------------------
+Fri Feb 22 17:02:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
 - 2.21.11
 - extend previous fix to groups of packages.
 
