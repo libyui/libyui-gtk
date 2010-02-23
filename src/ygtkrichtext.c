@@ -280,6 +280,25 @@ static void GRTParseState_free (GRTParseState *state)
 	free_list (state->htags);
 }
 
+static void insert_li_enumeration (GRTParseState *state, GtkTextIter *iter, gboolean start)
+{
+	gboolean _start = gtk_widget_get_default_direction() != GTK_TEXT_DIR_RTL;
+	if (_start != start) return;
+
+	HTMLList *front_list;
+	if (state->html_list && (front_list = g_list_first (state->html_list)->data) &&
+	    (front_list->ordered)) {
+		const gchar *form = start ? "%d. " : " .%d";
+		gchar *str = g_strdup_printf (form, front_list->enumeration++);
+		gtk_text_buffer_insert (state->buffer, iter, str, -1);
+		g_free (str);
+	}
+	else {                          // \\u25cf for bigger bullets
+		const char *str = start ? "\u2022 " : " \u2022";
+		gtk_text_buffer_insert (state->buffer, iter, str, -1);
+	}
+}
+
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
 static void
@@ -347,20 +366,8 @@ rt_start_element (GMarkupParseContext *context,
 			else
 				g_warning ("Unknown a attribute: '%s'", attribute_names[0]);
 		}
-		else if (!g_ascii_strcasecmp (element_name, "li")) {
-			HTMLList *front_list;
-
-			if (state->html_list &&
-			    (front_list = g_list_first (state->html_list)->data) &&
-			    (front_list->ordered)) {;
-				gchar *str = g_strdup_printf ("%d. ", front_list->enumeration++);
-				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
-				g_free (str);
-			}
-			else {                           // \\u25cf for bigger bullets
-				gtk_text_buffer_insert (state->buffer, &iter, "\u2022 ", -1);
-			}
-		}
+		else if (!g_ascii_strcasecmp (element_name, "li"))
+			insert_li_enumeration (state, &iter, TRUE);
 		// Tags that affect the margin
 		else if (!g_ascii_strcasecmp (element_name, "ul") ||
 		         !g_ascii_strcasecmp (element_name, "ol")) {
@@ -475,6 +482,8 @@ rt_end_element (GMarkupParseContext *context,
 		gtk_text_buffer_apply_tag_by_name (state->buffer, "center", &start, &end);
 		appendLines = 1;
 	}
+	else if (!g_ascii_strcasecmp (element_name, "li"))
+		insert_li_enumeration (state, &end, FALSE);
 
 	if (isBlockTag (element_name) || !g_ascii_strcasecmp (element_name, "br")) {
 		appendLines = 1;
@@ -513,12 +522,21 @@ rt_text (GMarkupParseContext *context,
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
 		                                  text, text_len, NULL, NULL);
 	else {
+		gboolean rtl = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+
 		int i = 0;
 		if (state->closed_block_tag) {
 			for (; i < text_len; i++)
 				if (!g_ascii_isspace (text[i]))
 					break;
 		}
+
+		// hack: for right-to-left languages, change "Device:" to ":Device" (bug 581800)
+		if (rtl && text[text_len-1] == ':') {
+			gtk_text_buffer_insert (state->buffer, &start, ":", 1);
+			text_len--;
+		}
+
 		gtk_text_buffer_insert (state->buffer, &start, text+i, text_len-i);
 	}
 	gtk_text_buffer_get_end_iter (state->buffer, &end);

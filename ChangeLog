@@ -1,3 +1,9 @@
+2010-02-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: bug fix 581800: <li> element
+	and headers ending with colon were not being given
+	right-to-left treatment for languages like Arabic.
+
 2010-02-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/yzyppwrapper.h/cc: extend previous commit to
