@@ -1,3 +1,9 @@
+2010-02-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: bug fix 581800: <li> element
+	and headers ending with colon were not being given
+	right-to-left treatment for languages like Arabic.
+
 2010-02-18  Martin Kudlvasr  <mkudlvasr@novell.com>
 
 	* tests/Firewall_bnc567505.ycp: add Ricardo's test for bnc#567505

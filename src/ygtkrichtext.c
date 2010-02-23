@@ -24,13 +24,10 @@ static GdkColor link_color = { 0, 0, 0, 0xeeee };
 // utilities
 // Looks at all tags covering the position of iter in the text view,
 // and returns the link the text points to, in case that text is a link.
-static const char *get_link (GtkTextView *text_view, gint x, gint y)
+static const char *get_link_at_iter (GtkTextView *text_view, GtkTextIter *iter)
 {
-	GtkTextIter iter;
-	gtk_text_view_get_iter_at_location (text_view, &iter, x, y);
-
 	char *link = NULL;
-	GSList *tags = gtk_text_iter_get_tags (&iter), *tagp;
+	GSList *tags = gtk_text_iter_get_tags (iter), *tagp;
 	for (tagp = tags; tagp != NULL; tagp = tagp->next) {
 		GtkTextTag *tag = (GtkTextTag*) tagp->data;
 		link = (char*) g_object_get_data (G_OBJECT (tag), "link");
@@ -42,23 +39,27 @@ static const char *get_link (GtkTextView *text_view, gint x, gint y)
 		g_slist_free (tags);
 	return link;
 }
+static const char *get_link (GtkTextView *text_view, gint win_x, gint win_y)
+{
+	gint buffer_x, buffer_y;
+	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
+		GTK_TEXT_WINDOW_WIDGET, win_x, win_y, &buffer_x, &buffer_y);
+	GtkTextIter iter;
+	gtk_text_view_get_iter_at_location (text_view, &iter, buffer_x, buffer_y);
+	return get_link_at_iter (text_view, &iter);
+}
 
 // callbacks
 // Links can also be activated by clicking.
 static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 {
-	GtkTextIter start, end;
-	GtkTextBuffer *buffer;
-	GdkEventButton *event;
-	gint x, y;
-
 	if (ev->type != GDK_BUTTON_RELEASE)
 		return FALSE;
-
-	event = (GdkEventButton *)ev;
+	GtkTextIter start, end;
+	GtkTextBuffer *buffer;
+	GdkEventButton *event = (GdkEventButton *) ev;
 	if (event->button != 1)
 		return FALSE;
-
 	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text_view));
 
 	// We shouldn't follow a link if the user is selecting something.
@@ -66,10 +67,7 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 	if (gtk_text_iter_get_offset (&start) != gtk_text_iter_get_offset (&end))
 		return FALSE;
 
-	gtk_text_view_window_to_buffer_coords (GTK_TEXT_VIEW (text_view),
-		GTK_TEXT_WINDOW_WIDGET, (gint) event->x, (gint) event->y, &x, &y);
-
-	const char *link = get_link (GTK_TEXT_VIEW (text_view), x, y);
+	const char *link = get_link (GTK_TEXT_VIEW (text_view), event->x, event->y);
 	if (link)  // report link
 		g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
 	return FALSE;
@@ -180,12 +178,9 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 		    wy >= widget->allocation.height)
 			return;
 	}
-	gint bx, by;
-	gtk_text_view_window_to_buffer_coords (view, GTK_TEXT_WINDOW_WIDGET,
-	                                       wx, wy, &bx, &by);
 
 	static gboolean hovering_over_link = FALSE;
-	gboolean hovering = get_link (view, bx, by) != NULL;
+	gboolean hovering = get_link (view, wx, wy) != NULL;
 
 	if (hovering != hovering_over_link) {
 		hovering_over_link = hovering;
@@ -285,6 +280,25 @@ static void GRTParseState_free (GRTParseState *state)
 	free_list (state->htags);
 }
 
+static void insert_li_enumeration (GRTParseState *state, GtkTextIter *iter, gboolean start)
+{
+	gboolean _start = gtk_widget_get_default_direction() != GTK_TEXT_DIR_RTL;
+	if (_start != start) return;
+
+	HTMLList *front_list;
+	if (state->html_list && (front_list = g_list_first (state->html_list)->data) &&
+	    (front_list->ordered)) {
+		const gchar *form = start ? "%d. " : " .%d";
+		gchar *str = g_strdup_printf (form, front_list->enumeration++);
+		gtk_text_buffer_insert (state->buffer, iter, str, -1);
+		g_free (str);
+	}
+	else {                          // \\u25cf for bigger bullets
+		const char *str = start ? "\u2022 " : " \u2022";
+		gtk_text_buffer_insert (state->buffer, iter, str, -1);
+	}
+}
+
 // Tags to support: <p> and not </p>:
 // either 'elide' \ns (turn off with <pre> I guess
 static void
@@ -322,22 +336,29 @@ rt_start_element (GMarkupParseContext *context,
 	// Special tags that must be inserted manually
 	if (!tag->tag) {
 		if (!g_ascii_strcasecmp (element_name, "font")) {
-			if (attribute_names[0] &&
-			    !g_ascii_strcasecmp (attribute_names[0], "color")) {
-				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-				                                       "foreground", attribute_values[0],
-				                                       NULL);
-				state->default_color = FALSE;
+			int i;
+			for (i = 0; attribute_names[i]; i++) {
+				const char *attrb = attribute_names[i];
+				const char *value = attribute_values[i];
+				if (!g_ascii_strcasecmp (attrb, "color")) {
+					tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+						"foreground", value, NULL);
+					state->default_color = FALSE;
+				}
+				// not from html -- we use this internally
+				else if (!g_ascii_strcasecmp (attrb, "bgcolor")) {
+					tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+						"background", value, NULL);
+				}
+				else
+					g_warning ("Unknown font attribute: '%s'", attrb);
 			}
-			else
-				g_warning ("Unknown font attribute: '%s'", attribute_names[0]);
 		}
 		else if (!g_ascii_strcasecmp (element_name, "a")) {
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "href")) {
 				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
-				                                       "underline", PANGO_UNDERLINE_SINGLE,
-				                                       NULL);
+					"underline", PANGO_UNDERLINE_SINGLE, NULL);
 				if (state->default_color)
 					g_object_set (tag->tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag->tag), "link", g_strdup (attribute_values[0]));
@@ -345,20 +366,8 @@ rt_start_element (GMarkupParseContext *context,
 			else
 				g_warning ("Unknown a attribute: '%s'", attribute_names[0]);
 		}
-		else if (!g_ascii_strcasecmp (element_name, "li")) {
-			HTMLList *front_list;
-
-			if (state->html_list &&
-			    (front_list = g_list_first (state->html_list)->data) &&
-			    (front_list->ordered)) {;
-				gchar *str = g_strdup_printf ("%d. ", front_list->enumeration++);
-				gtk_text_buffer_insert (state->buffer, &iter, str, -1);
-				g_free (str);
-			}
-			else {                           // \\u25cf for bigger bullets
-				gtk_text_buffer_insert (state->buffer, &iter, "\u2022 ", -1);
-			}
-		}
+		else if (!g_ascii_strcasecmp (element_name, "li"))
+			insert_li_enumeration (state, &iter, TRUE);
 		// Tags that affect the margin
 		else if (!g_ascii_strcasecmp (element_name, "ul") ||
 		         !g_ascii_strcasecmp (element_name, "ol")) {
@@ -366,24 +375,30 @@ rt_start_element (GMarkupParseContext *context,
 			HTMLList_init (list, !g_ascii_strcasecmp (element_name, "ol"));
 			state->html_list = g_list_append (state->html_list, list);
 		}
-
 		else if (!g_ascii_strcasecmp (element_name, "img")) {
 			if (attribute_names[0] &&
 			    !g_ascii_strcasecmp (attribute_names[0], "src")) {
-				GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (attribute_values[0], NULL);
-				if (pixbuf) {
-					gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
-					g_object_unref (G_OBJECT (pixbuf));
+				const char *filename = attribute_values[0];
+				if (filename) {
+					GdkPixbuf *pixbuf;
+					if (filename[0] == '/')
+						pixbuf = gdk_pixbuf_new_from_file (filename, NULL);
+					else
+						pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
+							filename, 64, 0, NULL);
+					if (pixbuf) {
+						gtk_text_buffer_insert_pixbuf (state->buffer, &iter, pixbuf);
+						g_object_unref (G_OBJECT (pixbuf));
+					}
 				}
 			}
 			else
 				g_warning ("Unknown img attribute: '%s'", attribute_names[0]);
 		}
-
-		// for tags like <br/>, GMarkup will pass them through the end
+		// tags like <br/>, GMarkup will pass them through the end
 		// tag callback too, so we'll deal with them there
-		else if (!g_ascii_strcasecmp (element_name, "br"))
-			;
+		else if (!g_ascii_strcasecmp (element_name, "br")) ;
+		else if (!g_ascii_strcasecmp (element_name, "hr")) ;
 
 		else
 		{
@@ -391,6 +406,17 @@ rt_start_element (GMarkupParseContext *context,
 				;
 			else
 				g_warning ("Unknown tag '%s'", element_name);
+		}
+	}
+	else if (attribute_names[0]) {  // tags that may have extra attributes
+		if (!g_ascii_strcasecmp (element_name, "p")) {
+			// not from html (basic html only supports background color in
+			// tables), but we use this internally
+			if (!g_ascii_strcasecmp (attribute_names[0], "bgcolor"))
+				tag->tag = gtk_text_buffer_create_tag (state->buffer, NULL,
+					"paragraph-background", attribute_values[0], NULL);
+			else
+				g_warning ("Unknown p attribute: '%s'", attribute_names[0]);
 		}
 	}
 
@@ -456,6 +482,8 @@ rt_end_element (GMarkupParseContext *context,
 		gtk_text_buffer_apply_tag_by_name (state->buffer, "center", &start, &end);
 		appendLines = 1;
 	}
+	else if (!g_ascii_strcasecmp (element_name, "li"))
+		insert_li_enumeration (state, &end, FALSE);
 
 	if (isBlockTag (element_name) || !g_ascii_strcasecmp (element_name, "br")) {
 		appendLines = 1;
@@ -494,12 +522,21 @@ rt_text (GMarkupParseContext *context,
 		gtk_text_buffer_insert_with_tags (state->buffer, &start,
 		                                  text, text_len, NULL, NULL);
 	else {
+		gboolean rtl = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+
 		int i = 0;
 		if (state->closed_block_tag) {
 			for (; i < text_len; i++)
 				if (!g_ascii_isspace (text[i]))
 					break;
 		}
+
+		// hack: for right-to-left languages, change "Device:" to ":Device" (bug 581800)
+		if (rtl && text[text_len-1] == ':') {
+			gtk_text_buffer_insert (state->buffer, &start, ":", 1);
+			text_len--;
+		}
+
 		gtk_text_buffer_insert (state->buffer, &start, text+i, text_len-i);
 	}
 	gtk_text_buffer_get_end_iter (state->buffer, &end);
@@ -555,16 +592,14 @@ static void ygtk_rich_text_set_rtl (YGtkRichText *rtext)
 
 void ygtk_rich_text_set_text (YGtkRichText* rtext, const gchar* text, gboolean plain_mode)
 {
-	GtkTextBuffer *buffer;
-	buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
-
 	if (plain_mode) {
+		GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
 		gtk_text_buffer_set_text (buffer, text, -1);
 		return;
 	}
 
-	// remove any possible existing text
-	gtk_text_buffer_set_text (buffer, "", 0);
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (rtext));
+	gtk_text_buffer_set_text (buffer, "", 0);  // remove any existing text
 
 	GRTParseState state;
 	GRTParseState_init (&state, buffer);
@@ -691,7 +726,7 @@ void ygtk_rich_text_set_background (YGtkRichText *rtext, GdkPixbuf *pixbuf)
 		g_object_ref (G_OBJECT (pixbuf));
 }
 
-void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
+static void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
