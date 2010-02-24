@@ -203,6 +203,13 @@ struct SuffixFilter : public Ypp::Match {
 		Ypp::finish();
 	}
 
+	void clearQueryWidgets()
+	{
+		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
+		     it != m_queryWidgets.end(); it++)
+			(*it)->clearSelection();
+	}
+
 	// Ypp::Interface
 
 	static bool acceptText (Ypp::Selectable &selectable, const std::string &title,
@@ -678,6 +685,7 @@ void YGPackageSelector::showFilterWidget (const char *filter)
 
 void YGPackageSelector::searchFor (Ypp::PoolQuery::StringAttribute attrb, const std::string &text)
 {
+	impl->clearQueryWidgets();
 	impl->m_entry->setText (attrb, text);
 	impl->refreshQuery();
 }

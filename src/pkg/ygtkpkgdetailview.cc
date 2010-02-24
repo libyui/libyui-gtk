@@ -787,18 +787,26 @@ struct DependenciesExpander : public DetailExpander {
 				if (!ret.empty())
 					ret += ", ";
 
-				std::string str (YGUtils::escapeMarkup (it->asString()));
+				std::string str (it->asString());
 				bool highlight = (str == keyword);
 
-				if (dep == 0 || dep == 2)
-					ret += "<a href=\"" + str + "\">";
-				if (highlight)
-					ret += keywordOpenTag;
-				ret += str;
+
+				if (dep == 0 || dep == 2) {
+					std::string::size_type i;
+					i = MIN (str.find (' '), str.find ('('));
+
+					std::string name (str, 0, i);
+					ret += "<a href=\"" + name + "\">" + YGUtils::escapeMarkup (name) + "</a>";
+					if (i != std::string::npos) {
+						std::string rest (str, i);
+						ret += YGUtils::escapeMarkup (rest);
+					}
+				}
+				else
+					ret += YGUtils::escapeMarkup (str);
+
 				if (highlight)
 					ret += keywordCloseTag;
-				if (dep == 0 || dep == 2)
-					ret += "</a>";
 			}
 			return ret;
 		}
