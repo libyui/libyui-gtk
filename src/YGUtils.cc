@@ -617,6 +617,10 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 					_id = GTK_STOCK_GO_BACK;
 				else if (!strcmp (id, GTK_STOCK_MEDIA_RECORD))
 					_id = GTK_STOCK_SAVE;
+				else if (!strcmp (id, GTK_STOCK_CLEAR))
+					_id = GTK_STOCK_DELETE;
+				else if (!strcmp (id, GTK_STOCK_QUIT))
+					_id = GTK_STOCK_APPLY;
 				stockMap[cutUnderline (item.label)] = _id;
 			}
 			// some may not have a stock item because they can't be set on a label
