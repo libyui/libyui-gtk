@@ -6,6 +6,9 @@
 	* src/YGUtils.cc: honor style dont-show-icon-in-buttons
 	setting.
 
+	* src/YGPushButton.cc: change fallback icon from expert
+	key assignment to Edit icon, from the Preferences ones.
+
 2010-02-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkrichtext.c: bug fix 581800: <li> element
