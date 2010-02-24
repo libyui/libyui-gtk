@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Feb 24 14:37:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.13
+- software manager bug fix: fixed the dependencies
+links to search only for the package name.
+
+-------------------------------------------------------------------
 Fri Feb 23 16:03:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.12
