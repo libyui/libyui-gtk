@@ -3,6 +3,9 @@
 	* src/YGUtils.cc: bug fix 582536 and 582560. map jump-to to
 	ok icon. Don't map gtk-dialog- icons.
 
+	* src/YGPushButton.cc: bug fix 582533: ignore back function
+	key.
+
 2010-02-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc: fixed the dependencies
