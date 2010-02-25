@@ -39,7 +39,7 @@ public:
 				case 5: stock = GTK_STOCK_DELETE; break;
 				case 6: stock = GTK_STOCK_EXECUTE; break;  // Test
 				case 7: stock = GTK_STOCK_EDIT; break;  // Expert
-				case 8: stock = GTK_STOCK_GO_BACK; break;
+				//case 8: stock = GTK_STOCK_GO_BACK; break;
 				case 9: stock = GTK_STOCK_CANCEL; break;
 //				case 10: stock = GTK_STOCK_GO_FORWARD; break;
 				default: break;
