@@ -621,7 +621,13 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 					_id = GTK_STOCK_DELETE;
 				else if (!strcmp (id, GTK_STOCK_QUIT))
 					_id = GTK_STOCK_APPLY;
-				stockMap[cutUnderline (item.label)] = _id;
+				else if (!strcmp (id, GTK_STOCK_JUMP_TO))
+					_id = GTK_STOCK_OK;
+				else if (!strncmp (id, "gtk-dialog-", 11))
+					_id = 0;
+
+				if (_id)
+					stockMap[cutUnderline (item.label)] = _id;
 			}
 			// some may not have a stock item because they can't be set on a label
 			// e.g.: gtk-directory, gtk-missing-image, gtk-dnd
