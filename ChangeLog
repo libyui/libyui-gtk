@@ -1,3 +1,11 @@
+2010-02-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUtils.cc: bug fix 582536 and 582560. map jump-to to
+	ok icon. Don't map gtk-dialog- icons.
+
+	* src/YGUI.cc: backported bug fix 547261: work around broken
+	metacity icon by defaulting to the generic yast2 icon.
+
 2010-02-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: use remove icon instead of clear,
