@@ -1,3 +1,10 @@
+2010-03-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkfindentry.h/c: removed.
+
+	* src/ygtkwizard.c: replaced our custom YGtkFindEntry widget
+	by the usage of the new GtkEntry API.
+
 2010-02-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUtils.cc: bug fix 582536 and 582560. map jump-to to

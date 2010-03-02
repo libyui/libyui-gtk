@@ -30,7 +30,6 @@ set (gtk_yast_plugin_SRCS
 	ygtkhtmlwrap.c
 	ygtkmenubutton.c
 	ygtklinklabel.c
-	ygtkfindentry.c
 	ygtkfixed.c
 	ygtkimage.c
 	ygtkratiobox.c

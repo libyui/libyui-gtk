@@ -17,7 +17,6 @@
 #include <string.h>
 #include "ygtkhtmlwrap.h"
 #include "ygtksteps.h"
-#include "ygtkfindentry.h"
 #include "ygtklinklabel.h"
 #define YGI18N_C
 #include "YGi18n.h"
@@ -45,13 +44,47 @@ static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 	ygtk_html_wrap_search_next (dialog->help_text, text);
 }
 
-static void search_entry_modified_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
+static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
-	gchar *key = gtk_editable_get_chars (editable, 0, -1);
-	gboolean found = ygtk_html_wrap_search (dialog->help_text, key);
-	ygtk_find_entry_set_state (YGTK_FIND_ENTRY (dialog->search_entry), found);
-	g_free (key);
+	GtkEntry *entry = GTK_ENTRY (editable);
+	const gchar *text = gtk_entry_get_text (entry);
+	gboolean found = ygtk_html_wrap_search (dialog->help_text, text);
+
+	GtkWidget *widget = GTK_WIDGET (entry);
+	if (found) {  // revert
+		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+	}
+	else {
+		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
+				 white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &red);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &white);
+		gtk_widget_error_bell (widget);
+	}
+
+	gboolean showIcon = *text;  // show clear icon if text
+	if (showIcon != gtk_entry_get_icon_activatable (entry, GTK_ENTRY_ICON_SECONDARY)) {
+		gtk_entry_set_icon_activatable (entry,
+			GTK_ENTRY_ICON_SECONDARY, showIcon);
+		gtk_entry_set_icon_from_stock (entry,
+			GTK_ENTRY_ICON_SECONDARY, showIcon ? GTK_STOCK_CLEAR : NULL);
+		if (showIcon)
+			gtk_entry_set_icon_tooltip_text (entry,
+				GTK_ENTRY_ICON_SECONDARY, _("Clear"));
+	}
 }
+
+static void search_entry_icon_press_cb (GtkEntry *entry, GtkEntryIconPosition pos,
+                                         GdkEvent *event, YGtkHelpDialog *dialog)
+{
+	if (pos == GTK_ENTRY_ICON_PRIMARY)
+		gtk_editable_select_region (GTK_EDITABLE (entry), 0, -1);
+	else
+		gtk_entry_set_text (entry, "");
+	gtk_widget_grab_focus (GTK_WIDGET (entry));
+}
+
 static void search_entry_activated_cb (GtkEntry *entry, YGtkHelpDialog *dialog)
 { ygtk_help_dialog_find_next (dialog); }
 
@@ -93,8 +126,19 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	}
 
 	// bottom part (search entry + close button)
-	dialog->search_entry = ygtk_find_entry_new();
+	dialog->search_entry = gtk_entry_new();
 	gtk_widget_set_size_request (dialog->search_entry, 140, -1);
+	gtk_entry_set_icon_from_stock (GTK_ENTRY (dialog->search_entry),
+		GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
+	gtk_entry_set_icon_activatable (GTK_ENTRY (dialog->search_entry),
+		GTK_ENTRY_ICON_PRIMARY, TRUE);
+	g_signal_connect (G_OBJECT (dialog->search_entry), "icon-press",
+	                  G_CALLBACK (search_entry_icon_press_cb), dialog);
+	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
+	                  G_CALLBACK (search_entry_changed_cb), dialog);
+	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
+	                  G_CALLBACK (search_entry_activated_cb), dialog);
+
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
 	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
 
@@ -105,11 +149,6 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_box_pack_start (GTK_BOX (bottom_box), label, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 0);
 	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
-
-	g_signal_connect (G_OBJECT (dialog->search_entry), "changed",
-	                  G_CALLBACK (search_entry_modified_cb), dialog);
-	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
-	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
 #ifdef SET_HELP_HISTORY
 	dialog->history_combo = gtk_combo_box_new_text();
