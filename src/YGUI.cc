@@ -132,7 +132,7 @@ void YGUI::checkInit()
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
 			printf (
-				 "Command line options for the YaST2 Gtk UI:\n\n"
+				 _("Command line options for the YaST2 UI (Gtk plugin):\n\n"
 				 "--no-wm       assume no window manager is running\n"
 				 "--noborder    no window manager border for main dialogs\n"
 				 "--fullscreen  use full screen for main dialogs\n"
@@ -140,7 +140,7 @@ void YGUI::checkInit()
 				 "--nothreads   run without additional UI threads\n"
 				 "--help        prints this help text\n"
 				 "\n"
-				 );
+				 ));
 			exit (0);
 		}
 		else if (pkgSelectorParse (argp)) ;
@@ -291,7 +291,7 @@ YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 void YGUI::askPlayMacro()
 {
 	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
-		DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Play");
+		DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Select Macro File to Play"));
 	if (!filename.empty()) {
 		busyCursor();
 		YMacro::play (filename);
@@ -307,13 +307,13 @@ void YGUI::toggleRecordMacro()
 
 		GtkWidget* dialog = gtk_message_dialog_new (NULL,
 			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-			"Macro recording done.");
+			_("Macro recording done."));
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
 	}
 	else {
 		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
+			DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Select Macro File to Record to"));
 		if (!filename.empty())
 			YMacro::record (filename);
 	}
@@ -322,7 +322,7 @@ void YGUI::toggleRecordMacro()
 void YGUI::askSaveLogs()
 {
 	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", "Save y2logs to...");
+		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs to..."));
 	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
 		command += " '" + filename + "'";
@@ -332,7 +332,7 @@ void YGUI::askSaveLogs()
 			yuiMilestone() << "y2logs saved to " << filename << endl;
 		else {
 			char *error = g_strdup_printf (
-				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
+				_("Error: couldn't save y2logs: \"%s\" (exit value: %d)"),
 				command.c_str(), ret);
 			yuiError() << error << endl;
 			errorMsg (error);
@@ -411,7 +411,7 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		yuiDebug() << "screenshot: " << filename << endl;
 
 		filename = askForFileOrDirectory (
-			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", "Save screenshot to");
+			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", _("Save screenshot to"));
 		if (filename.empty()) {  // user dismissed the dialog
 			yuiDebug() << "Save screen shot canceled by user\n";
 			goto makeScreenShot_ret;
@@ -593,175 +593,6 @@ YOptionalWidgetFactory *YGUI::createOptionalWidgetFactory()
 { return new YGOptionalWidgetFactory; }
 YApplication *YGUI::createApplication()
 { return new YGApplication(); }
-
-//** debug dialogs
-
-//#define SHOW_YAST_VALID_COL
-
-void dumpTree (YWidget *ywidget)
-{
-	struct inner {
-		static GtkWidget *createYastView (GtkWidget *dialog, YWidget *ywidget)
-		{
-			int cols = 4;
-			#ifdef SHOW_YAST_VALID_COL
-				cols++;
-			#endif
-
-			GtkTreeStore *store;
-			store = gtk_tree_store_new (cols,
-				G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING
-				#ifdef SHOW_VALID_COL
-					, G_TYPE_BOOLEAN
-				#endif
-				);
-			GtkWidget *widget = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
-			GtkTreeView *view = GTK_TREE_VIEW (widget);
-			gtk_tree_view_set_enable_tree_lines (view, TRUE);
-			g_object_unref (G_OBJECT (store));
-
-			g_object_set_data (G_OBJECT (dialog), "yast-view", view);
-			g_object_set_data (G_OBJECT (dialog), "yast-store", store);
-
-			gtk_tree_view_append_column (view,
-				gtk_tree_view_column_new_with_attributes ("Type",
-				gtk_cell_renderer_text_new(), "text", 0, NULL));
-			gtk_tree_view_append_column (view,
-				gtk_tree_view_column_new_with_attributes ("Label",
-				gtk_cell_renderer_text_new(), "text", 1, NULL));
-			gtk_tree_view_column_set_expand (gtk_tree_view_get_column (
-				GTK_TREE_VIEW (view), 1), TRUE);
-			gtk_tree_view_append_column (view,
-				gtk_tree_view_column_new_with_attributes ("Stretch",
-				gtk_cell_renderer_text_new(), "text", 2, NULL));
-			gtk_tree_view_append_column (view,
-				gtk_tree_view_column_new_with_attributes ("Weight",
-				gtk_cell_renderer_text_new(), "text", 3, NULL));
-			#ifdef SHOW_VALID_COL
-				gtk_tree_view_append_column (view,
-					gtk_tree_view_column_new_with_attributes ("Valid",
-					gtk_cell_renderer_toggle_new(), "active", 4, NULL));
-			#endif
-			inner::dumpYastTree (ywidget, store, NULL);
-			gtk_tree_view_expand_all (view);
-			return widget;
-		}
-		static void dumpYastTree (YWidget *widget, GtkTreeStore *store,
-				                  GtkTreeIter *parent_node)
-		{
-			YGWidget *ygwidget;
-			if (!widget || !(ygwidget = YGWidget::get (widget)))
-				return;
-
-			GtkTreeIter iter;
-			gtk_tree_store_append (store, &iter, parent_node);
-
-			gchar *stretch = g_strdup_printf ("%d x %d",
-				widget->stretchable (YD_HORIZ), widget->stretchable (YD_VERT));
-			gchar *weight = g_strdup_printf ("%d x %d",
-				widget->weight (YD_HORIZ), widget->weight (YD_VERT));
-			gtk_tree_store_set (store, &iter, 0, widget->widgetClass(),
-				1, ygwidget->getDebugLabel().c_str(), 2, stretch, 3, weight,
-#ifdef IS_VALID_COL
-				4, widget->isValid(),
-#endif
-				-1);
-			g_free (stretch);
-			g_free (weight);
-
-			for (YWidgetListConstIterator it = widget->childrenBegin();
-			     it != widget->childrenEnd(); it++)
-				dumpYastTree (*it, store, &iter);
-		}
-		static GtkWidget *createGtkView (GtkWidget *dialog, YWidget *ywidget)
-		{
-			GtkTreeStore *store;
-			store = gtk_tree_store_new (1, G_TYPE_STRING);
-
-			GtkWidget *widget = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
-			GtkTreeView *view = GTK_TREE_VIEW (widget);
-			gtk_tree_view_set_enable_tree_lines (view, TRUE);
-			g_object_unref (G_OBJECT (store));
-
-			g_object_set_data (G_OBJECT (dialog), "gtk-view", view);
-			g_object_set_data (G_OBJECT (dialog), "gtk-store", store);
-
-			gtk_tree_view_append_column (view,
-				gtk_tree_view_column_new_with_attributes ("Type",
-				gtk_cell_renderer_text_new(), "text", 0, NULL));
-			inner::dumpGtkTree (YGWidget::get (ywidget)->getLayout(), store, NULL);
-			gtk_tree_view_expand_all (view);
-			return widget;
-		}
-		static void dumpGtkTree (GtkWidget *widget, GtkTreeStore *store,
-					 GtkTreeIter *parent_node)
-		{
-			if (!widget) return;
-
-			GtkTreeIter iter;
-			gtk_tree_store_append (store, &iter, parent_node);
-
-			gtk_tree_store_set (store, &iter,
-					    0, g_type_name_from_instance ((GTypeInstance *) widget),
-					    -1);
-
-			if (GTK_IS_CONTAINER (widget)) {
-			        GList *children = gtk_container_get_children (GTK_CONTAINER (widget));
-				for (GList *l = children; l; l = l->next) 
-				  dumpGtkTree (GTK_WIDGET (l->data), store, &iter);
-			}
-		}
-		static void dialog_response_cb (GtkDialog *dialog, gint response,
-		                                 YWidget *ywidget)
-		{
-			if (response == 1) {
-				GtkTreeStore *yast_store, *gtk_store;
-				GtkTreeView *yast_view, *gtk_view;
-				yast_store = (GtkTreeStore *)
-					g_object_get_data (G_OBJECT (dialog), "yast-store");
-				yast_view = (GtkTreeView *)
-					g_object_get_data (G_OBJECT (dialog), "yast-view");
-				gtk_store = (GtkTreeStore *)
-					g_object_get_data (G_OBJECT (dialog), "gtk-store");
-				gtk_view = (GtkTreeView *)
-					g_object_get_data (G_OBJECT (dialog), "gtk-view");
-				gtk_tree_store_clear (yast_store);
-				gtk_tree_store_clear (gtk_store);
-				dumpYastTree (ywidget, yast_store, NULL);
-				dumpGtkTree (YGWidget::get (ywidget)->getLayout(), gtk_store, NULL);
-				gtk_tree_view_expand_all (yast_view);
-				gtk_tree_view_expand_all (gtk_view);
-			}
-			else
-				gtk_widget_destroy (GTK_WIDGET (dialog));
-		}
-		static void add_page (GtkWidget *notebook, const char *title,
-		                       GtkWidget *view)
-		{
-			GtkWidget *scroll_win = gtk_scrolled_window_new (NULL, NULL);
-			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll_win),
-					                             GTK_SHADOW_IN);
-			gtk_scrolled_window_set_policy  (GTK_SCROLLED_WINDOW (scroll_win),
-					                         GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-			gtk_container_add (GTK_CONTAINER (scroll_win), view);
-			gtk_notebook_append_page (GTK_NOTEBOOK (notebook), scroll_win,
-			                          gtk_label_new (title));
-		}
-	};
-
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("Widget Tree", NULL,
-		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_REFRESH, 1,
-			GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 400);
-	g_signal_connect (G_OBJECT (dialog), "response",
-	                  G_CALLBACK (inner::dialog_response_cb), ywidget);
-
-	GtkWidget *notebook = gtk_notebook_new();
-	inner::add_page (notebook, "Yast", inner::createYastView (dialog, ywidget));
-	inner::add_page (notebook, "GTK", inner::createGtkView (dialog, ywidget));
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), notebook);
-	gtk_widget_show_all (dialog);
-}
 
 #include <YRichText.h>
 #include "ygtktextview.h"

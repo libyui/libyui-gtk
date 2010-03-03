@@ -1,3 +1,11 @@
+2010-03-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.cc: bug fix 582148: a few strings should be
+	set as translatable.
+
+	* src/YGDialog.cc: bug fix: revert to normal cursor after
+	running dialog-spy.
+
 2010-03-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.h/c: removed.

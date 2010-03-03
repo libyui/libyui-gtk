@@ -240,29 +240,23 @@ private:
 				    yuiMilestone() << "Starting xterm\n";
 				    system ("/usr/bin/xterm &");
 				    return TRUE;
-				case GDK_T:
-				    dumpTree (pThis->getChild());
-				    return TRUE;
 				case GDK_H:
 				    dumpYastHtml (pThis->getChild());
 				    return TRUE;
 				case GDK_E:  // easter egg
 				    static guint explode_timeout = 0;
 				    if (explode_timeout == 0)
-				        explode_timeout = g_timeout_add (10000,
-				                                         expode_window_timeout_cb, pThis);
+				        explode_timeout = g_timeout_add (10000, expode_window_timeout_cb, pThis);
 				    else {
 				        g_source_remove (explode_timeout);
 				        explode_timeout = 0;
 				    }
 				    return TRUE;
-#if YAST2_VERSION >= 2017006
 				case GDK_Y:
 					yuiMilestone() << "Opening dialog spy" << endl;
 					YDialogSpy::showDialogSpy();
-					//normalCursor();
+					YGUI::ui()->normalCursor();
 					break;
-#endif
 				default:
 					break;
 		    }
