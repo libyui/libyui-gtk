@@ -116,7 +116,7 @@ void YGUI::checkInit()
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
 			printf (
-				 "Command line options for the YaST2 Gtk UI:\n"
+				 _("Command line options for the YaST2 UI (Gtk plugin):\n"
 				 "\n"
 				 "--no-wm       assume no window manager is running\n"
 				 "--noborder    no window manager border for main dialogs\n"
@@ -125,7 +125,7 @@ void YGUI::checkInit()
 				 "--nothreads   run without additional UI threads\n"
 				 "--help        prints this help text\n"
 				 "\n"
-				 );
+				 ));
 			exit (0);
 		}
 /*
@@ -295,13 +295,13 @@ void YGUI::toggleRecordMacro()
 
 		GtkWidget* dialog = gtk_message_dialog_new (NULL,
 			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-			"Macro recording done.");
+			_("Macro recording done."));
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
 	}
 	else {
 		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-			DEFAULT_MACRO_FILE_NAME, "*.ycp", "Select Macro File to Record to");
+			DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Select Macro File to Record to"));
 		if (!filename.empty())
 			YMacro::record (filename);
 	}
@@ -310,7 +310,7 @@ void YGUI::toggleRecordMacro()
 void YGUI::askSaveLogs()
 {
 	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", "Save y2logs to...");
+		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs to..."));
 	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
 		command += " '" + filename + "'";
@@ -320,7 +320,7 @@ void YGUI::askSaveLogs()
 			yuiMilestone() << "y2logs saved to " << filename << endl;
 		else {
 			char *error = g_strdup_printf (
-				"Error: couldn't save y2logs: \"%s\" (exit value: %d)",
+				_("Error: couldn't save y2logs: \"%s\" (exit value: %d)"),
 				command.c_str(), ret);
 			yuiError() << error << endl;
 			errorMsg (error);
@@ -397,7 +397,7 @@ void YGApplication::makeScreenShot (string filename)
 		yuiDebug() << "screenshot: " << filename << endl;
 
 		filename = askForFileOrDirectory (
-			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", "Save screenshot to");
+			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", _("Save screenshot to"));
 		if (filename.empty()) {  // user dismissed the dialog
 			yuiDebug() << "Save screen shot canceled by user\n";
 			goto makeScreenShot_ret;
