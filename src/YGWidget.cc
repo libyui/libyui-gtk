@@ -269,19 +269,23 @@ void YGLabeledWidget::setBuddy (GtkWidget *widget)
 void YGLabeledWidget::doSetLabel (const std::string &label)
 {
 	if (!label.empty()) {
-		string str = YGUtils::mapKBAccel (label);
+		string str (YGUtils::mapKBAccel (label));
 
-		// add a ':' at the end
-		const gchar *last = g_utf8_find_prev_char (str.c_str(), str.c_str() + str.length());
-		gunichar last_char = g_utf8_get_char (last);
-		if (g_unichar_isalpha (last_char))
-			str += ':';
+		// add a ':' at the end of the label, if not set
+		if (!str.empty()) {
+			const gchar *last = g_utf8_find_prev_char (str.c_str(), str.c_str() + str.length());
+			gunichar last_char = g_utf8_get_char (last);
+			if (g_unichar_isalpha (last_char)) {  // append
+				bool reverse = false;
+				if (gtk_widget_get_direction (m_label) == GTK_TEXT_DIR_RTL &&
+				    pango_find_base_dir (str.c_str(), -1) == PANGO_DIRECTION_LTR)
+					reverse = true;
 
-/*		// set it as upper case
-		unsigned int first = (str [0] == '_') ? 1 : 0;
-		if (str [first] >= 'a' && str [first] <= 'z')
-			str [first] += 'A' - 'a';
-*/
+				int i = reverse ? 0 : str.length();
+				str.insert (i, 1, ':');
+			}
+		}
+
 		gtk_label_set_text (GTK_LABEL (m_label), str.c_str());
 		gtk_label_set_use_underline (GTK_LABEL (m_label), TRUE);
 	}
