@@ -428,7 +428,7 @@ bool Ypp::Selectable::canLock()
 {
 	switch (m_type) {
 		case PACKAGE:
-		case PATCH:
+		//case PATCH:
 			return true;
 		default: break;
 	}

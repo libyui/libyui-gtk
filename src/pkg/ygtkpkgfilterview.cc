@@ -64,16 +64,22 @@ struct UpdateData {
 static gboolean update_list_cb (GtkTreeModel *model,
 	GtkTreePath *path, GtkTreeIter *iter, gpointer _data)
 {
+	gchar *text;
 	UpdateData *data = (UpdateData *) _data;
 	gpointer mdata;
-	gtk_tree_model_get (model, iter, YGtkPkgFilterModel::DATA_COLUMN, &mdata, -1);
+	gtk_tree_model_get (model, iter, YGtkPkgFilterModel::TEXT_ORI_COLUMN, &text,
+		YGtkPkgFilterModel::DATA_COLUMN, &mdata, -1);
+
+	bool separator = !(*text);
+	g_free (text);
+	if (separator) return FALSE;
 
 	int row = gtk_tree_path_get_indices (path)[0];
 	if ((row % 2) == 0)  // let the UI breath
 		if (YGPackageSelector::get()->breath())
 			return TRUE;
 
-	if (row == 0 && data->pThis->allAsFirstRow())
+	if (row == 0 && data->pThis->firstRowIsAll())
 		data->pThis->setRowCount (0, data->list->size());
 	else
 		data->pThis->updateRow (*data->list, row, mdata);
@@ -93,7 +99,7 @@ bool YGtkPkgFilterModel::writeQuery (Ypp::PoolQuery &query, GtkTreeIter *iter)
 	gtk_tree_model_get (impl->filter, iter, DATA_COLUMN, &data, -1);
 
 	int row = impl->convertlIterToStoreRow (iter);
-	if (row == 0 && allAsFirstRow())
+	if (row == 0 && firstRowIsAll())
 		return false;
 	return writeRowQuery (query, row, data);
 }
@@ -124,7 +130,10 @@ void YGtkPkgFilterModel::addRow (const char *icon,
 	if (pixbuf) g_object_unref (pixbuf);
 }
 
-void YGtkPkgFilterModel::setRowCount (int row, int count)
+void YGtkPkgFilterModel::addSeparator()
+{ addRow (NULL, "", true, NULL); }
+
+void YGtkPkgFilterModel::setRowCount (int row, int count, bool hide_if_zero)
 {
 	GtkListStore *store = GTK_LIST_STORE (impl->model);
 	GtkTreeIter iter;
@@ -134,7 +143,8 @@ void YGtkPkgFilterModel::setRowCount (int row, int count)
 	gtk_tree_model_get (impl->model, &iter, TEXT_ORI_COLUMN, &ori_text, -1);
 
 	gchar *text = g_strdup_printf ("%s <small>(%d)</small>", ori_text, count);
-	gtk_list_store_set (store, &iter, TEXT_COLUMN, text, VISIBLE_COLUMN, count > 0, -1);
+	gtk_list_store_set (store, &iter, TEXT_COLUMN, text,
+		VISIBLE_COLUMN, !hide_if_zero || count > 0, -1);
 	g_free (ori_text);
 	g_free (text);
 }
@@ -143,7 +153,7 @@ void YGtkPkgFilterModel::setRowCount (int row, int count)
 
 struct YGtkPkgStatusModel::Impl : public Ypp::SelListener {
 	Impl (YGtkPkgStatusModel *parent)
-	: parent (parent), selected (-1), list (0)
+	: parent (parent), list (0)
 	{ Ypp::addSelListener (this); }
 
 	~Impl()
@@ -151,51 +161,70 @@ struct YGtkPkgStatusModel::Impl : public Ypp::SelListener {
 
 	virtual void selectableModified()
 	{  // make sure to update the "Modified" row on packages change
-		parent->updateRow (list, 5, NULL);
+		parent->updateRow (list, modifiedRow(), NULL);
 	}
 
 	YGtkPkgStatusModel *parent;
-	int selected;
 	Ypp::List list;
+
+	static int modifiedRow()
+	{ return YGPackageSelector::get()->onlineUpdateMode() ? 2 : 5; }
 };
+
+static Ypp::StatusMatch::Status rowToStatus (int row)
+{
+	if (YGPackageSelector::get()->onlineUpdateMode())
+		switch (row) {
+			case 0: return Ypp::StatusMatch::NOT_INSTALLED;
+			case 1: return Ypp::StatusMatch::IS_INSTALLED;
+			case 2: return Ypp::StatusMatch::TO_MODIFY;
+		}
+	else
+		switch (row) {
+			case 1: return Ypp::StatusMatch::NOT_INSTALLED;
+			case 2: return Ypp::StatusMatch::IS_INSTALLED;
+			case 3: return Ypp::StatusMatch::HAS_UPGRADE;
+			case 4: return Ypp::StatusMatch::IS_LOCKED;
+			case 5: return Ypp::StatusMatch::TO_MODIFY;
+		}
+	return (Ypp::StatusMatch::Status) 0;
+}
 
 YGtkPkgStatusModel::YGtkPkgStatusModel()
 : impl (new Impl (this))
 {
-	addRow (NULL, _("Any status"), true, 0);
-	addRow (NULL, _("Not installed"), true, 0);
-	addRow (NULL, _("Installed"), true, 0);
-	addRow (NULL, _("Upgradable"), true, 0);
-	addRow (NULL, _("Locked"), true, 0);
-	addRow (NULL, _("Modified"), true, 0);
+	if (YGPackageSelector::get()->onlineUpdateMode()) {
+		addRow (NULL, _("Available"), true, 0);
+		addRow (NULL, _("Installed"), true, 0);
+		addRow (NULL, _("Modified"), true, 0);
+	}
+	else {
+		addRow (NULL, _("Any status"), true, 0);
+		addRow (NULL, _("Not installed"), true, 0);
+		addRow (NULL, _("Installed"), true, 0);
+		addRow (NULL, _("Upgradable"), true, 0);
+		addRow (NULL, _("Locked"), true, 0);
+		addRow (NULL, _("Modified"), true, 0);
+	}
 }
 
 YGtkPkgStatusModel::~YGtkPkgStatusModel()
 { delete impl; }
 
-static Ypp::StatusMatch statusType (int row)
-{
-	switch (row) {
-		case 1: return Ypp::StatusMatch::NOT_INSTALLED;
-		case 2: return Ypp::StatusMatch::IS_INSTALLED;
-		case 3: return Ypp::StatusMatch::HAS_UPGRADE;
-		case 4: return Ypp::StatusMatch::IS_LOCKED;
-		case 5: return Ypp::StatusMatch::TO_MODIFY;
-	}
-	return (Ypp::StatusMatch::Status) 0;
-}
+bool YGtkPkgStatusModel::firstRowIsAll()
+{ return !YGPackageSelector::get()->onlineUpdateMode(); }
 
 void YGtkPkgStatusModel::updateRow (Ypp::List list, int row, gpointer data)
 {
+	bool hide_if_zero = row > 0;
 	impl->list = list;
-	Ypp::StatusMatch match (statusType (row));
-	setRowCount (row, list.count (&match));
+	Ypp::StatusMatch match (rowToStatus (row));
+	setRowCount (row, list.count (&match), hide_if_zero);
 }
 
 bool YGtkPkgStatusModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data)
 {
-	impl->selected = row;
-	query.addCriteria (new Ypp::StatusMatch (statusType (row)));
+	query.addCriteria (new Ypp::StatusMatch (rowToStatus (row)));
 	return true;
 }
 
@@ -212,7 +241,7 @@ static void upgrade_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis)
 
 GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 {  // "Upgrade All" button
-	if (row == 3) {
+	if (row == 3 && !YGPackageSelector::get()->onlineUpdateMode()) {
 		GtkWidget *button = gtk_button_new_with_label (_("Upgrade All"));
 		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON);
 		gtk_button_set_image (GTK_BUTTON (button), icon);
@@ -257,18 +286,16 @@ YGtkPkgPKGroupModel::YGtkPkgPKGroupModel()
 		if (i == YPKG_GROUP_RECENT)
 			name += std::string ("\n<small>") + _("(uploaded last 7 days)") + "</small>";
 		addRow (icon, name.c_str(), true, GINT_TO_POINTER (i+1));
-		if (i == YPKG_GROUP_UNKNOWN)  // separator
-			addRow (NULL, "", true, 0);
+		if (i == YPKG_GROUP_UNKNOWN)
+			addSeparator();
 	}
 }
 
 void YGtkPkgPKGroupModel::updateRow (Ypp::List list, int row, gpointer data)
 {
-	if (data) {
-		YPkgGroupEnum id = (YPkgGroupEnum) (GPOINTER_TO_INT (data)-1);
-		Ypp::PKGroupMatch match (id);
-		setRowCount (row, list.count (&match));
-	}
+	YPkgGroupEnum id = (YPkgGroupEnum) (GPOINTER_TO_INT (data)-1);
+	Ypp::PKGroupMatch match (id);
+	setRowCount (row, list.count (&match));
 }
 
 bool YGtkPkgPKGroupModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data)
@@ -315,7 +342,7 @@ YGtkPkgRepositoryModel::YGtkPkgRepositoryModel()
 		}
 	}
 
-	addRow ("gtk-missing-image", _("None"), true, GINT_TO_POINTER (1));
+	addRow (GTK_STOCK_MISSING_IMAGE, _("None"), true, GINT_TO_POINTER (1));
 }
 
 YGtkPkgRepositoryModel::~YGtkPkgRepositoryModel()
@@ -598,25 +625,21 @@ void YGtkPkgFilterView::updateList (Ypp::List list)
 {
 	impl->model->updateList (list);
 
-	if (impl->model->allAsFirstRow()) {
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (impl->view));
-		GtkTreeModel *model;
-		if (!gtk_tree_selection_get_selected (selection, &model, NULL)) {
-			GtkTreeIter iter;
-			if (gtk_tree_model_get_iter_first (model, &iter)) {
-				g_signal_handlers_block_by_func (selection, (gpointer) selection_changed_cb, this);
-				gtk_tree_selection_select_iter (selection, &iter);
-				g_signal_handlers_unblock_by_func (selection, (gpointer) selection_changed_cb, this);
-			}
+	// always ensure some row is selected
+	GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (impl->view));
+	GtkTreeModel *model;
+	if (!gtk_tree_selection_get_selected (selection, &model, NULL)) {
+		GtkTreeIter iter;
+		if (gtk_tree_model_get_iter_first (model, &iter)) {
+			g_signal_handlers_block_by_func (selection, (gpointer) selection_changed_cb, this);
+			gtk_tree_selection_select_iter (selection, &iter);
+			g_signal_handlers_unblock_by_func (selection, (gpointer) selection_changed_cb, this);
 		}
 	}
 }
 
 void YGtkPkgFilterView::clearSelection()
-{
-	int row = impl->model->allAsFirstRow() ? 0 : -1;
-	select (row);
-}
+{ select (0); /* select 1st row, so some row is selected */ }
 
 bool YGtkPkgFilterView::writeQuery (Ypp::PoolQuery &query)
 {

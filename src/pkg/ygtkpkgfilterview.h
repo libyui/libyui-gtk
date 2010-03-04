@@ -32,7 +32,7 @@ struct YGtkPkgFilterModel  // abstract
 	virtual GtkWidget *createToolbox (GtkTreeIter *iter);
 
 	virtual bool hasIconCol() = 0;
-	virtual bool allAsFirstRow() = 0;
+	virtual bool firstRowIsAll() = 0;
 
 	virtual bool begsUpdate() = 0;
 	virtual void updateRow (Ypp::List list, int row, gpointer data) = 0;
@@ -43,18 +43,21 @@ struct YGtkPkgFilterModel  // abstract
 	virtual GtkWidget *createInternalPopup() { return NULL; }
 
 	void addRow (const char *icon, const char *text, bool enabled, gpointer data);
-	void setRowCount (int row, int count);
+	void addSeparator();
+	void setRowCount (int row, int count, bool hide_if_zero = true);
 
 	struct Impl;
 	Impl *impl;
 };
+
+// implementations
 
 struct YGtkPkgStatusModel : public YGtkPkgFilterModel
 {
 	YGtkPkgStatusModel();
 	virtual ~YGtkPkgStatusModel();
 	virtual bool hasIconCol() { return false; }
-	virtual bool allAsFirstRow() { return true; }
+	virtual bool firstRowIsAll();
 	virtual bool begsUpdate() { return true; }
 	virtual void updateRow (Ypp::List list, int row, gpointer data);
 	virtual bool writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data);
@@ -68,7 +71,7 @@ struct YGtkPkgPKGroupModel : public YGtkPkgFilterModel
 {
 	YGtkPkgPKGroupModel();
 	virtual bool hasIconCol() { return true; }
-	virtual bool allAsFirstRow() { return true; }
+	virtual bool firstRowIsAll() { return true; }
 	virtual bool begsUpdate() { return true; }
 	virtual void updateRow (Ypp::List list, int row, gpointer data);
 	virtual bool writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data);
@@ -79,7 +82,7 @@ struct YGtkPkgRepositoryModel : public YGtkPkgFilterModel
 	YGtkPkgRepositoryModel();
 	virtual ~YGtkPkgRepositoryModel();
 	virtual bool hasIconCol() { return true; }
-	virtual bool allAsFirstRow() { return true; }
+	virtual bool firstRowIsAll() { return true; }
 	virtual bool begsUpdate() { return true; }
 	virtual void updateRow (Ypp::List list, int row, gpointer data);
 	virtual bool writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data);
@@ -95,7 +98,7 @@ struct YGtkPkgSupportModel : public YGtkPkgFilterModel
 {
 	YGtkPkgSupportModel();
 	virtual bool hasIconCol() { return false; }
-	virtual bool allAsFirstRow() { return true; }
+	virtual bool firstRowIsAll() { return true; }
 	virtual bool begsUpdate() { return true; }
 	virtual void updateRow (Ypp::List list, int row, gpointer data);
 	virtual bool writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data);
@@ -105,11 +108,13 @@ struct YGtkPkgPriorityModel : public YGtkPkgFilterModel
 {
 	YGtkPkgPriorityModel();
 	virtual bool hasIconCol() { return false; }
-	virtual bool allAsFirstRow() { return true; }
+	virtual bool firstRowIsAll() { return true; }
 	virtual bool begsUpdate() { return true; }
 	virtual void updateRow (Ypp::List list, int row, gpointer data);
 	virtual bool writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data);
 };
+
+// widget
 
 struct YGtkPkgFilterView : public YGtkPkgQueryWidget
 {

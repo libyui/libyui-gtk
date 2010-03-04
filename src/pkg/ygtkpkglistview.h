@@ -17,7 +17,8 @@ enum Property {
 };
 
 struct YGtkPkgListView {
-	YGtkPkgListView (bool descriptiveTooltip, int default_sort = Ypp::List::NAME_SORT);  // -1 to disable
+	YGtkPkgListView (bool descriptiveTooltip, int default_sort /* -1 to disable */,
+		bool identAuto, bool colorModified);
 	~YGtkPkgListView();
 
 	GtkWidget *getWidget();
@@ -28,10 +29,9 @@ struct YGtkPkgListView {
 
 	void setHighlight (const std::list <std::string> &keywords);
 
-	void addTextColumn (const char *header, int property, bool visible, int size, bool identAuto = false);
+	void addTextColumn (const char *header, int property, bool visible, int size);
 	void addCheckColumn (int checkProperty);
 	void addImageColumn (const char *header, int property);
-
 	void addUndoButtonColumn (const char *header);
 
 	struct Listener {

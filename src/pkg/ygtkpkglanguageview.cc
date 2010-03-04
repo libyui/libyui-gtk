@@ -11,7 +11,7 @@
 #include <gtk/gtk.h>
 
 YGtkPkgLanguageView::YGtkPkgLanguageView()
-: YGtkPkgListView (true)
+: YGtkPkgListView (true, Ypp::List::NAME_SORT, false, true)
 {
 	addCheckColumn (INSTALLED_CHECK_PROP);
 	addTextColumn (NULL, NAME_SUMMARY_PROP, true, -1);

@@ -259,10 +259,12 @@ struct YGtkPkgListView::Impl {
 	int sort_attrb, ascendent : 2;
 	bool userModified;
 	std::list <std::string> m_keywords;
+	bool identAuto, colorModified;
 
-	Impl (bool descriptiveTooltip, int default_sort_attrb) : listener (NULL), list (0),
-		descriptiveTooltip (descriptiveTooltip), sort_attrb (default_sort_attrb),
-		ascendent (true), userModified (false) {}
+	Impl (bool descriptiveTooltip, int default_sort_attrb, bool identAuto, bool colorModified)
+	: listener (NULL), list (0), descriptiveTooltip (descriptiveTooltip),
+	  sort_attrb (default_sort_attrb), ascendent (true), userModified (false),
+	  identAuto (identAuto), colorModified (colorModified) {}
 
 	void setList (Ypp::List _list, int _attrb, bool _ascendent, bool userSorted, const std::list <std::string> &keywords)
 	{
@@ -559,8 +561,8 @@ static void set_sort_column (YGtkPkgListView *pThis, GtkTreeViewColumn *column, 
 			              G_CALLBACK (column_clicked_cb), pThis);
 }
 
-YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort)
-: impl (new Impl (descriptiveTooltip, default_sort))
+YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, bool identAuto, bool colorModified)
+: impl (new Impl (descriptiveTooltip, default_sort, identAuto, colorModified))
 {
 	impl->scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (impl->scroll),
@@ -625,7 +627,7 @@ void YGtkPkgListView::setHighlight (const std::list <std::string> &keywords)
 		gtk_tree_view_scroll_to_point (GTK_TREE_VIEW (impl->view), -1, 0);
 }
 
-void YGtkPkgListView::addTextColumn (const char *header, int property, bool visible, int size, bool identAuto)
+void YGtkPkgListView::addTextColumn (const char *header, int property, bool visible, int size)
 {
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	if (header)
@@ -647,8 +649,12 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
 
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "markup", property, "sensitive", IS_LOCKED_PROP,
-		"cell-background", BACKGROUND_PROP, NULL);
+		header, renderer, "markup", property, "sensitive", IS_LOCKED_PROP, NULL);
+	if (impl->colorModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"cell-background", BACKGROUND_PROP);
+	if (impl->identAuto && (property == NAME_PROP || property == NAME_SUMMARY_PROP))
+		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
 	if (property == VERSION_PROP) {
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"button-visible", HAS_UPGRADE_PROP);
@@ -661,8 +667,6 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 
 	if (size != -1)  // on several columns
 		gtk_tree_view_set_rules_hint (view, TRUE);
-	if (identAuto)
-		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_column_set_resizable (column, TRUE);
 	if (size >= 0)
@@ -679,8 +683,10 @@ void YGtkPkgListView::addCheckColumn (int property)
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (NULL,
-		renderer, "active", property, "sensitive", IS_LOCKED_PROP,
-		"cell-background", BACKGROUND_PROP, NULL);
+		renderer, "active", property, "sensitive", IS_LOCKED_PROP, NULL);
+	if (impl->colorModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"cell-background", BACKGROUND_PROP);
 	g_signal_connect (G_OBJECT (renderer), "toggled",
 	                  G_CALLBACK (check_toggled_cb), this);
 
@@ -691,13 +697,33 @@ void YGtkPkgListView::addCheckColumn (int property)
 	gtk_tree_view_append_column (view, column);
 }
 
+void YGtkPkgListView::addImageColumn (const char *header, int property)
+{
+	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
+	GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
+	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+		header, renderer, "icon-name", property, NULL);
+	if (impl->colorModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"cell-background", BACKGROUND_PROP);
+
+	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
+	int height = MAX (32, YGUtils::getCharsHeight (impl->view, 1));
+	gtk_cell_renderer_set_fixed_size (renderer, -1, height);
+	gtk_tree_view_column_set_fixed_width (column, 38);
+	gtk_tree_view_append_column (view, column);
+}
+
 void YGtkPkgListView::addUndoButtonColumn (const char *header)
 {
 	GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
 		header, renderer, "sensitive", IS_LOCKED_PROP,
-		"cell-background", BACKGROUND_PROP,
 		"visible", TO_MODIFY_PROP, NULL);
+	if (impl->colorModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"cell-background", BACKGROUND_PROP);
+
 	const char *text = _("Undo");
 	g_object_set (G_OBJECT (renderer), "text", text, NULL);
 	gboolean show_icon;
@@ -724,20 +750,6 @@ void YGtkPkgListView::addUndoButtonColumn (const char *header)
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_column_set_fixed_width (column, width);
 	gtk_tree_view_append_column (GTK_TREE_VIEW (impl->view), column);
-}
-
-void YGtkPkgListView::addImageColumn (const char *header, int property)
-{
-	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
-	GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
-	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "icon-name", property, "cell-background", BACKGROUND_PROP, NULL);
-
-	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-	int height = MAX (32, YGUtils::getCharsHeight (impl->view, 1));
-	gtk_cell_renderer_set_fixed_size (renderer, -1, height);
-	gtk_tree_view_column_set_fixed_width (column, 38);
-	gtk_tree_view_append_column (view, column);
 }
 
 void YGtkPkgListView::setListener (YGtkPkgListView::Listener *listener)

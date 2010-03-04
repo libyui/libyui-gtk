@@ -206,8 +206,6 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 					g_free (_text);
 					gtk_label_set_use_markup (GTK_LABEL (label), TRUE);
 					gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
-					YGUtils::setWidgetFont (label,
-						PANGO_STYLE_ITALIC, PANGO_WEIGHT_NORMAL, PANGO_SCALE_MEDIUM);
 					g_signal_connect (G_OBJECT (label), "activate-link",
 					                  G_CALLBACK (patterns_link_cb), this);
 					GtkWidget *icon = gtk_image_new_from_stock (
@@ -222,8 +220,6 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 				GtkWidget *label = gtk_label_new (
 					_("Search by file name only reliable for installed packages."));
 				gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
-				YGUtils::setWidgetFont (label,
-					PANGO_STYLE_ITALIC, PANGO_WEIGHT_NORMAL, PANGO_SCALE_MEDIUM);
 				GtkWidget *icon = gtk_image_new_from_stock (
 					GTK_STOCK_DIALOG_WARNING, GTK_ICON_SIZE_BUTTON);
 				GtkWidget *hbox = gtk_hbox_new (FALSE, 4);

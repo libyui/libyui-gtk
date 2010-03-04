@@ -70,7 +70,7 @@ struct SuffixFilter : public Ypp::Match {
 		m_entry = new YGtkPkgSearchEntry();
 		m_queryWidgets.push_back (m_entry);
 
-		m_list = new YGtkPkgListView (false);
+		m_list = new YGtkPkgListView (false, Ypp::List::NAME_SORT, false, true);
 		m_list->addCheckColumn (INSTALLED_CHECK_PROP);
 		m_list->addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 		m_list->addTextColumn (_("Version"), VERSION_PROP, true, 125);
@@ -115,7 +115,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), m_list->getWidget(), TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), text, FALSE, TRUE);
-		gtk_paned_set_position (GTK_PANED (vpaned), 400);
+		gtk_paned_set_position (GTK_PANED (vpaned), 380);
 
 		GtkWidget *vbox, *_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), hbox, FALSE, TRUE, 0);
@@ -162,7 +162,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), m_combo->getWidget(), TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), status->getWidget(), FALSE, FALSE);
-		gtk_paned_set_position (GTK_PANED (vpaned), 500);
+		gtk_paned_set_position (GTK_PANED (vpaned), 490);
 		return vpaned;
 	}
 
@@ -170,17 +170,19 @@ struct SuffixFilter : public Ypp::Match {
 	{
 		Ypp::init();
 		m_undo = new YGtkPkgUndoList();
+		m_status = 0;
 
 		GtkWidget *hpaned = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (hpaned), createSidebar(), FALSE, TRUE);
 		gtk_paned_pack2 (GTK_PANED (hpaned), createMainArea(), TRUE, FALSE);
 		gtk_paned_set_position (GTK_PANED (hpaned), 200);
 
-		m_status = new YGtkPkgStatusBar (m_undo);
-
 		m_widget = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_widget), hpaned, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (m_widget), m_status->getWidget(), FALSE, TRUE, 0);
+		if (!YGPackageSelector::get()->onlineUpdateMode()) {
+			m_status = new YGtkPkgStatusBar (m_undo);
+			gtk_box_pack_start (GTK_BOX (m_widget), m_status->getWidget(), FALSE, TRUE, 0);
+		}
 		gtk_widget_show_all (m_widget);
 		gtk_widget_hide (m_toolbox);
 
@@ -452,7 +454,7 @@ struct SuffixFilter : public Ypp::Match {
 		     it != m_queryWidgets.end(); it++) {
 			GtkWidget *toolbox = (*it)->createToolbox();
 			if (toolbox) {
-				gtk_box_pack_end (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
+				gtk_box_pack_start (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
 				empty = false;
 				break;  // only present one toolbox widget as they may be quite large
 			}
@@ -558,7 +560,7 @@ struct SuffixFilter : public Ypp::Match {
 		query.addCriteria (new UnsupportedMatch());
 		Ypp::List list (query);
 
-		YGtkPkgListView view = new YGtkPkgListView (true);
+		YGtkPkgListView view (true, Ypp::List::NAME_SORT, false, true);
 		view.addCheckColumn (INSTALLED_CHECK_PROP);
 		view.addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 		view.addTextColumn (_("Supportability"), SUPPORT_PROP, true, 140);

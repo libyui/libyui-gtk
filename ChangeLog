@@ -6,6 +6,9 @@
 	* src/YGDialog.cc: bug fix: revert to normal cursor after
 	running dialog-spy.
 
+	* src/pkg/ygtkpkgfilterview.cc: always show "Available" row
+	for patches -- and select it by default.
+
 2010-03-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkfindentry.h/c: removed.

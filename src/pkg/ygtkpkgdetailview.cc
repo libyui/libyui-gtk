@@ -1067,7 +1067,7 @@ struct ContentsExpander : public DetailExpander {
 	ContentsExpander()
 	: DetailExpander (_("Applies to"), false)
 	{
-		view = new YGtkPkgListView (true);
+		view = new YGtkPkgListView (true, Ypp::List::NAME_SORT, false, false);
 		view->addCheckColumn (INSTALLED_CHECK_PROP);
 		view->addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 		view->addTextColumn (_("Version"), VERSION_PROP, true, 125);
