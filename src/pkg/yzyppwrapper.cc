@@ -915,7 +915,7 @@ bool Ypp::PKGroupMatch::match (Selectable &sel)
 				return delta <= 7;
 			}
 			return false;
-#if 0
+#if ZYPP_VERSION >= 6030004
 		case YPKG_GROUP_MULTIVERSION: return sel.zyppSel()->multiversionInstall();
 #endif
 		default: return Package (sel).group() == m_group;

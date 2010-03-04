@@ -278,7 +278,11 @@ YGtkPkgPKGroupModel::YGtkPkgPKGroupModel()
 		addRow (it->icon, it->name, true, GINT_TO_POINTER (((int)it->id)+1));
 
 	for (int i = YPKG_GROUP_UNKNOWN; i < YPKG_GROUP_TOTAL; i++) {
-		if (i == YPKG_GROUP_MULTIVERSION /* && zypp::sat::Pool::instance().multiversionEmpty() */)
+#if ZYPP_VERSION >= 6030004
+		if (i == YPKG_GROUP_MULTIVERSION && zypp::sat::Pool::instance().multiversionEmpty())
+#else
+		if (i == YPKG_GROUP_MULTIVERSION)
+#endif
 			continue;
 		if (i == YPKG_GROUP_ORPHANED) continue;
 		std::string name = zypp_tag_group_enum_to_localised_text ((YPkgGroupEnum) i);

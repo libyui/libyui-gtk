@@ -3,6 +3,9 @@
 	* src/YGWidget.cc: bug fix 583228: misplacing colon
 	when using English text on Arabic layout.
 
+	* src/pkg/ygtkpkgfilterview.cc & src/pkg/yzyppwrapper.cc:
+	enable multi-version code.
+
 2010-03-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc: bug fix 582148: a few strings should be
