@@ -1,3 +1,8 @@
+2010-03-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGWidget.cc: bug fix 583228: misplacing colon
+	when using English text on Arabic layout.
+
 2010-03-03 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc: bug fix 582148: a few strings should be
