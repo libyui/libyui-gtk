@@ -103,14 +103,19 @@ struct LastChange {
 			else
 				action = _("modify");  // generic for locked and so on
 
-			const char *format;
-			if (auto_count > 1)
-				format = _("<b>%s</b> %s, plus %d dependencies");
-			else if (auto_count == 1)
-				format = _("<b>%s</b> %s, plus 1 dependency");
-			else
-				format = "<b>%s</b> %s";
-			gchar *str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
+			gchar *str;
+			if (sel->toModifyAuto())
+				str = g_strdup_printf (_("<b>%s</b> %d predefined packages"), action, auto_count);
+			else {
+				const char *format;
+				if (auto_count > 1)
+					format = _("<b>%s</b> %s, plus %d dependencies");
+				else if (auto_count == 1)
+					format = _("<b>%s</b> %s, plus 1 dependency");
+				else
+					format = "<b>%s</b> %s";
+				str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
+			}
 #else
 			const char *format;
 			if (auto_count > 1)

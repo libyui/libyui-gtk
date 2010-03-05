@@ -243,7 +243,7 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);
 
 	YGtkPkgListView view (true, -1, true, false);
-	view.addImageColumn (_("Action"), STATUS_ICON_PROP);
+	view.addImageColumn (NULL, STATUS_ICON_PROP);
 	view.addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 	view.addTextColumn (_("Version"), VERSION_PROP, true, 125);
 	view.addUndoButtonColumn (_("Revert?"));

@@ -411,7 +411,7 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
 	gtk_widget_modify_bg (GTK_WIDGET (header), GTK_STATE_NORMAL, &white);
 
-	header->title = gtk_label_new ("YaST");
+	header->title = gtk_label_new ("");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
 	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
@@ -703,7 +703,7 @@ static void ygtk_wizard_map (GtkWidget *widget)
 	YGtkWizard *wizard = YGTK_WIZARD (widget);
 	YGtkWizardHeader *header = YGTK_WIZARD_HEADER (wizard->m_title);
 	const gchar *title = gtk_label_get_text (GTK_LABEL (header->title));
-	ygdialog_setTitle (strcmp (title, "YaST") ? title : "", FALSE);
+	ygdialog_setTitle (title, FALSE);
 }
 
 static gboolean clear_hash_cb (gpointer key, gpointer value, gpointer data)
@@ -820,8 +820,6 @@ void ygtk_wizard_set_help_text (YGtkWizard *wizard, const gchar *text)
 	if (!wizard->m_help)
 		wizard->m_help = ygtk_help_text_new();
 	const gchar *title = ygtk_wizard_header_get_title (YGTK_WIZARD_HEADER (wizard->m_title));
-	if (!strcmp (title, "YaST"))
-		title = 0;
 	ygtk_help_text_set (wizard->m_help, title, text);
 /*	helpful for building out test.cc
 	fprintf (stderr, "Help text:\n%s\n", text); */

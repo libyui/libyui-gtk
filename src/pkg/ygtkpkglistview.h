@@ -18,7 +18,7 @@ enum Property {
 
 struct YGtkPkgListView {
 	YGtkPkgListView (bool descriptiveTooltip, int default_sort /* -1 to disable */,
-		bool identAuto, bool colorModified);
+		bool indentAuto, bool colorModified);
 	~YGtkPkgListView();
 
 	GtkWidget *getWidget();

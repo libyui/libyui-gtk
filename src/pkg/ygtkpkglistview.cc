@@ -208,7 +208,7 @@ protected:
 				break;
 			}
 			case XPAD_PROP: {
-				int xpad = sel.toModifyAuto() ? 15 : 0;
+				int xpad = sel.toModifyAuto() ? 25 : 0;
 				g_value_set_int (value, xpad);
 				break;
 			}
@@ -259,12 +259,12 @@ struct YGtkPkgListView::Impl {
 	int sort_attrb, ascendent : 2;
 	bool userModified;
 	std::list <std::string> m_keywords;
-	bool identAuto, colorModified;
+	bool indentAuto, colorModified;
 
-	Impl (bool descriptiveTooltip, int default_sort_attrb, bool identAuto, bool colorModified)
+	Impl (bool descriptiveTooltip, int default_sort_attrb, bool indentAuto, bool colorModified)
 	: listener (NULL), list (0), descriptiveTooltip (descriptiveTooltip),
 	  sort_attrb (default_sort_attrb), ascendent (true), userModified (false),
-	  identAuto (identAuto), colorModified (colorModified) {}
+	  indentAuto (indentAuto), colorModified (colorModified) {}
 
 	void setList (Ypp::List _list, int _attrb, bool _ascendent, bool userSorted, const std::list <std::string> &keywords)
 	{
@@ -561,8 +561,8 @@ static void set_sort_column (YGtkPkgListView *pThis, GtkTreeViewColumn *column, 
 			              G_CALLBACK (column_clicked_cb), pThis);
 }
 
-YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, bool identAuto, bool colorModified)
-: impl (new Impl (descriptiveTooltip, default_sort, identAuto, colorModified))
+YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, bool indentAuto, bool colorModified)
+: impl (new Impl (descriptiveTooltip, default_sort, indentAuto, colorModified))
 {
 	impl->scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (impl->scroll),
@@ -653,7 +653,7 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
-	if (impl->identAuto && (property == NAME_PROP || property == NAME_SUMMARY_PROP))
+	if (impl->indentAuto && (property == NAME_PROP || property == NAME_SUMMARY_PROP))
 		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
 	if (property == VERSION_PROP) {
 		gtk_tree_view_column_add_attribute (column, renderer,
@@ -735,7 +735,8 @@ void YGtkPkgListView::addUndoButtonColumn (const char *header)
 
 	PangoRectangle rect;
 	int width = 0;
-	PangoLayout *layout = gtk_widget_create_pango_layout (impl->view, text);
+	PangoLayout *layout = gtk_widget_create_pango_layout (impl->view,
+		strlen (header) > strlen (text) ? header : text);
 	pango_layout_get_pixel_extents (layout, NULL, &rect);
 	width = MAX (width, rect.width);
 	g_object_unref (G_OBJECT (layout));

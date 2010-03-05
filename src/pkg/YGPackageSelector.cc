@@ -115,7 +115,8 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), m_list->getWidget(), TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), text, FALSE, TRUE);
-		gtk_paned_set_position (GTK_PANED (vpaned), 380);
+		g_signal_connect_after (G_OBJECT (vpaned), "size-allocate",
+		                        G_CALLBACK (vpaned_allocate_cb), this);
 
 		GtkWidget *vbox, *_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), hbox, FALSE, TRUE, 0);
@@ -518,6 +519,15 @@ struct SuffixFilter : public Ypp::Match {
 	}
 
 	// YGPackageSelector complementary methods
+
+	static void vpaned_allocate_cb (GtkWidget *vpaned, GtkAllocation *alloc, Impl *pThis)
+	{
+		if (!g_object_get_data (G_OBJECT (vpaned), "init")) {  // only once
+			int pos = MAX (alloc->height/2, alloc->height-165);
+			gtk_paned_set_position (GTK_PANED (vpaned), pos);
+			g_object_set_data (G_OBJECT (vpaned), "init", GINT_TO_POINTER (1));
+		}
+	}
 
 	static bool confirmCancel()
 	{

@@ -3,20 +3,20 @@
 set (gtk_pkg_yast_plugin_SRCS
 	YGPackageSelectorPluginImpl.cc
 	YGPackageSelector.cc
-	yzypptags.cc
-	yzyppwrapper.cc
+	ygtkpkgquerycombo.cc
 	ygtkpkglistview.cc
+	ygtkpkgdetailview.cc
 	ygtkpkgsearchentry.cc
 	ygtkpkgfilterview.cc
 	ygtkpkgrpmgroupsview.cc
-	ygtkpkgquerycombo.cc
 	ygtkpkgpatternview.cc
 	ygtkpkglanguageview.cc
 	ygtkpkgundolist.cc
 	ygtkpkgmenubar.cc
 	ygtkpkgstatusbar.cc
 	ygtkpkgproductdialog.cc
-	ygtkpkgdetailview.cc
+	yzyppwrapper.cc
+	yzypptags.cc
 
 	ygtkcellrendererbutton.c
 	ygtkcellrenderersidebutton.c

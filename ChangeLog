@@ -1,3 +1,26 @@
+2010-03-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c: when starting a module, better an empty
+	header, rather than the "YaST" string.
+
+	* src/pkg/ygtkpkgundolist.cc & src/pkg/ygtkpkglistview.cc: in
+	some locales, "Action" and "Revert" column could be
+	truncated.
+
+	* src/pkg/YGPackageSelector.cc: changed the way we set
+	the size to the description box, so it's visible (by
+	default) even on small displays.
+
+	* src/pkg/ygtkpkglistview.cc: increased indent space.
+
+	* src/pkg/ygtkpkgstatusbar.cc: at installation start,
+	use the string "install X predefined packages" for
+	the status bar, rather than "package X, plus N dep..."
+
+	* src/pkg/ygtkpkgsearchentry.cc: don't return empty
+	keyword (""): this fixes crash when searching with
+	trailing white-spaces (as in "yast2 ").
+
 2010-03-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGWidget.cc: bug fix 583228: misplacing colon

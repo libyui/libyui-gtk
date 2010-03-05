@@ -276,7 +276,8 @@ std::list <std::string> YGtkPkgSearchEntry::getText()
 	const gchar delimiter[2] = { ' ', '\0' };
 	gchar **_keywords = g_strsplit (text, delimiter, -1);
 	for (gchar **i = _keywords; *i; i++)
-		keywords.push_back (*i);
+		if (**i)
+			keywords.push_back (*i);
 	g_strfreev (_keywords);
 	return keywords;
 }

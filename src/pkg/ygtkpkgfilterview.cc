@@ -75,7 +75,7 @@ static gboolean update_list_cb (GtkTreeModel *model,
 	if (separator) return FALSE;
 
 	int row = gtk_tree_path_get_indices (path)[0];
-	if ((row % 2) == 0)  // let the UI breath
+	if ((row % 4) == 0)  // let the UI breath
 		if (YGPackageSelector::get()->breath())
 			return TRUE;
 
