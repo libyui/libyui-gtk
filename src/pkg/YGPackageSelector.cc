@@ -163,7 +163,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), m_combo->getWidget(), TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), status->getWidget(), FALSE, FALSE);
-		gtk_paned_set_position (GTK_PANED (vpaned), 490);
+		gtk_paned_set_position (GTK_PANED (vpaned), 485);
 		return vpaned;
 	}
 
@@ -523,7 +523,7 @@ struct SuffixFilter : public Ypp::Match {
 	static void vpaned_allocate_cb (GtkWidget *vpaned, GtkAllocation *alloc, Impl *pThis)
 	{
 		if (!g_object_get_data (G_OBJECT (vpaned), "init")) {  // only once
-			int pos = MAX (alloc->height/2, alloc->height-165);
+			int pos = MAX (alloc->height / 2, alloc->height - 180);
 			gtk_paned_set_position (GTK_PANED (vpaned), pos);
 			g_object_set_data (G_OBJECT (vpaned), "init", GINT_TO_POINTER (1));
 		}
