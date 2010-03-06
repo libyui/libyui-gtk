@@ -637,6 +637,7 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 
 		stockMap [_("Apply")] = GTK_STOCK_APPLY;
 		stockMap [_("Accept")] = GTK_STOCK_APPLY;
+		stockMap [_("Install")] = GTK_STOCK_APPLY;
 		stockMap [_("OK")] = GTK_STOCK_OK;
 		stockMap [_("Cancel")] = GTK_STOCK_CANCEL;
 		stockMap [_("Yes")] = GTK_STOCK_YES;
