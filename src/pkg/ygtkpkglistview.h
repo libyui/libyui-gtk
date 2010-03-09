@@ -12,13 +12,14 @@
 #include <gtk/gtkwidget.h>
 
 enum Property {
-	INSTALLED_CHECK_PROP, NAME_PROP, NAME_SUMMARY_PROP, VERSION_PROP,
-	REPOSITORY_PROP, SUPPORT_PROP, SIZE_PROP, STATUS_ICON_PROP, TOTAL_PROPS
+	INSTALLED_CHECK_PROP, NAME_PROP, ACTION_NAME_PROP, NAME_SUMMARY_PROP,
+	VERSION_PROP, SINGLE_VERSION_PROP, REPOSITORY_PROP, SUPPORT_PROP,
+	SIZE_PROP, STATUS_ICON_PROP, TOTAL_PROPS
 };
 
 struct YGtkPkgListView {
 	YGtkPkgListView (bool descriptiveTooltip, int default_sort /* -1 to disable */,
-		bool indentAuto, bool colorModified);
+		bool indentAuto, bool colorModified, bool variableHeight = false);
 	~YGtkPkgListView();
 
 	GtkWidget *getWidget();
@@ -48,6 +49,7 @@ struct YGtkPkgListView {
 
 // some utilities:
 
+const char *getStatusAction (Ypp::Selectable *sel);
 std::string getStatusSummary (Ypp::Selectable &sel);
 const char *getStatusStockIcon (Ypp::Selectable &sel);
 

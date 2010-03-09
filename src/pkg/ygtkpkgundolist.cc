@@ -222,6 +222,27 @@ static GtkWidget *create_close_when_done_check()
 	return check_box;
 }
 
+struct YGtkPkgUndoView : public YGtkPkgListView, YGtkPkgUndoList::Listener
+{
+	YGtkPkgUndoView()
+	: YGtkPkgListView (true, -1, true, false, true)
+	{
+		addImageColumn (NULL, STATUS_ICON_PROP);
+		addTextColumn (_("Name"), ACTION_NAME_PROP, true, -1);
+		addTextColumn (_("Version"), SINGLE_VERSION_PROP, true, 125);
+		addUndoButtonColumn (_("Revert?"));
+
+		undoChanged (YGPackageSelector::get()->undoList());
+		YGPackageSelector::get()->undoList()->addListener (this);
+	}
+
+	~YGtkPkgUndoView()
+	{ YGPackageSelector::get()->undoList()->removeListener (this); }
+
+	virtual void undoChanged (YGtkPkgUndoList *undo)
+	{ setList (undo->getList()); }
+};
+
 bool YGtkPkgUndoList::popupDialog (bool onApply)
 {
 	GtkMessageType type = onApply ? GTK_MESSAGE_QUESTION : GTK_MESSAGE_OTHER;
@@ -246,13 +267,7 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);
 
-	YGtkPkgListView view (true, -1, true, false);
-	view.addImageColumn (NULL, STATUS_ICON_PROP);
-	view.addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
-	view.addTextColumn (_("Version"), VERSION_PROP, true, 125);
-	view.addUndoButtonColumn (_("Revert?"));
-	view.setList (impl->changes);
-
+	YGtkPkgUndoView view;
 	ChangeSizeInfo change_size;
 
 	GtkWidget *vbox = gtk_vbox_new (FALSE, 6);

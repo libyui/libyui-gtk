@@ -82,27 +82,8 @@ struct LastChange {
 			//GdkPixbuf *_pixbuf = YGUtils::setGray (pixbuf);
 			gtk_image_set_from_pixbuf (GTK_IMAGE (icon), pixbuf);
 			g_object_unref (G_OBJECT (pixbuf));
-#if 1
-			const char *action;
-			if (sel->toInstall()) {
-				action = _("install");
-				if (sel->type() == Ypp::Selectable::PACKAGE) {
-					if (sel->isInstalled()) {
-						Ypp::Version candidate = sel->candidate(), installed = sel->installed();
-						if (candidate > installed)
-							action = _("upgrade");
-						else if (candidate < installed)
-							action = _("downgrade");
-						else
-							action = _("re-install");
-					}
-				}
-			}
-			else if (sel->toRemove())
-				action = _("remove");
-			else
-				action = _("modify");  // generic for locked and so on
 
+			const char *action = getStatusAction (sel);
 			gchar *str;
 			if (sel->toModifyAuto())
 				str = g_strdup_printf (_("<b>%s</b> %d predefined packages"), action, auto_count);
@@ -116,16 +97,6 @@ struct LastChange {
 					format = "<b>%s</b> %s";
 				str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
 			}
-#else
-			const char *format;
-			if (auto_count > 1)
-				format = _("%s, plus %d dependencies");
-			else if (auto_count == 1)
-				format = _("%s, plus 1 dependency");
-			else
-				format = "%s";
-			gchar *str = g_strdup_printf (format, sel->name().c_str(), auto_count);
-#endif
 
 			gtk_label_set_markup (GTK_LABEL (text), str);
 			gtk_widget_set_sensitive (undo_button, TRUE);

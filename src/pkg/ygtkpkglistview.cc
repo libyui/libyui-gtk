@@ -36,10 +36,10 @@ enum ImplProperty {
 static GType _columnType (int col)
 {
 	switch (col) {
-		case NAME_PROP: case NAME_SUMMARY_PROP: case VERSION_PROP:
-		case REPOSITORY_PROP: case SUPPORT_PROP: case SIZE_PROP:
+		case NAME_PROP: case ACTION_NAME_PROP: case NAME_SUMMARY_PROP:
+		case VERSION_PROP: case SINGLE_VERSION_PROP: case REPOSITORY_PROP:
+		case SUPPORT_PROP: case SIZE_PROP: case STATUS_ICON_PROP:
 		case VERSION_FOREGROUND_PROP: case BACKGROUND_PROP: case REPOSITORY_STOCK_PROP:
-		case STATUS_ICON_PROP:
 			return G_TYPE_STRING;
 		case INSTALLED_CHECK_PROP:
 		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP:
@@ -82,6 +82,15 @@ protected:
 			case NAME_PROP: {
 				std::string str (sel.name());
 				highlightMarkupSpan (str, m_keywords);
+				g_value_set_string (value, str.c_str());
+				break;
+			}
+			case ACTION_NAME_PROP: {
+				std::string str ("<b>"), name (sel.name());
+				str.reserve (name.size() + 35);
+				str += getStatusAction (&sel);
+				str += "</b> ";
+				str += name;
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -175,6 +184,16 @@ protected:
 					str += sel.installed().number();
 					str += "</small>";
 				}
+				g_value_set_string (value, str.c_str());
+				break;
+			}
+			case SINGLE_VERSION_PROP: {
+				std::string str;
+				str.reserve (128);
+				if (sel.availableSize() && !sel.toRemove())
+					str = sel.candidate().number();
+				else
+					str = sel.installed().number();
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -549,7 +568,8 @@ static void set_sort_column (YGtkPkgListView *pThis, GtkTreeViewColumn *column, 
 	int attrb = -1;
 	switch (property) {
 		case INSTALLED_CHECK_PROP: attrb = Ypp::List::IS_INSTALLED_SORT; break;
-		case NAME_PROP: case NAME_SUMMARY_PROP: attrb = Ypp::List::NAME_SORT; break;
+		case NAME_PROP: case ACTION_NAME_PROP: case NAME_SUMMARY_PROP:
+			attrb = Ypp::List::NAME_SORT; break;
 		case REPOSITORY_PROP: attrb = Ypp::List::REPOSITORY_SORT; break;
 		case SUPPORT_PROP: attrb = Ypp::List::SUPPORT_SORT; break;
 		case SIZE_PROP: attrb = Ypp::List::SIZE_SORT; break;
@@ -562,7 +582,7 @@ static void set_sort_column (YGtkPkgListView *pThis, GtkTreeViewColumn *column, 
 			              G_CALLBACK (column_clicked_cb), pThis);
 }
 
-YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, bool indentAuto, bool colorModified)
+YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, bool indentAuto, bool colorModified, bool variableHeight)
 : impl (new Impl (descriptiveTooltip, default_sort, indentAuto, colorModified))
 {
 	impl->scroll = gtk_scrolled_window_new (NULL, NULL);
@@ -572,7 +592,8 @@ YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, boo
 		GTK_SHADOW_IN);
 
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view = ygtk_tree_view_new());
-	gtk_tree_view_set_fixed_height_mode (view, TRUE);
+	if (!variableHeight)
+		gtk_tree_view_set_fixed_height_mode (view, TRUE);
 	gtk_tree_view_set_headers_visible (view, FALSE);
 
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
@@ -654,7 +675,9 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
-	if (impl->indentAuto && (property == NAME_PROP || property == NAME_SUMMARY_PROP))
+/*	if (impl->indentAuto && (property == NAME_PROP || property == ACTION_NAME_PROP ||
+	    property == NAME_SUMMARY_PROP))*/
+	if (impl->indentAuto)
 		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
 	if (property == VERSION_PROP) {
 		gtk_tree_view_column_add_attribute (column, renderer,
@@ -703,7 +726,8 @@ void YGtkPkgListView::addImageColumn (const char *header, int property)
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "icon-name", property, NULL);
+		header, renderer, "icon-name", property,
+		"visible", MANUAL_MODIFY_PROP, NULL);
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
@@ -785,6 +809,30 @@ void YGtkPkgListView::selectAll()
 }
 
 // utilities
+
+const char *getStatusAction (Ypp::Selectable *sel)
+{
+	const char *action = 0;
+	if (sel->toInstall()) {
+		action = _("install");
+		if (sel->type() == Ypp::Selectable::PACKAGE) {
+			if (sel->isInstalled()) {
+				Ypp::Version candidate = sel->candidate(), installed = sel->installed();
+				if (candidate > installed)
+					action = _("upgrade");
+				else if (candidate < installed)
+					action = _("downgrade");
+				else
+					action = _("re-install");
+			}
+		}
+	}
+	else if (sel->toRemove())
+		action = _("remove");
+	else //if (sel->toModify())
+		action = _("modify");  // generic for locked and so on
+	return action;
+}
 
 std::string getStatusSummary (Ypp::Selectable &sel)
 {

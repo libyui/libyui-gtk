@@ -1,5 +1,13 @@
 2010-03-09 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkgundolist.cc: when user presses undo,
+	remove item from the summary list.
+
+	* src/pkg/ygtkpkglistview.cc: new property ACTION_NAME_PROP
+	whose item looks like the one from the undo line.
+
+2010-03-09 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgundolist.cc: work-around GTK bug: align
 	changes dialog icon to the left.
 
