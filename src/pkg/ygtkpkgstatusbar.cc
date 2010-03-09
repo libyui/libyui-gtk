@@ -66,7 +66,7 @@ struct LastChange {
 
 		hbox = gtk_hbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), text, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), text, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), undo_button, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), more, FALSE, TRUE, 0);
 	}
@@ -136,6 +136,7 @@ struct LastChange {
 			gtk_label_set_markup (GTK_LABEL (text), _("<i>No changes to perform</i>"));
 			gtk_widget_set_sensitive (undo_button, FALSE);
 		}
+		set_ellipsize (text);
 	}
 
 	static gboolean more_link_cb (GtkLabel *label, gchar *uri, LastChange *pThis)
@@ -145,6 +146,23 @@ struct LastChange {
 	{
 		Ypp::Selectable *sel = YGPackageSelector::get()->undoList()->front (NULL);
 		if (sel) sel->undo();
+	}
+
+	void set_ellipsize (GtkWidget *label)
+	{
+		GtkWidget *hbox = gtk_widget_get_parent (this->hbox);
+		if (GTK_WIDGET_REALIZED (hbox)) {
+			gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_NONE);
+
+			GtkRequisition req;
+			gtk_widget_size_request (hbox, &req);
+			GtkWidget *window = gtk_widget_get_toplevel (hbox);
+			bool ellipsize = req.width > window->allocation.width - 10;
+
+			PangoEllipsizeMode mode = ellipsize ? PANGO_ELLIPSIZE_MIDDLE : PANGO_ELLIPSIZE_NONE;
+			gtk_label_set_ellipsize (GTK_LABEL (label), mode);
+			gtk_box_set_child_packing (GTK_BOX (this->hbox), label, ellipsize, TRUE, 0, GTK_PACK_START);
+		}
 	}
 };
 
@@ -290,8 +308,8 @@ struct YGtkPkgStatusBar::Impl : public YGtkPkgUndoList::Listener {
 		disk = new DiskChange();
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (hbox), last->getWidget(), FALSE, TRUE, 0);
-		gtk_box_pack_end (GTK_BOX (hbox), disk->getWidget(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), last->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), disk->getWidget(), FALSE, TRUE, 0);
 		box = hbox;
 		gtk_widget_show_all (box);
 
