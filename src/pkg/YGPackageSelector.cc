@@ -368,11 +368,13 @@ struct SuffixFilter : public Ypp::Match {
 		column = gtk_tree_view_column_new_with_attributes ("", renderer,
 			"visible", SHOW_TOGGLE_COL, "active", ACTIVE_TOGGLE_COL, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
 		renderer = gtk_cell_renderer_text_new();
 		g_object_set (G_OBJECT (renderer), "wrap-width", 400, NULL);
 		column = gtk_tree_view_column_new_with_attributes ("", renderer,
 			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, "xpad", TEXT_PAD_COL, NULL);
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+
 		gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
 		gtk_widget_set_has_tooltip (view, TRUE);
 

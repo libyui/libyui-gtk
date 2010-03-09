@@ -22,7 +22,8 @@
 
 enum ImplProperty {
 	// booleans
-	HAS_UPGRADE_PROP = TOTAL_PROPS, TO_UPGRADE_PROP, TO_MODIFY_PROP, IS_LOCKED_PROP,
+	HAS_UPGRADE_PROP = TOTAL_PROPS, TO_UPGRADE_PROP,
+	MANUAL_MODIFY_PROP, IS_LOCKED_PROP,
 	// integer
 	XPAD_PROP,
 	// string
@@ -41,8 +42,8 @@ static GType _columnType (int col)
 		case STATUS_ICON_PROP:
 			return G_TYPE_STRING;
 		case INSTALLED_CHECK_PROP:
-		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP: case TO_MODIFY_PROP:
-		case IS_LOCKED_PROP:
+		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP:
+		case MANUAL_MODIFY_PROP: case IS_LOCKED_PROP:
 			return G_TYPE_BOOLEAN;
 		case XPAD_PROP:
 			return G_TYPE_INT;
@@ -177,8 +178,8 @@ protected:
 				g_value_set_string (value, str.c_str());
 				break;
 			}
-			case INSTALLED_CHECK_PROP: {  // as it is, will it be installed at apply?
-				bool installed;
+			case INSTALLED_CHECK_PROP: {
+				bool installed;  // whether it is installed or will be at apply
 				if (sel.toInstall())
 					installed = true;
 				else if (sel.toRemove())
@@ -194,8 +195,8 @@ protected:
 			case TO_UPGRADE_PROP:
 				g_value_set_boolean (value, sel.hasUpgrade() && sel.toInstall());
 				break;
-			case TO_MODIFY_PROP:
-				g_value_set_boolean (value, sel.toModify());
+			case MANUAL_MODIFY_PROP:
+				g_value_set_boolean (value, sel.toModify() && !sel.toModifyAuto());
 				break;
 			case IS_LOCKED_PROP:
 				g_value_set_boolean (value, !sel.isLocked());
@@ -719,7 +720,7 @@ void YGtkPkgListView::addUndoButtonColumn (const char *header)
 	GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
 		header, renderer, "sensitive", IS_LOCKED_PROP,
-		"visible", TO_MODIFY_PROP, NULL);
+		"visible", MANUAL_MODIFY_PROP, "visible", NULL);
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);

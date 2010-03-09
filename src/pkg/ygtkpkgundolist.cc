@@ -237,6 +237,10 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 		gtk_widget_show (image);
 		gtk_message_dialog_set_image (GTK_MESSAGE_DIALOG (dialog), image);
 		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_YES, NULL);
+
+		// work-around for GTK bug: when you set a custom icon, it is packed as expanded
+		GtkWidget *hbox = gtk_widget_get_parent (image);
+		gtk_box_set_child_packing (GTK_BOX (hbox), image, FALSE, TRUE, 0, GTK_PACK_START);
 	}
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_YES);
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);

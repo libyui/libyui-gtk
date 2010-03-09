@@ -1,3 +1,12 @@
+2010-03-09 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgundolist.cc: work-around GTK bug: align
+	changes dialog icon to the left.
+
+	* src/pkg/ygtkpkglistview.cc: bug fix: don't show
+	undo buttons for dependencies (for changes dialog).
+	Spotted by Atri Bhattacharya.
+
 2010-03-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: when starting a module, better an empty
