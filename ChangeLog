@@ -7,6 +7,10 @@
 	undo buttons for dependencies (for changes dialog).
 	Spotted by Atri Bhattacharya.
 
+	* src/pkg/ygtkpkgstatusbar.cc: truncate changes text
+	when there is not enough room for it. I haven't
+	bothered to check when the window is resized...
+
 2010-03-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkwizard.c: when starting a module, better an empty
