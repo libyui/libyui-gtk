@@ -467,12 +467,12 @@ struct SuffixFilter : public Ypp::Match {
 
 	virtual void refreshQuery()
 	{
+		YGUI::ui()->busyCursor();
+		if (YGPackageSelector::get()->breath()) return;
+
 		std::list <std::string> keywords;
 		if (m_entry->getAttribute() == Ypp::PoolQuery::NAME)
 			keywords = m_entry->getText();
-
-		YGUI::ui()->busyCursor();
-		if (YGPackageSelector::get()->breath()) return;
 
 		Ypp::Selectable::Type type = Ypp::Selectable::PACKAGE;
 		if (YGPackageSelector::get()->onlineUpdateMode())
@@ -592,7 +592,11 @@ struct SuffixFilter : public Ypp::Match {
 #include "pkg-selector-help.h"
 
 static bool confirm_cb (void *pThis)
-{ return YGPackageSelector::Impl::confirmCancel(); }
+{
+	if (Ypp::isModified())
+		return YGPackageSelector::Impl::confirmCancel();
+	return true;
+}
 
 static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
                               gint id_type, YGPackageSelector *pThis)
