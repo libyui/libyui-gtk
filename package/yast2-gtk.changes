@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Wed Mar 10 18:16:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.20
+- changed undo line and dialog as response to feedback
+by Atri Bhattacharya.
+- undo line fix: truncate text when there is not enough
+room.
+
+-------------------------------------------------------------------
 Wed Mar 05 00:54:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.19
