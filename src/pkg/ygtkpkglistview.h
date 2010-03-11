@@ -14,7 +14,7 @@
 enum Property {
 	INSTALLED_CHECK_PROP, NAME_PROP, ACTION_NAME_PROP, NAME_SUMMARY_PROP,
 	VERSION_PROP, SINGLE_VERSION_PROP, REPOSITORY_PROP, SUPPORT_PROP,
-	SIZE_PROP, STATUS_ICON_PROP, TOTAL_PROPS
+	SIZE_PROP, STATUS_ICON_PROP, ACTION_BUTTON_PROP, UNDO_BUTTON_PROP, TOTAL_PROPS
 };
 
 struct YGtkPkgListView {
@@ -32,8 +32,8 @@ struct YGtkPkgListView {
 
 	void addTextColumn (const char *header, int property, bool visible, int size);
 	void addCheckColumn (int checkProperty);
-	void addImageColumn (const char *header, int property);
-	void addUndoButtonColumn (const char *header);
+	void addImageColumn (const char *header, int property, bool onlyManualModified = false);
+	void addButtonColumn (const char *header, int property);
 
 	struct Listener {
 		virtual void selectionChanged() = 0;

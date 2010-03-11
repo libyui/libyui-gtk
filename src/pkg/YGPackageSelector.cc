@@ -25,6 +25,8 @@
 #include "ygtkpkgstatusbar.h"
 #include "ygtkpkgdetailview.h"
 
+#define USE_LIST_BUTTONS
+
 YGPackageSelector *YGPackageSelector::singleton = 0;
 
 struct YGPackageSelector::Impl :
@@ -71,11 +73,18 @@ struct SuffixFilter : public Ypp::Match {
 		m_queryWidgets.push_back (m_entry);
 
 		m_list = new YGtkPkgListView (false, Ypp::List::NAME_SORT, false, true);
+#ifdef USE_LIST_BUTTONS
+		m_list->addImageColumn (NULL, STATUS_ICON_PROP);
+#else
 		m_list->addCheckColumn (INSTALLED_CHECK_PROP);
+#endif
 		m_list->addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
 		m_list->addTextColumn (_("Version"), VERSION_PROP, true, 125);
 		if (!onlineUpdate)
 			m_list->addTextColumn (_("Size"), SIZE_PROP, false, 85);
+#ifdef USE_LIST_BUTTONS
+		m_list->addButtonColumn (_("Action"), ACTION_BUTTON_PROP);
+#endif
 		m_list->addTextColumn (_("Repository"), REPOSITORY_PROP, false, 180);
 		if (!onlineUpdate)
 			m_list->addTextColumn (_("Supportability"), SUPPORT_PROP, false, 120);

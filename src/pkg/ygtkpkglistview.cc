@@ -28,6 +28,7 @@ enum ImplProperty {
 	XPAD_PROP,
 	// string
 	VERSION_FOREGROUND_PROP, BACKGROUND_PROP, REPOSITORY_STOCK_PROP,
+	ACTION_ICON_PROP,
 	// pointer
 	PTR_PROP,
 	TOTAL_IMPL_PROPS
@@ -39,7 +40,8 @@ static GType _columnType (int col)
 		case NAME_PROP: case ACTION_NAME_PROP: case NAME_SUMMARY_PROP:
 		case VERSION_PROP: case SINGLE_VERSION_PROP: case REPOSITORY_PROP:
 		case SUPPORT_PROP: case SIZE_PROP: case STATUS_ICON_PROP:
-		case VERSION_FOREGROUND_PROP: case BACKGROUND_PROP: case REPOSITORY_STOCK_PROP:
+		case ACTION_BUTTON_PROP: case ACTION_ICON_PROP: case VERSION_FOREGROUND_PROP:
+		case BACKGROUND_PROP: case REPOSITORY_STOCK_PROP:
 			return G_TYPE_STRING;
 		case INSTALLED_CHECK_PROP:
 		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP:
@@ -235,6 +237,28 @@ protected:
 			case STATUS_ICON_PROP:
 				g_value_set_string (value, getStatusStockIcon (sel));
 				break;
+			case ACTION_ICON_PROP: {
+				const char *stock;
+				if (sel.toModify())
+					stock = GTK_STOCK_UNDO;
+				else if (sel.isInstalled())
+					stock = GTK_STOCK_REMOVE;
+				else
+					stock = GTK_STOCK_ADD;
+				g_value_set_string (value, stock);
+				break;
+			}
+			case ACTION_BUTTON_PROP: {
+				const char *text;
+				if (sel.toModify())
+					text = _("Undo");
+				else if (sel.isInstalled())
+					text = _("Remove");
+				else
+					text = _("Install");
+				g_value_set_string (value, text);
+				break;
+			}
 			case PTR_PROP:
 				g_value_set_pointer (value, (void *) &sel);
 				break;
@@ -496,6 +520,21 @@ static void undo_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
 	sel->undo();
 }
 
+static void action_button_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
+	YGtkPkgListView *pThis)
+{
+fprintf (stderr, "action\n");
+	GtkTreeView *view = GTK_TREE_VIEW (pThis->impl->view);
+	GtkTreeModel *model = gtk_tree_view_get_model (view);
+	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path_str);
+	if (sel->toModify())
+		sel->undo();
+	else if (sel->isInstalled())
+		sel->remove();
+	else
+		sel->install();
+}
+
 static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 	gboolean keyboard_mode, GtkTooltip *tooltip, YGtkPkgListView *pThis)
 {
@@ -721,16 +760,18 @@ void YGtkPkgListView::addCheckColumn (int property)
 	gtk_tree_view_append_column (view, column);
 }
 
-void YGtkPkgListView::addImageColumn (const char *header, int property)
+void YGtkPkgListView::addImageColumn (const char *header, int property, bool onlyManualModified)
 {
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	GtkCellRenderer *renderer = gtk_cell_renderer_pixbuf_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "icon-name", property,
-		"visible", MANUAL_MODIFY_PROP, NULL);
+		header, renderer, "icon-name", property, NULL);
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
+	if (onlyManualModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"visible", MANUAL_MODIFY_PROP);
 
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	int height = MAX (32, YGUtils::getCharsHeight (impl->view, 1));
@@ -739,24 +780,39 @@ void YGtkPkgListView::addImageColumn (const char *header, int property)
 	gtk_tree_view_append_column (view, column);
 }
 
-void YGtkPkgListView::addUndoButtonColumn (const char *header)
+void YGtkPkgListView::addButtonColumn (const char *header, int property)
 {
 	GtkCellRenderer *renderer = ygtk_cell_renderer_button_new();
 	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "sensitive", IS_LOCKED_PROP,
-		"visible", MANUAL_MODIFY_PROP, "visible", NULL);
+		header, renderer, "sensitive", IS_LOCKED_PROP, NULL);
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
 
-	const char *text = _("Undo");
-	g_object_set (G_OBJECT (renderer), "text", text, NULL);
 	gboolean show_icon;
 	g_object_get (G_OBJECT (gtk_settings_get_default()), "gtk-button-images", &show_icon, NULL);
-	if (show_icon)
-		g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_UNDO, NULL);
-	g_signal_connect (G_OBJECT (renderer), "toggled",
-		              G_CALLBACK (undo_toggled_cb), this);
+
+	const char *text;
+	if (property == UNDO_BUTTON_PROP) {  // static property (always "Undo")
+		text = _("Undo");
+		g_object_set (G_OBJECT (renderer), "text", text, NULL);
+		if (show_icon)
+			g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_UNDO, NULL);
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"visible", MANUAL_MODIFY_PROP);
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+				          G_CALLBACK (undo_toggled_cb), this);
+	}
+	else {
+		text = "xxxxxxxxxx";
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"text", property);
+		if (show_icon)
+			gtk_tree_view_column_add_attribute (column, renderer,
+				"stock-id", ACTION_ICON_PROP);
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+				          G_CALLBACK (action_button_toggled_cb), this);
+	}
 
 	PangoRectangle rect;
 	int width = 0;

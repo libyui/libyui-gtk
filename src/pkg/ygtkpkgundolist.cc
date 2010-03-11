@@ -227,10 +227,10 @@ struct YGtkPkgUndoView : public YGtkPkgListView, YGtkPkgUndoList::Listener
 	YGtkPkgUndoView()
 	: YGtkPkgListView (true, -1, true, false, true)
 	{
-		addImageColumn (NULL, STATUS_ICON_PROP);
+		addImageColumn (NULL, STATUS_ICON_PROP, true);
 		addTextColumn (_("Name"), ACTION_NAME_PROP, true, -1);
 		addTextColumn (_("Version"), SINGLE_VERSION_PROP, true, 125);
-		addUndoButtonColumn (_("Revert?"));
+		addButtonColumn (_("Revert?"), UNDO_BUTTON_PROP);
 
 		undoChanged (YGPackageSelector::get()->undoList());
 		YGPackageSelector::get()->undoList()->addListener (this);

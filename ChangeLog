@@ -1,3 +1,9 @@
+2010-03-11 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc & src/pkg/ygtkpkglistview.h/cc:
+	added action col as suggested by Atri Bhattacharya for
+	testing purposes.
+
 2010-03-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: only confirms cancel
