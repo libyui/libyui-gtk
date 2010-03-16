@@ -25,7 +25,7 @@
 #include "ygtkpkgstatusbar.h"
 #include "ygtkpkgdetailview.h"
 
-#define USE_LIST_BUTTONS
+//#define USE_LIST_BUTTONS
 
 YGPackageSelector *YGPackageSelector::singleton = 0;
 

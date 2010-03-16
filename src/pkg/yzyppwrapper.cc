@@ -537,7 +537,7 @@ void Ypp::Collection::stats (int *installed, int *total)
 {
 	Ypp::List *content = getContent();
 	Ypp::ListProps props (*content);
-	*installed = props.isInstalled();
+	*installed = props.isInstalledNb();
 	*total = content->size();
 }
 
