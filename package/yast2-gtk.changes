@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Mar 16 14:51:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.21
+- wrong installed number in pattern list (bnc#588561)
+
+-------------------------------------------------------------------
 Wed Mar 10 18:16:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.20
