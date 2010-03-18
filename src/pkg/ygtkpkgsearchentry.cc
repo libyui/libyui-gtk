@@ -22,6 +22,7 @@ static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
 	pThis->notifyDelay (item == 0 ? 150 : 500);
 
 	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
+	static GdkColor black = { 0, 0, 0, 0 };
 
 	GtkWidget *widget = GTK_WIDGET (editable);
 	GtkEntry *entry = GTK_ENTRY (editable);  // show clear icon if text
@@ -37,9 +38,12 @@ static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
 			gtk_entry_set_icon_tooltip_text (entry,
 				GTK_ENTRY_ICON_SECONDARY, _("Clear"));
 			gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &yellow);
+			gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &black);
 		}
-		else  // revert
+		else {  // revert
 			gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
+			gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+		}
 	}
 }
 

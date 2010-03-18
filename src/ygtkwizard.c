@@ -47,8 +47,9 @@ static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
 	static GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 };
-	static GdkColor white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+	static GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
 	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
+	static GdkColor black = { 0, 0, 0, 0 };
 
 	GtkWidget *widget = GTK_WIDGET (editable);
 	GtkEntry *entry = GTK_ENTRY (editable);
@@ -57,7 +58,7 @@ static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dial
 
 	if (found && *text) {
 		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &yellow);
-		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &black);
 	}
 	else if (found) {  // revert
 		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
