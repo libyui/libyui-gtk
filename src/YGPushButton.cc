@@ -206,7 +206,7 @@ public:
 	static void size_request_cb (GtkWidget *widget, GtkRequisition *req, YGPushButton *pThis)
 	{	// enlarge button if parent is ButtonBox
 		YWidget *yparent = pThis->m_ywidget->parent();
-		if (!strcmp (yparent->widgetClass(), "YButtonBox")) {
+		if (yparent && !strcmp (yparent->widgetClass(), "YButtonBox")) {
 			req->width = MAX (req->width, DEFAULT_CHILD_MIN_WIDTH);
 			req->height = MAX (req->height, DEFAULT_CHILD_MIN_HEIGHT);
 		}

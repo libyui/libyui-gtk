@@ -7,6 +7,8 @@
 	* src/ygtkwizard.c & src/YGPushButton.cc: enlarge wizard
 	and dialog buttons to reflect settings from GtkButtonBox.
 
+	* src/YGPushButton.cc: fixed potential crash.
+
 2010-03-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/yzyppwrapper.cc: bug fix 588561: wrong
