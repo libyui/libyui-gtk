@@ -17,17 +17,11 @@ Requires:       yast2_theme >= 2.16.1
 Requires:  	    libzypp >= 6.3.0 
 Provides:       yast2_ui yast2-ui-gtk
 Provides:       yast2_ui_pkg
+Source1:        yast2-gtk-rpmlintrc 
 
 %description
 One of several user interfaces available for YaST2, based on GTK and
 the X Window System.
-
-
-
-Authors:
---------
-    Ricardo Cruz <rpmcruz@alunos.dcc.fc.up.pt>
-    Michael Meeks <mmeeks@novell.com>
 
 %prep
 %setup
@@ -42,7 +36,7 @@ cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_SKIP_RPATH=1 \
       ..
-make %{?jobs:-j %jobs} VERBOSE=1
+make %{?_smp_mflags} VERBOSE=1
 
 %install
 cd build
