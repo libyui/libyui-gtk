@@ -1,3 +1,12 @@
+2010-03-18 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkwizard.c & src/pkg/ygtkpkgsearchentry.cc: use
+	yellow color for search entry when changed like Rhythmbox
+	and other gnome apps.
+
+	* src/ygtkwizard.c & src/YGPushButton.cc: enlarge wizard
+	and dialog buttons to reflect settings from GtkButtonBox.
+
 2010-03-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/yzyppwrapper.cc: bug fix 588561: wrong

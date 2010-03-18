@@ -46,18 +46,24 @@ static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 
 static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
+	static GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 };
+	static GdkColor white = { 0, 255 << 8, 255 << 8, 255 << 8 };
+	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
+
+	GtkWidget *widget = GTK_WIDGET (editable);
 	GtkEntry *entry = GTK_ENTRY (editable);
 	const gchar *text = gtk_entry_get_text (entry);
 	gboolean found = ygtk_html_wrap_search (dialog->help_text, text);
 
-	GtkWidget *widget = GTK_WIDGET (entry);
-	if (found) {  // revert
+	if (found && *text) {
+		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &yellow);
+		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+	}
+	else if (found) {  // revert
 		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
 		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
 	}
 	else {
-		GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 },
-				 white = { 0, 255 << 8, 255 << 8, 255 << 8 };
 		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &red);
 		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &white);
 		gtk_widget_error_bell (widget);
@@ -142,13 +148,17 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
 	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
 
+	GtkWidget *close_box = gtk_hbutton_box_new();
+	gtk_container_add (GTK_CONTAINER (close_box), dialog->close_button);
+
 	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (_("_Find:"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
+
 	bottom_box = gtk_hbox_new (FALSE, 2);
 	gtk_box_pack_start (GTK_BOX (bottom_box), label, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (bottom_box), dialog->search_entry, FALSE, FALSE, 0);
-	gtk_box_pack_end (GTK_BOX (bottom_box), dialog->close_button, FALSE, FALSE, 0);
+	gtk_box_pack_end (GTK_BOX (bottom_box), close_box, FALSE, FALSE, 0);
 
 #ifdef SET_HELP_HISTORY
 	dialog->history_combo = gtk_combo_box_new_text();
@@ -629,15 +639,18 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	g_signal_connect (G_OBJECT (wizard->help_button), "toggled",
 	                  G_CALLBACK (help_button_toggled_cb), wizard);
 
-	wizard->m_buttons = gtk_hbox_new (FALSE, 6);
+	wizard->m_buttons = gtk_hbutton_box_new();
+	gtk_button_box_set_layout (GTK_BUTTON_BOX (wizard->m_buttons), GTK_BUTTONBOX_END);
 	gtk_widget_show (wizard->m_buttons);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->help_button, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->release_notes_button,
 	                    FALSE, TRUE, 0);
+	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX (wizard->m_buttons), wizard->help_button, TRUE);
+	gtk_button_box_set_child_secondary (GTK_BUTTON_BOX (wizard->m_buttons), wizard->release_notes_button, TRUE);
 
-	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->next_button, FALSE, TRUE, 0);
-	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->back_button, FALSE, TRUE, 0);
 	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->abort_button, FALSE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->back_button, FALSE, TRUE, 0);
+	gtk_box_pack_end (GTK_BOX (wizard->m_buttons), wizard->next_button, FALSE, TRUE, 0);
 
 	// make buttons all having the same size
 	GtkSizeGroup *buttons_group = gtk_size_group_new (GTK_SIZE_GROUP_BOTH);

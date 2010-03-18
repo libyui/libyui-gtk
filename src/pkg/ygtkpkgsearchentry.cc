@@ -21,6 +21,9 @@ static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
 	int item = gtk_combo_box_get_active (GTK_COMBO_BOX (pThis->impl->combo));
 	pThis->notifyDelay (item == 0 ? 150 : 500);
 
+	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
+
+	GtkWidget *widget = GTK_WIDGET (editable);
 	GtkEntry *entry = GTK_ENTRY (editable);  // show clear icon if text
 	const gchar *name = gtk_entry_get_text (entry);
 	bool showIcon = *name;
@@ -29,9 +32,14 @@ static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
 			GTK_ENTRY_ICON_SECONDARY, showIcon);
 		gtk_entry_set_icon_from_stock (entry,
 			GTK_ENTRY_ICON_SECONDARY, showIcon ? GTK_STOCK_CLEAR : NULL);
-		if (showIcon)
+
+		if (showIcon) {
 			gtk_entry_set_icon_tooltip_text (entry,
 				GTK_ENTRY_ICON_SECONDARY, _("Clear"));
+			gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &yellow);
+		}
+		else  // revert
+			gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
 	}
 }
 

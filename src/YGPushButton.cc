@@ -8,6 +8,7 @@
 #include <YPushButton.h>
 #include "YGUtils.h"
 #include "YGWidget.h"
+#include <string.h>
 
 #include <YLayoutBox.h>
 
@@ -24,6 +25,7 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
+		g_signal_connect (getWidget(), "size-request", G_CALLBACK (size_request_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -196,6 +198,19 @@ public:
 	// callbacks
 	static void clicked_cb (GtkButton *button, YGPushButton *pThis)
 	{ pThis->emitEvent (YEvent::Activated, IGNORE_NOTIFY_EVENT); }
+
+// default values from gtkbbox.c; can vary from style to style, but no way to query those
+#define DEFAULT_CHILD_MIN_WIDTH 85
+#define DEFAULT_CHILD_MIN_HEIGHT 27
+
+	static void size_request_cb (GtkWidget *widget, GtkRequisition *req, YGPushButton *pThis)
+	{	// enlarge button if parent is ButtonBox
+		YWidget *yparent = pThis->m_ywidget->parent();
+		if (!strcmp (yparent->widgetClass(), "YButtonBox")) {
+			req->width = MAX (req->width, DEFAULT_CHILD_MIN_WIDTH);
+			req->height = MAX (req->height, DEFAULT_CHILD_MIN_HEIGHT);
+		}
+	}
 
 	YGWIDGET_IMPL_COMMON (YPushButton)
 };
