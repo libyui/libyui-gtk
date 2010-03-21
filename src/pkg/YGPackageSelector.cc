@@ -44,6 +44,8 @@ YGtkPkgMenuBar *m_menu;
 std::list <std::string> m_filterSuffices;
 GtkWidget *m_overview;
 YGtkPkgDetailView *m_details;
+guint m_refresh_id;
+Ypp::List m_refresh_list;
 
 struct SuffixFilter : public Ypp::Match {
 	SuffixFilter (Impl *pThis) : pThis (pThis) {}
@@ -176,7 +178,7 @@ struct SuffixFilter : public Ypp::Match {
 		return vpaned;
 	}
 
-	Impl() : m_menu (NULL), m_details (NULL)
+	Impl() : m_menu (NULL), m_details (NULL), m_refresh_id (0), m_refresh_list (0)
 	{
 		Ypp::init();
 		m_undo = new YGtkPkgUndoList();
@@ -204,6 +206,8 @@ struct SuffixFilter : public Ypp::Match {
 
 	~Impl()
 	{
+		if (m_refresh_id)
+			g_source_remove (m_refresh_id);
 		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
 		     it != m_queryWidgets.end(); it++)
 			delete *it;
@@ -474,8 +478,22 @@ struct SuffixFilter : public Ypp::Match {
 		empty ? gtk_widget_hide (m_toolbox) : gtk_widget_show_all (m_toolbox);
 	}
 
+	static gboolean refresh_filters_timeout_cb (gpointer data)
+	{
+		Impl *pThis = (Impl *) data;
+		pThis->refreshToolbox();
+		pThis->refreshFilters (pThis->m_refresh_list);
+		pThis->m_refresh_id = 0;
+		return FALSE;
+	}
+
 	virtual void refreshQuery()
 	{
+		if (m_refresh_id) {
+			g_source_remove (m_refresh_id);
+			m_refresh_id = 0;
+		}
+
 		YGUI::ui()->busyCursor();
 		if (YGPackageSelector::get()->breath()) return;
 
@@ -499,9 +517,11 @@ struct SuffixFilter : public Ypp::Match {
 		if (YGPackageSelector::get()->breath()) return;
 		m_list->setHighlight (keywords);
 
-		if (YGPackageSelector::get()->breath()) return;
-		refreshToolbox();
-		refreshFilters (list);
+		m_refresh_list = list;
+		int wait = 2500;
+		if (keywords.empty() || list.size() == 0)
+			wait = 500;
+		m_refresh_id = g_timeout_add_full (G_PRIORITY_LOW, wait, refresh_filters_timeout_cb, this, NULL);
 	}
 
 	// YGtkPkgQueryCombo callback
