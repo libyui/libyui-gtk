@@ -475,7 +475,7 @@ struct SuffixFilter : public Ypp::Match {
 				break;  // only present one toolbox widget as they may be quite large
 			}
 		}
-		empty ? gtk_widget_hide (m_toolbox) : gtk_widget_show_all (m_toolbox);
+		empty ? gtk_widget_hide (m_toolbox) : gtk_widget_show (m_toolbox);
 	}
 
 	static gboolean refresh_filters_timeout_cb (gpointer data)

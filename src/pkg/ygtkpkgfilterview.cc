@@ -243,6 +243,7 @@ GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 		gtk_button_set_image (GTK_BUTTON (button), icon);
 		g_signal_connect (G_OBJECT (button), "clicked",
 		                  G_CALLBACK (upgrade_clicked_cb), this);
+		gtk_widget_show (button);
 		return button;
 	}
 	return NULL;
@@ -342,7 +343,7 @@ YGtkPkgRepositoryModel::YGtkPkgRepositoryModel()
 		}
 	}
 
-	addRow (GTK_STOCK_MISSING_IMAGE, _("None"), true, GINT_TO_POINTER (1));
+	addRow (GTK_STOCK_MISSING_IMAGE, _("None"), true, GINT_TO_POINTER (2));
 }
 
 YGtkPkgRepositoryModel::~YGtkPkgRepositoryModel()
@@ -350,11 +351,7 @@ YGtkPkgRepositoryModel::~YGtkPkgRepositoryModel()
 
 void YGtkPkgRepositoryModel::updateRow (Ypp::List list, int row, gpointer data)
 {
-	if (GPOINTER_TO_INT (data) == 1) {  // 'none'
-		Ypp::PKGroupMatch match (YPKG_GROUP_ORPHANED);
-		setRowCount (row, list.count (&match));
-	}
-	else if (data) {
+	if (GPOINTER_TO_INT (data) == 1) {  // normal repo
 		Ypp::Repository &repo = impl->repos[row-1];
 		bool isSystem = repo.isSystem();
 		int count = 0;
@@ -374,36 +371,41 @@ void YGtkPkgRepositoryModel::updateRow (Ypp::List list, int row, gpointer data)
 		}
 		setRowCount (row, count);
 	}
-	// else - disabled repos
+	else if (GPOINTER_TO_INT (data) == 2) {  // 'none'
+		Ypp::PKGroupMatch match (YPKG_GROUP_ORPHANED);
+		setRowCount (row, list.count (&match));
+	}
 }
 
 bool YGtkPkgRepositoryModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data)
 {
-	if (data) {
+	impl->selected = 0;
+	if (GPOINTER_TO_INT (data) == 1) {
 		Ypp::Repository &repo = impl->repos[row-1];
 		query.addRepository (repo);
 		impl->selected = &repo;
 	}
-	else  // 'none'
+	else if (GPOINTER_TO_INT (data) == 2)
 		query.addCriteria (new Ypp::PKGroupMatch (YPKG_GROUP_ORPHANED));
 	return true;
 }
 
-static void set_button_repo (GtkButton *button, Ypp::Repository *repo)
+static void sync_toolbox_buttons (Ypp::Repository *repo, GtkWidget *box)
 {
-	const char *stock, *label;
+	GtkWidget *button, *undo;
+	GList *children = gtk_container_get_children (GTK_CONTAINER (box));
+	button = (GtkWidget *) g_list_nth_data (children, 0);
+	undo = (GtkWidget *) g_list_nth_data (children, 1);
+	g_list_free (children);
+
 	if (zypp::getZYpp()->resolver()->upgradingRepo (repo->zyppRepo())) {
-		label = _("Cancel switching system packages to versions in repository");
-		stock = GTK_STOCK_UNDO;
+		gtk_widget_set_sensitive (button, FALSE);
+		gtk_widget_show (undo);
 	}
 	else {
-		label = _("Switch system packages to the versions in this repository");
-		stock = GTK_STOCK_REFRESH;
+		gtk_widget_set_sensitive (button, TRUE);
+		gtk_widget_hide (undo);
 	}
-
-	GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
-	gtk_button_set_image (button, icon);
-	gtk_button_set_label (button, label);
 }
 
 static void switch_clicked_cb (GtkButton *button, YGtkPkgRepositoryModel *pThis)
@@ -414,8 +416,8 @@ static void switch_clicked_cb (GtkButton *button, YGtkPkgRepositoryModel *pThis)
 		zypp::getZYpp()->resolver()->removeUpgradeRepo (zrepo);
 	else
 		zypp::getZYpp()->resolver()->addUpgradeRepo (zrepo);
+	sync_toolbox_buttons (repo, gtk_widget_get_parent (GTK_WIDGET (button)));
 	Ypp::notifySelModified();
-	set_button_repo (button, repo);
 }
 
 GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)
@@ -432,14 +434,25 @@ GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)
 			GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
 			gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+			gtk_widget_show_all (hbox);
 			return hbox;
 		}
 		else if (!impl->selected->isSystem()) {
-			GtkWidget *button = gtk_button_new_with_label ("");
-			set_button_repo (GTK_BUTTON (button), impl->selected);
+			GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button;
+			button = gtk_button_new_from_stock (GTK_STOCK_UNDO);
 			g_signal_connect (G_OBJECT (button), "clicked",
 				              G_CALLBACK (switch_clicked_cb), this);
-			return button;
+			gtk_box_pack_end (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+			button = gtk_button_new_with_label (
+				_("Switch system packages to the versions in this repository"));
+			gtk_button_set_image (GTK_BUTTON (button),
+				gtk_image_new_from_stock (GTK_STOCK_REFRESH, GTK_ICON_SIZE_BUTTON));
+			g_signal_connect (G_OBJECT (button), "clicked",
+				              G_CALLBACK (switch_clicked_cb), this);
+			gtk_box_pack_end (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+			gtk_widget_show_all (hbox);
+			sync_toolbox_buttons (impl->selected, hbox);
+			return hbox;
 		}
 	}
 	return NULL;

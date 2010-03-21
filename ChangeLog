@@ -1,5 +1,15 @@
 2010-03-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkgfilterview.cc: repo view: added
+	undo button.
+
+	* src/pkg/ygtkpkgfilterview.cc: bug fix: repositories
+	count was broken, as was the 'none' entry.
+
+	* src/ygtkwizard.c: set buttons spacing.
+
+2010-03-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGPackageSelector.cc & src/ygtkpkgfilterview.cc:
 	changed refreshing strategy: UI should feel faster now.
 

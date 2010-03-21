@@ -1,22 +1,22 @@
 ## Makefile.am
 
 set (gtk_pkg_yast_plugin_SRCS
-	YGPackageSelectorPluginImpl.cc
 	YGPackageSelector.cc
-	ygtkpkgquerycombo.cc
-	ygtkpkglistview.cc
+	YGPackageSelectorPluginImpl.cc
 	ygtkpkgdetailview.cc
-	ygtkpkgsearchentry.cc
+	ygtkpkglistview.cc
 	ygtkpkgfilterview.cc
-	ygtkpkgrpmgroupsview.cc
-	ygtkpkgpatternview.cc
 	ygtkpkglanguageview.cc
-	ygtkpkgundolist.cc
 	ygtkpkgmenubar.cc
-	ygtkpkgstatusbar.cc
+	ygtkpkgpatternview.cc
 	ygtkpkgproductdialog.cc
-	yzyppwrapper.cc
+	ygtkpkgquerycombo.cc
+	ygtkpkgrpmgroupsview.cc
+	ygtkpkgsearchentry.cc
+	ygtkpkgstatusbar.cc
+	ygtkpkgundolist.cc
 	yzypptags.cc
+	yzyppwrapper.cc
 
 	ygtkcellrendererbutton.c
 	ygtkcellrenderersidebutton.c

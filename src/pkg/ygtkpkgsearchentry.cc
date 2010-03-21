@@ -225,6 +225,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 					GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
 					gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 					gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+					gtk_widget_show_all (hbox);
 					return hbox;
 				}
 				break;
@@ -237,6 +238,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 				GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
 				gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 				gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+				gtk_widget_show_all (hbox);
 				return hbox;
 			}
 		}

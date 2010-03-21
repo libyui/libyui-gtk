@@ -642,6 +642,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	wizard->m_buttons = gtk_hbutton_box_new();
 	gtk_button_box_set_layout (GTK_BUTTON_BOX (wizard->m_buttons), GTK_BUTTONBOX_END);
+	gtk_box_set_spacing (GTK_BOX (wizard->m_buttons), 6);
 	gtk_widget_show (wizard->m_buttons);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->help_button, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard->m_buttons), wizard->release_notes_button,
