@@ -725,7 +725,7 @@ void YGPackageSelector::showFilterWidget (const char *filter)
 {
 	int index = -1;
 	if (!strcmp (filter, "patterns"))
-		index = 4;
+		index = 5;
 	assert (index != -1);
 	impl->m_combo->setActive (index);
 }

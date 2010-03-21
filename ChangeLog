@@ -1,5 +1,10 @@
 2010-03-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/YGPackageSelector.cc: fixed crash when
+	clicking on the search patterns tooltip.
+
+2010-03-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgfilterview.cc: repo view: added
 	undo button.
 

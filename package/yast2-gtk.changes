@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sun Mar 21 15:26:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.26
+- fixed crash when clicking on the search patterns tooltip.
+
+-------------------------------------------------------------------
 Sun Mar 21 14:54:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.25
