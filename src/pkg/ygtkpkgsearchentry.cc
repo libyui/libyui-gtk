@@ -177,7 +177,7 @@ static bool any_pattern_contains (const char *name)
 {
 	if (strstr (name, " ")) return false;
 
-	// roll on some criteria to find whole-word match (zypp one doesnt cut it)
+	// roll on some criteria to find whole-word match (the zypp one doesnt cut it)
 	struct WholeWordMatch : public Ypp::Match {
 		WholeWordMatch (const char *word)
 		: word (word), len (strlen (word)) {}

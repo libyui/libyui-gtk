@@ -39,7 +39,7 @@ public:
 	// let the UI function while processing something; returns 'true' if the
 	// function was called again while the UI was 'breathing' -- in which case
 	// you probably want to return.
-	bool breath();
+	bool yield();
 
 	YGWIDGET_IMPL_COMMON (YPackageSelector)
 

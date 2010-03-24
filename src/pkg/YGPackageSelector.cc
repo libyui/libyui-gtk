@@ -451,39 +451,50 @@ struct SuffixFilter : public Ypp::Match {
 		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
 		     it != m_queryWidgets.end(); it++) {
 			if ((*it)->begsUpdate()) {
+				if (YGPackageSelector::get()->yield()) return;
+
 				if ((*it)->modified)
 					refreshQueryWidget (*it);
 				else
 					(*it)->updateList (list);
 			}
 		}
+
 	}
 
 	void refreshToolbox()
 	{
+		// only present one toolbox widget as they may be quite large
+		GtkWidget *toolbox = 0;
+		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
+		     it != m_queryWidgets.end(); it++)
+			if ((toolbox = (*it)->createToolbox()))
+				break;
+
 		GList *children = gtk_container_get_children (GTK_CONTAINER (m_toolbox));
 		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (m_toolbox), (GtkWidget *) i->data);
 		g_list_free (children);
-		bool empty = true;
-		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
-		     it != m_queryWidgets.end(); it++) {
-			GtkWidget *toolbox = (*it)->createToolbox();
-			if (toolbox) {
-				gtk_box_pack_start (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
-				empty = false;
-				break;  // only present one toolbox widget as they may be quite large
-			}
+
+		if (toolbox) {
+			gtk_box_pack_start (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
+			gtk_widget_show (m_toolbox);
 		}
-		empty ? gtk_widget_hide (m_toolbox) : gtk_widget_show (m_toolbox);
+		else
+			gtk_widget_hide (m_toolbox);
 	}
 
 	static gboolean refresh_filters_timeout_cb (gpointer data)
 	{
+		YGUI::ui()->busyCursor();
+		if (YGPackageSelector::get()->yield()) return FALSE;
+
 		Impl *pThis = (Impl *) data;
 		pThis->refreshToolbox();
 		pThis->refreshFilters (pThis->m_refresh_list);
 		pThis->m_refresh_id = 0;
+
+		YGUI::ui()->normalCursor();
 		return FALSE;
 	}
 
@@ -495,7 +506,7 @@ struct SuffixFilter : public Ypp::Match {
 		}
 
 		YGUI::ui()->busyCursor();
-		if (YGPackageSelector::get()->breath()) return;
+		if (YGPackageSelector::get()->yield()) return;
 
 		std::list <std::string> keywords;
 		if (m_entry->getAttribute() == Ypp::PoolQuery::NAME)
@@ -512,10 +523,9 @@ struct SuffixFilter : public Ypp::Match {
 
 		Ypp::List list (query);
 		m_list->setList (list);
+		m_list->setHighlight (keywords);
 
 		YGUI::ui()->normalCursor();
-		if (YGPackageSelector::get()->breath()) return;
-		m_list->setHighlight (keywords);
 
 		m_refresh_list = list;
 		int wait = 2500;
@@ -758,7 +768,7 @@ YGtkPkgUndoList *YGPackageSelector::undoList()
 YGtkPkgSearchEntry *YGPackageSelector::getSearchEntry()
 { return impl->m_entry; }
 
-bool YGPackageSelector::breath()
+bool YGPackageSelector::yield()
 {
 	static int _id = 0;
 	int id = ++_id;
