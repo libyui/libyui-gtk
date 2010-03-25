@@ -9,6 +9,8 @@
 #include "config.h"
 #include "YGi18n.h"
 #include "YGUtils.h"
+#include "YGUI.h"
+#include "YGPackageSelector.h"
 #include "ygtkpkglistview.h"
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
@@ -413,17 +415,18 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		Ypp::ListProps props (list);
 
 		bool canLock = props.canLock(), unlocked = props.isUnlocked();
+		bool modified = props.toModify();
 		bool locked = !unlocked && canLock;
-		if (props.isNotInstalled())
+		if (props.isNotInstalled() && !modified)
 			inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE,
 				!locked, inner::install_cb, pThis), empty = false;
-		if (props.hasUpgrade())
+		if (props.hasUpgrade() && !modified)
 			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GO_UP,
 				!locked, inner::install_cb, pThis), empty = false;
-		if (props.isInstalled() && props.canRemove())
+		if (props.isInstalled() && props.canRemove() && !modified)
 			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
 				!locked, inner::remove_cb, pThis), empty = false;
-		if (props.toModify())
+		if (modified)
 			inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
 				true, inner::undo_cb, pThis), empty = false;
 		if (canLock) {
@@ -435,7 +438,8 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::unlock_cb, pThis), empty = false;
 			if (unlocked)
 				inner::appendItem (menu, _("_Lock"), _(lock_tooltip),
-					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::lock_cb, pThis), empty = false;
+					GTK_STOCK_DIALOG_AUTHENTICATION, !modified,
+					inner::lock_cb, pThis), empty = false;
 		}
 	}
 
@@ -481,6 +485,9 @@ static void selection_changed_cb (GtkTreeSelection *selection, YGtkPkgListView *
 static void row_activated_cb (GtkTreeView *view, GtkTreePath *path,
 	GtkTreeViewColumn *column, YGtkPkgListView *pThis)
 {
+	YGUI::ui()->busyCursor();
+	if (YGPackageSelector::get()->yield()) return;
+
 	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path);
 	if (sel->toModify())
@@ -489,26 +496,38 @@ static void row_activated_cb (GtkTreeView *view, GtkTreePath *path,
 		sel->remove();
 	else
 		sel->install();
+
+	YGUI::ui()->normalCursor();
 }
 
 static void check_toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	YGtkPkgListView *pThis)
 {
+	YGUI::ui()->busyCursor();
+	if (YGPackageSelector::get()->yield()) return;
+
 	GtkTreeView *view = GTK_TREE_VIEW (pThis->impl->view);
 	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path_str);
 
 	gboolean active = gtk_cell_renderer_toggle_get_active (renderer);
 	active ? sel->remove() : sel->install();
+
+	YGUI::ui()->normalCursor();
 }
 
 static void upgrade_toggled_cb (YGtkCellRendererSideButton *renderer, gchar *path_str,
 	YGtkPkgListView *pThis)
 {
+	YGUI::ui()->busyCursor();
+	if (YGPackageSelector::get()->yield()) return;
+
 	GtkTreeView *view = GTK_TREE_VIEW (pThis->impl->view);
 	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path_str);
 	sel->toInstall() ? sel->undo() : sel->install();
+
+	YGUI::ui()->normalCursor();
 }
 
 static void undo_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
@@ -980,6 +999,7 @@ void highlightMarkup (std::string &text, const std::list <std::string> &keywords
                       const char *openTag, const char *closeTag, int openTagLen, int closeTagLen)
 {
 	if (keywords.empty()) return;
+	text.reserve ((openTagLen + closeTagLen + 2) * 6);
 	const char *i = text.c_str();
 	while (*i) {
 		std::list <std::string>::const_iterator it;

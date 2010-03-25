@@ -1,5 +1,18 @@
 2010-03-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkglistview.cc: allocate sufficient memory
+	for string beforehand: should speed up things a little.
+
+	* src/pkg/ygtkpkglistview.cc: show busy cursor when
+	modifying some list item.
+
+	* src/pkg/ygtkpkglistview.cc: disable Lock context-menu
+	item when package is being installed or remove, in which
+	case it won't have an effect. And replaced I/U/R by Undo
+	when package changed.
+
+2010-03-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkglistview.cc: bug fix 2: highlight could
 	still get mangled when searching for more than one keyword,
 	when the 2nd was part of a tag.
