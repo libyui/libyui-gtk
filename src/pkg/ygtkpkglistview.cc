@@ -980,16 +980,22 @@ void highlightMarkup (std::string &text, const std::list <std::string> &keywords
                       const char *openTag, const char *closeTag, int openTagLen, int closeTagLen)
 {
 	if (keywords.empty()) return;
-	for (std::list <std::string>::const_iterator it = keywords.begin();
-	     it != keywords.end(); it++) {
-		const std::string &keyword = *it;
-		const char *c = text.c_str();
-		while ((c = strcasestr (c, keyword.c_str()))) {
-			int pos = c - text.c_str(), len = keyword.size();
-			text.insert (pos+len, closeTag);
-			text.insert (pos, openTag);
-			c = text.c_str() + pos + len + openTagLen + closeTagLen - 2;
+	const char *i = text.c_str();
+	while (*i) {
+		std::list <std::string>::const_iterator it;
+		for (it = keywords.begin(); it != keywords.end(); it++) {
+			const std::string &keyword = *it;
+			int len = keyword.size();
+			if (strncasecmp (i, keyword.c_str(), len) == 0) {
+				int pos = i - text.c_str();
+				text.insert (pos+len, closeTag);
+				text.insert (pos, openTag);
+				i = text.c_str() + pos + len + openTagLen + closeTagLen - 2;
+				break;
+			}
 		}
+		if (it == keywords.end())
+			i++;
 	}
 }
 

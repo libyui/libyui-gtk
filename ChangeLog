@@ -1,5 +1,11 @@
 2010-03-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkglistview.cc: bug fix 2: highlight could
+	still get mangled when searching for more than one keyword,
+	when the 2nd was part of a tag.
+
+2010-03-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkglistview.cc: bug fix: various glitches
 	when searching for certain small sub-strings (due to
 	a collision with the tag "</small>").

@@ -222,7 +222,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 					                  G_CALLBACK (patterns_link_cb), this);
 					GtkWidget *icon = gtk_image_new_from_stock (
 						GTK_STOCK_DIALOG_INFO, GTK_ICON_SIZE_BUTTON);
-					GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
+					GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 					gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 					gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
 					gtk_widget_show_all (hbox);
@@ -235,7 +235,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 				gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 				GtkWidget *icon = gtk_image_new_from_stock (
 					GTK_STOCK_DIALOG_WARNING, GTK_ICON_SIZE_BUTTON);
-				GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
+				GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 				gtk_box_pack_start (GTK_BOX (hbox), icon, FALSE, TRUE, 0);
 				gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
 				gtk_widget_show_all (hbox);
