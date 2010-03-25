@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Thu Mar 25 05:22:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.29
+- sw_single: bug fix2: highlight could (still) get mangled
+when searching for more than one keyword, when the 2nd was part
+of a tag.
+
+-------------------------------------------------------------------
 Thu Mar 25 01:05:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.28
