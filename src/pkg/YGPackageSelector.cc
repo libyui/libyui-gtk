@@ -132,7 +132,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vbox, *_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), hbox, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), vpaned, TRUE, TRUE, 0);
-		vbox = gtk_vbox_new (FALSE, 6);  // higher spacing
+		vbox = gtk_vbox_new (FALSE, 8);
 		gtk_box_pack_start (GTK_BOX (vbox), _vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (vbox), m_toolbox, FALSE, TRUE, 0);
 		return vbox;
@@ -528,9 +528,11 @@ struct SuffixFilter : public Ypp::Match {
 		YGUI::ui()->normalCursor();
 
 		m_refresh_list = list;
-		int wait = 2500;
-		if (keywords.empty() || list.size() == 0)
+		int wait = 800;
+		if (keywords.empty())
 			wait = 500;
+		if (list.size() == 0)
+			wait = 200;
 		m_refresh_id = g_timeout_add_full (G_PRIORITY_LOW, wait, refresh_filters_timeout_cb, this, NULL);
 	}
 

@@ -97,14 +97,14 @@ protected:
 				break;
 			}
 			case NAME_SUMMARY_PROP: {
-				std::string str, name (sel.name()), summary (sel.summary());
-				str.reserve (name.size() + summary.size() + 64);
+				std::string name (sel.name()), summary (sel.summary()), str;
+				summary = YGUtils::escapeMarkup (summary);
+				highlightMarkupSpan (name, m_keywords);
+				highlightMarkupSpan (summary, m_keywords);
+				str.reserve (name.size() + summary.size() + 32);
 				str = name;
-				if (!summary.empty()) {
-					summary = YGUtils::escapeMarkup (summary);
+				if (!summary.empty())
 					str += "\n<small>" + summary + "</small>";
-				}
-				highlightMarkupSpan (str, m_keywords);
 				g_value_set_string (value, str.c_str());
 				break;
 			}

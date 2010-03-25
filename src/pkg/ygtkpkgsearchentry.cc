@@ -199,7 +199,7 @@ static bool any_pattern_contains (const char *name)
 
 	Ypp::PoolQuery query (Ypp::Selectable::PATTERN);
 	query.addCriteria (new WholeWordMatch (name));
-	query.addStringOr (name);
+	//query.addStringOr (name);
 	return query.hasNext();
 }
 
@@ -231,7 +231,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 				break;
 			case 2: {
 				GtkWidget *label = gtk_label_new (
-					_("Search by file name only reliable for installed packages."));
+					_("Search by file name is only reliable for installed packages."));
 				gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 				GtkWidget *icon = gtk_image_new_from_stock (
 					GTK_STOCK_DIALOG_WARNING, GTK_ICON_SIZE_BUTTON);

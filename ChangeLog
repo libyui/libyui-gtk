@@ -1,3 +1,12 @@
+2010-03-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkglistview.cc: bug fix: various glitches
+	when searching for certain small sub-strings (due to
+	a collision with the tag "</small>").
+
+	* src/pkg/ygtkpkgsearchentry.cc: speed fix: pin-down
+	the cause of the overall slowness of a query update.
+
 2010-03-24 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: improved yielding of
