@@ -4,6 +4,7 @@ set (gtk_pkg_yast_plugin_SRCS
 	YGPackageSelector.cc
 	YGPackageSelectorPluginImpl.cc
 	ygtkpkgdetailview.cc
+	ygtkpkghistorydialog.cc
 	ygtkpkglistview.cc
 	ygtkpkgfilterview.cc
 	ygtkpkglanguageview.cc

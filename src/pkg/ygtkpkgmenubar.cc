@@ -524,6 +524,15 @@ static void install_all_debug_source_pkgs_cb()
 static void show_pkg_changes_cb()
 { YGPackageSelector::get()->popupChanges(); }
 
+
+#include "ygtkpkghistorydialog.h"
+
+static void show_log_changes_cb()
+{
+	YGtkPkgHistoryDialog dialog;
+	dialog.popup();
+}
+
 static void reset_ignored_dependency_conflicts_cb()
 { zypp::getZYpp()->resolver()->undo(); }
 
@@ -589,6 +598,8 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			G_CALLBACK (show_products_cb), this);
 		append_menu_item (submenu, _("Show Package Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
+		append_menu_item (submenu, _("Show History of Changes"), NULL,
+			G_CALLBACK (show_log_changes_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, _("Install All Matching -devel Packages"), NULL,
 			G_CALLBACK (install_all_devel_pkgs_cb), this);

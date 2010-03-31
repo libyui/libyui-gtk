@@ -153,7 +153,7 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 	gtk_container_add (GTK_CONTAINER (scroll), view);
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-		GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_CLOSE, _("Product Listing"));
+		GtkDialogFlags (0), GTK_MESSAGE_OTHER, GTK_BUTTONS_CLOSE, _("Product Listing"));
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);

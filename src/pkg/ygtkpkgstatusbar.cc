@@ -86,7 +86,7 @@ struct LastChange {
 			const char *action = getStatusAction (sel);
 			gchar *str;
 			if (sel->toModifyAuto())
-				str = g_strdup_printf (_("<b>%s</b> %d predefined packages"), action, auto_count);
+				str = g_strdup_printf (_("<b>%s</b> %d preselected packages"), action, auto_count);
 			else {
 				const char *format;
 				if (auto_count > 1)
