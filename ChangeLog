@@ -1,3 +1,14 @@
+2010-04-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkghistorydialog.cc: added some markup
+	to the text as requested by Atri.
+
+	* src/pkg/ygtkpkgfilterview.cc: aligned number count
+	to the right.
+
+	* src/pkg/YGPackageSelector.cc: aligned tool-box to
+	the right, and re-positioned it, as requested by Atri.
+
 2010-03-31 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkpkghistorydialog.h/cc: fate#305859 and

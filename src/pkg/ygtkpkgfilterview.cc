@@ -67,7 +67,7 @@ static gboolean update_list_cb (GtkTreeModel *model,
 	gchar *text;
 	UpdateData *data = (UpdateData *) _data;
 	gpointer mdata;
-	gtk_tree_model_get (model, iter, YGtkPkgFilterModel::TEXT_ORI_COLUMN, &text,
+	gtk_tree_model_get (model, iter, YGtkPkgFilterModel::TEXT_COLUMN, &text,
 		YGtkPkgFilterModel::DATA_COLUMN, &mdata, -1);
 
 	bool separator = !(*text);
@@ -120,7 +120,7 @@ void YGtkPkgFilterModel::addRow (const char *icon,
 	GtkTreeIter iter;
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, ICON_COLUMN, pixbuf, TEXT_COLUMN, text,
-		TEXT_ORI_COLUMN, text, ENABLED_COLUMN, enabled, VISIBLE_COLUMN, TRUE,
+		COUNT_NUMBER_COLUMN, "", ENABLED_COLUMN, enabled, VISIBLE_COLUMN, TRUE,
 		DATA_COLUMN, data, -1);
 
 	if (pixbuf) g_object_unref (pixbuf);
@@ -135,14 +135,10 @@ void YGtkPkgFilterModel::setRowCount (int row, int count, bool hide_if_zero)
 	GtkTreeIter iter;
 	gtk_tree_model_iter_nth_child (impl->model, &iter, NULL, row);
 
-	gchar *ori_text;
-	gtk_tree_model_get (impl->model, &iter, TEXT_ORI_COLUMN, &ori_text, -1);
-
-	gchar *text = g_strdup_printf ("%s <small>(%d)</small>", ori_text, count);
-	gtk_list_store_set (store, &iter, TEXT_COLUMN, text,
+	gchar *str = g_strdup_printf ("%d", count);
+	gtk_list_store_set (store, &iter, COUNT_NUMBER_COLUMN, str,
 		VISIBLE_COLUMN, !hide_if_zero || count > 0, -1);
-	g_free (ori_text);
-	g_free (text);
+	g_free (str);
 }
 
 // Status
@@ -595,8 +591,16 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "markup", YGtkPkgFilterModel::TEXT_COLUMN,
 		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
-	g_object_set (G_OBJECT (renderer), "ellipsize",
-		updates ? PANGO_ELLIPSIZE_MIDDLE : PANGO_ELLIPSIZE_END, NULL);
+	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+	gtk_tree_view_column_set_expand (column, TRUE);
+	gtk_tree_view_append_column (view, column);
+
+	renderer = gtk_cell_renderer_text_new();
+	column = gtk_tree_view_column_new_with_attributes (
+		NULL, renderer, "text", YGtkPkgFilterModel::COUNT_NUMBER_COLUMN,
+		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
+	g_object_set (G_OBJECT (renderer), "xalign", 1.0, "scale", PANGO_SCALE_SMALL,
+		"foreground", "#8c8c8c", NULL);
 	gtk_tree_view_append_column (view, column);
 
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);

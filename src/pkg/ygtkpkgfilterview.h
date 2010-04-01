@@ -20,7 +20,7 @@
 
 struct YGtkPkgFilterModel  // abstract
 {
-	enum Column { ICON_COLUMN, TEXT_COLUMN, TEXT_ORI_COLUMN,
+	enum Column { ICON_COLUMN, TEXT_COLUMN, COUNT_NUMBER_COLUMN,
 		VISIBLE_COLUMN, ENABLED_COLUMN, DATA_COLUMN, TOTAL_COLUMNS };
 
 	YGtkPkgFilterModel();

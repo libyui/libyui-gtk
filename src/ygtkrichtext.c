@@ -117,10 +117,6 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 
 	// Create a few tags like 'h3', 'b', 'i'. others need to be created as we parse
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer (tview);
-	PangoFontDescription *font_desc = widget->style->font_desc;
-	int size = pango_font_description_get_size (font_desc);
-	if (pango_font_description_get_size_is_absolute (font_desc))
-		size /= PANGO_SCALE;
 
 	gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
 	const char *left_margin = reverse ? "right-margin" : "left-margin";
@@ -128,24 +124,22 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 
 	gtk_text_buffer_create_tag (buffer, "body", NULL);
 	gtk_text_buffer_create_tag (buffer, "h1", "weight", PANGO_WEIGHT_HEAVY,
-		"size", (int)(size * PANGO_SCALE_XX_LARGE), "pixels-below-lines", 16,
+		"scale", PANGO_SCALE_XX_LARGE, "pixels-below-lines", 16,
 		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h2", "weight", PANGO_WEIGHT_ULTRABOLD,
-		"size", (int)(size * PANGO_SCALE_X_LARGE), "pixels-below-lines", 15,
+		"scale", PANGO_SCALE_X_LARGE, "pixels-below-lines", 15,
 		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h3", "weight", PANGO_WEIGHT_BOLD,
-		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 14,
+		"scale", PANGO_SCALE_LARGE, "pixels-below-lines", 14,
 		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h4", "weight", PANGO_WEIGHT_SEMIBOLD,
-		"size", (int)(size * PANGO_SCALE_LARGE), "pixels-below-lines", 13,
+		"scale", PANGO_SCALE_LARGE, "pixels-below-lines", 13,
 		"foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "h5",
-		"size", (int)(size * PANGO_SCALE_LARGE), "foreground", "#5c5c5c", NULL);
+		"scale", PANGO_SCALE_LARGE, "foreground", "#5c5c5c", NULL);
 	gtk_text_buffer_create_tag (buffer, "p", "pixels-below-lines", 12, NULL);
-	gtk_text_buffer_create_tag (buffer, "big",
-	                            "size", (int)(size * PANGO_SCALE_LARGE), NULL);
-	gtk_text_buffer_create_tag (buffer, "small",
-	                            "size", (int)(size * PANGO_SCALE_SMALL), NULL);
+	gtk_text_buffer_create_tag (buffer, "big", "scale", PANGO_SCALE_LARGE, NULL);
+	gtk_text_buffer_create_tag (buffer, "small", "scale", PANGO_SCALE_SMALL, NULL);
 	gtk_text_buffer_create_tag (buffer, "tt", "family", "monospace", NULL);
 	gtk_text_buffer_create_tag (buffer, "pre", "family", "monospace",
 		"paragraph-background", "#f0f0f0", left_margin, 16, right_margin, 20, NULL);

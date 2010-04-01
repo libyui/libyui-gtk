@@ -10,12 +10,12 @@
 #include "YGDialog.h"
 #include "ygtkpkghistorydialog.h"
 #include <gtk/gtk.h>
-#include "ygtkrichtext.h"
+#include "ygtktextview.h"
 
 #include <zypp/parser/HistoryLogReader.h>
 #define FILENAME "/var/log/zypp/history"
 
-static void selection_changed_cb (GtkTreeSelection *selection, YGtkRichText *text)
+static void selection_changed_cb (GtkTreeSelection *selection, GtkTextView *text)
 {
 	GtkTreeModel *model;
 	GtkTreeIter iter;
@@ -23,9 +23,9 @@ static void selection_changed_cb (GtkTreeSelection *selection, YGtkRichText *tex
 		char *date;
 		gtk_tree_model_get (model, &iter, 0, &date, -1);
 
-		GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text));
+		GtkTextBuffer *buffer = gtk_text_view_get_buffer (text);
 		GtkTextMark *mark = gtk_text_buffer_get_mark (buffer, date);
-		gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (text), mark, 0, TRUE, 0, 0);
+		gtk_text_view_scroll_to_mark (text, mark, 0, TRUE, 0, 0);
 		g_free (date);
 	}
 }
@@ -34,7 +34,12 @@ struct Handler
 {
 	Handler (GtkListStore *store, GtkTextBuffer *buffer)
 	: store (store), buffer (buffer)
-	{}
+	{
+		bold_tag = gtk_text_buffer_create_tag (buffer, "bold",
+			"weight", PANGO_WEIGHT_BOLD, "foreground", "#5c5c5c",
+			"scale", PANGO_SCALE_LARGE, "pixels-below-lines", 6,
+			"pixels-above-lines", 6, NULL);
+	}
 
 	bool operator() (const zypp::HistoryItem::Ptr &item)
 	{
@@ -52,7 +57,8 @@ struct Handler
 				0, date.c_str(), -1);
 
 			gtk_text_buffer_create_mark (buffer, date.c_str(), &text_iter, TRUE);
-			gtk_text_buffer_insert (buffer, &text_iter, (date + "\n").c_str(), -1);
+			gtk_text_buffer_insert_with_tags (buffer, &text_iter,
+				(date + "\n").c_str(), -1, bold_tag, NULL);
 		}
 
 		std::string line;
@@ -118,12 +124,13 @@ struct Handler
 	GtkListStore *store;
 	GtkTextBuffer *buffer;
 	std::string date;
+	GtkTextTag *bold_tag;
 };
 
 
 YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 {
-	GtkWidget *text = ygtk_rich_text_new();
+	GtkWidget *text = ygtk_text_view_new (FALSE);
 	GtkWidget *text_scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (text_scroll),
 		GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -167,7 +174,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	GtkWidget *hpaned = gtk_hpaned_new();
 	gtk_paned_pack1 (GTK_PANED (hpaned), date_scroll, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (hpaned), text_scroll, TRUE, FALSE);
-	gtk_paned_set_position (GTK_PANED (hpaned), 220);
+	gtk_paned_set_position (GTK_PANED (hpaned), 180);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), hpaned);
 
 	Handler handler (store, gtk_text_view_get_buffer (GTK_TEXT_VIEW (text)));

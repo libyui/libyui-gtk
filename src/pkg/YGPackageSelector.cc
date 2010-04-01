@@ -123,19 +123,20 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *text = gtk_event_box_new();
 		gtk_container_add (GTK_CONTAINER (text), m_overview);
 
+		GtkWidget *list_vbox = gtk_vbox_new (FALSE, 4);
+		gtk_box_pack_start (GTK_BOX (list_vbox), m_list->getWidget(), TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (list_vbox), m_toolbox, FALSE, TRUE, 0);
+
 		GtkWidget *vpaned = gtk_vpaned_new();
-		gtk_paned_pack1 (GTK_PANED (vpaned), m_list->getWidget(), TRUE, FALSE);
+		gtk_paned_pack1 (GTK_PANED (vpaned), list_vbox, TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), text, FALSE, TRUE);
 		g_signal_connect_after (G_OBJECT (vpaned), "size-allocate",
 		                        G_CALLBACK (vpaned_allocate_cb), this);
 
-		GtkWidget *vbox, *_vbox = gtk_vbox_new (FALSE, 0);
+		GtkWidget *_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), hbox, FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), vpaned, TRUE, TRUE, 0);
-		vbox = gtk_vbox_new (FALSE, 8);
-		gtk_box_pack_start (GTK_BOX (vbox), _vbox, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (vbox), m_toolbox, FALSE, TRUE, 0);
-		return vbox;
+		return _vbox;
 	}
 
 	GtkWidget *createSidebar()
@@ -477,7 +478,7 @@ struct SuffixFilter : public Ypp::Match {
 		g_list_free (children);
 
 		if (toolbox) {
-			gtk_box_pack_start (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
+			gtk_box_pack_end (GTK_BOX (m_toolbox), toolbox, FALSE, TRUE, 0);
 			gtk_widget_show (m_toolbox);
 		}
 		else
