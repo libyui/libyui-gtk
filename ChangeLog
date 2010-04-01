@@ -9,6 +9,11 @@
 	* src/pkg/YGPackageSelector.cc: aligned tool-box to
 	the right, and re-positioned it, as requested by Atri.
 
+	* src/pkg/ygtkpkghistorydialog.cc: set dialog non-modal.
+
+	* src/pkg/ygtkpkgdetailview.cc: added line to changelog
+	indicating it only applies to the installed version.
+	
 2010-03-31 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkpkghistorydialog.h/cc: fate#305859 and

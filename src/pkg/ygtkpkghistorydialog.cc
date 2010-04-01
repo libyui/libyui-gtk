@@ -127,10 +127,40 @@ struct Handler
 	GtkTextTag *bold_tag;
 };
 
+static void write_file (const char *filename, const char *text)
+{
+	FILE *file = fopen (filename, "w");
+	fwrite (text, strlen (text), sizeof (char), file);
+	fclose (file);
+}
+
+static void response_cb (GtkDialog *dialog, gint response, GtkTextBuffer *buffer)
+{
+	if (response == 1) {
+		GtkWidget *_dialog = gtk_file_chooser_dialog_new ("", GTK_WINDOW (dialog),
+			GTK_FILE_CHOOSER_ACTION_SAVE, GTK_STOCK_OPEN, GTK_RESPONSE_OK,
+			GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL, NULL);
+		gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (_dialog), TRUE);
+		gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (_dialog), TRUE);
+		if (gtk_dialog_run (GTK_DIALOG (_dialog)) == GTK_RESPONSE_OK) {
+			gchar *filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (_dialog));
+			GtkTextIter start, end;
+			gtk_text_buffer_get_bounds (buffer, &start, &end);
+			gchar *text = gtk_text_buffer_get_text (buffer, &start, &end, FALSE);
+			write_file (filename, text);
+			g_free (text);
+			g_free (filename);
+		}
+		gtk_widget_destroy (_dialog);
+	}
+	else
+		gtk_widget_destroy (GTK_WIDGET (dialog));
+}
 
 YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 {
 	GtkWidget *text = ygtk_text_view_new (FALSE);
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (text));
 	GtkWidget *text_scroll = gtk_scrolled_window_new (NULL, NULL);
 	gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (text_scroll),
 		GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -165,11 +195,15 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_container_add (GTK_CONTAINER (date_scroll), date_view);
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-		GtkDialogFlags (0), GTK_MESSAGE_OTHER, GTK_BUTTONS_CLOSE, _("History of Changes"));
+		GtkDialogFlags (0), GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE, _("History of Changes"));
+//	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to file"), 1);
+	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_DELETE_EVENT);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), FILENAME);
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);
 	gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);
+	g_signal_connect (G_OBJECT (dialog), "response",
+	                  G_CALLBACK (response_cb), buffer);
 
 	GtkWidget *hpaned = gtk_hpaned_new();
 	gtk_paned_pack1 (GTK_PANED (hpaned), date_scroll, FALSE, FALSE);
@@ -177,7 +211,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_paned_set_position (GTK_PANED (hpaned), 180);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), hpaned);
 
-	Handler handler (store, gtk_text_view_get_buffer (GTK_TEXT_VIEW (text)));
+	Handler handler (store, buffer);
 	zypp::parser::HistoryLogReader parser (FILENAME, boost::ref (handler));
 	try {
 		parser.readAll();
@@ -192,8 +226,8 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 }
 
 YGtkPkgHistoryDialog::~YGtkPkgHistoryDialog()
-{ gtk_widget_destroy (m_dialog); }
+{} //gtk_widget_destroy (m_dialog); }
 
 void YGtkPkgHistoryDialog::popup()
-{ gtk_dialog_run (GTK_DIALOG (m_dialog)); }
+{ gtk_widget_show (m_dialog); }
 

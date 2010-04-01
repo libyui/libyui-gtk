@@ -958,6 +958,8 @@ struct ChangelogExpander : public DetailExpander {
 	static std::string changelog (Ypp::Selectable &sel)
 	{
 		std::string text;
+		text.reserve (32768);
+		text = _("<p>Changelog applies only to the installed version.</p>");
 		ZyppResObject zobj = sel.installed().zyppObj();
 		ZyppPackage zpkg = castZyppPackage (zobj);
 		if (zpkg) {
