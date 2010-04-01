@@ -16,16 +16,12 @@ struct YGtkPkgSearchEntry::Impl {
 	GtkWidget *box, *entry, *combo;
 };
 
-static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
+static void entry_icons_sync (GtkWidget *widget)
 {
-	int item = gtk_combo_box_get_active (GTK_COMBO_BOX (pThis->impl->combo));
-	pThis->notifyDelay (item == 0 ? 150 : 500);
-
 	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
 	static GdkColor black = { 0, 0, 0, 0 };
 
-	GtkWidget *widget = GTK_WIDGET (editable);
-	GtkEntry *entry = GTK_ENTRY (editable);  // show clear icon if text
+	GtkEntry *entry = GTK_ENTRY (widget);  // show clear icon if text
 	const gchar *name = gtk_entry_get_text (entry);
 	bool showIcon = *name;
 	if (showIcon != gtk_entry_get_icon_activatable (entry, GTK_ENTRY_ICON_SECONDARY)) {
@@ -45,6 +41,13 @@ static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
 			gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
 		}
 	}
+}
+
+static void entry_changed_cb (GtkEditable *editable, YGtkPkgSearchEntry *pThis)
+{
+	int item = gtk_combo_box_get_active (GTK_COMBO_BOX (pThis->impl->combo));
+	pThis->notifyDelay (item == 0 ? 150 : 500);
+	entry_icons_sync (GTK_WIDGET (editable));
 }
 
 static void combo_changed_cb (GtkComboBox *combo, YGtkPkgSearchEntry *pThis)
@@ -260,6 +263,7 @@ void YGtkPkgSearchEntry::setText (Ypp::PoolQuery::StringAttribute attrb, const s
 	g_signal_handlers_block_by_func (impl->combo, (gpointer) combo_changed_cb, this);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (impl->combo), index);
 	gtk_entry_set_text (GTK_ENTRY (impl->entry), text.c_str());
+	entry_icons_sync (impl->entry);
 	g_signal_handlers_unblock_by_func (impl->entry, (gpointer) entry_changed_cb, this);
 	g_signal_handlers_unblock_by_func (impl->combo, (gpointer) combo_changed_cb, this);
 }
