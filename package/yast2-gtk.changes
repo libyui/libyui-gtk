@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Apr 02 23:23:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.32
+- sw_single: bug fix: find entry didn't show clear icon when
+requires or provides links were clicked.
+- button icons: map icons for untranslated terms.
+
+-------------------------------------------------------------------
 Thu Apr 01 04:42:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.31
