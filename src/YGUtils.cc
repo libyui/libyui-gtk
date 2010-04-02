@@ -598,6 +598,29 @@ static void stripEnd (std::string &str, char ch)
 		str.erase (str.size()-1, 1);
 }
 
+struct StockMap {
+	const char *english, *locale, *stock;
+};
+static const StockMap stock_map[] = {
+	{ "Apply", _("Apply"), GTK_STOCK_APPLY },
+	{ "Accept", _("Accept"), GTK_STOCK_APPLY },
+	{ "Install", _("Install"), GTK_STOCK_APPLY },
+	{ "OK", _("OK"), GTK_STOCK_OK },
+	{ "Cancel", _("Cancel"), GTK_STOCK_CANCEL },
+	{ "Close", _("Close"), GTK_STOCK_CLOSE },
+	{ "Yes", _("Yes"), GTK_STOCK_YES },
+	{ "No", _("No"), GTK_STOCK_NO },
+	{ "Add", _("Add"), GTK_STOCK_ADD },
+	{ "Edit", _("Edit"), GTK_STOCK_EDIT },
+	{ "Delete", _("Delete"), GTK_STOCK_DELETE },
+	{ "Up", _("Up"), GTK_STOCK_GO_UP },
+	{ "Down", _("Down"), GTK_STOCK_GO_DOWN },
+	{ "Enable", _("Enable"), GTK_STOCK_YES },
+	{ "Disable", _("Disable"), GTK_STOCK_NO },
+	{ "Exit", _("Exit"), GTK_STOCK_QUIT },
+};
+#define stock_map_length (sizeof (stock_map) / sizeof (StockMap))
+
 const char *YGUtils::mapStockIcon (const std::string &label)
 {
 	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
@@ -635,22 +658,9 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 		}
 		g_slist_free (list);
 
-		stockMap [_("Apply")] = GTK_STOCK_APPLY;
-		stockMap [_("Accept")] = GTK_STOCK_APPLY;
-		stockMap [_("Install")] = GTK_STOCK_APPLY;
-		stockMap [_("OK")] = GTK_STOCK_OK;
-		stockMap [_("Cancel")] = GTK_STOCK_CANCEL;
-		stockMap [_("Yes")] = GTK_STOCK_YES;
-		stockMap [_("No")] = GTK_STOCK_NO;
-		stockMap [_("Add")] = GTK_STOCK_ADD;
-		stockMap [_("Edit")] = GTK_STOCK_EDIT;
-		stockMap [_("Delete")] = GTK_STOCK_DELETE;
-		stockMap [_("Up")] = GTK_STOCK_GO_UP;
-		stockMap [_("Down")] = GTK_STOCK_GO_DOWN;
-		stockMap [_("Enable")] = GTK_STOCK_YES;
-		stockMap [_("Disable")] = GTK_STOCK_NO;
-		stockMap [_("Exit")] = GTK_STOCK_QUIT;
-		stockMap [_("Resize")] = GTK_STOCK_FULLSCREEN;
+		for (unsigned int j = 0; j < 2; j++)  // add both current locale & english terms
+			for (unsigned int i = 0; i < stock_map_length; i++)
+				stockMap [stock_map[i].english+j] = stock_map[i].stock;
 	}
 
 	std::string id = cutUnderline (label);

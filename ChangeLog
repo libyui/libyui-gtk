@@ -2,6 +2,8 @@
 
 	* src/pkg/ygtkpkghistorydialog.cc: removed dead code.
 
+	* src/YGUtils.cc: map icon for untranslated terms.
+
 2010-04-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgsearchentry.cc: bug fix: update
