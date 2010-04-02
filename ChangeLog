@@ -1,3 +1,7 @@
+2010-04-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkghistorydialog.cc: removed dead code.
+
 2010-04-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgsearchentry.cc: bug fix: update
