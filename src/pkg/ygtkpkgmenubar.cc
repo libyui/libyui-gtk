@@ -558,9 +558,9 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	GtkWidget *menu_bar = m_menu, *item, *submenu;
 	item = append_menu_item (menu_bar, _("File"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("Import..."), GTK_STOCK_OPEN,
+		append_menu_item (submenu, _("Import..."), NULL,
 			G_CALLBACK (import_file_cb), this);
-		append_menu_item (submenu, _("Export..."), GTK_STOCK_SAVE_AS,
+		append_menu_item (submenu, _("Export..."), NULL,
 			G_CALLBACK (export_file_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, NULL, GTK_STOCK_APPLY, G_CALLBACK (accept_item_cb), selector);
@@ -598,8 +598,9 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			G_CALLBACK (show_products_cb), this);
 		append_menu_item (submenu, _("Show Package Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
-		append_menu_item (submenu, _("Show History of Changes"), NULL,
-			G_CALLBACK (show_log_changes_cb), this);
+		if (!selector->onlineUpdateMode())
+			append_menu_item (submenu, _("Show History of Changes"), NULL,
+				G_CALLBACK (show_log_changes_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, _("Install All Matching -devel Packages"), NULL,
 			G_CALLBACK (install_all_devel_pkgs_cb), this);

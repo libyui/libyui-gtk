@@ -41,6 +41,14 @@ GType ygtk_tree_view_get_type (void) G_GNUC_CONST;
 
 void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu);
 
+GtkWidget *ygtk_tree_view_create_show_columns_menu (YGtkTreeView *view);
+GtkWidget *ygtk_tree_view_append_show_columns_item (YGtkTreeView *view, GtkWidget *menu);
+
+// use this method of adding columns to overload gtk Arabic tree-view layout by
+// a more sane and simpler one.
+// (if you do, use it for all your column adding needs.)
+void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column);
+
 G_END_DECLS
 #endif /*YGTK_TREE_VIEW_H*/
 

@@ -7,6 +7,7 @@
 
 #include <config.h>
 #include "ygtkcellrenderertextpixbuf.h"
+#include <gtk/gtk.h>
 
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
 
@@ -15,8 +16,8 @@ extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolea
 enum {
 	PROP_0,
 	PROP_PIXBUF,
-	PROP_STOCK_ID,
-	PROP_STOCK_SIZE,
+	PROP_ICON_NAME,
+	PROP_SIZE,
 };
 
 G_DEFINE_TYPE (YGtkCellRendererTextPixbuf, ygtk_cell_renderer_text_pixbuf, GTK_TYPE_CELL_RENDERER_TEXT)
@@ -28,14 +29,14 @@ static void ygtk_cell_renderer_text_pixbuf_init (YGtkCellRendererTextPixbuf *tpc
 	cell->xpad = cell->ypad = 0;
 	cell->xalign = 0;
 	cell->yalign = 0.5;
-	tpcell->stock_size = GTK_ICON_SIZE_MENU;
+	tpcell->size = 22;
 }
 
 static void unset_image_properties (YGtkCellRendererTextPixbuf *cell)
 {
-	if (cell->stock_id) {
-		g_free (cell->stock_id);
-		cell->stock_id = NULL;
+	if (cell->icon_name) {
+		g_free (cell->icon_name);
+		cell->icon_name = NULL;
 	}
 	if (cell->pixbuf) {
 		g_object_unref (cell->pixbuf);
@@ -59,11 +60,11 @@ static void ygtk_cell_renderer_text_pixbuf_get_property (GObject *object,
 			case PROP_PIXBUF:
 				g_value_set_object (value, G_OBJECT (tpcell->pixbuf));
 				break;
-			case PROP_STOCK_ID:
-				g_value_set_string (value, tpcell->stock_id);
+			case PROP_ICON_NAME:
+				g_value_set_string (value, tpcell->icon_name);
 				break;
-			case PROP_STOCK_SIZE:
-				g_value_set_uint (value, tpcell->stock_size);
+			case PROP_SIZE:
+				g_value_set_uint (value, tpcell->size);
 				break;
 		}
 	}
@@ -82,12 +83,12 @@ static void ygtk_cell_renderer_text_pixbuf_set_property (GObject *object,
 				unset_image_properties (tpcell);
 				tpcell->pixbuf = (GdkPixbuf *) g_value_dup_object (value);
 				break;
-			case PROP_STOCK_ID:
+			case PROP_ICON_NAME:
 				unset_image_properties (tpcell);
-				tpcell->stock_id = g_value_dup_string (value);
+				tpcell->icon_name = g_value_dup_string (value);
 				break;
-			case PROP_STOCK_SIZE:
-				tpcell->stock_size = g_value_get_uint (value);
+			case PROP_SIZE:
+				tpcell->size = g_value_get_uint (value);
 				break;
 		}
 	}
@@ -106,8 +107,11 @@ static PangoLayout *create_layout (YGtkCellRendererTextPixbuf *tpcell, GtkWidget
 
 static void ensure_pixbuf (YGtkCellRendererTextPixbuf *cell, GtkWidget *widget)
 {
-	if (cell->stock_id && !cell->pixbuf)
-		cell->pixbuf = gtk_widget_render_icon (widget, cell->stock_id, cell->stock_size, NULL);
+	if (cell->icon_name && !cell->pixbuf) {
+		GtkIconTheme *theme = gtk_icon_theme_get_default();
+		cell->pixbuf = gtk_icon_theme_load_icon (theme, cell->icon_name, cell->size,
+			GTK_ICON_LOOKUP_FORCE_SIZE, NULL);
+	}
 }
 
 static void ygtk_cell_renderer_text_pixbuf_get_size_full (GtkCellRenderer *cell,
@@ -253,10 +257,10 @@ static void ygtk_cell_renderer_text_pixbuf_class_init (YGtkCellRendererTextPixbu
 		G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB;
 	g_object_class_install_property (object_class, PROP_PIXBUF,
 		g_param_spec_object ("pixbuf", "Image", "Side image", GDK_TYPE_PIXBUF, readwrite_flag));
-	g_object_class_install_property (object_class, PROP_STOCK_ID,
-		g_param_spec_string ("stock-id", "Stock ID", "Stock icon to render", NULL, readwrite_flag));
-	g_object_class_install_property (object_class, PROP_STOCK_SIZE,
-		g_param_spec_uint ("stock-size", "Size", "GtkIconSize of the rendered icon",
-		0, G_MAXUINT, GTK_ICON_SIZE_MENU, readwrite_flag));
+	g_object_class_install_property (object_class, PROP_ICON_NAME,
+		g_param_spec_string ("icon-name", "Icon name", "Icon to render", NULL, readwrite_flag));
+	g_object_class_install_property (object_class, PROP_SIZE,
+		g_param_spec_uint ("size", "Size", "Size of the icon to render",
+		0, G_MAXUINT, 22, readwrite_flag));
 }
 

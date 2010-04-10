@@ -157,10 +157,11 @@ struct YGtkPkgStatusModel::Impl : public Ypp::SelListener {
 	}
 
 	YGtkPkgStatusModel *parent;
-	Ypp::List list;
 
 	static int modifiedRow()
 	{ return YGPackageSelector::get()->onlineUpdateMode() ? 2 : 5; }
+
+	Ypp::List list;
 };
 
 static Ypp::StatusMatch::Status rowToStatus (int row)
@@ -208,8 +209,8 @@ bool YGtkPkgStatusModel::firstRowIsAll()
 
 void YGtkPkgStatusModel::updateRow (Ypp::List list, int row, gpointer data)
 {
-	bool hide_if_zero = row > 0;
 	impl->list = list;
+	bool hide_if_zero = row > 0;
 	Ypp::StatusMatch match (rowToStatus (row));
 	setRowCount (row, list.count (&match), hide_if_zero);
 }
@@ -454,9 +455,8 @@ GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)
 	return NULL;
 }
 
-#include <YEvent.h>
 static void edit_clicked_cb (GtkWidget *button, YGtkPkgRepositoryModel *pThis)
-{ YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
+{ YGPackageSelector::get()->showRepoManager(); }
 
 GtkWidget *YGtkPkgRepositoryModel::createInternalToolbox()
 {
@@ -585,7 +585,7 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 		column = gtk_tree_view_column_new_with_attributes (NULL,
 			renderer, "pixbuf", YGtkPkgFilterModel::ICON_COLUMN,
 			"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
-		gtk_tree_view_append_column (view, column);
+		ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 	}
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes (
@@ -593,7 +593,7 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 	gtk_tree_view_column_set_expand (column, TRUE);
-	gtk_tree_view_append_column (view, column);
+	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes (
@@ -601,7 +601,7 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "xalign", 1.0, "scale", PANGO_SCALE_SMALL,
 		"foreground", "#8c8c8c", NULL);
-	gtk_tree_view_append_column (view, column);
+	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 	gtk_tree_selection_set_mode (selection, GTK_SELECTION_BROWSE);

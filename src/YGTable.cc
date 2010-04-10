@@ -56,12 +56,9 @@ public:
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
-		GtkTreeViewColumn *column;
-		GtkCellRenderer *renderer;
-
-		renderer = ygtk_cell_renderer_text_pixbuf_new();
-		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-			renderer, "pixbuf", icon_col, "text", text_col, NULL);
+		GtkCellRenderer *renderer = ygtk_cell_renderer_text_pixbuf_new();
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+			header.c_str(), renderer, "pixbuf", icon_col, "text", text_col, NULL);
 
 		gfloat xalign = -1;
 		switch (align) {
@@ -83,30 +80,24 @@ public:
 		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
-		gtk_tree_view_append_column (getView(), column);
+		ygtk_tree_view_append_column (YGTK_TREE_VIEW (getView()), column);
 	}
 
 	void appendCheckColumn (string header, int bool_col)
 	{
-		GtkTreeViewColumn *column;
-		GtkCellRenderer *renderer;
-
-		renderer = gtk_cell_renderer_toggle_new();
+		GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
 		g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (bool_col));
-		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-			renderer, "active", bool_col, NULL);
-
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+			header.c_str(), renderer, "active", bool_col, NULL);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
-		gtk_tree_view_append_column (getView(), column);
+		ygtk_tree_view_append_column (YGTK_TREE_VIEW (getView()), column);
 	}
 
-	void appendDumbColumn()
-	{
-		gtk_tree_view_append_column (getView(), gtk_tree_view_column_new());
-	}
+	void appendEmptyColumn()
+	{ gtk_tree_view_append_column (getView(), gtk_tree_view_column_new()); }
 
 	void setModel()
 	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), getModel()); }
@@ -266,7 +257,7 @@ public:
 			appendIconTextColumn (header (i), align, col, col+1);
 			if ((align == YAlignCenter || align == YAlignEnd) && i == columns()-1)
 				// if last col is aligned: add another so that it doesn't expand.
-				appendDumbColumn();
+				appendEmptyColumn();
 		}
 		setModel();
 		if (!keepSorting())
@@ -374,36 +365,38 @@ public:
 		if (pThis->notifyContextMenu())
 			return YGTableView::right_click_cb (view, outreach, pThis);
 #endif
-		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
-			// undetermined case -- more than one table exists
-			YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1) {
-			gtk_widget_error_bell (GTK_WIDGET (view));
-			return;
-		}
-
-		struct inner {
-			static void key_activate_cb (GtkMenuItem *item, YWidget *button)
-			{ activateButton (button); }
-			static void appendItem (GtkWidget *menu, const gchar *stock, int key)
-			{
-				YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
-				if (button) {
-					GtkWidget *item;
-					item = gtk_image_menu_item_new_from_stock (stock, NULL);
-					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-					g_signal_connect (G_OBJECT (item), "activate",
-								      G_CALLBACK (key_activate_cb), button);
-				}
-			}
-		};
-
 		GtkWidget *menu = gtk_menu_new();
-		if (outreach)
-			inner::appendItem (menu, GTK_STOCK_ADD, 3);
+
+		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
+				YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1)
+			// more than one table exists, or no function key 5 assigned
+			gtk_widget_error_bell (GTK_WIDGET (view));
 		else {
-			inner::appendItem (menu, GTK_STOCK_EDIT, 4);
-			inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+			struct inner {
+				static void key_activate_cb (GtkMenuItem *item, YWidget *button)
+				{ activateButton (button); }
+				static void appendItem (GtkWidget *menu, const gchar *stock, int key)
+				{
+					YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
+					if (button) {
+						GtkWidget *item;
+						item = gtk_image_menu_item_new_from_stock (stock, NULL);
+						gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+						g_signal_connect (G_OBJECT (item), "activate",
+										  G_CALLBACK (key_activate_cb), button);
+					}
+				}
+			};
+
+			if (outreach)
+				inner::appendItem (menu, GTK_STOCK_ADD, 3);
+			else {
+				inner::appendItem (menu, GTK_STOCK_EDIT, 4);
+				inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+			}
 		}
+
+		menu = ygtk_tree_view_append_show_columns_item (YGTK_TREE_VIEW (view), menu);
 		ygtk_tree_view_popup_menu (view, menu);
 	}
 

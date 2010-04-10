@@ -1,3 +1,35 @@
+2010-04-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkghistorydialog.cc: re-worked the log
+	text as a list, making each item clickable
+	so user can easily see package details, and added
+	a few columns.
+
+	* src/pkg/ygtkpkghistorydialog.cc: added back
+	save-to-file button.
+
+	* src/ygtkcellrenderertextpixbuf.c: instead of stock
+	id and sizes use gtk-icon-theme stuff.
+
+	* src/pkg/ygtkpkgundolist.cc: added see-logs
+	button to the changes dialog.
+
+	* src/ygtktreeview.h/c: made it easier to plug a
+	context menu to show/hide columns.
+
+	* src/ygtktreeview.h/c: bug reporters requested
+	text be aligned right on Arabic, even if it is
+	English. So told gtk to blindly right-aligned text.
+
+	* src/ygtktreeview.c: show "loading"/"empty" text
+	when appropriate.
+
+	* src/YGTable.cc: use new ygtktreeview facility.
+
+	* src/ygtkcellrenderertextpixbuf.c: use the broader
+	icon theme facility instead of gtk stock one. (changed
+	some of the properties name.)
+
 2010-04-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkghistorydialog.cc: removed dead code.

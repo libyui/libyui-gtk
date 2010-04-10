@@ -765,6 +765,9 @@ void YGPackageSelector::filterPkgSuffix (const std::string &suffix, bool enable)
 	impl->refreshQuery();
 }
 
+void YGPackageSelector::showRepoManager()
+{ YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
+
 YGtkPkgUndoList *YGPackageSelector::undoList()
 { return impl->m_undo; }
 

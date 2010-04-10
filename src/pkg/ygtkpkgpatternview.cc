@@ -393,13 +393,13 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 		NULL, renderer, "active", CHECK_COLUMN, "visible", HAS_CHECK_COLUMN, NULL);
 	g_signal_connect (G_OBJECT (renderer), "toggled",
 	                  G_CALLBACK (toggled_cb), this);
-	gtk_tree_view_append_column (view, column);
+	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
 	if (type == Ypp::Selectable::PATTERN) {
 		renderer = gtk_cell_renderer_pixbuf_new();
 		column = gtk_tree_view_column_new_with_attributes (NULL,
 			renderer, "pixbuf", ICON_COLUMN, "visible", HAS_ICON_COLUMN, NULL);
-		gtk_tree_view_append_column (view, column);
+		ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 	}
 
 	renderer = gtk_cell_renderer_text_new();
@@ -407,7 +407,7 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 		NULL, renderer, "markup", TEXT_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 	gtk_tree_view_column_set_expand (column, TRUE);
-	gtk_tree_view_append_column (view, column);
+	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 	gtk_tree_selection_set_select_function (selection, can_tree_select_cb, NULL, NULL);

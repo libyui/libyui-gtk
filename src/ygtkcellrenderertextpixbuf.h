@@ -33,8 +33,8 @@ typedef struct _YGtkCellRendererTextPixbuf
 
 	// private:
 	GdkPixbuf *pixbuf;
-	gchar *stock_id;
-	GtkIconSize stock_size;
+	gchar *icon_name;
+	gint size;
 } YGtkCellRendererTextPixbuf;
 
 typedef struct _YGtkCellRendererTextPixbufClass

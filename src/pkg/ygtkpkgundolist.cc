@@ -243,6 +243,8 @@ struct YGtkPkgUndoView : public YGtkPkgListView, YGtkPkgUndoList::Listener
 	{ setList (undo->getList()); }
 };
 
+#include "ygtkpkghistorydialog.h"
+
 bool YGtkPkgUndoList::popupDialog (bool onApply)
 {
 	GtkMessageType type = onApply ? GTK_MESSAGE_QUESTION : GTK_MESSAGE_OTHER;
@@ -257,7 +259,8 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 		GtkWidget *image = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_DIALOG);
 		gtk_widget_show (image);
 		gtk_message_dialog_set_image (GTK_MESSAGE_DIALOG (dialog), image);
-		gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_YES, NULL);
+		gtk_dialog_add_buttons (GTK_DIALOG (dialog), _("See History"), 1,
+			GTK_STOCK_CLOSE, GTK_RESPONSE_YES, NULL);
 
 		// work-around for GTK bug: when you set a custom icon, it is packed as expanded
 		GtkWidget *hbox = gtk_widget_get_parent (image);
@@ -279,6 +282,10 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vbox);
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
+	if (ret == 1) {
+		YGtkPkgHistoryDialog dialog;
+		dialog.popup();
+	}
 	gtk_widget_destroy (dialog);
 	return ret == GTK_RESPONSE_YES;
 }

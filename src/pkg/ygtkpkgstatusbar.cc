@@ -99,12 +99,20 @@ struct LastChange {
 			}
 
 			gtk_label_set_markup (GTK_LABEL (text), str);
+			gtk_label_set_attributes (GTK_LABEL (text), NULL);
 			gtk_widget_set_sensitive (undo_button, TRUE);
 			g_free (str);
 		}
 		else {
 			gtk_image_clear (GTK_IMAGE (icon));
-			gtk_label_set_markup (GTK_LABEL (text), _("<i>No changes to perform</i>"));
+			gtk_label_set_text (GTK_LABEL (text), _("No changes to perform"));
+
+			PangoAttrList *attrs = pango_attr_list_new();
+			pango_attr_list_insert (attrs, pango_attr_foreground_new (120<<8, 120<<8, 120<<8));
+			pango_attr_list_insert (attrs, pango_attr_style_new (PANGO_STYLE_ITALIC));
+			gtk_label_set_attributes (GTK_LABEL (text), attrs);
+			pango_attr_list_unref (attrs);
+
 			gtk_widget_set_sensitive (undo_button, FALSE);
 		}
 		set_ellipsize (text);

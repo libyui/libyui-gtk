@@ -8,6 +8,8 @@
 #include <config.h>
 #include "ygtktreeview.h"
 #include <gtk/gtk.h>
+#define YGI18N_C
+#include "YGi18n.h"
 
 static guint right_click_signal = 0;
 
@@ -70,25 +72,119 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 	return TRUE;
 }
 
-// Ensure selected row remains visible on window size changes
-static void ygtk_tree_view_size_allocate (GtkWidget *widget, GtkAllocation *alloc)
+static gboolean _ygtk_tree_view_expose_event (GtkWidget *widget, GdkEventExpose *event)
 {
-	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->size_allocate (widget, alloc);
-#if 0  // this doesn't work so well on gtk 2.18.1
-	GtkTreeView *view = GTK_TREE_VIEW (widget);
-	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
-	GList *paths;
-	paths = gtk_tree_selection_get_selected_rows (selection, NULL);
+	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->expose_event (widget, event);
 
-	if (paths && !paths->next) /*only one row selected*/ {
-		GtkTreePath *path = (GtkTreePath *) paths->data;
-		gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
+	if (event->window == gtk_tree_view_get_bin_window (GTK_TREE_VIEW (widget))) {
+		GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (widget));
+		GtkTreeIter iter;
+		if (!model || !gtk_tree_model_get_iter_first (model, &iter)) {  // empty tree-view
+			const char *text = _("No entries.");
+			if (!model)
+				text = _("Loading...");
+			cairo_t *cr = gdk_cairo_create (event->window);
+			PangoLayout *layout;
+			layout = gtk_widget_create_pango_layout (widget, text);
+
+			PangoAttrList *attrs = pango_attr_list_new();
+			pango_attr_list_insert (attrs, pango_attr_foreground_new (160<<8, 160<<8, 160<<8));
+			pango_layout_set_attributes (layout, attrs);
+			pango_attr_list_unref (attrs);
+
+			int width, height;
+			pango_layout_get_pixel_size (layout, &width, &height);
+			int x, y;
+			x = (widget->allocation.width - width) / 2;
+			y = (widget->allocation.height - height) / 2;
+			cairo_move_to (cr, x, y);
+
+			pango_cairo_show_layout (cr, layout);
+			g_object_unref (layout);
+			cairo_destroy (cr);
+		}
 	}
-	g_list_foreach (paths, (GFunc) gtk_tree_path_free, 0);
-	g_list_free (paths);
-#endif
+	return FALSE;
 }
 
+static void show_column_cb (GtkCheckMenuItem *item, GtkTreeView *view)
+{
+	int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item), "column"));
+	GtkTreeViewColumn *column = gtk_tree_view_get_column (view, col);
+	gboolean visible = gtk_check_menu_item_get_active (item);
+	gtk_tree_view_column_set_visible (column, visible);
+}
+
+GtkWidget *ygtk_tree_view_create_show_columns_menu (YGtkTreeView *view)
+{
+	GtkWidget *menu = gtk_menu_new();
+	GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (view));
+	int n;
+	GList *i;
+	for (n = 0, i = columns; i; i = i->next, n++) {
+		GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
+		const gchar *header = gtk_tree_view_column_get_title (column);
+		if (header) {
+			GtkWidget *item = gtk_check_menu_item_new_with_label (header);
+			g_object_set_data (G_OBJECT (item), "column", GINT_TO_POINTER (n));
+
+			gboolean visible = gtk_tree_view_column_get_visible (column);
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), visible);
+			g_signal_connect (G_OBJECT (item), "toggled",
+				G_CALLBACK (show_column_cb), view);
+
+			// see ygtk_tree_view_append_column(): we re-order arabic column insertion
+			if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+				gtk_menu_shell_prepend (GTK_MENU_SHELL (menu), item);
+			else
+				gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+
+			// if the user were to remove all columns, the right-click would no longer work
+			gtk_widget_set_sensitive (item, n != 0);
+		}
+	}
+	g_list_free (columns);
+	return menu;
+}
+
+GtkWidget *ygtk_tree_view_append_show_columns_item (YGtkTreeView *view, GtkWidget *menu)
+{
+	if (!menu)
+		menu = gtk_menu_new();
+
+	GList *children = gtk_container_get_children (GTK_CONTAINER (menu));
+	g_list_free (children);
+	if (children)  // non-null if it has children (in which case, add separator)
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
+
+	GtkWidget *submenu = ygtk_tree_view_create_show_columns_menu (view);
+	GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show column"));
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
+	return menu;
+}
+
+void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column)
+{
+	int pos = -1;
+	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL) {
+		gtk_widget_set_direction (GTK_WIDGET (view), GTK_TEXT_DIR_LTR);
+
+		GList *renderers = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (column));
+		GtkCellRenderer *renderer = (GtkCellRenderer *) renderers->data;
+		if (GTK_IS_CELL_RENDERER_TEXT (renderer)) {
+			g_object_set (G_OBJECT (renderer), "alignment", PANGO_ALIGN_RIGHT, NULL);
+
+			PangoEllipsizeMode ellipsize;
+			g_object_get (G_OBJECT (renderer), "ellipsize", &ellipsize, NULL);
+			if (ellipsize == PANGO_ELLIPSIZE_END)
+				g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_START, NULL);
+		}
+		g_list_free (renderers);
+		pos = 0;
+	}
+	gtk_tree_view_insert_column (GTK_TREE_VIEW (view), column, pos);
+}
 
 GtkWidget *ygtk_tree_view_new (void)
 { return g_object_new (YGTK_TYPE_TREE_VIEW, NULL); }
@@ -98,7 +194,7 @@ static void ygtk_tree_view_class_init (YGtkTreeViewClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->button_press_event = ygtk_tree_view_button_press_event;
 	gtkwidget_class->popup_menu = _ygtk_tree_view_popup_menu;
-	gtkwidget_class->size_allocate = ygtk_tree_view_size_allocate;
+	gtkwidget_class->expose_event = _ygtk_tree_view_expose_event;
 
 	right_click_signal = g_signal_new ("right-click",
 		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST,

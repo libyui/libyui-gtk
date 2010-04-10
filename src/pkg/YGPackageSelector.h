@@ -32,6 +32,7 @@ public:
 	void showSelectableDetails (Ypp::Selectable &sel);
 	void popupChanges();
 	void filterPkgSuffix (const std::string &suffix, bool enable);
+	void showRepoManager();
 
 	YGtkPkgUndoList *undoList();
 	YGtkPkgSearchEntry *getSearchEntry();

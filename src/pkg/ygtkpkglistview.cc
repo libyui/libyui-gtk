@@ -398,14 +398,6 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		{ pThis->getSelected().lock (false); }
 		static void select_all_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->selectAll(); }
-		static void show_column_cb (GtkCheckMenuItem *item, YGtkPkgListView *pThis)
-		{
-			int col = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (item), "column"));
-			GtkTreeViewColumn *column = gtk_tree_view_get_column (
-				GTK_TREE_VIEW (pThis->impl->view), col);
-			bool visible = gtk_check_menu_item_get_active (item);
-			gtk_tree_view_column_set_visible (column, visible);
-		}
 	};
 
 	GtkWidget *menu = gtk_menu_new();
@@ -452,26 +444,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		inner::appendItem (menu, NULL, NULL, GTK_STOCK_SELECT_ALL,
 		                   true, inner::select_all_cb, pThis);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
-		GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show column"));
-		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-		GtkWidget *submenu = gtk_menu_new();
-		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
-		GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (pThis->impl->view));
-		int n = 0;
-		for (GList *i = columns; i; i = i->next, n++) {
-			GtkTreeViewColumn *column = (GtkTreeViewColumn *) i->data;
-			const gchar *header = gtk_tree_view_column_get_title (column);
-			if (header) {
-				GtkWidget *item = gtk_check_menu_item_new_with_label (header);
-				g_object_set_data (G_OBJECT (item), "column", GINT_TO_POINTER (n));
-				gtk_menu_shell_append (GTK_MENU_SHELL (submenu), item);
-				gboolean visible = gtk_tree_view_column_get_visible (column);
-				gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), visible);
-				g_signal_connect (G_OBJECT (item), "toggled",
-					G_CALLBACK (inner::show_column_cb), pThis);
-			}
-		}
-		g_list_free (columns);
+		ygtk_tree_view_append_show_columns_item (YGTK_TREE_VIEW (pThis->impl->view), menu);
 	}
 	ygtk_tree_view_popup_menu (YGTK_TREE_VIEW (pThis->impl->view), menu);
 }
@@ -745,7 +718,7 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	}
 	else if (property == REPOSITORY_PROP)
 		gtk_tree_view_column_add_attribute (column, renderer,
-			"stock-id", REPOSITORY_STOCK_PROP);
+			"icon-name", REPOSITORY_STOCK_PROP);
 
 	if (size != -1)  // on several columns
 		gtk_tree_view_set_rules_hint (view, TRUE);
@@ -757,7 +730,7 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 		gtk_tree_view_column_set_expand (column, TRUE);
 	gtk_tree_view_column_set_visible (column, visible);
 	set_sort_column (this, column, property);
-	gtk_tree_view_append_column (view, column);
+	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 }
 
 void YGtkPkgListView::addCheckColumn (int property)
@@ -970,29 +943,30 @@ std::string getRepositoryLabel (Ypp::Repository &repo)
 	return str;
 }
 
+const char *getRepositoryStockIcon (const std::string &url)
+{
+	if (url.empty())
+		return GTK_STOCK_MISSING_IMAGE;
+	if (url.compare (0, 2, "cd", 2) == 0 || url.compare (0, 3, "dvd", 3) == 0)
+		return GTK_STOCK_CDROM;
+	if (url.compare (0, 3, "iso", 3) == 0)
+		return GTK_STOCK_FILE;
+	if (url.find ("KDE") != std::string::npos)
+		return "pattern-kde";
+	if (url.find ("GNOME") != std::string::npos)
+		return "pattern-gnome";
+	if (url.find ("update") != std::string::npos)
+		return "yast-update";
+	if (url.find ("home") != std::string::npos)
+		return "yast-users";
+	return GTK_STOCK_NETWORK;
+}
+
 const char *getRepositoryStockIcon (Ypp::Repository &repo)
 {
-	std::string url (repo.url());
-	const char *icon;
 	if (repo.isSystem())
-		icon = "yast-host";
-	else if (url.empty())
-		icon = GTK_STOCK_MISSING_IMAGE;
-	else if (url.compare (0, 2, "cd", 2) == 0 || url.compare (0, 3, "dvd", 3) == 0)
-		icon = GTK_STOCK_CDROM;
-	else if (url.compare (0, 3, "iso", 3) == 0)
-		icon = GTK_STOCK_FILE;
-	else if (url.find ("KDE") != std::string::npos)
-		icon = "pattern-kde";
-	else if (url.find ("GNOME") != std::string::npos)
-		icon = "pattern-gnome";
-	else if (url.find ("update") != std::string::npos)
-		icon = "yast-update";
-	else if (url.find ("home") != std::string::npos)
-		icon = "yast-users";
-	else
-		icon = GTK_STOCK_NETWORK;
-	return icon;
+		return "yast-host";
+	return getRepositoryStockIcon (repo.url());
 }
 
 void highlightMarkup (std::string &text, const std::list <std::string> &keywords,

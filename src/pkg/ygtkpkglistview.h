@@ -55,6 +55,7 @@ const char *getStatusStockIcon (Ypp::Selectable &sel);
 
 std::string getRepositoryLabel (Ypp::Repository &repo);
 const char *getRepositoryStockIcon (Ypp::Repository &repo);
+const char *getRepositoryStockIcon (const std::string &url);
 
 void highlightMarkup (std::string &text, const std::list <std::string> &keywords,
                       const char *openTag, const char *closeTag, int openTagLen, int closeTagLen);
