@@ -361,38 +361,40 @@ public:
 
 	static void hack_right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
 	{
+		struct inner {
+			static void key_activate_cb (GtkMenuItem *item, YWidget *button)
+			{ activateButton (button); }
+			static void appendItem (GtkWidget *menu, const gchar *stock, int key)
+			{
+				YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
+				if (button) {
+					GtkWidget *item;
+					item = gtk_image_menu_item_new_from_stock (stock, NULL);
+					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+					g_signal_connect (G_OBJECT (item), "activate",
+									  G_CALLBACK (key_activate_cb), button);
+				}
+			}
+		};
+
 #if YAST2_VERSION > 2018003
 		if (pThis->notifyContextMenu())
 			return YGTableView::right_click_cb (view, outreach, pThis);
 #endif
 		GtkWidget *menu = gtk_menu_new();
 
-		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
-				YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1)
-			// more than one table exists, or no function key 5 assigned
-			gtk_widget_error_bell (GTK_WIDGET (view));
-		else {
-			struct inner {
-				static void key_activate_cb (GtkMenuItem *item, YWidget *button)
-				{ activateButton (button); }
-				static void appendItem (GtkWidget *menu, const gchar *stock, int key)
-				{
-					YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
-					if (button) {
-						GtkWidget *item;
-						item = gtk_image_menu_item_new_from_stock (stock, NULL);
-						gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-						g_signal_connect (G_OBJECT (item), "activate",
-										  G_CALLBACK (key_activate_cb), button);
-					}
-				}
-			};
-
-			if (outreach)
-				inner::appendItem (menu, GTK_STOCK_ADD, 3);
+		YGDialog *dialog = YGDialog::currentDialog();
+		if (dialog->getClassWidgets ("YTable").size() == 1) {
+			// if more than one table exists, function keys become ambiguous
+			if (outreach) {
+				if (dialog->getFunctionWidget(3))
+					inner::appendItem (menu, GTK_STOCK_ADD, 3);
+			}
 			else {
-				inner::appendItem (menu, GTK_STOCK_EDIT, 4);
-				inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+				if (dialog->getFunctionWidget(4))
+					inner::appendItem (menu, GTK_STOCK_EDIT, 4);
+				if (dialog->getFunctionWidget(5))
+					inner::appendItem (menu, GTK_STOCK_DELETE, 5);
 			}
 		}
 

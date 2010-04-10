@@ -1,5 +1,10 @@
 2010-04-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/YGTable.cc: don't show context menu entries
+	that aren't working.
+
+2010-04-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkghistorydialog.cc: re-worked the log
 	text as a list, making each item clickable
 	so user can easily see package details, and added
