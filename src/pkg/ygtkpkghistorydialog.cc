@@ -279,7 +279,9 @@ struct ZyppHistoryParser
 				name = _item->name;
 				descrpt = _item->edition.version();
 				reqby = _item->reqby; autoreq = reqby.empty(); reqby = reqbyTreatment (reqby);
-				installed.erase (installed.find (name));
+				std::map <std::string, int>::iterator it = installed.find (name);
+				if (it != installed.end())
+					installed.erase (it);
 				break;
 			}
 			case zypp::HistoryActionID::REPO_ADD_e: {
@@ -579,8 +581,8 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	title += " ("; title += FILENAME; title += ")";
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GtkDialogFlags (0), GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE, title.c_str());
-	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to File"), 2);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_JUMP_TO, 1);
+	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to File"), 2);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);
 	gtk_dialog_set_response_sensitive (GTK_DIALOG (dialog), 1, FALSE);
     gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_CLOSE);

@@ -80,7 +80,7 @@ public:
 		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
-		ygtk_tree_view_append_column (YGTK_TREE_VIEW (getView()), column);
+		gtk_tree_view_append_column (getView(), column);
 	}
 
 	void appendCheckColumn (string header, int bool_col)
@@ -93,7 +93,7 @@ public:
 		                  G_CALLBACK (toggled_cb), this);
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
-		ygtk_tree_view_append_column (YGTK_TREE_VIEW (getView()), column);
+		gtk_tree_view_append_column (getView(), column);
 	}
 
 	void appendEmptyColumn()
@@ -457,7 +457,7 @@ public:
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 
@@ -493,7 +493,7 @@ public:
 		// Let the user toggle, using space/enter or double click (not an event).
 		connect (getWidget(), "row-activated", G_CALLBACK (multi_activated_cb), this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 
@@ -567,7 +567,7 @@ public:
 		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 

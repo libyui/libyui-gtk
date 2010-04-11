@@ -119,6 +119,9 @@ GtkWidget *ygtk_tree_view_create_show_columns_menu (YGtkTreeView *view)
 {
 	GtkWidget *menu = gtk_menu_new();
 	GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (view));
+	// see ygtk_tree_view_append_column(): we re-order arabic column insertion
+	gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL &&
+		gtk_widget_get_direction (GTK_WIDGET (view)) != GTK_TEXT_DIR_RTL;
 	int n;
 	GList *i;
 	for (n = 0, i = columns; i; i = i->next, n++) {
@@ -133,14 +136,14 @@ GtkWidget *ygtk_tree_view_create_show_columns_menu (YGtkTreeView *view)
 			g_signal_connect (G_OBJECT (item), "toggled",
 				G_CALLBACK (show_column_cb), view);
 
-			// see ygtk_tree_view_append_column(): we re-order arabic column insertion
-			if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+			if (reverse)
 				gtk_menu_shell_prepend (GTK_MENU_SHELL (menu), item);
 			else
 				gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 
 			// if the user were to remove all columns, the right-click would no longer work
-			gtk_widget_set_sensitive (item, n != 0);
+			if (n == 0 && !reverse)
+				gtk_widget_set_sensitive (item, FALSE);
 		}
 	}
 	g_list_free (columns);

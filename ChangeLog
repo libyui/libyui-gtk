@@ -1,3 +1,17 @@
+2010-04-11 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGTable.cc: reverted Arabic treatment.
+
+	* src/YGTable.cc: fixed crash when right-clicking on
+	selection-box, multi-box and tree, due to a casting
+	problem.
+
+	* src/pkg/ygtkpkghistorydialog.cc: fixed crash:
+	reported by Atri Bhattacharya.
+
+	* src/pkg/ygtkpkgdetailview.cc: changed gray title bar
+	to cover the entire widget.
+
 2010-04-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: don't show context menu entries

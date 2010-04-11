@@ -1109,6 +1109,11 @@ Ypp::List m_list;
 	{
 		DetailWidget *widget;
 
+		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
+		widget = new DetailName();
+		m_widgets.push_back (widget);
+		gtk_box_pack_start (GTK_BOX (vbox), widget->getWidget(), FALSE, TRUE, 0);
+
 		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 0);
 		widget = new VersionExpander();
 		m_widgets.push_back (widget);
@@ -1120,9 +1125,6 @@ Ypp::List m_list;
 		}
 
 		GtkWidget *main_vbox = gtk_vbox_new (FALSE, 0);
-		widget = new DetailName();
-		m_widgets.push_back (widget);
-		gtk_box_pack_start (GTK_BOX (main_vbox), widget->getWidget(), FALSE, TRUE, 0);
 		widget = new DetailDescription();
 		m_widgets.push_back (widget);
 		gtk_box_pack_start (GTK_BOX (main_vbox), widget->getWidget(), FALSE, TRUE, 0);
@@ -1153,13 +1155,15 @@ Ypp::List m_list;
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 2);
 		gtk_box_pack_start (GTK_BOX (hbox), main_vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), side_vbox, FALSE, TRUE, 0);
-		g_signal_connect (G_OBJECT (hbox), "expose-event",
+
+		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
+		g_signal_connect (G_OBJECT (vbox), "expose-event",
 			              G_CALLBACK (white_expose_cb), NULL);
 
 		m_scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_scroll), hbox);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_scroll), vbox);
 
 		gtk_widget_show_all (m_scroll);
 		g_signal_connect (G_OBJECT (m_scroll), "realize",
