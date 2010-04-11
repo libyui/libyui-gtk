@@ -480,9 +480,19 @@ static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 	return FALSE;
 }
 
+static void goto_activate_cb (GtkMenuItem *item, GtkTreeView *view)
+{ goto_clicked (view); }
+
 static void right_click_cb (YGtkTreeView *view, gboolean outreach)
 {
-	GtkWidget *menu = ygtk_tree_view_append_show_columns_item (view, NULL);
+	GtkWidget *menu = gtk_menu_new();
+	if (!outreach) {
+		GtkWidget *item = gtk_image_menu_item_new_from_stock (GTK_STOCK_JUMP_TO, NULL);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+		g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (goto_activate_cb), view);
+	}
+
+	ygtk_tree_view_append_show_columns_item (view, menu);
 	ygtk_tree_view_popup_menu (view, menu);
 }
 
