@@ -334,10 +334,10 @@ static void goto_clicked (GtkTreeView *log_view)
 		else
 			YGPackageSelector::get()->searchFor (Ypp::PoolQuery::NAME, shortcut);
 		g_free (shortcut);
-	}
 
-	GtkWidget *dialog = gtk_widget_get_toplevel (GTK_WIDGET (log_view));
-	gtk_widget_destroy (dialog);
+		GtkWidget *dialog = gtk_widget_get_toplevel (GTK_WIDGET (log_view));
+		gtk_widget_destroy (dialog);
+	}
 }
 
 static void log_selection_changed_cb (GtkTreeSelection *selection, GtkDialog *dialog)
