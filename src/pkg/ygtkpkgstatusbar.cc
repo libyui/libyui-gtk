@@ -108,7 +108,7 @@ struct LastChange {
 			gtk_label_set_text (GTK_LABEL (text), _("No changes to perform"));
 
 			PangoAttrList *attrs = pango_attr_list_new();
-			pango_attr_list_insert (attrs, pango_attr_foreground_new (120<<8, 120<<8, 120<<8));
+			pango_attr_list_insert (attrs, pango_attr_foreground_new (110<<8, 110<<8, 110<<8));
 			pango_attr_list_insert (attrs, pango_attr_style_new (PANGO_STYLE_ITALIC));
 			gtk_label_set_attributes (GTK_LABEL (text), attrs);
 			pango_attr_list_unref (attrs);

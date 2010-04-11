@@ -3,6 +3,12 @@
 	* src/pkg/ygtkpkghistorydialog.cc: set go-to entry
 	insensitive if nothing is selected.
 
+	* src/pkg/ygtkpkghistorydialog.cc: apply gray effect
+	to "(patch)" and "(auto)", not italic.
+
+	* src/pkg/ygtkstatusbar.cc: set higher gray color
+	to "no changes to perform" text.
+
 2010-04-11 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkghistorydialog.cc: added go-to entry

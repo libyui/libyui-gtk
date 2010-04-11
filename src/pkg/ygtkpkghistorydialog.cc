@@ -119,7 +119,7 @@ struct LogListHandler
 		}
 
 		std::string _name;
-		_name.reserve (action.size() + name.size() + 10);
+		_name.reserve (action.size() + name.size() + 64);
 		_name = std::string ("<b>") + action + "</b> " + name;
 		int xpad = 0; // autoReq ? 25 : 0;
 
@@ -128,11 +128,16 @@ struct LogListHandler
 			repo_icon = getRepositoryStockIcon (repositoryUrl);
 			if (repositoryUrl.find ("update") != std::string::npos) {
 				//color = "red";
-				_name += _("  <i>(patch)</i>");
+				_name += "  <span color=\"#999999\">(";
+				_name += _("patch");
+				_name += ")</span>";
 			}
 		}
-		if (autoReq)
-			_name += _("  <i>(auto)</i>");
+		if (autoReq) {
+			_name += "  <span color=\"#999999\">(";
+			_name += _("auto");
+			_name += ")</span>";
+		}
 
 		gtk_list_store_append (store, &iter);
 		gtk_list_store_set (store, &iter, ICON_COLUMN, icon, NAME_COLUMN, _name.c_str(),
@@ -543,7 +548,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 	gtk_tree_view_column_set_resizable (column, TRUE);
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-	gtk_tree_view_column_set_fixed_width (column, 100);
+	gtk_tree_view_column_set_fixed_width (column, 120);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (log_view), column);
 
 	renderer = ygtk_cell_renderer_text_pixbuf_new();
