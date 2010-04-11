@@ -487,7 +487,11 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach)
 {
 	GtkWidget *menu = gtk_menu_new();
 	if (!outreach) {
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (view));
+		bool selected = gtk_tree_selection_get_selected (selection, NULL, NULL);
+
 		GtkWidget *item = gtk_image_menu_item_new_from_stock (GTK_STOCK_JUMP_TO, NULL);
+		gtk_widget_set_sensitive (item, selected);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 		g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (goto_activate_cb), view);
 	}
