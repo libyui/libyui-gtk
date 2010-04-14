@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Apr 14 12:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.37
+- sw_single: added visual feedback that history dialog may
+take a bit to load, and cached it for repetitive use.
+
+-------------------------------------------------------------------
 Sun Apr 11 14:42:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.36

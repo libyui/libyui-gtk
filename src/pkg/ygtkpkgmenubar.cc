@@ -528,10 +528,7 @@ static void show_pkg_changes_cb()
 #include "ygtkpkghistorydialog.h"
 
 static void show_log_changes_cb()
-{
-	YGtkPkgHistoryDialog dialog;
-	dialog.popup();
-}
+{ popupHistoryDialog(); }
 
 static void reset_ignored_dependency_conflicts_cb()
 { zypp::getZYpp()->resolver()->undo(); }

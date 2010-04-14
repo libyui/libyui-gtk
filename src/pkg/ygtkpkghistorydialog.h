@@ -22,5 +22,8 @@ private:
 	GtkWidget *m_dialog;
 };
 
+// use this method to create the dialog -- so it is cached
+void popupHistoryDialog();
+
 #endif
 

@@ -341,7 +341,7 @@ static void goto_clicked (GtkTreeView *log_view)
 		g_free (shortcut);
 
 		GtkWidget *dialog = gtk_widget_get_toplevel (GTK_WIDGET (log_view));
-		gtk_widget_destroy (dialog);
+		gtk_widget_hide (dialog);
 	}
 }
 
@@ -403,7 +403,7 @@ static void response_cb (GtkDialog *dialog, gint response, GtkTreeView *log_view
 	switch (response) {
 		case 1: goto_clicked (log_view); break;
 		case 2: save_to_file (GTK_WINDOW (dialog)); break;
-		default: gtk_widget_destroy (GTK_WIDGET (dialog)); break;
+		default: gtk_widget_hide (GTK_WIDGET (dialog)); break;
 	}
 }
 
@@ -507,14 +507,10 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach)
 
 YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 {
-	ListHandler handler;
-	ZyppHistoryParser parser (&handler);
-
 	GtkCellRenderer *renderer;
 	GtkTreeViewColumn *column;
 
 	GtkWidget *log_view = ygtk_tree_view_new();
-	gtk_tree_view_set_model (GTK_TREE_VIEW (log_view), handler.log_handler->getModel());
 	gtk_tree_view_set_search_column (GTK_TREE_VIEW (log_view), LogListHandler::SHORTCUT_COLUMN);
 	gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (log_view), TRUE);
 	gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (log_view), TRUE);
@@ -579,7 +575,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 		GTK_SCROLLED_WINDOW (log_scroll), GTK_SHADOW_IN);
 	gtk_container_add (GTK_CONTAINER (log_scroll), log_view);
 
-	GtkWidget *date_view = gtk_tree_view_new_with_model (handler.date_handler->getModel());
+	GtkWidget *date_view = gtk_tree_view_new();
 	gtk_tree_view_set_search_column (GTK_TREE_VIEW (date_view), DateListHandler::TEXT_COLUMN);
 	gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (date_view), TRUE);
 
@@ -596,10 +592,9 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 		GTK_SCROLLED_WINDOW (date_scroll), GTK_SHADOW_IN);
 	gtk_container_add (GTK_CONTAINER (date_scroll), date_view);
 
-	std::string title (_("History of Changes"));
-	title += " ("; title += FILENAME; title += ")";
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
-		GtkDialogFlags (0), GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE, title.c_str());
+		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE,
+		_("History of Changes (%s)"), FILENAME);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_JUMP_TO, 1);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to File"), 2);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);
@@ -629,10 +624,31 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (date_view));
 	g_signal_connect (G_OBJECT (selection), "changed",
 	                  G_CALLBACK (date_selection_changed_cb), log_view);
+
+	GdkDisplay *display = gtk_widget_get_display (dialog);
+	GdkCursor *cursor = gdk_cursor_new_for_display (display, GDK_WATCH);
+	gdk_window_set_cursor (gtk_widget_get_window (dialog), cursor);
+	while (g_main_context_iteration (NULL, FALSE)) ;
+	gdk_cursor_unref (cursor);
+
+	ListHandler handler;
+	ZyppHistoryParser parser (&handler);
+	gtk_tree_view_set_model (GTK_TREE_VIEW (date_view), handler.date_handler->getModel());
+	gtk_tree_view_set_model (GTK_TREE_VIEW (log_view), handler.log_handler->getModel());
+
+	gdk_window_set_cursor (dialog->window, NULL);
 }
 
 YGtkPkgHistoryDialog::~YGtkPkgHistoryDialog() {}
 
 void YGtkPkgHistoryDialog::popup()
-{ gtk_widget_show (m_dialog); }
+{ gtk_window_present (GTK_WINDOW (m_dialog)); }
+
+void popupHistoryDialog()
+{
+	static YGtkPkgHistoryDialog *dialog = 0;
+	if (!dialog)
+		dialog = new YGtkPkgHistoryDialog();
+	dialog->popup();
+}
 

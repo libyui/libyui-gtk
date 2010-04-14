@@ -282,10 +282,8 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vbox);
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-	if (ret == 1) {
-		YGtkPkgHistoryDialog dialog;
-		dialog.popup();
-	}
+	if (ret == 1)
+		popupHistoryDialog();
 	gtk_widget_destroy (dialog);
 	return ret == GTK_RESPONSE_YES;
 }

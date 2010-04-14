@@ -1,3 +1,8 @@
+2010-04-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkghistorydialog.h/cc: cache dialog,
+	and (at first use) improved visual feedback.
+
 2010-04-11 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkghistorydialog.cc: set go-to entry
