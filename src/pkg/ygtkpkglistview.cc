@@ -14,9 +14,7 @@
 #include "ygtkpkglistview.h"
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
-#include "ygtkcellrenderertextpixbuf.h"
 #include "ygtkcellrendererbutton.h"
-#include "ygtkcellrenderersidebutton.h"
 #include <gtk/gtk.h>
 #include <string.h>
 
@@ -489,7 +487,7 @@ static void check_toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	YGUI::ui()->normalCursor();
 }
 
-static void upgrade_toggled_cb (YGtkCellRendererSideButton *renderer, gchar *path_str,
+static void upgrade_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
 	YGtkPkgListView *pThis)
 {
 	YGUI::ui()->busyCursor();
@@ -685,40 +683,48 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	if (header)
 		gtk_tree_view_set_headers_visible (view, TRUE);
+	GtkTreeViewColumn *column = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title (column, header);
+
 	GtkCellRenderer *renderer;
+
 	if (property == VERSION_PROP) {
-		renderer = ygtk_cell_renderer_side_button_new();
+		renderer = ygtk_cell_renderer_button_new();
+		if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+			gtk_tree_view_column_pack_start (column, renderer, FALSE);
+		else
+			gtk_tree_view_column_pack_end (column, renderer, FALSE);
+		gtk_tree_view_column_set_attributes (column, renderer,
+			"visible", HAS_UPGRADE_PROP, "active", TO_UPGRADE_PROP, NULL);
 		g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_GO_UP, NULL);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 				          G_CALLBACK (upgrade_toggled_cb), this);
 	}
-	else if (property == REPOSITORY_PROP)
-		renderer = ygtk_cell_renderer_text_pixbuf_new();
-	else
-		renderer = gtk_cell_renderer_text_new();
+	else if (property == REPOSITORY_PROP) {
+		renderer = gtk_cell_renderer_pixbuf_new();
+		if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+			gtk_tree_view_column_pack_end (column, renderer, FALSE);
+		else
+			gtk_tree_view_column_pack_start (column, renderer, FALSE);
+		gtk_tree_view_column_set_attributes (column, renderer,
+			"icon-name", REPOSITORY_STOCK_PROP, NULL);
+	}
+
+	renderer = gtk_cell_renderer_text_new();
+	gtk_tree_view_column_pack_start (column, renderer, TRUE);
+	gtk_tree_view_column_set_attributes (column, renderer,
+		"markup", property, "sensitive", IS_LOCKED_PROP, NULL);
+
+	if (impl->colorModified)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"cell-background", BACKGROUND_PROP);
+	if (impl->indentAuto)
+		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
+
 	PangoEllipsizeMode ellipsize = PANGO_ELLIPSIZE_END;
 	if (size >= 0 && property != NAME_SUMMARY_PROP)
 		ellipsize = PANGO_ELLIPSIZE_MIDDLE;
 	g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
-
-	GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-		header, renderer, "markup", property, "sensitive", IS_LOCKED_PROP, NULL);
-	if (impl->colorModified)
-		gtk_tree_view_column_add_attribute (column, renderer,
-			"cell-background", BACKGROUND_PROP);
-/*	if (impl->indentAuto && (property == NAME_PROP || property == ACTION_NAME_PROP ||
-	    property == NAME_SUMMARY_PROP))*/
-	if (impl->indentAuto)
-		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
-	if (property == VERSION_PROP) {
-		gtk_tree_view_column_add_attribute (column, renderer,
-			"button-visible", HAS_UPGRADE_PROP);
-		gtk_tree_view_column_add_attribute (column, renderer,
-			"active", TO_UPGRADE_PROP);
-	}
-	else if (property == REPOSITORY_PROP)
-		gtk_tree_view_column_add_attribute (column, renderer,
-			"icon-name", REPOSITORY_STOCK_PROP);
 
 	if (size != -1)  // on several columns
 		gtk_tree_view_set_rules_hint (view, TRUE);

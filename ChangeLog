@@ -1,3 +1,23 @@
+2010-04-15 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkcellrenderertextpixbuf.h/c: removed;
+	use instead gtkcellrendererpixbuf packaged in a column.
+
+	* src/pkg/ygtkcellrenderersidebutton.h/c: removed;
+	use instead ygtkcellrendererbutton packaged in a column.
+
+	* src/ygtkcellrendererbutton.h/c: removed dependency
+	from ygtkcellrenderertextpixbuf.
+
+	* src/YGTable.cc, src/pkg/YGPackageSelector.cc,
+	src/pkg/ygtkpkglistview.cc & src/ygtkpkghistorydialog.cc:
+	use gtk or ygtkbutton cell renderers.
+
+	* src/ygtktreeview.cc: arabic fixes.
+
+	* src/pkg/ygtkpkgdetailview.cc: arabic fix:
+	"name - summary" -> "summary - name"
+
 2010-04-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkghistorydialog.h/cc: cache dialog,

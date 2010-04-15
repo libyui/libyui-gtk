@@ -371,24 +371,29 @@ struct SuffixFilter : public Ypp::Match {
 			GTK_TREE_VIEW (view)), GTK_SELECTION_NONE);
 		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (view), FALSE);
 		gtk_tree_view_set_search_column (GTK_TREE_VIEW (view), TEXT_COL);
+
 		GtkTreeViewColumn *column;
 		GtkCellRenderer *renderer;
+		column = gtk_tree_view_column_new();
+
 		renderer = gtk_cell_renderer_toggle_new();
+		gtk_tree_view_column_pack_start (column, renderer, FALSE);
+		gtk_tree_view_column_set_attributes (column, renderer,
+			"visible", SHOW_TOGGLE_COL, "active", ACTIVE_TOGGLE_COL, NULL);
 		gtk_cell_renderer_toggle_set_radio (
 			GTK_CELL_RENDERER_TOGGLE (renderer), TRUE);
 		// we should not connect the actual toggle button, as we toggle on row press
 		g_signal_connect (G_OBJECT (view), "cursor-changed",
 			G_CALLBACK (inner::cursor_changed_cb), store);
-		column = gtk_tree_view_column_new_with_attributes ("", renderer,
-			"visible", SHOW_TOGGLE_COL, "active", ACTIVE_TOGGLE_COL, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 
 		renderer = gtk_cell_renderer_text_new();
-		g_object_set (G_OBJECT (renderer), "wrap-width", 400, NULL);
-		column = gtk_tree_view_column_new_with_attributes ("", renderer,
+		gtk_tree_view_column_pack_start (column, renderer, TRUE);
+		gtk_tree_view_column_set_attributes (column, renderer,
 			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, "xpad", TEXT_PAD_COL, NULL);
-		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
+		g_object_set (G_OBJECT (renderer), "wrap-width", 400,
+			"wrap-mode", PANGO_WRAP_WORD_CHAR, NULL);
 
+		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 		gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
 		gtk_widget_set_has_tooltip (view, TRUE);
 

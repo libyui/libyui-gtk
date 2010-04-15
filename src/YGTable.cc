@@ -9,7 +9,6 @@
 #include "YGWidget.h"
 #include "YSelectionWidget.h"
 #include "YGSelectionModel.h"
-#include "ygtkcellrenderertextpixbuf.h"
 #include "ygtktreeview.h"
 
 /* A generic widget for table related widgets. */
@@ -56,28 +55,27 @@ public:
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
-		GtkCellRenderer *renderer = ygtk_cell_renderer_text_pixbuf_new();
-		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
-			header.c_str(), renderer, "pixbuf", icon_col, "text", text_col, NULL);
-
 		gfloat xalign = -1;
 		switch (align) {
-			case YAlignBegin:
-				xalign = 0.0;
-				break;
-			case YAlignCenter:
-				xalign = 0.5;
-				break;
-			case YAlignEnd:
-				xalign = 1.0;
-				break;
-			case YAlignUnchanged:
-				break;
+			case YAlignBegin: xalign = 0.0; break;
+			case YAlignCenter: xalign = 0.5; break;
+			case YAlignEnd: xalign = 1.0; break;
+			case YAlignUnchanged: break;
 		}
-		if (xalign != -1) {
+
+		GtkTreeViewColumn *column = gtk_tree_view_column_new();
+		gtk_tree_view_column_set_title (column, header.c_str());
+		GtkCellRenderer *renderer;
+
+		renderer = gtk_cell_renderer_pixbuf_new();
+		gtk_tree_view_column_pack_start (column, renderer, FALSE);
+		gtk_tree_view_column_set_attributes (column, renderer, "pixbuf", icon_col, NULL);
+
+		renderer = gtk_cell_renderer_text_new();
+		gtk_tree_view_column_pack_start (column, renderer, TRUE);
+		gtk_tree_view_column_set_attributes (column, renderer, "text", text_col, NULL);
+		if (xalign != -1)
 			g_object_set (renderer, "xalign", xalign, NULL);
-			//gtk_tree_view_column_set_alignment (column, xalign);
-		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);

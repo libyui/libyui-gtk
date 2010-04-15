@@ -8,7 +8,7 @@
 #ifndef YGTK_CELL_RENDERER_BUTTON_H
 #define YGTK_CELL_RENDERER_BUTTON_H
 
-#include "ygtkcellrenderertextpixbuf.h"
+#include <gtk/gtkcellrenderertext.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_CELL_RENDERER_BUTTON  (ygtk_cell_renderer_button_get_type ())
@@ -25,15 +25,18 @@ G_BEGIN_DECLS
 
 typedef struct _YGtkCellRendererButton
 {
-	YGtkCellRendererTextPixbuf parent;
+	GtkCellRendererText parent;
 
 	// private:
+	GdkPixbuf *pixbuf;
+	gchar *icon_name, *stock_id;
+	gint icon_size;
 	guint active : 2;
 } YGtkCellRendererButton;
 
 typedef struct _YGtkCellRendererButtonClass
 {
-	YGtkCellRendererTextPixbufClass parent_class;
+	GtkCellRendererTextClass parent_class;
 
 	void (* toggled) (YGtkCellRendererButton *renderer, const gchar *path);
 } YGtkCellRendererButtonClass;

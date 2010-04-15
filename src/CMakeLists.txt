@@ -24,7 +24,6 @@ set (gtk_yast_plugin_SRCS
 	YGWidget.cc
 	YGWizard.cc
 	ygdkmngloader.c
-	ygtkcellrenderertextpixbuf.c
 	ygtkbargraph.c
 	ygtkfieldentry.c
 	ygtkhtmlwrap.c

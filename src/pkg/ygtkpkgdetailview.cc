@@ -61,7 +61,10 @@ struct DetailName : public DetailWidget {
 			str += "\">";
 			if (list.size() == 1) {
 				Ypp::Selectable &sel = list.get (0);
-				str += "<b>" + sel.name() + "</b> - " + sel.summary();
+				if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
+					str += sel.summary() + " - " + "<b>" + sel.name() + "</b>";
+				else
+					str += "<b>" + sel.name() + "</b> - " + sel.summary();
 			}
 			else {
 				str += "<b>";

@@ -11,7 +11,6 @@
 #include "YGDialog.h"
 #include "YGPackageSelector.h"
 #include "ygtkpkglistview.h"
-#include "ygtkcellrenderertextpixbuf.h"
 #include <gtk/gtk.h>
 #include "ygtktreeview.h"
 
@@ -120,7 +119,8 @@ struct LogListHandler
 
 		std::string _name;
 		_name.reserve (action.size() + name.size() + 64);
-		_name = std::string ("<b>") + action + "</b> " + name;
+		_name = "<b>";
+		_name += action + "</b> " + name;
 		int xpad = 0; // autoReq ? 25 : 0;
 
 		const char *repo_icon = 0, *color = 0;
@@ -128,15 +128,17 @@ struct LogListHandler
 			repo_icon = getRepositoryStockIcon (repositoryUrl);
 			if (repositoryUrl.find ("update") != std::string::npos) {
 				//color = "red";
-				_name += "  <span color=\"#999999\">(";
-				_name += _("patch");
-				_name += ")</span>";
+				std::string tag;
+				tag.reserve (64);
+				tag = "<span color=\"#999999\">("; tag += _("patch"); tag += ")</span>";
+				_name += "  "; _name += tag;
 			}
 		}
 		if (autoReq) {
-			_name += "  <span color=\"#999999\">(";
-			_name += _("auto");
-			_name += ")</span>";
+			std::string tag;
+			tag.reserve (64);
+			tag = "<span color=\"#999999\">("; tag += _("auto"); tag += ")</span>";
+			_name += "  "; _name += tag;
 		}
 
 		gtk_list_store_append (store, &iter);
@@ -430,49 +432,22 @@ static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 		text.reserve (254);
 		const char *icon = 0;
 
-		int col;
-		for (col = 0; gtk_tree_view_get_column (view, col); col++)
-			if (column == gtk_tree_view_get_column (view, col))
-				break;
-/*
-		char *color;
-		gtk_tree_model_get (model, &iter, LogListHandler::COLOR_COLUMN, &color, -1);
-		bool has_color = color != NULL;
-		g_free (color);
-*/
-		switch (col) {
-			case LogListHandler::REPOSITORY_COLUMN: {
-				char *name, *url;
-				gtk_tree_model_get (model, &iter,
-					LogListHandler::REPOSITORY_COLUMN, &name,
-					LogListHandler::REPOSITORY_URL_COLUMN, &url, -1);
-				if (name && *name) {
-					text = name;
-					if (url && *url) {
-						text += "\n<small>"; text += url; text += "</small>";
-						icon = getRepositoryStockIcon (url);
-					}
-					if (url)
-						g_free (url);
+		if (column == gtk_tree_view_get_column (view, 2)) {  // repository
+			char *name, *url;
+			gtk_tree_model_get (model, &iter,
+				LogListHandler::REPOSITORY_COLUMN, &name,
+				LogListHandler::REPOSITORY_URL_COLUMN, &url, -1);
+			if (name && *name) {
+				text = name;
+				if (url && *url) {
+					text += "\n<small>"; text += url; text += "</small>";
+					icon = getRepositoryStockIcon (url);
 				}
-				if (name)
-					g_free (name);
-				break;
+				if (url)
+					g_free (url);
 			}
-			case LogListHandler::NAME_COLUMN:
-			case LogListHandler::VERSION_URL_COLUMN:
-			case LogListHandler::REQBY_COLUMN: {
-				char *str;
-				gtk_tree_model_get (model, &iter, col, &str, -1);
-				if (str && *str) {
-					text = str;
-/*					if (has_color && col != LogListHandler::REQBY_COLUMN)
-						text += _(" (patch)");*/
-				}
-				if (str)
-					g_free (str);
-				break;
-			}
+			if (name)
+				g_free (name);
 		}
 
 		if (!text.empty()) {
@@ -507,7 +482,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach)
 
 YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 {
-	GtkCellRenderer *renderer;
+	GtkCellRenderer *renderer, *pix_renderer;
 	GtkTreeViewColumn *column;
 
 	GtkWidget *log_view = ygtk_tree_view_new();
@@ -520,18 +495,28 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	g_signal_connect (G_OBJECT (log_view), "right-click",
 	                  G_CALLBACK (right_click_cb), this);
 
-	renderer = gtk_cell_renderer_pixbuf_new();
-	column = gtk_tree_view_column_new_with_attributes (NULL, renderer,
-		"icon-name", LogListHandler::ICON_COLUMN, NULL);
-	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
-	gtk_tree_view_column_set_fixed_width (column, 38);
-	ygtk_tree_view_append_column (YGTK_TREE_VIEW (log_view), column);
+	bool reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+
+	column = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title (column, _("Action"));
+	gtk_tree_view_column_set_spacing (column, 6);
+
+	pix_renderer = gtk_cell_renderer_pixbuf_new();
+	if (!reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
 
 	renderer = gtk_cell_renderer_text_new();
-	column = gtk_tree_view_column_new_with_attributes (_("Action"), renderer,
+	gtk_tree_view_column_pack_start (column, renderer, TRUE);
+	gtk_tree_view_column_set_attributes (column, renderer,
 		"markup", LogListHandler::NAME_COLUMN, "xpad", LogListHandler::XPAD_COLUMN,
 		"foreground", LogListHandler::COLOR_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+
+	if (reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
+	gtk_tree_view_column_set_attributes (column, pix_renderer,
+		"icon-name", LogListHandler::ICON_COLUMN, NULL);
+
 	gtk_tree_view_column_set_resizable (column, TRUE);
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_column_set_expand (column, TRUE);
@@ -547,11 +532,24 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_tree_view_column_set_fixed_width (column, 120);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (log_view), column);
 
-	renderer = ygtk_cell_renderer_text_pixbuf_new();
-	column = gtk_tree_view_column_new_with_attributes (_("Repository"), renderer,
-		"text", LogListHandler::REPOSITORY_COLUMN,
+	column = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title (column, _("Repository"));
+	gtk_tree_view_column_set_spacing (column, 2);
+
+	pix_renderer = gtk_cell_renderer_pixbuf_new();
+	if (!reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
+
+	renderer = gtk_cell_renderer_text_new();
+	gtk_tree_view_column_pack_start (column, renderer, TRUE);
+	gtk_tree_view_column_set_attributes (column, renderer,
+		"text", LogListHandler::REPOSITORY_COLUMN, NULL);
+
+	if (reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
+	gtk_tree_view_column_set_attributes (column, pix_renderer,
 		"icon-name", LogListHandler::REPOSITORY_ICON_COLUMN, NULL);
-	g_object_set (G_OBJECT (renderer), "size", 16, NULL);
+
 	gtk_tree_view_column_set_resizable (column, TRUE);
 	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_column_set_fixed_width (column, 140);

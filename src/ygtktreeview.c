@@ -173,15 +173,31 @@ void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column
 	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL) {
 		gtk_widget_set_direction (GTK_WIDGET (view), GTK_TEXT_DIR_LTR);
 
-		GList *renderers = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (column));
-		GtkCellRenderer *renderer = (GtkCellRenderer *) renderers->data;
-		if (GTK_IS_CELL_RENDERER_TEXT (renderer)) {
-			g_object_set (G_OBJECT (renderer), "alignment", PANGO_ALIGN_RIGHT, NULL);
+		GList *renderers = gtk_cell_layout_get_cells (GTK_CELL_LAYOUT (column)), *i;
+		for (i = renderers; i; i = i->next) {
+			GtkCellRenderer *renderer = (GtkCellRenderer *) i->data;
+			if (GTK_IS_CELL_RENDERER_TEXT (renderer)) {
+				PangoAlignment alignment;
+				g_object_get (G_OBJECT (renderer), "alignment", &alignment, NULL);
+				if (alignment == PANGO_ALIGN_LEFT)
+					alignment = PANGO_ALIGN_RIGHT;
+				else if (alignment == PANGO_ALIGN_RIGHT)
+					alignment = PANGO_ALIGN_LEFT;
+				g_object_set (G_OBJECT (renderer), "alignment", alignment, NULL);
 
-			PangoEllipsizeMode ellipsize;
-			g_object_get (G_OBJECT (renderer), "ellipsize", &ellipsize, NULL);
-			if (ellipsize == PANGO_ELLIPSIZE_END)
-				g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_START, NULL);
+				gfloat xalign;
+				g_object_get (G_OBJECT (renderer), "xalign", &xalign, NULL);
+				xalign = 1.0 - xalign;
+				g_object_set (G_OBJECT (renderer), "xalign", xalign, NULL);
+
+				PangoEllipsizeMode ellipsize;
+				g_object_get (G_OBJECT (renderer), "ellipsize", &ellipsize, NULL);
+				if (ellipsize == PANGO_ELLIPSIZE_END)
+					ellipsize = PANGO_ELLIPSIZE_START;
+				else if (ellipsize == PANGO_ELLIPSIZE_START)
+					ellipsize = PANGO_ELLIPSIZE_END;
+				g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
+			}
 		}
 		g_list_free (renderers);
 		pos = 0;

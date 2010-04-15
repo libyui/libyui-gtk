@@ -599,8 +599,8 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "text", YGtkPkgFilterModel::COUNT_NUMBER_COLUMN,
 		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
-	g_object_set (G_OBJECT (renderer), "xalign", 1.0, "scale", PANGO_SCALE_SMALL,
-		"foreground", "#8c8c8c", NULL);
+	g_object_set (G_OBJECT (renderer), "xalign", 1.0,
+		"scale", PANGO_SCALE_SMALL, "foreground", "#8c8c8c", NULL);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
