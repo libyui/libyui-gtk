@@ -282,8 +282,12 @@ static gboolean ygtk_cell_renderer_button_activate (GtkCellRenderer *cell,
 	GdkEvent *event, GtkWidget *widget, const gchar *path, GdkRectangle *background_area,
 	GdkRectangle *cell_area, GtkCellRendererState flags)
 {
-	g_signal_emit (cell, toggle_cell_signal, 0, path);
-	return TRUE;
+	GdkEventButton *_event = &event->button;
+	if (_event->x >= cell_area->x && _event->x <= cell_area->x + cell_area->width) {
+		g_signal_emit (cell, toggle_cell_signal, 0, path);
+		return TRUE;
+	}
+	return FALSE;
 }
 
 GtkCellRenderer *ygtk_cell_renderer_button_new (void)
