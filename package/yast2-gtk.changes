@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Sun Apr 18 17:26:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.39
+- sw_single: bug fix: upgrade button should not be selected
+when the button presses anywhere in the column it is in.
+
+-------------------------------------------------------------------
 Thu Apr 15 14:23:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.38
