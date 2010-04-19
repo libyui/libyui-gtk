@@ -212,7 +212,7 @@ struct DetailDescription : public DetailWidget {
 			command += link;
 		}
 		command += " &";
-		system (command.c_str());
+		(void) system (command.c_str());
 	}
 
 	static void copy_link_cb (GtkMenuItem *item, DetailDescription *pThis)
@@ -846,7 +846,7 @@ struct FilelistExpander : public DetailExpander {
 	static void dirname_pressed_cb (GtkWidget *text, const gchar *link, FilelistExpander *pThis)
 	{
 		gchar *cmd = g_strdup_printf (GNOME_OPEN_BIN " %s &", link);
-		system (cmd);
+		(void) system (cmd);
 		g_free (cmd);
 	}
 

@@ -19,6 +19,16 @@ static void ygtk_tree_view_init (YGtkTreeView *view)
 {
 }
 
+static void ygtk_tree_view_finalize (GObject *object)
+{
+	YGtkTreeView *view = YGTK_TREE_VIEW (object);
+	if (view->empty_text) {
+		g_free (view->empty_text);
+		view->empty_text = NULL;
+	}
+	G_OBJECT_CLASS (ygtk_tree_view_parent_class)->finalize (object);
+}
+
 static void _gtk_widget_destroy (gpointer widget)
 { gtk_widget_destroy (GTK_WIDGET (widget)); }
 
@@ -76,11 +86,13 @@ static gboolean _ygtk_tree_view_expose_event (GtkWidget *widget, GdkEventExpose 
 {
 	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->expose_event (widget, event);
 
-	if (event->window == gtk_tree_view_get_bin_window (GTK_TREE_VIEW (widget))) {
-		GtkTreeModel *model = gtk_tree_view_get_model (GTK_TREE_VIEW (widget));
+	GtkTreeView *view = GTK_TREE_VIEW (widget);
+	YGtkTreeView *yview = YGTK_TREE_VIEW (widget);
+	if (yview->empty_text && event->window == gtk_tree_view_get_bin_window (view)) {
+		GtkTreeModel *model = gtk_tree_view_get_model (view);
 		GtkTreeIter iter;
 		if (!model || !gtk_tree_model_get_iter_first (model, &iter)) {  // empty tree-view
-			const char *text = _("No entries.");
+			const gchar *text = yview->empty_text;
 			if (!model)
 				text = _("Loading...");
 			cairo_t *cr = gdk_cairo_create (event->window);
@@ -205,8 +217,19 @@ void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column
 	gtk_tree_view_insert_column (GTK_TREE_VIEW (view), column, pos);
 }
 
-GtkWidget *ygtk_tree_view_new (void)
-{ return g_object_new (YGTK_TYPE_TREE_VIEW, NULL); }
+void ygtk_tree_view_set_empty_text (YGtkTreeView *view, const gchar *empty_text)
+{
+	if (view->empty_text)
+		g_free (view->empty_text);
+	view->empty_text = empty_text ? g_strdup (empty_text) : NULL;
+}
+
+GtkWidget *ygtk_tree_view_new (const gchar *empty_text)
+{
+	YGtkTreeView *view = (YGtkTreeView *) g_object_new (YGTK_TYPE_TREE_VIEW, NULL);
+	view->empty_text = empty_text ? g_strdup (empty_text) : NULL;
+	return GTK_WIDGET (view);
+}
 
 static void ygtk_tree_view_class_init (YGtkTreeViewClass *klass)
 {
@@ -214,6 +237,9 @@ static void ygtk_tree_view_class_init (YGtkTreeViewClass *klass)
 	gtkwidget_class->button_press_event = ygtk_tree_view_button_press_event;
 	gtkwidget_class->popup_menu = _ygtk_tree_view_popup_menu;
 	gtkwidget_class->expose_event = _ygtk_tree_view_expose_event;
+
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class->finalize = ygtk_tree_view_finalize;
 
 	right_click_signal = g_signal_new ("right-click",
 		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST,

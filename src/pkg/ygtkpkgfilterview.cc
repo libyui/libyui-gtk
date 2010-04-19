@@ -106,8 +106,8 @@ GtkWidget *YGtkPkgFilterModel::createToolbox (GtkTreeIter *iter)
 	return createToolboxRow (row);
 }
 
-void YGtkPkgFilterModel::addRow (const char *icon,
-	const char *text, bool enabled, gpointer data)
+void YGtkPkgFilterModel::addRow (const char *icon, const char *text,
+	bool enabled, gpointer data, bool defaultVisible)
 {
 	// we use cell-render-pixbuf's "pixbuf" rather than "icon-name" so we
 	// can use a fixed size
@@ -116,11 +116,11 @@ void YGtkPkgFilterModel::addRow (const char *icon,
 		pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
 			icon, 32, GtkIconLookupFlags (0), NULL);
 
-	GtkListStore *store = GTK_LIST_STORE (impl->model);
 	GtkTreeIter iter;
+	GtkListStore *store = GTK_LIST_STORE (impl->model);
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, ICON_COLUMN, pixbuf, TEXT_COLUMN, text,
-		COUNT_NUMBER_COLUMN, "", ENABLED_COLUMN, enabled, VISIBLE_COLUMN, TRUE,
+		COUNT_NUMBER_COLUMN, "", ENABLED_COLUMN, enabled, VISIBLE_COLUMN, defaultVisible,
 		DATA_COLUMN, data, -1);
 
 	if (pixbuf) g_object_unref (pixbuf);
@@ -129,7 +129,7 @@ void YGtkPkgFilterModel::addRow (const char *icon,
 void YGtkPkgFilterModel::addSeparator()
 { addRow (NULL, "", true, NULL); }
 
-void YGtkPkgFilterModel::setRowCount (int row, int count, bool hide_if_zero)
+void YGtkPkgFilterModel::setRowCount (int row, int count)
 {
 	GtkListStore *store = GTK_LIST_STORE (impl->model);
 	GtkTreeIter iter;
@@ -137,7 +137,7 @@ void YGtkPkgFilterModel::setRowCount (int row, int count, bool hide_if_zero)
 
 	gchar *str = g_strdup_printf ("%d", count);
 	gtk_list_store_set (store, &iter, COUNT_NUMBER_COLUMN, str,
-		VISIBLE_COLUMN, !hide_if_zero || count > 0, -1);
+		VISIBLE_COLUMN, row == 0 || count > 0, -1);
 	g_free (str);
 }
 
@@ -189,15 +189,15 @@ YGtkPkgStatusModel::YGtkPkgStatusModel()
 	if (YGPackageSelector::get()->onlineUpdateMode()) {
 		addRow (NULL, _("Available"), true, 0);
 		addRow (NULL, _("Installed"), true, 0);
-		addRow (NULL, _("Modified"), true, 0);
+		addRow (NULL, _("Modified"), true, 0, false);
 	}
 	else {
 		addRow (NULL, _("Any status"), true, 0);
 		addRow (NULL, _("Not installed"), true, 0);
 		addRow (NULL, _("Installed"), true, 0);
-		addRow (NULL, _("Upgradable"), true, 0);
-		addRow (NULL, _("Locked"), true, 0);
-		addRow (NULL, _("Modified"), true, 0);
+		addRow (NULL, _("Upgradable"), true, 0, false);
+		addRow (NULL, _("Locked"), true, 0, false);
+		addRow (NULL, _("Modified"), true, 0, false);
 	}
 }
 
@@ -210,9 +210,8 @@ bool YGtkPkgStatusModel::firstRowIsAll()
 void YGtkPkgStatusModel::updateRow (Ypp::List list, int row, gpointer data)
 {
 	impl->list = list;
-	bool hide_if_zero = row > 0;
 	Ypp::StatusMatch match (rowToStatus (row));
-	setRowCount (row, list.count (&match), hide_if_zero);
+	setRowCount (row, list.count (&match));
 }
 
 bool YGtkPkgStatusModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer data)
@@ -491,7 +490,7 @@ YGtkPkgSupportModel::YGtkPkgSupportModel()
 {
 	addRow (NULL, _("All packages"), true, 0);
 	for (int i = 0; i < Ypp::Package::supportTotal(); i++)
-		addRow (NULL, Ypp::Package::supportSummary (i).c_str(), true, 0);
+		addRow (NULL, Ypp::Package::supportSummary (i).c_str(), true, 0, false);
 }
 
 void YGtkPkgSupportModel::updateRow (Ypp::List list, int row, gpointer data)
@@ -512,7 +511,7 @@ YGtkPkgPriorityModel::YGtkPkgPriorityModel()
 {
 	addRow (NULL, _("Any priority"), true, 0);
 	for (int i = 0; i < Ypp::Patch::priorityTotal(); i++)
-		addRow (NULL, Ypp::Patch::prioritySummary (i), true, 0);
+		addRow (NULL, Ypp::Patch::prioritySummary (i), true, 0, false);
 }
 
 void YGtkPkgPriorityModel::updateRow (Ypp::List list, int row, gpointer data)
@@ -564,7 +563,7 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 : YGtkPkgQueryWidget(), impl (new Impl (model))
 {
 	bool updates = model->begsUpdate();
-	impl->view = ygtk_tree_view_new();
+	impl->view = ygtk_tree_view_new (NULL);
 	gtk_tree_view_set_model (GTK_TREE_VIEW (impl->view), model->getModel());
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
 	gtk_tree_view_set_headers_visible (view, FALSE);

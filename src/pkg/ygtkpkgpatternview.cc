@@ -372,7 +372,7 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 		g_object_set_data (G_OBJECT (store), "patterns", GINT_TO_POINTER (1));
 	}
 
-	impl->view = ygtk_tree_view_new();
+	impl->view = ygtk_tree_view_new (NULL);
 	gtk_tree_view_set_model (GTK_TREE_VIEW (impl->view), GTK_TREE_MODEL (store));
 	g_object_unref (G_OBJECT (store));
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);

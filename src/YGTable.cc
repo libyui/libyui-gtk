@@ -1,7 +1,9 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
+/* Textdomain "yast2-gtk" */
 
+#include "YGi18n.h"
 #define YUILogComponent "gtk"
 #include "config.h"
 #include "YGUI.h"
@@ -239,6 +241,7 @@ public:
 	{
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
+		ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
 #if YAST2_VERSION >= 2017005
 		if (multiSelection)
 			gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_MULTIPLE);

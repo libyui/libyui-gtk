@@ -42,9 +42,9 @@ struct YGtkPkgFilterModel  // abstract
 	virtual GtkWidget *createInternalToolbox() { return NULL; }
 	virtual GtkWidget *createInternalPopup() { return NULL; }
 
-	void addRow (const char *icon, const char *text, bool enabled, gpointer data);
+	void addRow (const char *icon, const char *text, bool enabled, gpointer data, bool defaultVisible = true);
 	void addSeparator();
-	void setRowCount (int row, int count, bool hide_if_zero = true);
+	void setRowCount (int row, int count);
 
 	struct Impl;
 	Impl *impl;

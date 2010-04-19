@@ -620,7 +620,7 @@ YGtkPkgListView::YGtkPkgListView (bool descriptiveTooltip, int default_sort, boo
 	gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (impl->scroll),
 		GTK_SHADOW_IN);
 
-	GtkTreeView *view = GTK_TREE_VIEW (impl->view = ygtk_tree_view_new());
+	GtkTreeView *view = GTK_TREE_VIEW (impl->view = ygtk_tree_view_new (_("No matches.")));
 	if (!variableHeight)
 		gtk_tree_view_set_fixed_height_mode (view, TRUE);
 	gtk_tree_view_set_headers_visible (view, FALSE);

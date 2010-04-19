@@ -211,13 +211,13 @@ struct FileHandler : public Handler
 	{ fclose (file); }
 
 	void addSpace()
-	{ fwrite ("\n", sizeof (char), 1, file); }
+	{ (void) fwrite ("\n", sizeof (char), 1, file); }
 
 	virtual void date (const std::string &str, bool first)
 	{
 		if (!first)
 			addSpace();
-		fwrite (str.c_str(), sizeof (char), str.size(), file);
+		(void) fwrite (str.c_str(), sizeof (char), str.size(), file);
 		addSpace(); addSpace();
 	}
 
@@ -228,7 +228,7 @@ struct FileHandler : public Handler
 		std::string str;
 		str.reserve (action.size() + name.size() + description.size() + 4);
 		str = std::string ("\t") + action + " " + name + " " + description + "\n";
-		fwrite (str.c_str(), sizeof (char), str.size(), file);
+		(void) fwrite (str.c_str(), sizeof (char), str.size(), file);
 	}
 };
 
@@ -485,7 +485,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	GtkCellRenderer *renderer, *pix_renderer;
 	GtkTreeViewColumn *column;
 
-	GtkWidget *log_view = ygtk_tree_view_new();
+	GtkWidget *log_view = ygtk_tree_view_new (NULL);
 	gtk_tree_view_set_search_column (GTK_TREE_VIEW (log_view), LogListHandler::SHORTCUT_COLUMN);
 	gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (log_view), TRUE);
 	gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (log_view), TRUE);

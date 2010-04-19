@@ -26,6 +26,9 @@ G_BEGIN_DECLS
 typedef struct _YGtkTreeView
 {
 	GtkTreeView parent;
+
+	// members:
+	gchar *empty_text;
 } YGtkTreeView;
 
 typedef struct _YGtkTreeViewClass
@@ -36,8 +39,10 @@ typedef struct _YGtkTreeViewClass
 	void (*right_click) (YGtkTreeView *view, gboolean outreach);
 } YGtkTreeViewClass;
 
-GtkWidget* ygtk_tree_view_new (void);
+GtkWidget* ygtk_tree_view_new (const gchar *empty_text);  /* null to disable */
 GType ygtk_tree_view_get_type (void) G_GNUC_CONST;
+
+void ygtk_tree_view_set_empty_text (YGtkTreeView *view, const gchar *empty_text);
 
 void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu);
 

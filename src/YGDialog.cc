@@ -238,7 +238,7 @@ private:
 				    return TRUE;
 				case GDK_X:
 				    yuiMilestone() << "Starting xterm\n";
-				    system ("/usr/bin/xterm &");
+				    (void) system ("/usr/bin/xterm &");
 				    return TRUE;
 				case GDK_H:
 				    dumpYastHtml (pThis->getChild());
