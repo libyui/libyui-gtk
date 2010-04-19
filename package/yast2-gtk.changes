@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Apr 19 11:51:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.41
+- sw_single: fix patterns filter padding on the headers.
+
+-------------------------------------------------------------------
 Mon Apr 19 11:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.40
