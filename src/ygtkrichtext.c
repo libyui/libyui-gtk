@@ -108,10 +108,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
 	gdk_cursor_ref (rtext->hand_cursor);
 
-#if GTK_CHECK_VERSION(2,10,0)
 	gtk_widget_style_get (widget, "link_color", &link_color, NULL);
-#endif
-
 	g_signal_connect (tview, "event-after",
 	                  G_CALLBACK (event_after), NULL);
 
@@ -149,7 +146,8 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	gtk_text_buffer_create_tag (buffer, "center", "justification", GTK_JUSTIFY_CENTER, NULL);
 	gtk_text_buffer_create_tag (buffer, "right", "justification", GTK_JUSTIFY_RIGHT, NULL);
 	// helpers
-	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow", NULL);
+	gtk_text_buffer_create_tag (buffer, "keyword", "background", "yellow",
+		"foreground", "#000000", NULL);
 }
 
 static void ygtk_rich_text_destroy (GtkObject *object)

@@ -24,8 +24,12 @@
 static const char *onlyInstalledMsg =
 	_("<i>Information only available for installed packages.</i>");
 
+#if 0
 static const char *keywordOpenTag = "<font color=\"#000000\" bgcolor=\"#ffff00\">";
 static const char *keywordCloseTag = "</font>";
+#else
+static const char *keywordOpenTag = "<keyword>", *keywordCloseTag = "</keyword>";
+#endif
 
 struct DetailWidget {
 	virtual ~DetailWidget() {}
@@ -58,7 +62,7 @@ struct DetailName : public DetailWidget {
 			Ypp::ListProps props (list);
 			str = "<p bgcolor=\"";
 			str += props.toModify() ? "#f4f4b7" : "#ededed";
-			str += "\">";
+			str += "\"><font color=\"#000000\">";
 			if (list.size() == 1) {
 				Ypp::Selectable &sel = list.get (0);
 				if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
@@ -71,7 +75,7 @@ struct DetailName : public DetailWidget {
 				str += _("Several selected");
 				str += "</b>";
 			}
-			str += "</p>";
+			str += "</font></p>";
 		}
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
@@ -607,7 +611,8 @@ struct VersionExpander : public DetailExpander {
 
 		cairo_t *cr = gdk_cairo_create (widget->window);
 		cairo_rectangle (cr, x, y, w, h);
-		cairo_set_source_rgb (cr, 245/255.0, 245/255.0, 245/255.0);
+		// use alpha to cope with styles who might not have a white background
+		cairo_set_source_rgba (cr, 0, 0, 0, .060);
 		cairo_fill (cr);
 		cairo_destroy (cr);
 		return FALSE;
@@ -1131,6 +1136,7 @@ Ypp::List m_list;
 		widget = new DetailDescription();
 		m_widgets.push_back (widget);
 		gtk_box_pack_start (GTK_BOX (main_vbox), widget->getWidget(), FALSE, TRUE, 0);
+		GtkWidget *detail_description = widget->getWidget();
 
 		if (YGPackageSelector::get()->onlineUpdateMode()) {
 			widget = new ContentsExpander();
@@ -1161,7 +1167,7 @@ Ypp::List m_list;
 
 		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
 		g_signal_connect (G_OBJECT (vbox), "expose-event",
-			              G_CALLBACK (white_expose_cb), NULL);
+			              G_CALLBACK (text_expose_cb), detail_description);
 
 		m_scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
@@ -1209,11 +1215,11 @@ Ypp::List m_list;
 		YGUtils::scrollWidget (vadj, true);
 	}
 
-	static gboolean white_expose_cb (GtkWidget *widget, GdkEventExpose *event)
+	static gboolean text_expose_cb (GtkWidget *widget, GdkEventExpose *event, GtkWidget *text)
 	{
 		cairo_t *cr = gdk_cairo_create (widget->window);
-		GdkColor color = { 0, 255 << 8, 255 << 8, 255 << 8 };
-		gdk_cairo_set_source_color (cr, &color);
+		GdkColor *color = &text->style->base [GTK_STATE_NORMAL];
+		gdk_cairo_set_source_color (cr, color);
 		cairo_rectangle (cr, event->area.x, event->area.y,
 				         event->area.width, event->area.height);
 		cairo_fill (cr);
