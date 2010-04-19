@@ -395,17 +395,29 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 	                  G_CALLBACK (toggled_cb), this);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
-	if (type == Ypp::Selectable::PATTERN) {
-		renderer = gtk_cell_renderer_pixbuf_new();
-		column = gtk_tree_view_column_new_with_attributes (NULL,
-			renderer, "pixbuf", ICON_COLUMN, "visible", HAS_ICON_COLUMN, NULL);
-		ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
-	}
+	bool reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
+
+	column = gtk_tree_view_column_new();
+	gtk_tree_view_column_set_title (column, NULL);
+	gtk_tree_view_column_set_spacing (column, 4);
+
+	GtkCellRenderer *pix_renderer = gtk_cell_renderer_pixbuf_new();
+	if (!reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
 
 	renderer = gtk_cell_renderer_text_new();
-	column = gtk_tree_view_column_new_with_attributes (
-		NULL, renderer, "markup", TEXT_COLUMN, NULL);
+	gtk_tree_view_column_pack_start (column, renderer, TRUE);
+	gtk_tree_view_column_set_attributes (column, renderer,
+		"markup", TEXT_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+
+	if (reverse)
+		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
+	gtk_tree_view_column_set_attributes (column, pix_renderer,
+		"pixbuf", ICON_COLUMN, "visible", HAS_ICON_COLUMN, NULL);
+
+	gtk_tree_view_column_set_resizable (column, TRUE);
+	gtk_tree_view_column_set_sizing (column, GTK_TREE_VIEW_COLUMN_FIXED);
 	gtk_tree_view_column_set_expand (column, TRUE);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 
