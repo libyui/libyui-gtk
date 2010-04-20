@@ -1,3 +1,26 @@
+2010-04-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkcellrendererbutton.c: reverted: don't use the all
+	column, but only the necessary width.
+
+	* src/pkg/ygtkpkghistorydialog.cc: reverted: show "loading..."
+	text.
+
+	* src/pkg/ygtkpkghistorydialog.cc: buf fix: window wouldn't
+	work if closed by other means other than the close button
+	(like pressing Escape).
+
+	* src/pkg/ygtkpkgcellrenderersidebutton.h/c: re-introduced.
+
+	* src/pkg/ygtkpkglistview.cc: bug fix: use side-button rather
+	than the previous packing simplifying which wouldn't work
+	occasionally.
+
+	* src/pkg/ygtkpkglistview.cc: show summary lines as gray.
+	I had to break the strict gtk data-view model in order
+	to avoid explicitly setting colors when a row was
+	selected.
+
 2010-04-19 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc: several bug fixes with

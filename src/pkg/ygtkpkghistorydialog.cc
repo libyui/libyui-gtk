@@ -485,7 +485,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	GtkCellRenderer *renderer, *pix_renderer;
 	GtkTreeViewColumn *column;
 
-	GtkWidget *log_view = ygtk_tree_view_new (NULL);
+	GtkWidget *log_view = ygtk_tree_view_new (_("No log entries."));
 	gtk_tree_view_set_search_column (GTK_TREE_VIEW (log_view), LogListHandler::SHORTCUT_COLUMN);
 	gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (log_view), TRUE);
 	gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (log_view), TRUE);
@@ -602,6 +602,8 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 650, 600);
 	g_signal_connect (G_OBJECT (dialog), "response",
 	                  G_CALLBACK (response_cb), log_view);
+	g_signal_connect (G_OBJECT (dialog), "delete-event",
+	                  G_CALLBACK (gtk_true), log_view);
 
 	GtkWidget *hpaned = gtk_hpaned_new();
 	gtk_paned_pack1 (GTK_PANED (hpaned), date_scroll, FALSE, FALSE);
@@ -633,6 +635,12 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	ZyppHistoryParser parser (&handler);
 	gtk_tree_view_set_model (GTK_TREE_VIEW (date_view), handler.date_handler->getModel());
 	gtk_tree_view_set_model (GTK_TREE_VIEW (log_view), handler.log_handler->getModel());
+
+	selection = gtk_tree_view_get_selection (GTK_TREE_VIEW (date_view));
+	GtkTreeIter iter;
+	if (gtk_tree_model_get_iter_first (
+		gtk_tree_view_get_model (GTK_TREE_VIEW (date_view)), &iter))
+		gtk_tree_selection_select_iter (selection, &iter);
 
 	gdk_window_set_cursor (dialog->window, NULL);
 }

@@ -15,6 +15,7 @@
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
 #include "ygtkcellrendererbutton.h"
+#include "ygtkcellrenderersidebutton.h"
 #include <gtk/gtk.h>
 #include <string.h>
 
@@ -57,7 +58,10 @@ static GType _columnType (int col)
 
 struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 {
-	YGtkZyppModel (Ypp::List list) : m_list (list)
+	// we pass GtkTreeView to the model, so we can test for selected rows
+	// and modify text markup appropriely (trashing the data-view model, heh)
+
+	YGtkZyppModel (Ypp::List list, GtkTreeView *view) : m_list (list), m_view (view)
 	{ addSelListener (this); }
 
 	~YGtkZyppModel()
@@ -68,7 +72,18 @@ struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 
 protected:
 	Ypp::List m_list;
+	GtkTreeView *m_view;
 	std::list <std::string> m_keywords;
+
+	bool isSelected (int row)
+	{
+		GtkTreeModel *model = gtk_tree_view_get_model (m_view);
+		GtkTreeSelection *selection = gtk_tree_view_get_selection (m_view);
+		GtkTreeIter iter;
+		if (gtk_tree_model_iter_nth_child (model, &iter, NULL, row))
+			return gtk_tree_selection_iter_is_selected (selection, &iter);
+		return false;
+	}
 
 	virtual int rowsNb() { return m_list.size(); }
 	virtual int columnsNb() const { return TOTAL_IMPL_PROPS; }
@@ -101,10 +116,17 @@ protected:
 				summary = YGUtils::escapeMarkup (summary);
 				highlightMarkupSpan (name, m_keywords);
 				highlightMarkupSpan (summary, m_keywords);
-				str.reserve (name.size() + summary.size() + 32);
+				str.reserve (name.size() + summary.size() + 64);
 				str = name;
-				if (!summary.empty())
-					str += "\n<small>" + summary + "</small>";
+				if (!summary.empty()) {
+					str += "\n";
+					bool selected = isSelected (row);
+					if (!selected)
+						str += "<span color=\"#727272\">";
+					str += "<small>" + summary + "</small>";
+					 if (!selected)
+						 str += "</span>";
+				}
 				g_value_set_string (value, str.c_str());
 				break;
 			}
@@ -272,8 +294,8 @@ protected:
 	}
 };
 
-static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list)
-{ return ygtk_tree_model_new (new YGtkZyppModel (list)); }
+static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list, GtkTreeView *view)
+{ return ygtk_tree_model_new (new YGtkZyppModel (list, view)); }
 
 static Ypp::Selectable *ygtk_zypp_model_get_sel (GtkTreeModel *model, gchar *path_str)
 {
@@ -325,7 +347,7 @@ struct YGtkPkgListView::Impl {
 			ascendent = _ascendent;
 		}
 
-		GtkTreeModel *model = ygtk_zypp_model_new (list.clone());
+		GtkTreeModel *model = ygtk_zypp_model_new (list.clone(), GTK_TREE_VIEW (view));
 		gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 		g_object_unref (G_OBJECT (model));
 		setHighlight (keywords);
@@ -687,20 +709,7 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	gtk_tree_view_column_set_title (column, header);
 
 	GtkCellRenderer *renderer;
-
-	if (property == VERSION_PROP) {
-		renderer = ygtk_cell_renderer_button_new();
-		if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
-			gtk_tree_view_column_pack_start (column, renderer, FALSE);
-		else
-			gtk_tree_view_column_pack_end (column, renderer, FALSE);
-		gtk_tree_view_column_set_attributes (column, renderer,
-			"visible", HAS_UPGRADE_PROP, "active", TO_UPGRADE_PROP, NULL);
-		g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_GO_UP, NULL);
-		g_signal_connect (G_OBJECT (renderer), "toggled",
-				          G_CALLBACK (upgrade_toggled_cb), this);
-	}
-	else if (property == REPOSITORY_PROP) {
+	if (property == REPOSITORY_PROP) {
 		renderer = gtk_cell_renderer_pixbuf_new();
 		if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL)
 			gtk_tree_view_column_pack_end (column, renderer, FALSE);
@@ -710,7 +719,15 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 			"icon-name", REPOSITORY_STOCK_PROP, NULL);
 	}
 
-	renderer = gtk_cell_renderer_text_new();
+	if (property == VERSION_PROP) {
+		renderer = ygtk_cell_renderer_side_button_new();
+		g_object_set (G_OBJECT (renderer), "stock-id", GTK_STOCK_GO_UP, NULL);
+		g_signal_connect (G_OBJECT (renderer), "toggled",
+				          G_CALLBACK (upgrade_toggled_cb), this);
+	}
+	else
+		renderer = gtk_cell_renderer_text_new();
+
 	gtk_tree_view_column_pack_start (column, renderer, TRUE);
 	gtk_tree_view_column_set_attributes (column, renderer,
 		"markup", property, "sensitive", IS_LOCKED_PROP, NULL);
@@ -725,6 +742,13 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	if (size >= 0 && property != NAME_SUMMARY_PROP)
 		ellipsize = PANGO_ELLIPSIZE_MIDDLE;
 	g_object_set (G_OBJECT (renderer), "ellipsize", ellipsize, NULL);
+
+	if (property == VERSION_PROP) {
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"button-visible", HAS_UPGRADE_PROP);
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"active", TO_UPGRADE_PROP);
+	}
 
 	if (size != -1)  // on several columns
 		gtk_tree_view_set_rules_hint (view, TRUE);
@@ -819,7 +843,7 @@ void YGtkPkgListView::addButtonColumn (const char *header, int property)
 	pango_layout_get_pixel_extents (layout, NULL, &rect);
 	width = MAX (width, rect.width);
 	g_object_unref (G_OBJECT (layout));
-	width += 16;
+	width += 18;
 	if (show_icon) {
 		int icon_width;
 		gtk_icon_size_lookup_for_settings (gtk_widget_get_settings (impl->view),

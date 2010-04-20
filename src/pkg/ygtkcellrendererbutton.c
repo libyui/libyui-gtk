@@ -236,15 +236,14 @@ static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
 	}
 
 	int text_xoffset, text_yoffset, pixbuf_xoffset, pixbuf_yoffset, pixbuf_width,
-	    pixbuf_height, height;
+	    pixbuf_height, width, height;
 	ygtk_cell_renderer_button_get_size_full (cell, widget, cell_area,
-		NULL, NULL, NULL, &height, &pixbuf_xoffset, &pixbuf_yoffset, &pixbuf_width,
+		NULL, NULL, &width, &height, &pixbuf_xoffset, &pixbuf_yoffset, &pixbuf_width,
 		&pixbuf_height, &text_xoffset, &text_yoffset);
 
 	int x = cell_area->x + OUTER_BORDER + 1;
-	int width = cell_area->width - OUTER_BORDER*2 - 2;
 	int y = cell_area->y + (cell_area->height - height)/2 + OUTER_BORDER;
-	height -= OUTER_BORDER*2;
+	width -= OUTER_BORDER*2; height -= OUTER_BORDER*2;
 
 	gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
 		"button", x, y, width, height);

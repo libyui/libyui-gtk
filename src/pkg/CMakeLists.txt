@@ -20,6 +20,7 @@ set (gtk_pkg_yast_plugin_SRCS
 	yzyppwrapper.cc
 
 	ygtkcellrendererbutton.c
+	ygtkcellrenderersidebutton.c
 	ygtktreemodel.cc
 	)
 
