@@ -1,5 +1,14 @@
 2010-04-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkcellrenderertext.h/c: added renderer: extends
+	gtk-cell-renderer-text so color markup within the "markup"
+	property is ignored when the row is selected.
+
+	* src/pkg/ygtkpkgfilterview.cc & src/ygtkpkgpatternview.cc:
+	gray sub-lines.
+
+2010-04-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgdetailview.cc: show satisfied patches as
 	installed in the versions list, and set install button
 	as inactive.

@@ -10,7 +10,10 @@
 #include "YGUtils.h"
 #include "ygtkpkgpatternview.h"
 #include "ygtktreeview.h"
+#include "ygtkcellrenderertext.h"
 #include <gtk/gtk.h>
+
+#define GRAY_COLOR "#727272"
 
 enum Column {
 	HAS_CHECK_COLUMN, CHECK_COLUMN, HAS_ICON_COLUMN, ICON_COLUMN,
@@ -127,7 +130,8 @@ static gboolean set_rows_cb (GtkTreeModel *model,
 
 	int installed, total;
 	Ypp::Collection (sel).stats (&installed, &total);
-	gchar *text = g_strdup_printf ("%s\n<small>Installed %d of %d</small>",
+	gchar *text = g_strdup_printf ("%s\n<span color=\"" GRAY_COLOR
+		"\"><small>Installed %d of %d</small></span>",
 		sel.name().c_str(), installed, total);
 
 	GtkTreeStore *store = GTK_TREE_STORE (model);
@@ -405,7 +409,7 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 	if (!reverse)
 		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
 
-	renderer = gtk_cell_renderer_text_new();
+	renderer = ygtk_cell_renderer_text_new();
 	gtk_tree_view_column_pack_start (column, renderer, TRUE);
 	gtk_tree_view_column_set_attributes (column, renderer,
 		"markup", TEXT_COLUMN, NULL);

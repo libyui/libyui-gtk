@@ -21,6 +21,7 @@ set (gtk_pkg_yast_plugin_SRCS
 
 	ygtkcellrendererbutton.c
 	ygtkcellrenderersidebutton.c
+	ygtkcellrenderertext.c
 	ygtktreemodel.cc
 	)
 

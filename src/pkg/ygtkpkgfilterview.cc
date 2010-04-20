@@ -14,7 +14,7 @@
 #include "YGPackageSelector.h"
 #include <gtk/gtk.h>
 #include "ygtktreeview.h"
-#include "ygtktreemodel.h"
+#include "ygtkcellrenderertext.h"
 
 // List store abstract
 
@@ -586,7 +586,7 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 			"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
 		ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
 	}
-	renderer = gtk_cell_renderer_text_new();
+	renderer = ygtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "markup", YGtkPkgFilterModel::TEXT_COLUMN,
 		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);

@@ -14,6 +14,7 @@
 #include "ygtkpkglistview.h"
 #include "ygtktreeview.h"
 #include "ygtktreemodel.h"
+#include "ygtkcellrenderertext.h"
 #include "ygtkcellrendererbutton.h"
 #include "ygtkcellrenderersidebutton.h"
 #include <gtk/gtk.h>
@@ -63,7 +64,7 @@ struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 	// we pass GtkTreeView to the model, so we can test for selected rows
 	// and modify text markup appropriely (trashing the data-view model, heh)
 
-	YGtkZyppModel (Ypp::List list, GtkTreeView *view) : m_list (list), m_view (view)
+	YGtkZyppModel (Ypp::List list) : m_list (list)
 	{ addSelListener (this); }
 
 	~YGtkZyppModel()
@@ -74,18 +75,7 @@ struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 
 protected:
 	Ypp::List m_list;
-	GtkTreeView *m_view;
 	std::list <std::string> m_keywords;
-
-	bool isSelected (int row)
-	{
-		GtkTreeModel *model = gtk_tree_view_get_model (m_view);
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (m_view);
-		GtkTreeIter iter;
-		if (gtk_tree_model_iter_nth_child (model, &iter, NULL, row))
-			return gtk_tree_selection_iter_is_selected (selection, &iter);
-		return false;
-	}
 
 	virtual int rowsNb() { return m_list.size(); }
 	virtual int columnsNb() const { return TOTAL_IMPL_PROPS; }
@@ -122,12 +112,9 @@ protected:
 				str = name;
 				if (!summary.empty()) {
 					str += "\n";
-					bool selected = isSelected (row);
-					if (!selected)
-						str += "<span color=\"" GRAY_COLOR "\">";
+					str += "<span color=\"" GRAY_COLOR "\">";
 					str += "<small>" + summary + "</small>";
-					 if (!selected)
-						 str += "</span>";
+					str += "</span>";
 				}
 				g_value_set_string (value, str.c_str());
 				break;
@@ -299,8 +286,8 @@ protected:
 	}
 };
 
-static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list, GtkTreeView *view)
-{ return ygtk_tree_model_new (new YGtkZyppModel (list, view)); }
+static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list)
+{ return ygtk_tree_model_new (new YGtkZyppModel (list)); }
 
 static Ypp::Selectable *ygtk_zypp_model_get_sel (GtkTreeModel *model, gchar *path_str)
 {
@@ -352,7 +339,7 @@ struct YGtkPkgListView::Impl {
 			ascendent = _ascendent;
 		}
 
-		GtkTreeModel *model = ygtk_zypp_model_new (list.clone(), GTK_TREE_VIEW (view));
+		GtkTreeModel *model = ygtk_zypp_model_new (list.clone());
 		gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 		g_object_unref (G_OBJECT (model));
 		setHighlight (keywords);
@@ -729,7 +716,7 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 				          G_CALLBACK (upgrade_toggled_cb), this);
 	}
 	else
-		renderer = gtk_cell_renderer_text_new();
+		renderer = ygtk_cell_renderer_text_new();
 
 	gtk_tree_view_column_pack_start (column, renderer, TRUE);
 	gtk_tree_view_column_set_attributes (column, renderer,
@@ -976,15 +963,9 @@ std::string getRepositoryLabel (Ypp::Repository &repo)
 	url = repo.isSystem() ? _("Local database") : repo.url();
 	str.reserve (name.size() + url.size() + 64);
 	str = name + "\n";
-#if 0
-	if (url_in_gray)
-		str += "<span color=\"" GRAY_COLOR "\">";
-#endif
+	str += "<span color=\"" GRAY_COLOR "\">";
 	str += "<small>" + url + "</small>";
-#if 0
-	if (url_in_gray)
-		str += "</span>";
-#endif
+	str += "</span>";
 	return str;
 }
 
