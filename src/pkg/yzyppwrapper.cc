@@ -213,8 +213,7 @@ bool Ypp::Selectable::isInstalled()
 			return !m_sel->installedEmpty();
 		case PATTERN:
 		case PATCH:
-			return m_sel->candidateObj().isSatisfied() ||
-				m_sel->hasInstalledObj();
+			return m_sel->isSatisfied();
 		case LANGUAGE:
 			return _zyppPool().isRequestedLocale (m_locale);
 		case ALL: break;

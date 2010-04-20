@@ -122,6 +122,8 @@ namespace Ypp
 		Size_t size();
 		Size_t downloadSize();
 
+		bool isInstalled();
+
 		bool operator < (Version &other);
 		bool operator > (Version &other);
 		bool operator == (Version &other);

@@ -118,7 +118,8 @@ struct DetailDescription : public DetailWidget {
 	virtual GtkWidget *getWidget()
 	{ return text; }
 
-	virtual void refreshList (Ypp::List list) {}
+	virtual void refreshList (Ypp::List list)
+	{ setList (list); }
 
 	virtual void setList (Ypp::List list)
 	{
@@ -440,16 +441,17 @@ struct VersionExpander : public DetailExpander {
 	void updateButton()
 	{
 		const char *label = 0, *stock = 0;
-		bool modified = false;
+		bool modified = false, can_modify = true;
 		if (list.size() == 1) {
 			ZyppSelectable zsel;
 			ZyppResObject zobj;
 			getSelected (&zsel, &zobj);
 
-			if (zobj->isSystem()) {
+			if (zobj->isSystem() || zobj->poolItem().isSatisfied()) {
 				label = _("Remove");
 				stock = GTK_STOCK_DELETE;
 				modified = zsel->toDelete();
+				can_modify = zobj->kind() != zypp::ResKind::patch;
 			}
 			else {
 				ZyppResObject installedObj = zsel->installedObj();
@@ -485,6 +487,7 @@ struct VersionExpander : public DetailExpander {
 			else if (props.isInstalled()) {
 				label = _("Remove");
 				stock = GTK_STOCK_DELETE;
+				can_modify = props.canRemove();
 			}
 			else if (props.isNotInstalled()) {
 				label = _("Install");
@@ -506,7 +509,7 @@ struct VersionExpander : public DetailExpander {
 		}
 		else
 			gtk_widget_hide (button);
-		gtk_widget_set_sensitive (button, !modified);
+		gtk_widget_set_sensitive (button, !modified && can_modify);
 		modified ? gtk_widget_show (undo_button) : gtk_widget_hide (undo_button);
 	}
 
@@ -527,7 +530,7 @@ struct VersionExpander : public DetailExpander {
 				radio = addVersion (zsel, *it, radio);
 			for (zypp::ui::Selectable::available_iterator it = zsel->availableBegin();
 			      it != zsel->availableEnd(); it++)
-				addVersion (zsel, *it, radio);
+				radio = addVersion (zsel, *it, radio);
 
 			int n = 0;
 			GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));

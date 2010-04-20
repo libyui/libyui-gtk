@@ -19,11 +19,13 @@
 #include <gtk/gtk.h>
 #include <string.h>
 
+#define GRAY_COLOR "#727272"
+
 //** Model
 
 enum ImplProperty {
 	// booleans
-	HAS_UPGRADE_PROP = TOTAL_PROPS, TO_UPGRADE_PROP,
+	HAS_UPGRADE_PROP = TOTAL_PROPS, TO_UPGRADE_PROP, CAN_TOGGLE_INSTALL_PROP,
 	MANUAL_MODIFY_PROP, IS_LOCKED_PROP,
 	// integer
 	XPAD_PROP,
@@ -45,7 +47,7 @@ static GType _columnType (int col)
 		case BACKGROUND_PROP: case REPOSITORY_STOCK_PROP:
 			return G_TYPE_STRING;
 		case INSTALLED_CHECK_PROP:
-		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP:
+		case HAS_UPGRADE_PROP: case TO_UPGRADE_PROP: case CAN_TOGGLE_INSTALL_PROP:
 		case MANUAL_MODIFY_PROP: case IS_LOCKED_PROP:
 			return G_TYPE_BOOLEAN;
 		case XPAD_PROP:
@@ -122,7 +124,7 @@ protected:
 					str += "\n";
 					bool selected = isSelected (row);
 					if (!selected)
-						str += "<span color=\"#727272\">";
+						str += "<span color=\"" GRAY_COLOR "\">";
 					str += "<small>" + summary + "</small>";
 					 if (!selected)
 						 str += "</span>";
@@ -237,6 +239,9 @@ protected:
 				break;
 			case TO_UPGRADE_PROP:
 				g_value_set_boolean (value, sel.hasUpgrade() && sel.toInstall());
+				break;
+			case CAN_TOGGLE_INSTALL_PROP:
+				g_value_set_boolean (value, sel.isInstalled() || sel.canRemove());
 				break;
 			case MANUAL_MODIFY_PROP:
 				g_value_set_boolean (value, sel.toModify() && !sel.toModifyAuto());
@@ -401,8 +406,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 				item = gtk_menu_item_new_with_mnemonic (label);
 			if (tooltip)
 				gtk_widget_set_tooltip_markup (item, tooltip);
-			if (!sensitive)
-				gtk_widget_set_sensitive (item, FALSE);
+			gtk_widget_set_sensitive (item, sensitive);
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 			g_signal_connect (G_OBJECT (item), "activate", G_CALLBACK (callback), pThis);
 		}
@@ -435,9 +439,9 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		if (props.hasUpgrade() && !modified)
 			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GO_UP,
 				!locked, inner::install_cb, pThis), empty = false;
-		if (props.isInstalled() && props.canRemove() && !modified)
+		if (props.isInstalled() && !modified)
 			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
-				!locked, inner::remove_cb, pThis), empty = false;
+				!locked && props.canRemove(), inner::remove_cb, pThis), empty = false;
 		if (modified)
 			inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
 				true, inner::undo_cb, pThis), empty = false;
@@ -535,7 +539,6 @@ static void undo_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
 static void action_button_toggled_cb (YGtkCellRendererButton *renderer, gchar *path_str,
 	YGtkPkgListView *pThis)
 {
-fprintf (stderr, "action\n");
 	GtkTreeView *view = GTK_TREE_VIEW (pThis->impl->view);
 	GtkTreeModel *model = gtk_tree_view_get_model (view);
 	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path_str);
@@ -772,6 +775,9 @@ void YGtkPkgListView::addCheckColumn (int property)
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
+	if (property == INSTALLED_CHECK_PROP)
+		gtk_tree_view_column_add_attribute (column, renderer,
+			"activatable", CAN_TOGGLE_INSTALL_PROP);
 	g_signal_connect (G_OBJECT (renderer), "toggled",
 	                  G_CALLBACK (check_toggled_cb), this);
 
@@ -968,8 +974,17 @@ std::string getRepositoryLabel (Ypp::Repository &repo)
 {
 	std::string name (repo.name()), url, str;
 	url = repo.isSystem() ? _("Local database") : repo.url();
-	str.reserve (name.size() + url.size() + 32);
-	str = name + "\n<small>" + url + "</small>";
+	str.reserve (name.size() + url.size() + 64);
+	str = name + "\n";
+#if 0
+	if (url_in_gray)
+		str += "<span color=\"" GRAY_COLOR "\">";
+#endif
+	str += "<small>" + url + "</small>";
+#if 0
+	if (url_in_gray)
+		str += "</span>";
+#endif
 	return str;
 }
 
