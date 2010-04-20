@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Apr 20 15:53:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.44
+- sw_single: fixed visually disconsonant sub-lines between
+the package lists and the repository/pattern ones.
+
+-------------------------------------------------------------------
 Tue Apr 20 14:02:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.43
