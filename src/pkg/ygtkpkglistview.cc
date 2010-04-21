@@ -31,7 +31,7 @@ enum ImplProperty {
 	// integer
 	XPAD_PROP,
 	// string
-	VERSION_FOREGROUND_PROP, BACKGROUND_PROP, REPOSITORY_STOCK_PROP,
+	FOREGROUND_PROP, BACKGROUND_PROP, REPOSITORY_STOCK_PROP,
 	ACTION_ICON_PROP,
 	// pointer
 	PTR_PROP,
@@ -44,7 +44,7 @@ static GType _columnType (int col)
 		case NAME_PROP: case ACTION_NAME_PROP: case NAME_SUMMARY_PROP:
 		case VERSION_PROP: case SINGLE_VERSION_PROP: case REPOSITORY_PROP:
 		case SUPPORT_PROP: case SIZE_PROP: case STATUS_ICON_PROP:
-		case ACTION_BUTTON_PROP: case ACTION_ICON_PROP: case VERSION_FOREGROUND_PROP:
+		case ACTION_BUTTON_PROP: case ACTION_ICON_PROP: case FOREGROUND_PROP:
 		case BACKGROUND_PROP: case REPOSITORY_STOCK_PROP:
 			return G_TYPE_STRING;
 		case INSTALLED_CHECK_PROP:
@@ -245,8 +245,15 @@ protected:
 				g_value_set_string (value, color);
 				break;
 			}
+			case FOREGROUND_PROP: {
+				const char *color = 0;
+				if (sel.toModifyAuto())
+					color = "#6f6f6f";
+				g_value_set_string (value, color);
+				break;
+			}
 			case XPAD_PROP: {
-				int xpad = sel.toModifyAuto() ? 25 : 0;
+				int xpad = sel.toModifyAuto() ? 20 : 0;
 				g_value_set_int (value, xpad);
 				break;
 			}
@@ -730,8 +737,10 @@ void YGtkPkgListView::addTextColumn (const char *header, int property, bool visi
 	if (impl->colorModified)
 		gtk_tree_view_column_add_attribute (column, renderer,
 			"cell-background", BACKGROUND_PROP);
-	if (impl->indentAuto)
+	if (impl->indentAuto) {
 		gtk_tree_view_column_add_attribute (column, renderer, "xpad", XPAD_PROP);
+		gtk_tree_view_column_add_attribute (column, renderer, "foreground", FOREGROUND_PROP);
+	}
 
 	PangoEllipsizeMode ellipsize = PANGO_ELLIPSIZE_END;
 	if (size >= 0 && property != NAME_SUMMARY_PROP)

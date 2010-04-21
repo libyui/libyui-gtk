@@ -1,5 +1,10 @@
 2010-04-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkglistviewcc: Atri request: make dependencies
+	gray.
+
+2010-04-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/yzyppwrapper.h/cc: improved on the API, especially
 	patches support.
 
