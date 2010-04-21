@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Apr 21 13:09:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.45
+- online_update: several fixes, that encompassthe list and the
+version widgets.
+
+-------------------------------------------------------------------
 Tue Apr 20 15:53:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.44
