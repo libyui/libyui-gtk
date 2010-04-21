@@ -113,7 +113,9 @@ namespace Ypp
 	// Selectable & related funcs
 
 	struct Version {
-		Version (ZyppResObject obj);
+		Version (ZyppResObject zobj);
+
+		int type();  // Ypp::Selectable::Type
 
 		std::string number();
 		std::string arch();
@@ -123,15 +125,16 @@ namespace Ypp
 		Size_t downloadSize();
 
 		bool isInstalled();
+		bool toModify();
 
 		bool operator < (Version &other);
 		bool operator > (Version &other);
 		bool operator == (Version &other);
 
-		ZyppResObject zyppObj() { return m_resobj; }
+		ZyppResObject zyppObj() { return m_zobj; }
 
 		private:
-			ZyppResObject m_resobj;
+			ZyppResObject m_zobj;
 	};
 
 	struct Selectable {
@@ -149,11 +152,12 @@ namespace Ypp
 		std::string summary();
 		std::string description (bool as_html);
 
-		bool userVisible();
+		bool visible();
 
 		bool isInstalled();
 		bool hasUpgrade();
 		bool isLocked();
+
 		bool toInstall();
 		bool toRemove();
 		bool toModify();
@@ -167,11 +171,15 @@ namespace Ypp
 		bool canRemove();
 		bool canLock();
 
-		Version installed();
+		int totalVersions();
+		Version version (int n);
+
+		bool hasCandidateVersion();
 		Version candidate();
 		void setCandidate (Version &version);
-		int availableSize();
-		Version available (int n);
+
+		bool hasInstalledVersion();
+		Version installed();
 		Version anyVersion();
 
 		bool operator == (const Selectable &other) const;
@@ -452,7 +460,6 @@ namespace Ypp
 		Impl *impl;
 		private:  // prevent copy
 			ListProps (const ListProps&); ListProps &operator= (const ListProps&);
-
 	};
 
 	// Disk

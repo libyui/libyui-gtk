@@ -43,32 +43,52 @@ bool Ypp::Repository::operator == (const Ypp::Repository &other) const
 
 // Version
 
-Ypp::Version::Version (ZyppResObject obj)
-: m_resobj (obj) {}
+Ypp::Version::Version (ZyppResObject zobj)
+: m_zobj (zobj) {}
+
+int Ypp::Version::type()
+{ return Selectable::asType (m_zobj->kind()); }
 
 std::string Ypp::Version::number()
-{ return m_resobj->edition().asString(); }
+{ return m_zobj->edition().asString(); }
 
 std::string Ypp::Version::arch()
-{ return m_resobj->arch().asString(); }
+{ return m_zobj->arch().asString(); }
 
 Ypp::Repository Ypp::Version::repository()
-{ return Repository (m_resobj->repository()); }
+{ return Repository (m_zobj->repository()); }
 
 Size_t Ypp::Version::size()
-{ return m_resobj->installSize(); }
+{ return m_zobj->installSize(); }
 
 Size_t Ypp::Version::downloadSize()
-{ return m_resobj->downloadSize(); }
+{ return m_zobj->downloadSize(); }
+
+bool Ypp::Version::isInstalled()
+{
+	zypp::ResStatus status = m_zobj->poolItem().status();
+	switch (type()) {
+		case Ypp::Selectable::PATCH:
+			return status.isSatisfied() && !status.isToBeInstalled();
+		default:
+			return status.isInstalled();
+	}
+}
+
+bool Ypp::Version::toModify()
+{
+	zypp::ResStatus status = m_zobj->poolItem().status();
+	return status.transacts();
+}
 
 bool Ypp::Version::operator < (Ypp::Version &other)
-{ return this->m_resobj->edition() < other.m_resobj->edition(); }
+{ return this->m_zobj->edition() < other.m_zobj->edition(); }
 
 bool Ypp::Version::operator > (Ypp::Version &other)
-{ return this->m_resobj->edition() > other.m_resobj->edition(); }
+{ return this->m_zobj->edition() > other.m_zobj->edition(); }
 
 bool Ypp::Version::operator == (Ypp::Version &other)
-{ return this->m_resobj->edition() == other.m_resobj->edition(); }
+{ return this->m_zobj->edition() == other.m_zobj->edition(); }
 
 // Selectable
 
@@ -189,7 +209,7 @@ std::string Ypp::Selectable::description (bool as_html)
 	return text;
 }
 
-bool Ypp::Selectable::userVisible()
+bool Ypp::Selectable::visible()
 {
 	switch (m_type) {
 		case PATTERN: {
@@ -197,7 +217,7 @@ bool Ypp::Selectable::userVisible()
 			return pattern->userVisible();
 		}
 		case PATCH:
-			if (zyppSel()->candidateObj())
+			if (zyppSel()->hasCandidateObj())
 				if (!zyppSel()->candidateObj().isRelevant())
 					return false;
 			return true;
@@ -213,7 +233,9 @@ bool Ypp::Selectable::isInstalled()
 			return !m_sel->installedEmpty();
 		case PATTERN:
 		case PATCH:
-			return m_sel->isSatisfied();
+			if (hasCandidateVersion())
+				return candidate().isInstalled();
+			return true;
 		case LANGUAGE:
 			return _zyppPool().isRequestedLocale (m_locale);
 		case ALL: break;
@@ -319,7 +341,10 @@ void Ypp::Selectable::install()
 					break;
 				// undo
 				case zypp::ui::S_Del:
-					status = zypp::ui::S_KeepInstalled;
+					if (hasInstalledVersion())
+						status = zypp::ui::S_Update;
+					else
+						status = zypp::ui::S_Install;
 					break;
 				// nothing to do about it
 				case zypp::ui::S_AutoDel:
@@ -366,17 +391,13 @@ void Ypp::Selectable::remove()
 				case zypp::ui::S_NoInst:
 				case zypp::ui::S_Del:
 					break;
-				// undo
-				case zypp::ui::S_Install:
-					status = zypp::ui::S_NoInst;
-					break;
 				// nothing to do about it
 				case zypp::ui::S_AutoInstall:
 				case zypp::ui::S_AutoUpdate:
 					break;
+				// undo
+				case zypp::ui::S_Install:
 				case zypp::ui::S_Update:
-					status = zypp::ui::S_KeepInstalled;
-					break;
 				// action
 				case zypp::ui::S_KeepInstalled:
 				case zypp::ui::S_AutoDel:
@@ -393,10 +414,35 @@ void Ypp::Selectable::remove()
 
 void Ypp::Selectable::undo()
 {
-	if (toInstall())
-		remove();
-	else if (toRemove())
-		install();
+	// undo not applicable to language type
+
+	zypp::ui::Status status = m_sel->status();
+	zypp::ui::Status prev_status = status;
+	switch (status) {
+		// not applicable
+		case zypp::ui::S_Protected:
+		case zypp::ui::S_Taboo:
+		case zypp::ui::S_NoInst:
+		case zypp::ui::S_KeepInstalled:
+			break;
+		// undo
+		case zypp::ui::S_Install:
+		case zypp::ui::S_AutoInstall:
+			status = zypp::ui::S_NoInst;
+			break;
+		case zypp::ui::S_AutoUpdate:
+		case zypp::ui::S_AutoDel:
+		case zypp::ui::S_Update:
+		case zypp::ui::S_Del:
+			status = zypp::ui::S_KeepInstalled;
+			break;
+	}
+	m_sel->setStatus (status);
+
+	if (!runSolver()) {
+		m_sel->setStatus (prev_status);
+		runSolver();
+	}
 }
 
 void Ypp::Selectable::lock (bool lock)
@@ -434,14 +480,26 @@ bool Ypp::Selectable::canLock()
 	return false;
 }
 
-Ypp::Version Ypp::Selectable::installed()
+int Ypp::Selectable::totalVersions()
+{ return m_sel->installedSize() + m_sel->availableSize(); }
+
+Ypp::Version Ypp::Selectable::version (int n)
 {
-	if (m_type == PATCH || m_type == PATTERN) {
-		if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
-			return Ypp::Version (m_sel->candidateObj());
+	if (n < (signed) m_sel->installedSize()) {
+		zypp::ui::Selectable::installed_iterator it = m_sel->installedBegin();
+		for (int i = 0; i < n; i++) it++;
+		return Version (*it);
 	}
-	return Ypp::Version (m_sel->installedObj());
+	else {
+		n -= m_sel->installedSize();
+		zypp::ui::Selectable::available_iterator it = m_sel->availableBegin();
+		for (int i = 0; i < n; i++) it++;
+		return Version (*it);
+	}
 }
+
+bool Ypp::Selectable::hasCandidateVersion()
+{ return !m_sel->availableEmpty(); }
 
 Ypp::Version Ypp::Selectable::candidate()
 { return Version (m_sel->candidateObj()); }
@@ -452,15 +510,16 @@ void Ypp::Selectable::setCandidate (Ypp::Version &version)
 	runSolver();
 }
 
-int Ypp::Selectable::availableSize()
-{ return m_sel->availableSize(); }
+bool Ypp::Selectable::hasInstalledVersion()
+{ return !m_sel->installedEmpty(); }
 
-Ypp::Version Ypp::Selectable::available (int n)
+Ypp::Version Ypp::Selectable::installed()
 {
-	zypp::ui::Selectable::available_iterator it = m_sel->availableBegin();
-	for (int i = 0; i < n; i++)
-		it++;
-	return Version (*it);
+	if (m_type == PATCH || m_type == PATTERN) {
+		if (m_sel->candidateObj() && m_sel->candidateObj().isSatisfied())
+			return Ypp::Version (m_sel->candidateObj());
+	}
+	return Ypp::Version (m_sel->installedObj());
 }
 
 Ypp::Version Ypp::Selectable::anyVersion()
@@ -907,7 +966,7 @@ bool Ypp::PKGroupMatch::match (Selectable &sel)
 		case YPKG_GROUP_SUGGESTED: return zypp::PoolItem (pkg).status().isSuggested();
 		case YPKG_GROUP_ORPHANED: return zypp::PoolItem (pkg).status().isOrphaned();
 		case YPKG_GROUP_RECENT:
-			if (sel.availableSize()) {
+			if (sel.hasCandidateVersion()) {
 				time_t build = static_cast <time_t> (sel.candidate().zyppObj()->buildtime());
 				time_t now = time (NULL);
 				time_t delta = (now - build) / (60*60*24);  // in days
@@ -967,7 +1026,7 @@ struct Ypp::PoolQuery::Impl {
 	{  // iterates until match -- will return argument if it already matches
 		while (it != query.selectableEnd()) {
 			Ypp::Selectable sel (*it);
-			if (sel.userVisible() && match (sel)) break;
+			if (sel.visible() && match (sel)) break;
 			it++;
 		}
 		return it;
@@ -1207,7 +1266,7 @@ static bool size_order (Ypp::Selectable &a, Ypp::Selectable &b)
 
 static std::string get_alias (Ypp::Selectable &a)
 {
-	if (a.availableSize() > 0)
+	if (a.hasCandidateVersion())
 		return a.candidate().repository().zyppRepo().alias();
 	return "a";  // system
 }

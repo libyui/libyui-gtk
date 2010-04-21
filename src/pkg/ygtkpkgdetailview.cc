@@ -31,6 +31,16 @@ static const char *keywordCloseTag = "</font>";
 static const char *keywordOpenTag = "<keyword>", *keywordCloseTag = "</keyword>";
 #endif
 
+struct BusyOp {
+	BusyOp() {
+		YGDialog::currentDialog()->busyCursor();
+		while (g_main_context_iteration (NULL, FALSE)) ;
+	}
+	~BusyOp() {
+		YGDialog::currentDialog()->normalCursor();
+	}
+};
+
 struct DetailWidget {
 	virtual ~DetailWidget() {}
 	virtual GtkWidget *getWidget() = 0;
@@ -337,6 +347,7 @@ inline ZyppPoolIterator zyppSrcPkgEnd()
 
 struct VersionExpander : public DetailExpander {
 	GtkWidget *box, *versions_box, *button, *undo_button;
+	std::list <Ypp::Version> versions;
 
 	VersionExpander()
 	: DetailExpander (_("Versions"), false)
@@ -377,64 +388,105 @@ struct VersionExpander : public DetailExpander {
 		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (versions_box), (GtkWidget *) i->data);
 		g_list_free (children);
+		versions.clear();
 	}
 
-	GtkWidget *addVersion (ZyppSelectable zsel, ZyppResObject zobj, GtkWidget *group)
+	GtkWidget *addVersion (Ypp::Selectable &sel, Ypp::Version version, GtkWidget *group)
 	{
-		bool modified = false;
-		std::string repo;
-		if (zobj->isSystem()) {
-			modified = zsel->toDelete();
-			repo = _("Installed");
-		}
-		else {
-			modified = zsel->toInstall() && zsel->candidateObj() == zobj;
-			repo = zobj->repository().name();
-		}
-
-
-		std::string _version (zobj->edition().asString());
-		std::string version (YGUtils::truncate (_version, 20, 0));
-		std::string arch (zobj->arch().asString());
-		char *text = g_strdup_printf ("%s%s <small>(%s)</small>\n%s%s",
-			modified ? "<i>" : "", version.c_str(), arch.c_str(), repo.c_str(),
-			modified ? "</i>" : "");
-
 		GtkWidget *radio = gtk_radio_button_new_with_label_from_widget
-			(GTK_RADIO_BUTTON (group), text);
-		g_free (text);
-		gtk_label_set_use_markup (GTK_LABEL (GTK_BIN (radio)->child), TRUE);
-
-		if (version.size() > 20) {
-			char *text = g_strdup_printf ("%s <small>(%s)</small>\n%s",
-				_version.c_str(), arch.c_str(), repo.c_str());
-			gtk_widget_set_tooltip_markup (radio, text);
-			g_free (text);
-		}
+			(GTK_RADIO_BUTTON (group), "");
+		updateRadio (radio, sel, version);
 
 		gtk_box_pack_start (GTK_BOX (versions_box), radio, FALSE, TRUE, 0);
-		if (zobj->isSystem() || modified)
+		if (version.toModify())
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
-		g_object_set_data (G_OBJECT (radio), "zsel", get_pointer (zsel));
-		g_object_set_data (G_OBJECT (radio), "zobj", (void *) get_pointer (zobj));
 		g_signal_connect (G_OBJECT (radio), "toggled",
 			              G_CALLBACK (version_toggled_cb), this);
+
+		if ((versions.size() % 2) == 1)
+			g_signal_connect (G_OBJECT (radio), "expose-event",
+			                  G_CALLBACK (draw_gray_cb), NULL);
+		versions.push_back (version);
 		return radio;
 	}
 
-	void getSelected (ZyppSelectable *zsel, ZyppResObject *zobj)
+	void updateRadio (GtkWidget *radio, Ypp::Selectable &sel, Ypp::Version &version)
 	{
-		GtkWidget *radio = 0;
+		bool modified;
+		std::string repo;
+		if (version.isInstalled()) {
+			repo = _("Installed");
+			modified = sel.toRemove();
+		}
+		else {
+			repo = version.repository().name();
+			modified = sel.toInstall();
+		}
+		modified = modified && version.toModify();
+
+		std::string number (version.number());
+		std::string arch (version.arch());
+		char *tooltip = g_strdup_printf ("%s <small>(%s)</small>\n<small>%s</small>",
+			number.c_str(), arch.c_str(), repo.c_str());
+		number = YGUtils::truncate (number, 20, 0);
+		char *label = g_strdup_printf ("%s%s <small>(%s)</small>\n<small>%s</small>%s",
+			modified ? "<i>" : "", number.c_str(), arch.c_str(), repo.c_str(),
+			modified ? "</i>" : "");
+
+		gtk_label_set_markup (GTK_LABEL (GTK_BIN (radio)->child), label);
+		if (number.size() > 20)
+			gtk_widget_set_tooltip_markup (radio, tooltip);
+		g_free (tooltip);
+		g_free (label);
+	}
+
+	Ypp::Version &getSelected()
+	{
+		std::list <Ypp::Version>::iterator it = versions.begin();
 		GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
-		for (GList *i = children; i; i = i->next)
-			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (i->data))) {
-				radio = (GtkWidget *) i->data;
+		for (GList *i = children; i; i = i->next, it++)
+			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (i->data)))
 				break;
-			}
 		g_list_free (children);
-		if (radio) {
-			*zsel = (ZyppSelectablePtr) g_object_get_data (G_OBJECT (radio), "zsel");
-			*zobj = (ZyppResObjectPtr) g_object_get_data (G_OBJECT (radio), "zobj");
+		return *it;
+	}
+
+	virtual bool onlySingleList() { return false; }
+
+	virtual void showList (Ypp::List list)
+	{
+		Ypp::ListProps props (list);
+		clearVersions();
+
+		if (list.size() == 1) {
+			Ypp::Selectable sel = list.get (0);
+			GtkWidget *radio = 0;
+			for (int i = 0; i < sel.totalVersions(); i++)
+				radio = addVersion (sel, sel.version (i), radio);
+			gtk_widget_show_all (versions_box);
+		}
+
+		// is locked
+		if (props.isLocked() || props.isUnlocked())
+			gtk_widget_set_sensitive (button, !props.isLocked());
+		else
+			gtk_widget_set_sensitive (button, TRUE);
+
+		updateButton();
+	}
+
+	virtual void showRefreshList (Ypp::List list)
+	{
+		updateButton();
+
+		// update radios
+		if (list.size() == 1) {
+			Ypp::Selectable &sel = list.get (0);
+			std::list <Ypp::Version>::iterator it = versions.begin();
+			GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
+			for (GList *i = children; i; i = i->next, it++)
+				updateRadio ((GtkWidget *) i->data, sel, *it);
+			g_list_free (children);
 		}
 	}
 
@@ -443,24 +495,23 @@ struct VersionExpander : public DetailExpander {
 		const char *label = 0, *stock = 0;
 		bool modified = false, can_modify = true;
 		if (list.size() == 1) {
-			ZyppSelectable zsel;
-			ZyppResObject zobj;
-			getSelected (&zsel, &zobj);
+			Ypp::Selectable sel = list.get (0);
+			Ypp::Version &version = getSelected();
 
-			if (zobj->isSystem() || zobj->poolItem().isSatisfied()) {
+			if (version.isInstalled()) {
 				label = _("Remove");
 				stock = GTK_STOCK_DELETE;
-				modified = zsel->toDelete();
-				can_modify = zobj->kind() != zypp::ResKind::patch;
+				can_modify = sel.canRemove();
+				modified = sel.toRemove();
 			}
 			else {
-				ZyppResObject installedObj = zsel->installedObj();
-				if (installedObj) {
-					if (zobj->edition() > installedObj->edition()) {
+				if (sel.hasInstalledVersion()) {
+					Ypp::Version installed = sel.installed();
+					if (installed < version) {
 						label = _("Upgrade");
 						stock = GTK_STOCK_GO_UP;
 					}
-					else if (zobj->edition() < installedObj->edition()) {
+					else if (installed > version) {
 						label = _("Downgrade");
 						stock = GTK_STOCK_GO_DOWN;
 					}
@@ -473,13 +524,13 @@ struct VersionExpander : public DetailExpander {
 					label = _("Install");
 					stock = GTK_STOCK_SAVE;
 				}
-				modified = zsel->toInstall() && zsel->candidateObj() == zobj;
+				modified = sel.toInstall();
 			}
+			modified = modified && version.toModify();
 		}
 		else {
 			Ypp::ListProps props (list);
-			if (props.toModify())
-				modified = true;
+			modified = props.toModify();
 			if (props.hasUpgrade()) {
 				label = _("Upgrade");
 				stock = GTK_STOCK_GO_UP;
@@ -496,7 +547,7 @@ struct VersionExpander : public DetailExpander {
 			else if (props.toModify()) {
 				label = _("Undo");
 				stock = GTK_STOCK_UNDO;
-				modified = false;
+				modified = false;  // don't show another undo button
 			}
 		}
 
@@ -513,62 +564,34 @@ struct VersionExpander : public DetailExpander {
 		modified ? gtk_widget_show (undo_button) : gtk_widget_hide (undo_button);
 	}
 
-	virtual bool onlySingleList() { return false; }
-
-	virtual void showList (Ypp::List list)
+	static void version_toggled_cb (GtkToggleButton *button, VersionExpander *pThis)
 	{
-		Ypp::ListProps props (list);
-		clearVersions();
+		if (gtk_toggle_button_get_active (button)) {
+			Ypp::Selectable sel = pThis->list.get (0);
+			Ypp::Version &version = pThis->getSelected();
 
-		if (list.size() == 1) {
-			Ypp::Selectable sel = list.get (0);
-			ZyppSelectable zsel = sel.zyppSel();
+			// enclosing this within startTransactions() so the button is updated
+			// before signaling any change, for a snappy feel
+			Ypp::startTransactions();
+			if (!sel.toInstall())
+				sel.setCandidate (version);
 
-			GtkWidget *radio = 0;
-			for (zypp::ui::Selectable::installed_iterator it = zsel->installedBegin();
-			      it != zsel->installedEnd(); it++)
-				radio = addVersion (zsel, *it, radio);
-			for (zypp::ui::Selectable::available_iterator it = zsel->availableBegin();
-			      it != zsel->availableEnd(); it++)
-				radio = addVersion (zsel, *it, radio);
-
-			int n = 0;
-			GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
-			for (GList *i = children; i; i = i->next, n++) {
-				GtkRadioButton *radio = (GtkRadioButton *) i->data;
-				if ((n % 2) == 1)
-					g_signal_connect (G_OBJECT (radio), "expose-event",
-					                  G_CALLBACK (draw_gray_cb), NULL);
-			}
-			g_list_free (children);
-
-			gtk_widget_show_all (versions_box);
+			pThis->updateButton();
+			while (g_main_context_iteration (NULL, FALSE)) ;
+			Ypp::finishTransactions();
 		}
-
-		// is locked
-		if (props.isLocked() || props.isUnlocked())
-			gtk_widget_set_sensitive (button, !props.isLocked());
-		else
-			gtk_widget_set_sensitive (button, TRUE);
-
-		updateButton();
 	}
-
-	virtual void showRefreshList (Ypp::List list)
-	{ updateButton(); }
 
 	static void button_clicked_cb (GtkButton *button, VersionExpander *pThis)
 	{
+		BusyOp op;
 		if (pThis->list.size() == 1) {
-			ZyppSelectable zsel;
-			ZyppResObject zobj;
-			pThis->getSelected (&zsel, &zobj);
+			Ypp::Selectable sel = pThis->list.get (0);
+			Ypp::Version &version = pThis->getSelected();
 
-			Ypp::Selectable sel (zsel);
-			if (zobj->isSystem())
+			if (version.isInstalled())
 				sel.remove();
 			else {
-				Ypp::Version version (zobj);
 				sel.setCandidate (version);
 				sel.install();
 			}
@@ -587,25 +610,10 @@ struct VersionExpander : public DetailExpander {
 	}
 
 	static void undo_clicked_cb (GtkButton *button, VersionExpander *pThis)
-	{ pThis->list.undo(); }
+	{ BusyOp op; pThis->list.undo(); }
 
 	static gboolean sel_modified_idle_cb (gpointer data)
 	{ Ypp::runSolver(); return FALSE; }
-
-	static void version_toggled_cb (GtkToggleButton *button, VersionExpander *pThis)
-	{
-		if (gtk_toggle_button_get_active (button)) {
-			ZyppSelectable zsel;
-			ZyppResObject zobj;
-			pThis->getSelected (&zsel, &zobj);
-			if (!zsel->toInstall()) {
-				zsel->setCandidate (zobj);  // delay sel modified for snappy feel
-				g_idle_add_full (G_PRIORITY_LOW, sel_modified_idle_cb, pThis, NULL);
-			}
-
-			pThis->updateButton();
-		}
-	}
 
 	static gboolean draw_gray_cb (GtkWidget *widget, GdkEventExpose *event)
 	{
@@ -727,9 +735,9 @@ struct DependenciesExpander : public DetailExpander {
 		clear();
 		for (int dep = 0; dep < VersionDependencies::total(); dep++) {
 			std::string inst, cand;
-			if (sel.isInstalled())
+			if (sel.hasInstalledVersion())
 				inst = VersionDependencies (sel.installed()).getText (dep);
-			if (sel.availableSize())
+			if (sel.hasCandidateVersion())
 				cand = VersionDependencies (sel.candidate()).getText (dep);
 			if (!inst.empty() || !cand.empty())
 				addLine (VersionDependencies::getLabel (dep), inst, cand, dep);

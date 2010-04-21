@@ -121,7 +121,7 @@ protected:
 			}
 			case REPOSITORY_PROP: {
 				std::string str;
-				if (sel.availableSize() > 0) {
+				if (sel.hasCandidateVersion()) {
 					Ypp::Repository repo (sel.candidate().repository());
 					str = getRepositoryLabel (repo);
 				}
@@ -136,7 +136,7 @@ protected:
 			}
 			case REPOSITORY_STOCK_PROP: {
 				const char *stock = 0;
-				if (sel.availableSize() > 0) {
+				if (sel.hasCandidateVersion()) {
 					Ypp::Repository repo (sel.candidate().repository());
 					stock = getRepositoryStockIcon (repo);
 				}
@@ -150,9 +150,11 @@ protected:
 				break;
 			}
 			case SUPPORT_PROP: {
-				Ypp::Package pkg (sel);
-				std::string str (Ypp::Package::supportSummary (pkg.support()));
-				g_value_set_string (value, str.c_str());
+				if (sel.type() == Ypp::Selectable::PACKAGE) {
+					Ypp::Package pkg (sel);
+					std::string str (Ypp::Package::supportSummary (pkg.support()));
+					g_value_set_string (value, str.c_str());
+				}
 				break;
 			}
 			case SIZE_PROP: {
@@ -164,8 +166,8 @@ protected:
 				std::string str;
 				str.reserve (128);
 				int cmp = 0;
-				bool hasAvailable = sel.availableSize() > 0;
-				if (hasAvailable) {
+				bool hasCandidate = sel.hasCandidateVersion();
+				if (hasCandidate) {
 					Ypp::Version candidate = sel.candidate();
 					if (sel.isInstalled()) {
 						Ypp::Version installed = sel.installed();
@@ -182,10 +184,10 @@ protected:
 
 				if (cmp == 0) {
 					if (sel.isInstalled()) {
-						if (!hasAvailable)  // red for orphan too
+						if (!hasCandidate)  // red for orphan too
 							str += "<span color=\"red\">";
 						str += sel.installed().number();
-						if (!hasAvailable)
+						if (!hasCandidate)
 							str += "</span>";
 					}
 					else
@@ -203,7 +205,7 @@ protected:
 			case SINGLE_VERSION_PROP: {
 				std::string str;
 				str.reserve (128);
-				if (sel.availableSize() && !sel.toRemove())
+				if (sel.hasCandidateVersion() && !sel.toRemove())
 					str = sel.candidate().number();
 				else
 					str = sel.installed().number();
@@ -228,7 +230,7 @@ protected:
 				g_value_set_boolean (value, sel.hasUpgrade() && sel.toInstall());
 				break;
 			case CAN_TOGGLE_INSTALL_PROP:
-				g_value_set_boolean (value, sel.isInstalled() || sel.canRemove());
+				g_value_set_boolean (value, !sel.isInstalled() || sel.canRemove());
 				break;
 			case MANUAL_MODIFY_PROP:
 				g_value_set_boolean (value, sel.toModify() && !sel.toModifyAuto());
@@ -495,7 +497,10 @@ static void check_toggled_cb (GtkCellRendererToggle *renderer, gchar *path_str,
 	Ypp::Selectable *sel = ygtk_zypp_model_get_sel (model, path_str);
 
 	gboolean active = gtk_cell_renderer_toggle_get_active (renderer);
-	active ? sel->remove() : sel->install();
+	if (sel->toModify())
+		sel->undo();
+	else
+		active ? sel->remove() : sel->install();
 
 	YGUI::ui()->normalCursor();
 }

@@ -357,11 +357,14 @@ void YGtkPkgRepositoryModel::updateRow (Ypp::List list, int row, gpointer data)
 				if (sel.isInstalled())
 					count++;
 			}
-			else for (int a = 0; a < sel.availableSize(); a++) {
-				Ypp::Repository pkg_repo = sel.available (a).repository();
-				if (repo == pkg_repo) {
-					count++;
-					break;
+			else for (int i = 0; i < sel.totalVersions(); i++) {
+				Ypp::Version version = sel.version (i);
+				if (!version.isInstalled()) {
+					Ypp::Repository pkg_repo = version.repository();
+					if (repo == pkg_repo) {
+						count++;
+						break;
+					}
 				}
 			}
 		}
