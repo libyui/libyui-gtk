@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Thu Apr 22 15:52:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.46
+- sw_single: bug fix: ups: broke the is-installed flag
+for patterns in the previous version.
+- sw_single (main list and history dialog): bug fix: on
+arabic, tooltips were showing in the wrong columns.
+- sw_single: don't show patterns view when none is available.
+
+-------------------------------------------------------------------
 Wed Apr 21 13:09:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.45
