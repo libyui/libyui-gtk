@@ -17,7 +17,7 @@
 
 enum Column {
 	HAS_CHECK_COLUMN, CHECK_COLUMN, HAS_ICON_COLUMN, ICON_COLUMN,
-	TEXT_COLUMN, TOOLTIP_COLUMN, ORDER_COLUMN, POINTER_COLUMN, TOTAL_COLUMNS
+	TEXT_COLUMN, ORDER_COLUMN, POINTER_COLUMN, TOTAL_COLUMNS
 };
 
 struct YGtkPkgPatternView::Impl : public Ypp::SelListener {
@@ -108,11 +108,10 @@ static void set_row (
 	else
 		ptr = g_strdup (sel.zyppLocale().code().c_str());
 
-	std::string tooltip (YGUtils::escapeMarkup (sel.description (false)));
 	gtk_tree_store_set (store, iter, HAS_CHECK_COLUMN, TRUE,
 		CHECK_COLUMN, sel.isInstalled() || sel.toInstall(), HAS_ICON_COLUMN, TRUE,
 		ICON_COLUMN, pixbuf, TEXT_COLUMN, (sel.name() + '\n').c_str(),
-		TOOLTIP_COLUMN, tooltip.c_str(), ORDER_COLUMN, order.c_str(),
+		ORDER_COLUMN, order.c_str(),
 		POINTER_COLUMN, ptr, -1);
 
 	if (pixbuf)
@@ -206,7 +205,7 @@ static void insert_category (GtkTreeStore *store, Ypp::Selectable &sel, ZyppPatt
 		insert_node (store, NULL, &iter, pattern->order());
 		gtk_tree_store_set (store, &iter, HAS_CHECK_COLUMN, FALSE,
 			CHECK_COLUMN, FALSE, HAS_ICON_COLUMN, FALSE, ICON_COLUMN, NULL,
-			TEXT_COLUMN, text.c_str(), TOOLTIP_COLUMN, NULL,
+			TEXT_COLUMN, text.c_str(),
 			ORDER_COLUMN, pattern->order().c_str(), POINTER_COLUMN, NULL, -1);
 	}
 	insert_pattern (store, &iter, sel, pattern);
@@ -245,6 +244,23 @@ static void undo_cb (GtkWidget *widget, ZyppSelectablePtr zsel)
 static void remove_cb (GtkWidget *widget, ZyppSelectablePtr zsel)
 { Ypp::Selectable (zsel).remove(); }
 
+static GtkWidget *menu_item_append (GtkWidget *menu, const char *label, const char *stock, bool sensitive)
+{
+	GtkWidget *item;
+	if (label) {
+		item = gtk_image_menu_item_new_with_mnemonic (label);
+		if (stock) {
+			GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
+			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
+		}
+	}
+	else
+		item = gtk_image_menu_item_new_from_stock (stock, NULL);
+	gtk_widget_set_sensitive (item, sensitive);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+	return item;
+}
+
 static void right_click_cb (YGtkTreeView *yview, gboolean outreach, YGtkPkgPatternView *pThis)
 {
 	if (!outreach) {
@@ -257,32 +273,28 @@ static void right_click_cb (YGtkTreeView *yview, gboolean outreach, YGtkPkgPatte
 			gtk_tree_model_get (model, &iter, POINTER_COLUMN, &zsel, -1);
 			Ypp::Selectable sel (zsel);
 
-			GtkWidget *menu = gtk_menu_new(), *item, *icon;
-			item = gtk_image_menu_item_new_with_mnemonic (_("Install"));
-			icon = gtk_image_new_from_stock (GTK_STOCK_ADD, GTK_ICON_SIZE_MENU);
-			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
-			gtk_widget_set_sensitive (item, !sel.isInstalled());
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-			g_signal_connect (G_OBJECT (item), "activate",
-					          G_CALLBACK (install_cb), zsel);
-
-			if (sel.canRemove()) {
-				item = gtk_image_menu_item_new_with_mnemonic (_("Remove"));
-				icon = gtk_image_new_from_stock (GTK_STOCK_REMOVE, GTK_ICON_SIZE_MENU);
-				gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
-				gtk_widget_set_sensitive (item, sel.isInstalled());
-				gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
+			GtkWidget *menu = gtk_menu_new(), *item;
+			if (sel.toModify()) {
+				item = menu_item_append (menu, NULL, GTK_STOCK_UNDO, true);
 				g_signal_connect (G_OBJECT (item), "activate",
-							      G_CALLBACK (remove_cb), zsel);
+							      G_CALLBACK (undo_cb), zsel);
 			}
-
-			item = gtk_image_menu_item_new_with_mnemonic (_("Undo"));
-			icon = gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_MENU);
-			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
-			gtk_widget_set_sensitive (item, sel.toModify());
-			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-			g_signal_connect (G_OBJECT (item), "activate",
-					          G_CALLBACK (undo_cb), zsel);
+			else {
+				if (sel.isInstalled()) {
+					if (sel.canRemove()) {
+						item = menu_item_append (menu, _("_Remove"), GTK_STOCK_REMOVE, true);
+						g_signal_connect (G_OBJECT (item), "activate",
+										  G_CALLBACK (remove_cb), zsel);
+					}
+					else
+						menu_item_append (menu, _("Remove: cannot remove patterns"), NULL, false);
+				}
+				else {
+					item = menu_item_append (menu, _("_Install"), GTK_STOCK_ADD, true);
+					g_signal_connect (G_OBJECT (item), "activate",
+									  G_CALLBACK (install_cb), zsel);
+				}
+			}
 
 			ygtk_tree_view_popup_menu (yview, menu);
 		}
@@ -325,6 +337,49 @@ static gboolean can_tree_select_cb (GtkTreeSelection *selection,
 static void selection_changed_cb (GtkTreeSelection *selection, YGtkPkgPatternView *pThis)
 { pThis->notify(); }
 
+static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
+	gboolean keyboard_mode, GtkTooltip *tooltip, YGtkPkgPatternView *pThis)
+{
+	GtkTreeView *view = GTK_TREE_VIEW (widget);
+	GtkTreeModel *model;
+	GtkTreePath *path;
+	GtkTreeIter iter;
+	if (gtk_tree_view_get_tooltip_context (view,
+	        &x, &y, keyboard_mode, &model, &path, &iter)) {
+		gtk_tree_view_set_tooltip_row (view, tooltip, path);
+		gtk_tree_path_free (path);
+
+		GtkTreeViewColumn *column;
+		int bx, by;
+		gtk_tree_view_convert_widget_to_bin_window_coords (
+			view, x, y, &bx, &by);
+		gtk_tree_view_get_path_at_pos (
+			view, x, y, NULL, &column, NULL, NULL);
+
+		ZyppSelectablePtr zsel;
+		gtk_tree_model_get (model, &iter, POINTER_COLUMN, &zsel, -1);
+		if (zsel) {
+			Ypp::Selectable sel (zsel);
+
+			if (column == ygtk_tree_view_get_column (YGTK_TREE_VIEW (view), 0)) {  // check-marks
+				if (sel.isInstalled())
+					gtk_tooltip_set_text (tooltip,
+						_("Installed: cannot remove a pattern.\n\n"
+						"You must manually remove the individual packages you no "
+						"longer want to keep."));
+				else
+					gtk_tooltip_set_text (tooltip, _("Not installed"));
+			}
+			else {
+				std::string text (YGUtils::escapeMarkup (sel.description (false)));
+				gtk_tooltip_set_text (tooltip, text.c_str());
+			}
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 : impl (new Impl())
 {
@@ -332,7 +387,7 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 
 	GtkTreeStore *store = gtk_tree_store_new (TOTAL_COLUMNS, G_TYPE_BOOLEAN,
 		G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, GDK_TYPE_PIXBUF, G_TYPE_STRING,
-		G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER);
+		G_TYPE_STRING, G_TYPE_POINTER);
 
 	if (type == Ypp::Selectable::LANGUAGE) {
 		Ypp::LangQuery query;
@@ -377,14 +432,16 @@ YGtkPkgPatternView::YGtkPkgPatternView (Ypp::Selectable::Type type)
 	}
 
 	impl->view = ygtk_tree_view_new (NULL);
-	gtk_tree_view_set_model (GTK_TREE_VIEW (impl->view), GTK_TREE_MODEL (store));
-	g_object_unref (G_OBJECT (store));
 	GtkTreeView *view = GTK_TREE_VIEW (impl->view);
+	gtk_tree_view_set_model (view, GTK_TREE_MODEL (store));
+	g_object_unref (G_OBJECT (store));
 	gtk_tree_view_set_headers_visible (view, FALSE);
 	gtk_tree_view_set_search_column (view, TEXT_COLUMN);
-	gtk_tree_view_set_tooltip_column (view, TOOLTIP_COLUMN);
 	gtk_tree_view_expand_all (view);
 	gtk_tree_view_set_show_expanders (view, FALSE);
+	gtk_widget_set_has_tooltip (impl->view, TRUE);
+	g_signal_connect (G_OBJECT (view), "query-tooltip",
+	                  G_CALLBACK (query_tooltip_cb), this);
 	g_signal_connect (G_OBJECT (view), "right-click",
 		              G_CALLBACK (right_click_cb), this);
 	g_signal_connect (G_OBJECT (view), "row-activated",
@@ -471,4 +528,7 @@ bool YGtkPkgPatternView::writeQuery (Ypp::PoolQuery &query)
 	}
 	return false;
 }
+
+bool isPatternsPoolEmpty()
+{ return zyppPool().empty <zypp::Pattern>(); }
 

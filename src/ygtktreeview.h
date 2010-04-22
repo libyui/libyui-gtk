@@ -54,6 +54,9 @@ GtkWidget *ygtk_tree_view_append_show_columns_item (YGtkTreeView *view, GtkWidge
 // (if you do, use it for all your column adding needs.)
 void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column);
 
+// use this if you have used our ygtk_tree_view_append_column()
+GtkTreeViewColumn *ygtk_tree_view_get_column (YGtkTreeView *view, gint nb);
+
 G_END_DECLS
 #endif /*YGTK_TREE_VIEW_H*/
 

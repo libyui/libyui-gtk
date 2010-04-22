@@ -432,7 +432,7 @@ static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 		text.reserve (254);
 		const char *icon = 0;
 
-		if (column == gtk_tree_view_get_column (view, 2)) {  // repository
+		if (column == ygtk_tree_view_get_column (YGTK_TREE_VIEW (view), 2)) {  // repository
 			char *name, *url;
 			gtk_tree_model_get (model, &iter,
 				LogListHandler::REPOSITORY_COLUMN, &name,
@@ -510,7 +510,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_tree_view_column_set_attributes (column, renderer,
 		"markup", LogListHandler::NAME_COLUMN, "xpad", LogListHandler::XPAD_COLUMN,
 		"foreground", LogListHandler::COLOR_COLUMN, NULL);
-	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
+	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_MIDDLE, NULL);
 
 	if (reverse)
 		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);

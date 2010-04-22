@@ -64,7 +64,7 @@ struct YGtkZyppModel : public YGtkTreeModel, Ypp::SelListener
 	// we pass GtkTreeView to the model, so we can test for selected rows
 	// and modify text markup appropriely (trashing the data-view model, heh)
 
-	YGtkZyppModel (Ypp::List list) : m_list (list)
+	YGtkZyppModel (Ypp::List list) : m_list (list.clone())
 	{ addSelListener (this); }
 
 	~YGtkZyppModel()
@@ -295,9 +295,6 @@ protected:
 	}
 };
 
-static GtkTreeModel *ygtk_zypp_model_new (Ypp::List list)
-{ return ygtk_tree_model_new (new YGtkZyppModel (list)); }
-
 static Ypp::Selectable *ygtk_zypp_model_get_sel (GtkTreeModel *model, gchar *path_str)
 {
 	GtkTreeIter iter;
@@ -348,7 +345,7 @@ struct YGtkPkgListView::Impl {
 			ascendent = _ascendent;
 		}
 
-		GtkTreeModel *model = ygtk_zypp_model_new (list.clone());
+		GtkTreeModel *model = ygtk_tree_model_new (new YGtkZyppModel (list));
 		gtk_tree_view_set_model (GTK_TREE_VIEW (view), model);
 		g_object_unref (G_OBJECT (model));
 		setHighlight (keywords);
@@ -574,7 +571,7 @@ static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 			view, x, y, NULL, &column, NULL, NULL);
 
 		GtkIconSize icon_size = GTK_ICON_SIZE_MENU;
-		if (column == gtk_tree_view_get_column (view, 0)) {
+		if (column == ygtk_tree_view_get_column (YGTK_TREE_VIEW (view), 0)) {
 			text = getStatusSummary (*sel);
 			icon = getStatusStockIcon (*sel);
 		}

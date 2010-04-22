@@ -46,6 +46,7 @@ GtkWidget *m_overview;
 YGtkPkgDetailView *m_details;
 guint m_refresh_id;
 Ypp::List m_refresh_list;
+bool has_patterns_mode;
 
 struct SuffixFilter : public Ypp::Match {
 	SuffixFilter (Impl *pThis) : pThis (pThis) {}
@@ -155,7 +156,9 @@ struct SuffixFilter : public Ypp::Match {
 			m_combo->add (_("Repositories"));
 			m_combo->add (_("Support"));
 			m_combo->add ("");
-			m_combo->add (_("Patterns"));
+			has_patterns_mode = !isPatternsPoolEmpty();
+			if (has_patterns_mode)
+				m_combo->add (_("Patterns"));
 			m_combo->add (_("Languages"));
 
 			int active = 5;
@@ -560,7 +563,9 @@ struct SuffixFilter : public Ypp::Match {
 				case 1: return new YGtkPkgRpmGroupsView();
 				case 2: model = new YGtkPkgRepositoryModel(); break;
 				case 3: model = new YGtkPkgSupportModel(); break;
-				case 5: return new YGtkPkgPatternView (Ypp::Selectable::PATTERN);
+				case 5:
+					if (has_patterns_mode)
+						return new YGtkPkgPatternView (Ypp::Selectable::PATTERN);
 				case 6: return new YGtkPkgLanguageView();
 			}
 		}

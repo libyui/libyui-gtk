@@ -493,7 +493,7 @@ struct VersionExpander : public DetailExpander {
 	void updateButton()
 	{
 		const char *label = 0, *stock = 0;
-		bool modified = false, can_modify = true;
+		bool modified = false, can_modify = true, can_never_modify = false;
 		if (list.size() == 1) {
 			Ypp::Selectable sel = list.get (0);
 			Ypp::Version &version = getSelected();
@@ -501,7 +501,7 @@ struct VersionExpander : public DetailExpander {
 			if (version.isInstalled()) {
 				label = _("Remove");
 				stock = GTK_STOCK_DELETE;
-				can_modify = sel.canRemove();
+				can_never_modify = !sel.canRemove();
 				modified = sel.toRemove();
 			}
 			else {
@@ -526,6 +526,7 @@ struct VersionExpander : public DetailExpander {
 				}
 				modified = sel.toInstall();
 			}
+			can_modify = !sel.isLocked();
 			modified = modified && version.toModify();
 		}
 		else {
@@ -538,7 +539,7 @@ struct VersionExpander : public DetailExpander {
 			else if (props.isInstalled()) {
 				label = _("Remove");
 				stock = GTK_STOCK_DELETE;
-				can_modify = props.canRemove();
+				can_never_modify = !props.canRemove();
 			}
 			else if (props.isNotInstalled()) {
 				label = _("Install");
@@ -549,6 +550,7 @@ struct VersionExpander : public DetailExpander {
 				stock = GTK_STOCK_UNDO;
 				modified = false;  // don't show another undo button
 			}
+			can_modify = props.isUnlocked();
 		}
 
 		if (label) {
@@ -561,6 +563,11 @@ struct VersionExpander : public DetailExpander {
 		else
 			gtk_widget_hide (button);
 		gtk_widget_set_sensitive (button, !modified && can_modify);
+		if (can_modify)
+			gtk_widget_set_tooltip_text (button, NULL);
+		else
+			gtk_widget_set_tooltip_text (button, _("Package is locked"));
+		!can_never_modify ? gtk_widget_show (button) : gtk_widget_hide (button);
 		modified ? gtk_widget_show (undo_button) : gtk_widget_hide (undo_button);
 	}
 

@@ -217,6 +217,21 @@ void ygtk_tree_view_append_column (YGtkTreeView *view, GtkTreeViewColumn *column
 	gtk_tree_view_insert_column (GTK_TREE_VIEW (view), column, pos);
 }
 
+GtkTreeViewColumn *ygtk_tree_view_get_column (YGtkTreeView *view, gint nb)
+{
+	GtkTreeViewColumn *column;
+	if (gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL) {
+		GList *columns = gtk_tree_view_get_columns (GTK_TREE_VIEW (view));
+		nb = g_list_length (columns) - nb - 1;
+		column = g_list_nth_data (columns, nb);
+		g_list_free (columns);
+	}
+	else
+		column = gtk_tree_view_get_column (GTK_TREE_VIEW (view), nb);
+	return column;
+}
+
+
 void ygtk_tree_view_set_empty_text (YGtkTreeView *view, const gchar *empty_text)
 {
 	if (view->empty_text)

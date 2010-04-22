@@ -1,3 +1,21 @@
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/yzyppwrapper.cc:bug fix: ups: just broke
+	is-installed flag for patterns.
+
+	* src/ygtktreeview.h/c, src/pkg/ygtkpkglistview.cc &
+	src/pkg/ygtkpkghistorydialog.cc: bug fix: on arabic, tooltips
+	were showing in the wrong columns.
+
+	* src/pkg/ygtkpkgdetailview.cc: don't show remove button for
+	patches, in versions widget.
+
+	* src/pkg/ygtkpkgpatternview.cc: disable remove item
+	for patterns.
+
+	* src/pkg/YGPackageSelector.cc: don't show patterns view
+	when none is available.
+
 2010-04-21 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkglistviewcc: Atri request: make dependencies

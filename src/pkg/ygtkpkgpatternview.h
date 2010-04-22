@@ -27,5 +27,7 @@ struct YGtkPkgPatternView : public YGtkPkgQueryWidget
 	Impl *impl;
 };
 
+bool isPatternsPoolEmpty();
+
 #endif
 

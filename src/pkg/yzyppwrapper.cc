@@ -69,6 +69,7 @@ bool Ypp::Version::isInstalled()
 	zypp::ResStatus status = m_zobj->poolItem().status();
 	switch (type()) {
 		case Ypp::Selectable::PATCH:
+		case Ypp::Selectable::PATTERN:
 			return status.isSatisfied() && !status.isToBeInstalled();
 		default:
 			return status.isInstalled();
