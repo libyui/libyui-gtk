@@ -575,14 +575,16 @@ Ypp::List *Ypp::Collection::getContent()
 bool Ypp::Collection::contains (Ypp::Selectable &sel)
 {
 	if (m_sel.type() == Ypp::Selectable::PATCH) {
-		ZyppResObject object = m_sel.zyppSel()->theObj();
-		ZyppPatch patch = castZyppPatch (object);
-		zypp::Patch::Contents contents (patch->contents());
-		ZyppSelectable pkg = sel.zyppSel();
-		for (zypp::Patch::Contents::Selectable_iterator it =
-		     contents.selectableBegin(); it != contents.selectableEnd(); it++) {
-			if (*it == pkg)
-				return true;
+		if (m_sel.hasCandidateVersion()) {
+			ZyppResObject object = m_sel.zyppSel()->candidateObj();
+			ZyppPatch patch = castZyppPatch (object);
+			zypp::Patch::Contents contents (patch->contents());
+			ZyppSelectable pkg = sel.zyppSel();
+			for (zypp::Patch::Contents::Selectable_iterator it =
+				 contents.selectableBegin(); it != contents.selectableEnd(); it++) {
+				if (*it == pkg)
+					return true;
+			}
 		}
 		return false;
 	}
@@ -665,6 +667,30 @@ std::string Ypp::Package::rpm_group()
 	ZyppPackage pkg = castZyppPackage (m_sel.zyppSel()->theObj());
 	return pkg->group();
 }
+
+static ZyppSelectable _getCandidatePatch (Ypp::Selectable &sel)
+{
+	ZyppSelectable zpatch = 0;
+	Ypp::PoolQuery query (Ypp::Selectable::PATCH);
+	query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::NOT_INSTALLED));
+	query.addCriteria (new Ypp::CollectionContainsMatch (sel));
+	if (query.hasNext())
+		zpatch = query.next().zyppSel();
+	return zpatch;
+}
+
+bool Ypp::Package::isCandidatePatch()
+{
+	if (m_sel.hasCandidateVersion() && m_sel.hasInstalledVersion()) {
+		Ypp::Version candidate (m_sel.candidate()), installed (m_sel.installed());
+		if (candidate > installed)
+			return _getCandidatePatch (m_sel) != 0;
+	}
+	return false;
+}
+
+Ypp::Selectable Ypp::Package::getCandidatePatch()
+{ return Ypp::Selectable (_getCandidatePatch (m_sel)); }
 
 // Patch
 
@@ -992,11 +1018,20 @@ bool Ypp::RpmGroupMatch::match (Selectable &sel)
 	return m_group.compare (0, len, pkg_group, 0, len) == 0;
 }
 
-Ypp::CollectionMatch::CollectionMatch (Collection &col)
+Ypp::FromCollectionMatch::FromCollectionMatch (Collection &col)
 : m_collection (col) {}
 
-bool Ypp::CollectionMatch::match (Selectable &sel)
+bool Ypp::FromCollectionMatch::match (Selectable &sel)
 { return m_collection.contains (sel); }
+
+Ypp::CollectionContainsMatch::CollectionContainsMatch (Ypp::Selectable &sel)
+: m_contains (sel) {}
+
+bool Ypp::CollectionContainsMatch::match (Ypp::Selectable &sel)
+{
+	Collection collection (sel);
+	return collection.contains (m_contains);
+}
 
 struct Ypp::PoolQuery::Impl {
 	ZyppQuery query;

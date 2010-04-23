@@ -1,5 +1,17 @@
 2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/yzyppwrapper.h/cc: added routines (in special
+	to Package) to tell if a package has a patch to be applied
+	to it.
+
+	* src/pkg/ygtkpkglistview.cc: show "patch" mark next to
+	a package with a patch.
+
+	* src/pkg/ygtkpkgdetailview.cc: show the patch description of
+	a package for which it should apply.
+
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgdetailview.cc: reverted description
 	layout.
 

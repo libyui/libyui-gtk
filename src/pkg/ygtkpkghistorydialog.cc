@@ -13,6 +13,7 @@
 #include "ygtkpkglistview.h"
 #include <gtk/gtk.h>
 #include "ygtktreeview.h"
+#include "ygtkcellrenderertext.h"
 
 #include <zypp/parser/HistoryLogReader.h>
 #define FILENAME "/var/log/zypp/history"
@@ -507,7 +508,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	if (!reverse)
 		gtk_tree_view_column_pack_start (column, pix_renderer, FALSE);
 
-	renderer = gtk_cell_renderer_text_new();
+	renderer = ygtk_cell_renderer_text_new();
 	gtk_tree_view_column_pack_start (column, renderer, TRUE);
 	gtk_tree_view_column_set_attributes (column, renderer,
 		"markup", LogListHandler::NAME_COLUMN, "xpad", LogListHandler::XPAD_COLUMN,

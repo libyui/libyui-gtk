@@ -110,6 +110,14 @@ protected:
 				highlightMarkupSpan (summary, m_keywords);
 				str.reserve (name.size() + summary.size() + 64);
 				str = name;
+				if (sel.type() == Ypp::Selectable::PACKAGE) {
+					Ypp::Package pkg (sel);
+					if (pkg.isCandidatePatch()) {
+						str += "   <small><span color=\"#909090\">";
+						str += _("patch");
+						str += "</span></small>";
+					}
+				}
 				if (!summary.empty()) {
 					str += "\n";
 					str += "<span color=\"" GRAY_COLOR "\">";

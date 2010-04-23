@@ -31,7 +31,7 @@ bool YGtkPkgLanguageView::writeQuery (Ypp::PoolQuery &query)
 	Ypp::List list = getSelected();
 	if (list.size() > 0) {
 		Ypp::Collection col (list.get (0));
-		query.addCriteria (new Ypp::CollectionMatch (col));
+		query.addCriteria (new Ypp::FromCollectionMatch (col));
 		return true;
 	}
 	return false;

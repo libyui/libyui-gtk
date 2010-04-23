@@ -134,6 +134,7 @@ struct DetailDescription : public DetailWidget {
 	virtual void setList (Ypp::List list)
 	{
 		std::string str;
+		str.reserve (2048);
 		if (list.size() == 1) {
 			Ypp::Selectable &sel = list.get (0);
 			str = sel.description (true);
@@ -147,10 +148,21 @@ struct DetailDescription : public DetailWidget {
 			}
 
 			if (sel.type() == Ypp::Selectable::PACKAGE) {
-				std::string url (Ypp::Package (sel).url());
-				if (!url.empty())
-					str += std::string ("<p><b>") + _("Web site:") + "</b> <a href=\"" +
-						url + "\">" + url + "</a></p>";
+				Ypp::Package pkg (sel);
+				std::string url (pkg.url());
+				if (!url.empty()) {
+					str += "<p><b>"; str += _("Web site:");
+					str += "</b> <a href=\""; str += url; str += "\">";
+					str += url; str += "</a></p>";
+				}
+				if (pkg.isCandidatePatch()) {
+					Ypp::Selectable _patch = pkg.getCandidatePatch();
+					Ypp::Patch patch (_patch);
+					str += "<p><b>"; str += _("Patch:");
+					str += "</b> ";
+					str += Ypp::Patch::prioritySummary (patch.priority());
+					str += ": "; str += _patch.summary(); str += "</p>";
+				}
 			}
 		}
 		else {
@@ -991,7 +1003,9 @@ struct ChangelogExpander : public DetailExpander {
 	{
 		std::string text;
 		text.reserve (32768);
-		text = _("<p>Changelog applies only to the installed version.</p>");
+		text += "<p><i>";
+		text += _("Changelog applies only to the installed version.");
+		text += "</i></p>";
 		ZyppResObject zobj = sel.installed().zyppObj();
 		ZyppPackage zpkg = castZyppPackage (zobj);
 		if (zpkg) {
@@ -1124,7 +1138,7 @@ struct ContentsExpander : public DetailExpander {
 		Ypp::Collection col (sel);
 
 		Ypp::PoolQuery query (Ypp::Selectable::PACKAGE);
-		query.addCriteria (new Ypp::CollectionMatch (col));
+		query.addCriteria (new Ypp::FromCollectionMatch (col));
 		view->setQuery (query);
 	}
 

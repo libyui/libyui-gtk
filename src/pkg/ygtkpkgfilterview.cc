@@ -220,7 +220,19 @@ bool YGtkPkgStatusModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointer
 	return true;
 }
 
-static void upgrade_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis)
+static void upgrade_patches_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis)
+{
+	Ypp::startTransactions();
+	for (int i = 0; i < pThis->impl->list.size(); i++) {
+		Ypp::Selectable sel = pThis->impl->list.get (i);
+		Ypp::Package pkg (sel);
+		if (sel.hasUpgrade() && pkg.isCandidatePatch())
+			sel.install();
+	}
+	Ypp::finishTransactions();
+}
+
+static void upgrade_all_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis)
 {
 	Ypp::startTransactions();
 	for (int i = 0; i < pThis->impl->list.size(); i++) {
@@ -231,16 +243,45 @@ static void upgrade_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis)
 	Ypp::finishTransactions();
 }
 
+static GtkWidget *button_new (const char *stock, const char *label)
+{
+	GtkWidget *button = gtk_button_new_with_label (label);
+	if (stock) {
+		GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (button), icon);
+	}
+	return button;
+}
+
+struct PkgHasPatchMatch : public Ypp::Match {
+	virtual bool match (Ypp::Selectable &sel)
+	{
+		Ypp::Package pkg (sel);
+		return pkg.isCandidatePatch();
+	}
+};
+
 GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 {  // "Upgrade All" button
 	if (row == 3 && !YGPackageSelector::get()->onlineUpdateMode()) {
-		GtkWidget *button = gtk_button_new_with_label (_("Upgrade All"));
-		GtkWidget *icon = gtk_image_new_from_stock (GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (button), icon);
+		PkgHasPatchMatch match;
+		bool hasPatches = impl->list.count (&match);
+
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button;
+
+		button = button_new (NULL, _("Upgrade Patches"));
+		gtk_widget_set_sensitive (button, hasPatches);
 		g_signal_connect (G_OBJECT (button), "clicked",
-		                  G_CALLBACK (upgrade_clicked_cb), this);
-		gtk_widget_show (button);
-		return button;
+		                  G_CALLBACK (upgrade_patches_clicked_cb), this);
+		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+
+		button = button_new (GTK_STOCK_GO_UP, _("Upgrade All"));
+		g_signal_connect (G_OBJECT (button), "clicked",
+		                  G_CALLBACK (upgrade_all_clicked_cb), this);
+		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+
+		gtk_widget_show_all (hbox);
+		return hbox;
 	}
 	return NULL;
 }

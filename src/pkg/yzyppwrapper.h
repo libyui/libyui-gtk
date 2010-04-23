@@ -110,7 +110,7 @@ namespace Ypp
 			bool m_onlyInfo;
 	};
 
-	// Selectable & related funcs
+	// Selectable & complementory structs
 
 	struct Version {
 		Version (ZyppResObject zobj);
@@ -219,6 +219,9 @@ namespace Ypp
 		YPkgGroupEnum group();
 		std::string rpm_group();
 
+		bool isCandidatePatch();
+		Selectable getCandidatePatch();
+
 		private:
 			Selectable m_sel;
 	};
@@ -324,11 +327,18 @@ namespace Ypp
 		private: std::string m_group;
 	};
 
-	struct CollectionMatch : public Match {
-		CollectionMatch (Collection &col);
+	struct FromCollectionMatch : public Match {
+		FromCollectionMatch (Collection &col);
 		virtual bool match (Selectable &sel);
 
 		private: Collection m_collection;
+	};
+
+	struct CollectionContainsMatch : public Match {
+		CollectionContainsMatch (Selectable &sel);
+		virtual bool match (Selectable &collection);
+
+		private: Selectable m_contains;
 	};
 
 	struct SupportMatch : public Match {
