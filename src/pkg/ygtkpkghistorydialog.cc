@@ -280,17 +280,20 @@ struct ZyppHistoryParser
 				getRepositoryInfo (_item->repoalias, repoName, repoUrl);
 				reqby = _item->reqby; autoreq = reqby.empty();
 				reqby = reqbyTreatment (reqby);
+				zypp::Edition edition = _item->edition;
 				std::map <std::string, zypp::Edition>::iterator it;
 				it = installed.find (name);
-				zypp::Edition edition = _item->edition, prev_edition = it->second;
 				if (it == installed.end())
 					action = _("install");
-				else if (edition > prev_edition)
-					action = _("upgrade");
-				else if (edition < prev_edition)
-					action = _("downgrade");
-				else // (edition == prev_edition)
-					action = _("re-install");
+				else {
+					zypp::Edition prev_edition = it->second;
+					if (edition > prev_edition)
+						action = _("upgrade");
+					else if (edition < prev_edition)
+						action = _("downgrade");
+					else // (edition == prev_edition)
+						action = _("re-install");
+				}
 				installed[name] = edition;
 				break;
 			}

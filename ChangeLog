@@ -1,5 +1,9 @@
 2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkhistorydialog.cc: fixed potential crash.
+
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkhistorydialog.cc: bug fix: show downgrades
 	and re-installs as such, not upgrades.
 
