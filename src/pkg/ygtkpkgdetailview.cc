@@ -1204,9 +1204,11 @@ Ypp::List m_list;
 		gtk_box_pack_start (GTK_BOX (hbox), main_vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), side_vbox, FALSE, TRUE, 0);
 
-		GtkWidget *child = hbox;
-		g_signal_connect (G_OBJECT (child), "expose-event",
-			              G_CALLBACK (text_expose_cb), detail_description);
+		GtkWidget *child = gtk_event_box_new();
+		gtk_container_add (GTK_CONTAINER (child), hbox);
+
+		GdkColor *color = &detail_description->style->base [GTK_STATE_NORMAL];
+		gtk_widget_modify_bg (child, GTK_STATE_NORMAL, color);
 
 		m_scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
@@ -1252,18 +1254,6 @@ Ypp::List m_list;
 		GtkScrolledWindow *scroll = GTK_SCROLLED_WINDOW (m_scroll);
 		GtkAdjustment *vadj = gtk_scrolled_window_get_vadjustment (scroll);
 		YGUtils::scrollWidget (vadj, true);
-	}
-
-	static gboolean text_expose_cb (GtkWidget *widget, GdkEventExpose *event, GtkWidget *text)
-	{
-		cairo_t *cr = gdk_cairo_create (widget->window);
-		GdkColor *color = &text->style->base [GTK_STATE_NORMAL];
-		gdk_cairo_set_source_color (cr, color);
-		cairo_rectangle (cr, event->area.x, event->area.y,
-				         event->area.width, event->area.height);
-		cairo_fill (cr);
-		cairo_destroy (cr);
-		return FALSE;
 	}
 
 	// fix cursor keys support

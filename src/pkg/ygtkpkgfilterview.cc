@@ -243,16 +243,6 @@ static void upgrade_all_clicked_cb (GtkButton *button, YGtkPkgStatusModel *pThis
 	Ypp::finishTransactions();
 }
 
-static GtkWidget *button_new (const char *stock, const char *label)
-{
-	GtkWidget *button = gtk_button_new_with_label (label);
-	if (stock) {
-		GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_BUTTON);
-		gtk_button_set_image (GTK_BUTTON (button), icon);
-	}
-	return button;
-}
-
 struct PkgHasPatchMatch : public Ypp::Match {
 	virtual bool match (Ypp::Selectable &sel)
 	{
@@ -267,15 +257,17 @@ GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 		PkgHasPatchMatch match;
 		bool hasPatches = impl->list.count (&match);
 
-		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button;
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button, *icon;
 
-		button = button_new (NULL, _("Upgrade Patches"));
+		button = gtk_button_new_with_label (_("Upgrade Patches"));
 		gtk_widget_set_sensitive (button, hasPatches);
 		g_signal_connect (G_OBJECT (button), "clicked",
 		                  G_CALLBACK (upgrade_patches_clicked_cb), this);
 		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
 
-		button = button_new (GTK_STOCK_GO_UP, _("Upgrade All"));
+		button = gtk_button_new_with_label (_("Upgrade All"));
+		icon = gtk_image_new_from_stock (GTK_STOCK_GO_UP, GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (button), icon);
 		g_signal_connect (G_OBJECT (button), "clicked",
 		                  G_CALLBACK (upgrade_all_clicked_cb), this);
 		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
