@@ -110,14 +110,6 @@ protected:
 				highlightMarkupSpan (summary, m_keywords);
 				str.reserve (name.size() + summary.size() + 64);
 				str = name;
-				if (sel.type() == Ypp::Selectable::PACKAGE) {
-					Ypp::Package pkg (sel);
-					if (pkg.isCandidatePatch()) {
-						str += "   <small><span color=\"#909090\">";
-						str += _("patch");
-						str += "</span></small>";
-					}
-				}
 				if (!summary.empty()) {
 					str += "\n";
 					str += "<span color=\"" GRAY_COLOR "\">";
@@ -175,6 +167,7 @@ protected:
 				str.reserve (128);
 				int cmp = 0;
 				bool hasCandidate = sel.hasCandidateVersion();
+				bool patch = false;
 				if (hasCandidate) {
 					Ypp::Version candidate = sel.candidate();
 					if (sel.isInstalled()) {
@@ -185,8 +178,14 @@ protected:
 							cmp = -1;
 					}
 				}
-				if (cmp > 0)
+				if (cmp > 0) {
 					str += "<span color=\"blue\">";
+
+					if (sel.type() == Ypp::Selectable::PACKAGE) {
+						Ypp::Package pkg (sel);
+						patch = pkg.isCandidatePatch();
+					}
+				}
 				else if (cmp < 0)
 					str += "<span color=\"red\">";
 
@@ -203,6 +202,8 @@ protected:
 				}
 				else {
 					str += sel.candidate().number();
+					if (patch)
+					{ str += " <small>"; str += _("patch"); str += "</small>"; }
 					str += "</span>\n<small>";
 					str += sel.installed().number();
 					str += "</small>";

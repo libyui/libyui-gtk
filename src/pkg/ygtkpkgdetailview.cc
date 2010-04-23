@@ -158,10 +158,11 @@ struct DetailDescription : public DetailWidget {
 				if (pkg.isCandidatePatch()) {
 					Ypp::Selectable _patch = pkg.getCandidatePatch();
 					Ypp::Patch patch (_patch);
-					str += "<p><b>"; str += _("Patch:");
-					str += "</b> ";
-					str += Ypp::Patch::prioritySummary (patch.priority());
-					str += ": "; str += _patch.summary(); str += "</p>";
+					str += "<p><b>"; str += _("Patch issued:");
+					str += "</b> "; str += _patch.summary();
+					str += " <b>("; str += Ypp::Patch::prioritySummary (patch.priority());
+					str += ")</b>"; str += "</p>";
+
 				}
 			}
 		}

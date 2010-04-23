@@ -113,6 +113,10 @@ struct LogListHandler
 			icon = GTK_STOCK_GO_UP;
 		else if (action == _("remove"))
 			icon = GTK_STOCK_REMOVE;
+		else if (action == _("downgrade"))
+			icon = GTK_STOCK_GO_DOWN;
+		else if (action == _("re-install"))
+			icon = GTK_STOCK_REFRESH;
 		else {
 			icon = getRepositoryStockIcon (name);
 			shortcut = "_repo";
@@ -240,7 +244,7 @@ struct ZyppHistoryParser
 {
 	Handler *handler;
 	std::string _date;
-	std::map <std::string, int> installed;
+	std::map <std::string, zypp::Edition> installed;
 
 	ZyppHistoryParser (Handler *handler)
 	: handler (handler)
@@ -274,13 +278,20 @@ struct ZyppHistoryParser
 				name = _item->name;
 				descrpt = _item->edition.version();
 				getRepositoryInfo (_item->repoalias, repoName, repoUrl);
-				reqby = _item->reqby; autoreq = reqby.empty(); reqby = reqbyTreatment (reqby);
-				if (installed.find (name) != installed.end())
-					action = _("upgrade");
-				else {
+				reqby = _item->reqby; autoreq = reqby.empty();
+				reqby = reqbyTreatment (reqby);
+				std::map <std::string, zypp::Edition>::iterator it;
+				it = installed.find (name);
+				zypp::Edition edition = _item->edition, prev_edition = it->second;
+				if (it == installed.end())
 					action = _("install");
-					installed[name] = 0;
-				}
+				else if (edition > prev_edition)
+					action = _("upgrade");
+				else if (edition < prev_edition)
+					action = _("downgrade");
+				else // (edition == prev_edition)
+					action = _("re-install");
+				installed[name] = edition;
 				break;
 			}
 			case zypp::HistoryActionID::REMOVE_e: {
@@ -289,8 +300,10 @@ struct ZyppHistoryParser
 				action = _("remove");
 				name = _item->name;
 				descrpt = _item->edition.version();
-				reqby = _item->reqby; autoreq = reqby.empty(); reqby = reqbyTreatment (reqby);
-				std::map <std::string, int>::iterator it = installed.find (name);
+				reqby = _item->reqby; autoreq = reqby.empty();
+				reqby = reqbyTreatment (reqby);
+				std::map <std::string, zypp::Edition>::iterator it;
+				it = installed.find (name);
 				if (it != installed.end())
 					installed.erase (it);
 				break;

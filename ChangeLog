@@ -1,5 +1,13 @@
 2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkhistorydialog.cc: bug fix: show downgrades
+	and re-installs as such, not upgrades.
+
+	* src/pkg/ygtkpkglistview.cc: show patch mark next to
+	version number, not name.
+
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgdetailview.cc: faster method to draw
 	description box background (modify it at the X11 level
 	rather than at expose).
