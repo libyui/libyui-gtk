@@ -1,5 +1,19 @@
 2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkgdetailview.cc: reverted description
+	layout.
+
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgdetailview.cc: show version numbers in
+	dependencies table.
+
+	* src/pkg/ygtkpkghistorydialog.cc: only mark as patches
+	those packages from the update server that were already
+	installed. Also, remove the auto mark when a patch.
+
+2010-04-22 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/yzyppwrapper.cc:bug fix: ups: just broke
 	is-installed flag for patterns.
 

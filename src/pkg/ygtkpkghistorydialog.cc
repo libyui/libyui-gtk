@@ -105,7 +105,7 @@ struct LogListHandler
 	{
 		GtkTreeIter iter;
 		const char *icon = 0;
-		std::string shortcut = name;
+		std::string shortcut (name);
 		if (action == _("install"))
 			icon = GTK_STOCK_ADD;
 		else if (action == _("upgrade"))
@@ -124,21 +124,24 @@ struct LogListHandler
 		int xpad = 0; // autoReq ? 25 : 0;
 
 		const char *repo_icon = 0, *color = 0;
-		if (!repositoryUrl.empty()) {
+		bool is_patch = false;
+		if (action == _("upgrade") && !repositoryUrl.empty()) {
+			// if 'upgrade' and from '*update*' server then mark as patch
 			repo_icon = getRepositoryStockIcon (repositoryUrl);
 			if (repositoryUrl.find ("update") != std::string::npos) {
 				//color = "red";
 				std::string tag;
 				tag.reserve (64);
-				tag = "<span color=\"#999999\">("; tag += _("patch"); tag += ")</span>";
-				_name += "  "; _name += tag;
+				tag = "<small><span color=\"#999999\">"; tag += _("patch"); tag += "</span></small>";
+				_name += "   "; _name += tag;
+				is_patch = true;
 			}
 		}
-		if (autoReq) {
+		if (autoReq && !is_patch) {  // dependency
 			std::string tag;
 			tag.reserve (64);
-			tag = "<span color=\"#999999\">("; tag += _("auto"); tag += ")</span>";
-			_name += "  "; _name += tag;
+			tag = "<small><span color=\"#999999\">"; tag += _("auto"); tag += "</span></small>";
+			_name += "   "; _name += tag;
 		}
 
 		gtk_list_store_append (store, &iter);
@@ -434,8 +437,7 @@ static gboolean query_tooltip_cb (GtkWidget *widget, gint x, gint y,
 
 		if (column == ygtk_tree_view_get_column (YGTK_TREE_VIEW (view), 2)) {  // repository
 			char *name, *url;
-			gtk_tree_model_get (model, &iter,
-				LogListHandler::REPOSITORY_COLUMN, &name,
+			gtk_tree_model_get (model, &iter, LogListHandler::REPOSITORY_COLUMN, &name,
 				LogListHandler::REPOSITORY_URL_COLUMN, &url, -1);
 			if (name && *name) {
 				text = name;

@@ -680,14 +680,13 @@ struct DependenciesExpander : public DetailExpander {
 	: DetailExpander (_("Dependencies"), false)
 	{
 		vbox = gtk_vbox_new (FALSE, 6);
-		addLine ("", _("<b>Installed Version</b>"), _("<b>Candidate Version</b>"), -1);
 		setChild (vbox);
 	}
 
 	void clear()
 	{
 		GList *children = gtk_container_get_children (GTK_CONTAINER (vbox));
-		for (GList *i = children->next; i; i = i->next)
+		for (GList *i = children; i; i = i->next)
 			gtk_container_remove (GTK_CONTAINER (vbox), (GtkWidget *) i->data);
 		g_list_free (children);
 	}
@@ -740,6 +739,13 @@ struct DependenciesExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 
 		clear();
+		std::string installed_str (_("<b>Installed Version</b>"));
+		std::string candidate_str (_("<b>Candidate Version</b>"));
+		if (sel.hasInstalledVersion())
+			installed_str += "\n" + sel.installed().number();
+		if (sel.hasCandidateVersion())
+			candidate_str += "\n" + sel.candidate().number();
+		addLine ("", installed_str, candidate_str, -1);
 		for (int dep = 0; dep < VersionDependencies::total(); dep++) {
 			std::string inst, cand;
 			if (sel.hasInstalledVersion())
@@ -1135,12 +1141,8 @@ Ypp::List m_list;
 	{
 		DetailWidget *widget;
 
-		GtkWidget *vbox = gtk_vbox_new (FALSE, 0);
-		widget = new DetailName();
-		m_widgets.push_back (widget);
-		gtk_box_pack_start (GTK_BOX (vbox), widget->getWidget(), FALSE, TRUE, 0);
-
 		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 0);
+
 		widget = new VersionExpander();
 		m_widgets.push_back (widget);
 		gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
@@ -1151,6 +1153,11 @@ Ypp::List m_list;
 		}
 
 		GtkWidget *main_vbox = gtk_vbox_new (FALSE, 0);
+
+		widget = new DetailName();
+		m_widgets.push_back (widget);
+		gtk_box_pack_start (GTK_BOX (main_vbox), widget->getWidget(), FALSE, TRUE, 0);
+
 		widget = new DetailDescription();
 		m_widgets.push_back (widget);
 		gtk_box_pack_start (GTK_BOX (main_vbox), widget->getWidget(), FALSE, TRUE, 0);
@@ -1183,14 +1190,14 @@ Ypp::List m_list;
 		gtk_box_pack_start (GTK_BOX (hbox), main_vbox, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), side_vbox, FALSE, TRUE, 0);
 
-		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
-		g_signal_connect (G_OBJECT (vbox), "expose-event",
+		GtkWidget *child = hbox;
+		g_signal_connect (G_OBJECT (child), "expose-event",
 			              G_CALLBACK (text_expose_cb), detail_description);
 
 		m_scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_scroll),
 			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_scroll), vbox);
+		gtk_scrolled_window_add_with_viewport (GTK_SCROLLED_WINDOW (m_scroll), child);
 
 		gtk_widget_show_all (m_scroll);
 		g_signal_connect (G_OBJECT (m_scroll), "realize",
