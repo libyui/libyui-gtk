@@ -668,15 +668,25 @@ std::string Ypp::Package::rpm_group()
 	return pkg->group();
 }
 
-static ZyppSelectable _getCandidatePatch (Ypp::Selectable &sel)
+static std::map <std::string, ZyppSelectable> g_selPatch;
+
+static ZyppSelectable getSelPatch (Ypp::Selectable &sel)
 {
-	ZyppSelectable zpatch = 0;
+	std::string name (sel.name());
+	std::map <std::string, ZyppSelectable>::iterator it = g_selPatch.find (name);
+	if (it != g_selPatch.end())
+		return it->second;
+
 	Ypp::PoolQuery query (Ypp::Selectable::PATCH);
 	query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::NOT_INSTALLED));
 	query.addCriteria (new Ypp::CollectionContainsMatch (sel));
-	if (query.hasNext())
-		zpatch = query.next().zyppSel();
-	return zpatch;
+	if (query.hasNext()) {
+		Ypp::Selectable patch = query.next();
+		g_selPatch[name] = patch.zyppSel();
+	}
+	else
+		g_selPatch[name] = NULL;
+	return g_selPatch[name];
 }
 
 bool Ypp::Package::isCandidatePatch()
@@ -684,13 +694,13 @@ bool Ypp::Package::isCandidatePatch()
 	if (m_sel.hasCandidateVersion() && m_sel.hasInstalledVersion()) {
 		Ypp::Version candidate (m_sel.candidate()), installed (m_sel.installed());
 		if (candidate > installed)
-			return _getCandidatePatch (m_sel) != 0;
+			return getSelPatch (m_sel) != NULL;
 	}
 	return false;
 }
 
 Ypp::Selectable Ypp::Package::getCandidatePatch()
-{ return Ypp::Selectable (_getCandidatePatch (m_sel)); }
+{ return Selectable (getSelPatch (m_sel)); }
 
 // Patch
 
@@ -1439,5 +1449,6 @@ void Ypp::finish()
 	g_busy_running = false;
 	g_patternsContent.clear();
 	g_languagesContent.clear();
+	g_selPatch.clear();
 }
 
