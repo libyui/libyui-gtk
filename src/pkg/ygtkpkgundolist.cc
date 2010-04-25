@@ -183,7 +183,9 @@ struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
 #define PATH_TO_YAST_SYSCONFIG  "/etc/sysconfig/yast2"
 #include <zypp/base/Sysconfig.h>
 
-static bool read_PKGMGR_ACTION_AT_EXIT()
+enum { CLOSE_MODE, RESTART_MODE, SUMMARY_MODE };
+
+static int read_PKGMGR_ACTION_AT_EXIT()
 { // from yast2-ncurses, NCPackageSelector.cc
 	std::map <std::string, std::string> sysconfig =
 		zypp::base::sysconfig::read( PATH_TO_YAST_SYSCONFIG );
@@ -191,33 +193,53 @@ static bool read_PKGMGR_ACTION_AT_EXIT()
 		sysconfig.find("PKGMGR_ACTION_AT_EXIT");
 	if (it != sysconfig.end()) {
 		yuiMilestone() << "Read sysconfig's action at pkg mgr exit value: " << it->second << endl;
-		return it->second == "restart";
+		std::string mode (it->second);
+		if (mode == "restart")
+			return RESTART_MODE;
+		else if (mode == "summary")
+			return SUMMARY_MODE;
+		else //if (mode == "close")
+			return CLOSE_MODE;
 	}
 	yuiMilestone() << "Could not read PKGMGR_ACTION_AT_EXIT variable from sysconfig" << endl;
 	return false;
 }
 
-static void write_PKGMGR_ACTION_AT_EXIT (bool restart)
+static void write_PKGMGR_ACTION_AT_EXIT (int mode)
 { // from yast2-ncurses, NCPackageSelector.cc
 	// this is really, really stupid. But we have no other iface for writing sysconfig so far
-	std::string actionAtExit (restart ? "restart" : "close");
+	std::string _mode;
+	switch (mode) {
+		case CLOSE_MODE: _mode = "close"; break;
+		case RESTART_MODE: _mode = "restart"; break;
+		case SUMMARY_MODE: _mode = "summary"; break;
+	}
 	int ret = -1;
 	string cmd = "sed -i 's/^[ \t]*PKGMGR_ACTION_AT_EXIT.*$/PKGMGR_ACTION_AT_EXIT=\"" +
-		actionAtExit + "\"/' " + PATH_TO_YAST_SYSCONFIG;
+		_mode + "\"/' " + PATH_TO_YAST_SYSCONFIG;
 	ret  = system(cmd.c_str());
 	yuiMilestone() << "Executing system cmd " << cmd << " returned " << ret << endl;
 }
 
 static void close_when_done_toggled_cb (GtkToggleButton *button)
-{ write_PKGMGR_ACTION_AT_EXIT (!gtk_toggle_button_get_active (button)); }
+{
+	gtk_toggle_button_set_inconsistent (button, FALSE);
+	int mode = gtk_toggle_button_get_active (button) ? CLOSE_MODE : RESTART_MODE;
+	write_PKGMGR_ACTION_AT_EXIT (mode);
+}
 
 static GtkWidget *create_close_when_done_check()
 {
 	GtkWidget *check_box = gtk_check_button_new_with_label (_("Close window when done"));
-	bool active = !read_PKGMGR_ACTION_AT_EXIT();
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check_box), active);
-	g_signal_connect (G_OBJECT (check_box), "toggled",
-	                  G_CALLBACK (close_when_done_toggled_cb), NULL);
+	int mode = read_PKGMGR_ACTION_AT_EXIT();
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check_box), mode == CLOSE_MODE);
+	gtk_toggle_button_set_inconsistent (GTK_TOGGLE_BUTTON (check_box), mode == SUMMARY_MODE);
+	if (access (PATH_TO_YAST_SYSCONFIG, W_OK) != 0) {
+		gtk_widget_set_sensitive (check_box, FALSE);
+		gtk_widget_set_tooltip_text (check_box, "Cannot write to " PATH_TO_YAST_SYSCONFIG);
+	}
+	g_signal_connect_after (G_OBJECT (check_box), "toggled",
+	                        G_CALLBACK (close_when_done_toggled_cb), NULL);
 	gtk_widget_show (check_box);
 	return check_box;
 }
