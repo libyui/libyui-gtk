@@ -443,16 +443,22 @@ static void sync_toolbox_buttons (Ypp::Repository *repo, GtkWidget *box)
 	}
 }
 
-static void switch_clicked_cb (GtkButton *button, YGtkPkgRepositoryModel *pThis)
+static void switch_repo_status (Ypp::Repository *repo)
 {
-	Ypp::Repository *repo = pThis->impl->selected;
 	ZyppRepository zrepo = repo->zyppRepo();
 	if (zypp::getZYpp()->resolver()->upgradingRepo (zrepo))
 		zypp::getZYpp()->resolver()->removeUpgradeRepo (zrepo);
 	else
 		zypp::getZYpp()->resolver()->addUpgradeRepo (zrepo);
+}
+
+static void switch_clicked_cb (GtkButton *button, YGtkPkgRepositoryModel *pThis)
+{
+	Ypp::Repository *repo = pThis->impl->selected;
+	switch_repo_status (repo);
+	if (!Ypp::runSolver())  // on solver cancel -- switch back
+		switch_repo_status (repo);
 	sync_toolbox_buttons (repo, gtk_widget_get_parent (GTK_WIDGET (button)));
-	Ypp::runSolver();
 }
 
 GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)

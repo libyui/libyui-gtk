@@ -1,5 +1,10 @@
 2010-06-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkgfilterview.cc: honor run solver
+	dialog's cancel button, on switch repository.
+
+2010-06-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/pkg/ygtkpkgfilterview.cc: bug fix: run solver on
 	switch repository. Reported by Atri Bhattacharya.
 
