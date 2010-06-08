@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* YGtkPkgSearchEntry, zypp query string attributes */
 // check the header file for information about this widget
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "YGi18n.h"
 #include "config.h"

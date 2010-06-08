@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* Ypp, the zypp wrapper */
 // check the header file for information about this wrapper
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "config.h"
 #include "YGi18n.h"

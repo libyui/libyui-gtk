@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* YGtkPkgMenuBar, menu bar */
 // check the header file for information about this widget
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "YGi18n.h"
 #include "config.h"
@@ -262,7 +265,7 @@ static void import_file_cb (GtkMenuItem *item)
 	}
 
 	g_free (filename);
-	Ypp::notifySelModified();
+	Ypp::runSolver();
     }
 
 
@@ -336,7 +339,6 @@ static void export_file_cb (GtkMenuItem *item)
 	}
 
 	g_free (filename);
- 	Ypp::notifySelModified();
    }
 }
 
@@ -508,7 +510,7 @@ static void installSubPkgs (std::string suffix)
 	}
     }
 
-	Ypp::notifySelModified();
+	Ypp::runSolver();
 	YGPackageSelector::get()->popupChanges();
 }
 

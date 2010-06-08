@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* YGtkPkgUndoList, list of changes */
 // check the header file for information about this utility
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "YGi18n.h"
 #include "config.h"

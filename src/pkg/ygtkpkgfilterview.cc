@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* YGtkPkgFilterView, several zypp attribute query criteria implementations */
 // check the header file for information about this widget
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "YGi18n.h"
 #include "YGUI.h"
@@ -449,7 +452,7 @@ static void switch_clicked_cb (GtkButton *button, YGtkPkgRepositoryModel *pThis)
 	else
 		zypp::getZYpp()->resolver()->addUpgradeRepo (zrepo);
 	sync_toolbox_buttons (repo, gtk_widget_get_parent (GTK_WIDGET (button)));
-	Ypp::notifySelModified();
+	Ypp::runSolver();
 }
 
 GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)

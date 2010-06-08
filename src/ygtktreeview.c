@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-
 /* YGtkTreeView widget */
 // check the header file for information about this widget
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include <config.h>
 #include "ygtktreeview.h"

@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* Tags PackageKit translator */
 // check the header file for information about this translator
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #include "YGi18n.h"
 #define YUILogComponent "gtk-pkg"
