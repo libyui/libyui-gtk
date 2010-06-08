@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Tue Jun 8 17:12:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.53
+- internationalization of some files broken (bnc#610313)
+- solver not automatically run on repository switch and
+on a couple of the menus, when dependencies check enabled.
+
+-------------------------------------------------------------------
 Sun Apr 25 11:15:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.52
