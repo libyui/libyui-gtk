@@ -233,7 +233,7 @@ static void close_when_done_toggled_cb (GtkToggleButton *button)
 
 static GtkWidget *create_close_when_done_check()
 {
-	GtkWidget *check_box = gtk_check_button_new_with_label (_("Close window when done"));
+	GtkWidget *check_box = gtk_check_button_new_with_label (_("Close software manager when done"));
 	int mode = read_PKGMGR_ACTION_AT_EXIT();
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check_box), mode == CLOSE_MODE);
 	gtk_toggle_button_set_inconsistent (GTK_TOGGLE_BUTTON (check_box), mode == SUMMARY_MODE);
