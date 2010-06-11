@@ -433,7 +433,7 @@ static void system_verification_mode_cb (GtkCheckMenuItem *item)
 	zypp::getZYpp()->resolver()->setSystemVerification (on);
 }
 
-#if ZYPP_VERSION > 6021002
+#if ZYPP_VERSION > 6031004
 
 static void cleanup_deps_on_remove_cb (GtkCheckMenuItem *item)
 {
@@ -610,7 +610,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_check_menu_item (submenu, _("System Verification Mode"),
 			zypp::getZYpp()->resolver()->systemVerification(),
 			G_CALLBACK (system_verification_mode_cb), this);
-#if ZYPP_VERSION > 6021002
+#if ZYPP_VERSION > 6031004
 		append_check_menu_item (submenu, _("_Cleanup when deleting packages"),
 			zypp::getZYpp()->resolver()->cleandepsOnRemove(),
 			G_CALLBACK (cleanup_deps_on_remove_cb), this);
