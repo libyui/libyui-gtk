@@ -1,3 +1,8 @@
+2010-06-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgmenubar.cc: qt plugin gap: "cleanup
+	deps" and "allow vendor" flags missing.
+
 2010-06-07 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgfilterview.cc: honor run solver

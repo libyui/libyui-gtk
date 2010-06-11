@@ -45,11 +45,11 @@ static GtkWidget *append_menu_item (GtkWidget *menu, const char *text,
 static GtkWidget *append_check_menu_item (GtkWidget *menu, const char *text,
 	bool checked, GCallback callback, gpointer callback_data)
 {
-	GtkWidget *item = gtk_check_menu_item_new_with_label (text);
+	GtkWidget *item = gtk_check_menu_item_new_with_mnemonic (text);
 	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), checked);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	if (callback)
-		g_signal_connect (G_OBJECT (item), "toggled", callback, callback_data);
+		g_signal_connect_after (G_OBJECT (item), "toggled", callback, callback_data);
 	return item;
 }
 
@@ -433,6 +433,24 @@ static void system_verification_mode_cb (GtkCheckMenuItem *item)
 	zypp::getZYpp()->resolver()->setSystemVerification (on);
 }
 
+#if ZYPP_VERSION > 6021002
+
+static void cleanup_deps_on_remove_cb (GtkCheckMenuItem *item)
+{
+	bool on = gtk_check_menu_item_get_active (item);
+	zypp::getZYpp()->resolver()->setCleandepsOnRemove( on );
+	Ypp::runSolver();
+}
+
+static void allow_vendor_change_cb (GtkCheckMenuItem *item)
+{
+	bool on = gtk_check_menu_item_get_active (item);
+	zypp::getZYpp()->resolver()->setAllowVendorChange( on );
+	Ypp::runSolver();
+}
+
+#endif
+
 static void installSubPkgs (std::string suffix)
 {
     // Find all matching packages and put them into a QMap
@@ -580,6 +598,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			G_CALLBACK (manualResolvePackageDependencies), this);
 		append_check_menu_item (submenu, _("Autocheck"), Ypp::isSolverEnabled(),
 			G_CALLBACK (auto_check_cb), this);
+
 	item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		// Translators: don't translate the "-devel"
@@ -591,6 +610,15 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_check_menu_item (submenu, _("System Verification Mode"),
 			zypp::getZYpp()->resolver()->systemVerification(),
 			G_CALLBACK (system_verification_mode_cb), this);
+#if ZYPP_VERSION > 6021002
+		append_check_menu_item (submenu, _("_Cleanup when deleting packages"),
+			zypp::getZYpp()->resolver()->cleandepsOnRemove(),
+			G_CALLBACK (cleanup_deps_on_remove_cb), this);
+		append_check_menu_item (submenu, _("_Allow vendor change"),
+			zypp::getZYpp()->resolver()->allowVendorChange(),
+			G_CALLBACK (allow_vendor_change_cb), this);
+#endif
+
 	item = append_menu_item (menu_bar, _("Extras"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("Show Products"), NULL,
