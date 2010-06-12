@@ -714,17 +714,19 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			G_CALLBACK (manualResolvePackageDependencies), this);
 		new AutoCheckItem (submenu, _("Autocheck"), &flags);
 
-	item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
-	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		// Translators: don't translate the "-devel"
-		new ShowDevelCheckItem (submenu, _("Show -devel packages"), &flags);
-		// Translators: don't translate the "-debuginfo/-debugsource" part
-		new ShowDebugCheckItem (submenu, _("Show -debuginfo/-debugsource Packages"), &flags);
-		new SystemVerificationCheckItem (submenu, _("System Verification Mode"), &flags);
+	if (!selector->onlineUpdateMode()) {
+		item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
+		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
+			// Translators: don't translate the "-devel"
+			new ShowDevelCheckItem (submenu, _("Show -devel packages"), &flags);
+			// Translators: don't translate the "-debuginfo/-debugsource" part
+			new ShowDebugCheckItem (submenu, _("Show -debuginfo/-debugsource Packages"), &flags);
+			new SystemVerificationCheckItem (submenu, _("System Verification Mode"), &flags);
 #if ZYPP_VERSION > 6031004
-		new CleanupDepsCheckItem (submenu, _("_Cleanup when deleting packages"), &flags);
-		new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
+			new CleanupDepsCheckItem (submenu, _("_Cleanup when deleting packages"), &flags);
+			new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
 #endif
+	}
 
 	item = append_menu_item (menu_bar, _("Extras"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
