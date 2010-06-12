@@ -853,6 +853,8 @@ void Ypp::setInterface (Ypp::Interface *interface)
 	runSolver();  // check problems at start
 }
 
+Ypp::Interface *Ypp::getInterface() { return g_interface; }
+
 Ypp::Problem::Solution *Ypp::Problem::getSolution (int nb)
 { return (Solution *) g_slist_nth_data ((GSList *) impl, nb); }
 

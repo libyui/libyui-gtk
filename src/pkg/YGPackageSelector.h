@@ -31,7 +31,7 @@ public:
 	void searchFor (Ypp::PoolQuery::StringAttribute attrb, const std::string &text);
 	void showSelectableDetails (Ypp::Selectable &sel);
 	void popupChanges();
-	void filterPkgSuffix (const std::string &suffix, bool enable);
+	void filterPkgSuffix (const std::string &suffix, bool enable_filter);
 	void showRepoManager();
 
 	YGtkPkgUndoList *undoList();

@@ -15,9 +15,56 @@
 #include "ygtkpkgmenubar.h"
 #include <gtk/gtk.h>
 #include <glib/gstdio.h>
+#include <stdio.h>
 #include <gdk/gdkkeysyms.h>
 #include "yzyppwrapper.h"
 #include "YGPackageSelector.h"
+
+// flags handling
+
+#define YAST_GTK_SYSCONFIG "/etc/sysconfig/yast2-gtk"
+
+struct Flags {
+	Flags() {
+		keys = g_key_file_new();
+		g_key_file_load_from_file (keys, YAST_GTK_SYSCONFIG, G_KEY_FILE_NONE, NULL);
+		modified = false;
+	}
+
+	~Flags() {
+		if (modified)
+			writeFile();
+		g_key_file_free (keys);
+	}
+
+	bool hasKey (const char *variable) {
+		return g_key_file_has_key (keys, "zypp", variable, NULL);
+	}
+
+	bool getBool (const char *variable) {
+		return g_key_file_get_boolean (keys, "zypp", variable, NULL);
+	}
+
+	void setBool (const char *variable, bool value) {
+		g_key_file_set_boolean (keys, "zypp", variable, value);
+		modified = true;
+	}
+
+	private:
+		void writeFile() {
+			FILE *out = fopen (YAST_GTK_SYSCONFIG, "w"); 
+			if (out) {
+				gsize size;
+				gchar *data = g_key_file_to_data (keys, &size, NULL);
+				fwrite (data, sizeof (char), size, out);
+				g_free (data);
+				fclose (out);
+			}
+		}
+
+		GKeyFile *keys;
+		bool modified;
+};
 
 // utilities
 
@@ -39,17 +86,6 @@ static GtkWidget *append_menu_item (GtkWidget *menu, const char *text,
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	if (callback)
 		g_signal_connect (G_OBJECT (item), "activate", callback, callback_data);
-	return item;
-}
-
-static GtkWidget *append_check_menu_item (GtkWidget *menu, const char *text,
-	bool checked, GCallback callback, gpointer callback_data)
-{
-	GtkWidget *item = gtk_check_menu_item_new_with_mnemonic (text);
-	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (item), checked);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-	if (callback)
-		g_signal_connect_after (G_OBJECT (item), "toggled", callback, callback_data);
 	return item;
 }
 
@@ -411,43 +447,122 @@ static void webpinSearch()
 static void manualResolvePackageDependencies()
 { Ypp::runSolver (true); }
 
-static void auto_check_cb (GtkCheckMenuItem *item)
-{ Ypp::setEnableSolver (gtk_check_menu_item_get_active (item)); }
+// check menu item flags
 
-static void show_devel_pkgs_cb (GtkCheckMenuItem *item)
-{
-	bool exclude = !gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item));
-	YGPackageSelector::get()->filterPkgSuffix ("-devel", exclude);
-}
+struct CheckMenuFlag {
+	CheckMenuFlag (GtkWidget *menu, const char *text) {
+		m_item = gtk_check_menu_item_new_with_mnemonic (text);
+		g_object_set_data_full (G_OBJECT (m_item), "this", this, destructor);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), m_item);
+	}
 
-static void show_debug_pkgs_cb (GtkCheckMenuItem *item)
-{
-	bool exclude = !gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (item));
-	YGPackageSelector::get()->filterPkgSuffix ("-debuginfo", exclude);
-	YGPackageSelector::get()->filterPkgSuffix ("-debugsource", exclude);
-}
+	void init (Flags *flags) {
+		bool check = getZyppValue();
 
-static void system_verification_mode_cb (GtkCheckMenuItem *item)
-{
-	bool on = gtk_check_menu_item_get_active (item);
-	zypp::getZYpp()->resolver()->setSystemVerification (on);
-}
+		const char *var = variable();
+		if (flags->hasKey (var)) {
+			bool c = flags->getBool (var);
+			if (c != check)
+				setZyppValue (c);
+			check = c;
+		}
+
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (m_item), check);
+		g_signal_connect_after (G_OBJECT (m_item), "toggled", G_CALLBACK (toggled_cb), this);
+	}
+
+	virtual const char *variable() = 0;
+	virtual bool getZyppValue() = 0;
+	virtual void setZyppValue (bool on) = 0;
+	virtual void runtimeSync() {}
+
+	void writeFile (bool on) {
+		Flags flags;
+		flags.setBool (variable(), on);
+	}
+
+	static void toggled_cb (GtkCheckMenuItem *item, CheckMenuFlag *pThis) {
+		bool on = gtk_check_menu_item_get_active (item);
+		pThis->setZyppValue (on);
+		pThis->runtimeSync();
+		pThis->writeFile (on);
+	}
+
+	static void destructor (gpointer data) {
+		delete ((CheckMenuFlag *) data);
+	}
+
+	GtkWidget *m_item;
+};
+
+struct AutoCheckItem : public CheckMenuFlag {
+	AutoCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "auto-check"; }
+	virtual bool getZyppValue() { return Ypp::isSolverEnabled(); }
+	virtual void setZyppValue (bool on) { Ypp::setEnableSolver (on); }
+};
+
+struct ShowDevelCheckItem : public CheckMenuFlag {
+	ShowDevelCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "show-devel"; }
+	virtual bool getZyppValue() { return true; }
+	virtual void setZyppValue (bool on)
+	{ YGPackageSelector::get()->filterPkgSuffix ("-devel", !on); }
+};
+
+struct ShowDebugCheckItem : public CheckMenuFlag {
+	ShowDebugCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "show-debug"; }
+	virtual bool getZyppValue() { return true; }
+	virtual void setZyppValue (bool on) {
+		YGPackageSelector::get()->filterPkgSuffix ("-debuginfo", !on);
+		YGPackageSelector::get()->filterPkgSuffix ("-debugsource", !on);
+	}
+};
+
+struct SystemVerificationCheckItem : public CheckMenuFlag {
+	SystemVerificationCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "system-verification"; }
+	virtual bool getZyppValue() {
+		return zypp::getZYpp()->resolver()->systemVerification();
+	}
+	virtual void setZyppValue (bool on) {
+		zypp::getZYpp()->resolver()->setSystemVerification (on);
+	}
+	virtual void runtimeSync() {}
+};
 
 #if ZYPP_VERSION > 6031004
 
-static void cleanup_deps_on_remove_cb (GtkCheckMenuItem *item)
-{
-	bool on = gtk_check_menu_item_get_active (item);
-	zypp::getZYpp()->resolver()->setCleandepsOnRemove( on );
-	Ypp::runSolver();
-}
+struct CleanupDepsCheckItem : public CheckMenuFlag {
+	CleanupDepsCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "cleanup-deps"; }
+	virtual bool getZyppValue() {
+		return zypp::getZYpp()->resolver()->cleandepsOnRemove();
+	}
+	virtual void setZyppValue (bool on) {
+		zypp::getZYpp()->resolver()->setCleandepsOnRemove( on );
+	}
+	virtual void runtimeSync() { Ypp::runSolver(); }
+};
 
-static void allow_vendor_change_cb (GtkCheckMenuItem *item)
-{
-	bool on = gtk_check_menu_item_get_active (item);
-	zypp::getZYpp()->resolver()->setAllowVendorChange( on );
-	Ypp::runSolver();
-}
+struct AllowVendorChangeCheckItem : public CheckMenuFlag {
+	AllowVendorChangeCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "allow-vendor-change"; }
+	virtual bool getZyppValue() {
+		return zypp::getZYpp()->resolver()->allowVendorChange();
+	}
+	virtual void setZyppValue (bool on) {
+		zypp::getZYpp()->resolver()->setAllowVendorChange( on );
+	}
+	virtual void runtimeSync() { Ypp::runSolver(); }
+};
 
 #endif
 
@@ -571,6 +686,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 {
 	YGPackageSelector *selector = YGPackageSelector::get();
 	m_menu = gtk_menu_bar_new();
+	Flags flags;
 
 	GtkWidget *menu_bar = m_menu, *item, *submenu;
 	item = append_menu_item (menu_bar, _("File"), NULL, NULL, NULL);
@@ -596,27 +712,18 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("Check Now"), NULL,
 			G_CALLBACK (manualResolvePackageDependencies), this);
-		append_check_menu_item (submenu, _("Autocheck"), Ypp::isSolverEnabled(),
-			G_CALLBACK (auto_check_cb), this);
+		new AutoCheckItem (submenu, _("Autocheck"), &flags);
 
 	item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		// Translators: don't translate the "-devel"
-		append_check_menu_item (submenu, _("Show -devel packages"),
-			true, G_CALLBACK (show_devel_pkgs_cb), this);
+		new ShowDevelCheckItem (submenu, _("Show -devel packages"), &flags);
 		// Translators: don't translate the "-debuginfo/-debugsource" part
-		append_check_menu_item (submenu, _("Show -debuginfo/-debugsource Packages"),
-			true, G_CALLBACK (show_debug_pkgs_cb), this);
-		append_check_menu_item (submenu, _("System Verification Mode"),
-			zypp::getZYpp()->resolver()->systemVerification(),
-			G_CALLBACK (system_verification_mode_cb), this);
+		new ShowDebugCheckItem (submenu, _("Show -debuginfo/-debugsource Packages"), &flags);
+		new SystemVerificationCheckItem (submenu, _("System Verification Mode"), &flags);
 #if ZYPP_VERSION > 6031004
-		append_check_menu_item (submenu, _("_Cleanup when deleting packages"),
-			zypp::getZYpp()->resolver()->cleandepsOnRemove(),
-			G_CALLBACK (cleanup_deps_on_remove_cb), this);
-		append_check_menu_item (submenu, _("_Allow vendor change"),
-			zypp::getZYpp()->resolver()->allowVendorChange(),
-			G_CALLBACK (allow_vendor_change_cb), this);
+		new CleanupDepsCheckItem (submenu, _("_Cleanup when deleting packages"), &flags);
+		new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
 #endif
 
 	item = append_menu_item (menu_bar, _("Extras"), NULL, NULL, NULL);

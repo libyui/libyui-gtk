@@ -183,7 +183,7 @@ struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
 	}
 };
 
-#define PATH_TO_YAST_SYSCONFIG  "/etc/sysconfig/yast2"
+#define YAST_SYSCONFIG "/etc/sysconfig/yast2"
 #include <zypp/base/Sysconfig.h>
 
 enum { CLOSE_MODE, RESTART_MODE, SUMMARY_MODE };
@@ -191,7 +191,7 @@ enum { CLOSE_MODE, RESTART_MODE, SUMMARY_MODE };
 static int read_PKGMGR_ACTION_AT_EXIT()
 { // from yast2-ncurses, NCPackageSelector.cc
 	std::map <std::string, std::string> sysconfig =
-		zypp::base::sysconfig::read( PATH_TO_YAST_SYSCONFIG );
+		zypp::base::sysconfig::read (YAST_SYSCONFIG);
 	std::map <std::string, std::string>::const_iterator it =
 		sysconfig.find("PKGMGR_ACTION_AT_EXIT");
 	if (it != sysconfig.end()) {
@@ -219,7 +219,7 @@ static void write_PKGMGR_ACTION_AT_EXIT (int mode)
 	}
 	int ret = -1;
 	string cmd = "sed -i 's/^[ \t]*PKGMGR_ACTION_AT_EXIT.*$/PKGMGR_ACTION_AT_EXIT=\"" +
-		_mode + "\"/' " + PATH_TO_YAST_SYSCONFIG;
+		_mode + "\"/' " + YAST_SYSCONFIG;
 	ret  = system(cmd.c_str());
 	yuiMilestone() << "Executing system cmd " << cmd << " returned " << ret << endl;
 }
@@ -237,9 +237,9 @@ static GtkWidget *create_close_when_done_check()
 	int mode = read_PKGMGR_ACTION_AT_EXIT();
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (check_box), mode == CLOSE_MODE);
 	gtk_toggle_button_set_inconsistent (GTK_TOGGLE_BUTTON (check_box), mode == SUMMARY_MODE);
-	if (access (PATH_TO_YAST_SYSCONFIG, W_OK) != 0) {
+	if (access (YAST_SYSCONFIG, W_OK) != 0) {
 		gtk_widget_set_sensitive (check_box, FALSE);
-		gtk_widget_set_tooltip_text (check_box, "Cannot write to " PATH_TO_YAST_SYSCONFIG);
+		gtk_widget_set_tooltip_text (check_box, "Cannot write to " YAST_SYSCONFIG);
 	}
 	g_signal_connect_after (G_OBJECT (check_box), "toggled",
 	                        G_CALLBACK (close_when_done_toggled_cb), NULL);

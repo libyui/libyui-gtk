@@ -280,6 +280,7 @@ namespace Ypp
 	};
 
 	void setInterface (Interface *interface);
+	Interface *getInterface();
 
 	// Pool selectables
 

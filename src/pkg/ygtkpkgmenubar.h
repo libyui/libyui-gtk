@@ -16,8 +16,8 @@ struct YGtkPkgMenuBar
 
 	GtkWidget *getWidget() { return m_menu; }
 
-private:
-	GtkWidget *m_menu;
+	private:
+		GtkWidget *m_menu;
 };
 
 #endif

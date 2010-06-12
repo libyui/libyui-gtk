@@ -207,7 +207,6 @@ struct SuffixFilter : public Ypp::Match {
 		for (std::list <YGtkPkgQueryWidget *>::iterator it = m_queryWidgets.begin();
 		     it != m_queryWidgets.end(); it++)
 			(*it)->setListener (this);
-		Ypp::setInterface (this);
 	}
 
 	~Impl()
@@ -470,7 +469,6 @@ struct SuffixFilter : public Ypp::Match {
 					(*it)->updateList (list);
 			}
 		}
-
 	}
 
 	void refreshToolbox()
@@ -702,7 +700,6 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 
 	impl = new Impl();  // can take a little
 	ygtk_wizard_set_child (wizard, impl->getWidget());
-
 	impl->m_menu = new YGtkPkgMenuBar();
 	ygtk_wizard_set_custom_menu (wizard, impl->m_menu->getWidget(), FALSE);
 
@@ -713,6 +710,7 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 	ygtk_wizard_set_help_text (wizard, str.c_str());
 	dialog->setTitle (title);
 
+	Ypp::setInterface (impl);
 	impl->refreshQuery();
 
 	if (summaryMode()) popupChanges();
@@ -774,7 +772,8 @@ void YGPackageSelector::filterPkgSuffix (const std::string &suffix, bool enable)
 	impl->m_filterSuffices.remove (suffix);
 	if (enable)
 		impl->m_filterSuffices.push_back (suffix);
-	impl->refreshQuery();
+	if (Ypp::getInterface() == impl)  // inited ?
+		impl->refreshQuery();
 }
 
 void YGPackageSelector::showRepoManager()

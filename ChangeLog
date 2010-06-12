@@ -1,3 +1,7 @@
+2010-06-12 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgmenubar.cc: memorize menu options.
+
 2010-06-11 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgmenubar.cc: qt plugin gap: "cleanup
