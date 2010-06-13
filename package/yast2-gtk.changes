@@ -1,5 +1,12 @@
 -------------------------------------------------------------------
-Tue Jun 11 17:45:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+Sun Jun 13 10:28:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.56
+- don't reset zypp options.
+- omit options menu for online update.
+
+-------------------------------------------------------------------
+Fri Jun 11 17:45:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.55
 - qt plugin gap: "cleanup deps" and "allow vendor" flags
