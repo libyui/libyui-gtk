@@ -1,8 +1,13 @@
+/********************************************************************
+ *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
+ ********************************************************************/
 /*
   Textdomain "yast2-gtk"
  */
 
-static const char *pkg_help[] = {
+#include "YGi18n.h"
+
+const char *pkg_help[] = {
 	_("<h1>Purpose</h1>"
 	"<p>This tool lets you install, remove, and update applications.</p>"
 	"<p>Software in &product; is broken down and distributed in the form of "
@@ -75,7 +80,7 @@ static const char *pkg_help[] = {
 	0
 };
 
-static const char *patch_help[] = {
+const char *patch_help[] = {
 	_("<h1>Purpose</h1>"
 	"<p>This tool gives you control on overviewing and picking patches. You may also "
 	"reverse patches that have been applied to the system.</p>"),
