@@ -190,15 +190,22 @@ YGtkPkgStatusModel::YGtkPkgStatusModel()
 : impl (new Impl (this))
 {
 	if (YGPackageSelector::get()->onlineUpdateMode()) {
+		// Translators: this refers to the package status
 		addRow (NULL, _("Available"), true, 0);
+		// Translators: this refers to the package status
 		addRow (NULL, _("Installed"), true, 0);
+		// Translators: this refers to the package status
 		addRow (NULL, _("Modified"), true, 0, false);
 	}
 	else {
+		// Translators: "Any status" may be translated as "All statuses" (whichever's smaller)
 		addRow (NULL, _("Any status"), true, 0);
+		// Translators: this refers to the package status
 		addRow (NULL, _("Not installed"), true, 0);
 		addRow (NULL, _("Installed"), true, 0);
+		// Translators: refers to package status: may be translated as "Upgrade"
 		addRow (NULL, _("Upgradable"), true, 0, false);
+		// Translators: this refers to the package status
 		addRow (NULL, _("Locked"), true, 0, false);
 		addRow (NULL, _("Modified"), true, 0, false);
 	}
@@ -262,6 +269,7 @@ GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button, *icon;
 
+		// Translators: if you prefer, translate this as "Apply Patches"
 		button = gtk_button_new_with_label (_("Upgrade Patches"));
 		gtk_widget_set_sensitive (button, hasPatches);
 		g_signal_connect (G_OBJECT (button), "clicked",
@@ -317,6 +325,7 @@ YGtkPkgPKGroupModel::YGtkPkgPKGroupModel()
 		std::string name = zypp_tag_group_enum_to_localised_text ((YPkgGroupEnum) i);
 		const char *icon = zypp_tag_enum_to_icon ((YPkgGroupEnum) i);
 		if (i == YPKG_GROUP_RECENT)
+			// Translators: when "upload" isn't easy to translate, translate this as "7 days old"
 			name += std::string ("\n<small>") + _("(uploaded last 7 days)") + "</small>";
 		addRow (icon, name.c_str(), true, GINT_TO_POINTER (i+1));
 		if (i == YPKG_GROUP_UNKNOWN)
@@ -485,7 +494,7 @@ GtkWidget *YGtkPkgRepositoryModel::createToolboxRow (int row)
 				              G_CALLBACK (switch_clicked_cb), this);
 			gtk_box_pack_end (GTK_BOX (hbox), button, FALSE, TRUE, 0);
 			button = gtk_button_new_with_label (
-				_("Switch system packages to the versions in this repository"));
+				_("Switch installed packages to the versions in this repository"));
 			gtk_button_set_image (GTK_BUTTON (button),
 				gtk_image_new_from_stock (GTK_STOCK_REFRESH, GTK_ICON_SIZE_BUTTON));
 			g_signal_connect (G_OBJECT (button), "clicked",
@@ -554,6 +563,7 @@ bool YGtkPkgSupportModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointe
 
 YGtkPkgPriorityModel::YGtkPkgPriorityModel()
 {
+		// Translators: "Any priority" may be translated as "All priorities" (whichever's smaller)
 	addRow (NULL, _("Any priority"), true, 0);
 	for (int i = 0; i < Ypp::Patch::priorityTotal(); i++)
 		addRow (NULL, Ypp::Patch::prioritySummary (i), true, 0, false);

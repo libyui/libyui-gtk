@@ -1,3 +1,12 @@
+2010-06-16 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/pkg-selector-help.cc: changed from header
+	format otherwise it is not picked up by i18n tool.
+
+	* src/pkg/ygtkpkgundolist.cc, ygtkpkgproductdialog.cc,
+	& ygtkpkgfilterview.cc: complemented with translator
+	commentary.
+
 2010-06-12 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgmenubar.cc: memorize menu options.

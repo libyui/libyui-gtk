@@ -152,6 +152,7 @@ struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
 			const ZyppDu &point = *it;
 			if (!point.readonly && point.freeAfterCommit() < 0) {
 				char *str = g_strdup_printf (
+					// Translators: keep the first and final "%s". They will be expanded with html code.
 					_("%sPartition %s is %s over-capacity (%s filled out of %s).%s"),
 					"<b><span color=\"red\">",
 					point.dir.c_str(), point.freeAfterCommit().asString().c_str(),

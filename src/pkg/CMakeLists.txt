@@ -1,6 +1,7 @@
 ## Makefile.am
 
 set (gtk_pkg_yast_plugin_SRCS
+	pkg-selector-help.cc
 	YGPackageSelector.cc
 	YGPackageSelectorPluginImpl.cc
 	ygtkpkgdetailview.cc

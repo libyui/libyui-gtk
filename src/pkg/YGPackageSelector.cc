@@ -641,7 +641,7 @@ struct SuffixFilter : public Ypp::Match {
 	}
 };
 
-#include "pkg-selector-help.h"
+extern const char *pkg_help[], *patch_help[];
 
 static bool confirm_cb (void *pThis)
 {
