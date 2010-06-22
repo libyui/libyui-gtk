@@ -117,6 +117,8 @@ public:
 		                  G_CALLBACK (close_window_cb), this);
 		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
 		                        G_CALLBACK (key_pressed_cb), this);
+		g_signal_connect (G_OBJECT (m_widget), "focus-in-event",
+		                  G_CALLBACK (focus_in_event_cb), this);
 		// set busy cursor at start
 		g_signal_connect_after (G_OBJECT (m_widget), "realize",
 		                        G_CALLBACK (realize_cb), this);
@@ -264,6 +266,9 @@ private:
 		return FALSE;
 	}
 
+	static gboolean focus_in_event_cb (GtkWidget *widget, GdkEventFocus *event)
+	{ gtk_window_set_urgency_hint (GTK_WINDOW (widget), FALSE); }
+
 	static void realize_cb (GtkWidget *widget, YGWindow *pThis)
 	{ pThis->busyCursor(); }
 
@@ -350,7 +355,9 @@ void YGDialog::activate()
 
 void YGDialog::present()
 {
-	gtk_window_present (GTK_WINDOW (m_window->getWidget()));
+	GtkWindow *window = GTK_WINDOW (m_window->getWidget());
+	if (!gtk_window_is_active (window))
+		gtk_window_set_urgency_hint (window, TRUE);
 }
 
 YGDialog *YGDialog::currentDialog()
