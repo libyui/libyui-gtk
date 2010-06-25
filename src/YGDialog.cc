@@ -267,7 +267,7 @@ private:
 	}
 
 	static gboolean focus_in_event_cb (GtkWidget *widget, GdkEventFocus *event)
-	{ gtk_window_set_urgency_hint (GTK_WINDOW (widget), FALSE); }
+	{ gtk_window_set_urgency_hint (GTK_WINDOW (widget), FALSE); return FALSE; }
 
 	static void realize_cb (GtkWidget *widget, YGWindow *pThis)
 	{ pThis->busyCursor(); }
