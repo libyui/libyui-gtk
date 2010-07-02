@@ -98,6 +98,8 @@ public:
 		    		width = YGUI::ui()->defaultWidth();
 		    	if (YGUI::ui()->defaultHeight())
 		    		height = YGUI::ui()->defaultHeight();
+				width = MIN (width, YUI::app()->displayWidth());
+				height = MIN (height, YUI::app()->displayHeight());
 
 		        gtk_window_set_default_size (window, width, height);
 				if (YGUI::ui()->setFullscreen())

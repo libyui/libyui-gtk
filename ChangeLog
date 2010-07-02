@@ -1,3 +1,8 @@
+2010-07-02 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.cc: bug fix 618951: sw_single too
+	big for some screens.
+
 2010-06-25 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc: compile fix.
