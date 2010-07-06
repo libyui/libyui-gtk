@@ -703,10 +703,12 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 			append_menu_item (submenu, _("Repositories..."), NULL,
 				G_CALLBACK (repoManager), this);
-			append_menu_item (submenu, _("Online Update..."), NULL,
-				G_CALLBACK (onlineUpdateConfiguration), this);
-			append_menu_item (submenu, _("Search Packages on Web..."), NULL,
-				G_CALLBACK (webpinSearch), this);
+			if (selector->onlineUpdateMode())
+				append_menu_item (submenu, _("Online Update..."), NULL,
+					G_CALLBACK (onlineUpdateConfiguration), this);
+			else
+				append_menu_item (submenu, _("Search Packages on Web..."), NULL,
+					G_CALLBACK (webpinSearch), this);
 	}
 	item = append_menu_item (menu_bar, _("Dependencies"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
