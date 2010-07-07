@@ -1161,14 +1161,14 @@ Ypp::List m_list;
 
 		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 0);
 
-		widget = new VersionExpander();
-		m_widgets.push_back (widget);
-		gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 		if (!YGPackageSelector::get()->onlineUpdateMode()) {
 			widget = new DetailsExpander();
 			m_widgets.push_back (widget);
 			gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 		}
+		widget = new VersionExpander();
+		m_widgets.push_back (widget);
+		gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 
 		GtkWidget *main_vbox = gtk_vbox_new (FALSE, 0);
 
