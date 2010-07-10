@@ -66,7 +66,21 @@ public:
 
 	void scrollToBottom()
 	{
-		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
+		//YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
+
+		GtkTextBuffer *buffer = getBuffer();
+		GtkTextIter iter;
+		gtk_text_buffer_get_end_iter (buffer, &iter);
+		gtk_text_iter_set_line_offset (&iter, 0);
+
+		GtkTextMark *mark = gtk_text_buffer_get_mark (buffer, "scroll");
+		if (mark)
+			gtk_text_buffer_move_mark (buffer, mark, &iter);
+		else
+			mark = gtk_text_buffer_create_mark (buffer, "scroll", &iter, TRUE);
+
+		GtkTextView *view = GTK_TEXT_VIEW (getWidget());
+		gtk_text_view_scroll_mark_onscreen (view, mark);
 	}
 
 	// Event callbacks
