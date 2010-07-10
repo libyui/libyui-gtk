@@ -99,7 +99,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	GtkWidget *widget = GTK_WIDGET (rtext);
 	GtkTextView *tview = GTK_TEXT_VIEW (rtext);
 	gtk_text_view_set_editable (tview, FALSE);
-	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD);
+	gtk_text_view_set_wrap_mode (tview, GTK_WRAP_WORD_CHAR);
 	gtk_text_view_set_pixels_below_lines (tview, 4);
 	gtk_text_view_set_left_margin (tview, 4);
 

@@ -716,12 +716,12 @@ struct DependenciesExpander : public DetailExpander {
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		GtkWidget *col;
 		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 120, -1);
+		gtk_widget_set_size_request (col, 100, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
 			("<b>" + col1 + "</b>").c_str());
-		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), col, FALSE, TRUE, 0);
 		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 120, -1);
+		gtk_widget_set_size_request (col, 1, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col2.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
@@ -731,7 +731,7 @@ struct DependenciesExpander : public DetailExpander {
 			                  G_CALLBACK (provides_link_cb), NULL);
 		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
 		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 120, -1);
+		gtk_widget_set_size_request (col, 1, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col3.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
@@ -761,9 +761,9 @@ struct DependenciesExpander : public DetailExpander {
 		std::string installed_str (_("<b>Installed Version</b>"));
 		std::string candidate_str (_("<b>Available Version</b>"));
 		if (sel.hasInstalledVersion())
-			installed_str += "\n" + sel.installed().number();
+			installed_str += "<br>" + sel.installed().number();
 		if (sel.hasCandidateVersion())
-			candidate_str += "\n" + sel.candidate().number();
+			candidate_str += "<br>" + sel.candidate().number();
 		addLine ("", installed_str, candidate_str, -1);
 		for (int dep = 0; dep < VersionDependencies::total(); dep++) {
 			std::string inst, cand;

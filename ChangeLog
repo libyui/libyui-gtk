@@ -1,5 +1,10 @@
 2010-07-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/pkg/ygtkpkgdetailview.cc & src/ygtkrichtext.c:
+	cosmetic fixes related to bug fix 620513.
+
+2010-07-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/YGText.cc: glitch fix: don't glitch on
 	autoScroll (see sw_single install procedure).
 
