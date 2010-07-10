@@ -1,3 +1,9 @@
+2010-07-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkrichtext.c: bug fix 620513: possible fix
+	for this freeze, when sw_single dependencies box is
+	open.
+
 2010-07-06 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc: bug fix 620513: versions
