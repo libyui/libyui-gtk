@@ -710,16 +710,18 @@ struct DependenciesExpander : public DetailExpander {
 	void addLine (const std::string &col1, const std::string &col2,
 	              const std::string &col3, int dep)
 	{
-		if (dep >= 0)
-			gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, TRUE, 0);
+//		if (dep >= 0)
+//			gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, TRUE, 0);
 
-		GtkWidget *hbox = gtk_hbox_new (TRUE, 6);
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
 		GtkWidget *col;
 		col = ygtk_rich_text_new();
+		gtk_widget_set_size_request (col, 120, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
 			("<b>" + col1 + "</b>").c_str());
 		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
 		col = ygtk_rich_text_new();
+		gtk_widget_set_size_request (col, 120, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col2.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
@@ -729,6 +731,7 @@ struct DependenciesExpander : public DetailExpander {
 			                  G_CALLBACK (provides_link_cb), NULL);
 		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
 		col = ygtk_rich_text_new();
+		gtk_widget_set_size_request (col, 120, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col3.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
@@ -756,7 +759,7 @@ struct DependenciesExpander : public DetailExpander {
 
 		clear();
 		std::string installed_str (_("<b>Installed Version</b>"));
-		std::string candidate_str (_("<b>Candidate Version</b>"));
+		std::string candidate_str (_("<b>Available Version</b>"));
 		if (sel.hasInstalledVersion())
 			installed_str += "\n" + sel.installed().number();
 		if (sel.hasCandidateVersion())
@@ -1047,7 +1050,7 @@ struct AuthorsExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 		std::string str (authors (sel));
 		if (str.empty())
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), _("<i>Unspecified attribute.</i>"));
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), _("<i>Not specified.</i>"));
 		else
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
@@ -1161,14 +1164,14 @@ Ypp::List m_list;
 
 		GtkWidget *side_vbox = gtk_vbox_new (FALSE, 0);
 
-		widget = new VersionExpander();
-		m_widgets.push_back (widget);
-		gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 		if (!YGPackageSelector::get()->onlineUpdateMode()) {
 			widget = new DetailsExpander();
 			m_widgets.push_back (widget);
 			gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 		}
+		widget = new VersionExpander();
+		m_widgets.push_back (widget);
+		gtk_box_pack_start (GTK_BOX (side_vbox), widget->getWidget(), FALSE, TRUE, 0);
 
 		GtkWidget *main_vbox = gtk_vbox_new (FALSE, 0);
 
