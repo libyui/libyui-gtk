@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sat Jul 10 18:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.62
+- fix sw_single post-procedure scrolling glitch.
+
+-------------------------------------------------------------------
 Sat Jul 10 13:49:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.61
