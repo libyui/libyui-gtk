@@ -1,3 +1,10 @@
+2010-07-12 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgdetailview.cc: as suggested by Atri,
+	to address bug 620513's usability complaint, replaced
+	the usage og bold fonts within the details box by
+	italic ones.
+
 2010-07-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc & src/ygtkrichtext.c:

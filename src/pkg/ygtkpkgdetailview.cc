@@ -339,16 +339,16 @@ struct DetailsExpander : public DetailExpander {
 		ZyppPackage zpkg = castZyppPackage (zobj);
 
 		std::string str;
-		std::string b ("<b>"), _b ("</b> "), br ("<br/>");
+		std::string b (""), _b (" "), i ("<i>"), _i("</i>"), br ("<br/>");
 		str.reserve (2048);
-		str += b + _("Size:") + _b + zobj->installSize().asString();
-		str += br + b + _("License:") + _b + zpkg->license();
+		str += b + _("Size:") + _b + i + zobj->installSize().asString() + _i;
+		str += br + b + _("License:") + _b + i + zpkg->license() + _i;
 		if (zsel->hasInstalledObj())
-			str += br + b + ("Installed at:") + _b +
-				zsel->installedObj()->installtime().form ("%x");
+			str += br + b + ("Installed at:") + _b + i +
+				zsel->installedObj()->installtime().form ("%x") + _i;
 		if (zsel->hasCandidateObj())
-			str += br + b + ("Latest build:") + _b +
-				zsel->candidateObj()->buildtime().form ("%x");
+			str += br + b + ("Latest build:") + _b + i +
+				zsel->candidateObj()->buildtime().form ("%x") + _i;
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
 
@@ -720,8 +720,10 @@ struct DependenciesExpander : public DetailExpander {
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
 			("<b>" + col1 + "</b>").c_str());
 		gtk_box_pack_start (GTK_BOX (hbox), col, FALSE, TRUE, 0);
+		// by settings both the two following "col" text widgets with the same
+		// fixed width, and expanded=True, we ensure all rows have the same size
 		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 1, -1);
+		gtk_widget_set_size_request (col, 80, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col2.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
@@ -731,7 +733,7 @@ struct DependenciesExpander : public DetailExpander {
 			                  G_CALLBACK (provides_link_cb), NULL);
 		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
 		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 1, -1);
+		gtk_widget_set_size_request (col, 80, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col3.c_str());
 		if (dep == 0)
 			g_signal_connect (G_OBJECT (col), "link-clicked",
