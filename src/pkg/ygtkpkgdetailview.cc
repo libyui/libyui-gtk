@@ -154,15 +154,15 @@ struct DetailDescription : public DetailWidget {
 				Ypp::Package pkg (sel);
 				std::string url (pkg.url());
 				if (!url.empty()) {
-					str += "<p><b>"; str += _("Web site:");
-					str += "</b> <a href=\""; str += url; str += "\">";
+					str += "<p><i>"; str += _("Web site:");
+					str += "</i> <a href=\""; str += url; str += "\">";
 					str += url; str += "</a></p>";
 				}
 				if (pkg.isCandidatePatch()) {
 					Ypp::Selectable _patch = pkg.getCandidatePatch();
 					Ypp::Patch patch (_patch);
-					str += "<p><b>"; str += _("Patch issued:");
-					str += "</b> "; str += _patch.summary();
+					str += "<p><i>"; str += _("Patch issued:");
+					str += "</i> "; str += _patch.summary();
 					str += " <b>("; str += Ypp::Patch::prioritySummary (patch.priority());
 					str += ")</b>"; str += "</p>";
 
@@ -339,7 +339,7 @@ struct DetailsExpander : public DetailExpander {
 		ZyppPackage zpkg = castZyppPackage (zobj);
 
 		std::string str;
-		std::string b (""), _b (" "), i ("<i>"), _i("</i>"), br ("<br/>");
+		std::string b ("<i>"), _b ("</i> "), i (""), _i(""), br ("<br/>");
 		str.reserve (2048);
 		str += b + _("Size:") + _b + i + zobj->installSize().asString() + _i;
 		str += br + b + _("License:") + _b + i + zpkg->license() + _i;
@@ -718,7 +718,7 @@ struct DependenciesExpander : public DetailExpander {
 		col = ygtk_rich_text_new();
 		gtk_widget_set_size_request (col, 100, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
-			("<b>" + col1 + "</b>").c_str());
+			("<i>" + col1 + "</i>").c_str());
 		gtk_box_pack_start (GTK_BOX (hbox), col, FALSE, TRUE, 0);
 		// by settings both the two following "col" text widgets with the same
 		// fixed width, and expanded=True, we ensure all rows have the same size
@@ -760,8 +760,8 @@ struct DependenciesExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 
 		clear();
-		std::string installed_str (_("<b>Installed Version</b>"));
-		std::string candidate_str (_("<b>Available Version</b>"));
+		std::string installed_str (_("<i>Installed Version</i>"));
+		std::string candidate_str (_("<i>Available Version</i>"));
 		if (sel.hasInstalledVersion())
 			installed_str += "<br>" + sel.installed().number();
 		if (sel.hasCandidateVersion())
@@ -1028,7 +1028,7 @@ struct ChangelogExpander : public DetailExpander {
 				YGUtils::replace (changes, "\n", 1, "<br>");
 				if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
 					author.erase (0, 2);                  // "- author". wtf?
-				text += date + " (" + author + "):<br><blockquote>" + changes + "</blockquote>";
+				text += "<i>" + date + " (" + author + "):</i><br><blockquote>" + changes + "</blockquote>";
 			}
 		}
 		return text;
@@ -1104,9 +1104,10 @@ struct AuthorsExpander : public DetailExpander {
 			}
 
 			if (!authors.empty()) {
-				text = _("Developed by:") + ("<blockquote>" + authors) + "</blockquote>";
+				text = "<i>"; text += _("Developed by:"); text += "</i>";
+				text += ("<blockquote>" + authors) + "</blockquote>";
 				if (!packager.empty() || !vendor.empty()) {
-					text += _("Packaged by:");
+					text += "<i>"; text += _("Packaged by:"); text += "</i>";
 					text += "<blockquote>";
 					if (!packager.empty()) text += packager + " ";
 					if (!vendor.empty()) text += "(" + vendor + ")";
