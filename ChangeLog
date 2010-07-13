@@ -1,3 +1,9 @@
+2010-07-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGDialog.cc & src/pkg/YGPackageSelector.cc: as
+	requested by Michael Meeks, enlarge window size for
+	bigger fonts.
+
 2010-07-12 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc: as suggested by Atri,
