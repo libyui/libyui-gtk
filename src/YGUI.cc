@@ -118,7 +118,7 @@ void YGUI::checkInit()
 		const char *argp = argv[i];
 		if (argp[0] != '-') {
 			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update"))
-				m_swsingle = true;
+				YGUI::pkgSelectorSize (&m_default_width, &m_default_height);
 			continue;
 		}
 		argp++;
@@ -143,6 +143,7 @@ void YGUI::checkInit()
 				 ));
 			exit (0);
 		}
+		else if (pkgSelectorParse (argp)) ;
 	}
 
 	gtk_init (&argc, &argv);

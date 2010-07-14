@@ -23,6 +23,9 @@
    be a YGDialog and is swap-able.
 */
 
+#define DEFAULT_WIDTH  750
+#define DEFAULT_HEIGHT 650
+
 class YGWindow;
 static YGWindow *main_window = 0;
 
@@ -90,19 +93,7 @@ public:
 		    }
 
 		    if (_main_window) {
-		    	static int width = 0, height;
-		    	if (!width) {
-		    		int char_width = YGUtils::getCharsWidth (m_widget, 1);
-
-		    		fprintf (stderr, "char width: %d\n", char_width);
-		    		if (char_width < 7)
-					{ width = 750; height = 650; }
-		    		else
-		    		{ width = 800; height = 750; }
-					if (YGUI::ui()->isPkgSelector())
-						height = width;
-				}
-
+		    	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
 		    	if (YGUI::ui()->defaultWidth())
 		    		width = YGUI::ui()->defaultWidth();
 		    	if (YGUI::ui()->defaultHeight())
@@ -364,7 +355,7 @@ void YGDialog::activate()
     m_window->setChild (this);
 }
 
-void YGDialog::blink()
+void YGDialog::present()
 {
 	GtkWindow *window = GTK_WINDOW (m_window->getWidget());
 	if (!gtk_window_is_active (window))
@@ -436,6 +427,16 @@ void YGDialog::doSetSize (int width, int height)
 #endif
 			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
+}
+
+void YGDialog::setMinSize (int width, int height)
+{
+	GtkWidget *window = m_window->getWidget();
+	width = MIN (width, YUI::app()->displayWidth());
+	height = MIN (height, YUI::app()->displayHeight());
+	width = MAX (width, window->allocation.width),
+	height = MAX (height, window->allocation.height);
+	gtk_window_resize (GTK_WINDOW (window), width, height);
 }
 
 void YGDialog::highlight (YWidget *ywidget)
@@ -519,7 +520,7 @@ void YGDialog::setTitle (const std::string &title, bool sticky)
 		g_free (str);
 		m_stickyTitle = sticky;
 	}
-	blink();
+	present();
 }
 
 extern "C" {

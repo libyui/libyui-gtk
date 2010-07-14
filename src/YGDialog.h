@@ -35,10 +35,11 @@ public:
 	static GtkWindow *currentWindow();
 
 	virtual void doSetSize (int width, int height);
+	void setMinSize (int width, int height);  // used internally by YGPackageSelector.cc
 
 	virtual void openInternal();
 	virtual void activate();
-	void blink();
+	void present();
 
 	virtual YEvent *waitForEventInternal (int timeout_millisec);
 	virtual YEvent *pollEventInternal();

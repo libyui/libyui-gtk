@@ -1,3 +1,8 @@
+2010-07-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* Reversed some of previous changes for build service
+	process.
+
 2010-07-13 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGDialog.cc & src/pkg/YGPackageSelector.cc: as

@@ -339,16 +339,16 @@ struct DetailsExpander : public DetailExpander {
 		ZyppPackage zpkg = castZyppPackage (zobj);
 
 		std::string str;
-		std::string b ("<i>"), _b ("</i> "), i (""), _i(""), br ("<br/>");
+		std::string b ("<i>"), _b ("</i> "), br ("<br/>");
 		str.reserve (2048);
-		str += b + _("Size:") + _b + i + zobj->installSize().asString() + _i;
-		str += br + b + _("License:") + _b + i + zpkg->license() + _i;
+		str += b + _("Size:") + _b + zobj->installSize().asString();
+		str += br + b + _("License:") + _b + zpkg->license();
 		if (zsel->hasInstalledObj())
-			str += br + b + ("Installed at:") + _b + i +
-				zsel->installedObj()->installtime().form ("%x") + _i;
+			str += br + b + ("Installed at:") + _b +
+				zsel->installedObj()->installtime().form ("%x");
 		if (zsel->hasCandidateObj())
-			str += br + b + ("Latest build:") + _b + i +
-				zsel->candidateObj()->buildtime().form ("%x") + _i;
+			str += br + b + ("Latest build:") + _b +
+				zsel->candidateObj()->buildtime().form ("%x");
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
 
@@ -720,8 +720,6 @@ struct DependenciesExpander : public DetailExpander {
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
 			("<i>" + col1 + "</i>").c_str());
 		gtk_box_pack_start (GTK_BOX (hbox), col, FALSE, TRUE, 0);
-		// by settings both the two following "col" text widgets with the same
-		// fixed width, and expanded=True, we ensure all rows have the same size
 		col = ygtk_rich_text_new();
 		gtk_widget_set_size_request (col, 80, -1);
 		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col2.c_str());
@@ -760,8 +758,10 @@ struct DependenciesExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 
 		clear();
-		std::string installed_str (_("<i>Installed Version</i>"));
-		std::string candidate_str (_("<i>Available Version</i>"));
+		std::string installed_str (_("<b>Installed Version</b>"));
+		std::string candidate_str (_("<b>Candidate Version</b>"));
+		installed_str = "<i>" + installed_str + "</i>";
+		candidate_str = "<i>" + candidate_str + "</i>";
 		if (sel.hasInstalledVersion())
 			installed_str += "<br>" + sel.installed().number();
 		if (sel.hasCandidateVersion())
@@ -1052,7 +1052,7 @@ struct AuthorsExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 		std::string str (authors (sel));
 		if (str.empty())
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), _("<i>Not specified.</i>"));
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), _("<i>Unspecified attribute.</i>"));
 		else
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}

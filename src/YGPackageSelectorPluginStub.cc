@@ -11,6 +11,12 @@
 #include <YEvent.h>
 #include <string.h>
 
+bool YGUI::pkgSelectorParse (const char *arg)
+{ return false; }
+
+void YGUI::pkgSelectorSize (int *width, int *height)
+{ *width = 750; *height = 750; }
+
 class YGPackageSelectorPluginStub : public YPackageSelectorPlugin
 {
 YGPackageSelectorPluginIf *impl;
