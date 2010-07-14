@@ -112,6 +112,8 @@ public:
 			if (pixbuf) {
 				GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
 				gtk_button_set_image (button, image);
+				// disregard gtk-button-images setting for explicitly set icons
+				gtk_widget_show (image);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else

@@ -472,7 +472,6 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 		inner::appendItem (menu, NULL, NULL, GTK_STOCK_SELECT_ALL,
 		                   true, inner::select_all_cb, pThis);
-		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 		ygtk_tree_view_append_show_columns_item (YGTK_TREE_VIEW (pThis->impl->view), menu);
 	}
 	ygtk_tree_view_popup_menu (YGTK_TREE_VIEW (pThis->impl->view), menu);
