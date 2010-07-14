@@ -760,8 +760,9 @@ struct DependenciesExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 
 		clear();
-		std::string installed_str (_("<i>Installed Version</i>"));
-		std::string candidate_str (_("<i>Available Version</i>"));
+		std::string i ("<i>"), _i ("</i>");
+		std::string installed_str (i + _("Installed Version") + _i);
+		std::string candidate_str (i + _("Available Version") + _i);
 		if (sel.hasInstalledVersion())
 			installed_str += "<br>" + sel.installed().number();
 		if (sel.hasCandidateVersion())
