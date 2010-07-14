@@ -1,4 +1,66 @@
 -------------------------------------------------------------------
+Wed Jul 14 13:39:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.68
+- sw_single: fixed duplicate separator item in context menu.
+
+-------------------------------------------------------------------
+Wed Jul 14 11:41:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.67
+- build for bnc#620513 patch.
+
+-------------------------------------------------------------------
+Tue Jul 13 16:04:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.66
+- adjust window size to cope with big fonts.
+
+-------------------------------------------------------------------
+Mon Jul 12 15:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.65
+- more comsmetic fixes related to bnc#620513.
+
+-------------------------------------------------------------------
+Sat Jul 10 21:56:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.64
+- comsmetic fixes related to bnc#620513.
+
+-------------------------------------------------------------------
+Sat Jul 10 18:42:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.63
+- typo correction.
+
+-------------------------------------------------------------------
+Sat Jul 10 18:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.62
+- fix sw_single post-procedure scrolling glitch.
+
+-------------------------------------------------------------------
+Sat Jul 10 13:49:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.61
+- dependencies box sometimes freezes when open (bnc#620513).
+
+-------------------------------------------------------------------
+Wed Jul 06 20:10:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.60
+- versions box not visible enough: swap position with
+details box (bnc#620513).
+
+-------------------------------------------------------------------
+Tue Jul 05 18:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.59
+- ommit online-update configuration menu item when
+not running online-update (bnc#609778s)
+
+-------------------------------------------------------------------
 Fri Jul 02 13:25:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.58
