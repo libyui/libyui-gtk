@@ -1,5 +1,9 @@
 2010-07-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* Undone reversion.
+
+2010-07-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* Reversed some of previous changes for build service
 	process.
 
