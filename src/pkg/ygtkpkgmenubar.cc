@@ -232,8 +232,6 @@ static void import_file_cb (GtkMenuItem *item)
 	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
-
     if ( ret == GTK_RESPONSE_ACCEPT )
     {
 	char *filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -304,7 +302,6 @@ static void import_file_cb (GtkMenuItem *item)
 	Ypp::runSolver();
     }
 
-
 	gtk_widget_destroy (dialog);
 }
 
@@ -329,8 +326,6 @@ static void export_file_cb (GtkMenuItem *item)
 	gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
-    gtk_widget_destroy (dialog);
-
 	if (ret == GTK_RESPONSE_ACCEPT) {
 	char *filename;
 	filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -376,6 +371,8 @@ static void export_file_cb (GtkMenuItem *item)
 
 	g_free (filename);
    }
+
+	gtk_widget_destroy (dialog);
 }
 
 static void create_solver_testcase_cb (GtkMenuItem *item)

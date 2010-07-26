@@ -1,3 +1,8 @@
+2010-07-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgmenubar.cc: bug fix 624310: file >
+	import and export failing.
+
 2010-07-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgdetailview.cc & src/ygtkrichtext.c:
