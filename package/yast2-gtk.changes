@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Jul 26 19:28:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.69
+- sw_single: fix file > import / export menu items (bcn#624310)
+
+-------------------------------------------------------------------
 Wed Jul 14 13:39:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.68
