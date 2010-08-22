@@ -23,8 +23,12 @@
    be a YGDialog and is swap-able.
 */
 
-#define DEFAULT_WIDTH  750
-#define DEFAULT_HEIGHT 650
+//#define DEFAULT_WIDTH  750
+//#define DEFAULT_HEIGHT 650
+#define DEFAULT_CHAR_WIDTH  65
+#define DEFAULT_CHAR_HEIGHT 28
+#define DEFAULT_PIXEL_WIDTH  350
+#define DEFAULT_PIXEL_HEIGHT 200
 
 class YGWindow;
 static YGWindow *main_window = 0;
@@ -92,12 +96,18 @@ public:
 		            gtk_window_set_decorated (window, FALSE);
 		    }
 
-		    if (_main_window) {
-		    	int width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT;
-		    	if (YGUI::ui()->defaultWidth())
-		    		width = YGUI::ui()->defaultWidth();
-		    	if (YGUI::ui()->defaultHeight())
-		    		height = YGUI::ui()->defaultHeight();
+			if (_main_window) {
+				// window default width is calculated as a proportion of a default
+				// char and pixel width to compensate for the fact that each widget's
+				// required size comes from a proportion of both parameters
+				int width = YGUtils::getCharsWidth (m_widget, DEFAULT_CHAR_WIDTH);
+				width += DEFAULT_PIXEL_WIDTH;
+				int height = YGUtils::getCharsHeight (m_widget, DEFAULT_CHAR_HEIGHT);
+				height += DEFAULT_PIXEL_HEIGHT;
+
+		    	if (YGUI::ui()->isSwsingle())
+		    		height += YGUtils::getCharsHeight (m_widget, 10);
+
 				width = MIN (width, YUI::app()->displayWidth());
 				height = MIN (height, YUI::app()->displayHeight());
 
@@ -105,7 +115,7 @@ public:
 				if (YGUI::ui()->setFullscreen())
 					gtk_window_fullscreen (window);
 				else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
-					// maximize for small displays
+					// maximize window for small displays
 					gtk_window_maximize (window);
 		    }
 
@@ -427,16 +437,6 @@ void YGDialog::doSetSize (int width, int height)
 #endif
 			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
-}
-
-void YGDialog::setMinSize (int width, int height)
-{
-	GtkWidget *window = m_window->getWidget();
-	width = MIN (width, YUI::app()->displayWidth());
-	height = MIN (height, YUI::app()->displayHeight());
-	width = MAX (width, window->allocation.width),
-	height = MAX (height, window->allocation.height);
-	gtk_window_resize (GTK_WINDOW (window), width, height);
 }
 
 void YGDialog::highlight (YWidget *ywidget)

@@ -1,3 +1,20 @@
+2010-08-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/YGUI.cc & src/YGDialog.cc: bug fix 633498: set
+	default window size as a proportion of both a constant
+	number of characters and pixels.
+
+	* src/YGUtils.cc, src/ygtkwizard.c, src/pkg/YGPackageSelector.cc:
+	paned position now set in percent terms. Related to
+	previous item.
+
+	* src/YGPackageSelector.cc: bug fix 632377: when
+	show-devel or show-debug disabled, then number count
+	in the filters box was not always correct.
+
+	* src/YGUI.cc: bug fix 633173: ensure file picking
+	dialog doesn't crash when esoteric filename selected.
+
 2010-07-26 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgmenubar.cc: bug fix 624310: file >

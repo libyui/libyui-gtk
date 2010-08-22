@@ -25,7 +25,8 @@ static std::string askForFileOrDirectory (GtkFileChooserAction action,
 static void errorMsg (const char *msg)
 {
 	GtkWidget* dialog = gtk_message_dialog_new (NULL,
-		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", msg);
+		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, _("Error"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), msg);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 }
@@ -45,8 +46,7 @@ YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
 	m_have_wm = true;
-	m_no_border = m_fullscreen = false;
-    m_default_width = (m_default_height = 0);
+	m_no_border = m_fullscreen = m_swsingle = false;
 
     YGUI::setTextdomain( TEXTDOMAIN );
 
@@ -118,7 +118,7 @@ void YGUI::checkInit()
 		const char *argp = argv[i];
 		if (argp[0] != '-') {
 			if (!strcmp (argp, "sw_single") || !strcmp (argp, "online_update"))
-				YGUI::pkgSelectorSize (&m_default_width, &m_default_height);
+				m_swsingle = true;
 			continue;
 		}
 		argp++;
@@ -143,7 +143,6 @@ void YGUI::checkInit()
 				 ));
 			exit (0);
 		}
-		else if (pkgSelectorParse (argp)) ;
 	}
 
 	gtk_init (&argc, &argv);
@@ -455,11 +454,21 @@ void YGApplication::beep()
 std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title)
 {
+	GtkWindow *parent = YGDialog::currentWindow();
+	const char *button;
+	switch (action) {
+		case GTK_FILE_CHOOSER_ACTION_SAVE:
+			button = GTK_STOCK_SAVE; break;
+		case GTK_FILE_CHOOSER_ACTION_OPEN:
+			button = GTK_STOCK_OPEN; break;
+		case GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER:
+		case GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER:
+			button = _("Choose"); break;
+	}
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title.c_str(),
-		YGDialog::currentWindow(), action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		action == GTK_FILE_CHOOSER_ACTION_SAVE ? GTK_STOCK_SAVE : GTK_STOCK_OPEN,
-		GTK_RESPONSE_ACCEPT, NULL);
+		parent, action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		button, GTK_RESPONSE_ACCEPT, NULL);
 	GtkFileChooser *fileChooser = GTK_FILE_CHOOSER (dialog);
 	gtk_file_chooser_set_local_only (fileChooser, TRUE);
 	gtk_file_chooser_set_do_overwrite_confirmation (fileChooser, TRUE);
@@ -509,8 +518,10 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	std::string ret;
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		gchar *filename = gtk_file_chooser_get_filename (fileChooser);
-		ret = filename;
-		g_free (filename);
+		if (filename) {
+			ret = filename;
+			g_free (filename);
+		}
 	}
 	gtk_widget_destroy (dialog);
 	return ret;

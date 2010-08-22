@@ -133,8 +133,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), list_vbox, TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), text, FALSE, TRUE);
-		g_signal_connect_after (G_OBJECT (vpaned), "size-allocate",
-		                        G_CALLBACK (vpaned_allocate_cb), this);
+		YGUtils::setPaneRelPosition (vpaned, .65);
 
 		GtkWidget *_vbox = gtk_vbox_new (FALSE, 0);
 		gtk_box_pack_start (GTK_BOX (_vbox), hbox, FALSE, TRUE, 0);
@@ -180,7 +179,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *vpaned = gtk_vpaned_new();
 		gtk_paned_pack1 (GTK_PANED (vpaned), m_combo->getWidget(), TRUE, FALSE);
 		gtk_paned_pack2 (GTK_PANED (vpaned), status->getWidget(), FALSE, FALSE);
-		gtk_paned_set_position (GTK_PANED (vpaned), 485);
+		YGUtils::setPaneRelPosition (vpaned, .80);
 		return vpaned;
 	}
 
@@ -193,7 +192,7 @@ struct SuffixFilter : public Ypp::Match {
 		GtkWidget *hpaned = gtk_hpaned_new();
 		gtk_paned_pack1 (GTK_PANED (hpaned), createSidebar(), FALSE, TRUE);
 		gtk_paned_pack2 (GTK_PANED (hpaned), createMainArea(), TRUE, FALSE);
-		gtk_paned_set_position (GTK_PANED (hpaned), 200);
+		YGUtils::setPaneRelPosition (hpaned, .28);
 
 		m_widget = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (m_widget), hpaned, TRUE, TRUE, 0);
@@ -451,6 +450,7 @@ struct SuffixFilter : public Ypp::Match {
 				continue;
 			(*it)->writeQuery (query);
 		}
+		query.addCriteria (new SuffixFilter (this));
 
 		Ypp::List list (query);
 		widget->updateList (list);
@@ -574,15 +574,6 @@ struct SuffixFilter : public Ypp::Match {
 
 	// YGPackageSelector complementary methods
 
-	static void vpaned_allocate_cb (GtkWidget *vpaned, GtkAllocation *alloc, Impl *pThis)
-	{
-		if (!g_object_get_data (G_OBJECT (vpaned), "init")) {  // only once
-			int pos = MAX (alloc->height / 2, alloc->height - 180);
-			gtk_paned_set_position (GTK_PANED (vpaned), pos);
-			g_object_set_data (G_OBJECT (vpaned), "init", GINT_TO_POINTER (1));
-		}
-	}
-
 	static bool confirmCancel()
 	{
 		GtkWidget *dialog;
@@ -668,9 +659,6 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 	setBorder (0);
 	YGDialog *dialog = YGDialog::currentDialog();
 	dialog->setCloseCallback (confirm_cb, this);
-	int width, height;
-	YGUI::ui()->pkgSelectorSize (&width, &height);
-	dialog->setMinSize (width, height);
 
 	const char *icon, *title, **help;
 	if (onlineUpdateMode()) {

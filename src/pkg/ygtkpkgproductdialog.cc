@@ -11,6 +11,7 @@
 #include "YGi18n.h"
 #include "config.h"
 #include "YGDialog.h"
+#include "YGUtils.h"
 #include "ygtkpkgproductdialog.h"
 #include <gtk/gtk.h>
 #include "ygtkrichtext.h"
@@ -165,7 +166,7 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 	GtkWidget *vpaned = gtk_vpaned_new();
 	gtk_paned_pack1 (GTK_PANED (vpaned), scroll, TRUE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (vpaned), description_scroll, FALSE, TRUE);
-	gtk_paned_set_position (GTK_PANED (vpaned), 250);
+	YGUtils::setPaneRelPosition (vpaned, .70);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vpaned);
 
 	gtk_widget_show_all (dialog);

@@ -493,6 +493,31 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight we
 void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale)
 { YGUtils::setWidgetFont (widget, style, weight, scale); }
 
+static void paned_allocate_cb (GtkWidget *paned, GtkAllocation *alloc, gpointer _rel)
+{
+	if (!g_object_get_data (G_OBJECT (paned), "init")) {  // only once
+		gdouble rel = GPOINTER_TO_INT (_rel) / 100.;
+		gint parent_size;
+		if (gtk_orientable_get_orientation (GTK_ORIENTABLE (paned)) == GTK_ORIENTATION_HORIZONTAL)
+			parent_size = paned->allocation.width;
+		else
+			parent_size = paned->allocation.height;
+		int pos = parent_size * rel;
+		gtk_paned_set_position (GTK_PANED (paned), pos);
+		g_object_set_data (G_OBJECT (paned), "init", GINT_TO_POINTER (1));
+	}
+}
+
+void YGUtils::setPaneRelPosition (GtkWidget *paned, gdouble rel)
+{
+	gint _rel = rel * 100;
+	g_signal_connect_after (G_OBJECT (paned), "size-allocate",
+	                        G_CALLBACK (paned_allocate_cb), GINT_TO_POINTER (_rel));
+}
+
+void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel)
+{ YGUtils::setPaneRelPosition (paned, rel); }
+
 GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
 {
 	GdkPixbuf *pixbuf = NULL;
