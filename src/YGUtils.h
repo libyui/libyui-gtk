@@ -44,6 +44,9 @@ namespace YGUtils
 	/* Sets some widget font proprities. */
 	void setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale);
 
+	/* Instead of setting GtkPaned::position in pixels, do so in percents. */
+	void setPaneRelPosition (GtkWidget *paned, gdouble rel);
+
 	/* Saves some code and standardizes the error. Returns NULL if failed.
 	   Don't forget to g_object_unref it! */
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
@@ -66,6 +69,7 @@ namespace YGUtils
 
 extern "C" {
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale);
+	void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel);
 
 	void ygutils_setFilter (GtkEntry *entry, const char *validChars);
 

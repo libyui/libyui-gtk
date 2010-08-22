@@ -12,6 +12,7 @@
 #include "config.h"
 #include "ygtkpkghistorydialog.h"
 #include "YGDialog.h"
+#include "YGUtils.h"
 #include "YGPackageSelector.h"
 #include "ygtkpkglistview.h"
 #include <gtk/gtk.h>
@@ -630,7 +631,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	GtkWidget *hpaned = gtk_hpaned_new();
 	gtk_paned_pack1 (GTK_PANED (hpaned), date_scroll, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (hpaned), log_scroll, TRUE, FALSE);
-	gtk_paned_set_position (GTK_PANED (hpaned), 180);
+	YGUtils::setPaneRelPosition (hpaned, .30);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), hpaned);
 
 	gtk_widget_show_all (dialog);

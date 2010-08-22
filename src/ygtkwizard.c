@@ -26,6 +26,7 @@
 // YGUtils bridge
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
+extern void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel);
 extern const char *ygutils_mapStockIcon (const char *label);
 extern const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
@@ -820,7 +821,7 @@ void ygtk_wizard_enable_tree (YGtkWizard *wizard)
 	gtk_widget_show_all (scroll);
 
 	ygtk_wizard_set_control_widget (wizard, scroll);
-	gtk_paned_set_position (GTK_PANED (wizard->m_pane), 180);
+	ygutils_setPaneRelPosition (wizard->m_pane, .30);
 }
 
 #define ENABLE_WIDGET(enable, widget) \

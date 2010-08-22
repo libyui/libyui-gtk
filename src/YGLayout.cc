@@ -77,7 +77,7 @@ public:
 	virtual void doAddChild (YWidget *ychild, GtkWidget *container)
 	{
 		YGWidget::doAddChild (ychild, container);
-//		if (primary() == YD_HORIZ)
+		if (primary() == YD_HORIZ)
 			group.addWidget (ychild);
 	}
 

@@ -96,7 +96,7 @@ public:
 		GtkButton *button = GTK_BUTTON (getWidget());
 		if (icon.empty()) {
 			m_customIcon = false;
-			// can't remove image; just hide it
+			// no need to worry about freeing the image, let it live with button
 			GtkWidget *image = gtk_button_get_image (button);
 			if (image)
 				gtk_widget_hide (image);

@@ -38,7 +38,7 @@ public:
 
 	virtual void openInternal();
 	virtual void activate();
-	void blink();
+	void present();
 
 	virtual YEvent *waitForEventInternal (int timeout_millisec);
 	virtual YEvent *pollEventInternal();
