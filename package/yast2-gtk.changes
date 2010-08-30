@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Aug 30 18:05:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.72
+- temporarily reverting cmake fixes: we need a 11.3 version
+built in order to issue a patch.
+
+-------------------------------------------------------------------
 Mon Aug 30 17:45:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.71
