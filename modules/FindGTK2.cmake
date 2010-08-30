@@ -138,6 +138,7 @@ function(_GTK2_FIND_INCLUDE_DIR _var _hdr)
         atkmm-1.6
         cairo
         cairomm-1.0
+        gdk-pixbuf-2.0
         gdkmm-2.4
         giomm-2.4
         gtk-2.0
@@ -398,6 +399,9 @@ foreach(_GTK2_component ${GTK2_FIND_COMPONENTS})
         
         _GTK2_FIND_INCLUDE_DIR(GTK2_GOBJECT_INCLUDE_DIR gobject/gobject.h)
         _GTK2_FIND_LIBRARY    (GTK2_GOBJECT_LIBRARY gobject false true)
+
+        _GTK2_FIND_INCLUDE_DIR(GTK2_GDK_PIXBUF_INCLUDE_DIR gdk-pixbuf/gdk-pixbuf.h)
+        _GTK2_FIND_LIBRARY    (GTK2_GDK_PIXBUF_LIBRARY gdk_pixbuf false true)
 
         _GTK2_FIND_INCLUDE_DIR(GTK2_GDK_INCLUDE_DIR gdk/gdk.h)
         _GTK2_FIND_INCLUDE_DIR(GTK2_GDKCONFIG_INCLUDE_DIR gdkconfig.h)
