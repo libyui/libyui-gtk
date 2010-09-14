@@ -266,6 +266,7 @@ namespace Ypp
 	bool runSolver (bool force = false); // returns whether succesful
 	void setEnableSolver (bool enabled);  // true by default
 	bool isSolverEnabled();
+	bool showPendingLicenses (Ypp::Selectable::Type type);
 
 	// temporarily suspends run-solver while installing/removing a few packages at a time
 	// -- used by Ypp::List
@@ -273,8 +274,8 @@ namespace Ypp
 	bool finishTransactions();  // returns return of runSolver()
 
 	struct Interface {
-		virtual bool acceptLicense (Selectable &sel, const std::string &license) = 0;
-		virtual bool displayMessage (Selectable &sel, const std::string &message) = 0;
+		virtual bool showLicense (Selectable &sel, const std::string &license) = 0;
+		virtual bool showMessage (Selectable &sel, const std::string &message) = 0;
 		// resolveProblems = false to cancel the action that had that effect
 		virtual bool resolveProblems (const std::list <Problem *> &problems) = 0;
 	};

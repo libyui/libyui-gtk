@@ -1,3 +1,11 @@
+2010-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: fix bug 637761: run
+	solver one final time at apply. (backport)
+
+	* src/pkg/yzyppwrapper.h/cc: added supporting methods.
+	(backport)
+
 2010-08-23 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGUI.cc & src/YGDialog.cc: bug fix 633498: set

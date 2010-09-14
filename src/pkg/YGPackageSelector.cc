@@ -266,13 +266,13 @@ struct SuffixFilter : public Ypp::Match {
 		return confirmed;
 	}
 
-	virtual bool acceptLicense (Ypp::Selectable &sel, const std::string &license)
+	virtual bool showLicense (Ypp::Selectable &sel, const std::string &license)
 	{
 		return acceptText (sel, _("License Agreement"),
 			_("Do you accept the terms of this license?"), license);
 	}
 
-	virtual bool displayMessage (Ypp::Selectable &sel, const std::string &message)
+	virtual bool showMessage (Ypp::Selectable &sel, const std::string &message)
 	{ return acceptText (sel, _("Warning Message"), _("Install anyway"), message); }
 
 	virtual bool resolveProblems (const std::list <Ypp::Problem *> &problems)
@@ -699,6 +699,7 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 	dialog->setTitle (title);
 
 	Ypp::setInterface (impl);
+	Ypp::runSolver();  // check dependencies at start
 	impl->refreshQuery();
 
 	if (summaryMode()) popupChanges();
@@ -720,6 +721,11 @@ void YGPackageSelector::cancel()
 
 void YGPackageSelector::apply()
 {
+	if (!Ypp::runSolver()) return;  // final dependencies check
+	if (onlineUpdateMode())
+		if (!Ypp::showPendingLicenses (Ypp::Selectable::PATCH)) return;
+	if (!Ypp::showPendingLicenses (Ypp::Selectable::PACKAGE)) return;
+
 	if (Ypp::isModified()) {  // confirm
 		if (!onlineUpdateMode() && confirmUnsupported()) {
 			if (!impl->confirmUnsupported())
