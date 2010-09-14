@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Sep 14 14:18:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.68
+- sw_single: run solver at end, fixes bnc#620513.
+- got rid of included FindGTK2.cmake module.
+
+-------------------------------------------------------------------
 Wed Jul 14 11:41:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.67
