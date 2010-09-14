@@ -5,9 +5,6 @@ project (yast2-gtk)
 
 ## configure
 
-# we bundle our own FindGTK2.cmake while it isn't shipped with cmake
-set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/modules")
-
 find_package (GTK2 REQUIRED gtk)
 find_package (Libyui REQUIRED)
 find_package (Zypp REQUIRED)

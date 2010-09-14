@@ -17,6 +17,7 @@
 #include <algorithm>
 
 static Ypp::Interface *g_interface = 0;
+static bool g_autoSolver = true;
 
 // Repository
 
@@ -322,14 +323,14 @@ void Ypp::Selectable::install()
 		default: {
 			if (!m_sel->hasLicenceConfirmed()) {
 				ZyppResObject obj = m_sel->candidateObj();
-				if (obj) {
+				if (obj && g_interface && g_autoSolver) {
 					const std::string &license = obj->licenseToConfirm();
-					if (!license.empty() && g_interface)
-						if (!g_interface->acceptLicense (*this, license))
+					if (!license.empty())
+						if (!g_interface->showLicense (*this, license))
 							return;
 					const std::string &msg = obj->insnotify();
-					if (!msg.empty() && g_interface)
-						if (!g_interface->displayMessage (*this, msg))
+					if (!msg.empty())
+						if (!g_interface->showMessage (*this, msg))
 							return;
 				}
 				m_sel->setLicenceConfirmed();
@@ -379,11 +380,11 @@ void Ypp::Selectable::remove()
 				_zyppPool().eraseRequestedLocale (m_locale);
 			break;
 		default: {
-			if (m_sel->hasCandidateObj()) {
+			if (m_sel->hasCandidateObj() && g_interface && g_autoSolver) {
 				ZyppResObject obj = m_sel->candidateObj();
 				const std::string &msg = obj->delnotify();
-				if (!msg.empty() && g_interface)
-					if (!g_interface->displayMessage (*this, msg))
+				if (!msg.empty())
+					if (!g_interface->showMessage (*this, msg))
 						return;
 			}
 
@@ -832,7 +833,7 @@ void Ypp::Busy::inc()
 // Interface
 
 std::list <Ypp::SelListener *> g_sel_listeners;
-static bool g_transacting = false, g_autoSolver = true;
+static bool g_transacting = false;
 
 void Ypp::addSelListener (Ypp::SelListener *listener)
 { g_sel_listeners.push_back (listener); }
@@ -850,7 +851,6 @@ void Ypp::notifySelModified()
 void Ypp::setInterface (Ypp::Interface *interface)
 {
 	g_interface = interface;
-	runSolver();  // check problems at start
 }
 
 Ypp::Interface *Ypp::getInterface() { return g_interface; }
@@ -937,6 +937,30 @@ void Ypp::setEnableSolver (bool enabled)
 
 bool Ypp::isSolverEnabled()
 { return g_autoSolver; }
+
+bool Ypp::showPendingLicenses (Ypp::Selectable::Type type)
+{
+	const zypp::ResKind &kind = Selectable::asKind (type);
+	for (ZyppPool::const_iterator it = zyppPool().byKindBegin(kind);
+	      it != zyppPool().byKindEnd(kind); it++) {
+		ZyppSelectable zsel = (*it);
+		switch (zsel->status()) {
+			case zypp::ui::S_Install: case zypp::ui::S_AutoInstall:
+			case zypp::ui::S_Update: case zypp::ui::S_AutoUpdate:
+				if (zsel->candidateObj()) {
+					std::string license = zsel->candidateObj()->licenseToConfirm();
+					if (!license.empty())
+						if (!zsel->hasLicenceConfirmed()) {
+							Selectable sel (zsel);
+							if (!g_interface->showLicense (sel, license))
+								return false;
+						}
+				}
+			default: break;
+		}
+	}
+	return true;
+}
 
 void Ypp::startTransactions()
 { g_transacting = true; }

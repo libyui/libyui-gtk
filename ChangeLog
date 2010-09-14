@@ -1,3 +1,12 @@
+2010-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc: fix bug 637761: run
+	solver one final time at apply.
+
+	* src/pkg/yzyppwrapper.h/cc: added supporting methods.
+
+	* CMakeLists.txt: remove included FindGTK2.cmake module.
+
 2010-08-29 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* yast2-gtk.spec.in: add gdk-pixbuf-devel to
