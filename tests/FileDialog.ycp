@@ -50,13 +50,14 @@
 		UI::CloseDialog();
 
 		if (action == `open_file)
-			ret_path = UI::AskForSaveFileName (start_path, filter_str, "Choose a File");
+			ret_path = UI::AskForExistingFile (start_path, filter_str, "Choose a File");
 		else if (action == `save_file)
 			ret_path = UI::AskForSaveFileName (start_path, filter_str, "Choose a File");
 		else if (action == `select_folder)
-			ret_path = UI::AskForSaveFileName (start_path, filter_str, "Choose a Folder");
+			ret_path = UI::AskForExistingDirectory (start_path, "Choose a Folder");
 		
-		if (ret_path != nil)
-			show_selected (ret_path);
+		if (ret_path == nil)
+			ret_path = "(none)";
+		show_selected (ret_path);
 	}
 }
