@@ -734,7 +734,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_menu_item (submenu, _("Show Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
 		if (!selector->onlineUpdateMode())
-			append_menu_item (submenu, _("Show Logs"), NULL,
+			append_menu_item (submenu, _("Show History"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, _("Install All Matching -devel Packages"), NULL,

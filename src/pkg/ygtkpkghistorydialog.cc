@@ -412,7 +412,7 @@ static void date_selection_changed_cb (GtkTreeSelection *selection, GtkTreeView 
 
 static void save_to_file (GtkWindow *parent)
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Save logs to"), parent,
+	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Save to"), parent,
 		GTK_FILE_CHOOSER_ACTION_SAVE, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
 	gtk_file_chooser_set_local_only (GTK_FILE_CHOOSER (dialog), TRUE);
@@ -618,7 +618,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE,
-		_("Logs (%s)"), FILENAME);
+		_("History (%s)"), FILENAME);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_JUMP_TO, 1);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to File"), 2);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);
