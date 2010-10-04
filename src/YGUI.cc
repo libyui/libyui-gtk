@@ -3,7 +3,7 @@
  ********************************************************************/
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include <string.h>

@@ -1,3 +1,12 @@
+2010-10-04 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/*.cc & src/pkg/*.cc: general string review,
+	and text domain change from "yast2-gtk" to "gtk".
+
+	* src/pkg/ygtkpkgdetailview.cc: on the dependencies
+	expander, show '"' for available version information
+	when that text is the same of the installed version.
+
 2010-09-14 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: fix bug 637761: run

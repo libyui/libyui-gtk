@@ -1,9 +1,60 @@
 -------------------------------------------------------------------
-Tue Sep 14 14:18:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+Mon Oct 04 16:21:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
-- 2.21.68
+- 2.21.75
 - sw_single: run solver at end, fixes bnc#620513.
 - got rid of included FindGTK2.cmake module.
+- overall string review.
+- text domain changed from "yast2-gtk" to "gtk".
+
+-------------------------------------------------------------------
+Thu Sep 30 18:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.74
+- rpm spec fix (now compatible for both 11.3 and factory).
+
+-------------------------------------------------------------------
+Tue Sep 14 14:48:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.73
+- sw_single: run solver at end, fixes bnc#620513.
+
+-------------------------------------------------------------------
+Mon Aug 30 18:05:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.72
+- temporarily reverting cmake fixes: we need a 11.3 version
+built in order to issue a patch.
+
+-------------------------------------------------------------------
+Mon Aug 30 17:45:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.71
+- fix compilation error on Factory (bnc#635352)
+- uploading the 11.3 branch for patching purposes (bnc#624310).
+
+-------------------------------------------------------------------
+Mon Aug 23 00:40:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.70
+- sw_single: package count wrong on the filters box when
+show-debug or show-devel when de-selected (bcn#632377)
+- fixed potential crash when file picking file of esoteric
+filename (bnc#633173)
+- window size too small when using big fonts: correlate
+window size to font size (bnc#633498)
+
+-------------------------------------------------------------------
+Mon Jul 26 19:28:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.69
+- sw_single: fix file > import / export menu items (bcn#624310)
+
+-------------------------------------------------------------------
+Wed Jul 14 13:39:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.68
+- sw_single: fixed duplicate separator item in context menu.
 
 -------------------------------------------------------------------
 Wed Jul 14 11:41:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt

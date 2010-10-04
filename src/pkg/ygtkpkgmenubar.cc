@@ -5,7 +5,7 @@
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -214,7 +214,7 @@ importSelectable( ZyppSel		selectable,
 
 static void import_file_cb (GtkMenuItem *item)
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Load Package List"),
+	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Import"),
 		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_OPEN,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL);
@@ -290,10 +290,10 @@ static void import_file_cb (GtkMenuItem *item)
 
 		YGPackageSelector::get()->popupChanges();
 	}
-	catch ( const zypp::Exception & exception )
+	catch (const zypp::Exception & exception)
 	{
 	    yuiWarning() << "Error reading package list from " << filename << endl;
-	    char *text = g_strdup_printf (_("Error loading package list from '%s'"), filename);
+	    char *text = g_strdup_printf (_("Could not load package list: '%s'"), filename);
 		errorMsg (text);
 		g_free (text);
 	}
@@ -307,7 +307,7 @@ static void import_file_cb (GtkMenuItem *item)
 
 static void export_file_cb (GtkMenuItem *item)
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Save Package List"),
+	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Export"),
 		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_SAVE,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
@@ -364,7 +364,7 @@ static void export_file_cb (GtkMenuItem *item)
 	    g_remove (filename);
 
 	    // Post error popup
-	    char *text = g_strdup_printf (_("Error exporting package list to '%s'"), filename);
+	    char *text = g_strdup_printf (_("Could not export package list: '%s'"), filename);
 		errorMsg (text);
 		g_free (text);
 	}
@@ -379,13 +379,13 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 {
 	const char *dirname = "/var/log/YaST2/solverTestcase";
 	std::string msg = _("Use this to generate extensive logs to help tracking down "
-	                  "bugs in the dependency resolver.\nThe logs will be stored in "
+	                  "bugs in the dependency solver.\nThe logs will be stored in "
 	                  "directory: ");
 	msg += dirname;
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
-		"%s", _("Create Dependency Resolver Test Case"));
+		"%s", _("Create Dependency Solver Test Case"));
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", msg.c_str());
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
@@ -400,11 +400,11 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 			GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 				GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
 				GTK_BUTTONS_YES_NO, "%s", _("Success"));
-			msg = _("Dependency resolver test case written to");
+			msg = _("Dependency solver test case written to");
 			msg += " <tt>";
 			msg += dirname;
 			msg += "</tt>\n";
-			msg += _("Prepare <tt>y2logs.tgz tar</tt> archive to attach to Bugzilla?");
+			msg += _("Also create a <tt>y2logs.tgz</tt> tar archive to attach to bugzilla?");
 			gtk_message_dialog_format_secondary_markup (GTK_MESSAGE_DIALOG (dialog),
                                                                                 "%s", msg.c_str());
 			ret = gtk_dialog_run (GTK_DIALOG (dialog));
@@ -413,7 +413,7 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 				YGUI::ui()->askSaveLogs();
 	    }
 	    else {
-	    	msg = _("Failed to create dependency resolver test case.\n"
+	    	msg = _("Failed to create dependency solver test case.\n"
 				"Please check disk space and permissions for");
 			msg += " <tt>";
 			msg += dirname;
@@ -731,10 +731,10 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("Show Products"), NULL,
 			G_CALLBACK (show_products_cb), this);
-		append_menu_item (submenu, _("Show Package Changes"), NULL,
+		append_menu_item (submenu, _("Show Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
 		if (!selector->onlineUpdateMode())
-			append_menu_item (submenu, _("Show History of Changes"), NULL,
+			append_menu_item (submenu, _("Show Logs"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, _("Install All Matching -devel Packages"), NULL,
@@ -744,7 +744,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_menu_item (submenu, _("Install All Matching -debug-source Packages"), NULL,
 			G_CALLBACK (install_all_debug_source_pkgs_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
-		append_menu_item (submenu, _("Generate Dependency Resolver Test Case"), NULL,
+		append_menu_item (submenu, _("Generate Dependency Solver Test Case"), NULL,
 			G_CALLBACK (create_solver_testcase_cb), this);
 		append_menu_item (submenu, _("Reset Ignored Dependency Conflicts"), NULL,
 			G_CALLBACK (reset_ignored_dependency_conflicts_cb), this);

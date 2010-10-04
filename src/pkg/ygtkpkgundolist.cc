@@ -5,7 +5,7 @@
 // check the header file for information about this utility
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"

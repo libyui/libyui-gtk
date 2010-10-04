@@ -5,7 +5,7 @@
 // check the header file for information about this translator
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -28,11 +28,16 @@ zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 	case YPKG_GROUP_PROGRAMMING:		return _( "Programming"		);
 	case YPKG_GROUP_MULTIMEDIA:		return _( "Multimedia"		);
 	case YPKG_GROUP_SYSTEM:		return _( "System"		);
+	// Translators: keep translation short
 	case YPKG_GROUP_DESKTOP_GNOME:	return _( "Desktop (GNOME)"	);
+	// Translators: keep translation short
 	case YPKG_GROUP_DESKTOP_KDE:		return _( "Desktop (KDE)"		);
+	// Translators: keep translation short
 	case YPKG_GROUP_DESKTOP_XFCE:	return _( "Desktop (XFCE)"	);
+	// Translators: keep translation short
 	case YPKG_GROUP_DESKTOP_OTHER:	return _( "Desktop (Others)"	);
 	case YPKG_GROUP_PUBLISHING:		return _( "Publishing"		);
+	// Translators: keep translation short
 	case YPKG_GROUP_ADMIN_TOOLS:		return _( "Admin Tools"		);
 	case YPKG_GROUP_LOCALIZATION:	return _( "Localization"	);
 	case YPKG_GROUP_SECURITY:		return _( "Security"		);
@@ -41,10 +46,10 @@ zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 	case YPKG_GROUP_DOCUMENTATION:		return _( "Documentation"		);
 	case YPKG_GROUP_UTILITIES:		return _( "Utilities"		);
 
-	case YPKG_GROUP_UNKNOWN:		return _( "Unknown Group"	);
+	case YPKG_GROUP_UNKNOWN:		return _( "Unknown"	);
 	case YPKG_GROUP_SUGGESTED:		return _( "Suggested"	);
 	case YPKG_GROUP_RECOMMENDED:		return _( "Recommended"	);
-	case YPKG_GROUP_ORPHANED:		return _( "Orphaned"	);
+	case YPKG_GROUP_ORPHANED:		return _( "Unmaintained"	);
 	case YPKG_GROUP_RECENT:		return _( "Recent"	);
 	case YPKG_GROUP_MULTIVERSION:		return _( "Multiversion"	);
 	case YPKG_GROUP_TOTAL: break;

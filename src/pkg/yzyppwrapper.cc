@@ -5,7 +5,7 @@
 // check the header file for information about this wrapper
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "config.h"
@@ -145,7 +145,7 @@ std::string Ypp::Selectable::summary()
 			int installed, total;
 			col.stats (&installed, &total);
 			std::ostringstream stream;
-			stream << _("Installed: ") << installed << _(" of ") << total;
+			stream << _("Installed:") << " " << installed << " " << _("of") << " " << total;
 			return stream.str();
 		}
 		default: break;
@@ -731,11 +731,15 @@ int Ypp::Patch::priorityTotal()
 const char *Ypp::Patch::prioritySummary (int priority)
 {
 	switch (priority) {
+		// Translators: this refers to patch priority
 		case 0: return _("Security");
+		// Translators: this refers to patch priority
 		case 1: return _("Recommended");
 		case 2: return "YaST";
 		case 3: return _("Documentation");
+		// Translators: this refers to patch priority
 		case 4: return _("Optional");
+		// Translators: this refers to patch priority
 		case 5: return _("Other");
 	}
 	return 0;

@@ -1,11 +1,11 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* YGtkPkgMenuBar, menu bar */
+/* YGtkPkgHistoryDialog, dialog */
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -47,8 +47,11 @@ static std::string reqbyTreatment (const std::string &reqby)
 {
 	if (reqby.empty())
 		return _("automatic");
-	if (reqby.compare (0, 4, "root", 4) == 0)
-		return _("user: root");
+	if (reqby.compare (0, 4, "root", 4) == 0) {
+		std::string str (_("user:"));
+		str += " root";
+		return str;
+	}
 	return reqby;
 }
 
@@ -508,7 +511,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	GtkCellRenderer *renderer, *pix_renderer;
 	GtkTreeViewColumn *column;
 
-	GtkWidget *log_view = ygtk_tree_view_new (_("No log entries."));
+	GtkWidget *log_view = ygtk_tree_view_new (_("No entries."));
 	gtk_tree_view_set_search_column (GTK_TREE_VIEW (log_view), LogListHandler::SHORTCUT_COLUMN);
 	gtk_tree_view_set_fixed_height_mode (GTK_TREE_VIEW (log_view), TRUE);
 	gtk_tree_view_set_rules_hint (GTK_TREE_VIEW (log_view), TRUE);
@@ -615,7 +618,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_OTHER, GTK_BUTTONS_NONE,
-		_("History of Changes (%s)"), FILENAME);
+		_("Logs (%s)"), FILENAME);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_JUMP_TO, 1);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), _("Save to File"), 2);
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE);

@@ -5,7 +5,7 @@
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -760,22 +760,27 @@ struct DependenciesExpander : public DetailExpander {
 		Ypp::Selectable sel = list.get (0);
 
 		clear();
-		std::string i ("<i>"), _i ("</i>");
-		std::string installed_str (i + _("Installed Version") + _i);
-		std::string candidate_str (i + _("Available Version") + _i);
-		if (sel.hasInstalledVersion())
+		std::string i ("<i>"), _i ("</i>"), b ("<b>"), _b ("</b>");
+		std::string installed_str (i + b + _("Installed Version:") + _b + _i);
+		std::string candidate_str (i + b + _("Available Version:") + _b + _i);
+		bool hasInstalled = sel.hasInstalledVersion(),
+			hasCandidate = sel.hasCandidateVersion();
+		if (hasInstalled)
 			installed_str += "<br>" + sel.installed().number();
-		if (sel.hasCandidateVersion())
+		if (hasCandidate)
 			candidate_str += "<br>" + sel.candidate().number();
 		addLine ("", installed_str, candidate_str, -1);
 		for (int dep = 0; dep < VersionDependencies::total(); dep++) {
 			std::string inst, cand;
-			if (sel.hasInstalledVersion())
+			if (hasInstalled)
 				inst = VersionDependencies (sel.installed()).getText (dep);
-			if (sel.hasCandidateVersion())
+			if (hasCandidate)
 				cand = VersionDependencies (sel.candidate()).getText (dep);
-			if (!inst.empty() || !cand.empty())
+			if (!inst.empty() || !cand.empty()) {
+				if (inst == cand)
+					cand = i + _("idem") + _i;
 				addLine (VersionDependencies::getLabel (dep), inst, cand, dep);
+			}
 		}
 		gtk_widget_show_all (vbox);
 	}

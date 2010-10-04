@@ -5,7 +5,7 @@
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #define YUILogComponent "gtk"
@@ -940,8 +940,10 @@ std::string getStatusSummary (Ypp::Selectable &sel)
 		text = _("To remove");
 	else if (sel.isInstalled()) {
 		text = _("Installed");
-		if (sel.hasUpgrade())
-			text += _(" (upgrade available)");
+		if (sel.hasUpgrade()) {
+			text += " ";
+			text += _("(upgrade available)");
+		}
 	}
 	else
 		text = _("Not installed");
@@ -982,7 +984,7 @@ const char *getStatusStockIcon (Ypp::Selectable &sel)
 std::string getRepositoryLabel (Ypp::Repository &repo)
 {
 	std::string name (repo.name()), url, str;
-	url = repo.isSystem() ? _("Local database") : repo.url();
+	url = repo.isSystem() ? _("System") : repo.url();
 	str.reserve (name.size() + url.size() + 64);
 	str = name + "\n";
 	str += "<span color=\"" GRAY_COLOR "\">";

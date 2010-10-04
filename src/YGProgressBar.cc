@@ -3,7 +3,7 @@
  ********************************************************************/
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #define YUILogComponent "gtk"

@@ -5,7 +5,7 @@
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -199,12 +199,12 @@ YGtkPkgStatusModel::YGtkPkgStatusModel()
 	}
 	else {
 		// Translators: "Any status" may be translated as "All statuses" (whichever's smaller)
-		addRow (NULL, _("Any status"), true, 0);
+		addRow (NULL, _("All packages"), true, 0);
 		// Translators: this refers to the package status
 		addRow (NULL, _("Not installed"), true, 0);
 		addRow (NULL, _("Installed"), true, 0);
 		// Translators: refers to package status: may be translated as "Upgrade"
-		addRow (NULL, _("Upgradable"), true, 0, false);
+		addRow (NULL, _("Upgrades"), true, 0, false);
 		// Translators: this refers to the package status
 		addRow (NULL, _("Locked"), true, 0, false);
 		addRow (NULL, _("Modified"), true, 0, false);
@@ -270,7 +270,7 @@ GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button, *icon;
 
 		// Translators: if you prefer, translate this as "Apply Patches"
-		button = gtk_button_new_with_label (_("Upgrade Patches"));
+		button = gtk_button_new_with_label (_("Apply Patches"));
 		gtk_widget_set_sensitive (button, hasPatches);
 		g_signal_connect (G_OBJECT (button), "clicked",
 		                  G_CALLBACK (upgrade_patches_clicked_cb), this);
@@ -564,7 +564,7 @@ bool YGtkPkgSupportModel::writeRowQuery (Ypp::PoolQuery &query, int row, gpointe
 YGtkPkgPriorityModel::YGtkPkgPriorityModel()
 {
 		// Translators: "Any priority" may be translated as "All priorities" (whichever's smaller)
-	addRow (NULL, _("Any priority"), true, 0);
+	addRow (NULL, _("All patches"), true, 0);
 	for (int i = 0; i < Ypp::Patch::priorityTotal(); i++)
 		addRow (NULL, Ypp::Patch::prioritySummary (i), true, 0, false);
 }

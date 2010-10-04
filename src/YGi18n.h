@@ -6,7 +6,7 @@
 #define YGi18n_h
 
 #include <libintl.h>
-#define TEXTDOMAIN "yast2-gtk"
+#define TEXTDOMAIN "gtk"
 
 static inline const char *_(const char *msgid)
 { return dgettext (TEXTDOMAIN, msgid); }

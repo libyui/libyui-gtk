@@ -1,9 +1,12 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
-/* Textdomain "yast2-gtk" */
 /* YGtkPkgQueryCombo, an umbrella for any group of QueryWidget widgets */
 // check the header file for information about this widget
+
+/*
+  Textdomain "yast2-gtk"
+ */
 
 #define YUILogComponent "gtk-pkg"
 #include "YGi18n.h"

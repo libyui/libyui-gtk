@@ -5,7 +5,7 @@
 // check the header file for information about this widget
 
 /*
-  Textdomain "yast2-gtk"
+  Textdomain "gtk"
  */
 
 #include "YGi18n.h"
@@ -237,7 +237,7 @@ GtkWidget *YGtkPkgSearchEntry::createToolbox()
 				break;
 			case 2: {
 				GtkWidget *label = gtk_label_new (
-					_("Search by file name is only reliable for installed packages."));
+					_("Search by file name only reliable for installed packages."));
 				gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 				GtkWidget *icon = gtk_image_new_from_stock (
 					GTK_STOCK_DIALOG_WARNING, GTK_ICON_SIZE_BUTTON);
