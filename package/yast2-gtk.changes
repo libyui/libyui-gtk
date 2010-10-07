@@ -1,37 +1,19 @@
 -------------------------------------------------------------------
-Mon Oct 04 16:21:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+Thu Oct 07 13:22:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
-- 2.21.75
+- 2.21.76
 - sw_single: run solver at end, fixes bnc#620513.
+- rpm spec fix (now compatible with both 11.3 and factory).
 - got rid of included FindGTK2.cmake module.
 - overall string review.
 - text domain changed from "yast2-gtk" to "gtk".
 
 -------------------------------------------------------------------
-Thu Sep 30 18:32:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+Mon Aug 30 10:48:27 CEST 2010 - vuntz@opensuse.org
 
-- 2.21.74
-- rpm spec fix (now compatible for both 11.3 and factory).
-
--------------------------------------------------------------------
-Tue Sep 14 14:48:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
-
-- 2.21.73
-- sw_single: run solver at end, fixes bnc#620513.
-
--------------------------------------------------------------------
-Mon Aug 30 18:05:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
-
-- 2.21.72
-- temporarily reverting cmake fixes: we need a 11.3 version
-built in order to issue a patch.
-
--------------------------------------------------------------------
-Mon Aug 30 17:45:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
-
-- 2.21.71
-- fix compilation error on Factory (bnc#635352)
-- uploading the 11.3 branch for patching purposes (bnc#624310).
+- Add yast2-gtk-fix-FindGTK2-gdk-pixbuf.patch to fix build with
+  gtk2 2.21.x: gdk-pixbuf was split and the include paths are
+  different now.
 
 -------------------------------------------------------------------
 Mon Aug 23 00:40:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
