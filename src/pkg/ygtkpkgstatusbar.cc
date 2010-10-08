@@ -91,14 +91,17 @@ struct LastChange {
 			if (sel->toModifyAuto())
 				str = g_strdup_printf (_("<b>%s</b> %d preselected packages"), action, auto_count);
 			else {
-				const char *format;
-				if (auto_count > 1)
-					format = _("<b>%s</b> %s, plus %d dependencies");
-				else if (auto_count == 1)
-					format = _("<b>%s</b> %s, plus 1 dependency");
-				else
-					format = "<b>%s</b> %s";
-				str = g_strdup_printf (format, action, sel->name().c_str(), auto_count);
+				if (auto_count == 0)
+					str = g_strdup_printf ("<b>%s</b> %s", action, sel->name().c_str());
+				else {
+					char *deps;
+					if (auto_count == 1)
+						deps = g_strdup (_("plus 1 dependency"));
+					else
+						deps = g_strdup_printf (_("plus %d dependencies"), auto_count);
+					str = g_strdup_printf ("<b>%s</b> %s, %s", action, sel->name().c_str(), deps);
+					g_free (deps);
+				}
 			}
 
 			gtk_label_set_markup (GTK_LABEL (text), str);

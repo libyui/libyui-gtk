@@ -273,7 +273,7 @@ struct SuffixFilter : public Ypp::Match {
 	}
 
 	virtual bool showMessage (Ypp::Selectable &sel, const std::string &message)
-	{ return acceptText (sel, _("Warning Message"), _("Install anyway"), message); }
+	{ return acceptText (sel, _("Warning Message"), _("Install anyway?"), message); }
 
 	virtual bool resolveProblems (const std::list <Ypp::Problem *> &problems)
 	{

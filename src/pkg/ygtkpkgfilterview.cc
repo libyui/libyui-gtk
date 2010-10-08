@@ -269,8 +269,8 @@ GtkWidget *YGtkPkgStatusModel::createToolboxRow (int row)
 
 		GtkWidget *hbox = gtk_hbox_new (FALSE, 6), *button, *icon;
 
-		// Translators: if you prefer, translate this as "Apply Patches"
-		button = gtk_button_new_with_label (_("Apply Patches"));
+		// Translators: this is shown next to the "Upgrade All" button
+		button = gtk_button_new_with_label (_("Only Upgrade Patches"));
 		gtk_widget_set_sensitive (button, hasPatches);
 		g_signal_connect (G_OBJECT (button), "clicked",
 		                  G_CALLBACK (upgrade_patches_clicked_cb), this);

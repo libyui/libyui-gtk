@@ -24,8 +24,12 @@
 #define BROWSER_BIN "/usr/bin/firefox"
 #define GNOME_OPEN_BIN "/usr/bin/gnome-open"
 
-static const char *onlyInstalledMsg =
-	_("<i>Information only available for installed packages.</i>");
+static std::string onlyInstalledMsg() {
+	std::string s ("<i>");
+	s += _("Information only available for installed packages.");
+	s += "</i>";
+	return s;
+}
 
 #if 0
 static const char *keywordOpenTag = "<font color=\"#000000\" bgcolor=\"#ffff00\">";
@@ -188,17 +192,14 @@ struct DetailDescription : public DetailWidget {
 
 			GtkWidget *item;
 			if (g_file_test (BROWSER_BIN, G_FILE_TEST_IS_EXECUTABLE)) {
-				std::string label;
+				std::string label ("_Open");
 				if (getuid() == 0) {
 					const char *username = getenv ("USERNAME");
 					if (!username || !(*username))
 						username = "root";
-					label = _("_Open (as ");
-					label += username;
-					label += ")";
+					label += " ("; label += _("as");
+					label += " "; label += username; label += ")";
 				}
-				else
-					label = _("_Open");
 				item = gtk_image_menu_item_new_with_mnemonic (label.c_str());
 				gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item),
 					gtk_image_new_from_stock (GTK_STOCK_OPEN, GTK_ICON_SIZE_MENU));
@@ -776,11 +777,8 @@ struct DependenciesExpander : public DetailExpander {
 				inst = VersionDependencies (sel.installed()).getText (dep);
 			if (hasCandidate)
 				cand = VersionDependencies (sel.candidate()).getText (dep);
-			if (!inst.empty() || !cand.empty()) {
-				if (inst == cand)
-					cand = i + _("idem") + _i;
+			if (!inst.empty() || !cand.empty())
 				addLine (VersionDependencies::getLabel (dep), inst, cand, dep);
-			}
 		}
 		gtk_widget_show_all (vbox);
 	}
@@ -797,16 +795,17 @@ struct DependenciesExpander : public DetailExpander {
 
 		static const char *getLabel (int dep)
 		{
+			
 			switch ((zypp::Dep::for_use_in_switch) dep) {
-				case zypp::Dep::PROVIDES_e: return _("Provides:");
-				case zypp::Dep::PREREQUIRES_e: return _("Pre-requires:");
-				case zypp::Dep::REQUIRES_e: return _("Requires:");
-				case zypp::Dep::CONFLICTS_e: return _("Conflicts:");
-				case zypp::Dep::OBSOLETES_e: return _("Obsoletes:");
-				case zypp::Dep::RECOMMENDS_e: return _("Recommends:");
-				case zypp::Dep::SUGGESTS_e: return _("Suggests:");
-				case zypp::Dep::ENHANCES_e: return _("Enhances:");
-				case zypp::Dep::SUPPLEMENTS_e: return _("Supplements:");
+				case zypp::Dep::PROVIDES_e: return "Provides:";
+				case zypp::Dep::PREREQUIRES_e: return "Pre-requires:";
+				case zypp::Dep::REQUIRES_e: return "Requires:";
+				case zypp::Dep::CONFLICTS_e: return "Conflicts:";
+				case zypp::Dep::OBSOLETES_e: return "Obsoletes:";
+				case zypp::Dep::RECOMMENDS_e: return "Recommends:";
+				case zypp::Dep::SUGGESTS_e: return "Suggests:";
+				case zypp::Dep::ENHANCES_e: return "Enhances:";
+				case zypp::Dep::SUPPLEMENTS_e: return "Supplements:";
 			}
 			return 0;
 		}
@@ -894,7 +893,7 @@ struct FilelistExpander : public DetailExpander {
 		if (sel.isInstalled())
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), filelist (sel).c_str());
 		else
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg);
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg().c_str());
 	}
 
 	virtual void showRefreshList (Ypp::List list) {}
@@ -1009,7 +1008,7 @@ struct ChangelogExpander : public DetailExpander {
 		if (sel.isInstalled())
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), changelog (sel).c_str());
 		else
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg);
+			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), onlyInstalledMsg().c_str());
 	}
 
 	virtual void showRefreshList (Ypp::List list) {}
@@ -1057,10 +1056,10 @@ struct AuthorsExpander : public DetailExpander {
 	{
 		Ypp::Selectable sel = list.get (0);
 		std::string str (authors (sel));
-		if (str.empty())
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), _("<i>Not specified.</i>"));
-		else
-			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
+		if (str.empty()) {
+			str = "<i>"; str += _("Attribute not-specified."); str += "</i>";
+		}
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (text), str.c_str());
 	}
 
 	virtual void showRefreshList (Ypp::List list) {}

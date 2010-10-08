@@ -366,8 +366,7 @@ static void export_file_cb (GtkMenuItem *item)
 	    // Post error popup
 	    std::string str (_("Could not save to:"));
 	    str += " "; str += filename;
-		errorMsg (text);
-		g_free (text);
+		errorMsg (str);
 	}
 
 	g_free (filename);
@@ -380,8 +379,8 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 {
 	const char *dirname = "/var/log/YaST2/solverTestcase";
 	std::string msg (_("Use this to generate extensive logs to help tracking "
-		"down bugs in the dependencies resolver.");
-	msg += "\n"; msg += _("The logs will be saved to the directory:"));
+		"down bugs in the dependencies resolver."));
+	msg += "\n"; msg += _("The logs will be saved to the directory:");
 	msg += " "; msg += dirname;
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
