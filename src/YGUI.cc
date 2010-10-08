@@ -45,7 +45,6 @@ YUI *createUI( bool withThreads )
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
-	m_have_wm = true;
 	m_no_border = m_fullscreen = m_swsingle = false;
 
     YGUI::setTextdomain( TEXTDOMAIN );
@@ -124,23 +123,19 @@ void YGUI::checkInit()
 		argp++;
 		if (argp[0] == '-') argp++;
 
-		if (!strcmp (argp, "no-wm"))
-			m_have_wm = false;
-		else if (!strcmp (argp, "fullscreen"))
+		if (!strcmp (argp, "fullscreen"))
 			m_fullscreen = true;
 		else if (!strcmp (argp, "noborder"))
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
 			printf (
-				 _("Command line options for the YaST2 UI (Gtk plugin):\n\n"
-				 "--no-wm       assume no window manager is running\n"
-				 "--noborder    no window manager border for main dialogs\n"
-				 "--fullscreen  use full screen for main dialogs\n"
-//				 "--geometry WxH sets a default size of W per H to main dialogs\n"
-				 "--nothreads   run without additional UI threads\n"
-				 "--help        prints this help text\n"
-				 "\n"
-				 ));
+				_("Command line options for the YaST2 UI (GTK plugin):\n\n"
+				"--noborder    no window manager border for main dialogs\n"
+				"--fullscreen  use full screen for main dialogs\n"
+				"--nothreads   run without additional UI threads\n"
+				"--help        prints this help text\n"
+				"\n"
+				));
 			exit (0);
 		}
 	}
@@ -290,7 +285,7 @@ YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 void YGUI::askPlayMacro()
 {
 	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
-		DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Select Macro File to Play"));
+		DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Open Macro file"));
 	if (!filename.empty()) {
 		busyCursor();
 		YMacro::play (filename);
@@ -312,7 +307,7 @@ void YGUI::toggleRecordMacro()
 	}
 	else {
 		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-			DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Select Macro File to Record to"));
+			DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Save Macro"));
 		if (!filename.empty())
 			YMacro::record (filename);
 	}
@@ -321,7 +316,7 @@ void YGUI::toggleRecordMacro()
 void YGUI::askSaveLogs()
 {
 	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
-		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs to..."));
+		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs"));
 	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
 		command += " '" + filename + "'";
@@ -331,7 +326,7 @@ void YGUI::askSaveLogs()
 			yuiMilestone() << "y2logs saved to " << filename << endl;
 		else {
 			char *error = g_strdup_printf (
-				_("Error: couldn't save y2logs: \"%s\" (exit value: %d)"),
+				_("Could not run: '%s' (exit value: %d)"),
 				command.c_str(), ret);
 			yuiError() << error << endl;
 			errorMsg (error);
@@ -369,7 +364,7 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 
 	if (!shot) {
 		if (interactive)
-			errorMsg (_("Couldn't take a screenshot."));
+			errorMsg (_("Could not take screenshot."));
 		return;
 	}
 
@@ -410,7 +405,7 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		yuiDebug() << "screenshot: " << filename << endl;
 
 		filename = askForFileOrDirectory (
-			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", _("Save screenshot to"));
+			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", _("Save screenshot"));
 		if (filename.empty()) {  // user dismissed the dialog
 			yuiDebug() << "Save screen shot canceled by user\n";
 			goto makeScreenShot_ret;
@@ -422,10 +417,11 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 
 	yuiDebug() << "Saving screen shot to " << filename << endl;
 	if (!gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
-		string msg = _("Couldn't save screenshot to file ") + filename;
+		string msg = _("Could not save to:");
+		msg += " "; msg += filename;
 		if (error) {
-			msg += "\n";
-			msg += std::string ("\n") + error->message;
+			msg += "\n"; msg += "\n";
+			msg += error->message;
 		}
 		yuiError() << msg << endl;
 		if (interactive)
@@ -463,7 +459,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 			button = GTK_STOCK_OPEN; break;
 		case GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER:
 		case GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER:
-			button = _("Choose"); break;
+			button = _("Select"); break;
 	}
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title.c_str(),

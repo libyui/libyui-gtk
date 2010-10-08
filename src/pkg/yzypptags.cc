@@ -49,6 +49,7 @@ zypp_tag_group_enum_to_localised_text (YPkgGroupEnum group)
 	case YPKG_GROUP_UNKNOWN:		return _( "Unknown"	);
 	case YPKG_GROUP_SUGGESTED:		return _( "Suggested"	);
 	case YPKG_GROUP_RECOMMENDED:		return _( "Recommended"	);
+	// Translators: this refers to packages no longer available in any repository.
 	case YPKG_GROUP_ORPHANED:		return _( "Unmaintained"	);
 	case YPKG_GROUP_RECENT:		return _( "Recent"	);
 	case YPKG_GROUP_MULTIVERSION:		return _( "Multiversion"	);

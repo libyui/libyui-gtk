@@ -63,13 +63,11 @@ private:
     static gboolean busy_timeout_cb (gpointer data);
 
     // window-related arguments
-    bool m_have_wm, m_no_border, m_fullscreen;
-    bool m_swsingle;
+    bool m_no_border, m_fullscreen, m_swsingle;
 
 public:
     // Helpers for internal use [ visibility hidden ]
     bool setFullscreen() const { return m_fullscreen; }
-    bool hasWM() const         { return m_have_wm; }
     bool unsetBorder() const   { return m_no_border; }
     bool isSwsingle() const    { return m_swsingle; }
 };

@@ -214,7 +214,7 @@ importSelectable( ZyppSel		selectable,
 
 static void import_file_cb (GtkMenuItem *item)
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Import"),
+	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Import from"),
 		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_OPEN,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 		GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT, NULL);
@@ -293,9 +293,9 @@ static void import_file_cb (GtkMenuItem *item)
 	catch (const zypp::Exception & exception)
 	{
 	    yuiWarning() << "Error reading package list from " << filename << endl;
-	    char *text = g_strdup_printf (_("Could not load package list: '%s'"), filename);
-		errorMsg (text);
-		g_free (text);
+	    std::string str (_("Could not open:"));
+	    str += " "; str += filename;
+		errorMsg (str);
 	}
 
 	g_free (filename);
@@ -307,7 +307,7 @@ static void import_file_cb (GtkMenuItem *item)
 
 static void export_file_cb (GtkMenuItem *item)
 {
-	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Export"),
+	GtkWidget *dialog = gtk_file_chooser_dialog_new (_("Export to"),
 		YGDialog::currentWindow(), GTK_FILE_CHOOSER_ACTION_SAVE,
 		GTK_STOCK_CANCEL, GTK_RESPONSE_REJECT,
 		GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT, NULL);
@@ -364,7 +364,8 @@ static void export_file_cb (GtkMenuItem *item)
 	    g_remove (filename);
 
 	    // Post error popup
-	    char *text = g_strdup_printf (_("Could not export package list: '%s'"), filename);
+	    std::string str (_("Could not save to:"));
+	    str += " "; str += filename;
 		errorMsg (text);
 		g_free (text);
 	}
@@ -378,14 +379,15 @@ static void export_file_cb (GtkMenuItem *item)
 static void create_solver_testcase_cb (GtkMenuItem *item)
 {
 	const char *dirname = "/var/log/YaST2/solverTestcase";
-	std::string msg = _("Use this to generate extensive logs to help tracking down "
-	                  "bugs in the dependency solver.\nThe logs will be stored in "
-	                  "directory: ");
-	msg += dirname;
+	std::string msg (_("Use this to generate extensive logs to help tracking "
+		"down bugs in the dependencies resolver.");
+	msg += "\n"; msg += _("The logs will be saved to the directory:"));
+	msg += " "; msg += dirname;
 
 	GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 		GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_INFO, GTK_BUTTONS_OK_CANCEL,
-		"%s", _("Create Dependency Solver Test Case"));
+	// Translators: if there is no direct translation to Dependencies Resolver, then translate it to e.g. Dependencies Manager
+		"%s", _("Generate Dependencies Resolver Testcase"));
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", msg.c_str());
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
@@ -400,7 +402,7 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 			GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 				GTK_DIALOG_DESTROY_WITH_PARENT, GTK_MESSAGE_QUESTION,
 				GTK_BUTTONS_YES_NO, "%s", _("Success"));
-			msg = _("Dependency solver test case written to");
+			msg = _("Dependencies resolver test case written to:");
 			msg += " <tt>";
 			msg += dirname;
 			msg += "</tt>\n";
@@ -413,11 +415,9 @@ static void create_solver_testcase_cb (GtkMenuItem *item)
 				YGUI::ui()->askSaveLogs();
 	    }
 	    else {
-	    	msg = _("Failed to create dependency solver test case.\n"
-				"Please check disk space and permissions for");
-			msg += " <tt>";
-			msg += dirname;
-			msg += "</tt>";
+	    	msg = _("Failed to create dependencies resolver testcase.\n"
+				"Please check disk space and permissions for:");
+			msg += " <tt>"; msg += dirname; msg += "</tt>";
 			errorMsg (msg.c_str());
 	    }
 	}
@@ -686,67 +686,68 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	Flags flags;
 
 	GtkWidget *menu_bar = m_menu, *item, *submenu;
-	item = append_menu_item (menu_bar, _("File"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("_File"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("Import..."), NULL,
+		append_menu_item (submenu, _("_Import..."), NULL,
 			G_CALLBACK (import_file_cb), this);
-		append_menu_item (submenu, _("Export..."), NULL,
+		append_menu_item (submenu, _("_Export..."), NULL,
 			G_CALLBACK (export_file_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, NULL, GTK_STOCK_APPLY, G_CALLBACK (accept_item_cb), selector);
 		append_menu_item (submenu, NULL, GTK_STOCK_QUIT, G_CALLBACK (reject_item_cb), selector);
 	if (selector->repoMgrEnabled()) {
-		item = append_menu_item (menu_bar, _("Configuration"), NULL, NULL, NULL);
+		item = append_menu_item (menu_bar, _("_Configuration"), NULL, NULL, NULL);
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-			append_menu_item (submenu, _("Repositories..."), NULL,
+			append_menu_item (submenu, _("_Repositories..."), NULL,
 				G_CALLBACK (repoManager), this);
 			if (selector->onlineUpdateMode())
-				append_menu_item (submenu, _("Online Update..."), NULL,
+				append_menu_item (submenu, _("_Online Update..."), NULL,
 					G_CALLBACK (onlineUpdateConfiguration), this);
 			else
-				append_menu_item (submenu, _("Search Packages on Web..."), NULL,
+				append_menu_item (submenu, _("Search Packages on _Web..."), NULL,
 					G_CALLBACK (webpinSearch), this);
 	}
-	item = append_menu_item (menu_bar, _("Dependencies"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("_Dependencies"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("Check Now"), NULL,
+		append_menu_item (submenu, _("_Check Now"), NULL,
 			G_CALLBACK (manualResolvePackageDependencies), this);
-		new AutoCheckItem (submenu, _("Autocheck"), &flags);
+		new AutoCheckItem (submenu, _("_Autocheck"), &flags);
 
 	if (!selector->onlineUpdateMode()) {
-		item = append_menu_item (menu_bar, _("Options"), NULL, NULL, NULL);
+		item = append_menu_item (menu_bar, _("_Options"), NULL, NULL, NULL);
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 			// Translators: don't translate the "-devel"
-			new ShowDevelCheckItem (submenu, _("Show -devel packages"), &flags);
+			new ShowDevelCheckItem (submenu, _("Show -de_vel Packages"), &flags);
 			// Translators: don't translate the "-debuginfo/-debugsource" part
-			new ShowDebugCheckItem (submenu, _("Show -debuginfo/-debugsource Packages"), &flags);
-			new SystemVerificationCheckItem (submenu, _("System Verification Mode"), &flags);
-#if ZYPP_VERSION > 6031004
+			new ShowDebugCheckItem (submenu, _("Show -_debuginfo/-debugsource Packages"), &flags);
+			new SystemVerificationCheckItem (submenu, _("_System Verification Mode"), &flags);
 			new CleanupDepsCheckItem (submenu, _("_Cleanup when deleting packages"), &flags);
 			new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
-#endif
 	}
 
-	item = append_menu_item (menu_bar, _("Extras"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("_Extras"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("Show Products"), NULL,
+		append_menu_item (submenu, _("Show _Products"), NULL,
 			G_CALLBACK (show_products_cb), this);
-		append_menu_item (submenu, _("Show Changes"), NULL,
+		append_menu_item (submenu, _("Show _Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
 		if (!selector->onlineUpdateMode())
-			append_menu_item (submenu, _("Show History"), NULL,
+			append_menu_item (submenu, _("Show _History"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
-		append_menu_item (submenu, _("Install All Matching -devel Packages"), NULL,
+		// Translators: keep "-_devel" untranslated
+		append_menu_item (submenu, _("Install All Matching -_devel Packages"), NULL,
 			G_CALLBACK (install_all_devel_pkgs_cb), this);
-		append_menu_item (submenu, _("Install All Matching -debug-info Packages"), NULL,
+		// Translators: keep "-debug-_info" untranslated
+		append_menu_item (submenu, _("Install All Matching -debug-_sinfo Packages"), NULL,
 			G_CALLBACK (install_all_debug_info_pkgs_cb), this);
-		append_menu_item (submenu, _("Install All Matching -debug-source Packages"), NULL,
+		// Translators: keep "-debug-_source" untranslated
+		append_menu_item (submenu, _("Install All Matching -debug-_source Packages"), NULL,
 			G_CALLBACK (install_all_debug_source_pkgs_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
-		append_menu_item (submenu, _("Generate Dependency Solver Test Case"), NULL,
+		append_menu_item (submenu, _("Generate Dependencies Resolver _Testcase"), NULL,
 			G_CALLBACK (create_solver_testcase_cb), this);
-		append_menu_item (submenu, _("Reset Ignored Dependency Conflicts"), NULL,
+		append_menu_item (submenu, _("Reset _Ignored Dependencies Conflicts"), NULL,
 			G_CALLBACK (reset_ignored_dependency_conflicts_cb), this);
 
 	gtk_widget_show_all (m_menu);

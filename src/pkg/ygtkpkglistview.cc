@@ -453,7 +453,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		if (canLock) {
 			static const char *lock_tooltip =
 				"<b>Package lock:</b> prevents the package status from being modified by "
-				"the solver (that is, it won't honour dependencies or collections ties.)";
+				"the dependencies resolver.";
 			if (props.isLocked())
 				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip),
 					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::unlock_cb, pThis), empty = false;
@@ -947,8 +947,11 @@ std::string getStatusSummary (Ypp::Selectable &sel)
 	}
 	else
 		text = _("Not installed");
-	if (sel.toModifyAuto())
-		text += _("\n<i>status changed by the dependency solver</i>");
+	if (sel.toModifyAuto()) {
+		text += "\n<i>";
+		text += _("status changed by the dependencies resolver");
+		text += "</i>";
+	}
 	return text;
 }
 

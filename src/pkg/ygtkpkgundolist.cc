@@ -151,15 +151,17 @@ struct ChangeSizeInfo : public YGtkPkgUndoList::Listener {
 		for (ZyppDuSet::iterator it = diskUsage.begin(); it != diskUsage.end(); it++) {
 			const ZyppDu &point = *it;
 			if (!point.readonly && point.freeAfterCommit() < 0) {
-				char *str = g_strdup_printf (
-					// Translators: keep the first and final "%s". They will be expanded with html code.
-					_("%sPartition %s is %s over-capacity (%s filled out of %s).%s"),
-					"<b><span color=\"red\">",
-					point.dir.c_str(), point.freeAfterCommit().asString().c_str(),
+				// Translators: please keep the %s order intact. They refer to mount_point, needed_space
+				char *over = g_strdup_printf (_("Partition %s is %s over-capacity"),
+					point.dir.c_str(), point.freeAfterCommit().asString().c_str());
+				// Translators: please keep the %s order intact. They refer to used_space, total_space
+				char *fill = g_strdup_printf (_("%s filled out of %s"),
 					point.usedAfterCommit().asString().c_str(),
-					point.totalSize().asString().c_str(), "</span></b>");
-				gtk_label_set_markup (GTK_LABEL (warn_label), str);
-				g_free (str);
+					point.totalSize().asString().c_str());
+				char *markup = g_strdup_printf (
+					"<b><span color=\"red\">%s (%s)</span></b>", over, fill);
+				gtk_label_set_markup (GTK_LABEL (warn_label), markup);
+				g_free (over); g_free (fill); g_free (markup);
 				gtk_widget_show (warn_label);
 				break;
 			}

@@ -187,12 +187,12 @@ std::string Ypp::Selectable::description (bool as_html)
 		case PATCH: {
 			ZyppPatch patch = castZyppPatch (m_sel->theObj());
 			if (patch->rebootSuggested()) {
-				text += br + br + "<b>" + _("Reboot required: ") + "</b>";
+				text += br + br + "<b>" + _("Reboot required:") + " </b>";
 				text += _("the system will have to be restarted in order for "
 					"this patch to take effect.");
 			}
 			if (patch->reloginSuggested()) {
-				text += br + br + "<b>" + _("Relogin required: ") + "</b>";
+				text += br + br + "<b>" + _("Relogin required:") + " </b>";
 				text += _("you must logout and login again for "
 					"this patch to take effect.");
 			}
