@@ -425,9 +425,10 @@ public:
 		gchar *str_a, *str_b;
 		gtk_tree_model_get (model, a, index, &str_a, -1);
 		gtk_tree_model_get (model, b, index, &str_b, -1);
+		if (!str_a) str_a = g_strdup ("");
+		if (!str_b) str_b = g_strdup ("");
 		int ret = strcmp (str_a, str_b);
-		g_free (str_a);
-		g_free (str_b);
+		g_free (str_a); g_free (str_b);
 		return ret;
 	}
 
