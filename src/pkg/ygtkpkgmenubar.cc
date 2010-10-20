@@ -74,11 +74,11 @@ static GtkWidget *append_menu_item (GtkWidget *menu, const char *text,
 	GtkWidget *item;
 	if (stock && text) {
 		GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
-		item = gtk_image_menu_item_new_with_label (text);
+		item = gtk_image_menu_item_new_with_mnemonic (text);
 		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
 	}
 	else if (text)
-		item = gtk_menu_item_new_with_label (text);
+		item = gtk_menu_item_new_with_mnemonic (text);
 	else if (stock)
 		item = gtk_image_menu_item_new_from_stock (stock, NULL);
 	else
@@ -685,7 +685,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	Flags flags;
 
 	GtkWidget *menu_bar = m_menu, *item, *submenu;
-	item = append_menu_item (menu_bar, _("_File"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("F_ile"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("_Import..."), NULL,
 			G_CALLBACK (import_file_cb), this);
@@ -724,7 +724,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
 	}
 
-	item = append_menu_item (menu_bar, _("_Extras"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("E_xtras"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 		append_menu_item (submenu, _("Show _Products"), NULL,
 			G_CALLBACK (show_products_cb), this);
