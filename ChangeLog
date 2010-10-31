@@ -1,3 +1,10 @@
+2010-10-31 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/YGPackageSelector.cc & src/pkg/ygtkpkgmenubar.cc:
+	work-around bug in global-menubar-applet.
+
+	* src/pkg/ygtkpkgfilterview.cc: speed-up Upgrades filter.
+
 2010-10-20 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/YGTable.cc: bug fix 640091: crash when modifying

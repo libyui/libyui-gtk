@@ -749,6 +749,8 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_menu_item (submenu, _("Reset _Ignored Dependencies Conflicts"), NULL,
 			G_CALLBACK (reset_ignored_dependency_conflicts_cb), this);
 
-	gtk_widget_show_all (m_menu);
+	//** TEMP: work-around global-menubar-applet: see bug 595560
+	//**       will call show_all() at YGPackageSelector.cc
+	//gtk_widget_show_all (m_menu);
 }
 

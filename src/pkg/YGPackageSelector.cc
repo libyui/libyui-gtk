@@ -689,7 +689,9 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 	impl = new Impl();  // can take a little
 	ygtk_wizard_set_child (wizard, impl->getWidget());
 	impl->m_menu = new YGtkPkgMenuBar();
-	ygtk_wizard_set_custom_menu (wizard, impl->m_menu->getWidget(), FALSE);
+	ygtk_wizard_set_custom_menu (wizard, impl->m_menu->getWidget(), TRUE);
+	//** TEMP: work-around global-menubar-applet: see bug 595560
+	gtk_widget_show_all (impl->m_menu->getWidget());
 
 	std::string str;
 	str.reserve (6820);

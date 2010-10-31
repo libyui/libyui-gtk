@@ -119,7 +119,7 @@ public:
 					gtk_window_maximize (window);
 		    }
 
-		    gtk_window_set_role (window, "yast2-gtk");
+		    gtk_window_set_role (window, "yast2");
 		}
 
 		if (_main_window)
