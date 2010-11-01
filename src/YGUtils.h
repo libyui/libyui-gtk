@@ -65,6 +65,9 @@ namespace YGUtils
 	/* For empty model rows, render a separator (can be used for GtkTreeView and GtkComboBox */
 	gboolean empty_row_is_separator_cb (
 		GtkTreeModel *model, GtkTreeIter *iter, gpointer text_col);
+
+	/* Shrink widget inner-border (thickness) */
+	void shrinkWidget (GtkWidget *widget);
 };
 
 extern "C" {

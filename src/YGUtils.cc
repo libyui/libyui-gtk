@@ -721,6 +721,24 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 	return icon;
 }
 
+void YGUtils::shrinkWidget (GtkWidget *widget)
+{
+	static bool first_time = true;
+	if (first_time) {
+		first_time = false;
+		gtk_rc_parse_string (
+			"style \"small-widget-style\"\n"
+			"{\n"
+			"  GtkWidget::focus-padding = 0\n"
+			"  GtkWidget::focus-line-width = 0\n"
+			"  xthickness = 0\n"
+			"  ythickness = 0\n"
+			"}\n"
+			"widget \"*.small-widget\" style \"small-widget-style\"");
+	}
+	gtk_widget_set_name (widget, "small-widget");
+}
+
 /*
  * construct a help string by dropping the title, and mentioning
  * the first sentence for a dialog sub-title

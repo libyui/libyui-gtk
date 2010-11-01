@@ -161,7 +161,7 @@ gboolean ygtk_wizard_add_sub_menu (YGtkWizard *wizard, const char *parent_id,
                                    const char *text, const char *id);
 gboolean ygtk_wizard_add_menu_separator (YGtkWizard *wizard, const char *parent_id);
 void ygtk_wizard_clear_menu (YGtkWizard *wizard);
-void ygtk_wizard_set_custom_menu (YGtkWizard *wizard, GtkWidget *menu_bar, gboolean hide_header);
+void ygtk_wizard_set_custom_menubar (YGtkWizard *wizard, GtkWidget *menu_bar, gboolean hide_header);
 void ygtk_wizard_set_status_bar (YGtkWizard *wizard, GtkWidget *status_bar);
 
 void ygtk_wizard_add_step_header (YGtkWizard *wizard, const char *text);

@@ -106,6 +106,7 @@ YGtkPkgSearchEntry::YGtkPkgSearchEntry()
 		gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), "RPM Requires");
 	}
 	gtk_combo_box_set_active (GTK_COMBO_BOX (impl->combo), 0);
+	YGUtils::shrinkWidget (impl->combo);
 	g_signal_connect (G_OBJECT (impl->combo), "changed",
 	                  G_CALLBACK (combo_changed_cb), this);
 	gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (impl->combo),

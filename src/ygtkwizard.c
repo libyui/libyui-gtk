@@ -956,7 +956,7 @@ void ygtk_wizard_add_menu (YGtkWizard *wizard, const char *text,
 {
 	if (!wizard->menu) {
 		wizard->menu = gtk_menu_bar_new();
-		ygtk_wizard_set_custom_menu (wizard, wizard->menu, TRUE);
+		ygtk_wizard_set_custom_menubar (wizard, wizard->menu, TRUE);
 		gtk_widget_show (wizard->menu);
 	}
 
@@ -1037,7 +1037,7 @@ void ygtk_wizard_clear_menu (YGtkWizard *wizard)
 	}
 }
 
-void ygtk_wizard_set_custom_menu (YGtkWizard *wizard, GtkWidget *menu_bar, gboolean hide_header)
+void ygtk_wizard_set_custom_menubar (YGtkWizard *wizard, GtkWidget *menu_bar, gboolean hide_header)
 {
 	gtk_container_add (GTK_CONTAINER (wizard->m_menu_box), menu_bar);
 	gtk_widget_show (wizard->m_menu_box);

@@ -19,19 +19,8 @@
 #include "yzyppwrapper.h"
 #include <gtk/gtk.h>
 
-static void small_size_request_cb (GtkWidget *widget, GtkRequisition *req)
+static void enlarge_width_size_request_cb (GtkWidget *widget, GtkRequisition *req)
 { req->width += 4; }
-
-static void set_small_widget (GtkWidget *widget)
-{
-	GtkRcStyle *rcstyle = gtk_rc_style_new();
-	rcstyle->xthickness = rcstyle->ythickness = 0;
-	gtk_widget_modify_style (widget, rcstyle);
-	g_object_unref (rcstyle);
-
-	g_signal_connect (G_OBJECT (widget), "size-request",
-	                  G_CALLBACK (small_size_request_cb), NULL);
-}
 
 struct LastChange {
 	GtkWidget *hbox, *icon, *text, *undo_button;
@@ -46,7 +35,9 @@ struct LastChange {
 		text = gtk_label_new ("");
 		gtk_misc_set_alignment (GTK_MISC (text), 0, .5);
 		undo_button = gtk_button_new_from_stock (GTK_STOCK_UNDO);
-		set_small_widget (undo_button);
+		YGUtils::shrinkWidget (undo_button);
+		g_signal_connect (G_OBJECT (undo_button), "size-request",
+		                  G_CALLBACK (enlarge_width_size_request_cb), NULL);
 		g_signal_connect (G_OBJECT (undo_button), "clicked",
 		                  G_CALLBACK (undo_clicked_cb), this);
 		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("view all changes"));
@@ -224,7 +215,7 @@ struct DiskChange {
 
 		combo = gtk_combo_box_new_with_model (GTK_TREE_MODEL (store));
 		g_object_unref (G_OBJECT (store));
-		set_small_widget (combo);
+		YGUtils::shrinkWidget (combo);
 		gtk_widget_set_name (combo, "small-widget");
 		gtk_combo_box_set_focus_on_click (GTK_COMBO_BOX (combo), FALSE);
 		GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
