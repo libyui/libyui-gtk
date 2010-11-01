@@ -24,21 +24,11 @@ static void small_size_request_cb (GtkWidget *widget, GtkRequisition *req)
 
 static void set_small_widget (GtkWidget *widget)
 {
-	static bool first_time = true;
-	if (first_time) {
-		first_time = false;
-		gtk_rc_parse_string (
-			"style \"small-widget-style\"\n"
-			"{\n"
-			"  GtkWidget::focus-padding = 0\n"
-			"  GtkWidget::focus-line-width = 0\n"
-			"  xthickness = 0\n"
-			"  ythickness = 0\n"
-			"}\n"
-			"widget \"*.small-widget\" style \"small-widget-style\"");
-	}
+	GtkRcStyle *rcstyle = gtk_rc_style_new();
+	rcstyle->xthickness = rcstyle->ythickness = 0;
+	gtk_widget_modify_style (widget, rcstyle);
+	g_object_unref (rcstyle);
 
-	gtk_widget_set_name (widget, "small-widget");
 	g_signal_connect (G_OBJECT (widget), "size-request",
 	                  G_CALLBACK (small_size_request_cb), NULL);
 }
