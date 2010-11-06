@@ -1,6 +1,12 @@
 -------------------------------------------------------------------
 Mon Nov 01 16:49:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
+- 2.21.81
+- fix build for 11.2 (added cmake requirement version).
+
+-------------------------------------------------------------------
+Mon Nov 01 16:49:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
 - 2.21.80
 - fix: show the software manager header bar.
 
