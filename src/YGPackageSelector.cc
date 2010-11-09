@@ -20,7 +20,7 @@ static YPackageSelector *pkg_selector = 0;
 #include "ygtkwizard.h"
 #include "ygtkfindentry.h"
 #include "ygtkmenubutton.h"
-#include "ygtkscrolledwindow.h"
+#include "ygtktreeview.h"
 #include "ygtktogglebutton.h"
 #include "ygtkhtmlwrap.h"
 #include "ygtkrichtext.h"
@@ -423,7 +423,7 @@ Listener *m_listener;
 		TreeView (bool isTree, bool descriptiveTooltip, bool editable, PackagesView *parent)
 		: View (parent), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 		{
-			GtkTreeView *view = GTK_TREE_VIEW (m_widget = ygtk_tree_view_new());
+			GtkTreeView *view = GTK_TREE_VIEW (m_widget = ygtk_tree_view_new (_("No matches.")));
 			gtk_tree_view_set_headers_visible (view, FALSE);
 			gtk_tree_view_set_search_column (view, YGtkZyppModel::NAME_COLUMN);
 			gtk_tree_view_set_fixed_height_mode (view, TRUE);
@@ -735,17 +735,10 @@ public:
 	: m_listener (NULL), m_model (NULL), m_view (NULL), m_isTree (isTree), m_descriptiveTooltip (descriptiveTooltip)
 	{
 		if (useScrollWindow) {
-			m_bin = ygtk_scrolled_window_new();
-			if (enableTilesMode) {
-				GtkWidget *buttons = gtk_vbox_new (FALSE, 0), *button;
-				button = create_toggle_button ("pkg-list-mode.xpm", _("View as list"), NULL);
-				gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-				button = create_toggle_button ("pkg-tiles-mode.xpm", _("View as grid"), button);
-				gtk_box_pack_start (GTK_BOX (buttons), button, FALSE, TRUE, 0);
-				gtk_widget_show_all (buttons);
-
-				ygtk_scrolled_window_set_corner_widget (YGTK_SCROLLED_WINDOW (m_bin), buttons);
-			}
+			m_bin = gtk_scrolled_window_new (NULL, NULL);
+			gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_bin),
+				GTK_POLICY_AUTOMATIC, GTK_POLICY_ALWAYS);
+			gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (m_bin), GTK_SHADOW_IN);
 		}
 		else
 			m_bin = gtk_event_box_new();

@@ -1,7 +1,11 @@
 /********************************************************************
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
+/*
+  Textdomain "gtk"
+ */
 
+#include "YGi18n.h"
 #define YUILogComponent "gtk"
 #include "config.h"
 #include "YGUI.h"
@@ -9,8 +13,7 @@
 #include "YGWidget.h"
 #include "YSelectionWidget.h"
 #include "YGSelectionModel.h"
-#include "ygtkcellrenderertextpixbuf.h"
-#include "ygtkscrolledwindow.h"
+#include "ygtktreeview.h"
 
 /* A generic widget for table related widgets. */
 class YGTableView : public YGScrolledWidget, public YGSelectionModel
@@ -56,31 +59,27 @@ public:
 
 	void appendIconTextColumn (string header, YAlignmentType align, int icon_col, int text_col)
 	{
-		GtkTreeViewColumn *column;
-		GtkCellRenderer *renderer;
-
-		renderer = ygtk_cell_renderer_text_pixbuf_new();
-		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-			renderer, "pixbuf", icon_col, "text", text_col, NULL);
-
 		gfloat xalign = -1;
 		switch (align) {
-			case YAlignBegin:
-				xalign = 0.0;
-				break;
-			case YAlignCenter:
-				xalign = 0.5;
-				break;
-			case YAlignEnd:
-				xalign = 1.0;
-				break;
-			case YAlignUnchanged:
-				break;
+			case YAlignBegin: xalign = 0.0; break;
+			case YAlignCenter: xalign = 0.5; break;
+			case YAlignEnd: xalign = 1.0; break;
+			case YAlignUnchanged: break;
 		}
-		if (xalign != -1) {
+
+		GtkTreeViewColumn *column = gtk_tree_view_column_new();
+		gtk_tree_view_column_set_title (column, header.c_str());
+		GtkCellRenderer *renderer;
+
+		renderer = gtk_cell_renderer_pixbuf_new();
+		gtk_tree_view_column_pack_start (column, renderer, FALSE);
+		gtk_tree_view_column_set_attributes (column, renderer, "pixbuf", icon_col, NULL);
+
+		renderer = gtk_cell_renderer_text_new();
+		gtk_tree_view_column_pack_start (column, renderer, TRUE);
+		gtk_tree_view_column_set_attributes (column, renderer, "text", text_col, NULL);
+		if (xalign != -1)
 			g_object_set (renderer, "xalign", xalign, NULL);
-			gtk_tree_view_column_set_alignment (column, xalign);
-		}
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
@@ -88,14 +87,10 @@ public:
 
 	void appendCheckColumn (string header, int bool_col)
 	{
-		GtkTreeViewColumn *column;
-		GtkCellRenderer *renderer;
-
-		renderer = gtk_cell_renderer_toggle_new();
+		GtkCellRenderer *renderer = gtk_cell_renderer_toggle_new();
 		g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (bool_col));
-		column = gtk_tree_view_column_new_with_attributes (header.c_str(),
-			renderer, "active", bool_col, NULL);
-
+		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
+			header.c_str(), renderer, "active", bool_col, NULL);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
 
@@ -103,10 +98,8 @@ public:
 		gtk_tree_view_append_column (getView(), column);
 	}
 
-	void appendDumbColumn()
-	{
-		gtk_tree_view_append_column (getView(), gtk_tree_view_column_new());
-	}
+	void appendEmptyColumn()
+	{ gtk_tree_view_append_column (getView(), gtk_tree_view_column_new()); }
 
 	void setModel()
 	{ gtk_tree_view_set_model (GTK_TREE_VIEW (getWidget()), getModel()); }
@@ -227,9 +220,7 @@ public:
 
 #if YAST2_VERSION > 2018003
 	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTableView *pThis)
-	{
-		pThis->emitEvent (YEvent::ContextMenuActivated);
-	}
+	{ pThis->emitEvent (YEvent::ContextMenuActivated); }
 #endif
 };
 
@@ -252,6 +243,7 @@ public:
 	{
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
+		ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
 #if YAST2_VERSION >= 2017005
 		if (multiSelection)
 			gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_MULTIPLE);
@@ -268,7 +260,7 @@ public:
 			appendIconTextColumn (header (i), align, col, col+1);
 			if ((align == YAlignCenter || align == YAlignEnd) && i == columns()-1)
 				// if last col is aligned: add another so that it doesn't expand.
-				appendDumbColumn();
+				appendEmptyColumn();
 		}
 		setModel();
 		if (!keepSorting())
@@ -308,8 +300,8 @@ public:
 	   		if (label == "X")
 	   			label = YUI::app()->glyph (YUIGlyph_CheckMark);
 		}
-   		setCellIcon (iter, index, icon);
-   		setCellLabel (iter, index+1, label);
+		setCellIcon (iter, index, icon);
+		setCellLabel (iter, index+1, label);
 	}
 
 	void setSortable (bool sortable)
@@ -372,17 +364,6 @@ public:
 
 	static void hack_right_click_cb (YGtkTreeView *view, gboolean outreach, YGTable *pThis)
 	{
-#if YAST2_VERSION > 2018003
-		if (pThis->notifyContextMenu())
-			return YGTableView::right_click_cb (view, outreach, pThis);
-#endif
-		if (!YGDialog::currentDialog()->getFunctionWidget (5) ||
-			// undetermined case -- more than one table exists
-			YGDialog::currentDialog()->getClassWidgets ("YTable").size() > 1) {
-			gtk_widget_error_bell (GTK_WIDGET (view));
-			return;
-		}
-
 		struct inner {
 			static void key_activate_cb (GtkMenuItem *item, YWidget *button)
 			{ activateButton (button); }
@@ -394,18 +375,33 @@ public:
 					item = gtk_image_menu_item_new_from_stock (stock, NULL);
 					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 					g_signal_connect (G_OBJECT (item), "activate",
-								      G_CALLBACK (key_activate_cb), button);
+									  G_CALLBACK (key_activate_cb), button);
 				}
 			}
 		};
 
+#if YAST2_VERSION > 2018003
+		if (pThis->notifyContextMenu())
+			return YGTableView::right_click_cb (view, outreach, pThis);
+#endif
 		GtkWidget *menu = gtk_menu_new();
-		if (outreach)
-			inner::appendItem (menu, GTK_STOCK_ADD, 3);
-		else {
-			inner::appendItem (menu, GTK_STOCK_EDIT, 4);
-			inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+
+		YGDialog *dialog = YGDialog::currentDialog();
+		if (dialog->getClassWidgets ("YTable").size() == 1) {
+			// if more than one table exists, function keys become ambiguous
+			if (outreach) {
+				if (dialog->getFunctionWidget(3))
+					inner::appendItem (menu, GTK_STOCK_ADD, 3);
+			}
+			else {
+				if (dialog->getFunctionWidget(4))
+					inner::appendItem (menu, GTK_STOCK_EDIT, 4);
+				if (dialog->getFunctionWidget(5))
+					inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+			}
 		}
+
+		menu = ygtk_tree_view_append_show_columns_item (YGTK_TREE_VIEW (view), menu);
 		ygtk_tree_view_popup_menu (view, menu);
 	}
 
@@ -429,9 +425,10 @@ public:
 		gchar *str_a, *str_b;
 		gtk_tree_model_get (model, a, index, &str_a, -1);
 		gtk_tree_model_get (model, b, index, &str_b, -1);
+		if (!str_a) str_a = g_strdup ("");
+		if (!str_b) str_b = g_strdup ("");
 		int ret = strcmp (str_a, str_b);
-		g_free (str_a);
-		g_free (str_b);
+		g_free (str_a); g_free (str_b);
 		return ret;
 	}
 
@@ -464,7 +461,7 @@ public:
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 		connect (getSelection(), "changed", G_CALLBACK (selection_changed_cb), (YGTableView *) this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 
@@ -500,7 +497,7 @@ public:
 		// Let the user toggle, using space/enter or double click (not an event).
 		connect (getWidget(), "row-activated", G_CALLBACK (multi_activated_cb), this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 
@@ -574,7 +571,7 @@ public:
 		connect (getWidget(), "cursor-changed", G_CALLBACK (row_selected_cb), this);
 		connect (getWidget(), "row-activated", G_CALLBACK (activated_cb), (YGTableView *) this);
 #if YAST2_VERSION > 2018003
-		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
+		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), (YGTableView *) this);
 #endif
 	}
 

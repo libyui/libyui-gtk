@@ -60,7 +60,7 @@ libpy2gtk_la_SOURCES = \
 	ygdkmngloader.c \
 	ygtkimage.c \
 	ygtkcellrenderertextpixbuf.c \
-	ygtkscrolledwindow.c \
+	ygtktreeview.c \
 	ygtktogglebutton.c \
 	ygtkhtmlwrap.c \
 	ygtktimezonepicker.c \
