@@ -40,15 +40,7 @@ static gint _popup_x = 0, _popup_y = 0;
 
 static void _ygtk_tree_view_menu_position_func (
 	GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer user_data)
-{
-	GtkWidget *widget = (GtkWidget *) user_data;
-	gtk_tree_view_convert_bin_window_to_widget_coords (
-		GTK_TREE_VIEW (widget), _popup_x, _popup_y, x, y);
-
-	gint root_x, root_y;
-	gdk_window_get_origin (widget->window, &root_x, &root_y);
-	*x += root_x; *y += root_y;
-}
+{ *x = _popup_x; *y = _popup_y; }
 
 void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu)
 {
@@ -82,7 +74,7 @@ static gboolean ygtk_tree_view_button_press_event (GtkWidget *widget, GdkEventBu
 		}
 
 		_popup_time = event->time;
-		_popup_x = event->x; _popup_y = event->y;
+		_popup_x = event->x_root; _popup_y = event->y_root;
 
 		gtk_widget_grab_focus (widget);
 		g_signal_emit (widget, right_click_signal, 0, outreach);
@@ -115,6 +107,14 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 		g_list_foreach (rows, (GFunc) gtk_tree_path_free, NULL);
 		g_list_free (rows);
 	}
+
+	GtkWidget *widget = (GtkWidget *) user_data;
+	gtk_tree_view_convert_bin_window_to_widget_coords (
+		GTK_TREE_VIEW (widget), _popup_x, _popup_y, &_popup_x, &_popup_y);
+
+	gint x_orig, y_orig;
+	gdk_window_get_origin (widget->window, &x_orig, &y_orig);
+	_popup_x += x_orig; _popup_y += y_orig;
 
 	g_signal_emit (widget, right_click_signal, 0, outreach);
 	return TRUE;
