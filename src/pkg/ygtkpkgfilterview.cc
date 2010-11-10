@@ -41,7 +41,7 @@ YGtkPkgFilterModel::YGtkPkgFilterModel()
 : impl (new Impl())
 {
 	GtkListStore *store = gtk_list_store_new (TOTAL_COLUMNS, GDK_TYPE_PIXBUF,
-		G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN,
+		G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_BOOLEAN, G_TYPE_INT,
 		G_TYPE_POINTER);
 	impl->model = GTK_TREE_MODEL (store);
 
@@ -119,12 +119,16 @@ void YGtkPkgFilterModel::addRow (const char *icon, const char *text,
 		pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
 			icon, 32, GtkIconLookupFlags (0), NULL);
 
+	int weight = PANGO_WEIGHT_NORMAL;
+	if (firstRowIsAll() && gtk_tree_model_iter_n_children (impl->model, NULL) == 0)
+		weight = PANGO_WEIGHT_BOLD;
+
 	GtkTreeIter iter;
 	GtkListStore *store = GTK_LIST_STORE (impl->model);
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, ICON_COLUMN, pixbuf, TEXT_COLUMN, text,
 		COUNT_NUMBER_COLUMN, "", ENABLED_COLUMN, enabled, VISIBLE_COLUMN, defaultVisible,
-		DATA_COLUMN, data, -1);
+		DATA_COLUMN, data, WEIGHT_COLUMN, weight, -1);
 
 	if (pixbuf) g_object_unref (pixbuf);
 }
@@ -644,7 +648,8 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 	renderer = ygtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "markup", YGtkPkgFilterModel::TEXT_COLUMN,
-		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
+		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN,
+		"weight", YGtkPkgFilterModel::WEIGHT_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "ellipsize", PANGO_ELLIPSIZE_END, NULL);
 	gtk_tree_view_column_set_expand (column, TRUE);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);
@@ -652,7 +657,8 @@ YGtkPkgFilterView::YGtkPkgFilterView (YGtkPkgFilterModel *model)
 	renderer = gtk_cell_renderer_text_new();
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "text", YGtkPkgFilterModel::COUNT_NUMBER_COLUMN,
-		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN, NULL);
+		"sensitive", YGtkPkgFilterModel::ENABLED_COLUMN,
+		"weight", YGtkPkgFilterModel::WEIGHT_COLUMN, NULL);
 	g_object_set (G_OBJECT (renderer), "xalign", 1.0,
 		"scale", PANGO_SCALE_SMALL, "foreground", "#8c8c8c", NULL);
 	ygtk_tree_view_append_column (YGTK_TREE_VIEW (view), column);

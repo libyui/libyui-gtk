@@ -35,6 +35,21 @@ static void ygtk_tree_view_finalize (GObject *object)
 static void _gtk_widget_destroy (gpointer widget)
 { gtk_widget_destroy (GTK_WIDGET (widget)); }
 
+static guint32 _popup_time = 0;
+static gint _popup_x = 0, _popup_y = 0;
+
+static void _ygtk_tree_view_menu_position_func (
+	GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer user_data)
+{
+	GtkWidget *widget = (GtkWidget *) user_data;
+	gtk_tree_view_convert_bin_window_to_widget_coords (
+		GTK_TREE_VIEW (widget), _popup_x, _popup_y, x, y);
+
+	gint root_x, root_y;
+	gdk_window_get_origin (widget->window, &root_x, &root_y);
+	*x += root_x; *y += root_y;
+}
+
 void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu)
 {
 	GtkWidget *widget = GTK_WIDGET (view);
@@ -42,34 +57,35 @@ void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu)
 	// emitted signals yet -- destroy it when replaced or the widget destroyed
 	g_object_set_data_full (G_OBJECT (view), "popup", menu, _gtk_widget_destroy);
 
-	guint32 time = gtk_get_current_event_time();
 	gtk_menu_attach_to_widget (GTK_MENU (menu), widget, NULL);
-	gtk_menu_popup (GTK_MENU (menu), NULL, NULL, NULL, NULL,  3, time);
+	gtk_menu_popup (GTK_MENU (menu), NULL, NULL,
+		_ygtk_tree_view_menu_position_func, widget,  3, _popup_time);
 	gtk_widget_show_all (menu);
 }
 
 static gboolean ygtk_tree_view_button_press_event (GtkWidget *widget, GdkEventButton *event)
 {
-	// workaround (based on gedit): we want the tree view to receive this press in order
-	// to select the row, but we can't use connect_after, so we throw a dummy mouse press
-	if (event->type == GDK_BUTTON_PRESS && event->button == 3) {
-		static gboolean safeguard = FALSE;
-		if (safeguard) return FALSE;
-		safeguard = TRUE;
-
+	if (event->button == 3) {
 		GtkTreeView *view = GTK_TREE_VIEW (widget);
-		GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
-
+		GtkTreePath *path;
 		gboolean outreach;
-		outreach = !gtk_tree_view_get_path_at_pos (view, event->x, event->y, 0, 0, 0, 0);
-		if (gtk_tree_selection_count_selected_rows (selection) <= 1) {
-			// if there is a selection, let it be
-			event->button = 1;
-			if (!gtk_widget_event (widget, (GdkEvent *) event))
-				return FALSE;
+		outreach = gtk_tree_view_get_path_at_pos (view, event->x, event->y, &path, NULL, NULL, NULL);
+		if (outreach) {   // select row if it is not
+			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
+			GtkTreeModel *model = gtk_tree_view_get_model (view);
+			GtkTreeIter iter;
+			gtk_tree_model_get_iter (model, &iter, path);
+
+			if (!gtk_tree_selection_iter_is_selected (selection, &iter))
+				gtk_tree_view_set_cursor (view, path, NULL, FALSE);
+			gtk_tree_path_free (path);
 		}
+
+		_popup_time = event->time;
+		_popup_x = event->x; _popup_y = event->y;
+
+		gtk_widget_grab_focus (widget);
 		g_signal_emit (widget, right_click_signal, 0, outreach);
-		safeguard = FALSE;
 		return TRUE;
 	}
 	return GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->button_press_event (widget, event);
@@ -80,6 +96,25 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 	GtkTreeView *view = GTK_TREE_VIEW (widget);
 	GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 	gboolean outreach = gtk_tree_selection_count_selected_rows (selection) == 0;
+
+	_popup_time = gtk_get_current_event_time();
+	if (outreach)
+		_popup_x = (_popup_y = 0);
+	else {
+		GList *rows = gtk_tree_selection_get_selected_rows (selection, NULL);
+		GtkTreePath *path = (GtkTreePath *) g_list_last (rows)->data;
+
+		// in case that path is not visible:
+		gtk_tree_view_scroll_to_cell (view, path, NULL, FALSE, 0, 0);
+
+		GdkRectangle rect;
+		gtk_tree_view_get_cell_area (view, path, NULL, &rect);
+		_popup_x = 0;
+		_popup_y = rect.y + rect.height;
+
+		g_list_foreach (rows, (GFunc) gtk_tree_path_free, NULL);
+		g_list_free (rows);
+	}
 
 	g_signal_emit (widget, right_click_signal, 0, outreach);
 	return TRUE;

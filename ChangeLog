@@ -1,3 +1,12 @@
+2010-11-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/ygtkpkgfilterview.cc: use bold for "all
+	packages" or "all patches" row.
+
+	* src/ygtktreeview.c: when pressing the context-menu
+	key, show the popup menu next to the selected row, not
+	under the mouse cursor.
+
 2010-11-01 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/YGPackageSelector.cc: show header bar.
