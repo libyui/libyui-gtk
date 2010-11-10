@@ -54,7 +54,6 @@ rm -rf "$RPM_BUILD_ROOT"
 %defattr (-, root, root)
 %dir %_libdir/YaST2
 %_libdir/YaST2/plugin/
-# %_prefix/share/YaST2/gtk/
 
 %changelog
 
