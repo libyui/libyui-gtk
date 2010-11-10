@@ -108,10 +108,8 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 		g_list_free (rows);
 	}
 
-	GtkWidget *widget = (GtkWidget *) user_data;
 	gtk_tree_view_convert_bin_window_to_widget_coords (
-		GTK_TREE_VIEW (widget), _popup_x, _popup_y, &_popup_x, &_popup_y);
-
+		view, _popup_x, _popup_y, &_popup_x, &_popup_y);
 	gint x_orig, y_orig;
 	gdk_window_get_origin (widget->window, &x_orig, &y_orig);
 	_popup_x += x_orig; _popup_y += y_orig;
