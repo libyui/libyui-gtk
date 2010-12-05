@@ -17,6 +17,7 @@ set (gtk_pkg_yast_plugin_SRCS
 	ygtkpkgsearchentry.cc
 	ygtkpkgstatusbar.cc
 	ygtkpkgundolist.cc
+	ygtkpkgvestigialdialog.cc
 	yzypptags.cc
 	yzyppwrapper.cc
 

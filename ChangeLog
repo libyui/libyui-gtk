@@ -1,3 +1,11 @@
+2010-12-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkpkgvestigialdialog.h/cc: show unneeded
+	packages (not done yet), as requested by Atri.
+
+	* src/YGUI.cc: tell package kit to shut down if
+	running, as requested by Atri.
+
 2010-11-10 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/pkg/ygtkpkgfilterview.cc: use bold for "all

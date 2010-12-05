@@ -140,17 +140,28 @@ YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const str
 
 class YGLogView : public YLogView, public YGTextView
 {
+bool m_cancelAutoScroll;
+
 public:
 	YGLogView (YWidget *parent, const string &label, int visibleLines, int maxLines)
 	: YLogView (NULL, label, visibleLines, maxLines)
-	, YGTextView (this, parent, label, false)
-	{}
+	, YGTextView (this, parent, label, false), m_cancelAutoScroll (false)
+	{
+		GtkAdjustment *adj = GTK_TEXT_VIEW (getWidget())->vadjustment;
+		g_signal_connect (G_OBJECT (adj), "value-changed",
+		                  G_CALLBACK (adj_value_changed_cb), this);
+	}
 
 	// YLogView
 	virtual void displayLogText (const string &text)
 	{
 		setText (text);
-		scrollToBottom();
+		if (!m_cancelAutoScroll) {
+			GtkAdjustment *adj = GTK_TEXT_VIEW (getWidget())->vadjustment;
+			g_signal_handlers_block_by_func (adj, (gpointer) adj_value_changed_cb, this);
+			scrollToBottom();
+			g_signal_handlers_unblock_by_func (adj, (gpointer) adj_value_changed_cb, this);
+		}
 	}
 
 	// YGWidget
@@ -161,6 +172,12 @@ public:
 			return MAX (80, height);
 		}
 		return 50;
+	}
+
+	static void adj_value_changed_cb (GtkAdjustment *vadj, YGLogView *pThis)
+	{
+		// user scrolling - disable auto-scroll if user wants to look up
+		pThis->m_cancelAutoScroll = (vadj->value < vadj->upper - vadj->page_size);
 	}
 
 	YGLABEL_WIDGET_IMPL (YLogView)

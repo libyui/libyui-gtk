@@ -655,11 +655,11 @@ static void install_all_debug_source_pkgs_cb()
 static void show_pkg_changes_cb()
 { YGPackageSelector::get()->popupChanges(); }
 
-
-#include "ygtkpkghistorydialog.h"
-
 static void show_log_changes_cb()
-{ popupHistoryDialog(); }
+{ YGPackageSelector::get()->showHistoryDialog(); }
+
+static void show_vestigial_packages_cb()
+{ YGPackageSelector::get()->showVestigialDialog(); }
 
 static void reset_ignored_dependency_conflicts_cb()
 { zypp::getZYpp()->resolver()->undo(); }
@@ -730,9 +730,12 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			G_CALLBACK (show_products_cb), this);
 		append_menu_item (submenu, _("Show _Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
-		if (!selector->onlineUpdateMode())
+		if (!selector->onlineUpdateMode()) {
 			append_menu_item (submenu, _("Show _History"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
+			append_menu_item (submenu, _("Show _Unneeded Dependencies"), NULL,
+				G_CALLBACK (show_vestigial_packages_cb), this);
+		}
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		// Translators: keep "-_devel" untranslated
 		append_menu_item (submenu, _("Install All Matching -_devel Packages"), NULL,

@@ -27,6 +27,9 @@
 #include "ygtkpkgstatusbar.h"
 #include "ygtkpkgdetailview.h"
 
+#include "ygtkpkghistorydialog.h"
+#include "ygtkpkgvestigialdialog.h"
+
 //#define USE_LIST_BUTTONS
 
 YGPackageSelector *YGPackageSelector::singleton = 0;
@@ -653,7 +656,8 @@ static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 }
 
 YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
-: YPackageSelector (NULL, mode), YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
+: YPackageSelector (NULL, mode), YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL),
+m_historyDialog (NULL), m_vestigialDialog (NULL)
 {
 	singleton = this;
 	setBorder (0);
@@ -709,6 +713,7 @@ YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 
 YGPackageSelector::~YGPackageSelector()
 {
+	delete m_historyDialog; delete m_vestigialDialog;
 	delete impl;
 	singleton = 0;
 }
@@ -756,10 +761,6 @@ void YGPackageSelector::searchFor (Ypp::PoolQuery::StringAttribute attrb, const 
 	impl->refreshQuery();
 }
 
-void YGPackageSelector::showSelectableDetails (Ypp::Selectable &sel)
-{
-}
-
 void YGPackageSelector::popupChanges()
 { impl->m_undo->popupDialog (false); }
 
@@ -774,6 +775,20 @@ void YGPackageSelector::filterPkgSuffix (const std::string &suffix, bool enable)
 
 void YGPackageSelector::showRepoManager()
 { YGUI::ui()->sendEvent (new YMenuEvent ("repo_mgr")); }
+
+void YGPackageSelector::showHistoryDialog()
+{
+	if (!m_historyDialog)
+		m_historyDialog = new YGtkPkgHistoryDialog();
+	m_historyDialog->popup();
+}
+
+void YGPackageSelector::showVestigialDialog()
+{
+	if (!m_vestigialDialog)
+		m_vestigialDialog = new YGtkPkgVestigialDialog();
+	m_vestigialDialog->popup();
+}
 
 YGtkPkgUndoList *YGPackageSelector::undoList()
 { return impl->m_undo; }

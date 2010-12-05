@@ -50,7 +50,7 @@ protected:
 	{ DELAY_EVENT = 2, IGNORE_NOTIFY_EVENT = 4, IF_NOT_PENDING_EVENT = 8 };
 	void emitEvent (YEvent::EventReason reason, EventFlags flags = (EventFlags) 0);
 
-	// signal registration; use "BlockEvents (this)" to temp block all signals
+	// signal registration; use "BlockEvents (this)" to temp-ly block all signals
 	friend struct BlockEvents;
 	void connect (gpointer object, const char *name,
 	              GCallback callback, gpointer data, bool after = true);

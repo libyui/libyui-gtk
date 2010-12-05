@@ -311,7 +311,7 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 	if (ret == 1)
-		popupHistoryDialog();
+		YGPackageSelector::get()->showHistoryDialog();
 	gtk_widget_destroy (dialog);
 	return ret == GTK_RESPONSE_YES;
 }

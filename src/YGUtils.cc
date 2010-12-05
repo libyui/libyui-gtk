@@ -860,3 +860,14 @@ gboolean YGUtils::empty_row_is_separator_cb (
 	return ret;
 }
 
+std::string YGUtils::exec (const char *cmd)
+{
+	FILE *pipe = popen (cmd, "r");
+	if (!pipe)
+		return "";
+	char buffer [1024];
+	fgets (buffer, 1024, pipe);
+	pclose (pipe);
+	return buffer;
+}
+

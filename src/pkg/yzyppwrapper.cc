@@ -45,6 +45,27 @@ bool Ypp::Repository::isSystem()
 bool Ypp::Repository::operator == (const Ypp::Repository &other) const
 { return this->m_repo.info().alias() == other.m_repo.info().alias(); }
 
+void Ypp::getRepositoryFromAlias (const std::string &alias, std::string &name, std::string &url)
+{
+	static std::map <std::string, zypp::RepoInfo> repos;
+	if (repos.empty()) {
+		zypp::RepoManager manager;
+		std::list <zypp::RepoInfo> known_repos = manager.knownRepositories();
+		for (std::list <zypp::RepoInfo>::const_iterator it = known_repos.begin();
+			 it != known_repos.end(); it++)
+			repos[it->alias()] = *it;
+	}
+
+	std::map <std::string, zypp::RepoInfo>::iterator it = repos.find (alias);
+	if (it != repos.end()) {
+		zypp::RepoInfo *repo = &it->second;
+		name = repo->name();
+		url = repo->url().asString();
+	}
+	else
+		name = alias;  // return alias if repo not currently setup-ed
+}
+
 // Version
 
 Ypp::Version::Version (ZyppResObject zobj)

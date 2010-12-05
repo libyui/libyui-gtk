@@ -110,6 +110,9 @@ namespace Ypp
 			bool m_onlyInfo;
 	};
 
+	void getRepositoryFromAlias (const std::string &alias,
+		std::string &name, std::string &url);
+
 	// Selectable & complementory structs
 
 	struct Version {

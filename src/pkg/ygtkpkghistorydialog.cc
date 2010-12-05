@@ -22,27 +22,6 @@
 #include <zypp/parser/HistoryLogReader.h>
 #define FILENAME "/var/log/zypp/history"
 
-static void getRepositoryInfo (const std::string &alias, std::string &name, std::string &url)
-{
-	static std::map <std::string, zypp::RepoInfo> repos;
-	if (repos.empty()) {
-		zypp::RepoManager manager;
-		std::list <zypp::RepoInfo> known_repos = manager.knownRepositories();
-		for (std::list <zypp::RepoInfo>::const_iterator it = known_repos.begin();
-			 it != known_repos.end(); it++)
-			repos[it->alias()] = *it;
-	}
-
-	std::map <std::string, zypp::RepoInfo>::iterator it = repos.find (alias);
-	if (it != repos.end()) {
-		zypp::RepoInfo *repo = &it->second;
-		name = repo->name();
-		url = repo->url().asString();
-	}
-	else
-		name = alias;  // return alias if repo not currently setup-ed
-}
-
 static std::string reqbyTreatment (const std::string &reqby)
 {
 	if (reqby.empty())
@@ -284,7 +263,7 @@ struct ZyppHistoryParser
 					static_cast <zypp::HistoryItemInstall *> (item.get());
 				name = _item->name;
 				descrpt = _item->edition.version();
-				getRepositoryInfo (_item->repoalias, repoName, repoUrl);
+				Ypp::getRepositoryFromAlias (_item->repoalias, repoName, repoUrl);
 				reqby = _item->reqby; autoreq = reqby.empty();
 				reqby = reqbyTreatment (reqby);
 				zypp::Edition edition = _item->edition;
@@ -322,7 +301,7 @@ struct ZyppHistoryParser
 				zypp::HistoryItemRepoAdd *_item =
 					static_cast <zypp::HistoryItemRepoAdd *> (item.get());
 				action = _("add repository");
-				getRepositoryInfo (_item->alias, name, t);
+				Ypp::getRepositoryFromAlias (_item->alias, name, t);
 				descrpt = _item->url.asString();
 				break;
 			}
@@ -344,7 +323,7 @@ struct ZyppHistoryParser
 				zypp::HistoryItemRepoUrlChange *_item =
 					static_cast <zypp::HistoryItemRepoUrlChange *> (item.get());
 				action = _("change repository url");
-				getRepositoryInfo (_item->alias, name, t);
+				Ypp::getRepositoryFromAlias (_item->alias, name, t);
 				descrpt = _item->newurl.asString();
 				break;
 			}
@@ -671,16 +650,9 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gdk_window_set_cursor (dialog->window, NULL);
 }
 
-YGtkPkgHistoryDialog::~YGtkPkgHistoryDialog() {}
+YGtkPkgHistoryDialog::~YGtkPkgHistoryDialog()
+{ gtk_widget_destroy (m_dialog); }
 
 void YGtkPkgHistoryDialog::popup()
 { gtk_window_present (GTK_WINDOW (m_dialog)); }
-
-void popupHistoryDialog()
-{
-	static YGtkPkgHistoryDialog *dialog = 0;
-	if (!dialog)
-		dialog = new YGtkPkgHistoryDialog();
-	dialog->popup();
-}
 

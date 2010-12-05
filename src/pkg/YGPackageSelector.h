@@ -15,6 +15,8 @@
 
 struct YGtkPkgUndoList;
 struct YGtkPkgSearchEntry;
+struct YGtkPkgHistoryDialog;
+struct YGtkPkgVestigialDialog;
 
 class YGPackageSelector : public YPackageSelector, YGWidget
 {
@@ -29,10 +31,12 @@ public:
 
 	void showFilterWidget (const char *filter);
 	void searchFor (Ypp::PoolQuery::StringAttribute attrb, const std::string &text);
-	void showSelectableDetails (Ypp::Selectable &sel);
 	void popupChanges();
 	void filterPkgSuffix (const std::string &suffix, bool enable_filter);
 	void showRepoManager();
+
+	void showHistoryDialog();
+	void showVestigialDialog();
 
 	YGtkPkgUndoList *undoList();
 	YGtkPkgSearchEntry *getSearchEntry();
@@ -46,8 +50,12 @@ public:
 
 	struct Impl;
 	Impl *impl;
+
 private:
 	static YGPackageSelector *singleton;
+
+	YGtkPkgHistoryDialog *m_historyDialog;
+	YGtkPkgVestigialDialog *m_vestigialDialog;
 };
 
 #endif
