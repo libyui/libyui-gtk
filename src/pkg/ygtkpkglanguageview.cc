@@ -17,8 +17,7 @@ YGtkPkgLanguageView::YGtkPkgLanguageView()
 	addTextColumn (NULL, NAME_SUMMARY_PROP, true, -1);
 
 	Ypp::LangQuery query;
-	Ypp::List list (query);
-	YGtkPkgListView::setList (list);
+	YGtkPkgListView::setList (query);
 
 	YGtkPkgListView::setListener (this);
 }
@@ -28,7 +27,7 @@ GtkWidget *YGtkPkgLanguageView::getWidget()
 
 bool YGtkPkgLanguageView::writeQuery (Ypp::PoolQuery &query)
 {
-	Ypp::List list = getSelected();
+	Ypp::List list (getSelected());
 	if (list.size() > 0) {
 		Ypp::Collection col (list.get (0));
 		query.addCriteria (new Ypp::FromCollectionMatch (col));

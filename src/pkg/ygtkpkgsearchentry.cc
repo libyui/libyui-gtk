@@ -79,7 +79,7 @@ YGtkPkgSearchEntry::YGtkPkgSearchEntry()
 : YGtkPkgQueryWidget(), impl (new Impl())
 {
 	impl->entry = gtk_entry_new();
-	gtk_widget_set_size_request (impl->entry, 160, -1);
+	gtk_widget_set_size_request (impl->entry, 180, -1);
 	g_signal_connect (G_OBJECT (impl->entry), "realize",  // grab focus at start
 	                  G_CALLBACK (gtk_widget_grab_focus), NULL);
 	g_signal_connect (G_OBJECT (impl->entry), "changed",

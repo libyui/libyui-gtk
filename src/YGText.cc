@@ -47,10 +47,17 @@ public:
 		gtk_text_buffer_delete (getBuffer(), &start_it, &end_it);
 	}
 
-	void setText (const string &text)
+	void setText (const std::string &text)
 	{
 		BlockEvents block (this);
 		gtk_text_buffer_set_text (getBuffer(), text.c_str(), -1);
+	}
+
+	void appendText (const std::string &text)
+	{
+		GtkTextIter end_it;
+		gtk_text_buffer_get_end_iter (getBuffer(), &end_it);
+		gtk_text_buffer_insert (getBuffer(), &end_it, text.c_str(), -1);
 	}
 
 	std::string getText()
@@ -66,8 +73,9 @@ public:
 
 	void scrollToBottom()
 	{
-		//YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
-
+#if 1
+		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
+#else
 		GtkTextBuffer *buffer = getBuffer();
 		GtkTextIter iter;
 		gtk_text_buffer_get_end_iter (buffer, &iter);
@@ -81,6 +89,7 @@ public:
 
 		GtkTextView *view = GTK_TEXT_VIEW (getWidget());
 		gtk_text_view_scroll_mark_onscreen (view, mark);
+#endif
 	}
 
 	// Event callbacks
@@ -140,28 +149,38 @@ YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const str
 
 class YGLogView : public YLogView, public YGTextView
 {
-bool m_cancelAutoScroll;
+std::string m_text;
 
 public:
 	YGLogView (YWidget *parent, const string &label, int visibleLines, int maxLines)
 	: YLogView (NULL, label, visibleLines, maxLines)
-	, YGTextView (this, parent, label, false), m_cancelAutoScroll (false)
-	{
-		GtkAdjustment *adj = GTK_TEXT_VIEW (getWidget())->vadjustment;
-		g_signal_connect (G_OBJECT (adj), "value-changed",
-		                  G_CALLBACK (adj_value_changed_cb), this);
-	}
+	, YGTextView (this, parent, label, false)
+	{}
 
 	// YLogView
-	virtual void displayLogText (const string &text)
+	virtual void displayLogText (const std::string &text)
 	{
-		setText (text);
-		if (!m_cancelAutoScroll) {
-			GtkAdjustment *adj = GTK_TEXT_VIEW (getWidget())->vadjustment;
-			g_signal_handlers_block_by_func (adj, (gpointer) adj_value_changed_cb, this);
-			scrollToBottom();
-			g_signal_handlers_unblock_by_func (adj, (gpointer) adj_value_changed_cb, this);
+		// libyui calls clearText before setting it: let's ignore it
+		if (text.empty()) return;
+
+		if (text.compare (0, m_text.size(), m_text) == 0) {
+			if (text.size() == m_text.size()) return;
+
+			// appending text: avoid flickering and allow user to scroll freely
+			GtkAdjustment *vadj = GTK_TEXT_VIEW (getWidget())->vadjustment;
+			bool autoScroll = vadj->value >= vadj->upper - vadj->page_size;
+
+			std::string diff (text.substr (m_text.size()));
+			YGTextView::appendText (diff);
+			if (autoScroll)
+				YGTextView::scrollToBottom();
+
 		}
+		else {
+			YGTextView::setText (text);
+			YGTextView::scrollToBottom();
+		}
+		m_text = text;
 	}
 
 	// YGWidget
@@ -172,12 +191,6 @@ public:
 			return MAX (80, height);
 		}
 		return 50;
-	}
-
-	static void adj_value_changed_cb (GtkAdjustment *vadj, YGLogView *pThis)
-	{
-		// user scrolling - disable auto-scroll if user wants to look up
-		pThis->m_cancelAutoScroll = (vadj->value < vadj->upper - vadj->page_size);
 	}
 
 	YGLABEL_WIDGET_IMPL (YLogView)

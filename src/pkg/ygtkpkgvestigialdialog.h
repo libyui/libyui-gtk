@@ -17,9 +17,8 @@ struct YGtkPkgVestigialDialog
 
 	void popup();
 
-private:
-	GtkWidget *m_dialog;
-//	Ypp::List m_unneeded;
+	struct Impl;
+	Impl *impl;
 };
 
 // you do not want to use this class directly:

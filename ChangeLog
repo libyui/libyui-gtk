@@ -1,5 +1,12 @@
 2010-12-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtkpkgvestigialdialog.h/cc: now functional.
+
+	* src/YGText.cc: reduced flickering of LogView,
+	and allowed user to freely scroll it.
+
+2010-12-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkpkgvestigialdialog.h/cc: show unneeded
 	packages (not done yet), as requested by Atri.
 
