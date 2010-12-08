@@ -35,6 +35,8 @@ struct YGtkPkgListView {
 	void addImageColumn (const char *header, int property, bool onlyManualModified = false);
 	void addButtonColumn (const char *header, int property);
 
+	Ypp::List getList();
+
 	struct Listener {
 		virtual void selectionChanged() = 0;
 	};

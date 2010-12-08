@@ -84,8 +84,7 @@ struct YGtkPkgVestigialDialog::Impl : public YGtkPkgListView::Listener
 
 	void remove_all()
 	{
-		Ypp::List selected (view->getSelected());
-		selected.remove();
+		view->getList().remove();
 	}
 
 	static void response_cb (GtkDialog *dialog, gint response, Impl *pThis)
@@ -132,7 +131,7 @@ static gboolean fill_list_idle_cb (void *data)
 	// 1. get list of packages installed as dependencies
 	ZyppVestigialParser parser;
 	const std::set <std::string> &deps = parser.m_dependencies;
-	impl->set_progress (.5);
+	impl->set_progress (.1);
 	// 2. map string names to zypp objects and check whether they are still necessary
 	int size = deps.size(), i = 0;
 	std::list <ZyppSelectable> unneeded;
@@ -150,11 +149,12 @@ static gboolean fill_list_idle_cb (void *data)
 					unneeded.push_back (zsel);
 		}
 
-		if ((i % 10) == 0)
-			impl->set_progress (.5 + ((i / (gdouble) size) * .85));
+		if ((i % 2) == 0)
+			impl->set_progress (.1 + ((i / (gdouble) size) * .80));
 		i++;
 	}
 	// 3. filter those installed by a container
+	impl->set_progress (.90);
 	Ypp::LangQuery langQuery;
 	size = langQuery.guessSize(); i = 0;
 	while (langQuery.hasNext()) {
@@ -197,7 +197,7 @@ YGtkPkgVestigialDialog::YGtkPkgVestigialDialog()
 	impl = new Impl();
 	GtkWidget *action_area = gtk_dialog_get_action_area (GTK_DIALOG (dialog));
 	impl->progressbar = gtk_progress_bar_new();
-	gtk_widget_set_size_request (impl->progressbar, -1, 0);
+	gtk_widget_set_size_request (impl->progressbar, 0, 0);
 	gtk_container_add (GTK_CONTAINER (action_area), impl->progressbar);
 
 	gtk_dialog_add_button (GTK_DIALOG (dialog), GTK_STOCK_JUMP_TO, 1);

@@ -874,6 +874,9 @@ void YGtkPkgListView::addButtonColumn (const char *header, int property)
 void YGtkPkgListView::setListener (YGtkPkgListView::Listener *listener)
 { impl->listener = listener; }
 
+Ypp::List YGtkPkgListView::getList()
+{ return impl->list; }
+
 Ypp::List YGtkPkgListView::getSelected()
 {
 	GtkTreeModel *model;

@@ -1,3 +1,11 @@
+2010-12-08 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/ygtkpkgvestigialdialog.cc: fixed remove-all
+	button. Fixed progress bar's progress. Refresh more
+	frequenltly. Smaller progress bar.
+
+	* src/ygtkpkglistview.h/cc: new method: getList().
+
 2010-12-05 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtkpkgvestigialdialog.h/cc: now functional.
