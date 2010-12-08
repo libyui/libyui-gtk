@@ -61,8 +61,8 @@ static gboolean ygtk_tree_view_button_press_event (GtkWidget *widget, GdkEventBu
 		GtkTreeView *view = GTK_TREE_VIEW (widget);
 		GtkTreePath *path;
 		gboolean outreach;
-		outreach = gtk_tree_view_get_path_at_pos (view, event->x, event->y, &path, NULL, NULL, NULL);
-		if (outreach) {   // select row if it is not
+		outreach = !gtk_tree_view_get_path_at_pos (view, event->x, event->y, &path, NULL, NULL, NULL);
+		if (!outreach) {   // select row if it is not
 			GtkTreeSelection *selection = gtk_tree_view_get_selection (view);
 			GtkTreeModel *model = gtk_tree_view_get_model (view);
 			GtkTreeIter iter;

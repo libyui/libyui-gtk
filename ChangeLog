@@ -1,5 +1,13 @@
 2010-12-08 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
+	* src/ygtktreeview.c: bug fix: now showing menu
+	entries when pressing an item. Reported by Atri.
+
+	* src/pkg/ygtkpkgfilterview.cc: use same height for
+	the "All packages" as is used by the categories.
+
+2010-12-08 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
 	* src/ygtkpkgvestigialdialog.cc: fixed remove-all
 	button. Fixed progress bar's progress. Refresh more
 	frequenltly. Smaller progress bar.

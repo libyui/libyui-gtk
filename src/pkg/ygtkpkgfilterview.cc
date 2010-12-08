@@ -115,9 +115,15 @@ void YGtkPkgFilterModel::addRow (const char *icon, const char *text,
 	// we use cell-render-pixbuf's "pixbuf" rather than "icon-name" so we
 	// can use a fixed size
 	GdkPixbuf *pixbuf = 0;
-	if (icon)
-		pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
-			icon, 32, GtkIconLookupFlags (0), NULL);
+	if (icon) {
+		if (!strcmp (icon, "empty")) {
+			pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, 32, 32);
+			gdk_pixbuf_fill (pixbuf, 0xffffff00);
+		}
+		else
+			pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
+				icon, 32, GtkIconLookupFlags (0), NULL);
+	}
 
 	int weight = PANGO_WEIGHT_NORMAL;
 	if (firstRowIsAll() && gtk_tree_model_iter_n_children (impl->model, NULL) == 0)
@@ -313,7 +319,7 @@ YGtkPkgPKGroupModel::YGtkPkgPKGroupModel()
 	for (int i = 0; i < YPKG_GROUP_UNKNOWN; i++)
 		groups.insert (PKGroup ((YPkgGroupEnum) i));
 
-	addRow (NULL, _("All packages"), true, 0);
+	addRow ("empty", _("All packages"), true, 0);
 	for (std::set <PKGroup>::const_iterator it = groups.begin();
 	     it != groups.end(); it++)
 		addRow (it->icon, it->name, true, GINT_TO_POINTER (((int)it->id)+1));

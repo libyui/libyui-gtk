@@ -182,6 +182,7 @@ static gboolean fill_list_idle_cb (void *data)
 	gtk_widget_hide (impl->progressbar);
 	gdk_window_set_cursor (impl->dialog->window, NULL);
 	gtk_dialog_set_response_sensitive (GTK_DIALOG (impl->dialog), 2, unneeded.size());
+	gtk_window_present (GTK_WINDOW (impl->dialog));
 	return FALSE;
 }
 
