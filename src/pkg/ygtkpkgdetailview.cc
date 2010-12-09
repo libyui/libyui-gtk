@@ -396,6 +396,27 @@ struct VersionExpander : public DetailExpander {
 		box = gtk_vbox_new (FALSE, 6);
 		gtk_box_pack_start (GTK_BOX (box), versions_box, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (box), button_box, FALSE, TRUE, 0);
+
+#if 0  // draw border all around
+		GtkWidget *frame = gtk_frame_new (NULL);
+		gtk_container_set_border_width (GTK_CONTAINER (frame), 2);
+		gtk_container_add (GTK_CONTAINER (frame), box);
+		box = frame;
+#endif
+#if 0  // draw border only to the left
+		GtkWidget *frame_box = gtk_hbox_new (FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (frame_box), gtk_vseparator_new(), FALSE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (frame_box), box, TRUE, TRUE, 0);
+		box = frame_box;
+#endif
+#if 0  // colored background
+		GtkWidget *back = gtk_event_box_new();
+		GdkColor color = { 0, 230 << 8, 230 << 8, 230 << 8 };
+		gtk_widget_modify_bg (back, GTK_STATE_NORMAL, &color);
+		gtk_container_add (GTK_CONTAINER (back), box);
+		box = back;
+#endif
+
 		setChild (box);
 	}
 

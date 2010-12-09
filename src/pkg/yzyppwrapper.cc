@@ -1389,6 +1389,7 @@ void Ypp::List::sort (Ypp::List::SortAttribute attrb, bool ascendent)
 	if (impl->vector.empty())
 		return;
 
+	bool unique_criteria = false;
 	switch (attrb) {
 		case IS_INSTALLED_SORT: _order = installed_order; break;
 		case NAME_SORT:
@@ -1397,13 +1398,17 @@ void Ypp::List::sort (Ypp::List::SortAttribute attrb, bool ascendent)
 				_order = utf8_name_order;
 			else
 				_order = name_order;
+			unique_criteria = true;
 			break;
-		case SIZE_SORT: _order = size_order; break;
+		case SIZE_SORT: _order = size_order; unique_criteria = true; break;
 		case REPOSITORY_SORT: _order = repository_order; break;
 		case SUPPORT_SORT: _order = support_order; break;
 	}
 	_ascendent = ascendent;
-	std::sort (impl->vector.begin(), impl->vector.end(), proxy_order);
+	if (unique_criteria)
+		std::sort (impl->vector.begin(), impl->vector.end(), proxy_order);
+	else  // many attributes are equal: maintain previous order in such cases
+		std::stable_sort (impl->vector.begin(), impl->vector.end(), proxy_order);
 }
 
 void Ypp::List::reverse()

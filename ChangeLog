@@ -1,3 +1,8 @@
+2010-12-09 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
+
+	* src/pkg/yzyppwrapper.cc: bug fix: when sorting
+	equal attributes maintain previous arranging order.
+
 2010-12-08 Ricardo Cruz  <rpmcruz@alunos.dcc.fc.up.pt>
 
 	* src/ygtktreeview.c: bug fix: now showing menu
