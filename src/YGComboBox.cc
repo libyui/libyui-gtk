@@ -21,10 +21,9 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	{
 		gtk_combo_box_set_model (getComboBox(), getModel());
 		GtkCellRenderer* cell;
-		if (editable) {
+		if (editable)
 			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()),
 			                                     YGSelectionModel::LABEL_COLUMN);
-		}
 		else {
 			cell = gtk_cell_renderer_text_new ();
 			gtk_cell_layout_pack_end (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
@@ -37,9 +36,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 			"pixbuf", YGSelectionModel::ICON_COLUMN, NULL);
 
 		connect (getWidget(), "changed", G_CALLBACK (selected_changed_cb), this);
-		// realize doesn't seem reliable -- expose then disconnect
-		g_signal_connect (G_OBJECT (getWidget()), "expose-event",
-		                  G_CALLBACK (realize_cb), this);
 	}
 
 	inline GtkComboBox *getComboBox()
@@ -129,19 +125,6 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionM
 	// callbacks
 	static void selected_changed_cb (GtkComboBox *widget, YGComboBox *pThis)
 	{ pThis->emitEvent (YEvent::ValueChanged); }
-
-	static gboolean realize_cb (GtkWidget *widget, GdkEventExpose *event,
-	                            YGComboBox *pThis)
-	{
-		// some combo boxes have too many items -- wrap the thing in columns
-		int rows;
-		pThis->getMaxDepth (&rows);
-		int cols = MIN (rows / 20, 5) + 1;
-		if (cols > 1)  // this changes the popup width, so only set it for cols > 1
-			gtk_combo_box_set_wrap_width (pThis->getComboBox(), cols);
-		g_signal_handlers_disconnect_by_func (widget, (gpointer) realize_cb, pThis);
-		return FALSE;
-	}
 
 	YGLABEL_WIDGET_IMPL (YComboBox)
 	YGSELECTION_WIDGET_IMPL (YComboBox)

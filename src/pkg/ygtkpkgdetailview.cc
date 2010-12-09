@@ -397,7 +397,7 @@ struct VersionExpander : public DetailExpander {
 		gtk_box_pack_start (GTK_BOX (box), versions_box, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (box), button_box, FALSE, TRUE, 0);
 
-#if 0  // draw border all around
+#if 1  // draw border all around
 		GtkWidget *frame = gtk_frame_new (NULL);
 		gtk_container_set_border_width (GTK_CONTAINER (frame), 2);
 		gtk_container_add (GTK_CONTAINER (frame), box);

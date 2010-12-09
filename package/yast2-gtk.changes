@@ -1,4 +1,17 @@
 -------------------------------------------------------------------
+Thu Dec 09 23:33:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.83
+- fix: can't use combo-box popup menu when items are too
+long (bnc#595560).
+- table fix: not showing all popup entries on right-click.
+- log view fix: fixed flickering, and allow user to freely
+scroll.
+- sw_single: use same height for "all packages" item, and
+keep items sorted by name when sorting by status or another
+column.
+
+-------------------------------------------------------------------
 Wed Nov 10 18:07:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.82

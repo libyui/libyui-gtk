@@ -13,6 +13,8 @@
 #include "YGWidget.h"
 #include "yzyppwrapper.h"
 
+//#define HAS_VESTIGIAL_DIALOG
+
 struct YGtkPkgUndoList;
 struct YGtkPkgSearchEntry;
 struct YGtkPkgHistoryDialog;
@@ -36,7 +38,9 @@ public:
 	void showRepoManager();
 
 	void showHistoryDialog();
+#ifdef HAS_VESTIGIAL_DIALOG
 	void showVestigialDialog();
+#endif
 
 	YGtkPkgUndoList *undoList();
 	YGtkPkgSearchEntry *getSearchEntry();
@@ -55,7 +59,9 @@ private:
 	static YGPackageSelector *singleton;
 
 	YGtkPkgHistoryDialog *m_historyDialog;
+#ifdef HAS_VESTIGIAL_DIALOG
 	YGtkPkgVestigialDialog *m_vestigialDialog;
+#endif
 };
 
 #endif

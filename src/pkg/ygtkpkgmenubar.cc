@@ -658,8 +658,10 @@ static void show_pkg_changes_cb()
 static void show_log_changes_cb()
 { YGPackageSelector::get()->showHistoryDialog(); }
 
+#ifdef HAS_VESTIGIAL_DIALOG
 static void show_vestigial_packages_cb()
 { YGPackageSelector::get()->showVestigialDialog(); }
+#endif
 
 static void reset_ignored_dependency_conflicts_cb()
 { zypp::getZYpp()->resolver()->undo(); }
@@ -733,8 +735,10 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		if (!selector->onlineUpdateMode()) {
 			append_menu_item (submenu, _("Show _History"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
+#ifdef HAS_VESTIGIAL_DIALOG
 			append_menu_item (submenu, _("Show _Unneeded Dependencies"), NULL,
 				G_CALLBACK (show_vestigial_packages_cb), this);
+#endif
 		}
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		// Translators: keep "-_devel" untranslated

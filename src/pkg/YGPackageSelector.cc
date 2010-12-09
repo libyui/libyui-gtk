@@ -28,7 +28,9 @@
 #include "ygtkpkgdetailview.h"
 
 #include "ygtkpkghistorydialog.h"
+#ifdef HAS_VESTIGIAL_DIALOG
 #include "ygtkpkgvestigialdialog.h"
+#endif
 
 //#define USE_LIST_BUTTONS
 
@@ -657,7 +659,10 @@ static void wizard_action_cb (YGtkWizard *wizard, gpointer id,
 
 YGPackageSelector::YGPackageSelector (YWidget *parent, long mode)
 : YPackageSelector (NULL, mode), YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL),
-m_historyDialog (NULL), m_vestigialDialog (NULL)
+m_historyDialog (NULL)
+#ifdef HAS_VESTIGIAL_DIALOG
+, m_vestigialDialog (NULL)
+#endif
 {
 	singleton = this;
 	setBorder (0);
@@ -713,7 +718,10 @@ m_historyDialog (NULL), m_vestigialDialog (NULL)
 
 YGPackageSelector::~YGPackageSelector()
 {
-	delete m_historyDialog; delete m_vestigialDialog;
+	delete m_historyDialog;
+#ifdef HAS_VESTIGIAL_DIALOG
+	delete m_vestigialDialog;
+#endif
 	delete impl;
 	singleton = 0;
 }
@@ -783,12 +791,14 @@ void YGPackageSelector::showHistoryDialog()
 	m_historyDialog->popup();
 }
 
+#ifdef HAS_VESTIGIAL_DIALOG
 void YGPackageSelector::showVestigialDialog()
 {
 	if (!m_vestigialDialog)
 		m_vestigialDialog = new YGtkPkgVestigialDialog();
 	m_vestigialDialog->popup();
 }
+#endif
 
 YGtkPkgUndoList *YGPackageSelector::undoList()
 { return impl->m_undo; }
