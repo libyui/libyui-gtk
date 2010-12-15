@@ -45,3 +45,15 @@ Documentation
   For documentation of YaST in general:
     http://developer.novell.com/wiki/index.php/Special:Downloads/yast/doc
 
+ChangeLog
+
+	Changes associated with version releases are recorded at
+	package/yast2-gtk.changes
+
+	Individual svn changes can be read by issueing: svn log | less
+
+	Other usage examples:
+		Last 50 changes:          svn log -l 50
+		Show also files changed:  svn log -v
+		Changes for a given file: svn log src/YGUI.cc
+
