@@ -13,7 +13,7 @@
 #include "YGWidget.h"
 #include "yzyppwrapper.h"
 
-//#define HAS_VESTIGIAL_DIALOG
+#define HAS_VESTIGIAL_DIALOG
 
 struct YGtkPkgUndoList;
 struct YGtkPkgSearchEntry;
