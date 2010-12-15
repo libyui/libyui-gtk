@@ -68,9 +68,6 @@ namespace YGUtils
 
 	/* Shrink widget inner-border (thickness) */
 	void shrinkWidget (GtkWidget *widget);
-
-	/* Runs and returns stdout of given command. */
-	std::string exec (const char *cmd);
 };
 
 extern "C" {

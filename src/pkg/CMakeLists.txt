@@ -19,7 +19,7 @@ set (gtk_pkg_yast_plugin_SRCS
 	ygtkpkgundolist.cc
 	yzypptags.cc
 	yzyppwrapper.cc
-	ygtkpkgvestigialdialog.cc
+	#ygtkpkgvestigialdialog.cc
 
 	ygtkcellrendererbutton.c
 	ygtkcellrenderersidebutton.c

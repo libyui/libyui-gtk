@@ -153,26 +153,6 @@ void YGUI::checkInit()
 		gtk_window_set_default_icon (pixbuf);
 		g_object_unref (G_OBJECT (pixbuf));
 	}
-
-	if (m_swsingle) {
-		struct inner {
-			static bool is_pkkit_running() {
-				return YGUtils::exec ("dbus-send --system --dest=org.freedesktop.DBus "
-					"--type=method_call --print-reply --reply-timeout=200 "
-					"/ org.freedesktop.DBus.NameHasOwner "
-					"string:org.freedesktop.PackageKit").find (
-						"boolean false") != std::string::npos;
-			}
-
-			static void close_pkkit() {
-				YGUtils::exec ("/bin/dbus-send --system --dest=org.freedesktop.PackageKit "
-					"--type=method_call /org/freedesktop/PackageKit org.freedesktop.PackageKit.SuggestDaemonQuit");
-			}
-		};
-
-		if (inner::is_pkkit_running())
-			inner::close_pkkit();
-	}
 }
 
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
