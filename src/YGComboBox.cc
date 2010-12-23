@@ -53,6 +53,8 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 		GtkTreeIter iter;
 		addRow (item, &iter);
 		setRowText (&iter, 0, item->iconName(), 1, item->label(), this);
+		if (item->selected())
+			doSelectItem (item, true);
 	}
 
 	void doSelectItem (YItem *item, bool select)
