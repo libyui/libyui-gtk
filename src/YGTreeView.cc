@@ -27,7 +27,7 @@ public:
 	: YGScrolledWidget (ywidget, parent, label, YD_VERT, YGTK_TYPE_TREE_VIEW, NULL),
 	  YGSelectionStore (tree)
 	{
-		gtk_tree_view_set_headers_visible (GTK_TREE_VIEW (getWidget()), FALSE);
+		gtk_tree_view_set_headers_visible (getView(), FALSE);
 
 		/* Yast tools expect the user to be unable to un-select the row. They
 		   generally don't check to see if the returned value is -1. So, just
@@ -79,6 +79,8 @@ public:
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
+		if (gtk_tree_view_get_search_column (getView()) == -1)
+			gtk_tree_view_set_search_column (getView(), text_col);
 	}
 
 	void addCheckColumn (int check_col)
@@ -92,6 +94,8 @@ public:
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
+		if (markColumn() == -1)
+			g_object_set_data (G_OBJECT (getWidget()), "mark-col", GINT_TO_POINTER (check_col));
 	}
 
 	void readModel()
@@ -141,7 +145,8 @@ public:
 	virtual bool _immediateMode() { return true; }
 	virtual bool _shrinkable() { return false; }
 
-	virtual int markColumn() { return -1; }
+	int markColumn()
+	{ return GPOINTER_TO_INT (g_object_get_data (G_OBJECT (getWidget()), "mark-col")); }
 
 	void toggleMark (GtkTreePath *path, gint column)
 	{
@@ -200,7 +205,7 @@ protected:
 		};
 
 		if (pThis->m_blockTimeout) return;
-		if (pThis->markColumn() < 0)
+		if (pThis->markColumn() == -1)
 			gtk_tree_model_foreach (pThis->getModel(), inner::foreach_sync_select, pThis);
 		if (pThis->_immediateMode())
 			pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
@@ -505,7 +510,6 @@ public:
 	// YGTreeView
 
 	virtual bool _shrinkable() { return shrinkable(); }
-	virtual int markColumn() { return 0; }
 
 	// YGSelectionStore
 
@@ -648,12 +652,6 @@ public:
 
 		gtk_tree_model_foreach (getModel(), inner::foreach_sync_open, this);
 	}
-
-	// YGTreeView
-
-#if YAST2_VERSION >= 2019002
-	virtual int markColumn() { return hasMultiSelection() ? 2 : -1; }
-#endif
 
 	// YGSelectionStore
 
