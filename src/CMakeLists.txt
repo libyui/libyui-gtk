@@ -16,9 +16,9 @@ set (gtk_yast_plugin_SRCS
 	YGPushButton.cc
 	YGProgressBar.cc
 	YGRadioButton.cc
-	YGSelectionModel.cc
-	YGTable.cc
+	YGSelectionStore.cc
 	YGText.cc
+	YGTreeView.cc
 	YGUtils.cc
 	YGUI.cc
 	YGWidget.cc

@@ -89,12 +89,12 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YRadioButton *createRadioButton (YWidget *parent, const string &label, bool isChecked);
     virtual YComboBox *createComboBox (YWidget *parent, const string & label, bool editable);
 	virtual YSelectionBox *createSelectionBox (YWidget *parent, const string &label);
-	virtual YTree *createTree (YWidget *parent, const string &label);
-#if YAST2_VERSION >= 2017005
-	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
+#if YAST2_VERSION >= 2019002
+	virtual YTree *createTree (YWidget *parent, const string &label, bool multiselection);
 #else
-	virtual YTable *createTable (YWidget *parent, YTableHeader *headers);
+	virtual YTree *createTree (YWidget *parent, const string &label);
 #endif
+	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
 	virtual YProgressBar *createProgressBar	(YWidget *parent, const string &label, int maxValue);
 	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const string &label, int timeout);
 	virtual YRichText *createRichText (YWidget *parent, const string &text, bool plainTextMode);
@@ -110,9 +110,7 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YWidget *createPkgSpecial (YWidget * parent, const string & subwidgetName) RET (NULL)  // for ncurses
 
 	virtual YLayoutBox *createLayoutBox (YWidget *parent, YUIDimension dimension);
-#if YAST2_VERSION >= 2017006
     virtual YButtonBox *createButtonBox (YWidget *parent);
-#endif
 
 	virtual YSpacing *createSpacing (YWidget *parent, YUIDimension dim, bool stretchable, YLayoutSize_t size);
 	virtual YEmpty *createEmpty (YWidget *parent);
@@ -224,9 +222,7 @@ public:
 	virtual bool richTextSupportsTable() RET (false)
 #endif
 
-#if YAST2_VERSION > 2018003
 	virtual bool openContextMenu (const YItemCollection &itemCollection);
-#endif
 
 private:
     // for screenshots:
