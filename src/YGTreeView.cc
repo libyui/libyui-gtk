@@ -14,6 +14,7 @@
 #include "YSelectionWidget.h"
 #include "YGSelectionStore.h"
 #include "ygtktreeview.h"
+#include <YLayoutBox.h>
 
 /* A generic widget for table related widgets. */
 
@@ -21,6 +22,8 @@ class YGTreeView : public YGScrolledWidget, public YGSelectionStore
 {
 protected:
 	guint m_blockTimeout;
+	int markColumn;
+	GtkWidget *m_count;
 
 public:
 	YGTreeView (YWidget *ywidget, YWidget *parent, const string &label, bool tree)
@@ -39,6 +42,7 @@ public:
 		connect (getWidget(), "right-click", G_CALLBACK (right_click_cb), this);
 
 		m_blockTimeout = 0;  // GtkTreeSelection idiotically fires when showing widget
+		markColumn = -1; m_count = NULL;
 		g_signal_connect (getWidget(), "map", G_CALLBACK (block_init_cb), this);
 	}
 
@@ -89,17 +93,69 @@ public:
 		g_object_set_data (G_OBJECT (renderer), "column", GINT_TO_POINTER (check_col));
 		GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes (
 			NULL, renderer, "active", check_col, NULL);
+		gtk_tree_view_column_set_cell_data_func (column, renderer, inconsistent_mark_cb, this, NULL);
 		g_signal_connect (G_OBJECT (renderer), "toggled",
 		                  G_CALLBACK (toggled_cb), this);
 
 		gtk_tree_view_column_set_resizable (column, TRUE);
 		gtk_tree_view_append_column (getView(), column);
-		if (markColumn() == -1)
-			g_object_set_data (G_OBJECT (getWidget()), "mark-col", GINT_TO_POINTER (check_col));
+		if (markColumn == -1)
+			markColumn = check_col;
 	}
 
 	void readModel()
 	{ gtk_tree_view_set_model (getView(), getModel()); }
+
+	void addCountWidget (YWidget *yparent)
+	{
+		bool mainWidget = true;
+		for (; yparent; yparent->parent()) {
+			YLayoutBox *box = dynamic_cast <YLayoutBox *> (yparent);
+			if (box) {
+				mainWidget = box->primary() == YD_VERT;
+				break;
+			}
+		}
+		if (mainWidget) {
+			m_count = gtk_label_new ("0");
+			GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
+			GtkWidget *label = gtk_label_new (_("Total selected:"));
+			//gtk_box_pack_start (GTK_BOX (hbox), gtk_event_box_new(), TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (hbox), m_count, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (YGWidget::getWidget()), hbox, FALSE, TRUE, 0);
+			gtk_widget_show_all (hbox);
+		}
+	}
+
+	void syncCount()
+	{
+		if (!m_count) return;
+
+		struct inner {
+			static gboolean foreach (
+				GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer _pThis)
+			{
+				YGTreeView *pThis = (YGTreeView *) _pThis;
+				gboolean mark;
+				gtk_tree_model_get (model, iter, pThis->markColumn, &mark, -1);
+				if (mark) {
+					int count = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (model), "count"));
+					g_object_set_data (G_OBJECT (model), "count", GINT_TO_POINTER (count+1));
+				}
+				return FALSE;
+			}
+		};
+
+		GtkTreeModel *model = getModel();
+		g_object_set_data (G_OBJECT (model), "count", 0);
+		gtk_tree_model_foreach (model, inner::foreach, this);
+
+		int count = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (model), "count"));
+		gchar *str = g_strdup_printf ("%d", count);
+		gtk_label_set_text (GTK_LABEL (m_count), str);
+		g_free (str);
+	}
 
 	void focusItem (YItem *item, bool select)
 	{
@@ -134,7 +190,7 @@ public:
 				GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, gpointer _pThis)
 			{
 				YGTreeView *pThis = (YGTreeView *) _pThis;
-				pThis->setRowMark (iter, pThis->markColumn(), FALSE);
+				pThis->setRowMark (iter, pThis->markColumn, FALSE);
 				return FALSE;
 			}
 		};
@@ -144,9 +200,6 @@ public:
 
 	virtual bool _immediateMode() { return true; }
 	virtual bool _shrinkable() { return false; }
-
-	int markColumn()
-	{ return GPOINTER_TO_INT (g_object_get_data (G_OBJECT (getWidget()), "mark-col")); }
 
 	void toggleMark (GtkTreePath *path, gint column)
 	{
@@ -159,6 +212,7 @@ public:
 		state = !state;
 		setRowMark (&iter, column, state);
 		getYItem (&iter)->setSelected (state);
+		syncCount();
 		emitEvent (YEvent::ValueChanged);
 	}
 
@@ -190,6 +244,29 @@ protected:
 
 	// callbacks
 
+	static bool all_marked (GtkTreeModel *model, GtkTreeIter *iter, int mark_col)
+	{
+		gboolean marked;
+		GtkTreeIter child_iter;
+		if (gtk_tree_model_iter_children (model, &child_iter, iter))
+			do {
+				gtk_tree_model_get (model, &child_iter, mark_col, &marked, -1);
+				if (!marked) return false;
+				all_marked (model, &child_iter, mark_col);
+			} while (gtk_tree_model_iter_next (model, &child_iter));
+		return true;
+	}
+
+	static void inconsistent_mark_cb (GtkTreeViewColumn *column,
+		GtkCellRenderer *cell, GtkTreeModel *model, GtkTreeIter *iter, gpointer data)
+	{  // used for trees -- show inconsistent if one node is check but another isn't
+		YGTreeView *pThis = (YGTreeView *) data;
+		gboolean marked;
+		gtk_tree_model_get (model, iter, pThis->markColumn, &marked, -1);
+		gboolean consistent = !marked || all_marked (model, iter, pThis->markColumn);
+		g_object_set (G_OBJECT (cell), "inconsistent", !consistent, NULL);
+	}
+
 	static void selection_changed_cb (GtkTreeSelection *selection, YGTreeView *pThis)
 	{
 		struct inner {
@@ -205,7 +282,7 @@ protected:
 		};
 
 		if (pThis->m_blockTimeout) return;
-		if (pThis->markColumn() == -1)
+		if (pThis->markColumn == -1)
 			gtk_tree_model_foreach (pThis->getModel(), inner::foreach_sync_select, pThis);
 		if (pThis->_immediateMode())
 			pThis->emitEvent (YEvent::SelectionChanged, IF_NOT_PENDING_EVENT);
@@ -214,8 +291,8 @@ protected:
 	static void activated_cb (GtkTreeView *tree_view, GtkTreePath *path,
 	                          GtkTreeViewColumn *column, YGTreeView* pThis)
 	{
-		if (pThis->markColumn() >= 0)
-			pThis->toggleMark (path, pThis->markColumn());
+		if (pThis->markColumn >= 0)
+			pThis->toggleMark (path, pThis->markColumn);
 		else {
 			// for tree - expand/collpase double-clicked rows
 			if (gtk_tree_view_row_expanded (tree_view, path))
@@ -234,6 +311,10 @@ protected:
 		gint column = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (renderer), "column"));
 		pThis->toggleMark (path, column);
 		gtk_tree_path_free (path);
+
+		// un/marking a sub-node can cause changes of "inconsistency"
+		if (gtk_tree_path_get_depth (path) >= 2)
+			gtk_widget_queue_draw (pThis->getWidget());
 	}
 
 	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTreeView *pThis)
@@ -505,6 +586,7 @@ public:
 		addTextColumn (1, 2);
 		createStore (3, types);
 		readModel();
+		addCountWidget (parent);
 	}
 
 	// YGTreeView
@@ -519,6 +601,7 @@ public:
 		addRow (item, &iter);
 		setRowMark (&iter, 0, item->selected());
 		setRowText (&iter, 1, item->iconName(), 2, item->label(), this);
+		syncCount();
     }
 
 	void doSelectItem (YItem *item, bool select)
@@ -526,10 +609,11 @@ public:
 		GtkTreeIter iter;
 		getTreeIter (item, &iter);
 		setRowMark (&iter, 0, select);
+		syncCount();
 	}
 
 	void doDeselectAllItems()
-	{ unmarkAll(); }
+	{ unmarkAll(); syncCount(); }
 
 	// YMultiSelectionBox
 
@@ -572,15 +656,15 @@ public:
 			addCheckColumn (2);
 			addTextColumn (0, 1);
 			createStore (3, types);
+			addCountWidget (parent);
 		}
 		else
-#else
+#endif
 		{
 			GType types [2] = { GDK_TYPE_PIXBUF, G_TYPE_STRING };
 			addTextColumn (0, 1);
 			createStore (2, types);
 		}
-#endif
 		readModel();
 
 		g_signal_connect (getWidget(), "row-collapsed", G_CALLBACK (row_collapsed_cb), this);
@@ -651,6 +735,7 @@ public:
 		};
 
 		gtk_tree_model_foreach (getModel(), inner::foreach_sync_open, this);
+		syncCount();
 	}
 
 	// YGSelectionStore
@@ -664,6 +749,7 @@ public:
 			GtkTreeIter iter;
 			getTreeIter (item, &iter);
 			setRowMark (&iter, 2, select);
+			syncCount();
 		}
 		else
 #endif
@@ -673,8 +759,10 @@ public:
 	void doDeselectAllItems()
 	{
 #if YAST2_VERSION >= 2019002
-		if (hasMultiSelection())
+		if (hasMultiSelection()) {
 			unmarkAll();
+			syncCount();
+		}
 		else
 #endif
 			unfocusAllItems();

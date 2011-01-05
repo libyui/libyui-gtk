@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Wed Jan 05 23:00:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.87
+- bug fix: YTree was crashing with new libyui
+- YMultiSelectionBox and YTree: show selection count
+when main widget
+- sw_single: show "re-install" popup menu option
+for single package selections.
+
+-------------------------------------------------------------------
 Tue Dec 23 03:10:00 WET 2010 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.86

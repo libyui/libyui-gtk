@@ -417,6 +417,8 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		}
 		static void install_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->getSelected().install(); }
+		static void reinstall_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
+		{ reinstall (pThis->getSelected().get(0)); }
 		static void remove_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->getSelected().remove(); }
 		static void undo_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
@@ -427,11 +429,39 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		{ pThis->getSelected().lock (false); }
 		static void select_all_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->selectAll(); }
+
+		static bool hasReinstall (Ypp::Selectable sel)
+		{
+			if (sel.hasInstalledVersion()) {
+				Ypp::Version installedVersion = sel.installed();
+				for (int i = 0; i < sel.totalVersions(); i++) {
+					Ypp::Version version = sel.version (i);
+					if (!version.isInstalled() && version == installedVersion)
+						return true;
+				}
+			}
+			return false;
+		}
+		static void reinstall (Ypp::Selectable sel)
+		{
+			Ypp::Version installedVersion = sel.installed();
+			for (int i = 0; i < sel.totalVersions(); i++) {
+				Ypp::Version version = sel.version (i);
+				if (!version.isInstalled() && version == installedVersion) {
+					sel.setCandidate (version);
+					sel.install();
+					break;
+				}
+			}
+		}
 	};
 
 	GtkWidget *menu = gtk_menu_new();
-	bool empty = true;
 	Ypp::List list = pThis->getSelected();
+	Ypp::Selectable::Type type = Ypp::Selectable::PACKAGE;
+	if (list.size() > 0)
+		type = list.get(0).type();
+
 	if (!outreach) {
 		Ypp::ListProps props (list);
 
@@ -440,35 +470,38 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		bool locked = !unlocked && canLock;
 		if (props.isNotInstalled() && !modified)
 			inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE,
-				!locked, inner::install_cb, pThis), empty = false;
+				!locked, inner::install_cb, pThis);
 		if (props.hasUpgrade() && !modified)
 			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GO_UP,
-				!locked, inner::install_cb, pThis), empty = false;
+				!locked, inner::install_cb, pThis);
+		if (type == Ypp::Selectable::PACKAGE && list.size() == 1 && inner::hasReinstall (list.get(0)) && !modified)
+			inner::appendItem (menu, _("_Re-install"), 0, GTK_STOCK_REFRESH,
+				!locked, inner::reinstall_cb, pThis);
 		if (props.isInstalled() && !modified)
 			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
-				!locked && props.canRemove(), inner::remove_cb, pThis), empty = false;
+				!locked && props.canRemove(), inner::remove_cb, pThis);
 		if (modified)
 			inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
-				true, inner::undo_cb, pThis), empty = false;
+				true, inner::undo_cb, pThis);
 		if (canLock) {
 			static const char *lock_tooltip =
 				"<b>Package lock:</b> prevents the package status from being modified by "
 				"the dependencies resolver.";
 			if (props.isLocked())
 				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip),
-					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::unlock_cb, pThis), empty = false;
+					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::unlock_cb, pThis);
 			if (unlocked)
 				inner::appendItem (menu, _("_Lock"), _(lock_tooltip),
 					GTK_STOCK_DIALOG_AUTHENTICATION, !modified,
-					inner::lock_cb, pThis), empty = false;
+					inner::lock_cb, pThis);
 		}
 	}
 
-	Ypp::Selectable::Type type = Ypp::Selectable::PACKAGE;
-	if (list.size())
-		type = list.get(0).type();
 	if (type == Ypp::Selectable::PACKAGE || type == Ypp::Selectable::PATCH) {
-		if (!empty)
+		GList *items = gtk_container_get_children (GTK_CONTAINER (menu));
+		g_list_free (items);
+
+		if (items != NULL)  /* add separator if there are other items */
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 		inner::appendItem (menu, NULL, NULL, GTK_STOCK_SELECT_ALL,
 		                   true, inner::select_all_cb, pThis);
@@ -990,7 +1023,7 @@ const char *getStatusStockIcon (Ypp::Selectable &sel)
 std::string getRepositoryLabel (Ypp::Repository &repo)
 {
 	std::string name (repo.name()), url, str;
-	url = repo.isSystem() ? _("System") : repo.url();
+	url = repo.isSystem() ? _("Installed packages") : repo.url();
 	str.reserve (name.size() + url.size() + 64);
 	str = name + "\n";
 	str += "<span color=\"" GRAY_COLOR "\">";

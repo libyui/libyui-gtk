@@ -21,6 +21,8 @@
 #include "ygtkpkglistview.h"
 #include <YStringTree.h>
 
+//#define ATRI_BUTTONS
+
 #define BROWSER_BIN "/usr/bin/firefox"
 #define GNOME_OPEN_BIN "/usr/bin/gnome-open"
 
@@ -429,23 +431,70 @@ struct VersionExpander : public DetailExpander {
 		versions.clear();
 	}
 
+#ifdef ATRI_BUTTONS
+static void atri_button_clicked_cb (GtkToggleButton *button, VersionExpander *pThis)
+{
+	BusyOp op;
+	Ypp::Selectable sel = pThis->list.get (0);
+
+	if (!gtk_toggle_button_get_active (button)) {  /* was active before pressing? */
+		sel.undo();
+		return;
+	}
+
+	int nb = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (button), "nb"));
+	std::list <Ypp::Version>::iterator it = pThis->versions.begin();
+	for (int i = 0; i < nb; i++) it++;
+
+	// guard with startTransaction() ...
+
+	if (sel.toModify())
+		sel.undo();
+
+	Ypp::Version &version = *it;
+	if (version.isInstalled())
+		sel.remove();
+	else {
+		sel.setCandidate (version);
+		sel.install();
+	}
+}
+#endif
+
 	GtkWidget *addVersion (Ypp::Selectable &sel, Ypp::Version version, GtkWidget *group)
 	{
+		GtkWidget *widget;
+#ifdef ATRI_BUTTONS
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (hbox), 2);
+		GtkWidget *button = gtk_toggle_button_new();
+		gtk_container_add (GTK_CONTAINER (button), gtk_image_new());
+		GtkWidget *label = gtk_label_new ("");
+		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+		updateRadio (hbox, sel, version);
+		widget = hbox;
+		g_object_set_data (G_OBJECT (button), "nb", GINT_TO_POINTER (versions.size()));
+		g_signal_connect (G_OBJECT (button), "toggled", G_CALLBACK (atri_button_clicked_cb), this);
+#else
 		GtkWidget *radio = gtk_radio_button_new_with_label_from_widget
 			(GTK_RADIO_BUTTON (group), "");
 		updateRadio (radio, sel, version);
 
-		gtk_box_pack_start (GTK_BOX (versions_box), radio, FALSE, TRUE, 0);
 		if (version.toModify())
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
 		g_signal_connect (G_OBJECT (radio), "toggled",
 			              G_CALLBACK (version_toggled_cb), this);
-
+		widget = radio;
+#endif
 		if ((versions.size() % 2) == 1)
-			g_signal_connect (G_OBJECT (radio), "expose-event",
+			g_signal_connect (G_OBJECT (widget), "expose-event",
 			                  G_CALLBACK (draw_gray_cb), NULL);
 		versions.push_back (version);
-		return radio;
+		gtk_box_pack_start (GTK_BOX (versions_box), widget, FALSE, TRUE, 0);
+
+		return widget;
 	}
 
 	void updateRadio (GtkWidget *radio, Ypp::Selectable &sel, Ypp::Version &version)
@@ -471,9 +520,69 @@ struct VersionExpander : public DetailExpander {
 			modified ? "<i>" : "", number.c_str(), arch.c_str(), repo.c_str(),
 			modified ? "</i>" : "");
 
+#ifdef ATRI_BUTTONS
+		GList *children = gtk_container_get_children (GTK_CONTAINER (radio));
+		GtkWidget *_label = (GtkWidget *) children->data;
+		GtkWidget *_button = (GtkWidget *) children->next->data;
+		gtk_label_set_markup (GTK_LABEL (_label), label);
+		if (number.size() > 20)
+			gtk_widget_set_tooltip_markup (_label, tooltip);
+		g_list_free (children);
+
+		const gchar *stock, *l;
+		bool can_never_modify;
+		if (version.isInstalled()) {
+			l = _("Remove");
+			stock = GTK_STOCK_DELETE;
+			can_never_modify = !sel.canRemove();
+			modified = sel.toRemove();
+		}
+		else {
+			if (sel.hasInstalledVersion()) {
+				Ypp::Version installed = sel.installed();
+				if (installed < version) {
+					l = _("Upgrade");
+					stock = GTK_STOCK_GO_UP;
+				}
+				else if (installed > version) {
+					l = _("Downgrade");
+					stock = GTK_STOCK_GO_DOWN;
+				}
+				else {
+					l = _("Re-install");
+					stock = GTK_STOCK_REFRESH;
+				}
+			}
+			else {
+				l = _("Install");
+				stock = GTK_STOCK_SAVE;
+			}
+			modified = sel.toInstall();
+		}
+		if (modified)
+			l = _("Undo");
+		bool can_modify = !sel.isLocked();
+		modified = modified && version.toModify();
+
+g_signal_handlers_block_by_func (_button, (gpointer) atri_button_clicked_cb, this);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (_button), modified);
+g_signal_handlers_unblock_by_func (_button, (gpointer) atri_button_clicked_cb, this);
+		gtk_widget_set_sensitive (_button, can_modify);
+/*		if (can_never_modify)
+			gtk_widget_hide (_button);
+		else
+			gtk_widget_show (_button);
+*/
+		// stock is never changed -- could be set previously...
+		gtk_widget_set_tooltip_text (_button, l);
+		gtk_image_set_from_stock (GTK_IMAGE (GTK_BIN(_button)->child), stock, GTK_ICON_SIZE_BUTTON);
+
+#else
 		gtk_label_set_markup (GTK_LABEL (GTK_BIN (radio)->child), label);
 		if (number.size() > 20)
 			gtk_widget_set_tooltip_markup (radio, tooltip);
+#endif
+
 		g_free (tooltip);
 		g_free (label);
 	}
@@ -530,6 +639,10 @@ struct VersionExpander : public DetailExpander {
 
 	void updateButton()
 	{
+#ifdef ATRI_BUTTONS
+if (list.size() == 1) { gtk_widget_hide (button); gtk_widget_hide (undo_button); return; }
+#endif
+
 		const char *label = 0, *stock = 0;
 		bool modified = false, can_modify = true, can_never_modify = false;
 		if (list.size() == 1) {
