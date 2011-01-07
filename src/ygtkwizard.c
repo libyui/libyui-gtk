@@ -385,6 +385,7 @@ typedef struct _YGtkWizardHeader
 	GtkEventBox box;
 	// members:
 	GtkWidget *title, *description, *icon, *description_more;
+	gint press_x, press_y;
 } YGtkWizardHeader;
 
 typedef struct _YGtkWizardHeaderClass
@@ -454,12 +455,55 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 	gtk_container_add (GTK_CONTAINER (header), box);
 }
 
+static gboolean ygtk_wizard_header_button_press_event (GtkWidget *widget, GdkEventButton *event)
+{
+	if (event->button == 1) {
+		GdkCursor *cursor = gdk_cursor_new (GDK_FLEUR);
+		gdk_window_set_cursor (event->window, cursor);
+		gdk_cursor_unref (cursor);
+
+		YGtkWizardHeader *header = YGTK_WIZARD_HEADER (widget);
+		header->press_x = event->x;
+		header->press_y = event->y;
+	}
+	return TRUE;
+}
+
+static gboolean ygtk_wizard_header_button_release_event (GtkWidget *widget, GdkEventButton *event)
+{
+	if (event->button == 1)
+		gdk_window_set_cursor (event->window, NULL);
+	return TRUE;
+}
+
+static gboolean ygtk_wizard_header_motion_notify_event (GtkWidget *widget, GdkEventMotion *event)
+{
+	if (event->state & GDK_BUTTON1_MASK) {
+		YGtkWizardHeader *header = YGTK_WIZARD_HEADER (widget);
+		gint root_x, root_y, pointer_x, pointer_y;
+		gdk_window_get_root_origin (event->window, &root_x, &root_y);
+		gdk_window_get_pointer (event->window, &pointer_x, &pointer_y, NULL);
+
+		gint x = pointer_x + root_x - header->press_x;
+		gint y = pointer_y + root_y - header->press_y;
+
+		GtkWidget *top_window = gtk_widget_get_toplevel (widget);
+		gtk_window_move (GTK_WINDOW (top_window), x, y);
+	}
+	return TRUE;
+}
+
 GtkWidget *ygtk_wizard_header_new()
 { return g_object_new (YGTK_TYPE_WIZARD_HEADER, NULL); }
 
 static void ygtk_wizard_header_class_init (YGtkWizardHeaderClass *klass)
 {
 	ygtk_wizard_header_parent_class = g_type_class_peek_parent (klass);
+
+	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
+	widget_class->button_press_event = ygtk_wizard_header_button_press_event;
+	widget_class->button_release_event = ygtk_wizard_header_button_release_event;
+	widget_class->motion_notify_event = ygtk_wizard_header_motion_notify_event;
 
 	more_clicked_signal = g_signal_new ("more-clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,
