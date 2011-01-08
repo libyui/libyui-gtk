@@ -187,7 +187,7 @@ static gboolean ygtk_link_label_expose_event (GtkWidget *widget, GdkEventExpose 
 static gboolean ygtk_link_label_button_press_event (GtkWidget *widget, GdkEventButton *event)
 {
 	g_signal_emit (widget, link_clicked_signal, 0, NULL);
-	return FALSE;
+	return TRUE;
 }
 
 void ygtk_link_label_set_text (YGtkLinkLabel *label, const gchar *text, const gchar *link,
