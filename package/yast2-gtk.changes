@@ -1,8 +1,10 @@
 -------------------------------------------------------------------
-
+Thu Jan 20 20:22:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.88
-- feature: move window by dragging the header.
+- sw_single: using buttons instead of radios for the
+versions-box.
+- allow moving window by dragging the header.
 
 -------------------------------------------------------------------
 Wed Jan 05 23:00:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
