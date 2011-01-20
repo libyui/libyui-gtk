@@ -487,9 +487,7 @@ void Ypp::Selectable::lock (bool lock)
 bool Ypp::Selectable::canRemove()
 {
 	switch (m_type) {
-		case PACKAGE:
-		case LANGUAGE:
-			return true;
+		case PACKAGE: case LANGUAGE: return true;
 		default: break;
 	}
 	return false;

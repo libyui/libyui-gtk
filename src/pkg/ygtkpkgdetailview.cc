@@ -21,8 +21,6 @@
 #include "ygtkpkglistview.h"
 #include <YStringTree.h>
 
-//#define ATRI_BUTTONS
-
 #define BROWSER_BIN "/usr/bin/firefox"
 #define GNOME_OPEN_BIN "/usr/bin/gnome-open"
 
@@ -33,12 +31,7 @@ static std::string onlyInstalledMsg() {
 	return s;
 }
 
-#if 0
-static const char *keywordOpenTag = "<font color=\"#000000\" bgcolor=\"#ffff00\">";
-static const char *keywordCloseTag = "</font>";
-#else
 static const char *keywordOpenTag = "<keyword>", *keywordCloseTag = "</keyword>";
-#endif
 
 struct BusyOp {
 	BusyOp() {
@@ -365,61 +358,158 @@ inline ZyppPoolIterator zyppSrcPkgEnd()
 { return zyppPool().byKindEnd<zypp::SrcPackage>();	}
 
 struct VersionExpander : public DetailExpander {
-	GtkWidget *box, *versions_box, *button, *undo_button;
+	GtkWidget *versions_box;
 	std::list <Ypp::Version> versions;
 
 	VersionExpander()
 	: DetailExpander (_("Versions"), false)
 	{
-		button = gtk_button_new_with_label ("");
-		g_signal_connect (G_OBJECT (button), "clicked",
-		                  G_CALLBACK (button_clicked_cb), this);
-
-		GtkSettings *settings = gtk_settings_get_default();
-		gboolean show_button_images;
-		g_object_get (settings, "gtk-button-images", &show_button_images, NULL);
-		if (show_button_images) {
-			undo_button = gtk_button_new_with_label ("");
-			gtk_button_set_image (GTK_BUTTON (undo_button),
-				gtk_image_new_from_stock (GTK_STOCK_UNDO, GTK_ICON_SIZE_BUTTON));
-			gtk_widget_set_tooltip_text (undo_button, _("Undo"));
-		}
-		else
-			undo_button = gtk_button_new_with_label (_("Undo"));
-		g_signal_connect (G_OBJECT (undo_button), "clicked",
-		                  G_CALLBACK (undo_clicked_cb), this);
-
 		versions_box = gtk_vbox_new (FALSE, 2);
 
-		GtkWidget *button_box = gtk_hbox_new (FALSE, 6);
-		gtk_box_pack_end (GTK_BOX (button_box), undo_button, FALSE, TRUE, 0);
-		gtk_box_pack_end (GTK_BOX (button_box), button, FALSE, TRUE, 0);
-
-		box = gtk_vbox_new (FALSE, 6);
-		gtk_box_pack_start (GTK_BOX (box), versions_box, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (box), button_box, FALSE, TRUE, 0);
-
-#if 1  // draw border all around
+		// draw border
 		GtkWidget *frame = gtk_frame_new (NULL);
 		gtk_container_set_border_width (GTK_CONTAINER (frame), 2);
-		gtk_container_add (GTK_CONTAINER (frame), box);
-		box = frame;
-#endif
-#if 0  // draw border only to the left
-		GtkWidget *frame_box = gtk_hbox_new (FALSE, 2);
-		gtk_box_pack_start (GTK_BOX (frame_box), gtk_vseparator_new(), FALSE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (frame_box), box, TRUE, TRUE, 0);
-		box = frame_box;
-#endif
-#if 0  // colored background
-		GtkWidget *back = gtk_event_box_new();
-		GdkColor color = { 0, 230 << 8, 230 << 8, 230 << 8 };
-		gtk_widget_modify_bg (back, GTK_STATE_NORMAL, &color);
-		gtk_container_add (GTK_CONTAINER (back), box);
-		box = back;
-#endif
+		gtk_container_add (GTK_CONTAINER (frame), versions_box);
+		setChild (frame);
+	}
 
-		setChild (box);
+	GtkWidget *addVersion (Ypp::Selectable &sel, Ypp::Version version, GtkWidget *group)
+	{
+		GtkWidget *button = gtk_toggle_button_new();
+		gtk_container_add (GTK_CONTAINER (button), gtk_image_new());
+
+		GtkWidget *label = gtk_label_new ("");
+		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+
+		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
+		gtk_container_set_border_width (GTK_CONTAINER (hbox), 2);
+		gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+		gtk_widget_show_all (hbox);
+
+		g_object_set_data (G_OBJECT (button), "nb", GINT_TO_POINTER (versions.size()));
+		updateVersionWidget (hbox, sel, version);
+		g_signal_connect (G_OBJECT (button), "toggled",
+		                  G_CALLBACK (button_clicked_cb), this);
+
+		GtkWidget *widget = hbox;
+		if ((versions.size() % 2) == 1)
+			g_signal_connect (G_OBJECT (widget), "expose-event",
+			                  G_CALLBACK (draw_gray_cb), NULL);
+		versions.push_back (version);
+		gtk_box_pack_start (GTK_BOX (versions_box), widget, FALSE, TRUE, 0);
+		return widget;
+	}
+
+	void updateVersionLabel (GtkWidget *label, Ypp::Selectable &sel, Ypp::Version &version)
+	{
+		std::string repo; bool modified;
+		if (version.isInstalled()) {
+			repo = _("Installed");
+			modified = sel.toRemove();
+		}
+		else {
+			repo = version.repository().name();
+			modified = sel.toInstall();
+		}
+		modified = modified && version.toModify();
+
+		std::string number (version.number()), arch (version.arch());
+		char *tooltip = g_strdup_printf ("%s <small>(%s)</small>\n<small>%s</small>",
+			number.c_str(), arch.c_str(), repo.c_str());
+		number = YGUtils::truncate (number, 20, 0);
+		char *str = g_strdup_printf ("%s%s <small>(%s)</small>\n<small>%s</small>%s",
+			modified ? "<i>" : "", number.c_str(), arch.c_str(), repo.c_str(),
+			modified ? "</i>" : "");
+
+		gtk_label_set_markup (GTK_LABEL (label), str);
+		if (number.size() > 20)
+			gtk_widget_set_tooltip_markup (label, tooltip);
+		g_free (tooltip); g_free (str);
+	}
+
+	void updateVersionButton (GtkWidget *button, Ypp::Selectable &sel, Ypp::Version &version)
+	{
+		const char *stock, *tooltip;
+		bool modified, can_modify = true;
+		if (version.isInstalled()) {
+			tooltip = _("Remove");
+			stock = GTK_STOCK_DELETE;
+			can_modify = sel.canRemove();
+			modified = sel.toRemove();
+		}
+		else {
+			if (sel.hasInstalledVersion()) {
+				Ypp::Version installed = sel.installed();
+				if (installed < version) {
+					tooltip = _("Upgrade");
+					stock = GTK_STOCK_GO_UP;
+				}
+				else if (installed > version) {
+					tooltip = _("Downgrade");
+					stock = GTK_STOCK_GO_DOWN;
+				}
+				else {
+					tooltip = _("Re-install");
+					stock = GTK_STOCK_REFRESH;
+				}
+			}
+			else {
+				tooltip = _("Install");
+				stock = GTK_STOCK_SAVE;
+			}
+			modified = sel.toInstall();
+		}
+		if (modified)
+			tooltip = _("Undo");
+
+		g_signal_handlers_block_by_func (button, (gpointer) button_clicked_cb, this);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), modified);
+		g_signal_handlers_unblock_by_func (button, (gpointer) button_clicked_cb, this);
+		can_modify ? gtk_widget_show (button) : gtk_widget_hide (button);
+		gtk_widget_set_tooltip_text (button, tooltip);
+		gtk_image_set_from_stock (GTK_IMAGE (gtk_bin_get_child (GTK_BIN(button))),
+			stock, GTK_ICON_SIZE_BUTTON);
+	}
+
+	void updateVersionWidget (GtkWidget *widget, Ypp::Selectable &sel, Ypp::Version &version)
+	{
+		GList *children = gtk_container_get_children (GTK_CONTAINER (widget));
+		GtkWidget *label = (GtkWidget *) children->data;
+		GtkWidget *button = (GtkWidget *) children->next->data;
+		g_list_free (children);
+
+		updateVersionLabel (label, sel, version);
+		updateVersionButton (button, sel, version);
+	}
+
+	void updateMultiselectionButton (GtkWidget *button)
+	{
+		Ypp::ListProps props (list);
+
+		const char *stock, *tooltip;
+		bool modified, hide = false;
+		if (props.isInstalled()) {
+			tooltip = _("Remove");
+			stock = GTK_STOCK_DELETE;
+		}
+		else if (props.isNotInstalled()) {
+			tooltip = _("Install");
+			stock = GTK_STOCK_SAVE;
+		}
+		else
+			hide = true;
+		modified = props.toModify();
+		if (modified)
+			tooltip = _("Undo");
+
+		g_signal_handlers_block_by_func (button, (gpointer) button_clicked_cb, this);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), modified);
+		g_signal_handlers_unblock_by_func (button, (gpointer) button_clicked_cb, this);
+		hide ? gtk_widget_hide (button) : gtk_widget_show (button);
+		gtk_widget_set_tooltip_text (button, tooltip);
+		gtk_image_set_from_stock (GTK_IMAGE (gtk_bin_get_child (GTK_BIN(button))),
+			stock, GTK_ICON_SIZE_BUTTON);
 	}
 
 	void clearVersions()
@@ -431,171 +521,45 @@ struct VersionExpander : public DetailExpander {
 		versions.clear();
 	}
 
-#ifdef ATRI_BUTTONS
-static void atri_button_clicked_cb (GtkToggleButton *button, VersionExpander *pThis)
-{
-	BusyOp op;
-	Ypp::Selectable sel = pThis->list.get (0);
-
-	if (!gtk_toggle_button_get_active (button)) {  /* was active before pressing? */
-		sel.undo();
-		return;
-	}
-
-	int nb = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (button), "nb"));
-	std::list <Ypp::Version>::iterator it = pThis->versions.begin();
-	for (int i = 0; i < nb; i++) it++;
-
-	// guard with startTransaction() ...
-
-	if (sel.toModify())
-		sel.undo();
-
-	Ypp::Version &version = *it;
-	if (version.isInstalled())
-		sel.remove();
-	else {
-		sel.setCandidate (version);
-		sel.install();
-	}
-}
-#endif
-
-	GtkWidget *addVersion (Ypp::Selectable &sel, Ypp::Version version, GtkWidget *group)
+	Ypp::Version &getVersion (GtkToggleButton *button)
 	{
-		GtkWidget *widget;
-#ifdef ATRI_BUTTONS
-		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
-		gtk_container_set_border_width (GTK_CONTAINER (hbox), 2);
-		GtkWidget *button = gtk_toggle_button_new();
-		gtk_container_add (GTK_CONTAINER (button), gtk_image_new());
-		GtkWidget *label = gtk_label_new ("");
-		gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
-		gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
-		updateRadio (hbox, sel, version);
-		widget = hbox;
-		g_object_set_data (G_OBJECT (button), "nb", GINT_TO_POINTER (versions.size()));
-		g_signal_connect (G_OBJECT (button), "toggled", G_CALLBACK (atri_button_clicked_cb), this);
-#else
-		GtkWidget *radio = gtk_radio_button_new_with_label_from_widget
-			(GTK_RADIO_BUTTON (group), "");
-		updateRadio (radio, sel, version);
-
-		if (version.toModify())
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radio), TRUE);
-		g_signal_connect (G_OBJECT (radio), "toggled",
-			              G_CALLBACK (version_toggled_cb), this);
-		widget = radio;
-#endif
-		if ((versions.size() % 2) == 1)
-			g_signal_connect (G_OBJECT (widget), "expose-event",
-			                  G_CALLBACK (draw_gray_cb), NULL);
-		versions.push_back (version);
-		gtk_box_pack_start (GTK_BOX (versions_box), widget, FALSE, TRUE, 0);
-
-		return widget;
+		int nb = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (button), "nb"));
+		std::list <Ypp::Version>::iterator it = versions.begin();
+		for (int i = 0; i < nb; i++) it++;
+		return *it;
 	}
 
-	void updateRadio (GtkWidget *radio, Ypp::Selectable &sel, Ypp::Version &version)
+	static void button_clicked_cb (GtkToggleButton *button, VersionExpander *pThis)
 	{
-		bool modified;
-		std::string repo;
-		if (version.isInstalled()) {
-			repo = _("Installed");
-			modified = sel.toRemove();
-		}
-		else {
-			repo = version.repository().name();
-			modified = sel.toInstall();
-		}
-		modified = modified && version.toModify();
-
-		std::string number (version.number());
-		std::string arch (version.arch());
-		char *tooltip = g_strdup_printf ("%s <small>(%s)</small>\n<small>%s</small>",
-			number.c_str(), arch.c_str(), repo.c_str());
-		number = YGUtils::truncate (number, 20, 0);
-		char *label = g_strdup_printf ("%s%s <small>(%s)</small>\n<small>%s</small>%s",
-			modified ? "<i>" : "", number.c_str(), arch.c_str(), repo.c_str(),
-			modified ? "</i>" : "");
-
-#ifdef ATRI_BUTTONS
-		GList *children = gtk_container_get_children (GTK_CONTAINER (radio));
-		GtkWidget *_label = (GtkWidget *) children->data;
-		GtkWidget *_button = (GtkWidget *) children->next->data;
-		gtk_label_set_markup (GTK_LABEL (_label), label);
-		if (number.size() > 20)
-			gtk_widget_set_tooltip_markup (_label, tooltip);
-		g_list_free (children);
-
-		const gchar *stock, *l;
-		bool can_never_modify;
-		if (version.isInstalled()) {
-			l = _("Remove");
-			stock = GTK_STOCK_DELETE;
-			can_never_modify = !sel.canRemove();
-			modified = sel.toRemove();
-		}
-		else {
-			if (sel.hasInstalledVersion()) {
-				Ypp::Version installed = sel.installed();
-				if (installed < version) {
-					l = _("Upgrade");
-					stock = GTK_STOCK_GO_UP;
-				}
-				else if (installed > version) {
-					l = _("Downgrade");
-					stock = GTK_STOCK_GO_DOWN;
-				}
-				else {
-					l = _("Re-install");
-					stock = GTK_STOCK_REFRESH;
-				}
+		BusyOp op;
+		if (gtk_toggle_button_get_active (button)) {  // was un-pressed
+			if (pThis->list.size() > 1) {
+				Ypp::ListProps props (pThis->list);
+				if (props.hasUpgrade())
+					pThis->list.install();
+				else if (props.isInstalled())
+					pThis->list.remove();
+				else if (props.isNotInstalled())
+					pThis->list.install();
+				else if (props.toModify())
+					pThis->list.undo();
 			}
 			else {
-				l = _("Install");
-				stock = GTK_STOCK_SAVE;
+				Ypp::Selectable sel = pThis->list.get (0);
+				Ypp::Version &version = pThis->getVersion (button);
+
+				if (sel.toModify())
+					sel.undo();
+				if (version.isInstalled())
+					sel.remove();
+				else {
+					sel.setCandidate (version);
+					sel.install();
+				}
 			}
-			modified = sel.toInstall();
 		}
-		if (modified)
-			l = _("Undo");
-		bool can_modify = !sel.isLocked();
-		modified = modified && version.toModify();
-
-g_signal_handlers_block_by_func (_button, (gpointer) atri_button_clicked_cb, this);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (_button), modified);
-g_signal_handlers_unblock_by_func (_button, (gpointer) atri_button_clicked_cb, this);
-		gtk_widget_set_sensitive (_button, can_modify);
-/*		if (can_never_modify)
-			gtk_widget_hide (_button);
-		else
-			gtk_widget_show (_button);
-*/
-		// stock is never changed -- could be set previously...
-		gtk_widget_set_tooltip_text (_button, l);
-		gtk_image_set_from_stock (GTK_IMAGE (GTK_BIN(_button)->child), stock, GTK_ICON_SIZE_BUTTON);
-
-#else
-		gtk_label_set_markup (GTK_LABEL (GTK_BIN (radio)->child), label);
-		if (number.size() > 20)
-			gtk_widget_set_tooltip_markup (radio, tooltip);
-#endif
-
-		g_free (tooltip);
-		g_free (label);
-	}
-
-	Ypp::Version &getSelected()
-	{
-		std::list <Ypp::Version>::iterator it = versions.begin();
-		GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
-		for (GList *i = children; i; i = i->next, it++)
-			if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (i->data)))
-				break;
-		g_list_free (children);
-		return *it;
+		else  // button was pressed
+			pThis->list.undo();
 	}
 
 	virtual bool onlySingleList() { return false; }
@@ -610,168 +574,45 @@ g_signal_handlers_unblock_by_func (_button, (gpointer) atri_button_clicked_cb, t
 			GtkWidget *radio = 0;
 			for (int i = 0; i < sel.totalVersions(); i++)
 				radio = addVersion (sel, sel.version (i), radio);
-			gtk_widget_show_all (versions_box);
+		}
+		else {
+			GtkWidget *button = gtk_toggle_button_new();
+			gtk_container_add (GTK_CONTAINER (button), gtk_image_new());
+
+			GtkWidget *label = gtk_label_new (_("Several selected"));
+			GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
+			gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (hbox), button, FALSE, TRUE, 0);
+			gtk_box_pack_start (GTK_BOX (versions_box), hbox, FALSE, TRUE, 0);
+			gtk_widget_show_all (hbox);
+
+			updateMultiselectionButton (button);
+			g_signal_connect (G_OBJECT (button), "toggled",
+			                  G_CALLBACK (button_clicked_cb), this);
 		}
 
-		// is locked
-		if (props.isLocked() || props.isUnlocked())
-			gtk_widget_set_sensitive (button, !props.isLocked());
-		else
-			gtk_widget_set_sensitive (button, TRUE);
-
-		updateButton();
+		gtk_widget_set_sensitive (versions_box, !props.isLocked());
 	}
 
 	virtual void showRefreshList (Ypp::List list)
 	{
-		updateButton();
-
 		// update radios
+		GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
 		if (list.size() == 1) {
 			Ypp::Selectable &sel = list.get (0);
 			std::list <Ypp::Version>::iterator it = versions.begin();
-			GList *children = gtk_container_get_children (GTK_CONTAINER (versions_box));
 			for (GList *i = children; i; i = i->next, it++)
-				updateRadio ((GtkWidget *) i->data, sel, *it);
-			g_list_free (children);
-		}
-	}
-
-	void updateButton()
-	{
-#ifdef ATRI_BUTTONS
-if (list.size() == 1) { gtk_widget_hide (button); gtk_widget_hide (undo_button); return; }
-#endif
-
-		const char *label = 0, *stock = 0;
-		bool modified = false, can_modify = true, can_never_modify = false;
-		if (list.size() == 1) {
-			Ypp::Selectable sel = list.get (0);
-			Ypp::Version &version = getSelected();
-
-			if (version.isInstalled()) {
-				label = _("Remove");
-				stock = GTK_STOCK_DELETE;
-				can_never_modify = !sel.canRemove();
-				modified = sel.toRemove();
-			}
-			else {
-				if (sel.hasInstalledVersion()) {
-					Ypp::Version installed = sel.installed();
-					if (installed < version) {
-						label = _("Upgrade");
-						stock = GTK_STOCK_GO_UP;
-					}
-					else if (installed > version) {
-						label = _("Downgrade");
-						stock = GTK_STOCK_GO_DOWN;
-					}
-					else {
-						label = _("Re-install");
-						stock = GTK_STOCK_REFRESH;
-					}
-				}
-				else {
-					label = _("Install");
-					stock = GTK_STOCK_SAVE;
-				}
-				modified = sel.toInstall();
-			}
-			can_modify = !sel.isLocked();
-			modified = modified && version.toModify();
+				updateVersionWidget ((GtkWidget *) i->data, sel, *it);
 		}
 		else {
-			Ypp::ListProps props (list);
-			modified = props.toModify();
-			if (props.hasUpgrade()) {
-				label = _("Upgrade");
-				stock = GTK_STOCK_GO_UP;
-			}
-			else if (props.isInstalled()) {
-				label = _("Remove");
-				stock = GTK_STOCK_DELETE;
-				can_never_modify = !props.canRemove();
-			}
-			else if (props.isNotInstalled()) {
-				label = _("Install");
-				stock = GTK_STOCK_SAVE;
-			}
-			else if (props.toModify()) {
-				label = _("Undo");
-				stock = GTK_STOCK_UNDO;
-				modified = false;  // don't show another undo button
-			}
-			can_modify = props.isUnlocked();
+			GtkWidget *hbox = (GtkWidget *) children->data;
+			GList *l = gtk_container_get_children (GTK_CONTAINER (hbox));
+			GtkWidget *button = (GtkWidget *) l->next->data;
+			g_list_free (l);
+			updateMultiselectionButton (button);
 		}
-
-		if (label) {
-			gtk_button_set_label (GTK_BUTTON (button), label);
-			GtkWidget *image = gtk_image_new_from_stock (
-				stock, GTK_ICON_SIZE_BUTTON);
-			gtk_button_set_image (GTK_BUTTON (button), image);
-			gtk_widget_show (button);
-		}
-		else
-			gtk_widget_hide (button);
-		gtk_widget_set_sensitive (button, !modified && can_modify);
-		if (can_modify)
-			gtk_widget_set_tooltip_text (button, NULL);
-		else
-			gtk_widget_set_tooltip_text (button, _("Package is locked"));
-		!can_never_modify ? gtk_widget_show (button) : gtk_widget_hide (button);
-		modified ? gtk_widget_show (undo_button) : gtk_widget_hide (undo_button);
+		g_list_free (children);
 	}
-
-	static void version_toggled_cb (GtkToggleButton *button, VersionExpander *pThis)
-	{
-		if (gtk_toggle_button_get_active (button)) {
-			Ypp::Selectable sel = pThis->list.get (0);
-			Ypp::Version &version = pThis->getSelected();
-
-			// enclosing this within startTransactions() so the button is updated
-			// before signaling any change, for a snappy feel
-			Ypp::startTransactions();
-			if (!sel.toInstall())
-				sel.setCandidate (version);
-
-			pThis->updateButton();
-			while (g_main_context_iteration (NULL, FALSE)) ;
-			Ypp::finishTransactions();
-		}
-	}
-
-	static void button_clicked_cb (GtkButton *button, VersionExpander *pThis)
-	{
-		BusyOp op;
-		if (pThis->list.size() == 1) {
-			Ypp::Selectable sel = pThis->list.get (0);
-			Ypp::Version &version = pThis->getSelected();
-
-			if (version.isInstalled())
-				sel.remove();
-			else {
-				sel.setCandidate (version);
-				sel.install();
-			}
-		}
-		else {
-			Ypp::ListProps props (pThis->list);
-			if (props.hasUpgrade())
-				pThis->list.install();
-			else if (props.isInstalled())
-				pThis->list.remove();
-			else if (props.isNotInstalled())
-				pThis->list.install();
-			else if (props.toModify())
-				pThis->list.undo();
-		}
-	}
-
-	static void undo_clicked_cb (GtkButton *button, VersionExpander *pThis)
-	{ BusyOp op; pThis->list.undo(); }
-
-	static gboolean sel_modified_idle_cb (gpointer data)
-	{ Ypp::runSolver(); return FALSE; }
 
 	static gboolean draw_gray_cb (GtkWidget *widget, GdkEventExpose *event)
 	{
