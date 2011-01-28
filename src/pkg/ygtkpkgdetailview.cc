@@ -460,6 +460,7 @@ struct VersionExpander : public DetailExpander {
 			}
 			modified = sel.toInstall();
 		}
+		modified = modified && version.toModify();
 		if (modified)
 			tooltip = _("Undo");
 
