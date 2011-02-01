@@ -48,6 +48,8 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 
 	// YGSelectionModel
 
+	void blockSelected() {}
+
 	void doAddItem (YItem *item)
 	{
 		GtkTreeIter iter;

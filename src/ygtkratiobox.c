@@ -184,6 +184,8 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_alloc.width = width;
 			child_alloc.height = child_length;
 		}
+		child_alloc.width = MAX (child_alloc.width, 1);
+		child_alloc.height = MAX (child_alloc.height, 1);
 
 		gtk_widget_size_allocate (child->widget, &child_alloc);
 		child_pos += child_length + box->spacing;
@@ -336,6 +338,8 @@ static void ygtk_adj_size_size_allocate (GtkWidget *widget,
 		child_alloc.y += border;
 		child_alloc.width -= border * 2;
 		child_alloc.height -= border * 2;
+		child_alloc.width = MAX (child_alloc.width, 1);
+		child_alloc.height = MAX (child_alloc.height, 1);
 		gtk_widget_size_allocate (child, &child_alloc);
 	}
 	GTK_WIDGET_CLASS (ygtk_adj_size_parent_class)->size_allocate (widget, allocation);

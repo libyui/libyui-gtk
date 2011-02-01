@@ -236,7 +236,7 @@ protected:
 	void blockSelected()
 	{  // GtkTreeSelection only fires when idle; so set a timeout
 		if (m_blockTimeout) g_source_remove (m_blockTimeout);
-		m_blockTimeout = g_timeout_add_full (G_PRIORITY_LOW, 250, block_selected_timeout_cb, this, NULL);
+		m_blockTimeout = g_timeout_add_full (G_PRIORITY_LOW, 50, block_selected_timeout_cb, this, NULL);
 	}
 
 	static void block_init_cb (GtkWidget *widget, YGTreeView *pThis)
@@ -676,6 +676,7 @@ public:
 		GtkTreeIter iter;
 		addRow (item, &iter, parent);
 		setRowText (&iter, 0, item->iconName(), 1, item->label(), this);
+#if 0  // yast2-qt ignores `selected flag
 		if (item->selected()) {
 #if YAST2_VERSION >= 2019002
 			if (hasMultiSelection())
@@ -684,14 +685,17 @@ public:
 #endif
 				focusItem (item, true);
 		}
-/*		if (((YTreeItem *) item)->isOpen())
-			expand (&iter);*/
+#endif
+#if 0
+		if (((YTreeItem *) item)->isOpen())
+			expand (&iter);
+#endif
 		for (YItemConstIterator it = item->childrenBegin();
 		     it != item->childrenEnd(); it++)
 			addNode (*it, &iter);
 	}
 
-/*
+#if 0
 	void expand (GtkTreeIter *iter)
 	{
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
@@ -706,12 +710,14 @@ public:
 				return false;
 		return true;
 	}
-*/
+#endif
 
 	// YTree
 
 	virtual void rebuildTree()
 	{
+		blockSelected();
+
 		doDeleteAllItems();
 		for (YItemConstIterator it = YTree::itemsBegin(); it != YTree::itemsEnd(); it++)
 			addNode (*it, NULL);
@@ -734,7 +740,10 @@ public:
 			}
 		};
 
+		g_signal_handlers_block_by_func (getWidget(), (gpointer) row_expanded_cb, this);
 		gtk_tree_model_foreach (getModel(), inner::foreach_sync_open, this);
+		g_signal_handlers_unblock_by_func (getWidget(), (gpointer) row_expanded_cb, this);
+
 		syncCount();
 	}
 

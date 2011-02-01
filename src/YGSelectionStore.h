@@ -49,6 +49,7 @@ protected:
 	}                                                    \
 	virtual void deleteAllItems() {                      \
 		ParentClass::deleteAllItems();                   \
+		blockSelected();                                 \
 		doDeleteAllItems();                              \
 	}                                                    \
 	virtual void selectItem (YItem *item, bool select) { \

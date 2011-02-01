@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Feb 01 22:43:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.90
+- printer crash fix: printer tool was misbehaving, somestimes
+crashing, when selecting tree item. (Reported by Atri Bhattacharya.)
+
+-------------------------------------------------------------------
 Fri Jan 28 18:03:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.89
