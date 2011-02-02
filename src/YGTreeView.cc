@@ -43,6 +43,7 @@ public:
 
 		m_blockTimeout = 0;  // GtkTreeSelection idiotically fires when showing widget
 		markColumn = -1; m_count = NULL;
+		blockSelected();
 		g_signal_connect (getWidget(), "map", G_CALLBACK (block_init_cb), this);
 	}
 

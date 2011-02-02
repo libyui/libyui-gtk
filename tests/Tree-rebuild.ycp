@@ -20,6 +20,7 @@
 						   ]
 						  )
 					   ] ),
+					`PushButton (`id (`sel), "Select Value 1"),
 					`Label (`id (`label), "Selected: (none)")
 				)
 		   );
@@ -30,19 +31,23 @@
 	{
 	    id = UI::UserInput();
 
-		any item = UI::QueryWidget (`tree, `CurrentItem);
+		if (id == `sel)
+			UI::ChangeWidget( `id( `tree ), `CurrentItem, "Value 1" );
 
-		UI::ChangeWidget( `id( `label ), `Value, sformat( "%1", item ) );
+		else {
+			any item = UI::QueryWidget (`tree, `CurrentItem);
+
+			UI::ChangeWidget( `id( `label ), `Value, sformat( "%1", item ) );
 
 
-		UI::ChangeWidget (`tree, `Items, ( [
-					   `item( "Option 1:" , true,
+			UI::ChangeWidget (`tree, `Items, ( [
+					   `item( "Option 1:" , false,
 					    	[
 					    `item( "Value 1" , true ),
 					    `item( "Value 2" , true )
 					    ] )
 					   ]));
-
+		}
 
 	} until ( id == `cancel );
     UI::CloseDialog();
