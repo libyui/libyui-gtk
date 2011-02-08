@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Feb 08 18:28:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.91
+- fixed compatibility with upcoming yast2-libyui 2.20.1.
+
+-------------------------------------------------------------------
 Tue Feb 01 22:43:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.90

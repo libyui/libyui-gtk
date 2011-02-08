@@ -199,6 +199,14 @@ public:
 		gtk_tree_model_foreach (getModel(), inner::foreach_unmark, this);
 	}
 
+	YItem *getFocusItem()
+	{
+		GtkTreeIter iter;
+		if (gtk_tree_selection_get_selected (getSelection(), NULL, &iter))
+			return getYItem (&iter);
+		return NULL;
+	}
+
 	virtual bool _immediateMode() { return true; }
 	virtual bool _shrinkable() { return false; }
 
@@ -619,12 +627,7 @@ public:
 	// YMultiSelectionBox
 
 	virtual YItem *currentItem()
-	{
-		GtkTreeIter iter;
-		if (gtk_tree_selection_get_selected (getSelection(), NULL, &iter))
-			return getYItem (&iter);
-		return NULL;
-    }
+	{ return getFocusItem(); }
 
 	virtual void setCurrentItem (YItem *item)
 	{ focusItem (item, true); }
@@ -747,6 +750,9 @@ public:
 
 		syncCount();
 	}
+
+	virtual YTreeItem *currentItem()
+	{ return (YTreeItem *) getFocusItem(); }
 
 	// YGSelectionStore
 
