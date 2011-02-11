@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Fri Feb 11 15:05:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.92
+- fixed freeze in webpin search tool, and possibly others
+(bnc#670625).
+
+-------------------------------------------------------------------
 Tue Feb 08 18:28:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.91
