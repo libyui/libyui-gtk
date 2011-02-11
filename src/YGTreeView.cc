@@ -120,7 +120,6 @@ public:
 			gtk_box_pack_start (GTK_BOX (YGWidget::getWidget()), hbox, FALSE, TRUE, 0);
 			gtk_widget_show_all (hbox);
 		}
-#endif
 	}
 
 	void syncCount()
