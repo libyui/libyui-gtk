@@ -14,7 +14,7 @@
 #include "YSelectionWidget.h"
 #include "YGSelectionStore.h"
 #include "ygtktreeview.h"
-#include <YLayoutBox.h>
+#include <string.h>
 
 /* A generic widget for table related widgets. */
 
@@ -109,14 +109,7 @@ public:
 
 	void addCountWidget (YWidget *yparent)
 	{
-		bool mainWidget = true;
-		for (; yparent; yparent->parent()) {
-			YLayoutBox *box = dynamic_cast <YLayoutBox *> (yparent);
-			if (box) {
-				mainWidget = box->primary() == YD_VERT;
-				break;
-			}
-		}
+		bool mainWidget = !yparent || !strcmp (yparent->widgetClass(), "YVBox") || !strcmp (yparent->widgetClass(), "YReplacePoint");
 		if (mainWidget) {
 			m_count = gtk_label_new ("0");
 			GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
@@ -127,6 +120,7 @@ public:
 			gtk_box_pack_start (GTK_BOX (YGWidget::getWidget()), hbox, FALSE, TRUE, 0);
 			gtk_widget_show_all (hbox);
 		}
+#endif
 	}
 
 	void syncCount()
