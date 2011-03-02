@@ -54,10 +54,10 @@ const char *pkg_help[] = {
 	_("<h2>Filters</h2>"),
 	_("<h3>Search</h3>"
 	"<p>Enter free text into the search-field to match their names and descriptions. "
-	"(a search for 'office' will bring up the 'OpenOffice' packages as well as "
+	"(a search for 'office' will bring up the 'LibreOffice' packages as well as "
 	"'AbiWord' which carries the word 'office' in its description). You can search for "
 	"multiple keywords by separating the with a white space (e.g. 'spread sheet' "
-	"would return 'OpenOffice-calc').You may use the "
+	"would return 'libreoffice-calc').You may use the "
 	"search combined with a filter, like searching for a package in a given repository. "
 	"Other search attributes are provided, such as to search for a given file.</p>"),
 	_("<h3>Groups</h3>"
