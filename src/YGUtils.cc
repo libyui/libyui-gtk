@@ -632,6 +632,7 @@ static const StockMap stock_map[] = {
 	{ "Install", _("Install"), GTK_STOCK_APPLY },
 	{ "OK", _("OK"), GTK_STOCK_OK },
 	{ "Cancel", _("Cancel"), GTK_STOCK_CANCEL },
+	{ "Abort", _("Abort"), GTK_STOCK_CANCEL },
 	{ "Close", _("Close"), GTK_STOCK_CLOSE },
 	{ "Yes", _("Yes"), GTK_STOCK_YES },
 	{ "No", _("No"), GTK_STOCK_NO },
