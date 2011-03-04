@@ -388,6 +388,7 @@ public:
 
 	void setCell (GtkTreeIter *iter, int column, const YTableCell *cell)
 	{
+		if (!cell) return;
 		std::string label (cell->label());
 		if (label == "X")
 			label = YUI::app()->glyph (YUIGlyph_CheckMark);
@@ -428,8 +429,10 @@ public:
     	if (item) {
 			GtkTreeIter iter;
 			addRow (item, &iter);
-   			for (int i = 0; i < columns(); i++)
-   				setCell (&iter, i, item->cell(i));
+			int i = 0;
+			for (YTableCellIterator it = item->cellsBegin();
+			     it != item->cellsEnd(); it++)
+   				setCell (&iter, i++, *it);
 			if (item->selected())
 				focusItem (item, true);
     	}
