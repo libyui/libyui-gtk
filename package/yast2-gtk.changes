@@ -1,3 +1,11 @@
+Fri Apr 01 00:09:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.93
+- backport trunk fixes:
+- firewall tool crash fix (bnc#677007).
+- refer to LibreOffice rather than OpenOffice.org in help text
+(bnc#675486).
+
 -------------------------------------------------------------------
 Fri Feb 11 15:05:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
