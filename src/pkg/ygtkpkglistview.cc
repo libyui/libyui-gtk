@@ -393,14 +393,17 @@ struct YGtkPkgListView::Impl {
 static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListView *pThis)
 {
 	struct inner {
-		static void appendItem (GtkWidget *menu, const char *label,
+		static void appendItem (GtkWidget *menu, const char *_label,
 			const char *tooltip, const char *stock, bool sensitive,
 			void (& callback) (GtkMenuItem *item, YGtkPkgListView *pThis), YGtkPkgListView *pThis)
 		{
 			GtkWidget *item;
+			std::string label;
+			if (_label)
+				label = YGUtils::mapKBAccel (_label);
 			if (stock) {
-				if (label) {
-					item = gtk_image_menu_item_new_with_mnemonic (label);
+				if (_label) {
+					item = gtk_image_menu_item_new_with_mnemonic (label.c_str());
 					GtkWidget *image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
 					gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), image);
 				}
@@ -408,7 +411,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 					item = gtk_image_menu_item_new_from_stock (stock, NULL);
 			}
 			else
-				item = gtk_menu_item_new_with_mnemonic (label);
+				item = gtk_menu_item_new_with_mnemonic (label.c_str());
 			if (tooltip)
 				gtk_widget_set_tooltip_markup (item, tooltip);
 			gtk_widget_set_sensitive (item, sensitive);
@@ -469,29 +472,29 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		bool modified = props.toModify();
 		bool locked = !unlocked && canLock;
 		if (props.isNotInstalled() && !modified)
-			inner::appendItem (menu, _("_Install"), 0, GTK_STOCK_SAVE,
+			inner::appendItem (menu, _("&Install"), 0, GTK_STOCK_SAVE,
 				!locked, inner::install_cb, pThis);
 		if (props.hasUpgrade() && !modified)
-			inner::appendItem (menu, _("_Upgrade"), 0, GTK_STOCK_GO_UP,
+			inner::appendItem (menu, _("&Upgrade"), 0, GTK_STOCK_GO_UP,
 				!locked, inner::install_cb, pThis);
 		if (type == Ypp::Selectable::PACKAGE && list.size() == 1 && inner::hasReinstall (list.get(0)) && !modified)
-			inner::appendItem (menu, _("_Re-install"), 0, GTK_STOCK_REFRESH,
+			inner::appendItem (menu, _("&Re-install"), 0, GTK_STOCK_REFRESH,
 				!locked, inner::reinstall_cb, pThis);
 		if (props.isInstalled() && !modified)
-			inner::appendItem (menu, _("_Remove"), 0, GTK_STOCK_DELETE,
+			inner::appendItem (menu, _("&Remove"), 0, GTK_STOCK_DELETE,
 				!locked && props.canRemove(), inner::remove_cb, pThis);
 		if (modified)
-			inner::appendItem (menu, _("_Undo"), 0, GTK_STOCK_UNDO,
+			inner::appendItem (menu, _("&Undo"), 0, GTK_STOCK_UNDO,
 				true, inner::undo_cb, pThis);
 		if (canLock) {
 			static const char *lock_tooltip =
 				"<b>Package lock:</b> prevents the package status from being modified by "
 				"the dependencies resolver.";
 			if (props.isLocked())
-				inner::appendItem (menu, _("_Unlock"), _(lock_tooltip),
+				inner::appendItem (menu, _("&Unlock"), _(lock_tooltip),
 					GTK_STOCK_DIALOG_AUTHENTICATION, true, inner::unlock_cb, pThis);
 			if (unlocked)
-				inner::appendItem (menu, _("_Lock"), _(lock_tooltip),
+				inner::appendItem (menu, _("&Lock"), _(lock_tooltip),
 					GTK_STOCK_DIALOG_AUTHENTICATION, !modified,
 					inner::lock_cb, pThis);
 		}

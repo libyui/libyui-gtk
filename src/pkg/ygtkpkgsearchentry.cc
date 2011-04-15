@@ -94,7 +94,8 @@ YGtkPkgSearchEntry::YGtkPkgSearchEntry()
 		GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
 	gtk_entry_set_icon_activatable (GTK_ENTRY (impl->entry), GTK_ENTRY_ICON_PRIMARY, TRUE);
 
-	GtkWidget *label = gtk_label_new_with_mnemonic (_("_Find:"));
+	std::string label_str (YGUtils::mapKBAccel (_("&Find:")));
+	GtkWidget *label = gtk_label_new_with_mnemonic (label_str.c_str());
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), impl->entry);
 
 	impl->combo = gtk_combo_box_new_text();

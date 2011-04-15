@@ -71,6 +71,8 @@ namespace YGUtils
 };
 
 extern "C" {
+	char *ygutils_mapKBAccel (const char *src);
+
 	void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale);
 	void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel);
 

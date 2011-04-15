@@ -187,7 +187,7 @@ struct DetailDescription : public DetailWidget {
 
 			GtkWidget *item;
 			if (g_file_test (BROWSER_BIN, G_FILE_TEST_IS_EXECUTABLE)) {
-				std::string label ("_Open");
+				std::string label (YGUtils::mapKBAccel ("&Open"));
 				if (getuid() == 0) {
 					const char *username = getenv ("USERNAME");
 					if (!username || !(*username))

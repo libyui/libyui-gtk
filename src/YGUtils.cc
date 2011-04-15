@@ -312,6 +312,12 @@ std::string YGUtils::mapKBAccel (const std::string &src)
 	return str;
 }
 
+char *ygutils_mapKBAccel (const char *src)
+{
+	std::string ret (YGUtils::mapKBAccel (src));
+	return strdup (ret.c_str());
+}
+
 void YGUtils::setFilter (GtkEntry *entry, const string &validChars)
 {
 	struct inner {

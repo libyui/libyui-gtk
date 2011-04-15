@@ -687,10 +687,12 @@ m_historyDialog (NULL)
 	dialog->setIcon (icon);
 	ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-	ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"), GTK_STOCK_CANCEL);
+	std::string cancel_str (YGUtils::mapKBAccel ("&Cancel"));
+	std::string apply_str (YGUtils::mapKBAccel ("&Apply"));
+	ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _(cancel_str.c_str()), GTK_STOCK_CANCEL);
 	ygtk_wizard_set_button_str_id (wizard, wizard->abort_button, "cancel");
 	ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL, NULL);
-	ygtk_wizard_set_button_label (wizard,  wizard->next_button, _("_Apply"), GTK_STOCK_APPLY);
+	ygtk_wizard_set_button_label (wizard,  wizard->next_button, _(apply_str.c_str()), GTK_STOCK_APPLY);
 	ygtk_wizard_set_button_str_id (wizard, wizard->next_button, "accept");
 	g_signal_connect (G_OBJECT (wizard), "action-triggered",
 	                  G_CALLBACK (wizard_action_cb), this);
