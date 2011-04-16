@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Sat Apr 16 13:51:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.96
+- Tree widget: add recursiveSelection flag from yast2-libyui
+2.20.3.
+
+-------------------------------------------------------------------
 Fri Apr 15 20:45:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.95

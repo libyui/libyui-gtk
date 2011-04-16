@@ -1277,21 +1277,18 @@ Ypp::List m_list;
 			gtk_adjustment_set_value (adj, value);
 	}
 
-	static void fix_keybindings (GtkWidget *scroll, GtkWidget *widget)
+	static void fix_keys (GtkWidget *widget, void *_scroll)
 	{
+		GtkWidget *scroll = (GtkWidget *) _scroll;
 		if (GTK_IS_TEXT_VIEW (widget))
 			g_signal_connect (G_OBJECT (widget), "move-cursor",
 			                  G_CALLBACK (move_cursor_cb), scroll);
-		else if (GTK_IS_CONTAINER (widget)) {
-			GList *children = gtk_container_get_children (GTK_CONTAINER (widget));
-			for (GList *i = children; i; i = i->next)
-				fix_keybindings (scroll, (GtkWidget *) i->data);
-			g_list_free (children);
-		}
+		else if (GTK_IS_CONTAINER (widget))
+			gtk_container_foreach (GTK_CONTAINER (widget), fix_keys, _scroll);
 	}
 
 	static void scroll_realize_cb (GtkWidget *widget, Impl *pThis)
-	{ fix_keybindings (widget, widget); }
+	{ fix_keys (widget, widget); }
 };
 
 YGtkPkgDetailView::YGtkPkgDetailView()
