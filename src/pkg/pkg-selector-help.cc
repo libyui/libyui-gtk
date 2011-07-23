@@ -16,7 +16,7 @@ const char *pkg_help[] = {
 	"if needed. The user need not be concerned about such underlying <i>dependencies</i>. "
 	"Likewise, the plugins and other non-essential data of a given application may "
 	"be shipped in their own packages, so the user may install them only if needed.</p>"),
-	_("<p>Common suffixes for complementory packages:</p>"
+	_("<p>Common suffixes for complementary packages:</p>"
 	"<ul>"
 	"<li><b>-plugin-</b>: extends the application with extra functionality.</li>"
 	"<li><b>-devel</b>: headers for software development.</li>"
