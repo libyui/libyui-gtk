@@ -7,8 +7,7 @@
 
 #include <string>
 #include <list>
-#include <gtk/gtktextview.h>
-#include <gtk/gtkentry.h>
+#include <gtk/gtk.h>
 
 /* YGUtils.h/cc have some functionality that is shared between different parts
    of the code. */

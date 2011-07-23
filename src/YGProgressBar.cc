@@ -137,8 +137,8 @@ public:
 		ygtk_ratio_box_set_spacing (YGTK_RATIO_BOX (getWidget()), 2);
 		for (int s = 0; s < segments(); s++) {
 			GtkWidget *bar = gtk_progress_bar_new();
-			gtk_progress_bar_set_orientation (GTK_PROGRESS_BAR (bar),
-				horizontal() ? GTK_PROGRESS_LEFT_TO_RIGHT : GTK_PROGRESS_BOTTOM_TO_TOP);
+                        gtk_orientable_set_orientation(GTK_ORIENTABLE(bar), horizontal() ? GTK_ORIENTATION_HORIZONTAL : GTK_ORIENTATION_VERTICAL);
+                        gtk_progress_bar_set_inverted(GTK_PROGRESS_BAR (bar), horizontal() ? FALSE : TRUE);
 			// Progress bars would ask for too much size with weight...
 			const int min_size = 5;
 			if (horizontal())

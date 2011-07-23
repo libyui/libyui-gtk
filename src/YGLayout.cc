@@ -21,16 +21,17 @@ static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 }
 
 #define YGLAYOUT_INIT                                          \
-	ygtk_fixed_setup (YGTK_FIXED (getWidget()), preferred_size_cb, set_size_cb, this);
+	ygtk_fixed_setup (YGTK_FIXED (getWidget()), preferred_width_cb, preferred_height_cb, set_size_cb, this);
 #define YGLAYOUT_PREFERRED_SIZE_IMPL(ParentClass) \
-	static void preferred_size_cb (YGtkFixed *fixed, gint *width, gint *height, \
-	                               gpointer pThis) { \
-		*width = ((ParentClass *) pThis)->ParentClass::preferredWidth(); \
-		*height = ((ParentClass *) pThis)->ParentClass::preferredHeight(); \
+	static gint preferred_width_cb (YGtkFixed *fixed, gpointer pThis) {  \
+		return ((ParentClass *) pThis)->ParentClass::preferredWidth();   \
+	}                                                                    \
+	static gint preferred_height_cb (YGtkFixed *fixed, gpointer pThis) { \
+		return ((ParentClass *) pThis)->ParentClass::preferredHeight();  \
 	}
-#define YGLAYOUT_SET_SIZE_IMPL(ParentClass) \
+#define YGLAYOUT_SET_SIZE_IMPL(ParentClass)                             \
 	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, \
-	                         gpointer pThis) { \
+	                         gpointer pThis) {                          \
 		((ParentClass *) pThis)->ParentClass::setSize (width, height); \
 	} \
 	virtual void moveChild (YWidget *ychild, int x, int y)      \
@@ -161,7 +162,7 @@ public:
 		if (filename.empty()) {
 			m_background_pixbuf = 0;
 			g_signal_handlers_disconnect_by_func (G_OBJECT (getWidget()),
-			                                      (void*) expose_event_cb, this);
+			                                      (void*) draw_event_cb, this);
 		}
 		else {
 			GError *error = 0;
@@ -170,27 +171,22 @@ public:
 				g_warning ("Setting YAlignment background - couldn't load image '%s' - %s",
 				           filename.c_str(), error->message);
 			else
-				g_signal_connect (G_OBJECT (getWidget()), "expose-event",
-				                  G_CALLBACK (expose_event_cb), this);
+				g_signal_connect (G_OBJECT (getWidget()), "draw",
+				                  G_CALLBACK (draw_event_cb), this);
 		}
 	}
 
-	static gboolean expose_event_cb (GtkWidget *widget, GdkEventExpose *event,
-	                                 YGAlignment *pThis)
+        static gboolean draw_event_cb (GtkWidget *widget, cairo_t *cr, int width, int height,
+	                               YGAlignment *pThis)
 	{
-		GtkAllocation *alloc = &widget->allocation;
-		cairo_t *cr = gdk_cairo_create (widget->window);
-
 		gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
 		cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
 
-		cairo_rectangle (cr, alloc->x, alloc->y, alloc->width, alloc->height);
+		cairo_rectangle (cr, 0, 0, width, height);
 		cairo_fill (cr);
 
-		cairo_destroy (cr);
-
-		gtk_container_propagate_expose (GTK_CONTAINER (widget),
-		                                GTK_BIN (widget)->child, event);
+		gtk_container_propagate_draw (GTK_CONTAINER (widget),
+		                              gtk_bin_get_child(GTK_BIN (widget)), cr);
 		return TRUE;
 	}
 };
@@ -234,7 +230,7 @@ public:
 
 	YGWIDGET_IMPL_COMMON (YSpacing)
 	YGLAYOUT_PREFERRED_SIZE_IMPL (YSpacing)
-	static void set_size_cb (YGtkFixed *fixed, gint width, gint height, 
+	static void set_size_cb (YGtkFixed *fixed, gint width, gint height,
 	                         gpointer pThis) {}
 };
 

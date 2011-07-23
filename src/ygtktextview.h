@@ -9,7 +9,7 @@
 #ifndef YGTK_TEXT_VIEW_H
 #define YGTK_TEXT_VIEW_H
 
-#include <gtk/gtktextview.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_TEXT_VIEW            (ygtk_text_view_get_type ())

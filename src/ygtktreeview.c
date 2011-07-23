@@ -113,27 +113,26 @@ static gboolean _ygtk_tree_view_popup_menu (GtkWidget *widget)
 	gtk_tree_view_convert_bin_window_to_widget_coords (
 		view, _popup_x, _popup_y, &_popup_x, &_popup_y);
 	gint x_orig, y_orig;
-	gdk_window_get_origin (widget->window, &x_orig, &y_orig);
+	gdk_window_get_origin (gtk_widget_get_window(widget), &x_orig, &y_orig);
 	_popup_x += x_orig; _popup_y += y_orig;
 
 	g_signal_emit (widget, right_click_signal, 0, outreach);
 	return TRUE;
 }
 
-static gboolean _ygtk_tree_view_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean _ygtk_tree_view_draw (GtkWidget *widget, cairo_t *cr)
 {
-	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->expose_event (widget, event);
+	GTK_WIDGET_CLASS (ygtk_tree_view_parent_class)->draw(widget, cr);
 
 	GtkTreeView *view = GTK_TREE_VIEW (widget);
 	YGtkTreeView *yview = YGTK_TREE_VIEW (widget);
-	if (yview->empty_text && event->window == gtk_tree_view_get_bin_window (view)) {
+	if (yview->empty_text) {
 		GtkTreeModel *model = gtk_tree_view_get_model (view);
 		GtkTreeIter iter;
 		if (!model || !gtk_tree_model_get_iter_first (model, &iter)) {  // empty tree-view
 			const gchar *text = yview->empty_text;
 			if (!model)
 				text = _("Loading...");
-			cairo_t *cr = gdk_cairo_create (event->window);
 			PangoLayout *layout;
 			layout = gtk_widget_create_pango_layout (widget, text);
 
@@ -144,14 +143,15 @@ static gboolean _ygtk_tree_view_expose_event (GtkWidget *widget, GdkEventExpose 
 
 			int width, height;
 			pango_layout_get_pixel_size (layout, &width, &height);
+                        GtkAllocation allocation;
+                        gtk_widget_get_allocation(widget, &allocation);
 			int x, y;
-			x = (widget->allocation.width - width) / 2;
-			y = (widget->allocation.height - height) / 2;
+			x = (allocation.width - width) / 2;
+			y = (allocation.height - height) / 2;
 			cairo_move_to (cr, x, y);
 
 			pango_cairo_show_layout (cr, layout);
 			g_object_unref (layout);
-			cairo_destroy (cr);
 		}
 	}
 	return FALSE;
@@ -291,7 +291,7 @@ static void ygtk_tree_view_class_init (YGtkTreeViewClass *klass)
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->button_press_event = ygtk_tree_view_button_press_event;
 	gtkwidget_class->popup_menu = _ygtk_tree_view_popup_menu;
-	gtkwidget_class->expose_event = _ygtk_tree_view_expose_event;
+	gtkwidget_class->draw = _ygtk_tree_view_draw;
 
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->finalize = ygtk_tree_view_finalize;
@@ -299,6 +299,6 @@ static void ygtk_tree_view_class_init (YGtkTreeViewClass *klass)
 	right_click_signal = g_signal_new ("right-click",
 		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (YGtkTreeViewClass, right_click),
-		NULL, NULL, gtk_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+		NULL, NULL, g_cclosure_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 }
 

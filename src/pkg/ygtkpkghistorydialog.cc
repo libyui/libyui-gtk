@@ -504,7 +504,7 @@ static gboolean read_logs_idle_cb (void *data)
 	    gtk_tree_view_get_model (date_view), &iter))
 		gtk_tree_selection_select_iter (selection, &iter);
 
-	gdk_window_set_cursor (dialog->window, NULL);
+	gdk_window_set_cursor (gtk_widget_get_window(GTK_WIDGET(dialog)), NULL);
 	return FALSE;
 }
 
@@ -637,7 +637,8 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_paned_pack1 (GTK_PANED (hpaned), date_scroll, FALSE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (hpaned), log_scroll, TRUE, FALSE);
 	YGUtils::setPaneRelPosition (hpaned, .30);
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), hpaned);
+	gtk_widget_set_vexpand (hpaned, TRUE);
+	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), hpaned);
 
 	gtk_widget_show_all (dialog);
 	m_dialog = dialog;
@@ -654,7 +655,7 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	                  G_CALLBACK (date_selection_changed_cb), log_view);
 
 	GdkCursor *cursor = gdk_cursor_new (GDK_WATCH);
-	gdk_window_set_cursor (dialog->window, cursor);
+	gdk_window_set_cursor (gtk_widget_get_window(GTK_WIDGET(dialog)), cursor);
 	gdk_cursor_unref (cursor);
 
 	GtkWidget **views = g_new (GtkWidget *, 3);

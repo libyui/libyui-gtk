@@ -8,7 +8,7 @@
 #ifndef YGTK_FIXED_H
 #define YGTK_FIXED_H
 
-#include <gtk/gtkcontainer.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_FIXED            (ygtk_fixed_get_type ())
@@ -26,7 +26,8 @@ G_BEGIN_DECLS
 typedef struct _YGtkFixed YGtkFixed;
 typedef struct _YGtkFixedClass YGtkFixedClass;
 
-typedef void (*YGtkPreferredSize) (YGtkFixed *, gint *, gint *, gpointer);
+typedef gint (*YGtkPreferredWidth) (YGtkFixed *, gpointer);
+typedef gint (*YGtkPreferredHeight) (YGtkFixed *, gpointer);
 typedef void (*YGtkSetSize) (YGtkFixed *, gint, gint, gpointer);
 
 struct _YGtkFixed
@@ -34,7 +35,8 @@ struct _YGtkFixed
 	GtkContainer parent;
 	// private (read-only):
 	GSList *children;
-	YGtkPreferredSize preferred_size_cb;
+	YGtkPreferredWidth preferred_width_cb;
+	YGtkPreferredHeight preferred_height_cb;
 	YGtkSetSize set_size_cb;
 	gpointer data;
 };
@@ -54,7 +56,7 @@ typedef struct _YGtkFixedChild
 
 GType ygtk_fixed_get_type (void) G_GNUC_CONST;
 
-void ygtk_fixed_setup (YGtkFixed *fixed, YGtkPreferredSize cb1, YGtkSetSize cb2, gpointer data);
+void ygtk_fixed_setup (YGtkFixed *fixed, YGtkPreferredWidth cb1, YGtkPreferredHeight cb2, YGtkSetSize cb3, gpointer data);
 
 void ygtk_fixed_set_child_pos (YGtkFixed *fixed, GtkWidget *widget, gint x, gint y);
 void ygtk_fixed_set_child_size (YGtkFixed *fixed, GtkWidget *widget, gint width, gint height);

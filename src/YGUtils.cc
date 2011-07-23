@@ -411,14 +411,14 @@ std::string YGUtils::truncate (const std::string &str, int length, int pos)
 static gboolean scroll_down_cb (void *pData)
 {
 	GtkAdjustment *vadj = (GtkAdjustment *) pData;
-	gtk_adjustment_set_value (vadj, vadj->upper - vadj->page_size);
+	gtk_adjustment_set_value (vadj, gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj));
 	return FALSE;
 }
 
 void YGUtils::scrollWidget (GtkAdjustment *vadj, bool top)
 {
 	if (top)
-		gtk_adjustment_set_value (vadj, vadj->lower);
+                gtk_adjustment_set_value (vadj, gtk_adjustment_get_lower(vadj));
 	else
 		// since we usually want to call this together with a text change, we
 		// must wait till that gets in effect
@@ -460,9 +460,10 @@ bool YGUtils::endsWith (const std::string &str, const std::string &key)
 
 int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 {
+        GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
 	PangoContext *context = gtk_widget_get_pango_context (widget);
 	PangoFontMetrics *metrics = pango_context_get_metrics (context,
-		widget->style->font_desc, NULL);
+                                                               gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL), NULL);
 
 	int width = pango_font_metrics_get_approximate_char_width (metrics);
 	pango_font_metrics_unref (metrics);
@@ -472,9 +473,10 @@ int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 
 int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 {
+        GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
 	PangoContext *context = gtk_widget_get_pango_context (widget);
 	PangoFontMetrics *metrics = pango_context_get_metrics (context,
-		widget->style->font_desc, NULL);
+                                                               gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL), NULL);
 
 	int height = pango_font_metrics_get_ascent (metrics) +
 	             pango_font_metrics_get_descent (metrics);
@@ -486,13 +488,15 @@ int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 void YGUtils::setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight,
                              double scale)
 {
-	PangoFontDescription *font_desc = widget->style->font_desc;
+        GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
+        const PangoFontDescription *font_desc = gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL);
+
 	int size = pango_font_description_get_size (font_desc);
 	PangoFontDescription* font = pango_font_description_new();
 	pango_font_description_set_weight (font, weight);
 	pango_font_description_set_size   (font, (int)(size * scale));
 	pango_font_description_set_style (font, style);
-	gtk_widget_modify_font (widget, font);
+	gtk_widget_override_font (widget, font);
 	pango_font_description_free (font);
 }
 
@@ -504,10 +508,13 @@ static void paned_allocate_cb (GtkWidget *paned, GtkAllocation *alloc, gpointer 
 	if (!g_object_get_data (G_OBJECT (paned), "init")) {  // only once
 		gdouble rel = GPOINTER_TO_INT (_rel) / 100.;
 		gint parent_size;
+                GtkAllocation alloc;
+                gtk_widget_get_allocation(paned, &alloc);
+
 		if (gtk_orientable_get_orientation (GTK_ORIENTABLE (paned)) == GTK_ORIENTATION_HORIZONTAL)
-			parent_size = paned->allocation.width;
+			parent_size = alloc.width;
 		else
-			parent_size = paned->allocation.height;
+			parent_size = alloc.height;
 		int pos = parent_size * rel;
 		gtk_paned_set_position (GTK_PANED (paned), pos);
 		g_object_set_data (G_OBJECT (paned), "init", GINT_TO_POINTER (1));
@@ -711,10 +718,12 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
                                    const char *fallbackIcon)
 {
 	const char *icon = mapStockIcon (label);
+        GtkStyleContext *ctx = gtk_widget_get_style_context(button);
+
 	if (!icon && label.size() < 22)
 		icon = fallbackIcon;
 	if (icon) {
-		if (gtk_style_lookup_icon_set (button->style, icon)) {
+                if (gtk_style_context_lookup_icon_set (ctx, icon)) {
 			// we want to use GtkImage stock mode so it honors sensitive
 			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
 			gtk_button_set_image (GTK_BUTTON (button), image);
@@ -731,19 +740,26 @@ const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
 void YGUtils::shrinkWidget (GtkWidget *widget)
 {
 	static bool first_time = true;
+        GtkCssProvider *provider;
+
 	if (first_time) {
-		first_time = false;
-		gtk_rc_parse_string (
-			"style \"small-widget-style\"\n"
+                provider = gtk_css_provider_new ();
+                gtk_css_provider_load_from_data (provider,
+                        "style \"small-widget-style\"\n"
 			"{\n"
 			"  GtkWidget::focus-padding = 0\n"
 			"  GtkWidget::focus-line-width = 0\n"
 			"  xthickness = 0\n"
 			"  ythickness = 0\n"
 			"}\n"
-			"widget \"*.small-widget\" style \"small-widget-style\"");
-	}
-	gtk_widget_set_name (widget, "small-widget");
+                       "widget \"*.small-widget\" style \"small-widget-style\"", -1, NULL);
+        gtk_style_context_add_provider (gtk_widget_get_style_context (widget),
+                                        GTK_STYLE_PROVIDER (provider),
+                                        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                g_object_unref (provider);
+	        gtk_widget_set_name (widget, "small-widget");
+                first_time = false;
+        }
 }
 
 /*
@@ -764,7 +780,7 @@ ygutils_headerize_help (const char *help_text, gboolean *cut)
 			for (; text[i]; i++)
 				if (text[i] == '>')
 					break;
-			
+
 			if (!strncasecmp (text+a, "<h", 2) || !strncasecmp (text+a, "<big>", 5) ||
 			    (!str->len && !strncasecmp (text+a, "<b>", 3))) {
 				for (i++; text[i]; i++) {

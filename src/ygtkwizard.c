@@ -21,8 +21,6 @@
 #define YGI18N_C
 #include "YGi18n.h"
 
-#define HELP_IMG_BG "yelp-icon-big"
-
 // YGUtils bridge
 extern char *ygutils_mapKBAccel (const char *src);
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
@@ -120,6 +118,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	dialog->help_text = ygtk_html_wrap_new();
 	gtk_container_add (GTK_CONTAINER (dialog->help_box), dialog->help_text);
 
+#if 0  // show a nice background image
 	GtkIconTheme *theme = gtk_icon_theme_get_default();
 	GtkIconInfo *info = gtk_icon_theme_lookup_icon (theme, HELP_IMG_BG, 192, 0);
 	if (info) {
@@ -133,6 +132,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 		}
 		gtk_icon_info_free (info);
 	}
+#endif
 
 	// bottom part (search entry + close button)
 	dialog->search_entry = gtk_entry_new();
@@ -149,7 +149,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
 	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
-	GTK_WIDGET_SET_FLAGS (dialog->close_button, GTK_CAN_DEFAULT);
+        gtk_widget_set_can_default(dialog->close_button, TRUE);
 
 	GtkWidget *close_box = gtk_hbutton_box_new();
 	gtk_container_add (GTK_CONTAINER (close_box), dialog->close_button);
@@ -237,8 +237,8 @@ static void ygtk_help_dialog_class_init (YGtkHelpDialogClass *klass)
 	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
 	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
-	gtk_binding_entry_add_signal (binding_set, GDK_F3, 0, "find_next", 0);
-	gtk_binding_entry_add_signal (binding_set, GDK_Escape, 0, "close", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_F3, 0, "find_next", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_Escape, 0, "close", 0);
 }
 
 #ifdef SET_HELP_HISTORY
@@ -323,7 +323,7 @@ void ygtk_help_text_set (YGtkHelpText *help, const gchar *title, const gchar *te
 #else
 	if (help->text)
 		g_free (help->text);
-	help->text = g_strdup (text);	
+	help->text = g_strdup (text);
 #endif
 	if (help->dialog)
 		ygtk_help_text_sync (help, NULL);
@@ -584,7 +584,7 @@ static void button_clicked_cb (GtkButton *button, YGtkWizard *wizard)
 static GtkWidget *button_new (YGtkWizard *wizard)
 {
 	GtkWidget *button = gtk_button_new_with_mnemonic ("");
-	GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
+        gtk_widget_set_can_default(button, TRUE);
 	g_signal_connect (G_OBJECT (button), "clicked",
 			  G_CALLBACK (button_clicked_cb), wizard);
 	return button;
@@ -647,7 +647,7 @@ static void buttons_size_allocate_cb (GtkWidget *box, GtkAllocation *alloc,
 	GSList *buttons = gtk_size_group_get_widgets (group), *i;
 	int max_width = 0, total = 0;
 	for (i = buttons; i; i = i->next) {
-		if (!GTK_WIDGET_VISIBLE (i->data))
+		if (!gtk_widget_get_visible (i->data))
 			continue;
 		GtkRequisition req;
 		gtk_widget_get_child_requisition ((GtkWidget *) i->data, &req);
@@ -1201,6 +1201,6 @@ static void ygtk_wizard_class_init (YGtkWizardClass *klass)
 	              NULL, NULL, g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
 	GtkBindingSet *binding_set = gtk_binding_set_by_class (klass);
-	gtk_binding_entry_add_signal (binding_set, GDK_F1, 0, "popup_help", 0);
+	gtk_binding_entry_add_signal (binding_set, GDK_KEY_F1, 0, "popup_help", 0);
 }
 

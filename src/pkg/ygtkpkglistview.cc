@@ -515,7 +515,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 
 static void selection_changed_cb (GtkTreeSelection *selection, YGtkPkgListView *pThis)
 {
-	if (GTK_WIDGET_REALIZED (pThis->impl->view) && pThis->impl->listener)
+	if (gtk_widget_get_realized (pThis->impl->view) && pThis->impl->listener)
 		pThis->impl->listener->selectionChanged();
 }
 
@@ -742,7 +742,7 @@ void YGtkPkgListView::setHighlight (const std::list <std::string> &keywords)
 		gtk_tree_selection_select_path (selection, path);
 		gtk_tree_path_free (path);
 	}
-	else if (GTK_WIDGET_REALIZED (impl->view))
+	else if (gtk_widget_get_realized (impl->view))
 		gtk_tree_view_scroll_to_point (GTK_TREE_VIEW (impl->view), -1, 0);
 }
 

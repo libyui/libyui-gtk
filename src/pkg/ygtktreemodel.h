@@ -8,7 +8,7 @@
 #ifndef YGTK_TREE_MODEL_H
 #define YGTK_TREE_MODEL_H
 
-#include <gtk/gtktreemodel.h>
+#include <gtk/gtk.h>
 
 struct YGtkTreeModel
 {

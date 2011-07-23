@@ -54,7 +54,7 @@ struct YGWidget::Signals
 static void min_size_cb (guint *min_width, guint *min_height, gpointer pData);
 
 YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent,
-                   GtkType type, const char *property_name, ...)
+                   GType type, const char *property_name, ...)
 	: m_ywidget (ywidget)
 {
 	va_list args;
@@ -157,7 +157,7 @@ int YGWidget::doPreferredSize (YUIDimension dimension)
 {
 	// We might want to do some caching here..
 	GtkRequisition req;
-	gtk_widget_size_request (m_adj_size, &req);
+	gtk_widget_get_preferred_size (m_adj_size, &req, NULL);
 	return dimension == YD_HORIZ ? req.width : req.height;
 }
 

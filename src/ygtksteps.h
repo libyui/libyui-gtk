@@ -18,7 +18,7 @@
 
 #ifndef YGTK_STEPS_H
 #define YGTK_STEPS_H
-#include <gtk/gtkvbox.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_STEPS            (ygtk_steps_get_type ())
@@ -42,7 +42,7 @@ typedef struct _YGtkSteps
 	PangoLayout *check_mark_layout, *current_mark_layout, *todo_mark_layout;
 	// for current_mark little animation
 	guint current_mark_timeout_id, current_mark_frame;
-	
+
 } YGtkSteps;
 
 typedef struct _YGtkStepsClass

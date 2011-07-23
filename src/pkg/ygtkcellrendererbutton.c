@@ -31,9 +31,7 @@ static void ygtk_cell_renderer_button_init (YGtkCellRendererButton *bcell)
 {
 	bcell->active = FALSE;
 	GtkCellRenderer *cell = GTK_CELL_RENDERER (bcell);
-	cell->xpad = BORDER;
-	cell->ypad = BORDER;
-	cell->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE;
+        g_object_set(cell, "xpad", BORDER, "ypad", BORDER, "mode", GTK_CELL_RENDERER_MODE_ACTIVATABLE, NULL);
 	bcell->icon_size = 16;
 }
 
@@ -118,14 +116,19 @@ static void ygtk_cell_renderer_button_set_property (GObject *object,
 static PangoLayout *create_layout (YGtkCellRendererButton *bcell, GtkWidget *widget)
 {
 	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (bcell);
-	if (tcell->text)
-		return gtk_widget_create_pango_layout (widget, tcell->text);
-	return NULL;
+	gchar *text = NULL;
+	g_object_get (G_OBJECT (tcell), "text", &text, NULL);
+	PangoLayout *layout = NULL;
+	if (text) {
+		layout = gtk_widget_create_pango_layout (widget, text);
+		g_free(text);
+	}
+	return layout;
 }
 
 static void ensure_pixbuf (YGtkCellRendererButton *cell, GtkWidget *widget)
 {
-	if ((cell->icon_name || cell->stock_id) && !cell->pixbuf) {
+	if (!cell->pixbuf && (cell->icon_name || cell->stock_id)) {
 		if (cell->icon_name) {
 			GtkIconTheme *theme = gtk_icon_theme_get_default();
 			GError *error = 0;
@@ -136,13 +139,13 @@ static void ensure_pixbuf (YGtkCellRendererButton *cell, GtkWidget *widget)
 					cell->icon_name, error->message);
 		}
 		else // stock-id
-			cell->pixbuf = gtk_widget_render_icon (widget, cell->stock_id,
-				GTK_ICON_SIZE_BUTTON, "button");
+			cell->pixbuf = gtk_widget_render_icon_pixbuf (
+				widget, cell->stock_id, GTK_ICON_SIZE_BUTTON);
 	}
 }
 
 static void ygtk_cell_renderer_button_get_size_full (GtkCellRenderer *cell,
-	GtkWidget *widget, GdkRectangle *cell_area, gint *_xoffset, gint *_yoffset,
+	GtkWidget *widget, const GdkRectangle *cell_area, gint *_xoffset, gint *_yoffset,
 	gint *_width, gint *_height, gint *_pixbuf_xoffset, gint *_pixbuf_yoffset,
 	gint *_pixbuf_width, gint *_pixbuf_height, gint *_text_xoffset, gint *_text_yoffset)
 {
@@ -170,28 +173,35 @@ static void ygtk_cell_renderer_button_get_size_full (GtkCellRenderer *cell,
 		width += PIXBUF_TEXT_SPACING;
 	height = MAX (pixbuf_height, text_height);
 
+        gfloat xalign, yalign;
+        guint xpad, ypad;
+        g_object_get(cell,
+                     "xalign", &xalign,
+                     "yalign", &yalign,
+                     "xpad", &xpad,
+                     "ypad", &ypad, NULL);
+
 	if (cell_area) {
 		gboolean reverse = gtk_widget_get_default_direction() == GTK_TEXT_DIR_RTL;
-		gfloat xalign = cell->xalign, yalign = cell->yalign;
 		if (reverse)
 			xalign = 1.0 - xalign;
 
-		int cell_width = cell_area->width - cell->xpad*2,
-		    cell_height = cell_area->height - cell->ypad*2;
-		int xoffset = (xalign * (cell_width - width)) + cell->xpad;
-		int yoffset = (yalign * (cell_height - height)) + cell->ypad;
+		int cell_width = cell_area->width - xpad*2,
+		    cell_height = cell_area->height - ypad*2;
+		int xoffset = (xalign * (cell_width - width)) + xpad;
+		int yoffset = (yalign * (cell_height - height)) + ypad;
 		if (_xoffset) *_xoffset = xoffset;
 		if (_yoffset) *_yoffset = yoffset;
 
 		int text_x = xoffset, text_y;
 		if (pixbuf_width && !reverse)
 			text_x += (pixbuf_width + PIXBUF_TEXT_SPACING);
-		text_y = (yalign * (cell_height - text_height)) + cell->ypad;
+		text_y = (yalign * (cell_height - text_height)) + ypad;
 
 		int pixbuf_x = xoffset, pixbuf_y;
 		if (text_width && reverse)
 			pixbuf_x += (text_width + PIXBUF_TEXT_SPACING);
-		pixbuf_y = (yalign * (cell_height - pixbuf_height)) + cell->ypad;
+		pixbuf_y = (yalign * (cell_height - pixbuf_height)) + ypad;
 
 		if (_pixbuf_xoffset) *_pixbuf_xoffset = pixbuf_x;
 		if (_pixbuf_yoffset) *_pixbuf_yoffset = pixbuf_y;
@@ -201,39 +211,37 @@ static void ygtk_cell_renderer_button_get_size_full (GtkCellRenderer *cell,
 		if (_text_yoffset) *_text_yoffset = text_y;
 	}
 
-	if (_width) *_width = width + (cell->xpad * 2);
-	if (_height) *_height = height + (cell->ypad * 2);
+	if (_width) *_width = width + (xpad * 2);
+	if (_height) *_height = height + (ypad * 2);
 }
 
 static void ygtk_cell_renderer_button_get_size (GtkCellRenderer *cell,
-	GtkWidget *widget, GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
+	GtkWidget *widget, const GdkRectangle *cell_area, gint *xoffset, gint *yoffset,
 	gint *width, gint *height)
 {
 	ygtk_cell_renderer_button_get_size_full (cell, widget, cell_area,
 		xoffset, yoffset, width, height, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
-static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
-	GdkDrawable *window, GtkWidget *widget, GdkRectangle *background_area,
-	GdkRectangle *cell_area, GdkRectangle *expose_area, GtkCellRendererState flags)
+static void ygtk_cell_renderer_button_render(
+	GtkCellRenderer *cell, cairo_t *cr, GtkWidget *widget,
+	const GdkRectangle *background_area, const GdkRectangle *cell_area,
+	GtkCellRendererState flags)
 {
 	YGtkCellRendererButton *bcell = YGTK_CELL_RENDERER_BUTTON (cell);
 
-	gboolean has_focus = FALSE;
-	if (flags & GTK_CELL_RENDERER_SELECTED)
-		has_focus = GTK_WIDGET_HAS_FOCUS (widget);
-
 	GtkStateType state = GTK_STATE_NORMAL;
-	if (!cell->sensitive || GTK_WIDGET_STATE (widget) == GTK_STATE_INSENSITIVE)
+	if (!gtk_cell_renderer_get_sensitive(cell) || gtk_widget_get_state (widget) == GTK_STATE_INSENSITIVE)
 		state = GTK_STATE_INSENSITIVE;
 	else if ((flags & GTK_CELL_RENDERER_PRELIT))
 		state = GTK_STATE_PRELIGHT;
-
-	GtkShadowType shadow = GTK_SHADOW_OUT;
-	if (bcell->active) {
-		shadow = GTK_SHADOW_IN;
+	if (bcell->active)
 		state = GTK_STATE_ACTIVE;
-	}
+
+	GtkStyleContext *style = gtk_widget_get_style_context(widget);
+	gtk_style_context_save(style);
+	gtk_style_context_set_state(style, state);
+	gtk_style_context_add_class (style, GTK_STYLE_CLASS_BUTTON);
 
 	int text_xoffset, text_yoffset, pixbuf_xoffset, pixbuf_yoffset, pixbuf_width,
 	    pixbuf_height, width, height;
@@ -245,41 +253,39 @@ static void ygtk_cell_renderer_button_render (GtkCellRenderer *cell,
 	int y = cell_area->y + (cell_area->height - height)/2 + OUTER_BORDER;
 	width -= OUTER_BORDER*2; height -= OUTER_BORDER*2;
 
-	gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
-		"button", x, y, width, height);
+	gtk_render_background (style, cr, x, y, width, height);
+	gtk_render_frame (style, cr, x, y, width, height);
 
-	int cell_area_x = cell_area->x, cell_area_y = cell_area->y;
-	if (bcell->active) {
-		cell_area->x += DEPRESS_PAD;
-		cell_area->y += DEPRESS_PAD;
-	}
+	// paint content
 
-	// paint
 	ensure_pixbuf (bcell, widget);
 	if (bcell->pixbuf) {
-		int x = cell_area->x + pixbuf_xoffset, y = cell_area->y + pixbuf_yoffset;
-		cairo_t *cr = gdk_cairo_create (window);
-		gdk_cairo_set_source_pixbuf (cr, bcell->pixbuf, x, y);
-		cairo_rectangle (cr, x, y, pixbuf_width, pixbuf_height);
+		int _x = x + pixbuf_xoffset, _y = y + pixbuf_yoffset;
+		if (bcell->active) {
+			_x += DEPRESS_PAD; _y += DEPRESS_PAD;
+		}
+		gdk_cairo_set_source_pixbuf (cr, bcell->pixbuf, _x, _y);
+		cairo_rectangle (cr, _x, _y, pixbuf_width, pixbuf_height);
 		cairo_fill (cr);
-		cairo_destroy (cr);
 	}
 
 	PangoLayout *layout = create_layout (bcell, widget);
 	if (layout) {
-		int x = cell_area->x + text_xoffset, y = cell_area->y + text_yoffset;
-		GtkStyle *style = gtk_widget_get_style (widget);
-		gtk_paint_layout (style, window, state, TRUE, expose_area, widget,
-			              "cellrenderertext", x, y, layout);
+		int _x = cell_area->x + text_xoffset, _y = cell_area->y + text_yoffset;
+		if (bcell->active) {
+			_x += DEPRESS_PAD; _y += DEPRESS_PAD;
+		}
+
+		gtk_render_layout(style, cr, _x, _y, layout);
 		g_object_unref (G_OBJECT (layout));
 	}
 
-	cell_area->x = cell_area_x; cell_area->y = cell_area_y;
+	gtk_style_context_restore(style);
 }
 
 static gboolean ygtk_cell_renderer_button_activate (GtkCellRenderer *cell,
-	GdkEvent *event, GtkWidget *widget, const gchar *path, GdkRectangle *background_area,
-	GdkRectangle *cell_area, GtkCellRendererState flags)
+	GdkEvent *event, GtkWidget *widget, const gchar *path, const GdkRectangle *background_area,
+	const GdkRectangle *cell_area, GtkCellRendererState flags)
 {
 	GdkEventButton *_event = &event->button;
 	if (_event->x >= cell_area->x && _event->x <= cell_area->x + cell_area->width) {

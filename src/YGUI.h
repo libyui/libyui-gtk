@@ -72,10 +72,6 @@ public:
     bool isSwsingle() const    { return m_swsingle; }
 };
 
-// debug helpers.
-void dumpTree (YWidget *widget);
-void dumpYastHtml (YWidget *widget);
-
 #include <YWidgetFactory.h>
 
 class YGWidgetFactory : public YWidgetFactory

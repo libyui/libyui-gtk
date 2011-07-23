@@ -74,7 +74,7 @@ public:
 	void scrollToBottom()
 	{
 #if 1
-		YGUtils::scrollWidget (GTK_TEXT_VIEW (getWidget())->vadjustment, false);
+                YGUtils::scrollWidget (gtk_scrollable_get_vadjustment(GTK_SCROLLABLE (getWidget())), false);
 #else
 		GtkTextBuffer *buffer = getBuffer();
 		GtkTextIter iter;
@@ -167,8 +167,8 @@ public:
 			if (text.size() == m_text.size()) return;
 
 			// appending text: avoid flickering and allow user to scroll freely
-			GtkAdjustment *vadj = GTK_TEXT_VIEW (getWidget())->vadjustment;
-			bool autoScroll = vadj->value >= vadj->upper - vadj->page_size;
+			GtkAdjustment *vadj = gtk_scrollable_get_vadjustment(GTK_SCROLLABLE (getWidget()));
+			bool autoScroll = gtk_adjustment_get_value(vadj) >= gtk_adjustment_get_upper(vadj) - gtk_adjustment_get_page_size(vadj);
 
 			std::string diff (text.substr (m_text.size()));
 			YGTextView::appendText (diff);

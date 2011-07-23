@@ -356,11 +356,14 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		return;
 	}
 
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(widget, &alloc);
+
 	GError *error = 0;
 	GdkPixbuf *shot =
-		gdk_pixbuf_get_from_drawable (NULL, GDK_DRAWABLE (widget->window),
-			gdk_colormap_get_system(), 0, 0, 0, 0, widget->allocation.width,
-			widget->allocation.height);
+            gdk_pixbuf_get_from_window (gtk_widget_get_window(widget),
+                                        0, 0, alloc.width,
+                                        alloc.height);
 
 	if (!shot) {
 		if (interactive)
@@ -600,53 +603,4 @@ YOptionalWidgetFactory *YGUI::createOptionalWidgetFactory()
 { return new YGOptionalWidgetFactory; }
 YApplication *YGUI::createApplication()
 { return new YGApplication(); }
-
-#include <YRichText.h>
-#include "ygtktextview.h"
-
-void dumpYastHtml (YWidget *widget)
-{
-	struct inner {
-		static void dumpYastHtml (YWidget *widget, GtkBox *box)
-		{
-			YGWidget *ygwidget;
-			if (!widget || !(ygwidget = YGWidget::get (widget)))
-				return;
-
-			YRichText *rtext = dynamic_cast <YRichText *> (widget);
-			if (rtext) {
-				std::string text = rtext->text();
-
-				GtkWidget *view = ygtk_text_view_new (FALSE);
-				gtk_text_view_set_wrap_mode (GTK_TEXT_VIEW (view), GTK_WRAP_WORD);
-				GtkTextBuffer *buffer = gtk_text_view_get_buffer (GTK_TEXT_VIEW (view));
-				gtk_text_buffer_set_text (buffer, text.c_str(), -1);
-
-				GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
-				gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
-							                         GTK_SHADOW_IN);
-				gtk_scrolled_window_set_policy  (GTK_SCROLLED_WINDOW (scroll),
-					GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-				gtk_container_add (GTK_CONTAINER (scroll), view);
-				gtk_box_pack_start (box, scroll, TRUE, TRUE, 6);
-			}
-
-			for (YWidgetListConstIterator it = widget->childrenBegin();
-			     it != widget->childrenEnd(); it++)
-				dumpYastHtml (*it, box);
-		}
-		static void destroy_dialog (GtkDialog *dialog, gint arg)
-		{ gtk_widget_destroy (GTK_WIDGET (dialog)); }
-	};
-
-	GtkWidget *dialog = gtk_dialog_new_with_buttons ("YWidgets HTML", NULL,
-		GtkDialogFlags (GTK_DIALOG_NO_SEPARATOR), GTK_STOCK_CLOSE, GTK_RESPONSE_CLOSE, NULL);
-	gtk_window_set_default_size (GTK_WINDOW (dialog), 400, 300);
-
-	inner::dumpYastHtml (widget, GTK_BOX (GTK_DIALOG (dialog)->vbox));
-
-	gtk_widget_show_all (dialog);
-	g_signal_connect (G_OBJECT (dialog), "response",
-	                  G_CALLBACK (inner::destroy_dialog), 0);
-}
 

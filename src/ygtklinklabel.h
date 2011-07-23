@@ -12,7 +12,7 @@
 #ifndef YGTK_LINK_LABEL_H
 #define YGTK_LINK_LABEL_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_LINK_LABEL            (ygtk_link_label_get_type ())

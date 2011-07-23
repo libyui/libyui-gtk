@@ -9,7 +9,7 @@
 #define YGTK_PKG_LIST_VIEW_H
 
 #include "yzyppwrapper.h"
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 enum Property {
 	INSTALLED_CHECK_PROP, NAME_PROP, ACTION_NAME_PROP, NAME_SUMMARY_PROP,

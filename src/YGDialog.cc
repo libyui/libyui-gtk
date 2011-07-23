@@ -52,6 +52,7 @@ public:
 		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 		g_object_ref_sink (G_OBJECT (m_widget));
 		g_object_set (G_OBJECT (m_widget), "allow-shrink", TRUE, NULL);
+		gtk_window_set_has_resize_grip (GTK_WINDOW (m_widget), TRUE);
 
 		m_refcount = 0;
 		m_child = NULL;
@@ -140,7 +141,7 @@ public:
 	{
 		setChild (NULL);
 		if (m_busyCursor)
-			gdk_cursor_unref (m_busyCursor);
+                        g_object_unref (G_OBJECT (m_busyCursor));
 		gtk_widget_destroy (m_widget);
 		g_object_unref (G_OBJECT (m_widget));
 	}
@@ -151,7 +152,7 @@ public:
 	void normalCursor()
 	{
 		if (m_isBusy)
-			gdk_window_set_cursor (m_widget->window, NULL);
+                    gdk_window_set_cursor (gtk_widget_get_window(m_widget), NULL);
 		m_isBusy = false;
 	}
 
@@ -160,10 +161,10 @@ public:
 		if (!m_busyCursor) {
 			GdkDisplay *display = gtk_widget_get_display (m_widget);
 			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
-			gdk_cursor_ref (m_busyCursor);
+			g_object_ref (G_OBJECT (m_busyCursor));
 		}
 		if (!m_isBusy)
-			gdk_window_set_cursor (m_widget->window, m_busyCursor);
+                        gdk_window_set_cursor (gtk_widget_get_window(m_widget), m_busyCursor);
 		m_isBusy = true;
 	}
 
@@ -218,16 +219,16 @@ private:
 		                            YGWindow *pThis)
 	{
 		// if not main dialog, close it on escape
-		if (event->keyval == GDK_Escape &&
+		if (event->keyval == GDK_KEY_Escape &&
 		    /* not main window */ main_window != pThis) {
 			pThis->close();
 		    return TRUE;
-		    
+
 		}
 
 		if (event->state & GDK_SHIFT_MASK) {
 		    switch (event->keyval) {
-				case GDK_F8:
+				case GDK_KEY_F8:
 				    YGUI::ui()->askSaveLogs();
 				    return TRUE;
 				default:
@@ -238,35 +239,23 @@ private:
 		    && (event->state & GDK_MOD1_MASK)) {
 		    yuiMilestone() << "Caught YaST2 magic key combination\n";
 		    switch (event->keyval) {
-				case GDK_S:
+				case GDK_KEY_S:
 				    YGUI::ui()->makeScreenShot();
 				    return TRUE;
-				case GDK_M:
+				case GDK_KEY_M:
 				    YGUI::ui()->toggleRecordMacro();
 				    return TRUE;
-				case GDK_P:
+				case GDK_KEY_P:
 				    YGUI::ui()->askPlayMacro();
 				    return TRUE;
-				case GDK_D:
+				case GDK_KEY_D:
 				    YGUI::ui()->sendEvent (new YDebugEvent());
 				    return TRUE;
-				case GDK_X:
+				case GDK_KEY_X:
 				    yuiMilestone() << "Starting xterm\n";
 				    (void) system ("/usr/bin/xterm &");
 				    return TRUE;
-				case GDK_H:
-				    dumpYastHtml (pThis->getChild());
-				    return TRUE;
-				case GDK_E:  // easter egg
-				    static guint explode_timeout = 0;
-				    if (explode_timeout == 0)
-				        explode_timeout = g_timeout_add (10000, expode_window_timeout_cb, pThis);
-				    else {
-				        g_source_remove (explode_timeout);
-				        explode_timeout = 0;
-				    }
-				    return TRUE;
-				case GDK_Y:
+				case GDK_KEY_Y:
 					yuiMilestone() << "Opening dialog spy" << endl;
 					YDialogSpy::showDialogSpy();
 					YGUI::ui()->normalCursor();
@@ -283,36 +272,6 @@ private:
 
 	static void realize_cb (GtkWidget *widget, YGWindow *pThis)
 	{ pThis->busyCursor(); }
-
-	static gboolean expode_window_timeout_cb (gpointer data)
-	{
-		YGWindow *pThis = (YGWindow *) data;
-		GtkWindow *window = GTK_WINDOW (pThis->m_widget);
-		srand (time (NULL));
-		gint x, y;
-		gtk_window_get_position (window, &x, &y);
-		#if 0
-		// OVAL MOVE
-		for (int i = 180; i < 360+180; i++) {
-		    gtk_window_move (window, x+(int)(sin((i*G_PI)/180)*50),
-		                     y+(int)(cos((i*G_PI)/180)*50)+50);
-		    while (gtk_events_pending())
-		        gtk_main_iteration();
-		    usleep (25);
-		}
-		#else
-		// EXPLOSION
-		for (int i = 0; i < 40; i++) {
-		    gtk_window_move (window, x+(int)((((float)(rand())/RAND_MAX)*40)-20),
-		                     y+(int)((((float)(rand())/RAND_MAX)*40)-20));
-		    while (gtk_events_pending())
-		        gtk_main_iteration();
-		    usleep (200);
-		}
-		#endif
-		gtk_window_move (window, x, y);
-		return TRUE;
-	}
 };
 
 YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
@@ -416,17 +375,19 @@ void YGDialog::doSetSize (int width, int height)
 	// libyui calls YDialog::setSize() to force a geometry recalculation as a
 	// result of changed layout properties
 	GtkWidget *window = m_window->getWidget();
-	if (GTK_WIDGET_REALIZED (window)) {
+	if (gtk_widget_get_realized (window)) {
 		gtk_widget_queue_resize (window);
 		width = MIN (width, YUI::app()->displayWidth());
 		height = MIN (height, YUI::app()->displayHeight());
 #if 1
 		bool resize = false;
 		if (isMainDialog()) {
-			if (window->allocation.width < width || window->allocation.height < height) {
+                    GtkAllocation allocation;
+                    gtk_widget_get_allocation(window, &allocation);
+                    if (allocation.width < width || allocation.height < height) {
 				resize = true;
-				width = MAX (width, window->allocation.width),
-				height = MAX (height, window->allocation.height);
+				width = MAX (width, allocation.width),
+				height = MAX (height, allocation.height);
 			}
 		}
 		else
@@ -442,26 +403,23 @@ void YGDialog::doSetSize (int width, int height)
 void YGDialog::highlight (YWidget *ywidget)
 {
 	struct inner {
-		static gboolean expose_highlight_cb (GtkWidget *widget,
-		                                      GdkEventExpose *event)
+		static gboolean draw_highlight_cb (GtkWidget *widget, cairo_t *cr)
 		{
-			GtkAllocation *alloc = &widget->allocation;
-			int x = alloc->x, y = alloc->y, w = alloc->width, h = alloc->height;
+			int w = gtk_widget_get_allocated_width(widget);
+			int h = gtk_widget_get_allocated_height(widget);
 
-			cairo_t *cr = gdk_cairo_create (widget->window);
-			cairo_rectangle (cr, x, y, w, h);
+			cairo_rectangle (cr, 0, 0, w, h);
 			cairo_set_source_rgb (cr, 0xff/255.0, 0x88/255.0, 0);
 			cairo_fill (cr);
-			cairo_destroy (cr);
 			return FALSE;
 		}
 
 		static bool hasWindow (GtkWidget *widget)
 		{
-			if (!GTK_WIDGET_NO_WINDOW (widget))
+			if (gtk_widget_get_has_window(widget))
 				return true;
 			// widgets like GtkButton add their windows to parent's
-			for (GList *children = gdk_window_peek_children (widget->window);
+			for (GList *children = gdk_window_peek_children (gtk_widget_get_window(widget));
 				 children; children = children->next) {
 				GdkWindow *child = (GdkWindow *) children->data;
 				gpointer data;
@@ -479,12 +437,12 @@ void YGDialog::highlight (YWidget *ywidget)
 		if (prev) {
 			GtkWidget *widget = prev->getWidget();
 			if (inner::hasWindow (widget)) {
-				gtk_widget_modify_bg (widget, GTK_STATE_NORMAL, NULL);
-				gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
+				gtk_widget_override_background_color (widget, GTK_STATE_FLAG_NORMAL, NULL);
+				gtk_widget_override_color (widget, GTK_STATE_FLAG_NORMAL, NULL);
 			}
 			else {
 				g_signal_handlers_disconnect_by_func (widget,
-					(gpointer) inner::expose_highlight_cb, NULL);
+					(gpointer) inner::draw_highlight_cb, NULL);
 				gtk_widget_queue_draw (widget);
 			}
 		}
@@ -494,14 +452,14 @@ void YGDialog::highlight (YWidget *ywidget)
 		if (ygwidget) {
 			GtkWidget *widget = ygwidget->getWidget();
 			if (inner::hasWindow (widget)) {
-				GdkColor bg_color = { 0, 0xffff, 0xaaaa, 0 };
-				GdkColor base_color = { 0, 0xffff, 0xeeee, 0 };
-				gtk_widget_modify_bg (widget, GTK_STATE_NORMAL, &bg_color);
-				gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &base_color);
+				GdkRGBA bg_color = { 0, 0xffff, 0xaaaa, 0 };
+				GdkRGBA base_color = { 0, 0xffff, 0xeeee, 0 };
+				gtk_widget_override_background_color (widget, GTK_STATE_FLAG_NORMAL, &bg_color);
+				gtk_widget_override_color (widget, GTK_STATE_FLAG_NORMAL, &base_color);
 			}
 			else {
-				g_signal_connect (G_OBJECT (widget), "expose-event",
-				                  G_CALLBACK (inner::expose_highlight_cb), NULL);
+				g_signal_connect (G_OBJECT (widget), "draw",
+				                  G_CALLBACK (inner::draw_highlight_cb), NULL);
 				gtk_widget_queue_draw (widget);
 			}
 		}

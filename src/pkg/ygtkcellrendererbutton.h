@@ -8,7 +8,7 @@
 #ifndef YGTK_CELL_RENDERER_BUTTON_H
 #define YGTK_CELL_RENDERER_BUTTON_H
 
-#include <gtk/gtkcellrenderertext.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_CELL_RENDERER_BUTTON  (ygtk_cell_renderer_button_get_type ())

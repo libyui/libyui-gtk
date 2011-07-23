@@ -184,7 +184,7 @@ static void ygtk_field_entry_class_init (YGtkFieldEntryClass *klass)
 	filter_entry_signal = g_signal_new ("field_entry_changed",
 		G_OBJECT_CLASS_TYPE (klass), G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION,
 		G_STRUCT_OFFSET (YGtkFieldEntryClass, filter_entry_changed),
-		NULL, NULL, gtk_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT);
+		NULL, NULL, g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT);
 }
 
 gboolean ygtk_field_entry_set_focus (YGtkFieldEntry *fields)

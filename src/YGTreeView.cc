@@ -378,7 +378,7 @@ public:
 
 	void setSortable (bool sortable)
 	{
-		if (!sortable && !GTK_WIDGET_REALIZED (getWidget()))
+		if (!sortable && !gtk_widget_get_realized (getWidget()))
 			return;
 		int n = 0;
 		GList *columns = gtk_tree_view_get_columns (getView());
@@ -514,7 +514,7 @@ public:
 
 	static gboolean key_press_event_cb (GtkWidget *widget, GdkEventKey *event, YGTable *pThis)
 	{
-		if (event->keyval == GDK_Delete) {
+		if (event->keyval == GDK_KEY_Delete) {
 			YWidget *button = YGDialog::currentDialog()->getFunctionWidget (5);
 			if (button)
 				activateButton (button);

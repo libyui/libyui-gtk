@@ -9,7 +9,7 @@
 #ifndef YGTK_CELL_RENDERER_TEXT_H
 #define YGTK_CELL_RENDERER_TEXT_H
 
-#include <gtk/gtkcellrenderertext.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_CELL_RENDERER_TEXT (ygtk_cell_renderer_text_get_type())

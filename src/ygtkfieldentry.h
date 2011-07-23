@@ -12,8 +12,7 @@
 #ifndef YGTK_FIELD_ENTRY_H
 #define YGTK_FIELD_ENTRY_H
 
-#include <gtk/gtkhbox.h>
-#include <gtk/gtkentry.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_FIELD_ENTRY            (ygtk_field_entry_get_type ())
@@ -43,7 +42,7 @@ typedef struct _YGtkFieldEntryClass
 GtkWidget* ygtk_field_entry_new      (void);
 GType      ygtk_field_entry_get_type (void) G_GNUC_CONST;
 
-// if this is the first field, separator will be ignored. 
+// if this is the first field, separator will be ignored.
 guint      ygtk_field_entry_add_field         (YGtkFieldEntry *entry, gchar separator);
 // max_length can be 0 to disable it. valids_chars can be NULL to disable it.
 void       ygtk_field_entry_setup_field       (YGtkFieldEntry *entry, guint index,

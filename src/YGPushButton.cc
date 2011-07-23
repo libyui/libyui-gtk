@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include <YLayoutBox.h>
+#include "ygtkratiobox.h"
 
 class YGPushButton : public YPushButton, public YGWidget
 {
@@ -25,7 +26,7 @@ public:
 		gtk_button_set_use_underline (GTK_BUTTON (getWidget()), TRUE);
 		setLabel (label);
 		connect (getWidget(), "clicked", G_CALLBACK (clicked_cb), this);
-		g_signal_connect (getWidget(), "size-request", G_CALLBACK (size_request_cb), this);
+		g_signal_connect (getWidget(), "realize", G_CALLBACK (realize_cb), this);
 	}
 
 	void setStockIcon (const std::string &label)
@@ -135,8 +136,8 @@ public:
 		YPushButton::setDefaultButton (isDefault);
 		if (isDefault) {
 			GtkWidget *button = getWidget();
-			GTK_WIDGET_SET_FLAGS (button, GTK_CAN_DEFAULT);
-			if (GTK_WIDGET_REALIZED (button))
+			gtk_widget_set_can_default(button, TRUE);
+			if (gtk_widget_get_realized (button))
 				inner::realize_cb (button);
 			g_signal_connect (G_OBJECT (button), "realize",
 			                  G_CALLBACK (inner::realize_cb), this);
@@ -148,7 +149,7 @@ public:
 		if (dynamic_cast <YPushButton *> (ywidget)) {
 			GtkWidget *button = YGWidget::get (ywidget)->getWidget();
 			GtkWidget *icon = gtk_button_get_image (GTK_BUTTON (button));
-			return icon && GTK_WIDGET_VISIBLE (icon);
+			return icon && gtk_widget_get_visible (icon);
 		}
 		return true;
 	}
@@ -165,7 +166,7 @@ public:
 				for (YWidgetListConstIterator it = ybox->childrenBegin();
 					 it != ybox->childrenEnd(); it++) {
 					if ((YWidget *) pThis == *it) {
-						if (ylast && !hasIcon (ylast)) 
+						if (ylast && !hasIcon (ylast))
 							pThis->setIcon ("");
 						break;
 					}
@@ -205,13 +206,11 @@ public:
 #define DEFAULT_CHILD_MIN_WIDTH 85
 #define DEFAULT_CHILD_MIN_HEIGHT 27
 
-	static void size_request_cb (GtkWidget *widget, GtkRequisition *req, YGPushButton *pThis)
+	static void realize_cb (GtkWidget *widget, YGPushButton *pThis)
 	{	// enlarge button if parent is ButtonBox
 		YWidget *yparent = pThis->m_ywidget->parent();
-		if (yparent && !strcmp (yparent->widgetClass(), "YButtonBox")) {
-			req->width = MAX (req->width, DEFAULT_CHILD_MIN_WIDTH);
-			req->height = MAX (req->height, DEFAULT_CHILD_MIN_HEIGHT);
-		}
+		if (yparent && !strcmp (yparent->widgetClass(), "YButtonBox"))
+			ygtk_adj_size_set_min (YGTK_ADJ_SIZE(pThis->getLayout()), DEFAULT_CHILD_MIN_WIDTH, DEFAULT_CHILD_MIN_HEIGHT);
 	}
 
 	YGWIDGET_IMPL_COMMON (YPushButton)

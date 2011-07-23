@@ -19,9 +19,6 @@
 #include "yzyppwrapper.h"
 #include <gtk/gtk.h>
 
-static void enlarge_width_size_request_cb (GtkWidget *widget, GtkRequisition *req)
-{ req->width += 4; }
-
 struct LastChange {
 	GtkWidget *hbox, *icon, *text, *undo_button;
 
@@ -36,8 +33,6 @@ struct LastChange {
 		gtk_misc_set_alignment (GTK_MISC (text), 0, .5);
 		undo_button = gtk_button_new_from_stock (GTK_STOCK_UNDO);
 		YGUtils::shrinkWidget (undo_button);
-		g_signal_connect (G_OBJECT (undo_button), "size-request",
-		                  G_CALLBACK (enlarge_width_size_request_cb), NULL);
 		g_signal_connect (G_OBJECT (undo_button), "clicked",
 		                  G_CALLBACK (undo_clicked_cb), this);
 		gchar *str = g_strdup_printf ("(<a href=\"more\">%s</a>)", _("view all changes"));
@@ -117,13 +112,16 @@ struct LastChange {
 	void set_ellipsize (GtkWidget *label)
 	{
 		GtkWidget *hbox = gtk_widget_get_parent (this->hbox);
-		if (GTK_WIDGET_REALIZED (hbox)) {
+		if (gtk_widget_get_realized (hbox)) {
 			gtk_label_set_ellipsize (GTK_LABEL (label), PANGO_ELLIPSIZE_NONE);
 
 			GtkRequisition req;
 			gtk_widget_size_request (hbox, &req);
 			GtkWidget *window = gtk_widget_get_toplevel (hbox);
-			bool ellipsize = req.width > window->allocation.width - 10;
+                        GtkAllocation allocation;
+                        gtk_widget_get_allocation(window, &allocation);
+
+			bool ellipsize = req.width > allocation.width - 10;
 
 			PangoEllipsizeMode mode = ellipsize ? PANGO_ELLIPSIZE_MIDDLE : PANGO_ELLIPSIZE_NONE;
 			gtk_label_set_ellipsize (GTK_LABEL (label), mode);

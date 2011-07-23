@@ -21,27 +21,32 @@ gboolean filter_color_cb (PangoAttribute *attrb, gpointer data)
 }
 
 static void ygtk_cell_renderer_text_render (
-	GtkCellRenderer *cell, GdkDrawable *window, GtkWidget *widget,
-	GdkRectangle *background_area, GdkRectangle *cell_area,
-	GdkRectangle *expose_area, GtkCellRendererState flags)
+	GtkCellRenderer *cell, cairo_t *cr, GtkWidget *widget,
+	const GdkRectangle *background_area, const GdkRectangle *cell_area,
+	GtkCellRendererState flags)
 {
+	// hack: disable our color attributes when the text is selected,
+	// so that the text is visible against the blue background
 	GtkCellRendererText *tcell = GTK_CELL_RENDERER_TEXT (cell);
 	PangoAttrList *old_extra_attrs = 0, *new_extra_attrs = 0;
 	if (flags & (GTK_CELL_RENDERER_SELECTED | GTK_CELL_RENDERER_INSENSITIVE)) {
-		old_extra_attrs = pango_attr_list_copy (tcell->extra_attrs);
-		new_extra_attrs = tcell->extra_attrs;
+		g_object_get(tcell, "attributes", &old_extra_attrs, NULL);
+		g_object_get(tcell, "attributes", &new_extra_attrs, NULL);
 
-		PangoAttrList *t = pango_attr_list_filter (tcell->extra_attrs,
+		PangoAttrList *t = pango_attr_list_filter (new_extra_attrs,
 			filter_color_cb, NULL);
+
+		g_object_set(tcell, "attributes", new_extra_attrs, NULL);
+		pango_attr_list_unref (new_extra_attrs);
 		pango_attr_list_unref (t);
 	}
 
 	GTK_CELL_RENDERER_CLASS (ygtk_cell_renderer_text_parent_class)->render (
-		cell, window, widget, background_area, cell_area, expose_area, flags);
+		cell, cr, widget, background_area, cell_area, flags);
 
 	if (old_extra_attrs) {
-		tcell->extra_attrs = old_extra_attrs;
-		pango_attr_list_unref (new_extra_attrs);
+		g_object_set(tcell, "attributes", old_extra_attrs, NULL);
+		pango_attr_list_unref (old_extra_attrs);
 	}
 }
 

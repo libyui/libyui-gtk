@@ -9,7 +9,7 @@
 #ifndef YGTK_BAR_GRAPH_H
 #define YGTK_BAR_GRAPH_H
 
-#include <gtk/gtkframe.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_BAR_GRAPH            (ygtk_bar_graph_get_type ())
@@ -46,8 +46,8 @@ void ygtk_bar_graph_create_entries (YGtkBarGraph *bar, guint entries);
 void ygtk_bar_graph_setup_entry (YGtkBarGraph *bar, int index, const gchar *label_entry, int value);
 
 void ygtk_bar_graph_set_style (YGtkBarGraph *bar, gboolean flat);
-void ygtk_bar_graph_customize_bg (YGtkBarGraph *bar, int index, GdkColor *color);
-void ygtk_bar_graph_customize_fg (YGtkBarGraph *bar, int index, GdkColor *color);
+void ygtk_bar_graph_customize_bg (YGtkBarGraph *bar, int index, GdkRGBA *color);
+void ygtk_bar_graph_customize_fg (YGtkBarGraph *bar, int index, GdkRGBA *color);
 
 G_END_DECLS
 #endif /*YGTK_BAR_GRAPH_H*/
@@ -55,7 +55,6 @@ G_END_DECLS
 #ifndef YGTK_COLORED_LABEL_H
 #define YGTK_COLORED_LABEL_H
 
-#include <gtk/gtklabel.h>
 G_BEGIN_DECLS
 
 /* YGtkColoredLabel is a GtkLabel where gtk_modify_bg() can be used. It also
@@ -88,8 +87,8 @@ GType ygtk_colored_label_get_type (void) G_GNUC_CONST;
 
 // A convenience function (you may use gtk_widget_modify_fg() and
 // gtk_widget_modify_bg() instead), where colors range is [0, 255]
-void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkColor *color);
-void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkColor *color);
+void ygtk_colored_label_set_foreground (YGtkColoredLabel *label, GdkRGBA *color);
+void ygtk_colored_label_set_background (YGtkColoredLabel *label, GdkRGBA *color);
 
 G_END_DECLS
 #endif /*YGTK_COLORED_LABEL*/

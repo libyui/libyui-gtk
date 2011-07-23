@@ -98,13 +98,14 @@ YGtkPkgSearchEntry::YGtkPkgSearchEntry()
 	GtkWidget *label = gtk_label_new_with_mnemonic (label_str.c_str());
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), impl->entry);
 
-	impl->combo = gtk_combo_box_new_text();
-	gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), _("Name & Summary"));
-	gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), _("Description"));
+	impl->combo = gtk_combo_box_text_new();
+	GtkComboBoxText *combot = GTK_COMBO_BOX_TEXT (impl->combo);
+	gtk_combo_box_text_append (combot, 0, _("Name & Summary"));
+	gtk_combo_box_text_append (combot, 0, _("Description"));
 	if (!YGPackageSelector::get()->onlineUpdateMode()) {
-		gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), _("File name"));
-		gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), "RPM Provides");
-		gtk_combo_box_append_text (GTK_COMBO_BOX (impl->combo), "RPM Requires");
+		gtk_combo_box_text_append (combot, 0, _("File name"));
+		gtk_combo_box_text_append (combot, 0, "RPM Provides");
+		gtk_combo_box_text_append (combot, 0, "RPM Requires");
 	}
 	gtk_combo_box_set_active (GTK_COMBO_BOX (impl->combo), 0);
 	YGUtils::shrinkWidget (impl->combo);

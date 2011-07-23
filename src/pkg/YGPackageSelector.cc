@@ -258,7 +258,7 @@ struct SuffixFilter : public Ypp::Match {
 			(GTK_SCROLLED_WINDOW (scroll), GTK_SHADOW_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);
 
-		GtkBox *vbox = GTK_BOX (GTK_DIALOG(dialog)->vbox);
+		GtkBox *vbox = GTK_BOX (gtk_dialog_get_content_area(GTK_DIALOG(dialog)));
 		gtk_box_pack_start (vbox, scroll, TRUE, TRUE, 6);
 
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
@@ -411,7 +411,7 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
 			GTK_SHADOW_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);
-		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), scroll);
+		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), scroll);
 
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 		gtk_window_set_default_size (GTK_WINDOW (dialog), -1, 500);
@@ -603,6 +603,13 @@ struct SuffixFilter : public Ypp::Match {
 			{ return Ypp::Package (sel).support() <= 1; }
 		};
 
+		Ypp::PoolQuery query (Ypp::Selectable::PACKAGE);
+		query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::TO_MODIFY));
+		query.addCriteria (new UnsupportedMatch());
+		Ypp::List list (query);
+		if(list.size() == 0)
+			return true;
+
 		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 			GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE,
 			_("Unsupported packages"));
@@ -615,11 +622,6 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);
 
-		Ypp::PoolQuery query (Ypp::Selectable::PACKAGE);
-		query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::TO_MODIFY));
-		query.addCriteria (new UnsupportedMatch());
-		Ypp::List list (query);
-
 		YGtkPkgListView view (true, Ypp::List::NAME_SORT, false, true);
 		view.addCheckColumn (INSTALLED_CHECK_PROP);
 		view.addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
@@ -629,7 +631,7 @@ struct SuffixFilter : public Ypp::Match {
 		view.setListener (this);
 		view.setList (list);
 
-		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view.getWidget());
+		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), view.getWidget());
 		gtk_widget_show_all (dialog);
 		int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);

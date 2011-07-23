@@ -8,7 +8,7 @@
 #ifndef YGTK_TREE_VIEW_H
 #define YGTK_TREE_VIEW_H
 
-#include <gtk/gtktreeview.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_TREE_VIEW            (ygtk_tree_view_get_type ())

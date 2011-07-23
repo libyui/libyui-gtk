@@ -9,7 +9,7 @@
 #ifndef YGTK_PKG_HISTORY_DIALOG_H
 #define YGTK_PKG_HISTORY_DIALOG_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 struct YGtkPkgHistoryDialog
 {

@@ -16,7 +16,7 @@
 #define YGTK_PKG_FILTER_VIEW_H
 
 #include "ygtkpkgquerywidget.h"
-#include <gtk/gtktreestore.h>
+#include <gtk/gtk.h>
 
 struct YGtkPkgFilterModel  // abstract
 {

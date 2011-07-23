@@ -98,7 +98,7 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 			sel->candidateObj().isSatisfied() || sel->hasInstalledObj(),
 			TEXT_COLUMN, text.c_str(), VERSION_COLUMN, version.c_str(),
 			VENDOR_COLUMN, prod->vendor().c_str(), DESCRIPTION_COLUMN,
-			description.c_str(), -1);		
+			description.c_str(), -1);
     }
 
 	GtkWidget *description = ygtk_rich_text_new();
@@ -121,7 +121,7 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 	renderer = gtk_cell_renderer_toggle_new();
 	column = gtk_tree_view_column_new_with_attributes (
 		NULL, renderer, "active", INSTALLED_COLUMN, NULL);
-	g_object_set (G_OBJECT (renderer), "sensitive", FALSE, NULL);
+        gtk_cell_renderer_set_sensitive(renderer, FALSE);
 	gtk_tree_view_append_column (tview, column);
 
 	renderer = gtk_cell_renderer_text_new();
@@ -167,7 +167,8 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 	gtk_paned_pack1 (GTK_PANED (vpaned), scroll, TRUE, FALSE);
 	gtk_paned_pack2 (GTK_PANED (vpaned), description_scroll, FALSE, TRUE);
 	YGUtils::setPaneRelPosition (vpaned, .70);
-	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vpaned);
+	gtk_widget_set_vexpand (vpaned, TRUE);
+	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), vpaned);
 
 	gtk_widget_show_all (dialog);
 	m_dialog = dialog;

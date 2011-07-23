@@ -11,7 +11,7 @@
 #ifndef YGTK_POPUP_WINDOW_H
 #define YGTK_POPUP_WINDOW_H
 
-#include <gtk/gtkwindow.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_POPUP_WINDOW            (ygtk_popup_window_get_type ())
@@ -48,8 +48,6 @@ G_END_DECLS
 #ifndef YGTK_MENU_BUTTON_H
 #define YGTK_MENU_BUTTON_H
 
-#include <gtk/gtktogglebutton.h>
-#include <gtk/gtkmenu.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_MENU_BUTTON            (ygtk_menu_button_get_type ())

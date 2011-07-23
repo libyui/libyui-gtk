@@ -7,7 +7,7 @@
 #ifndef YGSELECTION_STORE_H
 #define YGSELECTION_STORE_H
 
-#include <gtk/gtktreemodel.h>
+#include <gtk/gtk.h>
 struct YItem;
 struct YSelectionWidget;
 

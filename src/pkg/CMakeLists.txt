@@ -43,11 +43,12 @@ add_dependencies (py2gtk_pkg py2gtk)
 ## libraries:
 
 target_link_libraries (py2gtk_pkg libpy2gtk.so)
-target_link_libraries (py2gtk_pkg ${GTK2_LIBRARIES})
+target_link_libraries (py2gtk_pkg ${GTK3_LIBRARIES})
 target_link_libraries (py2gtk_pkg ${LIBYUI_LIBRARY})
 target_link_libraries (py2gtk_pkg ${ZYPP_LIBRARY})
 set_target_properties (py2gtk_pkg PROPERTIES SOVERSION 2)
-set_target_properties (py2gtk_pkg PROPERTIES LINK_FLAGS "--no-undefined -Wl,-rpath -Wl,${UI_PLUGIN_DIR}")
+#set_target_properties (py2gtk_pkg PROPERTIES LINK_FLAGS "--no-undefined -Wl,-rpath -Wl,${UI_PLUGIN_DIR}")
+set_target_properties (py2gtk_pkg PROPERTIES LINK_FLAGS "-Wl,-rpath -Wl,${UI_PLUGIN_DIR}")
 
 ## install:
 

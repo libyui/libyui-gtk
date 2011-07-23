@@ -450,7 +450,8 @@ static void manualResolvePackageDependencies()
 
 struct CheckMenuFlag {
 	CheckMenuFlag (GtkWidget *menu, const char *text) {
-		m_item = gtk_check_menu_item_new_with_mnemonic (text);
+		std::string str (YGUtils::mapKBAccel(text));
+		m_item = gtk_check_menu_item_new_with_mnemonic (str.c_str());
 		g_object_set_data_full (G_OBJECT (m_item), "this", this, destructor);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), m_item);
 	}

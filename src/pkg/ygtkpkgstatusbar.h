@@ -8,7 +8,7 @@
 #ifndef YGTK_PKG_STATUS_BAR_H
 #define YGTK_PKG_STATUS_BAR_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 struct YGtkPkgUndoList;
 

@@ -14,14 +14,15 @@ G_DEFINE_TYPE (YGtkFixed, ygtk_fixed, GTK_TYPE_CONTAINER)
 
 static void ygtk_fixed_init (YGtkFixed *fixed)
 {
-	GTK_WIDGET_SET_FLAGS (fixed, GTK_NO_WINDOW);
+        gtk_widget_set_has_window(GTK_WIDGET(fixed), FALSE);
 	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (fixed), FALSE);
 }
 
-void ygtk_fixed_setup (YGtkFixed *fixed, YGtkPreferredSize cb1, YGtkSetSize cb2, gpointer data)
+void ygtk_fixed_setup (YGtkFixed *fixed, YGtkPreferredWidth cb1, YGtkPreferredHeight cb2, YGtkSetSize cb3, gpointer data)
 {
-	fixed->preferred_size_cb = cb1;
-	fixed->set_size_cb = cb2;
+	fixed->preferred_width_cb = cb1;
+	fixed->preferred_height_cb = cb2;
+	fixed->set_size_cb = cb3;
 	fixed->data = data;
 }
 
@@ -68,7 +69,7 @@ static void ygtk_fixed_remove (GtkContainer *container, GtkWidget *widget)
 	for (i = fixed->children; i; i = i->next) {
 		YGtkFixedChild *child = i->data;
 		if (child->widget == widget) {
-			gboolean was_visible = GTK_WIDGET_VISIBLE (widget);
+			gboolean was_visible = gtk_widget_get_visible (widget);
 			gtk_widget_unparent (widget);
 			fixed->children = g_slist_delete_link (fixed->children, i);
 			g_free (child);
@@ -92,12 +93,24 @@ static void ygtk_fixed_forall (GtkContainer *container, gboolean include_interna
 	}
 }
 
-static void ygtk_fixed_size_request (GtkWidget *widget, GtkRequisition *requisition)
+static void
+ygtk_fixed_get_preferred_width (GtkWidget *widget,
+                               gint      *minimum_width,
+                               gint      *natural_width)
 {
 	YGtkFixed *fixed = YGTK_FIXED (widget);
-	fixed->preferred_size_cb (fixed, &requisition->width, &requisition->height,
-	                          fixed->data);
-	GTK_WIDGET_CLASS (ygtk_fixed_parent_class)->size_request (widget, requisition);
+	*natural_width = *minimum_width =
+		fixed->preferred_width_cb (fixed, fixed->data);
+}
+
+static void
+ygtk_fixed_get_preferred_height (GtkWidget *widget,
+                                gint      *minimum_height,
+                                gint      *natural_height)
+{
+	YGtkFixed *fixed = YGTK_FIXED (widget);
+	*natural_height = *minimum_height =
+		fixed->preferred_height_cb (fixed, fixed->data);
 }
 
 static void ygtk_fixed_size_allocate (GtkWidget *widget, GtkAllocation *allocation)
@@ -134,7 +147,8 @@ static void ygtk_fixed_class_init (YGtkFixedClass *klass)
 	container_class->child_type = ygtk_fixed_child_type;
 
 	GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->size_request = ygtk_fixed_size_request;
+	widget_class->get_preferred_width = ygtk_fixed_get_preferred_width;
+	widget_class->get_preferred_height = ygtk_fixed_get_preferred_height;
 	widget_class->size_allocate = ygtk_fixed_size_allocate;
 }
 

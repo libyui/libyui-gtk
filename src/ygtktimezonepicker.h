@@ -10,7 +10,7 @@
 #ifndef YGTK_TIME_ZONE_PICKER_H
 #define YGTK_TIME_ZONE_PICKER_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 #include <gdk/gdk.h>
 G_BEGIN_DECLS
 

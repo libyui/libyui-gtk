@@ -16,17 +16,19 @@ G_DEFINE_TYPE (YGtkLinkLabel, ygtk_link_label, GTK_TYPE_WIDGET)
 
 static void ygtk_link_label_init (YGtkLinkLabel *label)
 {
-	GTK_WIDGET_SET_FLAGS (label, GTK_NO_WINDOW);
+	gtk_widget_set_has_window(GTK_WIDGET(label), FALSE);
 }
 
 static void ygtk_link_label_realize (GtkWidget *widget)
 {
 	GTK_WIDGET_CLASS (ygtk_link_label_parent_class)->realize (widget);
 	GdkWindowAttr attributes;
-	attributes.x = widget->allocation.x;
-	attributes.y = widget->allocation.y;
-	attributes.width = widget->allocation.width;
-	attributes.height = widget->allocation.height;
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(widget, &alloc);
+	attributes.x = alloc.x;
+	attributes.y = alloc.y;
+	attributes.width = alloc.width;
+	attributes.height = alloc.height;
 	attributes.window_type = GDK_WINDOW_CHILD;
 	attributes.wclass = GDK_INPUT_OUTPUT;
 	attributes.event_mask = gtk_widget_get_events (widget) |
@@ -36,12 +38,11 @@ static void ygtk_link_label_realize (GtkWidget *widget)
 		gtk_widget_get_display (widget), GDK_HAND2);
 
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
-	label->link_window = gdk_window_new (widget->window, &attributes, attributes_mask);
+	label->link_window = gdk_window_new (gtk_widget_get_window(widget), &attributes, attributes_mask);
 	gdk_window_set_user_data (label->link_window, widget);
 	GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
-	gdk_rgb_find_color (gtk_widget_get_colormap (widget), &white);
 	gdk_window_set_background (label->link_window, &white);
-	gdk_cursor_unref (attributes.cursor);
+	g_object_unref (G_OBJECT(attributes.cursor));
 }
 
 static void ygtk_link_label_unrealize (GtkWidget *widget)
@@ -108,19 +109,41 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	ygtk_link_label_ensure_layout (label);
 	requisition->width = requisition->height = 0;
+        GtkStyleContext *style_ctx;
+        style_ctx = gtk_widget_get_style_context(widget);
 //	if (label->text && *label->text)
 	{
 		PangoContext *context;
 		PangoFontMetrics *metrics;
 		gint ascent, descent;
 		context = pango_layout_get_context (label->layout);
-		metrics = pango_context_get_metrics (context, widget->style->font_desc,
+		metrics = pango_context_get_metrics (context, gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL),
 			                                 pango_context_get_language (context));
 		ascent = pango_font_metrics_get_ascent (metrics);
 		descent = pango_font_metrics_get_descent (metrics);
 		pango_font_metrics_unref (metrics);
 		requisition->height = PANGO_PIXELS (ascent + descent);
 	}
+}
+
+static void
+ygtk_link_label_get_preferred_width (GtkWidget *widget,
+                                     gint      *minimal_width,
+                                     gint      *natural_width)
+{
+  GtkRequisition requisition;
+  ygtk_link_label_size_request (widget, &requisition);
+  *minimal_width = *natural_width = requisition.width;
+}
+
+static void
+ygtk_link_label_get_preferred_height (GtkWidget *widget,
+                                      gint      *minimal_height,
+                                      gint      *natural_height)
+{
+  GtkRequisition requisition;
+  ygtk_link_label_size_request (widget, &requisition);
+  *minimal_height = *natural_height = requisition.height;
 }
 
 #define SPACING 4
@@ -158,29 +181,27 @@ static void ygtk_link_label_size_allocate (GtkWidget *widget, GtkAllocation *all
 	}
 }
 
-static gboolean ygtk_link_label_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_link_label_on_draw (GtkWidget *widget, cairo_t *cr)
 {
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	ygtk_link_label_ensure_layout (label);
 
-	gint x = 0, y = 0;
-	PangoLayout *layout = 0;
-	if (event->window == widget->window) {
+    GtkStyleContext *style = gtk_widget_get_style_context(widget);
+	if (gtk_cairo_should_draw_window(cr, gtk_widget_get_window(widget))) {
+		gint x = 0;
+		gint width = gtk_widget_get_allocated_width (widget);
 		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL) {
 			PangoRectangle extent;
 			pango_layout_get_extents (label->layout, NULL, &extent);
-			x = widget->allocation.width - extent.width/PANGO_SCALE;
+			x = width - extent.width/PANGO_SCALE;
 		}
-		x += widget->allocation.x;
-		y += widget->allocation.y;
-		layout = label->layout;
+		gtk_render_layout (style, cr, x, 0, label->layout);
 	}
-	else if (event->window == label->link_window)
-		layout = label->link_layout;
 
-	if (layout)
-		gtk_paint_layout (widget->style, event->window, GTK_WIDGET_STATE (widget),
-			FALSE, &event->area, widget, "label", x, y, layout);
+	if (gtk_cairo_should_draw_window(cr, label->link_window)) {
+		gtk_cairo_transform_to_window (cr, widget, label->link_window);
+		gtk_render_layout (style, cr, 0, 0, label->link_layout);
+	}
 	return FALSE;
 }
 
@@ -190,8 +211,8 @@ static gboolean ygtk_link_label_button_press_event (GtkWidget *widget, GdkEventB
 	return TRUE;
 }
 
-void ygtk_link_label_set_text (YGtkLinkLabel *label, const gchar *text, const gchar *link,
-                                gboolean link_always_visible)
+void ygtk_link_label_set_text (YGtkLinkLabel *label,
+	const gchar *text, const gchar *link, gboolean link_always_visible)
 {
 	g_free (label->text);
 	label->text = g_strdup (text);
@@ -219,9 +240,12 @@ static void ygtk_link_label_class_init (YGtkLinkLabelClass *klass)
 	widget_class->realize = ygtk_link_label_realize;
 	widget_class->unrealize = ygtk_link_label_unrealize;
 	widget_class->map = ygtk_link_label_map;
-	widget_class->size_request = ygtk_link_label_size_request;
+
+        widget_class->get_preferred_height = ygtk_link_label_get_preferred_height;
+        widget_class->get_preferred_width = ygtk_link_label_get_preferred_width;
+
 	widget_class->size_allocate = ygtk_link_label_size_allocate;
-	widget_class->expose_event = ygtk_link_label_expose_event;
+	widget_class->draw = ygtk_link_label_on_draw;
 	widget_class->button_press_event = ygtk_link_label_button_press_event;
 
 	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);

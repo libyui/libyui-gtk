@@ -39,9 +39,9 @@ static void ygtk_steps_init (YGtkSteps *steps)
 	steps->current_mark_timeout_id = steps->current_mark_frame = 0;
 }
 
-static void ygtk_steps_destroy (GtkObject *object)
+static void ygtk_steps_destroy (GtkWidget *widget)
 {
-	YGtkSteps *steps = YGTK_STEPS (object);
+	YGtkSteps *steps = YGTK_STEPS (widget);
 	if (steps->current_mark_timeout_id) {
 		g_source_remove (steps->current_mark_timeout_id);
 		steps->current_mark_timeout_id = 0;
@@ -54,7 +54,8 @@ static void ygtk_steps_destroy (GtkObject *object)
 	if (steps->todo_mark_layout)
 		g_object_unref (steps->todo_mark_layout);
 	steps->todo_mark_layout = NULL;
-	GTK_OBJECT_CLASS (ygtk_steps_parent_class)->destroy (object);
+
+	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->destroy(widget);
 }
 
 static void ygtk_step_update_layout (YGtkSteps *steps, gint step)
@@ -79,19 +80,21 @@ static void ygtk_step_update_layout (YGtkSteps *steps, gint step)
 	g_list_free (children);
 }
 
-static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_steps_draw (GtkWidget *widget, cairo_t *cr)
 {
-	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->expose_event (widget, event);
+	GTK_WIDGET_CLASS (ygtk_steps_parent_class)->draw(widget, cr);
 
 	YGtkSteps *steps = YGTK_STEPS (widget);
 	gboolean reverse = gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL;
 	GList *children = gtk_container_get_children (GTK_CONTAINER (widget)), *i;
 
-	cairo_t *cr = gdk_cairo_create (event->window);
 	cairo_set_source_rgb (cr, 0, 0, 0);
 	int n = 0;
 	for (i = children; i; i = i->next, n++) {
 		GtkWidget *label = i->data;
+                GtkAllocation alloc;
+                gtk_widget_get_allocation(label, &alloc);
+
 		if (g_object_get_data (G_OBJECT (label), "is-header"))
 			continue;
 		PangoLayout *layout;
@@ -101,11 +104,11 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 			layout = steps->current_mark_layout;
 		else //if (n > steps->current_step)
 			layout = steps->todo_mark_layout;
-		int x = label->allocation.x, y = label->allocation.y;
+		int x = alloc.x, y = alloc.y;
 		if (reverse) {
 			PangoRectangle rect;
 			pango_layout_get_pixel_extents (layout, NULL, &rect);
-			x += label->allocation.width - rect.width - 4;
+			x += alloc.width - rect.width - 4;
 		}
 		else
 			x += 4;
@@ -122,7 +125,6 @@ static gboolean ygtk_steps_expose_event (GtkWidget *widget, GdkEventExpose *even
 		cairo_move_to (cr, x, y);
 		pango_cairo_show_layout (cr, layout);
 	}
-	cairo_destroy (cr);
 	g_list_free (children);
 	return 	FALSE;
 }
@@ -189,7 +191,7 @@ void ygtk_steps_set_current (YGtkSteps *steps, gint step)
 		ygtk_step_update_layout (steps, step);
 	}
 
-	if (step != -1) {
+	if (step != -1 && step != old_step) {
 		steps->current_mark_frame = 0;
 		steps->current_mark_timeout_id = g_timeout_add
 			(CURRENT_MARK_ANIMATION_TIME / CURRENT_MARK_FRAMES_NB,
@@ -230,9 +232,7 @@ static void ygtk_steps_class_init (YGtkStepsClass *klass)
 	ygtk_steps_parent_class = g_type_class_peek_parent (klass);
 
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->expose_event = ygtk_steps_expose_event;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_steps_destroy;
+	widget_class->draw = ygtk_steps_draw;
+	widget_class->destroy = ygtk_steps_destroy;
 }
 

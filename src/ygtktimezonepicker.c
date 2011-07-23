@@ -72,7 +72,8 @@ static void window_to_map (YGtkTimeZonePicker *picker, gint win_x, gint win_y,
                            gint *map_x, gint *map_y)
 {
 	int win_width, win_height;
-	gdk_window_get_size (picker->map_window, &win_width, &win_height);
+	win_width = gdk_window_get_width(picker->map_window);
+	win_height = gdk_window_get_height(picker->map_window);
 
 	*map_x = ((win_x - win_width/2) / picker->scale) + picker->map_x;
 	*map_y = ((win_y - win_height/2) / picker->scale) + picker->map_y;
@@ -82,7 +83,8 @@ static void map_to_window (YGtkTimeZonePicker *picker, gint map_x, gint map_y,
                            gint *win_x, gint *win_y)
 {
 	int win_width, win_height;
-	gdk_window_get_size (picker->map_window, &win_width, &win_height);
+	win_width = gdk_window_get_width(picker->map_window);
+	win_height = gdk_window_get_height(picker->map_window);
 
 	*win_x = ((map_x - picker->map_x) * picker->scale) + win_width/2;
 	*win_y = ((map_y - picker->map_y) * picker->scale) + win_height/2;
@@ -244,12 +246,12 @@ G_DEFINE_TYPE (YGtkTimeZonePicker, ygtk_time_zone_picker, GTK_TYPE_WIDGET)
 
 static void ygtk_time_zone_picker_init (YGtkTimeZonePicker *picker)
 {
-	GTK_WIDGET_SET_FLAGS (picker, GTK_NO_WINDOW);
+        gtk_widget_set_has_window (GTK_WIDGET(picker), FALSE);
 }
 
-static void ygtk_time_zone_picker_destroy (GtkObject *object)
+static void ygtk_time_zone_picker_destroy (GtkWidget *widget)
 {
-	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (object);
+	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
 	if (picker->map_pixbuf) {
 		g_object_unref (G_OBJECT (picker->map_pixbuf));
 		picker->map_pixbuf = NULL;
@@ -267,7 +269,7 @@ static void ygtk_time_zone_picker_destroy (GtkObject *object)
 		g_list_free (picker->locations);
 		picker->locations = NULL;
 	}
-	GTK_OBJECT_CLASS (ygtk_time_zone_picker_parent_class)->destroy (object);
+	GTK_WIDGET_CLASS (ygtk_time_zone_picker_parent_class)->destroy(widget);
 }
 
 static void ygtk_time_zone_picker_realize (GtkWidget *widget)
@@ -277,11 +279,14 @@ static void ygtk_time_zone_picker_realize (GtkWidget *widget)
 	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
 
 	GdkWindowAttr attributes;
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(widget, &alloc);
+
 	attributes.window_type = GDK_WINDOW_CHILD;
-	attributes.x = widget->allocation.x;
-	attributes.y = widget->allocation.y;
-	attributes.width = widget->allocation.width;
-	attributes.height = widget->allocation.height;
+	attributes.x = alloc.x;
+	attributes.y = alloc.y;
+	attributes.width = alloc.width;
+	attributes.height = alloc.height;
 	attributes.wclass = GDK_INPUT_OUTPUT;
 	attributes.event_mask = gtk_widget_get_events (widget);
 	attributes.event_mask |=
@@ -289,10 +294,12 @@ static void ygtk_time_zone_picker_realize (GtkWidget *widget)
 		 | GDK_POINTER_MOTION_MASK | GDK_LEAVE_NOTIFY_MASK);
 	gint attributes_mask;
 	attributes_mask = GDK_WA_X | GDK_WA_Y;
-	picker->map_window = gdk_window_new (widget->window,
+	picker->map_window = gdk_window_new (gtk_widget_get_window(widget),
 	                          &attributes, attributes_mask);
 	gdk_window_set_user_data (picker->map_window, widget);
-	gtk_style_set_background (widget->style, picker->map_window, GTK_STATE_NORMAL);
+
+	GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
+	gtk_style_context_set_background(style_ctx, picker->map_window);
 
 	ygtk_time_zone_picker_closeup (picker, FALSE, 0, 0, FALSE);
 }
@@ -399,18 +406,22 @@ static gboolean ygtk_time_zone_picker_button_release_event (GtkWidget *widget,
 	return FALSE;
 }
 
-static void ygtk_time_zone_picker_size_request (GtkWidget *widget,
-                                                GtkRequisition *requisition)
+static void ygtk_time_zone_picker_get_preferred_width (GtkWidget *widget,
+	gint *minimal_width, gint *natural_width)
 {
-	requisition->width = 600;
-	requisition->height = 300;
-	GTK_WIDGET_CLASS (ygtk_time_zone_picker_parent_class)->size_request (widget, requisition);
+	*minimal_width = *natural_width = 600;
+}
+
+static void ygtk_time_zone_picker_get_preferred_height (GtkWidget *widget,
+	gint *minimal_height, gint *natural_height)
+{
+	*minimal_height = *natural_height = 300;
 }
 
 static void ygtk_time_zone_picker_size_allocate (GtkWidget     *widget,
                                                  GtkAllocation *allocation)
 {
-	if (!GTK_WIDGET_REALIZED (widget))
+	if (!gtk_widget_get_realized (widget))
 		return;
 	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
 	int win_width = allocation->width, win_height = allocation->height;
@@ -443,16 +454,13 @@ static void ygtk_time_zone_picker_size_allocate (GtkWidget     *widget,
 		(widget, allocation);
 }
 
-static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
-                                                    GdkEventExpose *event)
+static gboolean ygtk_time_zone_picker_draw (GtkWidget *widget, cairo_t *cr)
 {
 	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
-	if (event->window != picker->map_window)
-		return FALSE;
+	GtkStyleContext *style = gtk_widget_get_style_context(widget);
 
-	cairo_t *cr = gdk_cairo_create (event->window);
-	int width, height;
-	gdk_window_get_size (event->window, &width, &height);
+	int width = gtk_widget_get_allocated_width(widget);
+	int height = gtk_widget_get_allocated_height(widget);
 
 	if (!picker->map_pixbuf) {
 		// show alt text if no image was loaded
@@ -537,9 +545,7 @@ static gboolean ygtk_time_zone_picker_expose_event (GtkWidget *widget,
 	}
 
 cleanup:
-	cairo_destroy (cr);
-	gtk_paint_shadow (widget->style, event->window, GTK_STATE_NORMAL,
-		GTK_SHADOW_IN, &event->area, widget, "frame", 0, 0, width, height);
+	gtk_render_frame (style, cr, 0, 0, width, height);
 	return TRUE;
 }
 
@@ -552,16 +558,15 @@ static void ygtk_time_zone_picker_class_init (YGtkTimeZonePickerClass *klass)
 	widget_class->unrealize = ygtk_time_zone_picker_unrealize;
 	widget_class->map = ygtk_time_zone_picker_map;
 	widget_class->unmap = ygtk_time_zone_picker_unmap;
-	widget_class->expose_event = ygtk_time_zone_picker_expose_event;
-	widget_class->size_request = ygtk_time_zone_picker_size_request;
+	widget_class->draw = ygtk_time_zone_picker_draw;
+	widget_class->get_preferred_width = ygtk_time_zone_picker_get_preferred_width;
+	widget_class->get_preferred_height = ygtk_time_zone_picker_get_preferred_height;
 	widget_class->size_allocate = ygtk_time_zone_picker_size_allocate;
 	widget_class->button_press_event = ygtk_time_zone_picker_button_press_event;
 	widget_class->button_release_event = ygtk_time_zone_picker_button_release_event;
 	widget_class->motion_notify_event = ygtk_time_zone_picker_motion_notify_event;
 	widget_class->leave_notify_event = ygtk_time_zone_picker_leave_notify_event;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_time_zone_picker_destroy;
+	widget_class->destroy = ygtk_time_zone_picker_destroy;
 
 	zone_clicked_signal = g_signal_new ("zone_clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,

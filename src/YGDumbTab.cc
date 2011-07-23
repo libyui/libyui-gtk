@@ -8,7 +8,7 @@
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "YDumbTab.h"
-
+#include <gtk/gtk.h>
 #include "ygtkratiobox.h"
 
 class YGDumbTab : public YDumbTab, public YGWidget
@@ -141,7 +141,7 @@ public:
 	}
 
 	// callbacks
-	static void switch_page_cb (GtkNotebook *notebook, GtkNotebookPage *page,
+	static void switch_page_cb (GtkNotebook *notebook, GtkWidget *page,
 	                              guint tab_nb, YGDumbTab *pThis)
 	{
 		GtkWidget *child = gtk_notebook_get_nth_page (notebook, tab_nb);

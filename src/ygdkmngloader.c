@@ -132,8 +132,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 {
 	gboolean error = FALSE;
 	FILE *file = fopen (filename, "rb");
-	if (!file)
-	{
+	if (!file) {
 		SET_ERROR ("Could not open specified file")
 		return NULL;
 	}
@@ -147,8 +146,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 	                     fileno (file), 0);
 	if (data == MAP_FAILED)
 		SET_ERROR ("Could not map file")
-	else
-	{
+	else {
 		mng_pixbuf = ygdk_mng_pixbuf_new_from_data (data, file_size, error_msg);
 		munmap (data, file_size);
 	}
@@ -162,8 +160,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long 
 	DataStream data = data_stream_constructor (raw_data, size);
 
 	gboolean error = FALSE;
-	if (!read_signature (&data))
-	{
+	if (!read_signature (&data)) {
 		SET_ERROR ("Not a MNG file")
 		return NULL;
 	}
@@ -179,8 +176,7 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long 
     do {
 		error = !read_uint32 (&data, &chunk_size);
 		error = error || !read_uint32 (&data, &chunk_id);
-		if (error)
-		{
+		if (error) {
 			SET_ERROR ("Unexpected end of file on new chunk")
 			break;
 		}

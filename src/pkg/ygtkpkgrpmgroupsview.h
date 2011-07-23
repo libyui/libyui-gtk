@@ -9,7 +9,7 @@
 #define YGTK_PKG_RPM_GROUP_VIEW_H
 
 #include "ygtkpkgquerywidget.h"
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 struct YGtkPkgRpmGroupsView : public YGtkPkgQueryWidget
 {

@@ -26,19 +26,19 @@ public:
 			const YBarGraphSegment &s = segment (i);
 			ygtk_bar_graph_setup_entry (graph, i, s.label().c_str(), s.value());
 			if (s.hasSegmentColor()) {
-				GdkColor color = ycolorToGdk (s.segmentColor());
+				GdkRGBA color = ycolorToGdk (s.segmentColor());
 				ygtk_bar_graph_customize_bg (graph, i, &color);
 			}
 			if (s.hasTextColor()) {
-				GdkColor color = ycolorToGdk (s.textColor());
+				GdkRGBA color = ycolorToGdk (s.textColor());
 				ygtk_bar_graph_customize_fg (graph, i, &color);
 			}
 		}
 	}
 
-	static GdkColor ycolorToGdk (const YColor &ycolor)
+	static GdkRGBA ycolorToGdk (const YColor &ycolor)
 	{
-		GdkColor color = { 0, guint16(ycolor.red() << 8), guint16(ycolor.green() << 8), guint16(ycolor.blue() << 8) };
+		GdkRGBA color = { 0, guint16(ycolor.red() << 8), guint16(ycolor.green() << 8), guint16(ycolor.blue() << 8) };
 		return color;
 	}
 

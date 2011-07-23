@@ -20,7 +20,7 @@ static guint toggle_cell_signal = 0;
 G_DEFINE_TYPE (YGtkCellRendererSideButton, ygtk_cell_renderer_side_button, GTK_TYPE_CELL_RENDERER_TEXT)
 
 static void ygtk_cell_renderer_side_button_init (YGtkCellRendererSideButton *bcell)
-{ GTK_CELL_RENDERER (bcell)->mode = GTK_CELL_RENDERER_MODE_ACTIVATABLE; }
+{ g_object_set(GTK_CELL_RENDERER(bcell), "mode", GTK_CELL_RENDERER_MODE_ACTIVATABLE, NULL); }
 
 static void free_pixbuf (YGtkCellRendererSideButton *cell)
 {
@@ -93,7 +93,7 @@ static void ygtk_cell_renderer_side_button_set_property (GObject *object,
 }
 
 static void ygtk_cell_renderer_side_button_get_size (
-	GtkCellRenderer *cell, GtkWidget *widget, GdkRectangle *cell_area,
+	GtkCellRenderer *cell, GtkWidget *widget, const GdkRectangle *cell_area,
 	gint *x_offset, gint *y_offset, gint *width, gint *height)
 {
 	GTK_CELL_RENDERER_CLASS (ygtk_cell_renderer_side_button_parent_class)->get_size (
@@ -107,9 +107,9 @@ static void ygtk_cell_renderer_side_button_get_size (
 }
 
 static void ygtk_cell_renderer_side_button_render (
-	GtkCellRenderer *cell, GdkDrawable *window, GtkWidget *widget,
-	GdkRectangle *background_area, GdkRectangle *cell_area,
-	GdkRectangle *expose_area, GtkCellRendererState flags)
+	GtkCellRenderer *cell, cairo_t *cr, GtkWidget *widget,
+	const GdkRectangle *background_area, const GdkRectangle *cell_area,
+	GtkCellRendererState flags)
 {
 	YGtkCellRendererSideButton *bcell = YGTK_CELL_RENDERER_SIDE_BUTTON (cell);
 	GdkRectangle text_area = *cell_area;
@@ -120,20 +120,25 @@ static void ygtk_cell_renderer_side_button_render (
 			text_area.x += icon_width + 8;
 		text_area.width -= icon_width + 8 + 4;
 	}
+
 	GTK_CELL_RENDERER_CLASS (ygtk_cell_renderer_side_button_parent_class)->render (
-		cell, window, widget, background_area, &text_area, expose_area, flags);
+		cell, cr, widget, background_area, &text_area, flags);
 
 	if (bcell->button_visible) {
 		GtkStateType state = GTK_STATE_NORMAL;
-		GtkShadowType shadow = GTK_SHADOW_OUT;
-		if (!cell->sensitive || GTK_WIDGET_STATE (widget) == GTK_STATE_INSENSITIVE)
+                gboolean sensitive = TRUE;
+                g_object_get(cell, "sensitive", &sensitive, NULL);
+		if (!sensitive || gtk_widget_get_state (widget) == GTK_STATE_INSENSITIVE)
 			state = GTK_STATE_INSENSITIVE;
 	/*	else if ((flags & GTK_CELL_RENDERER_PRELIT))
 			state = GTK_STATE_PRELIGHT;*/
-		if (bcell->active) {
-			shadow = GTK_SHADOW_IN;
+		if (bcell->active)
 			state = GTK_STATE_ACTIVE;
-		}
+
+		GtkStyleContext *style = gtk_widget_get_style_context(widget);
+		gtk_style_context_save(style);
+		gtk_style_context_set_state(style, state);
+		gtk_style_context_add_class (style, GTK_STYLE_CLASS_BUTTON);
 
 		GdkRectangle button_area = *cell_area;
 		if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_RTL)
@@ -143,29 +148,30 @@ static void ygtk_cell_renderer_side_button_render (
 		button_area.width = icon_width + 4;
 		button_area.height = icon_height + 4;
 		button_area.y = cell_area->y + ((cell_area->height - button_area.height) / 2);
-		gtk_paint_box (widget->style, window, state, shadow, expose_area, widget,
-			"button", button_area.x, button_area.y, button_area.width, button_area.height);
+
+		gtk_render_background (style, cr, button_area.x, button_area.y, button_area.width, button_area.height);
+		gtk_render_frame (style, cr, button_area.x, button_area.y, button_area.width, button_area.height);
 
 		GdkRectangle icon_area = button_area;
 		icon_area.x += 2;
 		icon_area.y += 2;
 		if (bcell->active) {
-			cell_area->x += 2;
-			cell_area->y += 2;
+			icon_area.x += 2;
+			icon_area.y += 2;
 		}
 
 		ensure_pixbuf (bcell, widget);
-		cairo_t *cr = gdk_cairo_create (window);
 		gdk_cairo_set_source_pixbuf (cr, bcell->pixbuf, icon_area.x, icon_area.y);
 		cairo_rectangle (cr, icon_area.x, icon_area.y, icon_width, icon_height);
 		cairo_fill (cr);
-		cairo_destroy (cr);
+
+		gtk_style_context_restore(style);
 	}
 }
 
 static gboolean ygtk_cell_renderer_side_button_activate (
 	GtkCellRenderer *cell, GdkEvent *event, GtkWidget *widget, const gchar *path,
-	GdkRectangle *background_area, GdkRectangle *cell_area, GtkCellRendererState flags)
+	const GdkRectangle *background_area, const GdkRectangle *cell_area, GtkCellRendererState flags)
 {
 	YGtkCellRendererSideButton *bcell = YGTK_CELL_RENDERER_SIDE_BUTTON (cell);
 	if (bcell->button_visible) {

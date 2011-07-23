@@ -8,7 +8,7 @@
 #ifndef YGTK_PKG_DETAIL_VIEW_H
 #define YGTK_PKG_DETAIL_VIEW_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 #include "yzyppwrapper.h"
 
 struct YGtkPkgDetailView

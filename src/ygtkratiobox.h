@@ -8,7 +8,7 @@
 #ifndef YGTK_RATIO_BOX_H
 #define YGTK_RATIO_BOX_H
 
-#include <gtk/gtkcontainer.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_RATIO_BOX            (ygtk_ratio_box_get_type ())
@@ -112,7 +112,6 @@ G_END_DECLS
 #ifndef YGTK_ADJ_SIZE_H
 #define YGTK_ADJ_SIZE_H
 
-#include <gtk/gtkbin.h>
 G_BEGIN_DECLS
 
 #define YGTK_TYPE_ADJ_SIZE            (ygtk_adj_size_get_type ())

@@ -6,12 +6,11 @@
 // check the header file for information about this widget
 
 #include <config.h>
-#include <gtk/gtkversion.h>
+#include <gtk/gtk.h>
 #include <string.h>
 #include "ygtkhtmlwrap.h"
 
 // ygutils
-#include <gtk/gtktextview.h>
 void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
 
 GtkWidget *ygtk_html_wrap_new (void)
@@ -313,7 +312,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean pla
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-	ygutils_scrollAdj (GTK_TEXT_VIEW (widget)->vadjustment, top);
+        ygutils_scrollAdj (gtk_text_view_get_vadjustment(GTK_TEXT_VIEW (widget)), top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)

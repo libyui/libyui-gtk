@@ -11,8 +11,8 @@
 #define YGTK_WIZARD_H
 
 #include <gdk/gdk.h>
-#include <gtk/gtkwindow.h>
-#include <gtk/gtkvbox.h>
+#include <gtk/gtk.h>
+
 G_BEGIN_DECLS
 
 // test feature: history on help dialog

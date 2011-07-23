@@ -209,7 +209,7 @@ struct DetailDescription : public DetailWidget {
 				              G_CALLBACK (copy_link_cb), pThis);
 			gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 		}
-		gtk_menu_popup (GTK_MENU (pThis->popup), NULL, NULL, NULL, NULL, 
+		gtk_menu_popup (GTK_MENU (pThis->popup), NULL, NULL, NULL, NULL,
 		                0, gtk_get_current_event_time());
 		pThis->link_str = link;
 	}
@@ -394,7 +394,7 @@ struct VersionExpander : public DetailExpander {
 
 		GtkWidget *widget = hbox;
 		if ((versions.size() % 2) == 1)
-			g_signal_connect (G_OBJECT (widget), "expose-event",
+			g_signal_connect (G_OBJECT (widget), "draw",
 			                  G_CALLBACK (draw_gray_cb), NULL);
 		versions.push_back (version);
 		gtk_box_pack_start (GTK_BOX (versions_box), widget, FALSE, TRUE, 0);
@@ -615,17 +615,15 @@ struct VersionExpander : public DetailExpander {
 		g_list_free (children);
 	}
 
-	static gboolean draw_gray_cb (GtkWidget *widget, GdkEventExpose *event)
+	static gboolean draw_gray_cb (GtkWidget *widget, cairo_t *cr)
 	{
-		GtkAllocation *alloc = &widget->allocation;
-		int x = alloc->x, y = alloc->y, w = alloc->width, h = alloc->height;
+		int w = gtk_widget_get_allocated_width(widget);
+		int h = gtk_widget_get_allocated_height(widget);
 
-		cairo_t *cr = gdk_cairo_create (widget->window);
-		cairo_rectangle (cr, x, y, w, h);
+		cairo_rectangle (cr, 0, 0, w, h);
 		// use alpha to cope with styles who might not have a white background
 		cairo_set_source_rgba (cr, 0, 0, 0, .060);
 		cairo_fill (cr);
-		cairo_destroy (cr);
 		return FALSE;
 	}
 };
@@ -771,7 +769,7 @@ struct DependenciesExpander : public DetailExpander {
 
 		static const char *getLabel (int dep)
 		{
-			
+
 			switch ((zypp::Dep::for_use_in_switch) dep) {
 				case zypp::Dep::PROVIDES_e: return "Provides:";
 				case zypp::Dep::PREREQUIRES_e: return "Pre-requires:";
@@ -1198,7 +1196,7 @@ Ypp::List m_list;
 		GtkWidget *child = gtk_event_box_new();
 		gtk_container_add (GTK_CONTAINER (child), hbox);
 
-		GdkColor *color = &detail_description->style->base [GTK_STATE_NORMAL];
+		GdkColor *color = &gtk_widget_get_style(detail_description)->base [GTK_STATE_NORMAL];
 		gtk_widget_modify_bg (child, GTK_STATE_NORMAL, color);
 
 		m_scroll = gtk_scrolled_window_new (NULL, NULL);
@@ -1253,7 +1251,10 @@ Ypp::List m_list;
 	{
 		GtkScrolledWindow *_scroll = GTK_SCROLLED_WINDOW (scroll);
 		GtkAdjustment *adj = gtk_scrolled_window_get_vadjustment (_scroll);
-		int height = scroll->allocation.height;
+                GtkAllocation alloc;
+                gtk_widget_get_allocation(scroll, &alloc);
+
+		int height = alloc.height;
 		gdouble increment;
 		switch (step)  {
 			case GTK_MOVEMENT_DISPLAY_LINES:
@@ -1263,17 +1264,17 @@ Ypp::List m_list;
 				increment = height * 0.9;
 				break;
 			case GTK_MOVEMENT_DISPLAY_LINE_ENDS:
-				increment = adj->upper - adj->lower;
+                                increment = gtk_adjustment_get_upper(adj) - gtk_adjustment_get_lower(adj);
 				break;
 			default:
 				increment = 0.0;
 				break;
 		}
 
-		gdouble value = adj->value + (count * increment);
-		value = MIN (value, adj->upper - adj->page_size);
-		value = MAX (value, adj->lower);
-		if (value != adj->value)
+		gdouble value = gtk_adjustment_get_value(adj) + (count * increment);
+		value = MIN (value, gtk_adjustment_get_upper(adj) - gtk_adjustment_get_page_size(adj));
+		value = MAX (value, gtk_adjustment_get_lower(adj));
+		if (value != gtk_adjustment_get_value(adj))
 			gtk_adjustment_set_value (adj, value);
 	}
 

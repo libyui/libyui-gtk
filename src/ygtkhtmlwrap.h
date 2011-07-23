@@ -11,7 +11,7 @@
 #ifndef YGTK_HTML_WRAP_H
 #define YGTK_HTML_WRAP_H
 
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 G_BEGIN_DECLS
 
 GtkWidget *ygtk_html_wrap_new (void);

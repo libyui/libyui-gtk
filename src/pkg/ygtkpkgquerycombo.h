@@ -10,7 +10,7 @@
 #define YGTK_PKG_QUERY_COMBO_H
 
 #include "ygtkpkgquerywidget.h"
-#include <gtk/gtkwidget.h>
+#include <gtk/gtk.h>
 
 struct YGtkPkgQueryCombo : public YGtkPkgQueryWidget
 {

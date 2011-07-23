@@ -33,7 +33,7 @@ static void ygtk_popup_window_hide (GtkWidget *widget)
 
 static gboolean ygtk_popup_window_key_press_event (GtkWidget *widget, GdkEventKey *event)
 {
-	if (event->keyval == GDK_Escape) {
+	if (event->keyval == GDK_KEY_Escape) {
 		gtk_widget_hide (widget);
 		return TRUE;
 	}
@@ -54,7 +54,7 @@ static gboolean ygtk_popup_window_button_press_event (GtkWidget *widget,
 		while (child) {
 			if (child == widget)
 				return FALSE;
-			child = child->parent;
+			child = gtk_widget_get_parent(child);
 		}
 	gtk_widget_hide (widget);
 	return TRUE;
@@ -88,7 +88,7 @@ static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint 
 		*y = monitor.y;
 	else if (*y + req.height > monitor.y + monitor.height)
 		*y = monitor.y + monitor.height - req.height;
-} 
+}
 
 void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_time)
 {
@@ -100,10 +100,10 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 	gtk_widget_show (widget);
 
 	// grab this with your teeth
-	if (gdk_pointer_grab (widget->window, TRUE,
+	if (gdk_pointer_grab (gtk_widget_get_window(widget), TRUE,
 	        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK,
 	        NULL, NULL, activate_time) == 0)
-		if (gdk_keyboard_grab (widget->window, TRUE, activate_time) != 0)
+                if (gdk_keyboard_grab (gtk_widget_get_window(widget), TRUE, activate_time) != 0)
 			gdk_pointer_ungrab (activate_time);
 }
 
@@ -143,26 +143,27 @@ static void ygtk_menu_button_finalize (GObject *object)
 static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gint *y)
 {
 	GtkWidget *widget = GTK_WIDGET (button);
-	GtkAllocation *button_alloc = &widget->allocation;
+	GtkAllocation button_alloc;
+        gtk_widget_get_allocation(widget, &button_alloc);
 
 	// the popup would look awful if smaller than the button
 	GtkRequisition req;
 	gtk_widget_size_request (button->popup, &req);
 	int popup_width = req.width, popup_height = req.height;
-	if (button_alloc->width > req.width) {
-		gtk_widget_set_size_request (button->popup, button_alloc->width, -1);
-		popup_width = button_alloc->width;
+	if (button_alloc.width > req.width) {
+		gtk_widget_set_size_request (button->popup, button_alloc.width, -1);
+		popup_width = button_alloc.width;
 	}
 
-	gdk_window_get_origin (widget->window, x, y);
-	*x += button_alloc->x - popup_width*button->xalign;
-	*y += (button_alloc->y-popup_height) + (button_alloc->height+popup_height)*button->yalign;
+	gdk_window_get_origin (gtk_widget_get_window(widget), x, y);
+	*x += button_alloc.x - popup_width*button->xalign;
+	*y += (button_alloc.y-popup_height) + (button_alloc.height+popup_height)*button->yalign;
 
 	// GTK doesn't push up menus if they are near the bottom, but we will...
 	int screen_height;
 	screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
 	if (*y > screen_height - popup_height)
-		*y -= popup_height + button_alloc->height;
+		*y -= popup_height + button_alloc.height;
 }
 
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,

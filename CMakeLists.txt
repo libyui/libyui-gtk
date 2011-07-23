@@ -2,16 +2,16 @@
 cmake_minimum_required (VERSION 2.4)
 
 project (yast2-gtk)
-
+SET( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/modules )
 ## configure
 
-find_package (GTK2 REQUIRED gtk)
+find_package (GTK3 REQUIRED gtk)
 find_package (Libyui REQUIRED)
 find_package (Zypp REQUIRED)
 
-# debug while GTK2 support is shaky
-message (STATUS "GTK2 includes:" ${GTK2_INCLUDE_DIRS})
-message (STATUS "GTK2 libraries:" ${GTK2_LIBRARIES})
+# ricardo: debug gtk cmake
+message (STATUS "GTK3 includes:" ${GTK3_INCLUDE_DIRS})
+message (STATUS "GTK3 libraries:" ${GTK3_LIBRARIES})
 
 # set libyui and libzypp versions
 execute_process (COMMAND pkg-config --modversion yast2-libyui COMMAND awk -F. "{ printf \"%d\", ($1 * 1000 + $2) * 1000 + $3;}" OUTPUT_VARIABLE YAST2_VERSION)

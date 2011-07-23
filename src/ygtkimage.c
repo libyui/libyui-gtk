@@ -8,7 +8,7 @@
 #include <config.h>
 #include "ygdkmngloader.h"
 #include "ygtkimage.h"
-#include <gtk/gtkiconfactory.h>
+#include <gtk/gtk.h>
 
 G_DEFINE_TYPE (YGtkImage, ygtk_image, GTK_TYPE_DRAWING_AREA)
 
@@ -35,14 +35,14 @@ static void ygtk_image_free_pixbuf (YGtkImage *image)
 	}
 }
 
-static void ygtk_image_destroy (GtkObject *object)
+static void ygtk_image_destroy (GtkWidget *widget)
 {
-	YGtkImage *image = YGTK_IMAGE (object);
+	YGtkImage *image = YGTK_IMAGE (widget);
 	if (image->alt_text)
 		g_free (image->alt_text);
 	image->alt_text = NULL;
 	ygtk_image_free_pixbuf (image);
-	GTK_OBJECT_CLASS (ygtk_image_parent_class)->destroy (object);
+	GTK_WIDGET_CLASS (ygtk_image_parent_class)->destroy (widget);
 }
 
 static void ygtk_image_set_pixbuf (YGtkImage *image, GdkPixbuf *pixbuf, const char *error_msg)
@@ -143,8 +143,8 @@ void ygtk_image_set_from_data (YGtkImage *image, const guint8 *data, long data_s
 	GError *error = 0;
 	if (anim && ygdk_mng_pixbuf_is_data_mng (data, data_size)) {
 		GdkPixbufAnimation *pixbuf;
-		pixbuf = ygdk_mng_pixbuf_new_from_data (data, data_size, &error);	
-		ygtk_image_set_animation (image, pixbuf, error ? error->message : "(undefined)");		
+		pixbuf = ygdk_mng_pixbuf_new_from_data (data, data_size, &error);
+		ygtk_image_set_animation (image, pixbuf, error ? error->message : "(undefined)");
 	}
 	else {
 		image->animated = anim;
@@ -190,6 +190,26 @@ static void ygtk_image_size_request (GtkWidget *widget, GtkRequisition *requisit
 	requisition->height = height;
 }
 
+static void
+ygtk_image_get_preferred_width (GtkWidget *widget,
+                               gint      *minimal_width,
+                               gint      *natural_width)
+{
+        GtkRequisition requisition;
+        ygtk_image_size_request (widget, &requisition);
+        *minimal_width = *natural_width = requisition.width;
+}
+
+static void
+ygtk_image_get_preferred_height (GtkWidget *widget,
+                                gint      *minimal_height,
+                                gint      *natural_height)
+{
+        GtkRequisition requisition;
+        ygtk_image_size_request (widget, &requisition);
+        *minimal_height = *natural_height = requisition.height;
+}
+
 static GdkPixbuf *ygtk_image_render_state (GtkWidget *widget, GdkPixbuf *pixbuf)
 {
 	// as in GtkImage
@@ -198,21 +218,19 @@ static GdkPixbuf *ygtk_image_render_state (GtkWidget *widget, GdkPixbuf *pixbuf)
 	gtk_icon_source_set_pixbuf (source, pixbuf);
 	gtk_icon_source_set_size (source, GTK_ICON_SIZE_SMALL_TOOLBAR);
 	gtk_icon_source_set_size_wildcarded (source, FALSE);
-	rendered = gtk_style_render_icon (widget->style, source,
-		gtk_widget_get_direction (widget), GTK_WIDGET_STATE (widget),
-		/* arbitrary */ (GtkIconSize)-1, widget, "gtk-image");
+	rendered = gtk_render_icon_pixbuf (gtk_widget_get_style_context(widget), source, (GtkIconSize)-1);
 	gtk_icon_source_free (source);
 	return rendered;
 }
 
-static gboolean ygtk_image_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 {
 	YGtkImage *image = YGTK_IMAGE (widget);
-	int width, height;
-	width  = widget->allocation.width;
-	height = widget->allocation.height;
 
-	cairo_t *cr = gdk_cairo_create (widget->window);
+	GtkRequisition req;
+	gtk_widget_get_preferred_size (widget, &req, NULL);
+	int width  = gtk_widget_get_allocated_width(widget);
+	int height = gtk_widget_get_allocated_height(widget);
 
 	if (!image->loaded) {
 		if (image->alt_text) {
@@ -221,15 +239,14 @@ static gboolean ygtk_image_expose_event (GtkWidget *widget, GdkEventExpose *even
 			layout = gtk_widget_create_pango_layout (widget, image->alt_text);
 
 			int x, y;
-			x = (width - widget->requisition.width) / 2;
-			y = (height - widget->requisition.height) / 2;
+			x = (width - req.width) / 2;
+			y = (height - req.height) / 2;
 
 			cairo_move_to (cr, x, y);
 			pango_cairo_show_layout (cr, layout);
 
 			g_object_unref (layout);
 		}
-		cairo_destroy (cr);
 		return FALSE;
 	}
 
@@ -239,13 +256,13 @@ static gboolean ygtk_image_expose_event (GtkWidget *widget, GdkEventExpose *even
 	else
 		pixbuf = image->pixbuf;
 
-	gboolean needs_transform = GTK_WIDGET_STATE (widget) != GTK_STATE_NORMAL;
+	gboolean needs_transform = gtk_widget_get_state (widget) != GTK_STATE_NORMAL;
 	if (needs_transform)
 		pixbuf = ygtk_image_render_state (widget, pixbuf);
 	int x = 0, y = 0;
 	if (image->align == CENTER_IMAGE_ALIGN) {
-		x = (width - widget->requisition.width) / 2;
-		y = (height - widget->requisition.height) / 2;
+		x = (width - req.width) / 2;
+		y = (height - req.height) / 2;
 	}
 
 	gdk_cairo_set_source_pixbuf (cr, pixbuf, x, y);
@@ -270,7 +287,6 @@ static gboolean ygtk_image_expose_event (GtkWidget *widget, GdkEventExpose *even
 	cairo_rectangle (cr, x, y, width, height);
 	cairo_fill (cr);
 
-	cairo_destroy (cr);
 	if (needs_transform)
 		g_object_unref (G_OBJECT (pixbuf));
 	return FALSE;
@@ -284,10 +300,9 @@ GtkWidget* ygtk_image_new (void)
 static void ygtk_image_class_init (YGtkImageClass *klass)
 {
 	GtkWidgetClass* widget_class = GTK_WIDGET_CLASS (klass);
-	widget_class->expose_event = ygtk_image_expose_event;
-	widget_class->size_request = ygtk_image_size_request;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_image_destroy;
+	widget_class->draw = ygtk_image_draw_event;
+	widget_class->get_preferred_width = ygtk_image_get_preferred_width;
+	widget_class->get_preferred_height = ygtk_image_get_preferred_height;
+	widget_class->destroy = ygtk_image_destroy;
 }
 

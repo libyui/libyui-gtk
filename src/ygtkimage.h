@@ -10,8 +10,8 @@
 #ifndef YGTK_IMAGE_H
 #define YGTK_IMAGE_H
 
-#include <gtk/gtkdrawingarea.h>
-#include <gdk/gdkpixbuf.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
 
 G_BEGIN_DECLS
 
@@ -68,7 +68,7 @@ void ygtk_image_set_from_data (YGtkImage *image, const guint8 *data, long size, 
 void ygtk_image_set_from_pixbuf (YGtkImage *image, GdkPixbuf *pixbuf);
 void ygtk_image_set_props (YGtkImage *image, YGtkImageAlign align, const gchar *alt_text);
 
-// as we don't have a window, 
+// as we don't have a window,
 
 G_END_DECLS
 

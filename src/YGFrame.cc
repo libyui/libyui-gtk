@@ -39,10 +39,10 @@ public:
 static GtkWidget *findFirstFocusable (GtkContainer *container)
 {
 	g_return_val_if_fail (container != NULL, NULL);
-	
+
 	for (GList *l = gtk_container_get_children (container);
 	     l; l = l->next) {
-		if (GTK_WIDGET_CAN_FOCUS (l->data))
+                if (gtk_widget_get_can_focus (GTK_WIDGET(l->data)))
 			return GTK_WIDGET (l->data);
 		else if (GTK_IS_CONTAINER (l->data)) {
 			GtkWidget *ret = findFirstFocusable (GTK_CONTAINER (l->data));
@@ -130,7 +130,7 @@ public:
 	virtual void setLabel (const string &_str)
 	{
 		GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-		GtkLabel *label = GTK_LABEL (GTK_BIN (button)->child);
+		GtkLabel *label = GTK_LABEL (gtk_bin_get_child(GTK_BIN (button)));
 
 		string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (label, str.c_str());

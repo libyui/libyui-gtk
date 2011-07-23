@@ -51,7 +51,7 @@ static void combo_changed_cb (GtkComboBox *combo, YGtkPkgQueryCombo *pThis)
 YGtkPkgQueryCombo::YGtkPkgQueryCombo (Factory *factory)
 : impl (new Impl (factory))
 {
-	impl->combo = gtk_combo_box_new_text();
+	impl->combo = gtk_combo_box_text_new();
 	gtk_combo_box_set_row_separator_func (GTK_COMBO_BOX (impl->combo),
 		YGUtils::empty_row_is_separator_cb, GINT_TO_POINTER (0), NULL);
 	g_signal_connect_after (G_OBJECT (impl->combo), "changed",
@@ -70,8 +70,8 @@ GtkWidget *YGtkPkgQueryCombo::getWidget()
 
 void YGtkPkgQueryCombo::add (const char *title)
 {
-	GtkComboBox *combo = GTK_COMBO_BOX (impl->combo);
-	gtk_combo_box_append_text (combo, title);
+	GtkComboBoxText *combo = GTK_COMBO_BOX_TEXT (impl->combo);
+	gtk_combo_box_text_append (combo, NULL, title);
 }
 
 void YGtkPkgQueryCombo::setActive (int index)

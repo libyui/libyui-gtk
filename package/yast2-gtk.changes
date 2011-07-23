@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Sat Jul 23 06:35:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.22.0
+- ported to gtk3
+- don't show unsupported packages when the list is empty
+(bnc#704103).
+- showing mnemonics characters (bnc#704102).
+
+-------------------------------------------------------------------
 Sat Apr 16 13:51:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.96

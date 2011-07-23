@@ -16,7 +16,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 		YGComboBox (YWidget *parent, const string &label, bool editable)
 		: YComboBox (NULL, label, editable),
 		  YGLabeledWidget (this, parent, label, YD_HORIZ,
-		    editable ? GTK_TYPE_COMBO_BOX_ENTRY : GTK_TYPE_COMBO_BOX, NULL),
+                                   GTK_TYPE_COMBO_BOX, "has-entry", editable ? TRUE : FALSE, NULL),
 		  YGSelectionStore (false)
 	{
 		const GType types[2] = { GDK_TYPE_PIXBUF, G_TYPE_STRING };
@@ -29,7 +29,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 			"pixbuf", 0, NULL);
 
 		if (editable)
-			gtk_combo_box_entry_set_text_column (GTK_COMBO_BOX_ENTRY (getWidget()), 1);
+			gtk_combo_box_set_entry_text_column (GTK_COMBO_BOX (getWidget()), 1);
 		else {
 			cell = gtk_cell_renderer_text_new();
 			gtk_cell_layout_pack_end (GTK_CELL_LAYOUT (getWidget()), cell, TRUE);
@@ -87,16 +87,18 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 
 	virtual std::string text()
 	{
+		GtkTreeIter iter;
 		gchar *str;
-		if (GTK_IS_COMBO_BOX_ENTRY (getWidget()))
-			str = gtk_combo_box_get_active_text (getComboBox());
-		else {
-			GtkTreeIter iter;
-			if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
-				gtk_tree_model_get (getModel(), &iter, 1, &str, -1);
-			else
-				return "";
+		if (editable()) {
+			// HACK: this seems to be necessary
+			GtkWidget *entry = gtk_bin_get_child (GTK_BIN (getWidget()));
+			return gtk_entry_get_text (GTK_ENTRY (entry));
 		}
+		else
+                if (gtk_combo_box_get_active_iter (getComboBox(), &iter))
+                        gtk_tree_model_get (getModel(), &iter, 1, &str, -1);
+                else
+                        return "";
 		std::string ret (str);
 		g_free (str);
 		return ret;

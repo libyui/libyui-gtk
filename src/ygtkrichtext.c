@@ -150,13 +150,13 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 		"foreground", "#000000", NULL);
 }
 
-static void ygtk_rich_text_destroy (GtkObject *object)
+static void ygtk_rich_text_destroy (GtkWidget *widget)
 {
 	// destroy can be called multiple times, and we must ref only once
-	YGtkRichText *rtext = YGTK_RICH_TEXT (object);
+	YGtkRichText *rtext = YGTK_RICH_TEXT (widget);
 	gdk_cursor_unref (rtext->hand_cursor);
 	ygtk_rich_text_set_background (rtext, NULL);
-	GTK_OBJECT_CLASS (ygtk_rich_text_parent_class)->destroy (object);
+	GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->destroy(widget);
 }
 
 // Change the cursor to the "hands" cursor typically used by web browsers,
@@ -165,9 +165,12 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 {
 	if (wx == -1) {
 		GtkWidget *widget = GTK_WIDGET (view);
-		gdk_window_get_pointer (widget->window, &wx, &wy, NULL);
-		if (wx < 0 || wy < 0 || wx >= widget->allocation.width ||
-		    wy >= widget->allocation.height)
+                GtkAllocation alloc;
+                gtk_widget_get_allocation(widget, &alloc);
+
+		gdk_window_get_pointer (gtk_widget_get_window(widget), &wx, &wy, NULL);
+		if (wx < 0 || wy < 0 || wx >= alloc.width ||
+		    wy >= alloc.height)
 			return;
 	}
 
@@ -191,25 +194,29 @@ static gboolean ygtk_rich_text_motion_notify_event (GtkWidget *widget,
 	return TRUE;
 }
 
-static gboolean ygtk_rich_text_expose_event (GtkWidget *widget, GdkEventExpose *event)
+static gboolean ygtk_rich_text_draw (GtkWidget *widget, cairo_t *cr)
 {
 	GtkTextView *text = GTK_TEXT_VIEW (widget);
 	YGtkRichText *rtext = YGTK_RICH_TEXT (widget);
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(widget, &alloc);
 	if (rtext->background_pixbuf) {
 		GdkWindow *window = gtk_text_view_get_window (text, GTK_TEXT_WINDOW_TEXT);
-		if (event->window == window) {
+		if (gtk_cairo_should_draw_window(cr, window)) {
 			int x, y;
 			int width = gdk_pixbuf_get_width (rtext->background_pixbuf);
 			int height = gdk_pixbuf_get_height (rtext->background_pixbuf);
 			gtk_text_view_buffer_to_window_coords (text, GTK_TEXT_WINDOW_TEXT,
-				widget->allocation.width-((2*width)/5), -height/3, &x, &y);
-			gdk_draw_pixbuf (GDK_DRAWABLE (window), *widget->style->fg_gc, rtext->background_pixbuf,
-				0, 0, x, y, -1, -1, GDK_RGB_DITHER_NONE, 0, 0);
+				alloc.width-((2*width)/5), -height/3, &x, &y);
+
+			gtk_cairo_transform_to_window(cr, widget, window);
+			gdk_cairo_set_source_pixbuf (cr, rtext->background_pixbuf, x, y);
+			cairo_paint (cr);
 		}
 	}
 
 	gboolean ret;
-	ret = GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->expose_event (widget, event);
+	ret = GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->draw (widget, cr);
 	set_cursor_if_appropriate (text, -1, -1);
 	return ret;
 }
@@ -722,10 +729,8 @@ static void ygtk_rich_text_class_init (YGtkRichTextClass *klass)
 {
 	GtkWidgetClass *gtkwidget_class = GTK_WIDGET_CLASS (klass);
 	gtkwidget_class->motion_notify_event = ygtk_rich_text_motion_notify_event;
-	gtkwidget_class->expose_event = ygtk_rich_text_expose_event;
-
-	GtkObjectClass *gtkobject_class = GTK_OBJECT_CLASS (klass);
-	gtkobject_class->destroy = ygtk_rich_text_destroy;
+	gtkwidget_class->draw = ygtk_rich_text_draw;
+	gtkwidget_class->destroy = ygtk_rich_text_destroy;
 
 	link_clicked_signal = g_signal_new ("link-clicked",
 		G_TYPE_FROM_CLASS (G_OBJECT_CLASS (klass)), G_SIGNAL_RUN_LAST,

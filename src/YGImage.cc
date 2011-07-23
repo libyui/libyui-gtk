@@ -35,8 +35,12 @@ public:
 			stock = GTK_STOCK_DIALOG_WARNING;
 		else if (endsWith (filename, "/msg_error.png"))
 			stock = GTK_STOCK_DIALOG_ERROR;
-		if (stock && gtk_style_lookup_icon_set (m_widget->style, stock)) {
-			GdkPixbuf *pixbuf = gtk_widget_render_icon (m_widget, stock, GTK_ICON_SIZE_DIALOG, NULL);
+
+                GtkStyleContext *ctx;
+                ctx = gtk_widget_get_style_context(m_widget);
+
+		if (stock && gtk_style_context_lookup_icon_set (ctx, stock)) {
+			GdkPixbuf *pixbuf = gtk_widget_render_icon_pixbuf (m_widget, stock, GTK_ICON_SIZE_DIALOG);
 			ygtk_image_set_from_pixbuf (image, pixbuf);
 		}
 		else
