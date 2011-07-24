@@ -647,17 +647,21 @@ struct SupportExpander : public DetailWidget {
 	virtual void setList (Ypp::List list)
 	{
 		if (list.size() == 1) {
-			gtk_widget_show (expander);
-
 			Ypp::Selectable sel = list.get (0);
 			Ypp::Package pkg (sel);
 
-			std::string label ("<b>" + std::string (_("Supportability:")) + "</b> ");
-			label += Ypp::Package::supportSummary (pkg.support());
-			gtk_expander_set_label (GTK_EXPANDER (expander), label.c_str());
+			int support = pkg.support();
 
+			std::string label ("<b>" + std::string (_("Supportability:")) + "</b> ");
+			label += Ypp::Package::supportSummary (support);
+			gtk_expander_set_label (GTK_EXPANDER (expander), label.c_str());
 			ygtk_rich_text_set_text (YGTK_RICH_TEXT (text),
-				Ypp::Package::supportDescription (pkg.support()).c_str());
+				Ypp::Package::supportDescription (support).c_str());
+
+			if (support == 0)
+				gtk_widget_hide(expander);
+			else
+				gtk_widget_show (expander);
 		}
 		else
 			gtk_widget_hide (expander);
@@ -665,20 +669,22 @@ struct SupportExpander : public DetailWidget {
 };
 
 struct DependenciesExpander : public DetailExpander {
-	GtkWidget *vbox;
+	GtkWidget *grid;
 
 	DependenciesExpander()
 	: DetailExpander (_("Dependencies"), false)
 	{
-		vbox = gtk_vbox_new (FALSE, 6);
-		setChild (vbox);
+		grid = gtk_grid_new();
+		gtk_widget_set_hexpand (grid, TRUE);
+		gtk_widget_set_vexpand (grid, FALSE);
+		setChild (grid);
 	}
 
 	void clear()
 	{
-		GList *children = gtk_container_get_children (GTK_CONTAINER (vbox));
+		GList *children = gtk_container_get_children (GTK_CONTAINER (grid));
 		for (GList *i = children; i; i = i->next)
-			gtk_container_remove (GTK_CONTAINER (vbox), (GtkWidget *) i->data);
+			gtk_container_remove (GTK_CONTAINER (grid), (GtkWidget *) i->data);
 		g_list_free (children);
 	}
 
@@ -688,37 +694,31 @@ struct DependenciesExpander : public DetailExpander {
 //		if (dep >= 0)
 //			gtk_box_pack_start (GTK_BOX (vbox), gtk_hseparator_new(), FALSE, TRUE, 0);
 
-		GtkWidget *hbox = gtk_hbox_new (FALSE, 6);
-		GtkWidget *col;
-		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 100, -1);
-		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col),
-			("<i>" + col1 + "</i>").c_str());
-		gtk_box_pack_start (GTK_BOX (hbox), col, FALSE, TRUE, 0);
-		// by settings both the two following "col" text widgets with the same
-		// fixed width, and expanded=True, we ensure all rows have the same size
-		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 80, -1);
-		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col2.c_str());
-		if (dep == 0)
-			g_signal_connect (G_OBJECT (col), "link-clicked",
-			                  G_CALLBACK (requires_link_cb), NULL);
-		else if (dep == 2)
-			g_signal_connect (G_OBJECT (col), "link-clicked",
-			                  G_CALLBACK (provides_link_cb), NULL);
-		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
-		col = ygtk_rich_text_new();
-		gtk_widget_set_size_request (col, 80, -1);
-		ygtk_rich_text_set_text (YGTK_RICH_TEXT (col), col3.c_str());
-		if (dep == 0)
-			g_signal_connect (G_OBJECT (col), "link-clicked",
-			                  G_CALLBACK (requires_link_cb), NULL);
-		else if (dep == 2)
-			g_signal_connect (G_OBJECT (col), "link-clicked",
-			                  G_CALLBACK (provides_link_cb), NULL);
-		gtk_box_pack_start (GTK_BOX (hbox), col, TRUE, TRUE, 0);
+		GtkWidget *cols[3];
+		for(int i = 0; i < 3; i++) {
+			cols[i] = ygtk_rich_text_new();
+			gtk_widget_set_size_request(cols[i], 100, -1);
+		}
 
-		gtk_box_pack_start (GTK_BOX (vbox), hbox, TRUE, TRUE, 0);
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (cols[0]), ("<i>" + col1 + "</i>").c_str());
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (cols[1]), col2.c_str());
+		ygtk_rich_text_set_text (YGTK_RICH_TEXT (cols[2]), col3.c_str());
+
+		for(int i = 1; i < 3; i++) {
+			if (dep == 0)
+				g_signal_connect (G_OBJECT (cols[i]), "link-clicked",
+					              G_CALLBACK (requires_link_cb), NULL);
+			else if (dep == 2)
+				g_signal_connect (G_OBJECT (cols[i]), "link-clicked",
+					              G_CALLBACK (provides_link_cb), NULL);
+		}
+
+		GList *children = gtk_container_get_children(GTK_CONTAINER(grid));
+		guint top = g_list_length (children) / 3;
+		g_list_free (children);
+
+		for(int i = 0; i < 3; i++)
+			gtk_grid_attach (GTK_GRID (grid), cols[i], i, top, 1, 1);
 	}
 
 	static void requires_link_cb (GtkWidget *widget, const gchar *link)
@@ -754,7 +754,7 @@ struct DependenciesExpander : public DetailExpander {
 			if (!inst.empty() || !cand.empty())
 				addLine (VersionDependencies::getLabel (dep), inst, cand, dep);
 		}
-		gtk_widget_show_all (vbox);
+		gtk_widget_show_all (grid);
 	}
 
 	virtual void showRefreshList (Ypp::List list)

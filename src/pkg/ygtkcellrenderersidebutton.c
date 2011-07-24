@@ -19,6 +19,8 @@ static guint toggle_cell_signal = 0;
 
 G_DEFINE_TYPE (YGtkCellRendererSideButton, ygtk_cell_renderer_side_button, GTK_TYPE_CELL_RENDERER_TEXT)
 
+#define DEPRESS_PAD 1
+
 static void ygtk_cell_renderer_side_button_init (YGtkCellRendererSideButton *bcell)
 { g_object_set(GTK_CELL_RENDERER(bcell), "mode", GTK_CELL_RENDERER_MODE_ACTIVATABLE, NULL); }
 
@@ -156,8 +158,7 @@ static void ygtk_cell_renderer_side_button_render (
 		icon_area.x += 2;
 		icon_area.y += 2;
 		if (bcell->active) {
-			icon_area.x += 2;
-			icon_area.y += 2;
+			icon_area.x += DEPRESS_PAD; icon_area.y += DEPRESS_PAD;
 		}
 
 		ensure_pixbuf (bcell, widget);

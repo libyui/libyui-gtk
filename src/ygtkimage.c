@@ -211,14 +211,19 @@ ygtk_image_get_preferred_height (GtkWidget *widget,
 }
 
 static GdkPixbuf *ygtk_image_render_state (GtkWidget *widget, GdkPixbuf *pixbuf)
-{
-	// as in GtkImage
+{	// as in GtkImage
 	GtkIconSource *source = gtk_icon_source_new();
+	GtkStyleContext *style = gtk_widget_get_style_context (widget);
+	gtk_style_context_save (style);
+	gtk_style_context_set_state (style, gtk_widget_get_state_flags (widget));
+
 	GdkPixbuf *rendered;
 	gtk_icon_source_set_pixbuf (source, pixbuf);
 	gtk_icon_source_set_size (source, GTK_ICON_SIZE_SMALL_TOOLBAR);
 	gtk_icon_source_set_size_wildcarded (source, FALSE);
-	rendered = gtk_render_icon_pixbuf (gtk_widget_get_style_context(widget), source, (GtkIconSize)-1);
+	rendered = gtk_render_icon_pixbuf (style, source, (GtkIconSize)-1);
+
+	gtk_style_context_restore (style);
 	gtk_icon_source_free (source);
 	return rendered;
 }
@@ -256,7 +261,7 @@ static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 	else
 		pixbuf = image->pixbuf;
 
-	gboolean needs_transform = gtk_widget_get_state (widget) != GTK_STATE_NORMAL;
+	gboolean needs_transform = gtk_widget_get_state_flags (widget) & GTK_STATE_FLAG_INSENSITIVE;
 	if (needs_transform)
 		pixbuf = ygtk_image_render_state (widget, pixbuf);
 	int x = 0, y = 0;
@@ -292,6 +297,12 @@ static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 	return FALSE;
 }
 
+static void ygtk_image_state_flags_changed (GtkWidget *widget, GtkStateFlags old_flags)
+{
+	// it seems like we need to force a redraw in gtk3 when state changes
+	gtk_widget_queue_draw (widget);
+}
+
 GtkWidget* ygtk_image_new (void)
 {
 	return g_object_new (YGTK_TYPE_IMAGE, NULL);
@@ -304,5 +315,6 @@ static void ygtk_image_class_init (YGtkImageClass *klass)
 	widget_class->get_preferred_width = ygtk_image_get_preferred_width;
 	widget_class->get_preferred_height = ygtk_image_get_preferred_height;
 	widget_class->destroy = ygtk_image_destroy;
+	widget_class->state_flags_changed = ygtk_image_state_flags_changed;
 }
 
