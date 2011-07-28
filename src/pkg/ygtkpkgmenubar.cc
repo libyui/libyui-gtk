@@ -745,7 +745,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 		append_menu_item (submenu, _("Install All Matching -_devel Packages"), NULL,
 			G_CALLBACK (install_all_devel_pkgs_cb), this);
 		// Translators: keep "-debug-_info" untranslated
-		append_menu_item (submenu, _("Install All Matching -debug-_sinfo Packages"), NULL,
+		append_menu_item (submenu, _("Install All Matching -debug-_info Packages"), NULL,
 			G_CALLBACK (install_all_debug_info_pkgs_cb), this);
 		// Translators: keep "-debug-_source" untranslated
 		append_menu_item (submenu, _("Install All Matching -debug-_source Packages"), NULL,

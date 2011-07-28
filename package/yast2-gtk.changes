@@ -1,3 +1,12 @@
+-------------------------------------------------------------------
+Thu Jul 28 05:57:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- 2.21.94
+- don't show unsupported packages when the list is empty
+(bnc#704103).
+- showing mnemonics characters (bnc#704102).
+
+-------------------------------------------------------------------
 Fri Apr 01 00:09:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.93
