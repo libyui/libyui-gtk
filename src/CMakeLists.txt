@@ -41,6 +41,7 @@ set (gtk_yast_plugin_SRCS
 	ygtktextview.c
 	ygtktimezonepicker.c
 	ygtktreeview.c
+	ygtkwindow.c
 	ygtkwizard.c
 	)
 

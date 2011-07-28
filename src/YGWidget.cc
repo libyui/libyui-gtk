@@ -75,12 +75,12 @@ void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
 		g_object_ref_sink (G_OBJECT (m_adj_size));
 		gtk_widget_show (m_adj_size);
 		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
+		ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
 	}
 	gtk_widget_show (m_widget);
 
 	// Split by two so that with another widget it will have full border...
 	setBorder (DEFAULT_BORDER / 2);
-	ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
 
 	ywidget->setWidgetRep ((void *) this);
 	if (yparent) {

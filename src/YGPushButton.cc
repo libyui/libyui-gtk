@@ -210,7 +210,8 @@ public:
 	{	// enlarge button if parent is ButtonBox
 		YWidget *yparent = pThis->m_ywidget->parent();
 		if (yparent && !strcmp (yparent->widgetClass(), "YButtonBox"))
-			ygtk_adj_size_set_min (YGTK_ADJ_SIZE(pThis->getLayout()), DEFAULT_CHILD_MIN_WIDTH, DEFAULT_CHILD_MIN_HEIGHT);
+			ygtk_adj_size_set_min (YGTK_ADJ_SIZE(pThis->getLayout()),
+				DEFAULT_CHILD_MIN_WIDTH, DEFAULT_CHILD_MIN_HEIGHT);
 	}
 
 	YGWIDGET_IMPL_COMMON (YPushButton)

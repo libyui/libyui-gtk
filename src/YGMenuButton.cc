@@ -93,12 +93,15 @@ YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const string &l
 
 class YGContextMenu : public YContextMenu, public YGWidget
 {
+	int m_deactivateTimeout;
+
 public:
 	YGContextMenu()
 	:  YContextMenu(),
 	   YGWidget (this, NULL, GTK_TYPE_MENU, NULL)
 	{
 		// "cancel" signal doesnt seem to work properly
+		m_deactivateTimeout = 0;
 		connect (getWidget(), "deactivate", G_CALLBACK (deactivate_cb), this);
 	}
 
@@ -114,7 +117,10 @@ public:
 	// callbacks
 	static void deactivate_cb (GtkMenuShell *menu, YGContextMenu *pThis)
 	{  // ugly: we need to make sure a selection was made before this callback called
-		g_idle_add_full (G_PRIORITY_LOW, cancel_cb, pThis, NULL);
+		// we'll use a timeout because deactivate seems to be called more than once
+		if(pThis->m_deactivateTimeout == 0)
+			pThis->m_deactivateTimeout = g_timeout_add_full (G_PRIORITY_LOW, 50, cancel_cb, pThis, NULL);
+		//g_idle_add_full (G_PRIORITY_LOW, cancel_cb, pThis, NULL);
 	}
 
 	static gboolean cancel_cb (gpointer data)

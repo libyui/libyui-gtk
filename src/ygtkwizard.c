@@ -731,7 +731,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 
 	GtkWidget *vbox;
 	vbox = gtk_vbox_new (FALSE, 12);
-	gtk_container_set_border_width (GTK_CONTAINER (vbox), 6);  // content's border
+	gtk_container_set_border_width (GTK_CONTAINER (vbox), 12);  // content's border
 	gtk_box_pack_start (GTK_BOX (vbox), wizard->m_contents_box, TRUE, TRUE, 0);
 #if 0
 	GtkWidget *hsep = gtk_hseparator_new();

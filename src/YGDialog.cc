@@ -13,6 +13,7 @@
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 #include <string.h>
+#include "ygtkwindow.h"
 
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
    there is already a main window, it should replace its content -- and when closed,
@@ -49,9 +50,8 @@ public:
 
 	YGWindow (bool _main_window, YGDialog *ydialog)
 	{
-		m_widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+		m_widget = ygtk_window_new();
 		g_object_ref_sink (G_OBJECT (m_widget));
-		g_object_set (G_OBJECT (m_widget), "allow-shrink", TRUE, NULL);
 		gtk_window_set_has_resize_grip (GTK_WINDOW (m_widget), TRUE);
 
 		m_refcount = 0;
