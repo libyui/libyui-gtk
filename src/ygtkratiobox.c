@@ -338,7 +338,7 @@ static void ygtk_adj_size_init (YGtkAdjSize *adj_size)
 	gtk_widget_set_redraw_on_allocate (GTK_WIDGET (adj_size), FALSE);
 }
 
-static gint ygtk_adj_size_get_preferred_size (
+static void ygtk_adj_size_get_preferred_size (
 	GtkWidget *widget, GtkRequisition *requisition)
 {
 	GtkWidget *child = gtk_bin_get_child(GTK_BIN (widget));
