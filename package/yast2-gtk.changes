@@ -8,6 +8,11 @@ Thu Jul 28 05:57:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 - showing mnemonics characters (bnc#704102).
 
 -------------------------------------------------------------------
+Wed May 25 07:25:22 UTC 2011 - coolo@novell.com
+
+- make it build with gcc 4.6 (temporary aid)
+
+-------------------------------------------------------------------
 Sat Apr 16 13:51:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.96

@@ -8,14 +8,12 @@ Group:	System/YaST
 License: GPL v2.1 or later
 BuildRequires:  cmake
 BuildRequires:  gcc-c++ blocxx-devel libxcrypt-devel
-BuildRequires:  gtk2-devel
-%if 0%{?suse_version} > 1130
+BuildRequires:  gtk3-devel
 BuildRequires:  gdk-pixbuf-devel
-%endif
 BuildRequires:  yast2-devtools >= 2.16.3
 BuildRequires:  yast2-libyui-devel >= 2.18.8
 BuildRequires:  libzypp-devel >= 6.3.0 
-Requires:       gtk2
+Requires:       gtk3
 Requires:       yast2-libyui >= 2.18.8
 Requires:       yast2_theme >= 2.16.1
 Requires:       yast2-branding
