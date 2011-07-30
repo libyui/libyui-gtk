@@ -421,7 +421,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		static void install_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->getSelected().install(); }
 		static void reinstall_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
-		{ reinstall (pThis->getSelected().get(0)); }
+		{ reinstall (pThis->getSelected()); }
 		static void remove_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->getSelected().remove(); }
 		static void undo_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
@@ -433,27 +433,38 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		static void select_all_cb (GtkMenuItem *item, YGtkPkgListView *pThis)
 		{ pThis->selectAll(); }
 
-		static bool hasReinstall (Ypp::Selectable sel)
+		static bool canReinstall (Ypp::List list)
 		{
-			if (sel.hasInstalledVersion()) {
-				Ypp::Version installedVersion = sel.installed();
-				for (int i = 0; i < sel.totalVersions(); i++) {
-					Ypp::Version version = sel.version (i);
-					if (!version.isInstalled() && version == installedVersion)
-						return true;
+			for(int i = 0; i < list.size(); i++) {
+				Ypp::Selectable &sel = list.get(i);
+				if (sel.hasInstalledVersion()) {
+					Ypp::Version installedVersion = sel.installed();
+					int j;
+					for (j = 0; j < sel.totalVersions(); j++) {
+						Ypp::Version version = sel.version (j);
+						if (!version.isInstalled() && version == installedVersion)
+							break;
+					}
+					if(j == sel.totalVersions())
+						return false;
 				}
+				else
+					return false;
 			}
-			return false;
+			return true;
 		}
-		static void reinstall (Ypp::Selectable sel)
+		static void reinstall (Ypp::List list)
 		{
-			Ypp::Version installedVersion = sel.installed();
-			for (int i = 0; i < sel.totalVersions(); i++) {
-				Ypp::Version version = sel.version (i);
-				if (!version.isInstalled() && version == installedVersion) {
-					sel.setCandidate (version);
-					sel.install();
-					break;
+			for(int i = 0; i < list.size(); i++) {
+				Ypp::Selectable &sel = list.get(i);
+				Ypp::Version installedVersion = sel.installed();
+				for (int j = 0; j < sel.totalVersions(); j++) {
+					Ypp::Version version = sel.version (j);
+					if (!version.isInstalled() && version == installedVersion) {
+						sel.setCandidate (version);
+						sel.install();
+						break;
+					}
 				}
 			}
 		}
@@ -477,7 +488,7 @@ static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGtkPkgListVi
 		if (props.hasUpgrade() && !modified)
 			inner::appendItem (menu, _("&Upgrade"), 0, GTK_STOCK_GO_UP,
 				!locked, inner::install_cb, pThis);
-		if (type == Ypp::Selectable::PACKAGE && list.size() == 1 && inner::hasReinstall (list.get(0)) && !modified)
+		if (type == Ypp::Selectable::PACKAGE && inner::canReinstall(list) && !modified)
 			inner::appendItem (menu, _("&Re-install"), 0, GTK_STOCK_REFRESH,
 				!locked, inner::reinstall_cb, pThis);
 		if (props.isInstalled() && !modified)
