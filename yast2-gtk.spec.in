@@ -1,0 +1,60 @@
+@HEADERCOMMENT@
+
+
+@HEADER@
+Url:      http://en.opensuse.org/YaST2-GTK
+Summary:  YaST2 - GTK+ Graphical User Interface
+Group:	System/YaST
+License: GPL v2.1 or later
+BuildRequires:  cmake
+BuildRequires:  gcc-c++ blocxx-devel libxcrypt-devel
+BuildRequires:  gtk2-devel
+%if 0%{?suse_version} > 1130
+BuildRequires:  gdk-pixbuf-devel
+%endif
+BuildRequires:  yast2-devtools >= 2.16.3
+BuildRequires:  yast2-libyui-devel >= 2.18.8
+BuildRequires:  libzypp-devel >= 6.3.0 
+Requires:       gtk2
+Requires:       yast2-libyui >= 2.18.8
+Requires:       yast2_theme >= 2.16.1
+Requires:       yast2-branding
+Requires:  	    libzypp >= 6.3.0 
+Provides:       yast2_ui yast2-ui-gtk
+Provides:       yast2_ui_pkg
+Source1:        yast2-gtk-rpmlintrc 
+
+%description
+One of several user interfaces available for YaST2, based on GTK and
+the X Window System.
+
+%prep
+%setup
+
+%build
+mkdir build
+cd build
+export CFLAGS="$RPM_OPT_FLAGS"
+export CXXFLAGS="$CFLAGS"
+cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+      -DLIB=%{_lib} \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_SKIP_RPATH=1 \
+      ..
+make %{?_smp_mflags} VERBOSE=1
+
+%install
+cd build
+make install DESTDIR=$RPM_BUILD_ROOT
+cd ..
+
+%clean
+rm -rf "$RPM_BUILD_ROOT"
+
+%files
+%defattr (-, root, root)
+%dir %_libdir/YaST2
+%_libdir/YaST2/plugin/
+
+%changelog
+

@@ -1,0 +1,29 @@
+// wizard change must replace window title
+// bug  385710
+
+{
+    UI::OpenDialog(`opt(`defaultsize ),
+		   `Wizard(`opt(`stepsEnabled),
+			   `back,  "&Back",
+			   `abort, "Ab&ort",
+			   `next,  "&Next" ) );
+
+    UI::WizardCommand(`SetDialogIcon( "/usr/share/YaST2/theme/current/icons/22x22/apps/YaST.png" ) );
+    UI::WizardCommand(`SetDialogHeading( "Welcome to the YaST2 installation" ) );
+
+	UI::UserInput();
+
+    UI::OpenDialog(`opt(`defaultsize ),
+		   `Wizard(`opt(`stepsEnabled),
+			   `back,  "&Back",
+			   `abort, "Ab&ort",
+			   `next,  "&Next" ) );
+
+    UI::WizardCommand(`SetDialogIcon( "/usr/share/YaST2/theme/current/icons/22x22/apps/YaST.png" ) );
+    UI::WizardCommand(`SetDialogHeading( "Goodbye installation!!!" ) );
+	
+	UI::UserInput();
+    UI::CloseDialog();
+	UI::UserInput();
+}
+

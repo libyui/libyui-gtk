@@ -1,0 +1,63 @@
+// Tests for file dialog calls:
+// string UI::AskForExistingFile (startWith, filter, headline)
+// string UI::AskForSaveFileName (startWith, filter, headline)
+// string UI::AskForExistingDirectory (startWith, headline)
+
+{
+	define void show_selected (string selected)
+	{
+		UI::OpenDialog (
+			`VBox (
+				`HBox (
+						`Label ("You have selected:"),
+						`Label (`opt (`outputField), selected)
+					),
+				`PushButton ("OK")
+				)
+			);
+		UI::UserInput();
+		UI::CloseDialog();
+	};
+
+	while (true) {
+		UI::OpenDialog (
+			`VBox (
+				`ComboBox (`id (`combo_action), "Action:",
+					[
+						`item (`id (`open_file), "Open File"),
+						`item (`id (`save_file), "Save File"),
+						`item (`id (`select_folder), "Select Folder")
+					] ),
+				`TextEntry (`id (`entry_path), "Some path:"),
+				`TextEntry (`id (`entry_filter), "Filter:", "*"),
+				`HBox (
+					`PushButton (`id (`ok), "OK"),
+					`PushButton (`id (`cancel), "Cancel")
+					)
+				)
+			);
+		any ret = UI::UserInput();
+
+		if (ret == `cancel)
+			break;
+
+		string start_path = (string) UI::QueryWidget (`id (`entry_path), `Value);
+		string filter_str = (string) UI::QueryWidget (`id (`entry_filter), `Value);
+
+		string ret_path = nil;
+
+		any action = UI::QueryWidget (`id (`combo_action), `Value);
+		UI::CloseDialog();
+
+		if (action == `open_file)
+			ret_path = UI::AskForExistingFile (start_path, filter_str, "Choose a File");
+		else if (action == `save_file)
+			ret_path = UI::AskForSaveFileName (start_path, filter_str, "Choose a File");
+		else if (action == `select_folder)
+			ret_path = UI::AskForExistingDirectory (start_path, "Choose a Folder");
+		
+		if (ret_path == nil)
+			ret_path = "(none)";
+		show_selected (ret_path);
+	}
+}

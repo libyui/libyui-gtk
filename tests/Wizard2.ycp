@@ -1,0 +1,23 @@
+// Problematic labeling example...
+{
+	import "Label";
+	import "Wizard";
+
+    Wizard::CreateDialog();
+    Wizard::SetContents (
+	"Installed Add-On Products",
+        `VBox (
+	       `Left (`Label("select a monitor"))
+	       ),
+        "<p>Here you can foo.</p>",
+        false,
+        true
+    );
+
+    Wizard::HideBackButton();
+    Wizard::SetAbortButton (`abort, Label::CancelButton());
+    Wizard::SetNextButton (`next, Label::OKButton());
+
+    UI::WaitForEvent();
+    UI::CloseDialog();
+}

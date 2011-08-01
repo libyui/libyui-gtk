@@ -1,0 +1,27 @@
+// LogView test
+
+{
+	UI::OpenDialog (
+		`VBox (
+			`LogView (`id (`text), "", 5, 50),
+			`MultiLineEdit (`id (`source), `opt(`notify), "Source code", ""),
+			`PushButton (`id (`close), `opt(`default), "&Close")
+		)
+	);
+
+	any ret = nil;
+	repeat
+	{
+		ret = UI::UserInput();
+
+		if (ret == `source)
+		{
+			UI::ChangeWidget (`id (`text), `Value,
+			                  (string) UI::QueryWidget(`id(`source), `Value));
+		}
+
+	} until (ret == `close || ret == `cancel);
+
+	UI::CloseDialog();
+}
+

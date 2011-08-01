@@ -1,0 +1,44 @@
+// Let's create and destroy something
+
+{
+
+list strings =
+	[ "What a long button I am :D", ":/" ];
+integer cur_string = 1;
+
+UI::OpenDialog 
+	(
+	`MarginBox (5, 5, `VBox
+		(
+		`ReplacePoint(`id(`kill_replaceable), `PushButton( `id(`kill),
+		              "I am a waste of space" )),
+		`PushButton( `id(`transform),  select(strings, cur_string, nil) ),
+		`Left (`PushButton( `id(`quit), "Exit" ))
+		)
+	)
+	);
+
+any button_id = nil;
+
+while (true)
+	{
+	button_id = UI::UserInput();
+
+	if (button_id == `quit)
+		break;
+
+	if (button_id == `transform)
+	{
+		cur_string = (cur_string + 1) % 2;
+		UI::ChangeWidget (`transform, `Label, select(strings, cur_string, nil));
+	}
+
+	if (button_id == `kill)
+	{
+		UI::ReplaceWidget (`kill_replaceable, `Empty());
+	}
+
+
+	}
+UI::CloseDialog();
+}

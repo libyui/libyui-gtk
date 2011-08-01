@@ -1,0 +1,27 @@
+{
+UI::OpenDialog (
+	`VBox (
+		`Frame ("CPU &Speed",
+			`VBox (
+				`RadioButtonGroup(
+					`VBox (
+						`Left(`RadioButton("Normal")),
+						`Left(`RadioButton("Overclocked")),
+						`Left(`RadioButton("Red Hot")),
+						`Left(`RadioButton("Melting", true)),
+						`Left(`TextEntry ("Delay:", "20"))
+						)
+					),
+				`Frame
+					( "Exact speed",
+						`Slider ("CPU", 0, 100, 85)
+					)
+				)
+			),
+		`PushButton("&OK")
+		)
+	);
+
+UI::UserInput();
+UI::CloseDialog();
+}
