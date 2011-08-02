@@ -536,6 +536,19 @@ struct SystemVerificationCheckItem : public CheckMenuFlag {
 	virtual void runtimeSync() {}
 };
 
+struct IgnoreAlreadyRecommendedCheckItem : public CheckMenuFlag {
+	IgnoreAlreadyRecommendedCheckItem (GtkWidget *menu, const char *text, Flags *flags)
+	: CheckMenuFlag (menu, text) { init (flags); }
+	virtual const char *variable() { return "ignore-already-recommended"; }
+	virtual bool getZyppValue() {
+		return zypp::getZYpp()->resolver()->ignoreAlreadyRecommended();
+	}
+	virtual void setZyppValue (bool on) {
+		zypp::getZYpp()->resolver()->setIgnoreAlreadyRecommended(on);
+	}
+	virtual void runtimeSync() { Ypp::runSolver(); }
+};
+
 #if ZYPP_VERSION > 6031004
 
 struct CleanupDepsCheckItem : public CheckMenuFlag {
@@ -726,6 +739,7 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 			// Translators: don't translate the "-debuginfo/-debugsource" part
 			new ShowDebugCheckItem (submenu, _("Show -&debuginfo/-debugsource Packages"), &flags);
 			new SystemVerificationCheckItem (submenu, _("&System Verification Mode"), &flags);
+			new IgnoreAlreadyRecommendedCheckItem (submenu, _("&Ignore recommended packages for already installed packages"), &flags);
 			new CleanupDepsCheckItem (submenu, _("&Cleanup when deleting packages"), &flags);
 			new AllowVendorChangeCheckItem (submenu, _("&Allow vendor change"), &flags);
 	}

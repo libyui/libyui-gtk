@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Tue Aug  2 17:32:01 UTC 2011 - lslezak@suse.cz
+
+- added new ignoreAlreadyRecommended solver option to the options
+  submenu (bnc#668588)
+- 2.22.1
+
+-------------------------------------------------------------------
 Sat Jul 30 13:33:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.22.0
