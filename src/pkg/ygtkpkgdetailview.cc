@@ -1002,14 +1002,14 @@ struct ChangelogExpander : public DetailExpander {
 			const std::list <zypp::ChangelogEntry> &logs = zpkg->changelog();
 			for (std::list <zypp::ChangelogEntry>::const_iterator it = logs.begin();
 				 it != logs.end(); it++) {
-				std::string date (it->date().form ("%d %B %Y")), author (it->author()),
+				std::string author (it->author()),
 					        changes (it->text());
 				author = YGUtils::escapeMarkup (author);
 				changes = YGUtils::escapeMarkup (changes);
 				YGUtils::replace (changes, "\n", 1, "<br>");
 				if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
 					author.erase (0, 2);                  // "- author". wtf?
-				text += "<i>" + date + " (" + author + "):</i><br><blockquote>" + changes + "</blockquote>";
+				text += "<i>" + author + ":</i><br><blockquote>" + changes + "</blockquote>";
 			}
 		}
 		return text;
