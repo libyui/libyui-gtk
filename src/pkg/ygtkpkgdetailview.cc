@@ -187,7 +187,7 @@ struct DetailDescription : public DetailWidget {
 
 			GtkWidget *item;
 			if (g_file_test (BROWSER_BIN, G_FILE_TEST_IS_EXECUTABLE)) {
-				std::string label (YGUtils::mapKBAccel ("&Open"));
+				std::string label ("_Open");
 				if (getuid() == 0) {
 					const char *username = getenv ("USERNAME");
 					if (!username || !(*username))
@@ -1002,14 +1002,14 @@ struct ChangelogExpander : public DetailExpander {
 			const std::list <zypp::ChangelogEntry> &logs = zpkg->changelog();
 			for (std::list <zypp::ChangelogEntry>::const_iterator it = logs.begin();
 				 it != logs.end(); it++) {
-				std::string date (it->date().form ("%d %B %Y")), author (it->author()),
+				std::string author (it->author()),
 					        changes (it->text());
 				author = YGUtils::escapeMarkup (author);
 				changes = YGUtils::escapeMarkup (changes);
 				YGUtils::replace (changes, "\n", 1, "<br>");
 				if (author.compare (0, 2, "- ", 2) == 0)  // zypp returns a lot of author strings as
 					author.erase (0, 2);                  // "- author". wtf?
-				text += "<i>" + date + " (" + author + "):</i><br><blockquote>" + changes + "</blockquote>";
+				text += "<i>" + author + ":</i><br><blockquote>" + changes + "</blockquote>";
 			}
 		}
 		return text;
@@ -1277,18 +1277,21 @@ Ypp::List m_list;
 			gtk_adjustment_set_value (adj, value);
 	}
 
-	static void fix_keys (GtkWidget *widget, void *_scroll)
+	static void fix_keybindings (GtkWidget *scroll, GtkWidget *widget)
 	{
-		GtkWidget *scroll = (GtkWidget *) _scroll;
 		if (GTK_IS_TEXT_VIEW (widget))
 			g_signal_connect (G_OBJECT (widget), "move-cursor",
 			                  G_CALLBACK (move_cursor_cb), scroll);
-		else if (GTK_IS_CONTAINER (widget))
-			gtk_container_foreach (GTK_CONTAINER (widget), fix_keys, _scroll);
+		else if (GTK_IS_CONTAINER (widget)) {
+			GList *children = gtk_container_get_children (GTK_CONTAINER (widget));
+			for (GList *i = children; i; i = i->next)
+				fix_keybindings (scroll, (GtkWidget *) i->data);
+			g_list_free (children);
+		}
 	}
 
 	static void scroll_realize_cb (GtkWidget *widget, Impl *pThis)
-	{ fix_keys (widget, widget); }
+	{ fix_keybindings (widget, widget); }
 };
 
 YGtkPkgDetailView::YGtkPkgDetailView()

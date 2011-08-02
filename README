@@ -17,7 +17,8 @@ Build pre-requisites
   To make this compile you'll need the following packages installed
   (at a minimum):
 
-  gcc-c++ cmake gtk2-devel yast2-devtools yast2-core-devel yast2-libyui-devel libzypp-devel
+  gcc-c++, cmake, gtk2-devel, yast2-devtools, yast2-core-devel,
+  yast2-libyui-devel, and libzypp-devel
 
   They all are distributed with Suse's CDs.
 

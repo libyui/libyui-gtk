@@ -68,20 +68,17 @@ struct Flags {
 
 // utilities
 
-static GtkWidget *append_menu_item (GtkWidget *menu, const char *_text,
+static GtkWidget *append_menu_item (GtkWidget *menu, const char *text,
 	const char *stock, GCallback callback, gpointer callback_data)
 {
-	std::string text;
-	if (_text)
-		text = YGUtils::mapKBAccel (_text);
 	GtkWidget *item;
-	if (stock && _text) {
+	if (stock && text) {
 		GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
-		item = gtk_image_menu_item_new_with_mnemonic (text.c_str());
+		item = gtk_image_menu_item_new_with_mnemonic (text);
 		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
 	}
-	else if (_text)
-		item = gtk_menu_item_new_with_mnemonic (text.c_str());
+	else if (text)
+		item = gtk_menu_item_new_with_mnemonic (text);
 	else if (stock)
 		item = gtk_image_menu_item_new_from_stock (stock, NULL);
 	else
@@ -690,73 +687,73 @@ YGtkPkgMenuBar::YGtkPkgMenuBar()
 	Flags flags;
 
 	GtkWidget *menu_bar = m_menu, *item, *submenu;
-	item = append_menu_item (menu_bar, _("F&ile"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("F_ile"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("&Import..."), NULL,
+		append_menu_item (submenu, _("_Import..."), NULL,
 			G_CALLBACK (import_file_cb), this);
-		append_menu_item (submenu, _("&Export..."), NULL,
+		append_menu_item (submenu, _("_Export..."), NULL,
 			G_CALLBACK (export_file_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		append_menu_item (submenu, NULL, GTK_STOCK_APPLY, G_CALLBACK (accept_item_cb), selector);
 		append_menu_item (submenu, NULL, GTK_STOCK_QUIT, G_CALLBACK (reject_item_cb), selector);
 	if (selector->repoMgrEnabled()) {
-		item = append_menu_item (menu_bar, _("&Configuration"), NULL, NULL, NULL);
+		item = append_menu_item (menu_bar, _("_Configuration"), NULL, NULL, NULL);
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-			append_menu_item (submenu, _("&Repositories..."), NULL,
+			append_menu_item (submenu, _("_Repositories..."), NULL,
 				G_CALLBACK (repoManager), this);
 			if (selector->onlineUpdateMode())
-				append_menu_item (submenu, _("&Online Update..."), NULL,
+				append_menu_item (submenu, _("_Online Update..."), NULL,
 					G_CALLBACK (onlineUpdateConfiguration), this);
 			else
-				append_menu_item (submenu, _("Search Packages on &Web..."), NULL,
+				append_menu_item (submenu, _("Search Packages on _Web..."), NULL,
 					G_CALLBACK (webpinSearch), this);
 	}
-	item = append_menu_item (menu_bar, _("&Dependencies"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("_Dependencies"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("&Check Now"), NULL,
+		append_menu_item (submenu, _("_Check Now"), NULL,
 			G_CALLBACK (manualResolvePackageDependencies), this);
-		new AutoCheckItem (submenu, _("&Autocheck"), &flags);
+		new AutoCheckItem (submenu, _("_Autocheck"), &flags);
 
 	if (!selector->onlineUpdateMode()) {
-		item = append_menu_item (menu_bar, _("&Options"), NULL, NULL, NULL);
+		item = append_menu_item (menu_bar, _("_Options"), NULL, NULL, NULL);
 		gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
 			// Translators: don't translate the "-devel"
-			new ShowDevelCheckItem (submenu, _("Show -de&vel Packages"), &flags);
+			new ShowDevelCheckItem (submenu, _("Show -de_vel Packages"), &flags);
 			// Translators: don't translate the "-debuginfo/-debugsource" part
-			new ShowDebugCheckItem (submenu, _("Show -&debuginfo/-debugsource Packages"), &flags);
-			new SystemVerificationCheckItem (submenu, _("&System Verification Mode"), &flags);
-			new CleanupDepsCheckItem (submenu, _("&Cleanup when deleting packages"), &flags);
-			new AllowVendorChangeCheckItem (submenu, _("&Allow vendor change"), &flags);
+			new ShowDebugCheckItem (submenu, _("Show -_debuginfo/-debugsource Packages"), &flags);
+			new SystemVerificationCheckItem (submenu, _("_System Verification Mode"), &flags);
+			new CleanupDepsCheckItem (submenu, _("_Cleanup when deleting packages"), &flags);
+			new AllowVendorChangeCheckItem (submenu, _("_Allow vendor change"), &flags);
 	}
 
-	item = append_menu_item (menu_bar, _("E&xtras"), NULL, NULL, NULL);
+	item = append_menu_item (menu_bar, _("E_xtras"), NULL, NULL, NULL);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), (submenu = gtk_menu_new()));
-		append_menu_item (submenu, _("Show &Products"), NULL,
+		append_menu_item (submenu, _("Show _Products"), NULL,
 			G_CALLBACK (show_products_cb), this);
-		append_menu_item (submenu, _("Show &Changes"), NULL,
+		append_menu_item (submenu, _("Show _Changes"), NULL,
 			G_CALLBACK (show_pkg_changes_cb), this);
 		if (!selector->onlineUpdateMode()) {
-			append_menu_item (submenu, _("Show &History"), NULL,
+			append_menu_item (submenu, _("Show _History"), NULL,
 				G_CALLBACK (show_log_changes_cb), this);
 #ifdef HAS_VESTIGIAL_DIALOG
-			append_menu_item (submenu, _("Show &Unneeded Dependencies"), NULL,
+			append_menu_item (submenu, _("Show _Unneeded Dependencies"), NULL,
 				G_CALLBACK (show_vestigial_packages_cb), this);
 #endif
 		}
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
 		// Translators: keep "-_devel" untranslated
-		append_menu_item (submenu, _("Install All Matching -&devel Packages"), NULL,
+		append_menu_item (submenu, _("Install All Matching -_devel Packages"), NULL,
 			G_CALLBACK (install_all_devel_pkgs_cb), this);
 		// Translators: keep "-debug-_info" untranslated
-		append_menu_item (submenu, _("Install All Matching -debug-&sinfo Packages"), NULL,
+		append_menu_item (submenu, _("Install All Matching -debug-_info Packages"), NULL,
 			G_CALLBACK (install_all_debug_info_pkgs_cb), this);
 		// Translators: keep "-debug-_source" untranslated
-		append_menu_item (submenu, _("Install All Matching -debug-&source Packages"), NULL,
+		append_menu_item (submenu, _("Install All Matching -debug-_source Packages"), NULL,
 			G_CALLBACK (install_all_debug_source_pkgs_cb), this);
 		append_menu_item (submenu, NULL, NULL, NULL, NULL);
-		append_menu_item (submenu, _("Generate Dependencies Resolver &Testcase"), NULL,
+		append_menu_item (submenu, _("Generate Dependencies Resolver _Testcase"), NULL,
 			G_CALLBACK (create_solver_testcase_cb), this);
-		append_menu_item (submenu, _("Reset &Ignored Dependencies Conflicts"), NULL,
+		append_menu_item (submenu, _("Reset _Ignored Dependencies Conflicts"), NULL,
 			G_CALLBACK (reset_ignored_dependency_conflicts_cb), this);
 
 	//** TEMP: work-around global-menubar-applet: see bug 595560

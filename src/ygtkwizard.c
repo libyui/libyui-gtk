@@ -24,7 +24,6 @@
 #define HELP_IMG_BG "yelp-icon-big"
 
 // YGUtils bridge
-extern char *ygutils_mapKBAccel (const char *src);
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
 extern void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel);
@@ -154,9 +153,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	GtkWidget *close_box = gtk_hbutton_box_new();
 	gtk_container_add (GTK_CONTAINER (close_box), dialog->close_button);
 
-	char *label_str = ygutils_mapKBAccel (_("&Find:"));
-	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (label_str);
-	g_free (label_str);
+	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (_("_Find:"));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
 

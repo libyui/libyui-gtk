@@ -603,6 +603,13 @@ struct SuffixFilter : public Ypp::Match {
 			{ return Ypp::Package (sel).support() <= 1; }
 		};
 
+		Ypp::PoolQuery query (Ypp::Selectable::PACKAGE);
+		query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::TO_MODIFY));
+		query.addCriteria (new UnsupportedMatch());
+		Ypp::List list (query);
+		if(list.size() == 0)
+			return true;
+
 		GtkWidget *dialog = gtk_message_dialog_new (YGDialog::currentWindow(),
 			GtkDialogFlags (0), GTK_MESSAGE_WARNING, GTK_BUTTONS_NONE,
 			_("Unsupported packages"));
@@ -615,11 +622,6 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_window_set_resizable (GTK_WINDOW (dialog), TRUE);
 		gtk_window_set_default_size (GTK_WINDOW (dialog), 600, 500);
 
-		Ypp::PoolQuery query (Ypp::Selectable::PACKAGE);
-		query.addCriteria (new Ypp::StatusMatch (Ypp::StatusMatch::TO_MODIFY));
-		query.addCriteria (new UnsupportedMatch());
-		Ypp::List list (query);
-
 		YGtkPkgListView view (true, Ypp::List::NAME_SORT, false, true);
 		view.addCheckColumn (INSTALLED_CHECK_PROP);
 		view.addTextColumn (_("Name"), NAME_SUMMARY_PROP, true, -1);
@@ -629,7 +631,7 @@ struct SuffixFilter : public Ypp::Match {
 		view.setListener (this);
 		view.setList (list);
 
-		gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), view.getWidget());
+		gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), view.getWidget());
 		gtk_widget_show_all (dialog);
 		int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
@@ -687,12 +689,10 @@ m_historyDialog (NULL)
 	dialog->setIcon (icon);
 	ygtk_wizard_set_help_text (wizard, _("Please wait..."));
 
-	std::string cancel_str (YGUtils::mapKBAccel ("&Cancel"));
-	std::string apply_str (YGUtils::mapKBAccel ("&Apply"));
-	ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _(cancel_str.c_str()), GTK_STOCK_CANCEL);
+	ygtk_wizard_set_button_label (wizard,  wizard->abort_button, _("_Cancel"), GTK_STOCK_CANCEL);
 	ygtk_wizard_set_button_str_id (wizard, wizard->abort_button, "cancel");
 	ygtk_wizard_set_button_label (wizard,  wizard->back_button, NULL, NULL);
-	ygtk_wizard_set_button_label (wizard,  wizard->next_button, _(apply_str.c_str()), GTK_STOCK_APPLY);
+	ygtk_wizard_set_button_label (wizard,  wizard->next_button, _("_Apply"), GTK_STOCK_APPLY);
 	ygtk_wizard_set_button_str_id (wizard, wizard->next_button, "accept");
 	g_signal_connect (G_OBJECT (wizard), "action-triggered",
 	                  G_CALLBACK (wizard_action_cb), this);

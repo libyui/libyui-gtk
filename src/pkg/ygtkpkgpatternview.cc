@@ -247,14 +247,11 @@ static void undo_cb (GtkWidget *widget, ZyppSelectablePtr zsel)
 static void remove_cb (GtkWidget *widget, ZyppSelectablePtr zsel)
 { Ypp::Selectable (zsel).remove(); }
 
-static GtkWidget *menu_item_append (GtkWidget *menu, const char *_label, const char *stock, bool sensitive)
+static GtkWidget *menu_item_append (GtkWidget *menu, const char *label, const char *stock, bool sensitive)
 {
-	std::string label;
-	if (_label)
-		label = YGUtils::mapKBAccel (_label);
 	GtkWidget *item;
-	if (_label) {
-		item = gtk_image_menu_item_new_with_mnemonic (label.c_str());
+	if (label) {
+		item = gtk_image_menu_item_new_with_mnemonic (label);
 		if (stock) {
 			GtkWidget *icon = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
 			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (item), icon);
@@ -288,7 +285,7 @@ static void right_click_cb (YGtkTreeView *yview, gboolean outreach, YGtkPkgPatte
 			else {
 				if (sel.isInstalled()) {
 					if (sel.canRemove()) {
-						item = menu_item_append (menu, _("&Remove"), GTK_STOCK_REMOVE, true);
+						item = menu_item_append (menu, _("_Remove"), GTK_STOCK_REMOVE, true);
 						g_signal_connect (G_OBJECT (item), "activate",
 										  G_CALLBACK (remove_cb), zsel);
 					}
@@ -296,7 +293,7 @@ static void right_click_cb (YGtkTreeView *yview, gboolean outreach, YGtkPkgPatte
 						menu_item_append (menu, _("Remove: cannot remove patterns"), NULL, false);
 				}
 				else {
-					item = menu_item_append (menu, _("&Install"), GTK_STOCK_ADD, true);
+					item = menu_item_append (menu, _("_Install"), GTK_STOCK_ADD, true);
 					g_signal_connect (G_OBJECT (item), "activate",
 									  G_CALLBACK (install_cb), zsel);
 				}

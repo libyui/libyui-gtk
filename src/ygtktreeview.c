@@ -14,8 +14,6 @@
 #define YGI18N_C
 #include "YGi18n.h"
 
-extern char *ygutils_mapKBAccel (const char *src);
-
 static guint right_click_signal = 0;
 
 G_DEFINE_TYPE (YGtkTreeView, ygtk_tree_view, GTK_TYPE_TREE_VIEW)
@@ -211,9 +209,7 @@ GtkWidget *ygtk_tree_view_append_show_columns_item (YGtkTreeView *view, GtkWidge
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), gtk_separator_menu_item_new());
 
 	GtkWidget *submenu = ygtk_tree_view_create_show_columns_menu (view);
-	char *label = ygutils_mapKBAccel (_("&Show column"));
-	GtkWidget *item = gtk_menu_item_new_with_mnemonic (label);
-	g_free (label);
+	GtkWidget *item = gtk_menu_item_new_with_mnemonic (_("_Show column"));
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM (item), submenu);
 	return menu;
