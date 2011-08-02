@@ -89,10 +89,14 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YRadioButton *createRadioButton (YWidget *parent, const string &label, bool isChecked);
     virtual YComboBox *createComboBox (YWidget *parent, const string & label, bool editable);
 	virtual YSelectionBox *createSelectionBox (YWidget *parent, const string &label);
+#if YAST2_VERSION >= 2020003
+	virtual YTree *createTree (YWidget *parent, const string &label, bool multiselection, bool recursiveSelection);
+#else
 #if YAST2_VERSION >= 2019002
 	virtual YTree *createTree (YWidget *parent, const string &label, bool multiselection);
 #else
 	virtual YTree *createTree (YWidget *parent, const string &label);
+#endif
 #endif
 	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
 	virtual YProgressBar *createProgressBar	(YWidget *parent, const string &label, int maxValue);
