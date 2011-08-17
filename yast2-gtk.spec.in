@@ -5,7 +5,7 @@
 Url:      http://en.opensuse.org/YaST2-GTK
 Summary:  YaST2 - GTK+ Graphical User Interface
 Group:	System/YaST
-License: GPL v2.1 or later
+License: GPL-2.0 or GPL-3.0
 BuildRequires:  cmake
 BuildRequires:  gcc-c++ blocxx-devel libxcrypt-devel
 BuildRequires:  gtk3-devel
@@ -53,6 +53,8 @@ rm -rf "$RPM_BUILD_ROOT"
 %defattr (-, root, root)
 %dir %_libdir/YaST2
 %_libdir/YaST2/plugin/
+%doc COPYING.GPL2
+%doc COPYING.GPL3
 
 %changelog
 
