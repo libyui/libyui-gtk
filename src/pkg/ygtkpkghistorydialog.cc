@@ -638,7 +638,8 @@ YGtkPkgHistoryDialog::YGtkPkgHistoryDialog()
 	gtk_paned_pack2 (GTK_PANED (hpaned), log_scroll, TRUE, FALSE);
 	YGUtils::setPaneRelPosition (hpaned, .30);
 	gtk_widget_set_vexpand (hpaned, TRUE);
-	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), hpaned);
+	GtkContainer *content = GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog)));
+	gtk_container_add (content, hpaned);
 
 	gtk_widget_show_all (dialog);
 	m_dialog = dialog;

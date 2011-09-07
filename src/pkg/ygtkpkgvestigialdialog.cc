@@ -223,9 +223,8 @@ YGtkPkgVestigialDialog::YGtkPkgVestigialDialog()
 	impl->view->addTextColumn (_("Supportability"), SUPPORT_PROP, false, 120);
 	impl->view->setListener (impl);
 
-	GtkWidget *content = gtk_dialog_get_content_area (GTK_DIALOG (dialog));
-	gtk_container_add (GTK_CONTAINER (content), impl->view->getWidget());
-
+	GtkBox *content = GTK_BOX (gtk_dialog_get_content_area (GTK_DIALOG(dialog)));
+	gtk_box_pack_start (content, impl->view->getWidget(), TRUE, TRUE, 6);
 	gtk_widget_show_all (dialog);
 	impl->dialog = dialog;
 

@@ -308,7 +308,8 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 		gtk_box_pack_start (GTK_BOX (vbox), create_close_when_done_check(), FALSE, TRUE, 0);
 	gtk_widget_show (vbox);
 	gtk_widget_set_vexpand (vbox, TRUE);
-	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), vbox);
+	GtkContainer *content = GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog)));
+	gtk_container_add (content, vbox);
 
 	int ret = gtk_dialog_run (GTK_DIALOG (dialog));
 	if (ret == 1)

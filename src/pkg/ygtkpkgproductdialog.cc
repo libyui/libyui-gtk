@@ -168,7 +168,8 @@ YGtkPkgProductDialog::YGtkPkgProductDialog()
 	gtk_paned_pack2 (GTK_PANED (vpaned), description_scroll, FALSE, TRUE);
 	YGUtils::setPaneRelPosition (vpaned, .70);
 	gtk_widget_set_vexpand (vpaned, TRUE);
-	gtk_container_add (GTK_CONTAINER (gtk_dialog_get_content_area(GTK_DIALOG (dialog))), vpaned);
+	GtkContainer *content = GTK_CONTAINER (gtk_dialog_get_content_area (GTK_DIALOG (dialog)));
+	gtk_container_add (content, vpaned);
 
 	gtk_widget_show_all (dialog);
 	m_dialog = dialog;
