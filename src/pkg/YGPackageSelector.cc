@@ -398,8 +398,8 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_tree_view_column_pack_start (column, renderer, TRUE);
 		gtk_tree_view_column_set_attributes (column, renderer,
 			"text", TEXT_COL, "weight", WEIGHT_TEXT_COL, "xpad", TEXT_PAD_COL, NULL);
-		g_object_set (G_OBJECT (renderer), "wrap-width", 400,
-			"wrap-mode", PANGO_WRAP_WORD_CHAR, NULL);
+/*		g_object_set (G_OBJECT (renderer), "wrap-width", 400,
+			"wrap-mode", PANGO_WRAP_WORD, NULL);*/
 
 		gtk_tree_view_append_column (GTK_TREE_VIEW (view), column);
 		gtk_tree_view_expand_all (GTK_TREE_VIEW (view));
@@ -407,7 +407,7 @@ struct SuffixFilter : public Ypp::Match {
 
 		GtkWidget *scroll = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (scroll),
-			GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+			GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 		gtk_scrolled_window_set_shadow_type (GTK_SCROLLED_WINDOW (scroll),
 			GTK_SHADOW_IN);
 		gtk_container_add (GTK_CONTAINER (scroll), view);

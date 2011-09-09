@@ -51,6 +51,7 @@ public:
 	YGWindow (bool _main_window, YGDialog *ydialog)
 	{
 		m_widget = ygtk_window_new();
+		gtk_container_set_resize_mode (GTK_CONTAINER (m_widget), GTK_RESIZE_PARENT);
 		g_object_ref_sink (G_OBJECT (m_widget));
 		gtk_window_set_has_resize_grip (GTK_WINDOW (m_widget), TRUE);
 
