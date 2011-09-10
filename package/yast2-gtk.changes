@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sat Sep 07:02:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
+
+- disabled building of test-cases; broken in obs.
+- 2.22.3
+
+-------------------------------------------------------------------
 Fri Sep 23:50:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - layout issues for the manual conflicts resolver and other
