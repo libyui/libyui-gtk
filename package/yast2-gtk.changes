@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Wed Oct  5 12:48:52 UTC 2011 - lslezak@suse.cz
+
+- removed non-functional "Close software manager when done" check
+  box from the confirmation popup (bnc#718636)
+- 2.21.98
+
+-------------------------------------------------------------------
 Tue Aug 02 01:45:00 WET 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - 2.21.97

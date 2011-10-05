@@ -304,8 +304,9 @@ bool YGtkPkgUndoList::popupDialog (bool onApply)
 	GtkWidget *vbox = gtk_vbox_new (FALSE, 6);
 	gtk_box_pack_start (GTK_BOX (vbox), view.getWidget(), TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (vbox), change_size.getWidget(), FALSE, TRUE, 0);
-	if (onApply)
-		gtk_box_pack_start (GTK_BOX (vbox), create_close_when_done_check(), FALSE, TRUE, 0);
+// "Close software manager when done" checkbox is disabled - PKGMGR_ACTION_AT_EXIT is not available in SLE11-SP2
+//	if (onApply)
+//		gtk_box_pack_start (GTK_BOX (vbox), create_close_when_done_check(), FALSE, TRUE, 0);
 	gtk_widget_show (vbox);
 	gtk_container_add (GTK_CONTAINER (GTK_DIALOG (dialog)->vbox), vbox);
 
