@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 16 16:04:55 CET 2012 - tgoettlicher@suse.de
+
+- Fix for bnc #751309: markup of release notes
+- 2.21.99
+
+-------------------------------------------------------------------
 Wed Oct  5 12:48:52 UTC 2011 - lslezak@suse.cz
 
 - removed non-functional "Close software manager when done" check

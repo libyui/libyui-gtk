@@ -68,8 +68,16 @@ static gboolean event_after (GtkWidget *text_view, GdkEvent *ev)
 		return FALSE;
 
 	const char *link = get_link (GTK_TEXT_VIEW (text_view), event->x, event->y);
-	if (link)  // report link
-		g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
+	if (link) {
+		if (*link == '#') {
+			GtkTextMark *mark = gtk_text_buffer_get_mark (buffer, link + 1);
+			if (mark)
+				gtk_text_view_scroll_to_mark (GTK_TEXT_VIEW (text_view), mark, 0.4, TRUE, 0, 0);
+		} else {
+			// report link
+			g_signal_emit (YGTK_RICH_TEXT (text_view), link_clicked_signal, 0, link);
+		}
+	}
 	return FALSE;
 }
 
@@ -80,7 +88,7 @@ static int mystrcmp(void *a, void *b)
 static gboolean isBlockTag (const char *tag)
 {
 	static const char *Tags[] =
-	{ "blockquote", "h1", "h2", "h3", "h4", "h5", "li", "p", "pre" };
+	{ "blockquote", "dd", "dl", "dt", "h1", "h2", "h3", "h4", "h5", "li", "p", "pre" };
 	void *ret;
 	ret = bsearch (&tag, Tags, sizeof (Tags)/sizeof(char*), sizeof(char *), (void*)mystrcmp);
 	return ret != 0;
@@ -88,7 +96,7 @@ static gboolean isBlockTag (const char *tag)
 static gboolean isIdentTag (const char *tag)
 {
 	static const char *Tags[] =
-	{ "blockquote", "ol", "ul" };
+	{ "blockquote", "dd", "ol", "ul" };
 	void *ret;
 	ret = bsearch (&tag, Tags, sizeof (Tags)/sizeof(char*), sizeof(char *), (void*)mystrcmp);
 	return ret != 0;
@@ -354,6 +362,10 @@ rt_start_element (GMarkupParseContext *context,
 				if (state->default_color)
 					g_object_set (tag->tag, "foreground-gdk", &link_color, NULL);
 				g_object_set_data (G_OBJECT (tag->tag), "link", g_strdup (attribute_values[0]));
+			}
+			else if (attribute_names[0] &&
+				 !g_ascii_strcasecmp (attribute_names[0], "name")) {
+				gtk_text_buffer_create_mark (state->buffer, attribute_values[0], &iter, TRUE);
 			}
 			else
 				g_warning ("Unknown a attribute: '%s'", attribute_names[0]);
