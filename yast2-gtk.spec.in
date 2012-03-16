@@ -7,7 +7,7 @@ Summary:  YaST2 - GTK+ Graphical User Interface
 Group:	System/YaST
 License: GPL-2.0 or GPL-3.0
 BuildRequires:  cmake
-BuildRequires:  gcc-c++ blocxx-devel libxcrypt-devel
+BuildRequires:  gcc-c++ blocxx-devel
 BuildRequires:  gtk3-devel
 BuildRequires:  gdk-pixbuf-devel
 BuildRequires:  yast2-devtools >= 2.16.3
