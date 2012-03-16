@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Mar 16 15:27:50 CET 2012 - tgoettlicher@suse.de
+
+- Fix for bnc #751309: markup of release notes
+- 2.22.4
+
+-------------------------------------------------------------------
 Sat Sep 07:02:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - disabled building of test-cases; broken in obs.
