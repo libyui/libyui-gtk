@@ -23,6 +23,7 @@ Build pre-requisites
 
 Building / Installing
 
+  cmake -D CMAKE_INSTALL_PREFIX=/usr -f CMakeLists.txt
   make && sudo make install [1]
 
   [1] - if you want sudo not to ask you a password, add yourself to the
@@ -30,6 +31,7 @@ Building / Installing
 
 Running
 
+  export Y2DEBUG=1
   /usr/lib/YaST2/bin/y2base /usr/share/doc/packages/yast2-core/libyui/examples/HelloWorld.ycp gtk
 
   From OpenSuse 10.3 on, it should be picked up automatically if you use Gnome. 
