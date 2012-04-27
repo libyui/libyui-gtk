@@ -375,17 +375,16 @@ void YGDialog::doSetSize (int width, int height)
 {
 	// libyui calls YDialog::setSize() to force a geometry recalculation as a
 	// result of changed layout properties
+	bool resize = false;
 	GtkWidget *window = m_window->getWidget();
 	if (gtk_widget_get_realized (window)) {
 		gtk_widget_queue_resize (window);
 		width = MIN (width, YUI::app()->displayWidth());
 		height = MIN (height, YUI::app()->displayHeight());
-#if 1
-		bool resize = false;
 		if (isMainDialog()) {
-                    GtkAllocation allocation;
-                    gtk_widget_get_allocation(window, &allocation);
-                    if (allocation.width < width || allocation.height < height) {
+			GtkAllocation allocation;
+			gtk_widget_get_allocation(window, &allocation);
+			if (allocation.width < width || allocation.height < height) {
 				resize = true;
 				width = MAX (width, allocation.width),
 				height = MAX (height, allocation.height);
@@ -393,12 +392,11 @@ void YGDialog::doSetSize (int width, int height)
 		}
 		else
 			resize = true;
-		if (resize)
-#else
-		if (!isMainDialog())
-#endif
-			gtk_window_resize (GTK_WINDOW (window), width, height);
 	}
+	if (resize)
+		gtk_window_resize (GTK_WINDOW (window), width, height);
+	else
+		gtk_window_set_default_size (GTK_WINDOW (window), width, height);
 }
 
 void YGDialog::highlight (YWidget *ywidget)
