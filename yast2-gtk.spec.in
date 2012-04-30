@@ -16,7 +16,7 @@ BuildRequires:  libzypp-devel >= 6.3.0
 %if 0%{?suse_version} < 1220
 BuildRequires:  libxcrypt-devel
 %endif
-if 0%{?force_gcc_46}
+%if 0%{?force_gcc_46}
 BuildRequires:  gcc46
 BuildRequires:  gcc46-c++
 %else
