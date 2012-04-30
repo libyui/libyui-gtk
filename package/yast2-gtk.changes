@@ -1,17 +1,23 @@
 -------------------------------------------------------------------
+Mon Apr 30 10:25:22 CEST 2012 - tgoettlicher@suse.de
+
+- Fix for bnc #722053 by Michael Meeks
+- 2.22.5
+
+-------------------------------------------------------------------
 Fri Mar 16 15:27:50 CET 2012 - tgoettlicher@suse.de
 
 - Fix for bnc #751309: markup of release notes
 - 2.22.4
 
 -------------------------------------------------------------------
-Sat Sep 07:02:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
+Sat Sep 08 07:02:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - disabled building of test-cases; broken in obs.
 - 2.22.3
 
 -------------------------------------------------------------------
-Fri Sep 23:50:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
+Fri Sep 07 23:50:00 UTC 2011 - rpmcruz@alunos.dcc.fc.up.pt
 
 - layout issues for the manual conflicts resolver and other
   sw_single dialogs. (bnc#716336)

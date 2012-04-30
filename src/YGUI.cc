@@ -17,7 +17,7 @@
 #include "YGi18n.h"
 #include "YGUtils.h"
 #include "YGDialog.h"
-#include <glib/gthread.h>
+#include <glib.h> 
 
 static std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title);
