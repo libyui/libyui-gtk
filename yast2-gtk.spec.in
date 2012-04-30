@@ -14,7 +14,7 @@ BuildRequires:  yast2-devtools >= 2.16.3
 BuildRequires:  yast2-libyui-devel >= 2.18.8
 BuildRequires:  libzypp-devel >= 6.3.0 
 %if 0%{?suse_version} < 1220
-uildRequires:  libxcrypt-devel
+BuildRequires:  libxcrypt-devel
 %endif
 Requires:       gtk3
 Requires:       yast2-libyui >= 2.18.8
