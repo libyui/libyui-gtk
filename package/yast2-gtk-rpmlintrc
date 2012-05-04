@@ -1,0 +1,3 @@
+# yast2 likes a .so file for it's plugin that looks like a -devel pkg thing
+addFilter("devel-file-in-non-devel-package")
+
