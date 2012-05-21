@@ -66,7 +66,8 @@ set_target_properties (py2gtk PROPERTIES SOVERSION 2)
 
 install (TARGETS py2gtk LIBRARY DESTINATION ${UI_PLUGIN_DIR})
 
-add_subdirectory (pkg)
+# code of gtk packager moved to new repo: https://github.com/yast/yast-gtk-pkg
+#add_subdirectory (pkg)
 
 ## test:
 
