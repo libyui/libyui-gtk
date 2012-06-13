@@ -1,81 +1,64 @@
-## Makefile.am
+INCLUDE_DIRECTORIES( "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_INCLUDE_PATH}" "/usr/include/yui" "/usr/include/gtk-3.0/" "/usr/include/glib-2.0" )
 
-add_definitions()
+IF( NOT PLUGINNAME )
+  SET( ${TARGETLIB}_HEADERS
+    "${${TARGETLIB}_HEADERS}"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECTNAME_UC}_config.h"
+  )
+ENDIF( NOT PLUGINNAME )
 
-include_directories(${GTK3_INCLUDE_DIRS})
+IF( DISABLE_SHARED )
+  ADD_LIBRARY( ${TARGETLIB} STATIC ${${TARGETLIB}_SOURCES} )
+ELSE( DISABLE_SHARED )
+  ADD_LIBRARY( ${TARGETLIB} SHARED ${${TARGETLIB}_SOURCES} )
+ENDIF( DISABLE_SHARED )
 
-set (gtk_yast_plugin_SRCS
-	YGBarGraph.cc
-	YGComboBox.cc
-	YGDialog.cc
-	YGDumbTab.cc
-	YGFrame.cc
-	YGInputField.cc
-	YGIntField.cc
-	YGImage.cc
-	YGMenuButton.cc
-	YGLabel.cc
-	YGLayout.cc
-	YGPackageSelectorPluginStub.cc
-	YGPushButton.cc
-	YGProgressBar.cc
-	YGRadioButton.cc
-	YGSelectionStore.cc
-	YGText.cc
-	YGTreeView.cc
-	YGUtils.cc
-	YGUI.cc
-	YGWidget.cc
-	YGWizard.cc
-	ygdkmngloader.c
-	ygtkbargraph.c
-	ygtkfieldentry.c
-	ygtkhtmlwrap.c
-	ygtkmenubutton.c
-	ygtklinklabel.c
-	ygtkfixed.c
-	ygtkimage.c
-	ygtkratiobox.c
-	ygtkrichtext.c
-	ygtksteps.c
-	ygtktextview.c
-	ygtktimezonepicker.c
-	ygtktreeview.c
-	ygtkwindow.c
-	ygtkwizard.c
-	)
+TARGET_LINK_LIBRARIES( ${TARGETLIB} ${LIB_LINKER} )
 
-## includes:
+SET_TARGET_PROPERTIES(
+  ${TARGETLIB} PROPERTIES
+  SOVERSION "${SONAME_MAJOR}"
+  OUTPUT_NAME "${TARGETLIB}"
+  PUBLIC_HEADER "${${TARGETLIB}_HEADERS}"
+)
 
-include_directories (${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories (${GTK3_INCLUDE_DIRS})
-include_directories (${LIBYUI_INCLUDE_DIR})
+INSTALL(
+  TARGETS ${TARGETLIB}
+  EXPORT ${PROJECTNAME_UC}LibraryDepends
+  LIBRARY DESTINATION "${INSTALL_LIB_DIR_PREFIX}"
+  ARCHIVE DESTINATION "${INSTALL_LIB_DIR_PREFIX}"
+  PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR_PREFIX}"
+  COMPONENT dev
+)
 
-## target:
+INSTALL(
+  FILES "${${TARGETLIB}_HEADERS}"
+  DESTINATION "${INSTALL_INCLUDE_DIR_PREFIX}"
+)
 
-add_library (py2gtk SHARED ${gtk_yast_plugin_SRCS})
+IF( ENABLE_STATIC AND NOT DISABLE_SHARED )
 
-## libraries:
+  ADD_LIBRARY( ${TARGETLIB}_static STATIC ${${TARGETLIB}_SOURCES} )
+  TARGET_LINK_LIBRARIES( ${TARGETLIB}_static ${LIB_LINKER} )
 
-target_link_libraries (py2gtk ${GTK3_LIBRARIES})
-target_link_libraries (py2gtk ${LIBYUI_LIBRARY})
-set_target_properties (py2gtk PROPERTIES SOVERSION 2)
-#set_target_properties (py2gtk PROPERTIES LINK_FLAGS "--no-undefined")
+  SET_TARGET_PROPERTIES(
+    ${TARGETLIB}_static PROPERTIES
+    SOVERSION "${SONAME_MAJOR}"
+    OUTPUT_NAME "${TARGETLIB}"
+    PUBLIC_HEADER "${${TARGETLIB}_HEADERS}"
+ )
 
-## install:
+  INSTALL(
+    TARGETS ${TARGETLIB}_static
+    EXPORT ${PROJECTNAME_UC}LibraryDepends
+    LIBRARY DESTINATION "${INSTALL_LIB_DIR_PREFIX}"
+    ARCHIVE DESTINATION "${INSTALL_LIB_DIR_PREFIX}"
+    PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR_PREFIX}"
+      COMPONENT dev
+   )
 
-install (TARGETS py2gtk LIBRARY DESTINATION ${UI_PLUGIN_DIR})
+ENDIF( ENABLE_STATIC AND NOT DISABLE_SHARED )
 
-# code of gtk packager moved to new repo: https://github.com/yast/yast-gtk-pkg
-#add_subdirectory (pkg)
-
-## test:
-
-# FIXME: broken in latest build
-#link_directories (${CMAKE_BINARY_DIR}/src)
-#add_executable (test test.cc)
-#add_dependencies (test py2gtk)
-#target_link_libraries (test libpy2gtk.so)
-#target_link_libraries (test ${GTK3_LIBRARIES})
-#target_link_libraries (test ${LIBYUI_LIBRARY})
-
+IF( INSTALL_DOCS AND DOXYGEN_FOUND )
+  ADD_DEPENDENCIES( ${TARGETLIB} docs )
+ENDIF( INSTALL_DOCS AND DOXYGEN_FOUND )
