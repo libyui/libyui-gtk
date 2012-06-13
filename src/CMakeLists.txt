@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES( "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_INCLUDE_PATH}" "/usr/include/yui" "/usr/include/gtk-3.0/" "/usr/include/glib-2.0" )
+INCLUDE_DIRECTORIES( "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_INCLUDE_PATH}" "/usr/include/yui" "/usr/include/gtk-3.0/" "/usr/include/glib-2.0"  "/usr/lib64/glib/include" "/usr/include/pango-1.0/" "/usr/include/cairo/" "/usr/include/atk-1.0" )
 
 IF( NOT PLUGINNAME )
   SET( ${TARGETLIB}_HEADERS
