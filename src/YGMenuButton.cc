@@ -23,7 +23,7 @@ static void doCreateMenu (GtkWidget *parent, YItemIterator begin, YItemIterator 
 {
 	for (YItemIterator it = begin; it != end; it++) {
 		GtkWidget *entry, *image = 0;
-		string str = YGUtils::mapKBAccel ((*it)->label());
+		std::string str = YGUtils::mapKBAccel ((*it)->label());
 
 		if ((*it)->hasIconName()) {
 			GdkPixbuf *pixbuf = YGUtils::loadPixbuf ((*it)->iconName());
@@ -61,7 +61,7 @@ static void doCreateMenu (GtkWidget *parent, YItemIterator begin, YItemIterator 
 class YGMenuButton : public YMenuButton, public YGWidget
 {
 public:
-	YGMenuButton (YWidget *parent, const string &label)
+	YGMenuButton (YWidget *parent, const std::string &label)
 	:  YMenuButton (NULL, label),
 	   YGWidget (this, parent, YGTK_TYPE_MENU_BUTTON, NULL)
 	{ setLabel (label); }
@@ -69,7 +69,7 @@ public:
 	// YMenuButton
 	virtual void setLabel (const std::string &label)
 	{
-		string str = YGUtils::mapKBAccel (label.c_str());
+		std::string str = YGUtils::mapKBAccel (label.c_str());
 		ygtk_menu_button_set_label (YGTK_MENU_BUTTON (getWidget()), str.c_str());
 		YMenuButton::setLabel (label);
 	}
@@ -85,7 +85,7 @@ public:
 	YGWIDGET_IMPL_COMMON (YMenuButton)
 };
 
-YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const string &label)
+YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const std::string &label)
 { return new YGMenuButton (parent, label); }
 
 #if YAST2_VERSION > 2018003

@@ -18,7 +18,7 @@ class YGPushButton : public YPushButton, public YGWidget
 bool m_customIcon, m_labelIcon;
 
 public:
-	YGPushButton (YWidget *parent, const string &label)
+	YGPushButton (YWidget *parent, const std::string &label)
 	:  YPushButton (NULL, label),
 	   YGWidget (this, parent, GTK_TYPE_BUTTON, "can-default", TRUE, NULL)
 	{
@@ -64,7 +64,7 @@ public:
 	virtual void setLabel (const std::string &label)
 	{
 		YPushButton::setLabel (label);
-		string str = YGUtils::mapKBAccel (label);
+		std::string str = YGUtils::mapKBAccel (label);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		setStockIcon (str);
 	}
@@ -92,7 +92,7 @@ public:
 			setStockIcon (label());
 	}
 
-	virtual void setIcon (const string &icon)
+	virtual void setIcon (const std::string &icon)
 	{
 		GtkButton *button = GTK_BUTTON (getWidget());
 		if (icon.empty()) {
@@ -104,7 +104,7 @@ public:
 		}
 		else {
 			m_customIcon = true;
-			string path (icon);
+			std::string path (icon);
 			if (path[0] != '/')
 				path = std::string (THEMEDIR) + "/" + path;
 
@@ -118,8 +118,8 @@ public:
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
-				yuiWarning() << "YGPushButton: Couldn't load icon image: " << path << endl
-				             << "Reason: " << error->message << endl;
+				yuiWarning() << "YGPushButton: Couldn't load icon image: " << path << std::endl
+				             << "Reason: " << error->message << std::endl;
 		}
 	}
 
@@ -217,6 +217,6 @@ public:
 	YGWIDGET_IMPL_COMMON (YPushButton)
 };
 
-YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const string &label)
+YPushButton *YGWidgetFactory::createPushButton (YWidget *parent, const std::string &label)
 { return new YGPushButton (parent, label); }
 

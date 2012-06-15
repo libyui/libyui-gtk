@@ -15,7 +15,7 @@ class YGTextView : public YGScrolledWidget
 int maxChars;
 
 public:
-	YGTextView (YWidget *ywidget, YWidget *parent, const string &label, bool editable)
+	YGTextView (YWidget *ywidget, YWidget *parent, const std::string &label, bool editable)
 		: YGScrolledWidget (ywidget, parent, label, YD_VERT,
 		                    YGTK_TYPE_TEXT_VIEW, "wrap-mode", GTK_WRAP_WORD_CHAR,
 		                    "editable", editable, NULL)
@@ -108,16 +108,16 @@ public:
 class YGMultiLineEdit : public YMultiLineEdit, public YGTextView
 {
 public:
-	YGMultiLineEdit (YWidget *parent, const string &label)
+	YGMultiLineEdit (YWidget *parent, const std::string &label)
 	: YMultiLineEdit (NULL, label)
 	, YGTextView (this, parent, label, true)
 	{}
 
 	// YMultiLineEdit
-	virtual void setValue (const string &text)
+	virtual void setValue (const std::string &text)
 	{ YGTextView::setText (text); }
 
-	virtual string value()
+	virtual std::string value()
 	{ return YGTextView::getText(); }
 
 	virtual void setInputMaxLength (int nb)
@@ -140,7 +140,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YMultiLineEdit)
 };
 
-YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const string &label)
+YMultiLineEdit *YGWidgetFactory::createMultiLineEdit (YWidget *parent, const std::string &label)
 {
 	return new YGMultiLineEdit (parent, label);
 }
@@ -152,7 +152,7 @@ class YGLogView : public YLogView, public YGTextView
 std::string m_text;
 
 public:
-	YGLogView (YWidget *parent, const string &label, int visibleLines, int maxLines)
+	YGLogView (YWidget *parent, const std::string &label, int visibleLines, int maxLines)
 	: YLogView (NULL, label, visibleLines, maxLines)
 	, YGTextView (this, parent, label, false)
 	{}
@@ -196,7 +196,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YLogView)
 };
 
-YLogView *YGWidgetFactory::createLogView (YWidget *parent, const string &label,
+YLogView *YGWidgetFactory::createLogView (YWidget *parent, const std::string &label,
                                           int visibleLines, int maxLines)
 {
 	return new YGLogView (parent, label, visibleLines, maxLines);
@@ -208,7 +208,7 @@ YLogView *YGWidgetFactory::createLogView (YWidget *parent, const string &label,
 class YGRichText : public YRichText, YGScrolledWidget
 {
 public:
-	YGRichText (YWidget *parent, const string &text, bool plainText)
+	YGRichText (YWidget *parent, const std::string &text, bool plainText)
 	: YRichText (NULL, text, plainText)
 	, YGScrolledWidget (this, parent, ygtk_html_wrap_get_type(), NULL)
 	{
@@ -217,16 +217,16 @@ public:
 		setText (text, plainText);
 	}
 
-	void setPlainText (const string &text)
+	void setPlainText (const std::string &text)
 	{
 		ygtk_html_wrap_set_text (getWidget(), text.c_str(), TRUE);
 	}
 
-	void setRichText (const string &text)
+	void setRichText (const std::string &text)
 	{
 #if 0  // current done at the XHTML treatment level, we may want to enable
        // this code so that we replace the entity for all widgets
-		string text (_text);
+		std::string text (_text);
 		std::string productName = YUI::app()->productName();
 		YGUtils::replace (text, "&product;", 9, productName.c_str());
 #endif
@@ -238,7 +238,7 @@ public:
 		ygtk_html_wrap_scroll (getWidget(), FALSE);
 	}
 
-	void setText (const string &text, bool plain_mode)
+	void setText (const std::string &text, bool plain_mode)
 	{
 		plain_mode ?  setPlainText (text) : setRichText (text);
 		if (autoScrollDown())
@@ -246,7 +246,7 @@ public:
 	}
 
 	// YRichText
-	virtual void setValue (const string &text)
+	virtual void setValue (const std::string &text)
 	{
 		YRichText::setValue (text);
 		setText (text, plainTextMode());
@@ -277,7 +277,7 @@ public:
 };
 
 
-YRichText *YGWidgetFactory::createRichText (YWidget *parent, const string &text,
+YRichText *YGWidgetFactory::createRichText (YWidget *parent, const std::string &text,
                                             bool plainTextMode)
 {
 	return new YGRichText (parent, text, plainTextMode);

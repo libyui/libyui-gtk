@@ -21,11 +21,11 @@ public:
 	{
 		if (success())
 			yuiMilestone() << "Loaded " << PLUGIN_BASE_NAME
-				<< " plugin successfully from " << pluginLibFullPath() << endl;
+				<< " plugin successfully from " << pluginLibFullPath() << std::endl;
 		impl = (YGPackageSelectorPluginIf *) locateSymbol ("PSP");
 		if (!impl)
 			yuiError() << "Plugin " << PLUGIN_BASE_NAME
-				<< " does not provide PSP symbol" << endl;
+				<< " does not provide PSP symbol" << std::endl;
 	}
 
 	static YGPackageSelectorPluginStub *get()

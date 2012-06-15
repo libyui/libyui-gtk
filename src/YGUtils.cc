@@ -293,7 +293,7 @@ std::string YGUtils::mapKBAccel (const std::string &src)
 {
 	// conversion pairs: ('_', '__') ('&&', '&') ('&', '_')
 	std::string::size_type length = src.length(), i;
-	string str;
+	std::string str;
 	str.reserve (length);
 	for (i = 0; i < length; i++) {
 		if (src[i] == '_')
@@ -318,7 +318,7 @@ char *ygutils_mapKBAccel (const char *src)
 	return strdup (ret.c_str());
 }
 
-void YGUtils::setFilter (GtkEntry *entry, const string &validChars)
+void YGUtils::setFilter (GtkEntry *entry, const std::string &validChars)
 {
 	struct inner {
 		static void insert_text_cb (GtkEditable *editable, const gchar *new_text,
@@ -362,12 +362,12 @@ void YGUtils::setFilter (GtkEntry *entry, const string &validChars)
 void ygutils_setFilter (GtkEntry *entry, const char *validChars)
 { YGUtils::setFilter (entry, validChars); }
 
-void YGUtils::replace (string &str, const char *mouth, int mouth_len, const char *food)
+void YGUtils::replace (std::string &str, const char *mouth, int mouth_len, const char *food)
 {
 	if (mouth_len < 0)
 		mouth_len = strlen (mouth);
 	std::string::size_type i = 0;
-	while ((i = str.find (mouth, i)) != string::npos) {
+	while ((i = str.find (mouth, i)) != std::string::npos) {
 		str.erase (i, mouth_len);
 		str.insert (i, food);
 	}
@@ -531,7 +531,7 @@ void YGUtils::setPaneRelPosition (GtkWidget *paned, gdouble rel)
 void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel)
 { YGUtils::setPaneRelPosition (paned, rel); }
 
-GdkPixbuf *YGUtils::loadPixbuf (const string &filename)
+GdkPixbuf *YGUtils::loadPixbuf (const std::string &filename)
 {
 	GdkPixbuf *pixbuf = NULL;
 	if (!filename.empty()) {

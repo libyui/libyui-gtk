@@ -38,7 +38,7 @@ class YGWizard : public YWizard, public YGWidget
 			ygtk_wizard_set_button_ptr_id (getWizard(), widget, this);
 		}
 
-		virtual void setLabel (const string &label)
+		virtual void setLabel (const std::string &label)
 		{
 			YPushButton::setLabel (label);
 
@@ -79,8 +79,8 @@ class YGWizard : public YWizard, public YGWidget
 	// doesn't support it too anyway.
 
 public:
-	YGWizard (YWidget *parent, const string &backButtonLabel,
-		const string &abortButtonLabel, const string &nextButtonLabel,
+	YGWizard (YWidget *parent, const std::string &backButtonLabel,
+		const std::string &abortButtonLabel, const std::string &nextButtonLabel,
 		YWizardMode wizardMode)
 	: YWizard (NULL, backButtonLabel, abortButtonLabel, nextButtonLabel, wizardMode)
 	, YGWidget (this, parent, YGTK_TYPE_WIZARD, NULL)
@@ -117,7 +117,7 @@ public:
 		m_back_button  = new YGWButton (this, wizard->back_button, backButtonLabel);
 		m_abort_button = new YGWButton (this, wizard->abort_button, abortButtonLabel);
 		m_next_button  = new YGWButton (this, wizard->next_button, nextButtonLabel);
-		m_notes_button = new YGWButton (this, wizard->release_notes_button, string());
+		m_notes_button = new YGWButton (this, wizard->release_notes_button, std::string());
 		ygtk_wizard_set_default_button (wizard, wizard->next_button);
 
 		//** All event are sent through this signal together with an id
@@ -144,12 +144,12 @@ public:
 	virtual YPushButton *nextButton()  const
 	{ return m_next_button; }
 
-	virtual void setButtonLabel (YPushButton *button, const string &label)
+	virtual void setButtonLabel (YPushButton *button, const std::string &label)
 	{
 		button->setLabel (label);
 	}
 
-	virtual void setHelpText (const string &_text)
+	virtual void setHelpText (const std::string &_text)
 	{
 		std::string productName = YUI::app()->productName();
 		std::string text(_text);
@@ -157,38 +157,38 @@ public:
 		ygtk_wizard_set_help_text (getWizard(), text.c_str());
 	}
 
-	virtual void setDialogIcon (const string &icon)
+	virtual void setDialogIcon (const std::string &icon)
 	{
 		if (!ygtk_wizard_set_header_icon (getWizard(), icon.c_str()))
-			yuiWarning() << "YGWizard: could not load image: " << icon << endl;
+			yuiWarning() << "YGWizard: could not load image: " << icon << std::endl;
 		YGDialog::currentDialog()->setIcon (icon);
 	}
 
-	virtual void setDialogHeading (const string &heading)
+	virtual void setDialogHeading (const std::string &heading)
 	{
 		ygtk_wizard_set_header_text (getWizard(), heading.c_str());
 		YGDialog::currentDialog()->setTitle (heading, false);
 	}
 
-	virtual void setDialogTitle (const string &title)
+	virtual void setDialogTitle (const std::string &title)
 	{
 		YGDialog::currentDialog()->setTitle (title, true);
 	}
 
-	virtual void addStepHeading (const string &text)
+	virtual void addStepHeading (const std::string &text)
 	{
 		ygtk_wizard_add_step_header (getWizard(), text.c_str());
 	}
 
-    virtual void addStep (const string &text, const string &id)
+    virtual void addStep (const std::string &text, const std::string &id)
 	{
 		ygtk_wizard_add_step (getWizard(), text.c_str(), id.c_str());
 	}
 
-	virtual void setCurrentStep (const string &id)
+	virtual void setCurrentStep (const std::string &id)
 	{
 		if (!ygtk_wizard_set_current_step (getWizard(), id.c_str()))
-			yuiError() << "YGWizard: there is no step with id " << id << endl;
+			yuiError() << "YGWizard: there is no step with id " << id << std::endl;
 	}
 
 	virtual void deleteSteps()
@@ -199,26 +199,26 @@ public:
 	virtual void updateSteps()
 	{}
 
-	virtual void addTreeItem (const string &parentID, const string &text,
-	                          const string &id)
+	virtual void addTreeItem (const std::string &parentID, const std::string &text,
+	                          const std::string &id)
 	{
 		if (!ygtk_wizard_add_tree_item (getWizard(), parentID.c_str(),
 		        text.c_str(), id.c_str()))
-			yuiError() << "YGWizard: there is no tree item with id " << parentID << endl;
+			yuiError() << "YGWizard: there is no tree item with id " << parentID << std::endl;
 	}
 
-	virtual void selectTreeItem (const string &id)
+	virtual void selectTreeItem (const std::string &id)
 	{
 		if (!ygtk_wizard_select_tree_item (getWizard(), id.c_str()))
-			yuiError() << "YGWizard: there is no tree item with id " << id << endl;
+			yuiError() << "YGWizard: there is no tree item with id " << id << std::endl;
 	}
 
-	virtual string currentTreeSelection()
+	virtual std::string currentTreeSelection()
 	{
 		const char *selected = ygtk_wizard_get_tree_selection (getWizard());
 		if (selected)
 			return selected;
-		return string();
+		return std::string();
 	}
 
 	virtual void deleteTreeItems()
@@ -226,34 +226,34 @@ public:
 		ygtk_wizard_clear_tree (getWizard());
 	}
 
-	virtual void addMenu (const string &text, const string &id)
+	virtual void addMenu (const std::string &text, const std::string &id)
 	{
-		string str = YGUtils::mapKBAccel (text);
+		std::string str = YGUtils::mapKBAccel (text);
 		ygtk_wizard_add_menu (getWizard(), str.c_str(), id.c_str());
 	}
 
-	virtual void addSubMenu (const string &parentID, const string &text,
-	                         const string &id)
+	virtual void addSubMenu (const std::string &parentID, const std::string &text,
+	                         const std::string &id)
 	{
-		string str = YGUtils::mapKBAccel(text);
+		std::string str = YGUtils::mapKBAccel(text);
 		if (!ygtk_wizard_add_sub_menu (getWizard(), parentID.c_str(), str.c_str(),
 		        id.c_str()))
-			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << std::endl;
 	}
 
-	virtual void addMenuEntry (const string &parentID, const string &text,
-	                           const string &id)
+	virtual void addMenuEntry (const std::string &parentID, const std::string &text,
+	                           const std::string &id)
 	{
-		string str = YGUtils::mapKBAccel (text);
+		std::string str = YGUtils::mapKBAccel (text);
 		if (!ygtk_wizard_add_menu_entry (getWizard(), parentID.c_str(),
 			str.c_str(), id.c_str()))
-			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << std::endl;
 	}
 
-	virtual void addMenuSeparator (const string & parentID)
+	virtual void addMenuSeparator (const std::string & parentID)
 	{
 		if (!ygtk_wizard_add_menu_separator (getWizard(), parentID.c_str()))
-			yuiError() << "YGWizard: there is no menu item with id " << parentID << endl;
+			yuiError() << "YGWizard: there is no menu item with id " << parentID << std::endl;
 	}
 
 	virtual void deleteMenus()
@@ -261,9 +261,9 @@ public:
 		ygtk_wizard_clear_menu (getWizard());
 	}
 
-	virtual void showReleaseNotesButton (const string &label, const string &id)
+	virtual void showReleaseNotesButton (const std::string &label, const std::string &id)
 	{
-		string str = YGUtils::mapKBAccel (label.c_str());
+		std::string str = YGUtils::mapKBAccel (label.c_str());
 		ygtk_wizard_set_button_label (getWizard(), m_notes_button->getWidget(), str.c_str(), NULL);
 		ygtk_wizard_set_button_str_id (getWizard(), m_notes_button->getWidget(), id.c_str());
 	}
@@ -296,8 +296,8 @@ public:
 };
 
 YWizard *YGOptionalWidgetFactory::createWizard (YWidget *parent,
-	const string &backButtonLabel, const string &abortButtonLabel,
-	const string &nextButtonLabel, YWizardMode wizardMode)
+	const std::string &backButtonLabel, const std::string &abortButtonLabel,
+	const std::string &nextButtonLabel, YWizardMode wizardMode)
 {
 	return new YGWizard (parent, backButtonLabel, abortButtonLabel, nextButtonLabel,
 	                     wizardMode);

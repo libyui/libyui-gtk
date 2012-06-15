@@ -273,7 +273,7 @@ YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 	try {
 		event = packageSelector->findDialog()->waitForEvent();
 	} catch (const std::exception &e) {
-		yuiError() << "UI::RunPkgSelection() error: " << e.what() << endl;
+		yuiError() << "UI::RunPkgSelection() error: " << e.what() << std::endl;
 		yuiError() << "This is a libzypp problem. Do not file a bug against the UI!\n";
 	} catch (...) {
 		yuiError() << "UI::RunPkgSelection() error (unspecified)\n";
@@ -284,7 +284,7 @@ YEvent *YGUI::runPkgSelection (YWidget *packageSelector)
 
 void YGUI::askPlayMacro()
 {
-	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
+	std::string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_OPEN,
 		DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Open Macro file"));
 	if (!filename.empty()) {
 		busyCursor();
@@ -306,7 +306,7 @@ void YGUI::toggleRecordMacro()
 		gtk_widget_destroy (dialog);
 	}
 	else {
-		string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+		std::string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
 			DEFAULT_MACRO_FILE_NAME, "*.ycp", _("Save Macro"));
 		if (!filename.empty())
 			YMacro::record (filename);
@@ -315,20 +315,20 @@ void YGUI::toggleRecordMacro()
 
 void YGUI::askSaveLogs()
 {
-	string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
+	std::string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
 		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs"));
 	if (!filename.empty()) {
 		std::string command = "/sbin/save_y2logs";
 		command += " '" + filename + "'";
-	    yuiMilestone() << "Saving y2logs: " << command << endl;
+	    yuiMilestone() << "Saving y2logs: " << command << std::endl;
 	    int ret = system (command.c_str());
 		if (ret == 0)
-			yuiMilestone() << "y2logs saved to " << filename << endl;
+			yuiMilestone() << "y2logs saved to " << filename << std::endl;
 		else {
 			char *error = g_strdup_printf (
 				_("Could not run: '%s' (exit value: %d)"),
 				command.c_str(), ret);
-			yuiError() << error << endl;
+			yuiError() << error << std::endl;
 			errorMsg (error);
 			g_free (error);
 		}
@@ -375,17 +375,17 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		//** ask user for filename
 		// calculate a default directory...
 		if (screenShotNameTemplate.empty()) {
-			string dir;
+			std::string dir;
 			const char *homedir = getenv("HOME");
 			const char *ssdir = getenv("Y2SCREENSHOTS");
 			if (!homedir || !strcmp (homedir, "/")) {
 				// no homedir defined (installer)
-				dir = "/tmp/" + (ssdir ? (string(ssdir)) : (string("")));
+				dir = "/tmp/" + (ssdir ? (std::string(ssdir)) : (std::string("")));
 				if (mkdir (dir.c_str(), 0700) == -1)
 					dir = "";
 			}
 			else {
-				dir = homedir + (ssdir ? ("/" + string(ssdir)) : (string("")));
+				dir = homedir + (ssdir ? ("/" + std::string(ssdir)) : (std::string("")));
 				mkdir (dir.c_str(), 0750);  // create a dir for what to put the pics
 			}
 
@@ -396,7 +396,7 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		const char *baseName = "yast2-";
 
 		int nb;
-		map <string, int>::iterator it = screenShotNb.find (baseName);
+		std::map <std::string, int>::iterator it = screenShotNb.find (baseName);
 		if (it == screenShotNb.end())
 			nb = 0;
 
@@ -405,7 +405,7 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 			filename = tmp_name;
 			g_free (tmp_name);
 		}
-		yuiDebug() << "screenshot: " << filename << endl;
+		yuiDebug() << "screenshot: " << filename << std::endl;
 
 		filename = askForFileOrDirectory (
 			GTK_FILE_CHOOSER_ACTION_SAVE, "", "*.png", _("Save screenshot"));
@@ -418,15 +418,15 @@ void YGApplication::makeScreenShot (const std::string &_filename)
 		screenShotNb[baseName] = nb + 1;
 	}
 
-	yuiDebug() << "Saving screen shot to " << filename << endl;
+	yuiDebug() << "Saving screen shot to " << filename << std::endl;
 	if (!gdk_pixbuf_save (shot, filename.c_str(), "png", &error, NULL)) {
-		string msg = _("Could not save to:");
+		std::string msg = _("Could not save to:");
 		msg += " "; msg += filename;
 		if (error) {
 			msg += "\n"; msg += "\n";
 			msg += error->message;
 		}
-		yuiError() << msg << endl;
+		yuiError() << msg << std::endl;
 		if (interactive)
 			errorMsg (msg.c_str());
 		goto makeScreenShot_ret;
@@ -473,7 +473,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	gtk_file_chooser_set_do_overwrite_confirmation (fileChooser, TRUE);
 
 	// filepath can be a dir or a file path, split that up
-	string dirname, filename;
+	std::string dirname, filename;
 	if (!path.empty()) {
 		if (path[0] != '/')
 			yuiWarning() << "FileDialog: Relative paths are not supported: '" << path << "'\n";
@@ -482,8 +482,8 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 		else if (g_file_test (path.c_str(), G_FILE_TEST_IS_DIR))
 			dirname = path;
 		else {  // its a file
-			string::size_type i = path.find_last_of ("/");
-			if (i != string::npos) {
+			std::string::size_type i = path.find_last_of ("/");
+			if (i != std::string::npos) {
 				dirname = path.substr (0, i+1);
 				filename = path.substr (i+1);
 			}
@@ -501,7 +501,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 		// cut filter_pattern into chuncks like GTK likes
 		std::istringstream stream (filter);
 		while (!stream.eof()) {
-			string str;
+			std::string str;
 			stream >> str;
 			if (!str.empty() && str [str.size()-1] == ',')
 				str.erase (str.size()-1);

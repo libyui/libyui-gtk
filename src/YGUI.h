@@ -78,36 +78,36 @@ class YGWidgetFactory : public YWidgetFactory
 {
 	virtual YDialog *createDialog (YDialogType dialogType, YDialogColorMode colorMode);
 
-    virtual YPushButton *createPushButton (YWidget *parent, const string &label);
-	virtual YLabel *createLabel (YWidget *parent, const string &text, bool isHeading, bool isOutputField);
-	virtual YInputField *createInputField (YWidget *parent, const string &label, bool passwordMode);
-	virtual YCheckBox *createCheckBox (YWidget *parent, const string &label, bool isChecked);
-	virtual YRadioButton *createRadioButton (YWidget *parent, const string &label, bool isChecked);
-    virtual YComboBox *createComboBox (YWidget *parent, const string & label, bool editable);
-	virtual YSelectionBox *createSelectionBox (YWidget *parent, const string &label);
+    virtual YPushButton *createPushButton (YWidget *parent, const std::string &label);
+	virtual YLabel *createLabel (YWidget *parent, const std::string &text, bool isHeading, bool isOutputField);
+	virtual YInputField *createInputField (YWidget *parent, const std::string &label, bool passwordMode);
+	virtual YCheckBox *createCheckBox (YWidget *parent, const std::string &label, bool isChecked);
+	virtual YRadioButton *createRadioButton (YWidget *parent, const std::string &label, bool isChecked);
+    virtual YComboBox *createComboBox (YWidget *parent, const std::string & label, bool editable);
+	virtual YSelectionBox *createSelectionBox (YWidget *parent, const std::string &label);
 #if YAST2_VERSION >= 2020003
-	virtual YTree *createTree (YWidget *parent, const string &label, bool multiselection, bool recursiveSelection);
+	virtual YTree *createTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection);
 #else
 #if YAST2_VERSION >= 2019002
-	virtual YTree *createTree (YWidget *parent, const string &label, bool multiselection);
+	virtual YTree *createTree (YWidget *parent, const std::string &label, bool multiselection);
 #else
-	virtual YTree *createTree (YWidget *parent, const string &label);
+	virtual YTree *createTree (YWidget *parent, const std::string &label);
 #endif
 #endif
 	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
-	virtual YProgressBar *createProgressBar	(YWidget *parent, const string &label, int maxValue);
-	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const string &label, int timeout);
-	virtual YRichText *createRichText (YWidget *parent, const string &text, bool plainTextMode);
+	virtual YProgressBar *createProgressBar	(YWidget *parent, const std::string &label, int maxValue);
+	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const std::string &label, int timeout);
+	virtual YRichText *createRichText (YWidget *parent, const std::string &text, bool plainTextMode);
 
-	virtual YIntField *createIntField (YWidget *parent, const string &label, int minVal, int maxVal, int initialVal);
-	virtual YMenuButton *createMenuButton (YWidget *parent, const string &label);
-	virtual YMultiLineEdit *createMultiLineEdit	(YWidget *parent, const string &label);
-	virtual YImage *createImage (YWidget *parent, const string &imageFileName, bool animated);
-	virtual YLogView *createLogView (YWidget *parent, const string &label, int visibleLines, int storedLines);
-	virtual YMultiSelectionBox *createMultiSelectionBox (YWidget *parent, const string &label);
+	virtual YIntField *createIntField (YWidget *parent, const std::string &label, int minVal, int maxVal, int initialVal);
+	virtual YMenuButton *createMenuButton (YWidget *parent, const std::string &label);
+	virtual YMultiLineEdit *createMultiLineEdit	(YWidget *parent, const std::string &label);
+	virtual YImage *createImage (YWidget *parent, const std::string &imageFileName, bool animated);
+	virtual YLogView *createLogView (YWidget *parent, const std::string &label, int visibleLines, int storedLines);
+	virtual YMultiSelectionBox *createMultiSelectionBox (YWidget *parent, const std::string &label);
 
 	virtual YPackageSelector *createPackageSelector (YWidget * parent, long ModeFlags);
-	virtual YWidget *createPkgSpecial (YWidget * parent, const string & subwidgetName) RET (NULL)  // for ncurses
+	virtual YWidget *createPkgSpecial (YWidget * parent, const std::string & subwidgetName) RET (NULL)  // for ncurses
 
 	virtual YLayoutBox *createLayoutBox (YWidget *parent, YUIDimension dimension);
     virtual YButtonBox *createButtonBox (YWidget *parent);
@@ -117,8 +117,8 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YAlignment *createAlignment (YWidget *parent, YAlignmentType horAlignment, YAlignmentType vertAlignment);
 	virtual YSquash *createSquash (YWidget *parent, bool horSquash, bool vertSquash);
 
-	virtual YFrame *createFrame (YWidget *parent, const string &label);
-	virtual YCheckBoxFrame *createCheckBoxFrame	(YWidget *parent, const string &label, bool checked);
+	virtual YFrame *createFrame (YWidget *parent, const std::string &label);
+	virtual YCheckBoxFrame *createCheckBoxFrame	(YWidget *parent, const std::string &label, bool checked);
 
 	virtual YRadioButtonGroup *createRadioButtonGroup (YWidget *parent);
 	virtual YReplacePoint *createReplacePoint (YWidget *parent);
@@ -130,44 +130,44 @@ class YGOptionalWidgetFactory : public YOptionalWidgetFactory
 {
 public:
 	virtual bool hasWizard() RET (true)
-	virtual YWizard *createWizard (YWidget *parent, const string &backButtonLabel,
-		const string &abortButtonLabel, const string &nextButtonLabel,
+	virtual YWizard *createWizard (YWidget *parent, const std::string &backButtonLabel,
+		const std::string &abortButtonLabel, const std::string &nextButtonLabel,
 		YWizardMode wizardMode);
 
 	virtual bool hasDumbTab() RET (true)
 	virtual YDumbTab *createDumbTab (YWidget *parent);
 
 	virtual bool hasSlider() RET (true)
-	virtual YSlider *createSlider (YWidget *parent, const string &label, int minVal,
+	virtual YSlider *createSlider (YWidget *parent, const std::string &label, int minVal,
 		int maxVal, int initialVal);
 
 	virtual bool hasDateField() RET (true)
-	virtual YDateField *createDateField (YWidget *parent, const string &label);
+	virtual YDateField *createDateField (YWidget *parent, const std::string &label);
 
 	virtual bool hasTimeField() RET (true)
-	virtual YTimeField *createTimeField (YWidget *parent, const string &label);
+	virtual YTimeField *createTimeField (YWidget *parent, const std::string &label);
 
     virtual bool hasTimezoneSelector() RET (true)
 	virtual YTimezoneSelector *createTimezoneSelector (YWidget *parent, 
-		const string &pixmap,  const map <string, string> &timezones);
+		const std::string &pixmap,  const std::map <std::string, std::string> &timezones);
 
 	virtual bool hasBarGraph() RET (true)
 	virtual YBarGraph *createBarGraph (YWidget *parent);
 
 	virtual bool hasMultiProgressMeter() RET (true)
 	virtual YMultiProgressMeter *createMultiProgressMeter (YWidget *parent,
-		YUIDimension dim, const vector<float> &maxValues);
+		YUIDimension dim, const std::vector<float> &maxValues);
 
 	virtual bool hasPartitionSplitter() RET (true)
 	virtual YPartitionSplitter *createPartitionSplitter (YWidget *parent,
 		int usedSize, int totalFreeSize, int newPartSize, int minNewPartSize,
-		int minFreeSize, const string &usedLabel, const string &freeLabel,
-		const string &newPartLabel, const string &freeFieldLabel,
-		const string &newPartFieldLabel);
+		int minFreeSize, const std::string &usedLabel, const std::string &freeLabel,
+		const std::string &newPartLabel, const std::string &freeFieldLabel,
+		const std::string &newPartFieldLabel);
 
 	virtual bool hasDownloadProgress() RET (true)
 	virtual YDownloadProgress *createDownloadProgress (YWidget *parent,
-		const string &label, const string & filename, YFileSize_t expectedFileSize);
+		const std::string &label, const std::string & filename, YFileSize_t expectedFileSize);
 
 	virtual bool hasContextMenu() RET (true)
 

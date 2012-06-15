@@ -26,7 +26,7 @@ protected:
 	GtkWidget *m_count;
 
 public:
-	YGTreeView (YWidget *ywidget, YWidget *parent, const string &label, bool tree)
+	YGTreeView (YWidget *ywidget, YWidget *parent, const std::string &label, bool tree)
 	: YGScrolledWidget (ywidget, parent, label, YD_VERT, YGTK_TYPE_TREE_VIEW, NULL),
 	  YGSelectionStore (tree)
 	{
@@ -554,7 +554,7 @@ YTable *YGWidgetFactory::createTable (YWidget *parent, YTableHeader *headers,
 class YGSelectionBox : public YSelectionBox, public YGTreeView
 {
 public:
-	YGSelectionBox (YWidget *parent, const string &label)
+	YGSelectionBox (YWidget *parent, const std::string &label)
 	: YSelectionBox (NULL, label),
 	  YGTreeView (this, parent, label, false)
 	{
@@ -589,7 +589,7 @@ public:
 	YGSELECTION_WIDGET_IMPL (YSelectionBox)
 };
 
-YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const string &label)
+YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const std::string &label)
 { return new YGSelectionBox (parent, label); }
 
 #include "YMultiSelectionBox.h"
@@ -597,7 +597,7 @@ YSelectionBox *YGWidgetFactory::createSelectionBox (YWidget *parent, const strin
 class YGMultiSelectionBox : public YMultiSelectionBox, public YGTreeView
 {
 public:
-	YGMultiSelectionBox (YWidget *parent, const string &label)
+	YGMultiSelectionBox (YWidget *parent, const std::string &label)
 	: YMultiSelectionBox (NULL, label),
 	  YGTreeView (this, parent, label, false)
 	{
@@ -647,7 +647,7 @@ public:
 	YGSELECTION_WIDGET_IMPL (YMultiSelectionBox)
 };
 
-YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent, const string &label)
+YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent, const std::string &label)
 { return new YGMultiSelectionBox (parent, label); }
 
 #include "YTree.h"
@@ -657,14 +657,14 @@ class YGTree : public YTree, public YGTreeView
 {
 public:
 #if YAST2_VERSION >= 2020003
-	YGTree (YWidget *parent, const string &label, bool multiselection, bool recursiveSelection)
+	YGTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection)
 	: YTree (NULL, label, multiselection, recursiveSelection),
 #else
 #if YAST2_VERSION >= 2019002
-	YGTree (YWidget *parent, const string &label, bool multiselection)
+	YGTree (YWidget *parent, const std::string &label, bool multiselection)
 	: YTree (NULL, label, multiselection),
 #else
-	YGTree (YWidget *parent, const string &label)
+	YGTree (YWidget *parent, const std::string &label)
 	: YTree (NULL, label),
 #endif
 #endif
@@ -856,14 +856,14 @@ public:
 };
 
 #if YAST2_VERSION >= 2020003
-YTree *YGWidgetFactory::createTree (YWidget *parent, const string &label, bool multiselection, bool recursiveSelection)
+YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection)
 { return new YGTree (parent, label, multiselection, recursiveSelection); }
 #else
 #if YAST2_VERSION >= 2019002
-YTree *YGWidgetFactory::createTree (YWidget *parent, const string &label, bool multiselection)
+YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label, bool multiselection)
 { return new YGTree (parent, label, multiselection); }
 #else
-YTree *YGWidgetFactory::createTree (YWidget *parent, const string &label)
+YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label)
 { return new YGTree (parent, label); }
 #endif
 #endif

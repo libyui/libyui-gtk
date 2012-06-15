@@ -14,7 +14,7 @@
 class YGInputField : public YInputField, public YGLabeledWidget
 {
 public:
-	YGInputField (YWidget *parent, const string &label, bool passwordMode)
+	YGInputField (YWidget *parent, const std::string &label, bool passwordMode)
 	: YInputField (NULL, label, passwordMode),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
@@ -31,13 +31,13 @@ public:
 	}
 
 	// YInputField
-	virtual string value()
+	virtual std::string value()
 	{
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		return ygtk_field_entry_get_field_text (field, 0);
 	}
 
-	virtual void setValue (const string &text)
+	virtual void setValue (const std::string &text)
 	{
 		BlockEvents block (this);
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
@@ -56,7 +56,7 @@ public:
 		updateProps();
 	}
 
-	virtual void setValidChars (const string &validChars)
+	virtual void setValidChars (const std::string &validChars)
 	{
 		YInputField::setValidChars (validChars);
 		updateProps();
@@ -79,7 +79,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YInputField)
 };
 
-YInputField *YGWidgetFactory::createInputField (YWidget *parent, const string &label,
+YInputField *YGWidgetFactory::createInputField (YWidget *parent, const std::string &label,
                                                 bool passwordMode)
 {
 	return new YGInputField (parent, label, passwordMode);
@@ -90,7 +90,7 @@ YInputField *YGWidgetFactory::createInputField (YWidget *parent, const string &l
 class YGTimeField : public YTimeField, public YGLabeledWidget
 {
 public:
-	YGTimeField (YWidget *parent, const string &label)
+	YGTimeField (YWidget *parent, const std::string &label)
 	: YTimeField (NULL, label),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
@@ -105,7 +105,7 @@ public:
 	}
 
 	// YTimeField
-	virtual void setValue (const string &time)
+	virtual void setValue (const std::string &time)
 	{
 		BlockEvents block (this);
 		if (time.empty()) return;
@@ -117,7 +117,7 @@ public:
 		ygtk_field_entry_set_field_text (entry, 1, mins);
 	}
 
-	virtual string value()
+	virtual std::string value()
 	{
 		const gchar *hours, *mins;
 		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
@@ -125,7 +125,7 @@ public:
 		mins  = ygtk_field_entry_get_field_text (entry, 1);
 
 		gchar *time = g_strdup_printf ("%02d:%02d:00", atoi (hours), atoi (mins));
-		string str (time);
+		std::string str (time);
 		g_free (time);
 		return str;
 	}
@@ -138,7 +138,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YTimeField)
 };
 
-YTimeField *YGOptionalWidgetFactory::createTimeField (YWidget *parent, const string &label)
+YTimeField *YGOptionalWidgetFactory::createTimeField (YWidget *parent, const std::string &label)
 { return new YGTimeField (parent, label); }
 
 #include "YDateField.h"
@@ -149,7 +149,7 @@ class YGDateField : public YDateField, public YGLabeledWidget
 GtkWidget *m_calendar, *m_popup_calendar;
 
 public:
-	YGDateField (YWidget *parent, const string &label)
+	YGDateField (YWidget *parent, const std::string &label)
 	: YDateField (NULL, label),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ, YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
@@ -181,7 +181,7 @@ public:
 	{ return YGTK_FIELD_ENTRY (getWidget()); }
 
 	// YDateField
-	virtual void setValue (const string &date)
+	virtual void setValue (const std::string &date)
 	{
 		BlockEvents block (this);
 		if (date.empty()) return;
@@ -196,7 +196,7 @@ public:
 		ygtk_field_entry_set_field_text (getField(), 2, day);
 	}
 
-	virtual string value()
+	virtual std::string value()
 	{
 		const gchar *year, *month, *day;
 		year  = ygtk_field_entry_get_field_text (getField(), 0);
@@ -205,7 +205,7 @@ public:
 
 		gchar *time = g_strdup_printf ("%04d-%02d-%02d", atoi (year),
 		                               atoi (month), atoi (day));
-		string str (time);
+		std::string str (time);
 		g_free (time);
 		return str;
 	}
@@ -272,7 +272,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YDateField)
 };
 
-YDateField *YGOptionalWidgetFactory::createDateField (YWidget *parent, const string &label)
+YDateField *YGOptionalWidgetFactory::createDateField (YWidget *parent, const std::string &label)
 { return new YGDateField (parent, label); }
 
 #include "YTimezoneSelector.h"

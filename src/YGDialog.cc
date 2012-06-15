@@ -257,7 +257,7 @@ private:
 				    (void) system ("/usr/bin/xterm &");
 				    return TRUE;
 				case GDK_KEY_Y:
-					yuiMilestone() << "Opening dialog spy" << endl;
+					yuiMilestone() << "Opening dialog spy" << std::endl;
 					YDialogSpy::showDialogSpy();
 					YGUI::ui()->normalCursor();
 					break;

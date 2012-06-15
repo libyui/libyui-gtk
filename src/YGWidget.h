@@ -37,8 +37,8 @@ public:
 
 	// debug
 	const char *getWidgetName() const { return m_ywidget->widgetClass(); }
-	virtual string getDebugLabel() const  // let YWidget::debugLabel() be overloaded
-	{ if (m_ywidget->hasChildren()) return string(); return m_ywidget->debugLabel(); }
+	virtual std::string getDebugLabel() const  // let YWidget::debugLabel() be overloaded
+	{ if (m_ywidget->hasChildren()) return std::string(); return m_ywidget->debugLabel(); }
 
 	// aesthetics
 	void setBorder (unsigned int border);  // in pixels

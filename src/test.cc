@@ -28,7 +28,7 @@ bool testMapKBAccel()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string mapped = YGUtils::mapKBAccel(aTests[i].in);
+		std::string mapped = YGUtils::mapKBAccel(aTests[i].in);
 		if (mapped != aTests[i].out) {
 			fprintf (stderr, "Mis-mapped accel '%s' vs '%s'\n",
 				 mapped.c_str(), aTests[i].out);
@@ -131,7 +131,7 @@ bool testMarkupEscape()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string out (YGUtils::escapeMarkup (aTests[i].in));
+		std::string out (YGUtils::escapeMarkup (aTests[i].in));
 		if (out != aTests[i].out) {
 			fprintf (stderr, "Mis-converted entry %d XML '%s' should be '%s'\n",
 				 i, out.c_str(), aTests[i].out);
@@ -170,7 +170,7 @@ bool testTruncate()
 		{ NULL, NULL }
 	};
 	for (int i = 0; aTests[i].in; i++) {
-		string out = YGUtils::truncate (aTests[i].in, aTests[i].length, aTests[i].pos);
+		std::string out = YGUtils::truncate (aTests[i].in, aTests[i].length, aTests[i].pos);
 		if (out != aTests[i].out) {
 			fprintf (stderr, "Mis-converted entry %d truncate '%s' should be '%s'\n",
 				 i, out.c_str(), aTests[i].out);

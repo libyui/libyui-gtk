@@ -41,7 +41,7 @@ std::string size_stdform (YFileSize_t size)
 class YGProgressBar : public YProgressBar, public YGLabeledWidget
 {
 public:
-	YGProgressBar (YWidget *parent, const string &label, int maxValue)
+	YGProgressBar (YWidget *parent, const std::string &label, int maxValue)
 	: YProgressBar (NULL, label, maxValue)
 		// NOTE: its label widget is positionated at the vertical, because its label
 		// may change often and so will its size, which will look odd (we may want
@@ -69,7 +69,7 @@ public:
 	YGLABEL_WIDGET_IMPL (YProgressBar)
 };
 
-YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const string &label,
+YProgressBar *YGWidgetFactory::createProgressBar (YWidget *parent, const std::string &label,
                                                   int maxValue)
 {
 	return new YGProgressBar (parent, label, maxValue);
@@ -82,8 +82,8 @@ class YGDownloadProgress : public YDownloadProgress, public YGLabeledWidget
 guint timeout_id;
 
 public:
-	YGDownloadProgress (YWidget *parent, const string &label,
-	                    const string &filename, YFileSize_t expectedFileSize)
+	YGDownloadProgress (YWidget *parent, const std::string &label,
+	                    const std::string &filename, YFileSize_t expectedFileSize)
 	: YDownloadProgress (NULL, label, filename, expectedFileSize)
 	, YGLabeledWidget (this, parent, label, YD_HORIZ, GTK_TYPE_PROGRESS_BAR, NULL)
 	{
@@ -120,7 +120,7 @@ public:
 };
 
 YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *parent,
-		const string &label, const string &filename, YFileSize_t expectedFileSize)
+		const std::string &label, const std::string &filename, YFileSize_t expectedFileSize)
 { return new YGDownloadProgress (parent, label, filename, expectedFileSize); }
 
 #include "ygtkratiobox.h"
@@ -129,7 +129,7 @@ YDownloadProgress *YGOptionalWidgetFactory::createDownloadProgress (YWidget *par
 class YGMultiProgressMeter : public YMultiProgressMeter, public YGWidget
 {
 public:
-	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const vector <float> &maxValues)
+	YGMultiProgressMeter (YWidget *parent, YUIDimension dim, const std::vector <float> &maxValues)
 	: YMultiProgressMeter (NULL, dim, maxValues)
 	, YGWidget (this, parent,
 	            horizontal() ? YGTK_TYPE_RATIO_HBOX : YGTK_TYPE_RATIO_VBOX, NULL)
@@ -183,7 +183,7 @@ public:
 };
 
 YMultiProgressMeter *YGOptionalWidgetFactory::createMultiProgressMeter (YWidget *parent,
-		YUIDimension dim, const vector <float> &maxValues)
+		YUIDimension dim, const std::vector <float> &maxValues)
 { return new YGMultiProgressMeter (parent, dim, maxValues); }
 
 #include "YBusyIndicator.h"
@@ -201,7 +201,7 @@ guint pulse_timeout_id;
 int alive_timeout;
 
 public:
-	YGBusyIndicator (YWidget *parent, const string &label, int timeout)
+	YGBusyIndicator (YWidget *parent, const std::string &label, int timeout)
 	: YBusyIndicator (NULL, label, timeout)
 	, YGLabeledWidget (this, parent, label, YD_VERT,
 	                   GTK_TYPE_PROGRESS_BAR, "pulse-step", PULSE_STEP, NULL)
@@ -252,6 +252,6 @@ public:
 	YGLABEL_WIDGET_IMPL (YBusyIndicator)
 };
 
-YBusyIndicator *YGWidgetFactory::createBusyIndicator (YWidget *parent, const string &label, int timeout)
+YBusyIndicator *YGWidgetFactory::createBusyIndicator (YWidget *parent, const std::string &label, int timeout)
 { return new YGBusyIndicator (parent, label, timeout); }
 

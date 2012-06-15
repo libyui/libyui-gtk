@@ -62,11 +62,11 @@ public:
 	}
 
 	// YRadioButton
-	virtual void setLabel (const string &text)
+	virtual void setLabel (const std::string &text)
 	{
 		// NOTE: we can't just set a gtk_widget_modify() at the initialization
 		// because each gtk_button_set_label() creates a new label
-		string str = YGUtils::mapKBAccel(text.c_str());
+		std::string str = YGUtils::mapKBAccel(text.c_str());
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YRadioButton::setLabel (text);
 	}
@@ -97,7 +97,7 @@ public:
 	}
 };
 
-YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const string &label,
+YRadioButton *YGWidgetFactory::createRadioButton (YWidget *parent, const std::string &label,
                                                   bool isChecked)
 {
 	YRadioButton *button = new YGRadioButton (parent, label, isChecked);
@@ -135,7 +135,7 @@ class YGCheckBox : public YCheckBox, public YGWidget
 	bool m_isBold;
 
 public:
-	YGCheckBox(YWidget *parent, const string &label, bool isChecked)
+	YGCheckBox(YWidget *parent, const std::string &label, bool isChecked)
 	:  YCheckBox (NULL, label),
 	   YGWidget (this, parent, GTK_TYPE_CHECK_BUTTON, NULL)
 	{
@@ -149,9 +149,9 @@ public:
 	}
 
 	// YCheckButton
-	virtual void setLabel (const string &text)
+	virtual void setLabel (const std::string &text)
 	{
-		string str = YGUtils::mapKBAccel(text);
+		std::string str = YGUtils::mapKBAccel(text);
 		gtk_button_set_label (GTK_BUTTON (getWidget()), str.c_str());
 		YCheckBox::setLabel (text);
 	}
@@ -196,7 +196,7 @@ public:
 	YGWIDGET_IMPL_USE_BOLD (YCheckBox)
 };
 
-YCheckBox *YGWidgetFactory::createCheckBox (YWidget *parent, const string &label,
+YCheckBox *YGWidgetFactory::createCheckBox (YWidget *parent, const std::string &label,
                                             bool isChecked)
 { return new YGCheckBox (parent, label, isChecked); }
 

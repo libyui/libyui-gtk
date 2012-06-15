@@ -21,7 +21,7 @@ static inline bool endsWith (const std::string &str1, const char *str2)
 class YGImage : public YImage, public YGWidget
 {
 public:
-	YGImage (YWidget *parent, const string &filename, bool animated)
+	YGImage (YWidget *parent, const std::string &filename, bool animated)
 	: YImage (NULL, filename, animated),
 	  YGWidget (this, parent, YGTK_TYPE_IMAGE, NULL)
 	{
@@ -58,6 +58,6 @@ public:
 	YGWIDGET_IMPL_COMMON (YImage)
 };
 
-YImage *YGWidgetFactory::createImage (YWidget *parent, const string &filename, bool animated)
+YImage *YGWidgetFactory::createImage (YWidget *parent, const std::string &filename, bool animated)
 { return new YGImage (parent, filename, animated); }
 

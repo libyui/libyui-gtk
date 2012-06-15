@@ -13,7 +13,7 @@ class YGSpinBox : public YGLabeledWidget
 	GtkWidget *m_spiner, *m_slider;
 
 public:
-	YGSpinBox (YWidget *ywidget, YWidget *parent, const string &label,
+	YGSpinBox (YWidget *ywidget, YWidget *parent, const std::string &label,
 	           int minValue, int maxValue, int initialValue, bool show_slider)
 	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ,
 	                   GTK_TYPE_HBOX, "spacing", 6, NULL)
@@ -102,7 +102,7 @@ public:
 class YGIntField : public YIntField, public YGSpinBox
 {
 public:
-	YGIntField (YWidget *parent, const string &label, int minValue, int maxValue,
+	YGIntField (YWidget *parent, const std::string &label, int minValue, int maxValue,
 	            int initialValue)
 	: YIntField (NULL, label, minValue, maxValue)
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, false)
@@ -112,7 +112,7 @@ public:
 	YGSPIN_BOX_IMPL (YIntField)
 };
 
-YIntField *YGWidgetFactory::createIntField (YWidget *parent, const string &label,
+YIntField *YGWidgetFactory::createIntField (YWidget *parent, const std::string &label,
                                             int minValue, int maxValue, int initialValue)
 { return new YGIntField (parent, label, minValue, maxValue, initialValue); }
 
@@ -121,7 +121,7 @@ YIntField *YGWidgetFactory::createIntField (YWidget *parent, const string &label
 class YGSlider : public YSlider, public YGSpinBox
 {
 public:
-	YGSlider (YWidget *parent, const string &label, int minValue, int maxValue,
+	YGSlider (YWidget *parent, const std::string &label, int minValue, int maxValue,
 	          int initialValue)
 	: YSlider (NULL, label, minValue, maxValue)
 	, YGSpinBox (this, parent, label, minValue, maxValue, initialValue, true)
@@ -134,7 +134,7 @@ public:
 	YGSPIN_BOX_IMPL (YSlider)
 };
 
-YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const string &label,
+YSlider *YGOptionalWidgetFactory::createSlider (YWidget *parent, const std::string &label,
                                                 int minValue, int maxValue, int initialValue)
 { return new YGSlider (parent, label, minValue, maxValue, initialValue); }
 

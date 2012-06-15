@@ -13,7 +13,7 @@
 class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionStore
 {
 	public:
-		YGComboBox (YWidget *parent, const string &label, bool editable)
+		YGComboBox (YWidget *parent, const std::string &label, bool editable)
 		: YComboBox (NULL, label, editable),
 		  YGLabeledWidget (this, parent, label, YD_HORIZ,
                                    GTK_TYPE_COMBO_BOX, "has-entry", editable ? TRUE : FALSE, NULL),
@@ -120,7 +120,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 		gtk_entry_set_width_chars (getEntry(), length);
 	}
 
-	virtual void setValidChars (const string &validChars)
+	virtual void setValidChars (const std::string &validChars)
 	{
 		YComboBox::setValidChars (validChars);
 		YGUtils::setFilter (getEntry(), validChars);
@@ -134,7 +134,7 @@ class YGComboBox : public YComboBox, public YGLabeledWidget, public YGSelectionS
 	YGSELECTION_WIDGET_IMPL (YComboBox)
 };
 
-YComboBox *YGWidgetFactory::createComboBox (YWidget *parent, const string &label, bool editable)
+YComboBox *YGWidgetFactory::createComboBox (YWidget *parent, const std::string &label, bool editable)
 {
 	return new YGComboBox (parent, label, editable);
 }

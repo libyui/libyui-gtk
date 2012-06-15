@@ -62,8 +62,8 @@ public:
 	GtkWidget *m_scale, *m_free_spin, *m_new_spin;
 
 	YGPartitionSplitter (YWidget *parent, int usedSize, int totalFreeSize, int newPartSize,
-		int minNewPartSize, int minFreeSize, const string &usedLabel, const string &freeLabel,
-		const string &newPartLabel, const string &freeFieldLabel, const string &newPartFieldLabel)
+		int minNewPartSize, int minFreeSize, const std::string &usedLabel, const std::string &freeLabel,
+		const std::string &newPartLabel, const std::string &freeFieldLabel, const std::string &newPartFieldLabel)
 	: YPartitionSplitter (NULL, usedSize, totalFreeSize, newPartSize, minNewPartSize,
 		minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel, newPartFieldLabel)
 	, YGWidget (this, parent, GTK_TYPE_VBOX, NULL)
@@ -161,9 +161,9 @@ public:
 
 YPartitionSplitter *YGOptionalWidgetFactory::createPartitionSplitter (YWidget *parent,
 		int usedSize, int totalFreeSize, int newPartSize, int minNewPartSize,
-		int minFreeSize, const string &usedLabel, const string &freeLabel,
-		const string &newPartLabel, const string &freeFieldLabel,
-		const string &newPartFieldLabel)
+		int minFreeSize, const std::string &usedLabel, const std::string &freeLabel,
+		const std::string &newPartLabel, const std::string &freeFieldLabel,
+		const std::string &newPartFieldLabel)
 {
 	return new YGPartitionSplitter (parent, usedSize, totalFreeSize, newPartSize,
 		minNewPartSize, minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel,

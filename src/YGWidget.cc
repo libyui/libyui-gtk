@@ -270,7 +270,7 @@ void YGLabeledWidget::setBuddy (GtkWidget *widget)
 void YGLabeledWidget::doSetLabel (const std::string &label)
 {
 	if (!label.empty()) {
-		string str (YGUtils::mapKBAccel (label));
+		std::string str (YGUtils::mapKBAccel (label));
 
 		// add a ':' at the end of the label, if not set
 		if (!str.empty()) {
@@ -298,7 +298,7 @@ void YGLabeledWidget::doSetLabel (const std::string &label)
 
 YGScrolledWidget::YGScrolledWidget (YWidget *ywidget, YWidget *parent,
                                     GType type, const char *property_name, ...)
-	: YGLabeledWidget (ywidget, parent, string(), YD_VERT,
+	: YGLabeledWidget (ywidget, parent, std::string(), YD_VERT,
 	                   GTK_TYPE_SCROLLED_WINDOW, "shadow-type", GTK_SHADOW_IN, NULL)
 {
 	va_list args;

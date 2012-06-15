@@ -71,7 +71,7 @@ extern "C" {
 class YGFrame : public YFrame, public YGBaseFrame
 {
 public:
-	YGFrame (YWidget *parent, const string &label)
+	YGFrame (YWidget *parent, const std::string &label)
 	: YFrame (NULL, label),
 	  YGBaseFrame (this, parent)
 	{
@@ -87,10 +87,10 @@ public:
 	}
 
 	// YFrame
-	virtual void setLabel (const string &_str)
+	virtual void setLabel (const std::string &_str)
 	{
 		GtkWidget *label = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
-		string str (YGUtils::mapKBAccel (_str));
+		std::string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (GTK_LABEL (label), str.c_str());
 		YFrame::setLabel (_str);
 	}
@@ -98,12 +98,12 @@ public:
 	YGWIDGET_IMPL_CONTAINER (YFrame)
 
 	// YGWidget
-	virtual string getDebugLabel() const
+	virtual std::string getDebugLabel() const
 	{ return label(); }
 };
 
 
-YFrame *YGWidgetFactory::createFrame (YWidget *parent, const string &label)
+YFrame *YGWidgetFactory::createFrame (YWidget *parent, const std::string &label)
 { return new YGFrame (parent, label); }
 
 #include "YCheckBoxFrame.h"
@@ -111,7 +111,7 @@ YFrame *YGWidgetFactory::createFrame (YWidget *parent, const string &label)
 class YGCheckBoxFrame : public YCheckBoxFrame, public YGBaseFrame
 {
 public:
-	YGCheckBoxFrame (YWidget *parent, const string &label, bool checked)
+	YGCheckBoxFrame (YWidget *parent, const std::string &label, bool checked)
 	: YCheckBoxFrame (NULL, label, checked),
 	  YGBaseFrame (this, parent)
 	{
@@ -127,12 +127,12 @@ public:
 	}
 
 	// YCheckBoxFrame
-	virtual void setLabel (const string &_str)
+	virtual void setLabel (const std::string &_str)
 	{
 		GtkWidget *button = gtk_frame_get_label_widget (GTK_FRAME (getWidget()));
 		GtkLabel *label = GTK_LABEL (gtk_bin_get_child(GTK_BIN (button)));
 
-		string str (YGUtils::mapKBAccel (_str));
+		std::string str (YGUtils::mapKBAccel (_str));
 		gtk_label_set_text_with_mnemonic (label, str.c_str());
 		YCheckBoxFrame::setLabel (_str);
 	}
@@ -177,6 +177,6 @@ private:
 };
 
 YCheckBoxFrame *YGWidgetFactory::createCheckBoxFrame (
-	YWidget *parent, const string &label, bool checked)
+	YWidget *parent, const std::string &label, bool checked)
 { return new YGCheckBoxFrame (parent, label, checked); }
 
