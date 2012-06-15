@@ -5,7 +5,7 @@
 #ifndef YGUI_H
 #define YGUI_H
 
-#include "Libyui_config.h"
+#include <yui/Libyui_config.h>
 #include <YUI.h>
 #define YUILogComponent "gtk"
 #include <YUILog.h>

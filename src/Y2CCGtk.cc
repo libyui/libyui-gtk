@@ -2,7 +2,7 @@
  *           YaST2-GTK - http://en.opensuse.org/YaST2-GTK           *
  ********************************************************************/
 
-#include <Libyui_config.h>
+#include <yui/Libyui_config.h>
 #include <YGUI.h>
 #include <YGi18n.h>
 

@@ -5,7 +5,7 @@
 /* YGtkImage widget */
 // check the header file for information about this widget
 
-#include <Libyui_config.h>
+#include <yui/Libyui_config.h>
 #include "ygdkmngloader.h"
 #include "ygtkimage.h"
 #include <gtk/gtk.h>

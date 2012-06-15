@@ -6,7 +6,7 @@
  */
 
 #define YUILogComponent "gtk"
-#include "Libyui_config.h"
+#include <yui/Libyui_config.h>
 #include <string.h>
 #include "YGUtils.h"
 #include "YGUI.h"
