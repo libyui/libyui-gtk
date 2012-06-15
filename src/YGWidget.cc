@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include <stdarg.h>
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -193,10 +193,8 @@ void YGWidget::emitEvent (YEvent::EventReason reason, EventFlags flags)
 		}
 	};
 
-#if YAST2_VERSION > 2018003
 	if (reason == YEvent::ContextMenuActivated && !m_ywidget->notifyContextMenu())
 		;  // cancel
-#endif
 	if (flags & IGNORE_NOTIFY_EVENT || m_ywidget->notify()) {
 		YWidgetEvent *event = new YWidgetEvent (m_ywidget, reason);
 		if (flags & DELAY_EVENT)

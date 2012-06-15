@@ -5,7 +5,7 @@
 #ifndef YGUI_H
 #define YGUI_H
 
-#include "config.h"
+#include "Libyui_config.h"
 #include <YUI.h>
 #define YUILogComponent "gtk"
 #include <YUILog.h>
@@ -85,15 +85,7 @@ class YGWidgetFactory : public YWidgetFactory
 	virtual YRadioButton *createRadioButton (YWidget *parent, const std::string &label, bool isChecked);
     virtual YComboBox *createComboBox (YWidget *parent, const std::string & label, bool editable);
 	virtual YSelectionBox *createSelectionBox (YWidget *parent, const std::string &label);
-#if YAST2_VERSION >= 2020003
 	virtual YTree *createTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection);
-#else
-#if YAST2_VERSION >= 2019002
-	virtual YTree *createTree (YWidget *parent, const std::string &label, bool multiselection);
-#else
-	virtual YTree *createTree (YWidget *parent, const std::string &label);
-#endif
-#endif
 	virtual YTable *createTable (YWidget *parent, YTableHeader *headers, bool multiSelection);
 	virtual YProgressBar *createProgressBar	(YWidget *parent, const std::string &label, int maxValue);
 	virtual YBusyIndicator *createBusyIndicator (YWidget *parent, const std::string &label, int timeout);

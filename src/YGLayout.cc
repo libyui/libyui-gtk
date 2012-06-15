@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
 
@@ -90,7 +90,6 @@ public:
 YLayoutBox *YGWidgetFactory::createLayoutBox (YWidget *parent, YUIDimension dimension)
 { return new YGLayoutBox (parent, dimension); }
 
-#if YAST2_VERSION >= 2017006
 #include <YButtonBox.h>
 
 class YGButtonBox : public YButtonBox, public YGWidget
@@ -121,8 +120,6 @@ public:
 
 YButtonBox *YGWidgetFactory::createButtonBox (YWidget *parent)
 { return new YGButtonBox (parent); }
-
-#endif
 
 #include <YAlignment.h>
 

@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include "YGUI.h"
 #include <YPushButton.h>
 #include "YGUtils.h"
@@ -47,7 +47,6 @@ public:
 				case 10: stock = GTK_STOCK_OK; break;  // Next/Finish/OK
 				default: break;
 			}
-#if YAST2_VERSION >= 2017006
 			switch (role()) {
 				case YOKButton:     stock = GTK_STOCK_OK; break;
 				case YApplyButton:  stock = GTK_STOCK_APPLY; break;
@@ -55,7 +54,6 @@ public:
 				case YHelpButton:   stock = GTK_STOCK_HELP; break;
 				case YCustomButton: case YMaxButtonRole: break;
 			}
-#endif
 			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, stock);
 		}
 	}
@@ -69,14 +67,12 @@ public:
 		setStockIcon (str);
 	}
 
-#if YAST2_VERSION >= 2017006
 	virtual void setRole (YButtonRole role)
 	{
 		YPushButton::setRole (role);
 		if (!m_labelIcon && role != YCustomButton)  // to avoid duplications
 			setStockIcon (label());
 	}
-#endif
 
 	virtual void setFunctionKey (int key)
 	{

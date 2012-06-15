@@ -9,7 +9,7 @@
   Textdomain "gtk"
  */
 
-#include <config.h>
+#include <Libyui_config.h>
 #include "ygtkwizard.h"
 #include <atk/atk.h>
 #include <gtk/gtk.h>

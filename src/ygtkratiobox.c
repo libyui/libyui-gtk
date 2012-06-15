@@ -5,7 +5,7 @@
 /* YGtkRatioBox container */
 // check the header file for information about this container
 
-#include <config.h>
+#include <Libyui_config.h>
 #include <math.h>
 #include "ygtkratiobox.h"
 

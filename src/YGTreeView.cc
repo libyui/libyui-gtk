@@ -7,7 +7,7 @@
 
 #include "YGi18n.h"
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -656,21 +656,10 @@ YMultiSelectionBox *YGWidgetFactory::createMultiSelectionBox (YWidget *parent, c
 class YGTree : public YTree, public YGTreeView
 {
 public:
-#if YAST2_VERSION >= 2020003
 	YGTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection)
 	: YTree (NULL, label, multiselection, recursiveSelection),
-#else
-#if YAST2_VERSION >= 2019002
-	YGTree (YWidget *parent, const std::string &label, bool multiselection)
-	: YTree (NULL, label, multiselection),
-#else
-	YGTree (YWidget *parent, const std::string &label)
-	: YTree (NULL, label),
-#endif
-#endif
 	  YGTreeView (this, parent, label, true)
 	{
-#if YAST2_VERSION >= 2019002
 		if (multiselection) {
 			GType types [3] = { GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_BOOLEAN };
 			addCheckColumn (2);
@@ -679,7 +668,6 @@ public:
 			addCountWidget (parent);
 		}
 		else
-#endif
 		{
 			GType types [2] = { GDK_TYPE_PIXBUF, G_TYPE_STRING };
 			addTextColumn (0, 1);
@@ -691,9 +679,7 @@ public:
 		g_signal_connect (getWidget(), "row-expanded", G_CALLBACK (row_expanded_cb), this);
 	}
 
-#if YAST2_VERSION >= 2020003
 	virtual bool _recursiveSelection() { return recursiveSelection(); }
-#endif
 
 	void addNode (YItem *item, GtkTreeIter *parent)
 	{
@@ -702,15 +688,11 @@ public:
 		setRowText (&iter, 0, item->iconName(), 1, item->label(), this);
 #if 0  // yast2-qt ignores `selected flag
 		if (item->selected()) {
-#if YAST2_VERSION >= 2019002
 			if (hasMultiSelection())
 				setRowMark (&iter, 2, item->selected());
 			else
-#endif
 				focusItem (item, true);
 		}
-#endif
-#if 0
 		if (((YTreeItem *) item)->isOpen())
 			expand (&iter);
 #endif
@@ -793,29 +775,21 @@ public:
 
 	void doSelectItem (YItem *item, bool select)
 	{
-#if YAST2_VERSION >= 2019002
 		if (hasMultiSelection()) {
-#if YAST2_VERSION >= 2020003
 			_markItem (item, select, recursiveSelection());
-#else
-			_markItem (item, select, false);
-#endif
 			syncCount();
 		}
 		else
-#endif
 			focusItem (item, select);
 	}
 
 	void doDeselectAllItems()
 	{
-#if YAST2_VERSION >= 2019002
 		if (hasMultiSelection()) {
 			unmarkAll();
 			syncCount();
 		}
 		else
-#endif
 			unfocusAllItems();
 	}
 
@@ -855,16 +829,6 @@ public:
 	YGSELECTION_WIDGET_IMPL (YTree)
 };
 
-#if YAST2_VERSION >= 2020003
 YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label, bool multiselection, bool recursiveSelection)
 { return new YGTree (parent, label, multiselection, recursiveSelection); }
-#else
-#if YAST2_VERSION >= 2019002
-YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label, bool multiselection)
-{ return new YGTree (parent, label, multiselection); }
-#else
-YTree *YGWidgetFactory::createTree (YWidget *parent, const std::string &label)
-{ return new YGTree (parent, label); }
-#endif
-#endif
 

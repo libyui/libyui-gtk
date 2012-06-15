@@ -1,7 +1,4 @@
 SET( ${TARGETLIB}_SOURCES
-  dummy.cc
-  test.cc
-  Y2CCGtk.cc
   YGBarGraph.cc
   YGComboBox.cc
   YGDialog.cc

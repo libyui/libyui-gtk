@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
@@ -88,7 +88,6 @@ public:
 YMenuButton *YGWidgetFactory::createMenuButton (YWidget *parent, const std::string &label)
 { return new YGMenuButton (parent, label); }
 
-#if YAST2_VERSION > 2018003
 #include <YContextMenu.h>
 
 class YGContextMenu : public YContextMenu, public YGWidget
@@ -141,5 +140,4 @@ bool YGApplication::openContextMenu (const YItemCollection &itemCollection)
 	menu->addItems (itemCollection);
 	return true;
 }
-#endif
 

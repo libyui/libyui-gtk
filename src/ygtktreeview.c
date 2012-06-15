@@ -8,7 +8,7 @@
   Textdomain "gtk"
  */
 
-#include <config.h>
+#include <Libyui_config.h>
 #include "ygtktreeview.h"
 #include <gtk/gtk.h>
 #define YGI18N_C

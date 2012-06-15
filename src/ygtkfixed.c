@@ -5,7 +5,7 @@
 /* YGtkFixed container */
 // check the header file for information about this container
 
-#include <config.h>
+#include <Libyui_config.h>
 #include <math.h>
 #include <gtk/gtk.h>
 #include "ygtkfixed.h"

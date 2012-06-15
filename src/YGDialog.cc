@@ -3,13 +3,11 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include "config.h"
+#include "Libyui_config.h"
 #include "YGUI.h"
 #include "YGDialog.h"
 #include "YGUtils.h"
-#if YAST2_VERSION >= 2017006
 #include <YDialogSpy.h>
-#endif
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 #include <string.h>
