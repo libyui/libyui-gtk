@@ -38,7 +38,11 @@ public:
 
 	static GdkRGBA ycolorToGdk (const YColor &ycolor)
 	{
-		GdkRGBA color = { 0, guint16(ycolor.red() << 8), guint16(ycolor.green() << 8), guint16(ycolor.blue() << 8) };
+		GdkRGBA color = { 0,
+				  static_cast<gdouble> ( guint16(ycolor.red() << 8 ) ),
+				  static_cast<gdouble> ( guint16(ycolor.green() << 8 ) ),
+				  static_cast<gdouble> ( guint16(ycolor.blue() << 8 ) )
+				};
 		return color;
 	}
 
