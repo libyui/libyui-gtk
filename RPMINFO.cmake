@@ -9,6 +9,6 @@ SET( SPEC_BuildRequires		"cmake >= 2.8" "gcc-c++" "gtk3-devel" "gdk-pixbuf-devel
 SET( SPEC_Conflicts		"" )
 SET( SPEC_Provides		"yast2_ui" "yast2-ui-gtk" )
 SET( SPEC_Obsoletes		"" )
+SET( SPEC_Docs                  "%doc %dir %{_docdir}/@PROJECTNAME@@SONAME_MAJOR@\n%doc %{_docdir}/@PROJECTNAME@@SONAME_MAJOR@/COPYING*" )
 SET( SPEC_DEVEL_Requires	"@PROJECTNAME@@@varpfx@_SONAME_MAJOR@ = %{version}" )
 SET( SPEC_DEVEL_Provides	"pkgconfig(@PROJECTNAME@) = %{version}" )
-SET( SPEC_DEVEL_Docs		"%doc %{_docdir}/@PROJECTNAME@" )
