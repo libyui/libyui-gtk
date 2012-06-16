@@ -21,9 +21,10 @@ Summary:	@SPEC_Summary@
 
 Group:		System/Libraries
 
-@Conflicts@
+@Requires@
 @Provides@
 @Obsoletes@
+@Conflicts@
 URL:		@SPEC_Url@
 Summary:	@PROJECTNAME_UC@ - @SPEC_Summary@
 
@@ -61,14 +62,12 @@ cd build
 
 %if %{?_with_debug:1}%{!?_with_debug:0}
 cmake .. \
-	-DENABLE_WERROR=OFF \
 	-DPREFIX=%{_prefix} \
 	-DDOC_DIR=%{_docdir} \
 	-DLIB_DIR=%{_lib} \
 	-DCMAKE_BUILD_TYPE=RELWITHDEBINFO
 %else
 cmake .. \
-	-DENABLE_WERROR=OFF \
 	-DPREFIX=%{_prefix} \
 	-DDOC_DIR=%{_docdir} \
 	-DLIB_DIR=%{_lib} \
