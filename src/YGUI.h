@@ -6,10 +6,10 @@
 #define YGUI_H
 
 #include <yui/Libyui_config.h>
-#include <YUI.h>
+#include <yui/YUI.h>
 #define YUILogComponent "gtk"
-#include <YUILog.h>
-#include <YSimpleEventHandler.h>
+#include <yui/YUILog.h>
+#include <yui/YSimpleEventHandler.h>
 #include <map>
 #include <gtk/gtk.h>
 

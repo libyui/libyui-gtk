@@ -12,7 +12,7 @@
 #define YGDK_MNG_PIXBUF_H
 
 #define GDK_PIXBUF_ENABLE_BACKEND
-#include <gdk-pixbuf/gdk-pixbuf-animation.h>
+#include "gdk-pixbuf/gdk-pixbuf-animation.h"
 G_BEGIN_DECLS
 
 #define YGDK_TYPE_MNG_PIXBUF            (ygdk_mng_pixbuf_get_type ())
