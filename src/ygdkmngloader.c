@@ -124,8 +124,7 @@ gboolean ygdk_mng_pixbuf_is_data_mng (const guint8 *raw_data, long size)
 	return read_signature (&data);
 }
 
-#define SET_ERROR(msg) {
-	g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
+#define SET_ERROR(msg) {g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg);}
 
 GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
                                                    GError **error_msg)
