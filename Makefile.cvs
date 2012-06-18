@@ -7,7 +7,9 @@ all: configure
 configure: clean
 	mkdir build ; \
 	cd build ; \
-	cmake -DCMAKE_BUILD_TYPE=RELEASE ..
+	cmake .. \
+	-DENABLE_WERROR=OFF \
+	-DCMAKE_BUILD_TYPE=RELEASE
 
 install: configure
 	cd build ; \
