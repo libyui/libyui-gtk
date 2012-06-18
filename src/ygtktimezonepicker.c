@@ -11,7 +11,9 @@
 #include <string.h>
 #include <math.h>
 
-#define M_PI        acos (-1.0)
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#endif
 
 static guint zone_clicked_signal;
 
