@@ -32,6 +32,11 @@ ENDMACRO( SET_OPTIONS )
 
 MACRO( SET_BUILD_FLAGS )	# setup compiler-flags depending on CMAKE_BUILD_TYPE
 
+  IF( NOT USE_C_STD )
+    SET( USE_C_STD "gnu99" )
+    MESSAGE( STATUS "USE_C_STD not set, defaulting to ${USE_C_STD}" )
+  ENDIF( NOT USE_C_STD )
+
   SET( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined" )
 
   STRING( STRIP "${CMAKE_CXX_FLAGS}" CMAKE_CXX_FLAGS )
@@ -39,7 +44,7 @@ MACRO( SET_BUILD_FLAGS )	# setup compiler-flags depending on CMAKE_BUILD_TYPE
   STRING( STRIP "${CMAKE_CXX_FLAGS}" CMAKE_CXX_FLAGS )
 
   STRING( STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fmessage-length=0" )
+  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=${USE_C_STD} -fmessage-length=0" )
   STRING( STRIP "${CMAKE_C_FLAGS}" CMAKE_C_FLAGS )
 
   IF( ENABLE_DEBUG )
