@@ -252,8 +252,7 @@ private:
 				    return TRUE;
 				case GDK_KEY_X:
 				    yuiMilestone() << "Starting xterm\n";
-				    (void) system ("/usr/bin/xterm &");
-				    return TRUE;
+				    return ( ! system ("/usr/bin/xterm &") );
 				case GDK_KEY_Y:
 					yuiMilestone() << "Opening dialog spy" << std::endl;
 					YDialogSpy::showDialogSpy();
