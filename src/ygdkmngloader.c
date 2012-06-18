@@ -134,7 +134,10 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 	FILE *file = fopen (filename, "rb");
 	if (!file) {
 		error = TRUE;
+		if ( error )
+		{
 		SET_ERROR ("Could not open specified file")
+		}
 		return NULL;
 	}
 
