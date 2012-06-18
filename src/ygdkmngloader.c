@@ -124,18 +124,16 @@ gboolean ygdk_mng_pixbuf_is_data_mng (const guint8 *raw_data, long size)
 	return read_signature (&data);
 }
 
-#define SET_ERROR(msg) { error = TRUE; \
-	g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
+#define SET_ERROR(msg) {g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg);}
 
 GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
                                                    GError **error_msg)
 {
-	gboolean error = FALSE;
 	FILE *file = fopen (filename, "rb");
-	if (!file) {
-		error = TRUE;
-		SET_ERROR ("Could not open specified file")
-		return NULL;
+	if (!file)
+	{
+	  SET_ERROR ("Could not open specified file")
+	  return NULL;
 	}
 
 	fseek (file, 0, SEEK_END);
@@ -154,6 +152,11 @@ GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,
 	fclose (file);
 	return mng_pixbuf;
 }
+
+#undef SET_ERROR
+
+#define SET_ERROR(msg) { error = TRUE; \
+	g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
 
 GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_data (const guint8 *raw_data, long size,
                                                    GError **error_msg)

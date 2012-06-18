@@ -454,7 +454,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title)
 {
 	GtkWindow *parent = YGDialog::currentWindow();
-	const char *button;
+	const char *button = NULL;
 	switch (action) {
 		case GTK_FILE_CHOOSER_ACTION_SAVE:
 			button = GTK_STOCK_SAVE; break;

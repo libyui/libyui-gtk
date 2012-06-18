@@ -237,6 +237,7 @@ private:
 		if ((event->state & GDK_CONTROL_MASK) && (event->state & GDK_SHIFT_MASK)
 		    && (event->state & GDK_MOD1_MASK)) {
 		    yuiMilestone() << "Caught YaST2 magic key combination\n";
+		    int exitCode = 0;
 		    switch (event->keyval) {
 				case GDK_KEY_S:
 				    YGUI::ui()->makeScreenShot();
@@ -252,7 +253,9 @@ private:
 				    return TRUE;
 				case GDK_KEY_X:
 				    yuiMilestone() << "Starting xterm\n";
-				    (void) system ("/usr/bin/xterm &");
+				    exitCode = system ("/usr/bin/xterm &");
+				    if ( exitCode != 0 )
+				      yuiMilestone() << "xterm exited with error-code: " << exitCode << "\n";
 				    return TRUE;
 				case GDK_KEY_Y:
 					yuiMilestone() << "Opening dialog spy" << std::endl;
