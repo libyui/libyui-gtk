@@ -5,9 +5,6 @@
 /* YGdkMngLoader image loader */
 // check the header file for information about this loader
 
-// fileno is POSIX, so enable extensions
-#define _XOPEN_SOURCE 500
-
 #include "ygdkmngloader.h"
 #include <stdio.h>
 #include <string.h>
