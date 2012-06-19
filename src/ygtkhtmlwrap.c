@@ -312,7 +312,7 @@ void ygtk_html_wrap_set_text (GtkWidget *widget, const gchar* text, gboolean pla
 
 void ygtk_html_wrap_scroll (GtkWidget *widget, gboolean top)
 {
-        ygutils_scrollAdj (gtk_text_view_get_vadjustment(GTK_TEXT_VIEW (widget)), top);
+        ygutils_scrollAdj (gtk_scrollable_get_vadjustment (GTK_SCROLLABLE (widget)), top);
 }
 
 gboolean ygtk_html_wrap_search (GtkWidget *widget, const gchar *text)
