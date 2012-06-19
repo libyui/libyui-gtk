@@ -462,6 +462,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 			button = GTK_STOCK_OPEN; break;
 		case GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER:
 		case GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER:
+		default:
 			button = _("Select"); break;
 	}
 	GtkWidget *dialog;

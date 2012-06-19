@@ -21,7 +21,7 @@ public:
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);
 
 		if (show_slider) {
-			m_slider = gtk_hscale_new_with_range (minValue, maxValue, 1);
+			m_slider = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, minValue, maxValue, 1);
 			if (maxValue - minValue < 20)
 				// GtkScale by default uses a step of 10 -- use a lower for low values
 				gtk_range_set_increments (GTK_RANGE (m_slider), 1, 2);

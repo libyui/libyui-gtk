@@ -72,7 +72,7 @@ GtkWidget *ygtk_popup_window_new (GtkWidget *child)
 static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint *y)
 {	// don't let it go outside the screen
 	GtkRequisition req;
-  	gtk_widget_size_request (widget, &req);
+	gtk_widget_get_preferred_size(widget, &req, NULL);
 
 	GdkScreen *screen = gtk_widget_get_screen (widget);
 	gint monitor_num = gdk_screen_get_monitor_at_window (screen, gtk_widget_get_root_window (widget));
@@ -99,12 +99,21 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 	gtk_widget_grab_focus (widget);
 	gtk_widget_show (widget);
 
+	GdkWindow *window = gtk_widget_get_window (widget);
+	GdkDisplay *display = gdk_window_get_display (window);
+	GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
+	GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+
 	// grab this with your teeth
-	if (gdk_pointer_grab (gtk_widget_get_window(widget), TRUE,
+	if (gdk_device_grab (pointer, window, GDK_OWNERSHIP_NONE, TRUE,
 	        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK,
-	        NULL, NULL, activate_time) == 0)
-                if (gdk_keyboard_grab (gtk_widget_get_window(widget), TRUE, activate_time) != 0)
-			gdk_pointer_ungrab (activate_time);
+	        NULL, activate_time) == 0) {
+				GdkDevice *keyboard;
+				keyboard = gdk_device_get_associated_device (pointer);
+                if (gdk_device_grab (keyboard, window, GDK_OWNERSHIP_NONE, TRUE,
+					GDK_KEY_PRESS | GDK_KEY_RELEASE, NULL, activate_time) != 0)
+					gdk_device_ungrab (pointer, activate_time);
+	}
 }
 
 static void ygtk_popup_window_class_init (YGtkPopupWindowClass *klass)
@@ -148,7 +157,7 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 
 	// the popup would look awful if smaller than the button
 	GtkRequisition req;
-	gtk_widget_size_request (button->popup, &req);
+	gtk_widget_get_preferred_size (button->popup, &req, NULL);
 	int popup_width = req.width, popup_height = req.height;
 	if (button_alloc.width > req.width) {
 		gtk_widget_set_size_request (button->popup, button_alloc.width, -1);
@@ -233,7 +242,8 @@ void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
 {
 	if (!button->label) {
 		GtkWidget *hbox, *arrow;
-		hbox = gtk_hbox_new (FALSE, 4);
+		hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
+		gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
 		arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_IN);
 		button->label = gtk_label_new ("");
 		gtk_box_pack_start (GTK_BOX (hbox), button->label, TRUE, TRUE, 0);
