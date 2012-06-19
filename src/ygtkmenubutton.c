@@ -161,7 +161,7 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 
 	// the popup would look awful if smaller than the button
 	GtkRequisition req;
-	gtk_widget_size_request (button->popup, &req);
+	gtk_widget_get_preferred_size (button->popup, &req, NULL);
 	int popup_width = req.width, popup_height = req.height;
 	if (button_alloc.width > req.width) {
 		gtk_widget_set_size_request (button->popup, button_alloc.width, -1);

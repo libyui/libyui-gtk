@@ -114,7 +114,7 @@ void ygtk_rich_text_init (YGtkRichText *rtext)
 	// Init link support
 	GdkDisplay *display = gtk_widget_get_display (widget);
 	rtext->hand_cursor = gdk_cursor_new_for_display (display, GDK_HAND2);
-	gdk_cursor_ref (rtext->hand_cursor);
+	g_object_ref (rtext->hand_cursor);
 
 	gtk_widget_style_get (widget, "link_color", &link_color, NULL);
 	g_signal_connect (tview, "event-after",
@@ -162,7 +162,7 @@ static void ygtk_rich_text_destroy (GtkWidget *widget)
 {
 	// destroy can be called multiple times, and we must ref only once
 	YGtkRichText *rtext = YGTK_RICH_TEXT (widget);
-	gdk_cursor_unref (rtext->hand_cursor);
+	g_object_unref (rtext->hand_cursor);
 	ygtk_rich_text_set_background (rtext, NULL);
 	GTK_WIDGET_CLASS (ygtk_rich_text_parent_class)->destroy(widget);
 }
