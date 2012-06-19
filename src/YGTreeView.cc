@@ -112,7 +112,9 @@ public:
 		bool mainWidget = !yparent || !strcmp (yparent->widgetClass(), "YVBox") || !strcmp (yparent->widgetClass(), "YReplacePoint");
 		if (mainWidget) {
 			m_count = gtk_label_new ("0");
-			GtkWidget *hbox = gtk_hbox_new (FALSE, 4);
+			GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
+			gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
+
 			GtkWidget *label = gtk_label_new (_("Total selected:"));
 			//gtk_box_pack_start (GTK_BOX (hbox), gtk_event_box_new(), TRUE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (hbox), label, FALSE, TRUE, 0);
