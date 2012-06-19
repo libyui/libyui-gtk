@@ -72,7 +72,7 @@ GtkWidget *ygtk_popup_window_new (GtkWidget *child)
 static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint *y)
 {	// don't let it go outside the screen
 	GtkRequisition req;
-  	gtk_widget_size_request (widget, &req);
+	gtk_widget_get_preferred_size(widget, &req, NULL);
 
 	GdkScreen *screen = gtk_widget_get_screen (widget);
 	gint monitor_num = gdk_screen_get_monitor_at_window (screen, gtk_widget_get_root_window (widget));
