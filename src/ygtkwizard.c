@@ -493,18 +493,14 @@ static gboolean ygtk_wizard_header_button_release_event (GtkWidget *widget, GdkE
 
 static gboolean ygtk_wizard_header_motion_notify_event (GtkWidget *widget, GdkEventMotion *event)
 {
-		GdkDisplay       *display;
-		GdkDevice        *pointer;
-		GdkDeviceManager *device_manager;
-
 	if (event->state & GDK_BUTTON1_MASK) {
 		YGtkWizardHeader *header = YGTK_WIZARD_HEADER (widget);
 		gint root_x, root_y, pointer_x, pointer_y;
 		gdk_window_get_root_origin (event->window, &root_x, &root_y);
 
-		display = gdk_window_get_display (event->window);
-		device_manager = gdk_display_get_device_manager (display);
-		pointer = gdk_device_manager_get_client_pointer (device_manager);
+		GdkDisplay *display = gdk_window_get_display (event->window);
+		GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
+		GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
 		gdk_window_get_device_position (event->window, pointer, &pointer_x, &pointer_y, NULL);
 
 		gint x = pointer_x + root_x - header->press_x;

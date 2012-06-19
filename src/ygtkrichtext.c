@@ -171,20 +171,16 @@ static void ygtk_rich_text_destroy (GtkWidget *widget)
 // if there is a link in the given position.
 static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 {
-	GdkWindow        *window;
-	GdkDisplay       *display;
-	GdkDevice        *pointer;
-	GdkDeviceManager *device_manager;
-
 	if (wx == -1) {
 		GtkWidget *widget = GTK_WIDGET (view);
-                GtkAllocation alloc;
-                gtk_widget_get_allocation(widget, &alloc);
+        GtkAllocation alloc;
+        gtk_widget_get_allocation(widget, &alloc);
 
-		window = gtk_widget_get_window (widget);
-		display = gdk_window_get_display (window);
-		device_manager = gdk_display_get_device_manager (display);
-		pointer = gdk_device_manager_get_client_pointer (device_manager);
+		GdkWindow *window = gtk_widget_get_window (widget);
+		GdkDisplay *display = gdk_window_get_display (window);
+		GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
+		GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+
 		gdk_window_get_device_position (window, pointer, &wx, &wy, NULL);
 
 		if (wx < 0 || wy < 0 || wx >= alloc.width ||
