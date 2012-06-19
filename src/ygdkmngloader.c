@@ -5,6 +5,8 @@
 /* YGdkMngLoader image loader */
 // check the header file for information about this loader
 
+#define _XOPEN_SOURCE 500
+
 #include "ygdkmngloader.h"
 #include <stdio.h>
 #include <string.h>
@@ -124,7 +126,8 @@ gboolean ygdk_mng_pixbuf_is_data_mng (const guint8 *raw_data, long size)
 	return read_signature (&data);
 }
 
-#define SET_ERROR(msg) { error = TRUE; \
+// (void) error is to overcome -Werror=unused-but-set-variable
+#define SET_ERROR(msg) { error = TRUE; (void) error; \
 	g_set_error (error_msg, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, msg); }
 
 GdkPixbufAnimation *ygdk_mng_pixbuf_new_from_file (const gchar *filename,

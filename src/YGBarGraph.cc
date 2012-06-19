@@ -79,7 +79,8 @@ public:
 		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize);
 
 		/* Labels over the slider */
-		GtkWidget *labels_box = gtk_hbox_new (FALSE, 0);
+		GtkWidget *labels_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_box_set_homogeneous (GTK_BOX (labels_box), FALSE);
 		gtk_box_pack_start (GTK_BOX (labels_box),
 			gtk_label_new (freeFieldLabel.c_str()), FALSE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (labels_box), gtk_label_new (NULL), TRUE, TRUE, 0);
@@ -87,8 +88,9 @@ public:
 			gtk_label_new (newPartFieldLabel.c_str()), FALSE, TRUE, 0);
 
 		/* Slider and the spinners */
-		GtkWidget *slider_box = gtk_hbox_new (FALSE, 0);
-		m_scale = gtk_hscale_new_with_range ((gdouble) minFreeSize, maxFreeSize(), 1);
+		GtkWidget *slider_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		gtk_box_set_homogeneous (GTK_BOX (slider_box), FALSE);
+		m_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, (gdouble) minFreeSize, maxFreeSize(), 1);
 		gtk_scale_set_draw_value (GTK_SCALE (m_scale), FALSE);
 		m_free_spin = gtk_spin_button_new_with_range
 			(minFreeSize, maxFreeSize(), 1);
