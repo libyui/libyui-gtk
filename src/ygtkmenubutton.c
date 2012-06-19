@@ -99,12 +99,25 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 	gtk_widget_grab_focus (widget);
 	gtk_widget_show (widget);
 
+	GdkWindow        *window;
+	GdkDisplay       *display;
+	GdkDevice        *pointer;
+	GdkDevice        *keyboard;
+	GdkDeviceManager *device_manager;
+
+	window = gtk_widget_get_window (widget);
+	display = gdk_window_get_display (window);
+	device_manager = gdk_display_get_device_manager (display);
+	pointer = gdk_device_manager_get_client_pointer (device_manager);
+
+	keyboard = gdk_device_get_associated_device (pointer);
 	// grab this with your teeth
-	if (gdk_pointer_grab (gtk_widget_get_window(widget), TRUE,
+	if (gdk_device_grab (pointer, window, GDK_OWNERSHIP_NONE, TRUE,
 	        GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_POINTER_MOTION_MASK,
-	        NULL, NULL, activate_time) == 0)
-                if (gdk_keyboard_grab (gtk_widget_get_window(widget), TRUE, activate_time) != 0)
-			gdk_pointer_ungrab (activate_time);
+	        NULL, activate_time) == 0)
+                if (gdk_device_grab (keyboard, window, GDK_OWNERSHIP_NONE, TRUE,
+					GDK_KEY_PRESS | GDK_KEY_RELEASE, NULL, activate_time) != 0)
+					gdk_device_ungrab (pointer, activate_time);
 }
 
 static void ygtk_popup_window_class_init (YGtkPopupWindowClass *klass)
