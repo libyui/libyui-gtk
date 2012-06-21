@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu Jun 21 16:35:10 UTC 2012 - jreidinger@suse.com
+
+- fix bnc#767666 segfault of gtk sw_single during search 
+- remove workaround for forcing old gcc
+
+-------------------------------------------------------------------
 Mon Apr 30 10:25:22 CEST 2012 - tgoettlicher@suse.de
 
 - Fix for bnc #722053 by Michael Meeks
