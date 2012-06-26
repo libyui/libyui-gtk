@@ -16,12 +16,7 @@ BuildRequires:  libzypp-devel >= 6.3.0
 %if 0%{?suse_version} < 1220
 BuildRequires:  libxcrypt-devel
 %endif
-%if 0%{?force_gcc_46}
-BuildRequires:  gcc46
-BuildRequires:  gcc46-c++
-%else
 BuildRequires:  gcc-c++ >= 4.6
-%endif
 
 Requires:       gtk3
 Requires:       yast2-libyui >= 2.18.8
@@ -43,7 +38,8 @@ the X Window System.
 mkdir build
 cd build
 export CFLAGS="$RPM_OPT_FLAGS"
-export CXXFLAGS="$CFLAGS"
+#force to use same c++ standard as yast-core bnc#767666
+export CXXFLAGS="$CFLAGS --std=c++1x"
 cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} \
       -DLIB=%{_lib} \
       -DCMAKE_BUILD_TYPE=Release \
@@ -53,10 +49,6 @@ make %{?_smp_mflags} VERBOSE=1
 
 %install
 cd build
-%if 0%{?force_gcc_46}
-export CC=gcc-4.6
-export CXX=g++-4.6
-%endif
 make install DESTDIR=$RPM_BUILD_ROOT
 cd ..
 
