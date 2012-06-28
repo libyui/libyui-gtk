@@ -39,7 +39,7 @@ mkdir build
 cd build
 export CFLAGS="$RPM_OPT_FLAGS"
 #force to use same c++ standard as yast-core bnc#767666
-export CXXFLAGS="$CFLAGS --std=c++1x"
+export CXXFLAGS="$CFLAGS --std=c++0x"
 cmake -DCMAKE_INSTALL_PREFIX=%{_prefix} \
       -DLIB=%{_lib} \
       -DCMAKE_BUILD_TYPE=Release \
