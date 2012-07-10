@@ -16,6 +16,8 @@ BuildRequires:  gcc-c++
 BuildRequires:  pkg-config
 BuildRequires:  libyui-devel
 BuildRequires:  gtk3-devel
+Provides:	yast2_ui
+
 
 URL:        @URL@
 Summary:    @SUMMARY@
