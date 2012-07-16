@@ -5,7 +5,7 @@
 #include "YGUI.h"
 #include "YGPackageSelectorPluginIf.h"
 
-#define PLUGIN_BASE_NAME "gtk_pkg"
+#define PLUGIN_BASE_NAME "gtk-pkg"
 #include <YPackageSelectorPlugin.h>
 #include <YDialog.h>
 #include <YEvent.h>
