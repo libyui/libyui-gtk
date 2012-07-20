@@ -25,8 +25,8 @@ static std::string askForFileOrDirectory (GtkFileChooserAction action,
 static void errorMsg (const char *msg)
 {
 	GtkWidget* dialog = gtk_message_dialog_new (NULL,
-		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, _("Error"));
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), msg);
+		GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", _("Error"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog), "%s", msg);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 }
@@ -128,7 +128,7 @@ void YGUI::checkInit()
 		else if (!strcmp (argp, "noborder"))
 			m_no_border = true;
 		else if (!strcmp (argp, "help")) {
-			printf (
+			printf ("%s",
 				_("Command line options for the YaST2 UI (GTK plugin):\n\n"
 				"--noborder    no window manager border for main dialogs\n"
 				"--fullscreen  use full screen for main dialogs\n"
@@ -300,7 +300,7 @@ void YGUI::toggleRecordMacro()
 		normalCursor();
 
 		GtkWidget* dialog = gtk_message_dialog_new (NULL,
-			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+			GtkDialogFlags (0), GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s",
 			_("Macro recording done."));
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
