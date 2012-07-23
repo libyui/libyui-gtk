@@ -40,8 +40,8 @@ static void ygtk_link_label_realize (GtkWidget *widget)
 	YGtkLinkLabel *label = YGTK_LINK_LABEL (widget);
 	label->link_window = gdk_window_new (gtk_widget_get_window(widget), &attributes, attributes_mask);
 	gdk_window_set_user_data (label->link_window, widget);
-	GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
-	gdk_window_set_background (label->link_window, &white);
+	GdkRGBA white = { 1, 1, 1, 1 };
+	gdk_window_set_background_rgba(label->link_window, &white);
 	g_object_unref (G_OBJECT(attributes.cursor));
 }
 
