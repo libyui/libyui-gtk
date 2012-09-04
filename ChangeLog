@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Sep  4 14:35:20 CEST 2012 - tgoettlicher@suse.de
+
+- Fixed requirements in doc spec file
+
+-------------------------------------------------------------------
 Mon Apr 30 10:25:22 CEST 2012 - tgoettlicher@suse.de
 
 - Fix for bnc #722053 by Michael Meeks
