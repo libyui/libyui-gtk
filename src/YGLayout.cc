@@ -13,6 +13,7 @@
    have to do any work. */
 
 #include "ygtkfixed.h"
+#include "YGi18n.h"
 
 static void doMoveChild (GtkWidget *fixed, YWidget *ychild, int x, int y)
 {
@@ -152,7 +153,6 @@ public:
 		YAlignment::setBackgroundPixmap (_filename);
 		// YAlignment will prepend a path to the image
 		std::string filename (YAlignment::backgroundPixmap());
-
 		if (m_background_pixbuf)
 			g_object_unref (G_OBJECT (m_background_pixbuf));
 
@@ -169,23 +169,23 @@ public:
 				           filename.c_str(), error->message);
 			else
 				g_signal_connect (G_OBJECT (getWidget()), "draw",
-				                  G_CALLBACK (draw_event_cb), this);
+				                  G_CALLBACK (YGAlignment::draw_event_cb), this);
 		}
 	}
 
-        static gboolean draw_event_cb (GtkWidget *widget, cairo_t *cr, int width, int height,
-	                               YGAlignment *pThis)
-	{
-		gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
-		cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
+  static gboolean draw_event_cb (GtkWidget *widget, cairo_t *cr, YGAlignment *pThis, int width, int height)
+  {
+    gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
+    cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
 
-		cairo_rectangle (cr, 0, 0, width, height);
-		cairo_fill (cr);
+    cairo_rectangle (cr, 0, 0, width, height);
+    cairo_fill (cr);
 
-		gtk_container_propagate_draw (GTK_CONTAINER (widget),
-		                              gtk_bin_get_child(GTK_BIN (widget)), cr);
-		return TRUE;
-	}
+    gtk_container_propagate_draw (GTK_CONTAINER (widget),
+                                  gtk_bin_get_child(GTK_BIN (widget)), cr);
+    
+    return TRUE;
+  }
 };
 
 YAlignment *YGWidgetFactory::createAlignment (YWidget *parent, YAlignmentType halign,
