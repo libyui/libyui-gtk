@@ -91,7 +91,12 @@ public:
 					atk_object_set_role (peer, ATK_ROLE_DIALOG);
 		    }
 		    else {
-		        gtk_window_set_title (window, "YaST");
+						gtk_window_set_title (window, YUI::app()->applicationTitle().c_str());
+						GdkPixbuf *pixbuf = YGUtils::loadPixbuf (YUI::app()->applicationIcon());
+						if (pixbuf) {  // default window icon
+							gtk_window_set_default_icon (pixbuf);
+							g_object_unref (G_OBJECT (pixbuf));
+						}
 		        if (YGUI::ui()->unsetBorder())
 		            gtk_window_set_decorated (window, FALSE);
 		    }

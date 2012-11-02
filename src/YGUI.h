@@ -215,6 +215,14 @@ public:
 #endif
 
 	virtual bool openContextMenu (const YItemCollection &itemCollection);
+	
+	/**
+	 * Set the application title
+	 *
+	 * Reimplemented from YApplication.
+	 **/
+	virtual void setApplicationTitle(const std::string& title);
+
 
 private:
     // for screenshots:
