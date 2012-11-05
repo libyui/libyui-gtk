@@ -598,12 +598,6 @@ long YGApplication::displayColors()
 int YGApplication::defaultWidth() { return MIN (displayWidth(), 1024); }
 int YGApplication::defaultHeight() { return MIN (displayHeight(), 768); }
 
-void YGApplication::setApplicationTitle(const std::string& title)
-{
-	YApplication::setApplicationTitle ( title );
-	
-}
-
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }
 YOptionalWidgetFactory *YGUI::createOptionalWidgetFactory()
