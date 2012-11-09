@@ -215,7 +215,7 @@ public:
 #endif
 
 	virtual bool openContextMenu (const YItemCollection &itemCollection);
-
+	
 private:
     // for screenshots:
     std::map <std::string, int> screenShotNb;
