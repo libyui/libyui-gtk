@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Thu Dec 27 14:49:28 CET 2012 - anaselli@linux.it
+
+- Fixed YGProgressBar setValue to refresh 
+
+-------------------------------------------------------------------
 Fri Nov  2 19:19:27 CET 2012 - anaselli@linux.it
 
 - Used YApplication::applicationTitle() and 

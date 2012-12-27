@@ -56,6 +56,7 @@ public:
 		GtkProgressBar *bar = GTK_PROGRESS_BAR (getWidget());
 		float fraction = CLAMP ((float) value / maxValue(), 0, 1);
 		gtk_progress_bar_set_fraction (bar, fraction);
+		gtk_main_iteration_do(false);
 /*
 		char *text = g_strdup_printf ("%d %%", (int) (fraction*100));
 		gtk_progress_bar_set_text (bar, text);
