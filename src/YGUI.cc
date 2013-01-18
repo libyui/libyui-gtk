@@ -147,6 +147,45 @@ void YGUI::checkInit()
 	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
 		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
 #endif
+    std::string themeSubDir = YSettings::getThemeDir();
+
+    char* st = getenv("Y2STYLE");
+    std::string style = st ? st : "";
+ 
+    if (style.size())
+    {
+      style = themeSubDir + style;
+    }
+    else
+    {
+      style = themeSubDir + "style.css";
+    }
+
+    yuiMilestone() << "Style \"" << style << "\"\n";
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GFile * file = g_file_new_for_path(style.c_str());
+    if (g_file_query_exists(file, NULL))
+    {
+       GError *error = NULL;
+       if (!gtk_css_provider_load_from_file (provider, file, &error))
+       {
+         g_printerr ("%s\n", error->message);
+       }
+       else
+       {
+         GdkDisplay *display = gdk_display_get_default ();
+         GdkScreen *screen = gdk_display_get_default_screen (display);
+
+         gtk_style_context_add_provider_for_screen (screen,
+                                                    GTK_STYLE_PROVIDER (provider),
+                                                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);     
+       }
+    }
+    else
+       yuiMilestone() << "Style \"" << style << "\" not found. Ignoring style\n";
+    
+    g_object_unref (provider);
 
 	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (THEMEDIR "/icons/32x32/apps/yast.png");
 	if (pixbuf) {  // default window icon
