@@ -147,7 +147,7 @@ void YGUI::checkInit()
 	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
 		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
 #endif
-    std::string themeSubDir = YSettings::access()->getThemeDir();
+    std::string themeSubDir = YSettings::getThemeDir();
 
     char* st = getenv("Y2STYLE");
     std::string style = st ? st : "";
