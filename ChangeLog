@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Feb 11 16:53:11 CET 2013 - tgoettlicher@suse.de
+- Fixed window size (bnc #722053)
+- 2.42.3
+
+-------------------------------------------------------------------
 Fri Jan 18 15:13:21 CET 2013 - anaselli@linux.it
 - Added a basic theme management by using css style (style.css)
 
