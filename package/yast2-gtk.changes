@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Feb 12 11:10:04 UTC 2013 - tgoettlicher@suse.de
+
+- backported fix for bnc #722053: Layout issues
+
+-------------------------------------------------------------------
 Thu Jun 21 16:35:10 UTC 2012 - jreidinger@suse.com
 
 - fix bnc#767666 segfault of gtk sw_single during search 
