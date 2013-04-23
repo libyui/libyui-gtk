@@ -110,6 +110,7 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 	ygtk_link_label_ensure_layout (label);
 	requisition->width = requisition->height = 0;
         GtkStyleContext *style_ctx;
+	PangoFontDescription *font_desc;
         style_ctx = gtk_widget_get_style_context(widget);
 //	if (label->text && *label->text)
 	{
@@ -117,7 +118,8 @@ static void ygtk_link_label_size_request (GtkWidget      *widget,
 		PangoFontMetrics *metrics;
 		gint ascent, descent;
 		context = pango_layout_get_context (label->layout);
-		metrics = pango_context_get_metrics (context, gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL),
+		gtk_style_context_get (style_ctx, GTK_STATE_FLAG_NORMAL, "font", &font_desc, NULL);
+		metrics = pango_context_get_metrics (context, font_desc,
 			                                 pango_context_get_language (context));
 		ascent = pango_font_metrics_get_ascent (metrics);
 		descent = pango_font_metrics_get_descent (metrics);
