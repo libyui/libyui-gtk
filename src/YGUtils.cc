@@ -462,8 +462,9 @@ int YGUtils::getCharsWidth (GtkWidget *widget, int chars_nb)
 {
         GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
 	PangoContext *context = gtk_widget_get_pango_context (widget);
-	PangoFontMetrics *metrics = pango_context_get_metrics (context,
-                                                               gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL), NULL);
+	PangoFontDescription *font_desc;
+	gtk_style_context_get (style_ctx, GTK_STATE_FLAG_NORMAL, "font", &font_desc, NULL);
+	PangoFontMetrics *metrics = pango_context_get_metrics (context, font_desc, NULL);
 
 	int width = pango_font_metrics_get_approximate_char_width (metrics);
 	pango_font_metrics_unref (metrics);
@@ -475,8 +476,9 @@ int YGUtils::getCharsHeight (GtkWidget *widget, int chars_nb)
 {
         GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
 	PangoContext *context = gtk_widget_get_pango_context (widget);
-	PangoFontMetrics *metrics = pango_context_get_metrics (context,
-                                                               gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL), NULL);
+	PangoFontDescription *font_desc;
+	gtk_style_context_get (style_ctx, GTK_STATE_FLAG_NORMAL, "font", &font_desc, NULL);
+	PangoFontMetrics *metrics = pango_context_get_metrics (context, font_desc, NULL);
 
 	int height = pango_font_metrics_get_ascent (metrics) +
 	             pango_font_metrics_get_descent (metrics);
@@ -489,7 +491,8 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight we
                              double scale)
 {
         GtkStyleContext *style_ctx = gtk_widget_get_style_context(widget);
-        const PangoFontDescription *font_desc = gtk_style_context_get_font(style_ctx, GTK_STATE_FLAG_NORMAL);
+	PangoFontDescription *font_desc;
+	gtk_style_context_get (style_ctx, GTK_STATE_FLAG_NORMAL, "font", &font_desc, NULL);
 
 	int size = pango_font_description_get_size (font_desc);
 	PangoFontDescription* font = pango_font_description_new();
@@ -497,7 +500,6 @@ void YGUtils::setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight we
 	pango_font_description_set_size   (font, (int)(size * scale));
 	pango_font_description_set_style (font, style);
 	gtk_widget_override_font (widget, font);
-	pango_font_description_free (font);
 }
 
 void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style, PangoWeight weight, double scale)

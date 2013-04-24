@@ -39,7 +39,7 @@ static void select_all_activate_cb (GtkMenuItem *item, GtkTextBuffer *buffer)
 	gtk_text_buffer_select_range (buffer, &start, &end);
 }
 
-static void ygtk_text_view_populate_popup (GtkTextView *view, GtkMenu *menu)
+static void ygtk_text_view_populate_popup (GtkTextView *view, GtkWidget *menu)
 {
 	if (gtk_text_view_get_editable (view))
 		return;
