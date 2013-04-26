@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Apr 26 12:49:33 CEST 2013 - tgoettlicher@suse.de
+
+- fix for bnc #801311: Translation is missing 
+- 2.42.5
+
+-------------------------------------------------------------------
 Wed Apr 24 09:14:01 CEST 2013 - tgoettlicher@suse.de
 
 - GTK compilation fix
