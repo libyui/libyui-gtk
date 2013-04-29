@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Mon Apr 29 08:38:47 CEST 2013 - tgoettlicher@suse.de
+
+- Adapted call for theme dir and locale dir
+- 2.42.5
+
+-------------------------------------------------------------------
 Fri Apr 26 12:49:33 CEST 2013 - tgoettlicher@suse.de
 
 - fix for bnc #801311: Translation is missing 
