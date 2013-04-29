@@ -60,7 +60,7 @@ YGUI::YGUI (bool with_threads)
 
 void YGUI::setTextdomain( const char * domain )
 {
-    bindtextdomain( domain, YSettings::getLocaleDir().c_str() );
+    bindtextdomain( domain, YSettings::localeDir().c_str() );
     bind_textdomain_codeset( domain, "utf8" );
     textdomain( domain );
 
@@ -147,7 +147,7 @@ void YGUI::checkInit()
 	g_log_set_always_fatal (GLogLevelFlags (G_LOG_LEVEL_ERROR|G_LOG_LEVEL_CRITICAL|
 		G_LOG_LEVEL_WARNING| G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_INFO|G_LOG_LEVEL_DEBUG));
 #endif
-    std::string themeSubDir = YSettings::getThemeDir();
+    std::string themeSubDir = YSettings::themeDir();
 
     char* st = getenv("Y2STYLE");
     std::string style = st ? st : "";
