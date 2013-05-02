@@ -111,16 +111,16 @@ struct SuffixFilter : public Ypp::Match {
 
 		GtkWidget *overview = ygtk_html_wrap_new();
 		if (onlineUpdate)
-			ygtk_html_wrap_set_text (overview,
+			ygtk_html_wrap_set_text (overview, _(
 				"<h1><img src=\"gtk-dialog-info\" />Overview</h1>"
 				"<p>Press a patch in the list to see more information about it.</p>"
-				"<p>To install a patch, just click on its \"checkbox\".</p>", FALSE);
+				"<p>To install a patch, just click on its \"checkbox\".</p>"), FALSE);
 		else
-			ygtk_html_wrap_set_text (overview,
+			ygtk_html_wrap_set_text (overview, _(
 				"<h1><img src=\"gtk-dialog-info\" />Overview</h1>"
 				"<p>Browse packages using the groups list on the left.</p>"
 				"<p>Press a package in the list to see more information about it.</p>"
-				"<p>To install or remove a package, just click on its \"checkbox\".</p>", FALSE);
+				"<p>To install or remove a package, just click on its \"checkbox\".</p>"), FALSE);
 
 		m_overview = gtk_scrolled_window_new (NULL, NULL);
 		gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (m_overview),

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu May  2 08:53:36 UTC 2013 - tgoettlicher@suse.com
+
+- Fixed translation (bnc#721389)
+- 2.21.100
+
+-------------------------------------------------------------------
 Fri Mar 16 16:04:55 CET 2012 - tgoettlicher@suse.de
 
 - Fix for bnc #751309: markup of release notes
