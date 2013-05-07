@@ -14,11 +14,11 @@ BuildRequires:  gdk-pixbuf-devel
 %endif
 BuildRequires:  yast2-devtools >= 2.16.3
 BuildRequires:  yast2-libyui-devel >= 2.18.8
-BuildRequires:  libzypp-devel >= 6.3.0 
+BuildRequires:  libzypp-devel >= 9.31.0 
 Requires:       gtk2
 Requires:       yast2-libyui >= 2.18.8
 Requires:       yast2_theme >= 2.16.1
-Requires:  	    libzypp >= 6.3.0 
+Requires:       libzypp >= 9.31.0 
 Provides:       yast2_ui yast2-ui-gtk
 Provides:       yast2_ui_pkg
 Source1:        yast2-gtk-rpmlintrc 

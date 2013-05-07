@@ -10,6 +10,7 @@
 
 #include "YGi18n.h"
 #include "config.h"
+#define WITH_DEPRECATED_HISTORYITEM_API 1
 #include "ygtkpkghistorydialog.h"
 #include "YGDialog.h"
 #include "YGUtils.h"
