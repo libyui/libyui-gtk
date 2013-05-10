@@ -5,6 +5,7 @@
 all: configure
 
 configure: clean
+	./bootstrap.sh ; \
 	mkdir build ; \
 	cd build ; \
 	cmake .. \
@@ -20,4 +21,5 @@ reconf:
 	cmake rebuild_cache
 
 clean:
-	rm -rf build
+	rm -rf build \
+		CMakeLists.txt

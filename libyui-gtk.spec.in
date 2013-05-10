@@ -27,7 +27,7 @@ BuildRequires:  boost-devel
 BuildRequires:  cmake >= 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  pkg-config
-BuildRequires:  libyui-devel
+BuildRequires:  libyui-devel >= 3.0.4
 BuildRequires:  gtk3-devel
 Provides:	yui_backend
 
@@ -43,7 +43,7 @@ Summary:    @SUMMARY@
 Group:      System/Libraries
 
 Requires:   lib@BASELIB@@SONAME_MAJOR@
-Provides:   lib@BASELIB@-ncurses = %{version}
+Provides:   lib@BASELIB@-gtk = %{version}
 Provides:   yast2-gtk = %{version}
 Obsoletes:  yast2-gtk < %{version}
 
@@ -81,6 +81,8 @@ This package has very few dependencies.
 
 export CFLAGS="$RPM_OPT_FLAGS -DNDEBUG"
 export CXXFLAGS="$RPM_OPT_FLAGS -DNDEBUG"
+
+./bootstrap.sh %{_prefix}
 
 mkdir build
 cd build
