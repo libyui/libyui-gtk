@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Thu May 16 13:40:00 UTC 2013 - bjoern.esser@gmail.com
+
+- fixed contradiction between README and COPYING*
+- Version 2.43.4
+
+-------------------------------------------------------------------
 Fri May 10 10:40:00 UTC 2013 - bjoern.esser@gmail.com
 
 - use a common toplevel CMakeLists.txt
