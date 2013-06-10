@@ -46,10 +46,10 @@ static void ygtk_help_dialog_find_next (YGtkHelpDialog *dialog)
 
 static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dialog)
 {
-	static GdkColor red = { 0, 255 << 8, 102 << 8, 102 << 8 };
-	static GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
-	static GdkColor yellow = { 0, 0xf7f7, 0xf7f7, 0xbdbd };
-	static GdkColor black = { 0, 0, 0, 0 };
+	static GdkRGBA red = { 1.0, 0.4, 0.4, 1.0 };
+	static GdkRGBA white = { 1.0, 1.0, 1.0, 1.0 };
+	static GdkRGBA yellow = { 0.9686, 0.9686, 0.7411 };
+	static GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
 
 	GtkWidget *widget = GTK_WIDGET (editable);
 	GtkEntry *entry = GTK_ENTRY (editable);
@@ -57,16 +57,16 @@ static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dial
 	gboolean found = ygtk_html_wrap_search (dialog->help_text, text);
 
 	if (found && *text) {
-		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &yellow);
-		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &black);
+		gtk_widget_override_background_color (widget, GTK_STATE_NORMAL, &yellow);
+		gtk_widget_override_color (widget, GTK_STATE_NORMAL, &black);
 	}
 	else if (found) {  // revert
-		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, NULL);
-		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, NULL);
+		gtk_widget_override_background_color (widget, GTK_STATE_NORMAL, NULL);
+		gtk_widget_override_color (widget, GTK_STATE_NORMAL, NULL);
 	}
 	else {
-		gtk_widget_modify_base (widget, GTK_STATE_NORMAL, &red);
-		gtk_widget_modify_text (widget, GTK_STATE_NORMAL, &white);
+		gtk_widget_override_background_color (widget, GTK_STATE_NORMAL, &red);
+		gtk_widget_override_color (widget, GTK_STATE_NORMAL, &white);
 		gtk_widget_error_bell (widget);
 	}
 
@@ -103,8 +103,8 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
 	gtk_window_set_type_hint (GTK_WINDOW (dialog), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_title (GTK_WINDOW (dialog), _("Help"));
-	GdkPixbuf *icon = gtk_widget_render_icon (
-		GTK_WIDGET (dialog), GTK_STOCK_HELP, GTK_ICON_SIZE_MENU, NULL);
+	GdkPixbuf *icon = gtk_widget_render_icon_pixbuf (
+		GTK_WIDGET (dialog), GTK_STOCK_HELP, GTK_ICON_SIZE_MENU);
 	gtk_window_set_icon (GTK_WINDOW (dialog), icon);
 	g_object_unref (G_OBJECT (icon));
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
@@ -430,21 +430,21 @@ static void description_link_clicked_cb (YGtkLinkLabel *label, YGtkWizardHeader 
 
 static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 {
-	GdkColor white = { 0, 0xffff, 0xffff, 0xffff };
-	gtk_widget_modify_bg (GTK_WIDGET (header), GTK_STATE_NORMAL, &white);
+	GdkRGBA white = { 1.0, 1.0, 1.0, 1.0 };
+	gtk_widget_override_background_color (GTK_WIDGET (header), GTK_STATE_NORMAL, &white);
 
 	header->title = gtk_label_new ("");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
 	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
 	                       PANGO_SCALE_X_LARGE);
-	GdkColor black = { 0, 0, 0, 0 };  // set text to black cause of some style colors
-	gtk_widget_modify_fg (header->title, GTK_STATE_NORMAL, &black);
+	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
+	gtk_widget_override_color (header->title, GTK_STATE_NORMAL, &black);
 
 	header->description = ygtk_link_label_new ("", _("more"));
 	g_signal_connect (G_OBJECT (header->description), "link-clicked",
 	                  G_CALLBACK (description_link_clicked_cb), header);
-	gtk_widget_modify_fg (header->description, GTK_STATE_NORMAL, &black);
+	gtk_widget_override_color (header->description, GTK_STATE_NORMAL, &black);
 
 	header->icon = gtk_image_new();
 
