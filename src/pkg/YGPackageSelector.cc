@@ -418,6 +418,8 @@ struct SuffixFilter : public Ypp::Match {
 		gtk_widget_show_all (dialog);
 
 		bool apply = (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_APPLY);
+		// disconnect before destroying
+		g_signal_handlers_disconnect_by_data (G_OBJECT (view), store);
 		gtk_widget_destroy (dialog);
 		return apply;
 	}

@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue Jun 18 11:59:18 CEST 2013 - tgoettlicher@suse.de
+
+- Fix for package manager crash (bnc#786650)
+- 2.21.101
+
+-------------------------------------------------------------------
 Thu May  2 08:53:36 UTC 2013 - tgoettlicher@suse.com
 
 - Fixed translation (bnc#721389)
