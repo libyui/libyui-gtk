@@ -137,8 +137,8 @@ GtkWidget* ygtk_steps_new (void)
 gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 {
 	GtkWidget *label = gtk_label_new (text);
-	GdkColor black = { 0, 0, 0, 0 };
-	gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &black);
+	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
+	gtk_widget_override_color (label, GTK_STATE_NORMAL, &black);
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 	int mark_width = 10;
 	pango_layout_get_pixel_size (steps->check_mark_layout, &mark_width, NULL);
@@ -151,8 +151,8 @@ gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 {
 	GtkWidget *label = gtk_label_new (heading);
-	GdkColor black = { 0, 0, 0, 0 };
-	gtk_widget_modify_fg (label, GTK_STATE_NORMAL, &black);
+	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
+	gtk_widget_override_color (label, GTK_STATE_NORMAL, &black);
 	g_object_set_data (G_OBJECT (label), "is-header", GINT_TO_POINTER (1));
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
 
