@@ -678,7 +678,7 @@ static void buttons_size_allocate_cb (GtkWidget *box, GtkAllocation *alloc,
 		gtk_size_group_set_mode (group, new_mode);
 }
 
-G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_VBOX)
+G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_BOX)
 
 static void ygtk_wizard_init (YGtkWizard *wizard)
 {
@@ -688,6 +688,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                                          g_free, destroy_tree_path);
 	wizard->steps_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                           g_free, NULL);
+
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (wizard), GTK_ORIENTATION_VERTICAL);
 
 	//** Title
 	wizard->m_title = ygtk_wizard_header_new();
@@ -765,6 +767,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_status_box, FALSE, TRUE, 0);
+
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)

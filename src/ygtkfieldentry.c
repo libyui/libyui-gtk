@@ -15,7 +15,7 @@ static guint filter_entry_signal = 0;
 
 //** YGtkFieldEntry
 
-G_DEFINE_TYPE (YGtkFieldEntry, ygtk_field_entry, GTK_TYPE_HBOX)
+G_DEFINE_TYPE (YGtkFieldEntry, ygtk_field_entry, GTK_TYPE_BOX)
 
 static void ygtk_field_entry_init (YGtkFieldEntry *entry)
 {

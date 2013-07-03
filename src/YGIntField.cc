@@ -16,7 +16,7 @@ public:
 	YGSpinBox (YWidget *ywidget, YWidget *parent, const std::string &label,
 	           int minValue, int maxValue, int initialValue, bool show_slider)
 	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ,
-	                   GTK_TYPE_HBOX, "spacing", 6, NULL)
+	                   gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0), "spacing", 6, NULL)
 	{
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);
 

@@ -295,7 +295,7 @@ private:
 
 YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 	: YDialog (dialogType, colorMode),
-	   YGWidget (this, NULL, GTK_TYPE_HBOX, NULL)
+	   YGWidget (this, NULL, gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0), NULL)
 {
     setBorder (0);
     m_stickyTitle = false;

@@ -19,11 +19,12 @@
 #define CURRENT_MARK_ANIMATION_OFFSET  3
 #define CURRENT_MARK_FRAMES_NB (CURRENT_MARK_ANIMATION_OFFSET*2)
 
-G_DEFINE_TYPE (YGtkSteps, ygtk_steps, GTK_TYPE_VBOX)
+G_DEFINE_TYPE (YGtkSteps, ygtk_steps, GTK_TYPE_BOX)
 
 static void ygtk_steps_init (YGtkSteps *steps)
 {
 	gtk_box_set_spacing (GTK_BOX (steps), 8);
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (steps), GTK_ORIENTATION_VERTICAL);
 	gtk_container_set_border_width (GTK_CONTAINER (steps), 4);
 
 	const gchar *check = "\u2714", *current = "\u25b6", *todo = "\u26ab";

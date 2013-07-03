@@ -70,7 +70,7 @@ public:
 		const std::string &newPartLabel, const std::string &freeFieldLabel, const std::string &newPartFieldLabel)
 	: YPartitionSplitter (NULL, usedSize, totalFreeSize, newPartSize, minNewPartSize,
 		minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel, newPartFieldLabel)
-	, YGWidget (this, parent, GTK_TYPE_VBOX, NULL)
+	, YGWidget (this, parent, gtk_box_new(GTK_ORIENTATION_VERTICAL,0), NULL)
 	{
 		/* Bar graph widget */
 		GtkWidget *graph = ygtk_bar_graph_new();
