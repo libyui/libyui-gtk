@@ -8,6 +8,7 @@
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "ygtkratiobox.h"
+#include "YGMacros.h"
 
 // default widgets border -- may be overlapped with a setBorder(..)
 #define DEFAULT_BORDER       6
@@ -59,24 +60,33 @@ YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent,
 {
 	va_list args;
 	va_start (args, property_name);
-	construct (ywidget, yparent, type, property_name, args);
+	GtkWidget* gtkwidget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
+	construct (ywidget, yparent, gtkwidget, property_name, args);
 	va_end (args);
 }
 
-void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
-                          GType type, const char *property_name, va_list args)
-{
-	m_widget = GTK_WIDGET (g_object_new_valist (type, property_name, args));
 
-	if (type == GTK_TYPE_WINDOW || type == GTK_TYPE_MENU)
-		m_adj_size = m_widget;
-	else {
-		m_adj_size = ygtk_adj_size_new();
-		g_object_ref_sink (G_OBJECT (m_adj_size));
-		gtk_widget_show (m_adj_size);
-		gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
-		ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
-	}
+YGWidget::YGWidget(YWidget *ywidget, YWidget *yparent,
+                  GtkWidget *gtkwidget, const char *property_name, ...)
+	: m_ywidget (ywidget)
+{
+	va_list args;
+	va_start (args, property_name);
+	construct (ywidget, yparent, gtkwidget, property_name, args);
+	va_end (args);
+}
+
+
+void YGWidget::construct (YWidget *ywidget, YWidget *yparent,
+                          GtkWidget *gtkwidget, const char *property_name, va_list args)
+{
+	m_widget = gtkwidget; 
+
+	m_adj_size = ygtk_adj_size_new();
+	g_object_ref_sink (G_OBJECT (m_adj_size));
+	gtk_widget_show (m_adj_size);
+	gtk_container_add (GTK_CONTAINER (m_adj_size), m_widget);
+	ygtk_adj_size_set_min_cb (YGTK_ADJ_SIZE (m_adj_size), min_size_cb, this);
 	gtk_widget_show (m_widget);
 
 	// Split by two so that with another widget it will have full border...
@@ -224,10 +234,40 @@ void YGWidget::setBorder (unsigned int border)
 
 YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
                                   const std::string &label_text, YUIDimension label_ori,
+                                  GtkWidget *gtkwidget, const char *property_name, ...)
+	: YGWidget (ywidget, parent,
+	            gtkwidget, "spacing", LABEL_WIDGET_SPACING, NULL)
+
+{
+	// Create the field widget
+	va_list args;
+	va_start (args, property_name);
+	m_field = gtkwidget;
+	va_end (args);
+
+	// Create the label
+	m_label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
+/*	if (label_ori == YD_HORIZ)
+		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);*/
+	gtk_widget_show (m_label);
+	gtk_widget_show (m_field);
+
+	setBuddy (m_field);
+	doSetLabel (label_text);
+
+	// Set the container and show widgets
+	gtk_box_pack_start (GTK_BOX (m_widget), m_label, FALSE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (m_widget), m_field, TRUE, TRUE, 0);
+	m_orientation = label_ori;
+
+}
+
+YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
+                                  const std::string &label_text, YUIDimension label_ori,
                                   GType type, const char *property_name, ...)
 	: YGWidget (ywidget, parent,
-//	            label_ori == YD_VERT ? GTK_TYPE_VBOX : GTK_TYPE_HBOX,
-	            GTK_TYPE_VBOX, "spacing", LABEL_WIDGET_SPACING, NULL)
+	            YGTK_VBOX_NEW(0), "spacing", LABEL_WIDGET_SPACING, NULL)
 {
 	// Create the field widget
 	va_list args;

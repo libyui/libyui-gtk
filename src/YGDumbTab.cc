@@ -10,6 +10,7 @@
 #include "YDumbTab.h"
 #include <gtk/gtk.h>
 #include "ygtkratiobox.h"
+#include "YGMacros.h"
 
 class YGDumbTab : public YDumbTab, public YGWidget
 {
@@ -59,7 +60,7 @@ public:
 			}
 		}
 		if (image) {
-			tab_label = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+			tab_label = YGTK_HBOX_NEW(6);
 			gtk_box_set_homogeneous (GTK_BOX (tab_label), FALSE);
 			gtk_box_pack_start (GTK_BOX (tab_label), image, FALSE, TRUE, 0);
 			gtk_box_pack_start (GTK_BOX (tab_label), label, TRUE, TRUE, 0);

@@ -9,6 +9,7 @@
 #include "ygtkmenubutton.h"
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include "YGMacros.h"
 
 //** YGtkPopupWindow
 
@@ -242,7 +243,7 @@ void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
 {
 	if (!button->label) {
 		GtkWidget *hbox, *arrow;
-		hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
+		hbox = YGTK_HBOX_NEW(4);
 		gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
 		arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_IN);
 		button->label = gtk_label_new ("");
