@@ -15,6 +15,10 @@ class YGWidget
 public:
 	YGWidget (YWidget *ywidget, YWidget *yparent,
 	          GType type, const char *property_name, ...);
+
+	YGWidget (YWidget *ywidget, YWidget *yparent,
+	          GtkWidget *gtkwidget, const char *property_name, ...);
+
 	virtual ~YGWidget();
 
 	// get the YGWidget associated with a YWidget
@@ -61,7 +65,8 @@ protected:
 	Signals *m_signals;
 
 	void construct (YWidget *ywidget, YWidget *yparent,
-	                GType type, const char *property_name, va_list args);
+	                GtkWidget *gtkwidget, const char *property_name, va_list args);
+
 
 	// data
 	GtkWidget *m_widget, *m_adj_size;  // associated GtkWidget, and adjustment for borders
@@ -120,6 +125,9 @@ class YGLabeledWidget : public YGWidget
 		YGLabeledWidget(YWidget *ywidget, YWidget *yparent,
 		                const std::string &label_text, YUIDimension label_ori,
 		                GType type, const char *property_name, ...);
+		YGLabeledWidget(YWidget *ywidget, YWidget *yparent,
+		                const std::string &label_text, YUIDimension label_ori,
+		                GtkWidget *gtkwidget, const char *property_name, ...);
 		virtual ~YGLabeledWidget () {}
 
 		virtual inline GtkWidget* getWidget() { return m_field; }

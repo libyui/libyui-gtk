@@ -20,6 +20,8 @@
 #include "ygtklinklabel.h"
 #define YGI18N_C
 #include "YGi18n.h"
+#include "YGMacros.h"
+
 
 // YGUtils bridge
 extern char *ygutils_mapKBAccel (const char *src);
@@ -160,7 +162,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
 
-	bottom_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
+	bottom_box = YGTK_HBOX_NEW(2);
 	gtk_box_set_homogeneous (GTK_BOX (bottom_box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (bottom_box), label, FALSE, FALSE, 0);
@@ -175,11 +177,11 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 #endif
 
 	// glue it
-	dialog->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 6);
+	dialog->vbox = YGTK_VBOX_NEW(6);
 	gtk_box_set_homogeneous (GTK_BOX (dialog->vbox), FALSE);
 
 #ifdef SET_HELP_HISTORY
-	GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+	GtkWidget *hbox = YGTK_HBOX_NEW(6);
 	gtk_box_set_homogeneous (GTK_BOX (bottom_box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (hbox), gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON), FALSE, TRUE, 0);
@@ -448,20 +450,20 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 
 	header->icon = gtk_image_new();
 
-	GtkWidget *text_box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	GtkWidget *text_box = YGTK_VBOX_NEW(0);
 	gtk_box_set_homogeneous (GTK_BOX (text_box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (text_box), header->title, TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (text_box), header->description, FALSE, TRUE, 0);
 
-	GtkWidget *title_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 10);
+	GtkWidget *title_box = YGTK_HBOX_NEW(10);
 	gtk_box_set_homogeneous (GTK_BOX (title_box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (title_box), header->icon, FALSE, TRUE, 4);
 	gtk_box_pack_start (GTK_BOX (title_box), text_box, TRUE, TRUE, 0);
 	gtk_container_set_border_width (GTK_CONTAINER (title_box), 6);
 
-	GtkWidget *box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+	GtkWidget *box = YGTK_VBOX_NEW(0);
 	gtk_box_set_homogeneous (GTK_BOX (box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (box), title_box, TRUE, TRUE, 0);
@@ -678,7 +680,7 @@ static void buttons_size_allocate_cb (GtkWidget *box, GtkAllocation *alloc,
 		gtk_size_group_set_mode (group, new_mode);
 }
 
-G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_VBOX)
+G_DEFINE_TYPE (YGtkWizard, ygtk_wizard, GTK_TYPE_BOX)
 
 static void ygtk_wizard_init (YGtkWizard *wizard)
 {
@@ -688,6 +690,8 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	                                          g_free, destroy_tree_path);
 	wizard->steps_ids = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                           g_free, NULL);
+
+        gtk_orientable_set_orientation (GTK_ORIENTABLE (wizard), GTK_ORIENTATION_VERTICAL);
 
 	//** Title
 	wizard->m_title = ygtk_wizard_header_new();
@@ -740,7 +744,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	wizard->m_pane = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
 	gtk_widget_show (wizard->m_pane);
 
-	wizard->m_contents_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
+	wizard->m_contents_box = YGTK_HBOX_NEW(6);
 	gtk_box_set_homogeneous (GTK_BOX (wizard->m_contents_box), FALSE);
 
 	gtk_box_pack_start (GTK_BOX (wizard->m_contents_box), wizard->m_info_box, FALSE, TRUE, 0);
@@ -748,7 +752,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_widget_show (wizard->m_contents_box);
 
 	GtkWidget *vbox;
-	vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 12);
+	vbox = YGTK_VBOX_NEW(12);
 	gtk_box_set_homogeneous (GTK_BOX (vbox), FALSE);
 
 	gtk_container_set_border_width (GTK_CONTAINER (vbox), 12);  // content's border
@@ -765,6 +769,7 @@ static void ygtk_wizard_init (YGtkWizard *wizard)
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_title, FALSE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), vbox, TRUE, TRUE, 0);
 	gtk_box_pack_start (GTK_BOX (wizard), wizard->m_status_box, FALSE, TRUE, 0);
+
 }
 
 static void ygtk_wizard_realize (GtkWidget *widget)
@@ -843,7 +848,7 @@ void ygtk_wizard_set_child (YGtkWizard *wizard, GtkWidget *child)
 
 void ygtk_wizard_set_information_widget (YGtkWizard *wizard, GtkWidget *widget)
 {
-	GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 2);
+	GtkWidget *hbox = YGTK_HBOX_NEW(2);
 	gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
 
 	GtkWidget *sep = gtk_separator_new(GTK_ORIENTATION_VERTICAL);

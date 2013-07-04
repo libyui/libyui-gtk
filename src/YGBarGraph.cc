@@ -8,6 +8,8 @@
 #include "ygtkbargraph.h"
 
 #include "YBarGraph.h"
+#include "YGMacros.h"
+
 
 class YGBarGraph : public YBarGraph, public YGWidget
 {
@@ -70,7 +72,7 @@ public:
 		const std::string &newPartLabel, const std::string &freeFieldLabel, const std::string &newPartFieldLabel)
 	: YPartitionSplitter (NULL, usedSize, totalFreeSize, newPartSize, minNewPartSize,
 		minFreeSize, usedLabel, freeLabel, newPartLabel, freeFieldLabel, newPartFieldLabel)
-	, YGWidget (this, parent, GTK_TYPE_VBOX, NULL)
+	, YGWidget (this, parent, YGTK_VBOX_NEW(0), NULL)
 	{
 		/* Bar graph widget */
 		GtkWidget *graph = ygtk_bar_graph_new();
@@ -79,7 +81,7 @@ public:
 		ygtk_bar_graph_setup_entry (m_barGraph, 0, usedLabel.c_str(), usedSize);
 
 		/* Labels over the slider */
-		GtkWidget *labels_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		GtkWidget *labels_box = YGTK_HBOX_NEW(0);
 		gtk_box_set_homogeneous (GTK_BOX (labels_box), FALSE);
 		gtk_box_pack_start (GTK_BOX (labels_box),
 			gtk_label_new (freeFieldLabel.c_str()), FALSE, TRUE, 0);
@@ -88,7 +90,7 @@ public:
 			gtk_label_new (newPartFieldLabel.c_str()), FALSE, TRUE, 0);
 
 		/* Slider and the spinners */
-		GtkWidget *slider_box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 0);
+		GtkWidget *slider_box = YGTK_HBOX_NEW(0);
 		gtk_box_set_homogeneous (GTK_BOX (slider_box), FALSE);
 		m_scale = gtk_scale_new_with_range (GTK_ORIENTATION_HORIZONTAL, (gdouble) minFreeSize, maxFreeSize(), 1);
 		gtk_scale_set_draw_value (GTK_SCALE (m_scale), FALSE);
