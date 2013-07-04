@@ -12,6 +12,8 @@
 #include <math.h>  // easter
 #include <string.h>
 #include "ygtkwindow.h"
+#include "YGMacros.h"
+
 
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
    there is already a main window, it should replace its content -- and when closed,
@@ -295,7 +297,7 @@ private:
 
 YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 	: YDialog (dialogType, colorMode),
-	   YGWidget (this, NULL, gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0), NULL)
+	   YGWidget (this, NULL, YGTK_HBOX_NEW(0), NULL)
 {
     setBorder (0);
     m_stickyTitle = false;

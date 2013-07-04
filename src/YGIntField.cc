@@ -6,6 +6,7 @@
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"
+#include "YGMacros.h"
 
 class YGSpinBox : public YGLabeledWidget
 {
@@ -16,7 +17,7 @@ public:
 	YGSpinBox (YWidget *ywidget, YWidget *parent, const std::string &label,
 	           int minValue, int maxValue, int initialValue, bool show_slider)
 	: YGLabeledWidget (ywidget, parent, label, YD_HORIZ,
-	                   gtk_box_new(GTK_ORIENTATION_HORIZONTAL,0), "spacing", 6, NULL)
+	                   YGTK_HBOX_NEW(6), "spacing", 6, NULL)
 	{
 		m_spiner = gtk_spin_button_new_with_range  (minValue, maxValue, 1);
 

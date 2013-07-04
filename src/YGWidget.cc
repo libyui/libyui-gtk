@@ -8,6 +8,7 @@
 #include "YGWidget.h"
 #include "YGUtils.h"
 #include "ygtkratiobox.h"
+#include "YGMacros.h"
 
 // default widgets border -- may be overlapped with a setBorder(..)
 #define DEFAULT_BORDER       6
@@ -266,7 +267,7 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
                                   const std::string &label_text, YUIDimension label_ori,
                                   GType type, const char *property_name, ...)
 	: YGWidget (ywidget, parent,
-	            gtk_box_new(GTK_ORIENTATION_VERTICAL,0), "spacing", LABEL_WIDGET_SPACING, NULL)
+	            YGTK_VBOX_NEW(0), "spacing", LABEL_WIDGET_SPACING, NULL)
 {
 	// Create the field widget
 	va_list args;

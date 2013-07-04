@@ -14,6 +14,7 @@
 #include "YSelectionWidget.h"
 #include "YGSelectionStore.h"
 #include "ygtktreeview.h"
+#include "YGMacros.h"
 #include <string.h>
 
 /* A generic widget for table related widgets. */
@@ -112,7 +113,7 @@ public:
 		bool mainWidget = !yparent || !strcmp (yparent->widgetClass(), "YVBox") || !strcmp (yparent->widgetClass(), "YReplacePoint");
 		if (mainWidget) {
 			m_count = gtk_label_new ("0");
-			GtkWidget *hbox = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 4);
+			GtkWidget *hbox = YGTK_HBOX_NEW(4);
 			gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
 
 			GtkWidget *label = gtk_label_new (_("Total selected:"));
