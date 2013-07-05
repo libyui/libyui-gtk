@@ -426,10 +426,11 @@ static void ygtk_time_zone_picker_size_allocate (GtkWidget     *widget,
 	YGtkTimeZonePicker *picker = YGTK_TIME_ZONE_PICKER (widget);
 	int win_width = allocation->width, win_height = allocation->height;
 
+
 	if (picker->closeup)
 		picker->scale = 1;
 	else {
-		picker->scale = MIN ((double) win_width / picker->map_width,
+		picker->scale = MAX ((double) win_width / picker->map_width,
 			                 (double) win_height / picker->map_height);
 		picker->hover_loc = NULL;
 	}
