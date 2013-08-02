@@ -496,9 +496,9 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const char *button;
 	switch (action) {
 		case GTK_FILE_CHOOSER_ACTION_SAVE:
-			button = GTK_STOCK_SAVE; break;
+			button = "document-save"; break;
 		case GTK_FILE_CHOOSER_ACTION_OPEN:
-			button = GTK_STOCK_OPEN; break;
+			button = "folder-open"; break;
 		case GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER:
 		case GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER:
 		default:
@@ -506,7 +506,7 @@ std::string askForFileOrDirectory (GtkFileChooserAction action,
 	}
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new (title.c_str(),
-		parent, action, GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		parent, action, "application-exit", GTK_RESPONSE_CANCEL,
 		button, GTK_RESPONSE_ACCEPT, NULL);
 	GtkFileChooser *fileChooser = GTK_FILE_CHOOSER (dialog);
 	gtk_file_chooser_set_local_only (fileChooser, TRUE);

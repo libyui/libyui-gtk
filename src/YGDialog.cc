@@ -310,9 +310,10 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 
     if (colorMode != YDialogNormalColor) {
         // emulate a warning / info dialog
-        GtkWidget *icon = gtk_image_new_from_stock
-            (colorMode == YDialogWarnColor ? GTK_STOCK_DIALOG_WARNING : GTK_STOCK_DIALOG_INFO,
+          GtkWidget *icon = gtk_image_new_from_icon_name 
+            (colorMode == YDialogWarnColor ? "dialog-warning" : "dialog-information",
              GTK_ICON_SIZE_DIALOG);
+
         gtk_misc_set_alignment (GTK_MISC (icon), 0.5, 0);
         gtk_misc_set_padding   (GTK_MISC (icon), 0, 12);
 
