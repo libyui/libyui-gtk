@@ -125,7 +125,7 @@ static void ygtk_time_zone_picker_sync_cursor (YGtkTimeZonePicker *picker)
 	else if (picker->closeup)
 		ygtk_time_zone_picker_set_cursor_type (picker, GDK_CROSS);
 	else
-		ygtk_time_zone_picker_set_cursor_stock (picker, GTK_STOCK_ZOOM_IN);
+		ygtk_time_zone_picker_set_cursor_stock (picker, "zoom-in");
 }
 
 static void ygtk_time_zone_picker_scroll_to (YGtkTimeZonePicker *picker,

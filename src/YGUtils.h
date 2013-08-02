@@ -57,9 +57,10 @@ namespace YGUtils
 	GdkPixbuf *setGray (const GdkPixbuf *src);
 
 	/* Tries to make sense out of the string, applying some stock icon to the button. */
-	const char *mapStockIcon (const std::string &label);
 	const char *setStockIcon (GtkWidget *button, const std::string &label,
 	                          const char *fallbackIcon);
+	const char *mapIconname(const std::string &label);
+
 
 	/* For empty model rows, render a separator (can be used for GtkTreeView and GtkComboBox */
 	gboolean empty_row_is_separator_cb (
@@ -79,7 +80,7 @@ extern "C" {
 
 	void ygutils_scrollAdj (GtkAdjustment *vadj, gboolean top);
 
-	const char *ygutils_mapStockIcon (const char *label);
+	const char *ygutils_mapIconname (const std::string &label);
 	const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
 	                                  const char *fallbackIcon);
 

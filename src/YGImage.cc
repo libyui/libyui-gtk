@@ -26,21 +26,18 @@ public:
 	  YGWidget (this, parent, YGTK_TYPE_IMAGE, NULL)
 	{
 		YGtkImage *image = YGTK_IMAGE (getWidget());
-		const char *stock = NULL;
+		const char *iconname = NULL;
 		if (endsWith (filename, "/msg_question.png"))
-			stock = GTK_STOCK_DIALOG_QUESTION;
+			iconname = "dialog-question";
 		else if (endsWith (filename, "/msg_info.png"))
-			stock = GTK_STOCK_DIALOG_INFO;
+			iconname = "dialog-information";
 		else if (endsWith (filename, "/msg_warning.png"))
-			stock = GTK_STOCK_DIALOG_WARNING;
+			iconname = "dialog-warning";
 		else if (endsWith (filename, "/msg_error.png"))
-			stock = GTK_STOCK_DIALOG_ERROR;
+			iconname = "dialog-error";
 
-                GtkStyleContext *ctx;
-                ctx = gtk_widget_get_style_context(m_widget);
-
-		if (stock && gtk_style_context_lookup_icon_set (ctx, stock)) {
-			GdkPixbuf *pixbuf = gtk_widget_render_icon_pixbuf (m_widget, stock, GTK_ICON_SIZE_DIALOG);
+		if (iconname && gtk_icon_theme_lookup_icon (gtk_icon_theme_get_default(), iconname, GTK_ICON_SIZE_DIALOG, GTK_ICON_LOOKUP_USE_BUILTIN)) {
+			GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(), iconname, GTK_ICON_SIZE_DIALOG, GTK_ICON_LOOKUP_USE_BUILTIN,NULL);
 			ygtk_image_set_from_pixbuf (image, pixbuf);
 		}
 		else

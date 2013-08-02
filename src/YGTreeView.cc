@@ -487,7 +487,7 @@ public:
 				YWidget *button = YGDialog::currentDialog()->getFunctionWidget (key);
 				if (button) {
 					GtkWidget *item;
-					item = gtk_image_menu_item_new_from_stock (stock, NULL);
+					item = gtk_menu_item_new_with_mnemonic (stock);
 					gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 					g_signal_connect (G_OBJECT (item), "activate",
 									  G_CALLBACK (key_activate_cb), button);
@@ -501,13 +501,13 @@ public:
 			// if more than one table exists, function keys would be ambiguous
 			if (outreach) {
 				if (dialog->getFunctionWidget(3))
-					inner::appendItem (menu, GTK_STOCK_ADD, 3);
+					inner::appendItem (menu, "list-add", 3);
 			}
 			else {
 				if (dialog->getFunctionWidget(4))
-					inner::appendItem (menu, GTK_STOCK_EDIT, 4);
+					inner::appendItem (menu, "edit-cut", 4);
 				if (dialog->getFunctionWidget(5))
-					inner::appendItem (menu, GTK_STOCK_DELETE, 5);
+					inner::appendItem (menu, "list-remove", 5);
 			}
 		}
 
