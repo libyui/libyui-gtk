@@ -55,7 +55,7 @@ static void ygtk_text_view_populate_popup (GtkTextView *view, GtkMenu *menu)
 	g_list_free (items);
 
 	GtkWidget *item;
-	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_COPY, NULL);
+	item = gtk_menu_item_new();
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	if (gtk_text_buffer_get_has_selection (buffer))
 		g_signal_connect (item, "activate", G_CALLBACK (copy_activate_cb), buffer);
@@ -63,7 +63,7 @@ static void ygtk_text_view_populate_popup (GtkTextView *view, GtkMenu *menu)
 		gtk_widget_set_sensitive (item, FALSE);
 	item = gtk_separator_menu_item_new();
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
-	item = gtk_image_menu_item_new_from_stock (GTK_STOCK_SELECT_ALL, NULL);
+	item = gtk_menu_item_new();
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), item);
 	g_signal_connect (item, "activate", G_CALLBACK (select_all_activate_cb), buffer);
 	gtk_widget_show_all (GTK_WIDGET (menu));

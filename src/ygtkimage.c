@@ -210,24 +210,6 @@ ygtk_image_get_preferred_height (GtkWidget *widget,
         *minimal_height = *natural_height = requisition.height;
 }
 
-static GdkPixbuf *ygtk_image_render_state (GtkWidget *widget, GdkPixbuf *pixbuf)
-{	// as in GtkImage
-	GtkIconSource *source = gtk_icon_source_new();
-	GtkStyleContext *style = gtk_widget_get_style_context (widget);
-	gtk_style_context_save (style);
-	gtk_style_context_set_state (style, gtk_widget_get_state_flags (widget));
-
-	GdkPixbuf *rendered;
-	gtk_icon_source_set_pixbuf (source, pixbuf);
-	gtk_icon_source_set_size (source, GTK_ICON_SIZE_SMALL_TOOLBAR);
-	gtk_icon_source_set_size_wildcarded (source, FALSE);
-	rendered = gtk_render_icon_pixbuf (style, source, (GtkIconSize)-1);
-
-	gtk_style_context_restore (style);
-	gtk_icon_source_free (source);
-	return rendered;
-}
-
 static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 {
 	YGtkImage *image = YGTK_IMAGE (widget);
@@ -261,9 +243,6 @@ static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 	else
 		pixbuf = image->pixbuf;
 
-	gboolean needs_transform = gtk_widget_get_state_flags (widget) & GTK_STATE_FLAG_INSENSITIVE;
-	if (needs_transform)
-		pixbuf = ygtk_image_render_state (widget, pixbuf);
 	int x = 0, y = 0;
 	if (image->align == CENTER_IMAGE_ALIGN) {
 		x = (width - req.width) / 2;
@@ -292,8 +271,6 @@ static gboolean ygtk_image_draw_event (GtkWidget *widget, cairo_t *cr)
 	cairo_rectangle (cr, x, y, width, height);
 	cairo_fill (cr);
 
-	if (needs_transform)
-		g_object_unref (G_OBJECT (pixbuf));
 	return FALSE;
 }
 

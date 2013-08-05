@@ -28,7 +28,6 @@ extern char *ygutils_mapKBAccel (const char *src);
 extern void ygutils_setWidgetFont (GtkWidget *widget, PangoStyle style,
                                    PangoWeight weight, double scale);
 extern void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel);
-extern const char *ygutils_mapStockIcon (const char *label);
 extern const char *ygutils_setStockIcon (GtkWidget *button, const char *label,
                                       const char *fallbackIcon);
 extern GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean alpha);
@@ -76,8 +75,9 @@ static void search_entry_changed_cb (GtkEditable *editable, YGtkHelpDialog *dial
 	if (showIcon != gtk_entry_get_icon_activatable (entry, GTK_ENTRY_ICON_SECONDARY)) {
 		gtk_entry_set_icon_activatable (entry,
 			GTK_ENTRY_ICON_SECONDARY, showIcon);
-		gtk_entry_set_icon_from_stock (entry,
-			GTK_ENTRY_ICON_SECONDARY, showIcon ? GTK_STOCK_CLEAR : NULL);
+                gtk_entry_set_icon_from_icon_name( entry,
+			GTK_ENTRY_ICON_SECONDARY, showIcon ? "edit-clear" : NULL);
+
 		if (showIcon)
 			gtk_entry_set_icon_tooltip_text (entry,
 				GTK_ENTRY_ICON_SECONDARY, _("Clear"));
@@ -105,8 +105,9 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	gtk_container_set_border_width (GTK_CONTAINER (dialog), 6);
 	gtk_window_set_type_hint (GTK_WINDOW (dialog), GDK_WINDOW_TYPE_HINT_DIALOG);
 	gtk_window_set_title (GTK_WINDOW (dialog), _("Help"));
-	GdkPixbuf *icon = gtk_widget_render_icon_pixbuf (
-		GTK_WIDGET (dialog), GTK_STOCK_HELP, GTK_ICON_SIZE_MENU);
+
+	GdkPixbuf *icon = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(),
+		 "help-contents", GTK_ICON_SIZE_MENU, 0, NULL);
 	gtk_window_set_icon (GTK_WINDOW (dialog), icon);
 	g_object_unref (G_OBJECT (icon));
 	gtk_window_set_default_size (GTK_WINDOW (dialog), 500, 450);
@@ -139,8 +140,9 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	// bottom part (search entry + close button)
 	dialog->search_entry = gtk_entry_new();
 	gtk_widget_set_size_request (dialog->search_entry, 140, -1);
-	gtk_entry_set_icon_from_stock (GTK_ENTRY (dialog->search_entry),
-		GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_FIND);
+        gtk_entry_set_icon_from_icon_name( GTK_ENTRY (dialog->search_entry), 
+		GTK_ENTRY_ICON_PRIMARY, "edit-find");
+
 	gtk_entry_set_icon_activatable (GTK_ENTRY (dialog->search_entry),
 		GTK_ENTRY_ICON_PRIMARY, TRUE);
 	g_signal_connect (G_OBJECT (dialog->search_entry), "icon-press",
@@ -150,7 +152,7 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	g_signal_connect (G_OBJECT (dialog->search_entry), "activate",
 	                  G_CALLBACK (search_entry_activated_cb), dialog);
 
-	dialog->close_button = gtk_button_new_from_stock (GTK_STOCK_CLOSE);
+	dialog->close_button = gtk_button_new_with_label(_("Close"));
         gtk_widget_set_can_default(dialog->close_button, TRUE);
 
 	GtkWidget *close_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
@@ -614,7 +616,8 @@ static GtkWidget *create_help_button()
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
-	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_BUTTON);
+	image = gtk_image_new_from_icon_name ("help-contents", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_always_show_image(GTK_BUTTON (button), 1);
 	gtk_button_set_image (GTK_BUTTON (button), image);
 	return button;
 }
@@ -995,9 +998,9 @@ void ygtk_wizard_set_button_label (YGtkWizard *wizard, GtkWidget *button,
 	gtk_button_set_label (GTK_BUTTON (button), label);
 	ENABLE_WIDGET_STR (label, button);
 	if (button == wizard->abort_button)
-		stock = GTK_STOCK_CANCEL;
+		stock = "application-exit";
 	else if (button == wizard->release_notes_button)
-		stock = GTK_STOCK_EDIT;
+		stock = "edit-copy";
 
 	const char *_stock = ygutils_setStockIcon (button, label, stock);
 	g_object_set_data (G_OBJECT (button), "icon-fallback", _stock ? 0 : GINT_TO_POINTER (1));
@@ -1052,14 +1055,7 @@ gboolean ygtk_wizard_add_menu_entry (YGtkWizard *wizard, const char *parent_id,
 		return FALSE;
 
 	GtkWidget *entry;
-	const char *icon = ygutils_mapStockIcon (text);
-	if (icon) {
-		GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_MENU);
-		entry = gtk_image_menu_item_new_with_mnemonic (text);
-		gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (entry), image);
-	}
-	else
-		entry = gtk_menu_item_new_with_mnemonic (text);
+	entry = gtk_menu_item_new_with_mnemonic (text);
 	gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
 	gtk_widget_show (entry);
 

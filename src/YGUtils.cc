@@ -618,93 +618,59 @@ GdkPixbuf *YGUtils::setGray (const GdkPixbuf *src)
 GdkPixbuf *ygutils_setOpacity (const GdkPixbuf *src, int opacity, gboolean useAlpha)
 { return YGUtils::setOpacity (src, opacity, useAlpha); }
 
-static std::string cutUnderline (const std::string &str)
-{
-	std::string ret (str);
-	std::string::size_type i = 0;
-	if ((i = ret.find ('_', i)) != std::string::npos)
-		ret.erase (i, 1);
-	return ret;
-}
-
-static void stripStart (std::string &str, char ch)
-{
-	while (!str.empty() && str[0] == ch)
-		str.erase (0, 1);
-}
-static void stripEnd (std::string &str, char ch)
-{
-	while (!str.empty() && str[str.size()-1] == ch)
-		str.erase (str.size()-1, 1);
-}
 
 struct StockMap {
 	const char *english, *locale, *stock;
 };
 static const StockMap stock_map[] = {
-	{ "Apply", _("Apply"), GTK_STOCK_APPLY },
-	{ "Accept", _("Accept"), GTK_STOCK_APPLY },
-	{ "Install", _("Install"), GTK_STOCK_APPLY },
-	{ "OK", _("OK"), GTK_STOCK_OK },
-	{ "Cancel", _("Cancel"), GTK_STOCK_CANCEL },
-	{ "Abort", _("Abort"), GTK_STOCK_CANCEL },
-	{ "Close", _("Close"), GTK_STOCK_CLOSE },
-	{ "Yes", _("Yes"), GTK_STOCK_YES },
-	{ "No", _("No"), GTK_STOCK_NO },
-	{ "Add", _("Add"), GTK_STOCK_ADD },
-	{ "Edit", _("Edit"), GTK_STOCK_EDIT },
-	{ "Delete", _("Delete"), GTK_STOCK_DELETE },
-	{ "Up", _("Up"), GTK_STOCK_GO_UP },
-	{ "Down", _("Down"), GTK_STOCK_GO_DOWN },
-	{ "Enable", _("Enable"), GTK_STOCK_YES },
-	{ "Disable", _("Disable"), GTK_STOCK_NO },
-	{ "Exit", _("Exit"), GTK_STOCK_QUIT },
+	{ "Apply", _("Apply"), "application-exit" },
+	{ "Accept", _("Accept"), "application-exit" },
+	{ "Install", _("Install"), "application-exit" },
+	{ "OK", _("OK"), "document-save" },
+	{ "Cancel", _("Cancel"), "application-exit" },
+	{ "Abort", _("Abort"), "application-exit" },
+	{ "Close", _("Close"), "window-close" },
+	{ "Yes", _("Yes"), "document-save" },
+	{ "No", _("No"), "application-exit" },
+	{ "Add", _("Add"), "list-add" },
+	{ "Edit", _("Edit"), "edit-paste" },
+	{ "Delete", _("Delete"), "list-remove" },
+	{ "Up", _("Up"), "go-up" },
+	{ "Down", _("Down"), "go-down" },
+	{ "Enable", _("Enable"), "document-save" },
+	{ "Disable", _("Disable"), "application-exit" },
+	{ "Exit", _("Exit"), "application-exit" },
+	{ "Back", _("Back"), "go-previous" },
+	{ "Next", _("Next"), "go-next" },
 };
 #define stock_map_length (sizeof (stock_map) / sizeof (StockMap))
 
-const char *YGUtils::mapStockIcon (const std::string &label)
+static std::string cutUnderline (const std::string &str)
 {
-	static bool firstTime = true; static std::map <std::string, std::string> stockMap;
-	if (firstTime) {
-		firstTime = false;
+       std::string ret (str);
+       std::string::size_type i = 0;
+       if ((i = ret.find ('_', i)) != std::string::npos)
+               ret.erase (i, 1);
+       return ret;
+}
 
-		// match GTK stock labels to yast ones
-		GSList *list = gtk_stock_list_ids();
-		for (GSList *i = list; i; i = i->next) {
-			gchar *id = (gchar *) i->data;
-			GtkStockItem item;
-			if (gtk_stock_lookup (id, &item)) {
-				const gchar *_id = id;
-				if (!strcmp (id, GTK_STOCK_MEDIA_NEXT) || !strcmp (id, GTK_STOCK_MEDIA_FORWARD))
-					_id = GTK_STOCK_GO_FORWARD;
-				else if (!strcmp (id, GTK_STOCK_MEDIA_PREVIOUS) || !strcmp (id, GTK_STOCK_MEDIA_REWIND))
-					_id = GTK_STOCK_GO_BACK;
-				else if (!strcmp (id, GTK_STOCK_MEDIA_RECORD))
-					_id = GTK_STOCK_SAVE;
-				else if (!strcmp (id, GTK_STOCK_CLEAR))
-					_id = GTK_STOCK_DELETE;
-				else if (!strcmp (id, GTK_STOCK_QUIT))
-					_id = GTK_STOCK_APPLY;
-				else if (!strcmp (id, GTK_STOCK_JUMP_TO))
-					_id = GTK_STOCK_OK;
-				else if (!strncmp (id, "gtk-dialog-", 11))
-					_id = 0;
+static void stripStart (std::string &str, char ch)
+{
+       while (!str.empty() && str[0] == ch)
+               str.erase (0, 1);
+}
 
-				if (_id)
-					stockMap[cutUnderline (item.label)] = _id;
-			}
-			// some may not have a stock item because they can't be set on a label
-			// e.g.: gtk-directory, gtk-missing-image, gtk-dnd
-			g_free (id);
-		}
-		g_slist_free (list);
+static void stripEnd (std::string &str, char ch)
+{
+       while (!str.empty() && str[str.size()-1] == ch)
+               str.erase (str.size()-1, 1);
+}
 
-		for (unsigned int j = 0; j < 2; j++)  // add both current locale & english terms
-			for (unsigned int i = 0; i < stock_map_length; i++)
-				stockMap [stock_map[i].english+j] = stock_map[i].stock;
-	}
+const char *YGUtils::mapIconname(const std::string &label ) 
+{
+	std::map <std::string, std::string> stockMap;
 
-	std::string id = cutUnderline (label);
+	std::string id = cutUnderline (std::string(label));
 	stripStart (id, ' ');
 	stripEnd (id, ' ');
 	stripEnd (id, '.');
@@ -713,21 +679,22 @@ const char *YGUtils::mapStockIcon (const std::string &label)
 	it = stockMap.find (id);
 	if (it != stockMap.end())
 		return it->second.c_str();
+
 	return NULL;
 }
 
 const char *YGUtils::setStockIcon (GtkWidget *button, const std::string &label,
                                    const char *fallbackIcon)
 {
-	const char *icon = mapStockIcon (label);
-        GtkStyleContext *ctx = gtk_widget_get_style_context(button);
+	const char *icon = mapIconname (label);
 
 	if (!icon && label.size() < 22)
 		icon = fallbackIcon;
 	if (icon) {
-                if (gtk_style_context_lookup_icon_set (ctx, icon)) {
+                if (gtk_icon_theme_lookup_icon (gtk_icon_theme_get_default(), icon, GTK_ICON_SIZE_BUTTON, GTK_ICON_LOOKUP_USE_BUILTIN )) {
 			// we want to use GtkImage stock mode so it honors sensitive
-			GtkWidget *image = gtk_image_new_from_stock (icon, GTK_ICON_SIZE_BUTTON);
+			GtkWidget *image = gtk_image_new_from_icon_name (icon, GTK_ICON_SIZE_BUTTON);
+			gtk_button_set_always_show_image(GTK_BUTTON (button),true);
 			gtk_button_set_image (GTK_BUTTON (button), image);
 		}
 	}
@@ -832,8 +799,10 @@ ygutils_headerize_help (const char *help_text, gboolean *cut)
 	return g_string_free (str, FALSE);
 }
 
-const char *ygutils_mapStockIcon (const char *label)
-{ return YGUtils::mapStockIcon (label); }
+
+const char *ygutils_mapIconname (const std::string &label)
+{ return YGUtils::mapIconname (label); }
+
 
 const char *ygutils_setStockIcon (GtkWidget *button, const char *label, const char *fallback)
 { return YGUtils::setStockIcon (button, label, fallback); }

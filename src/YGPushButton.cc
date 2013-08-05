@@ -32,29 +32,29 @@ public:
 	void setStockIcon (const std::string &label)
 	{
 		if (!m_customIcon) {
-			const char *stock = NULL;
+			const char *icon = NULL;
 			switch (functionKey()) {
-				case 1: stock = GTK_STOCK_HELP; break;
-				case 2: stock = GTK_STOCK_INFO; break;  // Info
-				case 3: stock = GTK_STOCK_ADD; break;
-				case 4: stock = GTK_STOCK_EDIT; break;
-				case 5: stock = GTK_STOCK_DELETE; break;
-				case 6: stock = GTK_STOCK_EXECUTE; break;  // Test
-				case 7: stock = GTK_STOCK_EDIT; break;  // Expert
+				case 1: icon = "help-contents"; break;
+				case 2: icon = "dialog-information"; break;  // Info
+				case 3: icon = "list-add"; break;
+				case 4: icon = "edit-copy"; break;
+				case 5: icon = "edit-delete"; break;
+				case 6: icon = "system-run"; break;  // Test
+				case 7: icon = "edit-copy"; break;  // Expert
 				// old expert icon: GTK_STOCK_PREFERENCES
-				//case 8: stock = GTK_STOCK_GO_BACK; break;
-				case 9: stock = GTK_STOCK_CANCEL; break;
-				case 10: stock = GTK_STOCK_OK; break;  // Next/Finish/OK
+				// case 8: icon = "go-previous"; break;
+				case 9: icon = "application-exit"; break;
+				case 10: icon = "application-exit"; break;  // Next/Finish/OK
 				default: break;
 			}
 			switch (role()) {
-				case YOKButton:     stock = GTK_STOCK_OK; break;
-				case YApplyButton:  stock = GTK_STOCK_APPLY; break;
-				case YCancelButton: stock = GTK_STOCK_CANCEL; break;
-				case YHelpButton:   stock = GTK_STOCK_HELP; break;
+				case YOKButton:     icon = "document-save"; break;
+				case YApplyButton:  icon = "document-save"; break;
+				case YCancelButton: icon = "document-revert"; break;
+				case YHelpButton:   icon = "help-contents"; break;
 				case YCustomButton: case YMaxButtonRole: break;
 			}
-			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, stock);
+			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, icon);
 		}
 	}
 

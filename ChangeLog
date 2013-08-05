@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Aug  2 13:24:25 CEST 2013 - tgoettlicher@suse.de
+
+- fixed deprecated stock items
+- Version 2.43.6
+
+-------------------------------------------------------------------
 Thu Jul  4 17:39:43 CEST 2013 - tgoettlicher@suse.de
 
 - fixed misplaced countries in map (in time zone selection) (bnc #775672)

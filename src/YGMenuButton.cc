@@ -22,28 +22,10 @@ static void selected_item_cb (GtkMenuItem *menuitem, YItem *item)
 static void doCreateMenu (GtkWidget *parent, YItemIterator begin, YItemIterator end)
 {
 	for (YItemIterator it = begin; it != end; it++) {
-		GtkWidget *entry, *image = 0;
+		GtkWidget *entry;
 		std::string str = YGUtils::mapKBAccel ((*it)->label());
 
-		if ((*it)->hasIconName()) {
-			GdkPixbuf *pixbuf = YGUtils::loadPixbuf ((*it)->iconName());
-			if (pixbuf) {
-				image = gtk_image_new_from_pixbuf (pixbuf);
-				g_object_unref (G_OBJECT (pixbuf));
-			}
-		}
-		else {
-			const char *stock = YGUtils::mapStockIcon (str);
-			if (stock)
-				image = gtk_image_new_from_stock (stock, GTK_ICON_SIZE_MENU);
-		}
-
-		if (image) {
-			entry = gtk_image_menu_item_new_with_mnemonic (str.c_str());
-			gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (entry), image);
-		}
-		else
-			entry = gtk_menu_item_new_with_mnemonic (str.c_str());
+		entry = gtk_menu_item_new_with_mnemonic (str.c_str());
 
 		gtk_menu_shell_append (GTK_MENU_SHELL (parent), entry);
 
