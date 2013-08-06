@@ -29,7 +29,7 @@ BuildRequires:  gcc-c++
 BuildRequires:  pkg-config
 BuildRequires:  libyui-devel >= 3.0.4
 BuildRequires:  gtk3-devel
-Provides:	yui_backend
+Provides:	yui_backend = 5
 
 
 URL:        @URL@
