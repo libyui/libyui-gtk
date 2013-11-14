@@ -450,7 +450,13 @@ public:
 			int i = 0;
 			for (YTableCellIterator it = item->cellsBegin();
 			     it != item->cellsEnd(); it++)
-   				setCell (&iter, i++, *it);
+				if (i >= columns())
+				{
+					yuiWarning() << "Item contains too many columns, current column is (starting from 0) " << i 
+						<< " but only " << columns() << " columns are configured. Skipping..." << std::endl;
+				}
+				else
+	   				setCell (&iter, i++, *it);
 			if (item->selected())
 				focusItem (item, true);
     	}
