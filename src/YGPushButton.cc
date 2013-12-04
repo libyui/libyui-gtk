@@ -52,7 +52,7 @@ public:
 				case YApplyButton:  icon = "document-save"; break;
 				case YCancelButton: icon = "document-revert"; break;
 				case YHelpButton:   icon = "help-contents"; break;
-				case YCustomButton: case YMaxButtonRole: break;
+				case YCustomButton: case YMaxButtonRole: case YRelNotesButton: break;
 			}
 			m_labelIcon = YGUtils::setStockIcon (getWidget(), label, icon);
 		}
