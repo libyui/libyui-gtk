@@ -695,7 +695,6 @@ public:
 		GtkTreeIter iter;
 		addRow (item, &iter, parent);
 		setRowText (&iter, 0, item->iconName(), 1, item->label(), this);
-#if 0  // yast2-qt ignores `selected flag
 		if (item->selected()) {
 			if (hasMultiSelection())
 				setRowMark (&iter, 2, item->selected());
@@ -704,20 +703,19 @@ public:
 		}
 		if (((YTreeItem *) item)->isOpen())
 			expand (&iter);
-#endif
 		for (YItemConstIterator it = item->childrenBegin();
 		     it != item->childrenEnd(); it++)
 			addNode (*it, &iter);
 	}
 
-#if 0
+
 	void expand (GtkTreeIter *iter)
 	{
 		GtkTreePath *path = gtk_tree_model_get_path (getModel(), iter);
 		gtk_tree_view_expand_row (getView(), path, FALSE);
 		gtk_tree_path_free (path);
 	}
-
+#if 0
 	bool isReallyOpen (YTreeItem *item)  // are parents open as well?
 	{
 		for (YTreeItem *i = item; i; i = i->parent())
