@@ -182,8 +182,11 @@ public:
 			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			g_object_ref (G_OBJECT (m_busyCursor));
 		}
-		if (!m_isBusy)
-                        gdk_window_set_cursor (gtk_widget_get_window(m_widget), m_busyCursor);
+		if (!m_isBusy) {
+			GdkDisplay *display = gtk_widget_get_display (m_widget);
+			gdk_window_set_cursor (gtk_widget_get_window(m_widget), m_busyCursor);
+			gdk_display_sync(display);
+		}
 		m_isBusy = true;
 	}
 
