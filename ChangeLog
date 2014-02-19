@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Mon Feb 10 20:55:12 CET 2014 - anaselli@linux.it
+Wed Feb 19 20:58:13 CET 2014 - anaselli@linux.it
 
+- Added seconds to YTimeField as for Qt
 - Fixed BusyCursor
 - Fixed YTree item selection during items population,
   old implementation ignored selected items.

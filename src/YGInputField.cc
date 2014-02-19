@@ -98,8 +98,10 @@ public:
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_add_field (field, ':');
 		ygtk_field_entry_add_field (field, ':');
+		ygtk_field_entry_add_field (field, ':');
 		ygtk_field_entry_setup_field (field, 0, 2, "0123456789");
 		ygtk_field_entry_setup_field (field, 1, 2, "0123456789");
+		ygtk_field_entry_setup_field (field, 2, 2, "0123456789");
 
 		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
 	}
@@ -109,22 +111,24 @@ public:
 	{
 		BlockEvents block (this);
 		if (time.empty()) return;
-		char hours[3], mins[3];
-		sscanf (time.c_str(), "%2s:%2s", hours, mins);
+		char hours[3], mins[3], secs[3];
+		sscanf (time.c_str(), "%2s:%2s:%2s", hours, mins, secs);
 
 		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_set_field_text (entry, 0, hours);
 		ygtk_field_entry_set_field_text (entry, 1, mins);
+		ygtk_field_entry_set_field_text (entry, 2, secs);
 	}
 
 	virtual std::string value()
 	{
-		const gchar *hours, *mins;
+		const gchar *hours, *mins, *secs;
 		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
 		hours = ygtk_field_entry_get_field_text (entry, 0);
 		mins  = ygtk_field_entry_get_field_text (entry, 1);
+		secs  = ygtk_field_entry_get_field_text (entry, 2);
 
-		gchar *time = g_strdup_printf ("%02d:%02d:00", atoi (hours), atoi (mins));
+		gchar *time = g_strdup_printf ("%02d:%02d:%02d", atoi (hours), atoi (mins), atoi (secs));
 		std::string str (time);
 		g_free (time);
 		return str;
