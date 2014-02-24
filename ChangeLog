@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Wed Feb 19 20:58:13 CET 2014 - anaselli@linux.it
+
+- Added seconds to YTimeField as for Qt
+- Fixed BusyCursor
+- Fixed YTree item selection during items population,
+  old implementation ignored selected items.
+- Aligned dialog title behavior to QT
+- 2.44.1
+
+-------------------------------------------------------------------
 Thu Dec  5 16:36:33 UTC 2013 - mvidner@suse.com
 
 - adjusted to libyui so version 6
