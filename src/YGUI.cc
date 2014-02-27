@@ -357,10 +357,10 @@ void YGUI::askSaveLogs()
 	std::string filename = askForFileOrDirectory (GTK_FILE_CHOOSER_ACTION_SAVE,
 		"/tmp/y2logs.tgz", "*.tgz *.tar.gz", _("Save y2logs"));
 	if (!filename.empty()) {
-		std::string command = "/sbin/save_y2logs";
+		std::string command = "/usr/sbin/save_y2logs";
 		command += " '" + filename + "'";
-	    yuiMilestone() << "Saving y2logs: " << command << std::endl;
-	    int ret = system (command.c_str());
+		yuiMilestone() << "Saving y2logs: " << command << std::endl;
+		int ret = system (command.c_str());
 		if (ret == 0)
 			yuiMilestone() << "y2logs saved to " << filename << std::endl;
 		else {
