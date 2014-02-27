@@ -2,6 +2,16 @@
 Thu Feb 27 14:57:15 UTC 2014 - mvidner@suse.com
 
 - Fixed save_y2logs invocation (bnc#866056).
+- 2.44.2
+
+-------------------------------------------------------------------
+Wed Feb 19 20:58:13 CET 2014 - anaselli@linux.it
+
+- Added seconds to YTimeField as for Qt
+- Fixed BusyCursor
+- Fixed YTree item selection during items population,
+  old implementation ignored selected items.
+- Aligned dialog title behavior to QT
 - 2.44.1
 
 -------------------------------------------------------------------

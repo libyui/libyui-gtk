@@ -81,10 +81,17 @@ public:
 				parent = GTK_WINDOW (yglast->m_window->getWidget());
 			}
 		    GtkWindow *window = GTK_WINDOW (m_widget);
+			// to be back compatible
+		    std::string dialogTitle = "YaSt";
 
+#ifdef LIBYUI_VERSION_NUM
+ #if LIBYUI_VERSION_AT_LEAST(2,42,3)	
+		    dialogTitle = YUI::app()->applicationTitle();
+ #endif
+#endif
 		    if (parent) {
 		        // if there is a parent, this would be a dialog
-		        gtk_window_set_title (window, "");
+		        gtk_window_set_title (window, dialogTitle.c_str());
 		        gtk_window_set_modal (window, TRUE);
 		        gtk_window_set_transient_for (window, parent);
 		        gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
@@ -93,21 +100,15 @@ public:
 					atk_object_set_role (peer, ATK_ROLE_DIALOG);
 		    }
 		    else {
+						gtk_window_set_title (window, dialogTitle.c_str());
 #ifdef LIBYUI_VERSION_NUM
  #if LIBYUI_VERSION_AT_LEAST(2,42,3)	
-						gtk_window_set_title (window, YUI::app()->applicationTitle().c_str());
 						GdkPixbuf *pixbuf = YGUtils::loadPixbuf (YUI::app()->applicationIcon());
 						if (pixbuf) {  // default window icon
 							gtk_window_set_default_icon (pixbuf);
 							g_object_unref (G_OBJECT (pixbuf));
 						}
- #else
-						// to be back compatible
-						gtk_window_set_title (window, "YaST");
  #endif
-#else
-						// to be back compatible
-						gtk_window_set_title (window, "YaST");
 #endif
 		        if (YGUI::ui()->unsetBorder())
 		            gtk_window_set_decorated (window, FALSE);
@@ -181,8 +182,11 @@ public:
 			m_busyCursor = gdk_cursor_new_for_display (display, GDK_WATCH);
 			g_object_ref (G_OBJECT (m_busyCursor));
 		}
-		if (!m_isBusy)
-                        gdk_window_set_cursor (gtk_widget_get_window(m_widget), m_busyCursor);
+		if (!m_isBusy) {
+			GdkDisplay *display = gtk_widget_get_display (m_widget);
+			gdk_window_set_cursor (gtk_widget_get_window(m_widget), m_busyCursor);
+			gdk_display_sync(display);
+		}
 		m_isBusy = true;
 	}
 
