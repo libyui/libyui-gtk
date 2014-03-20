@@ -8,6 +8,7 @@
 #include "YGDialog.h"
 #include "YGUtils.h"
 #include <YDialogSpy.h>
+#include <YPushButton.h>
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 #include <string.h>
@@ -338,6 +339,16 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
 YGDialog::~YGDialog()
 {
     YGWindow::unref (m_window);
+}
+
+void YGDialog::setDefaultButton(YPushButton* newDefaultButton)
+{
+   YDialog::setDefaultButton( 0 ); // prevent complaints about multiple default buttons
+   if ( newDefaultButton ) 
+   {
+     newDefaultButton->setKeyboardFocus();
+     YDialog::setDefaultButton(newDefaultButton);
+   }
 }
 
 void YGDialog::openInternal()
