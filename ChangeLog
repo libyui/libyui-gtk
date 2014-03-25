@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
 Thu Mar 20 14:13:03 CET 2014 - anaselli@linux.it
 
+- Fixed smaller dialog (issue #41)
 - Fixed dialog setDefaultButton (issue #39)
 - 2.44.3
 
