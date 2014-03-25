@@ -8,6 +8,7 @@
 #include "YGDialog.h"
 #include "YGUtils.h"
 #include <YDialogSpy.h>
+#include <YPushButton.h>
 #include <gdk/gdkkeysyms.h>
 #include <math.h>  // easter
 #include <string.h>
@@ -340,6 +341,16 @@ YGDialog::~YGDialog()
     YGWindow::unref (m_window);
 }
 
+void YGDialog::setDefaultButton(YPushButton* newDefaultButton)
+{
+   YDialog::setDefaultButton( 0 ); // prevent complaints about multiple default buttons
+   if ( newDefaultButton ) 
+   {
+     newDefaultButton->setKeyboardFocus();
+     YDialog::setDefaultButton(newDefaultButton);
+   }
+}
+
 void YGDialog::openInternal()
 {
     m_window->show();
@@ -402,6 +413,16 @@ void YGDialog::doSetSize (int width, int height)
 	// result of changed layout properties
 	bool resize = false;
 	GtkWidget *window = m_window->getWidget();
+
+        gint w,h;
+        gtk_window_get_size(GTK_WINDOW (window), &w, &h);
+        
+        if (w < width || h < height) {
+            resize = true;
+            width  = MAX (width,  w),
+            height = MAX (height, h);
+        }                        
+
 	if (gtk_widget_get_realized (window)) {
 		gtk_widget_queue_resize (window);
 		width = MIN (width, YUI::app()->displayWidth());

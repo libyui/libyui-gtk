@@ -22,6 +22,11 @@ public:
 	YGDialog (YDialogType dialogType, YDialogColorMode colorMode);
 	virtual ~YGDialog();
 
+        /**
+        * Set the dialog's default button 
+        **/
+        void setDefaultButton( YPushButton * newDefaultButton );
+    
 	virtual GtkWidget *getContainer() { return m_containee; }
 
     void setCloseCallback (YGWindowCloseFn closeCallback, void *closeData);
