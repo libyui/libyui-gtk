@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Wed Apr 16 18:03:05 CEST 2014 - anaselli@linux.it
+
+- Fixed YGImage::setImage implementation (gh#libyui/libyui-gtk#44)
+- 2.44.4
+
+-------------------------------------------------------------------
 Thu Mar 20 14:13:03 CET 2014 - anaselli@linux.it
 
 - Fixed smaller dialog (gh#libyui/libyui-gtk#41)
