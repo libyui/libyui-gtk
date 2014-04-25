@@ -1,6 +1,7 @@
 -------------------------------------------------------------------
-Wed Apr 16 18:03:05 CEST 2014 - anaselli@linux.it
+Fri Apr 25 15:40:31 CEST 2014 - anaselli@linux.it
 
+- Fixed YGDateField and YGTimeField input validity check
 - Fixed YGImage::setImage implementation (gh#libyui/libyui-gtk#44)
 - 2.44.4
 
