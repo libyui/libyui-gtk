@@ -75,8 +75,8 @@ This package has very few dependencies.
 
 %build
 
-export CFLAGS="$RPM_OPT_FLAGS -DNDEBUG"
-export CXXFLAGS="$RPM_OPT_FLAGS -DNDEBUG"
+export CFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations"
+export CXXFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations"
 
 ./bootstrap.sh %{_prefix}
 

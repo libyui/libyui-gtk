@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Tue May  6 09:58:49 UTC 2014 - coolo@suse.com
+
+- don't error out on deprecated gtk widgets
+- 2.44.5
+
+-------------------------------------------------------------------
 Fri Apr 25 15:40:31 CEST 2014 - anaselli@linux.it
 
 - Fixed YGDateField and YGTimeField input validity check
