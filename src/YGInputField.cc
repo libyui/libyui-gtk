@@ -10,6 +10,11 @@
 #include "ygtkfieldentry.h"
 
 #include <YInputField.h>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <iostream>
+#include <sstream>
+
+using namespace boost::gregorian;
 
 class YGInputField : public YInputField, public YGLabeledWidget
 {
@@ -89,12 +94,15 @@ YInputField *YGWidgetFactory::createInputField (YWidget *parent, const std::stri
 
 class YGTimeField : public YTimeField, public YGLabeledWidget
 {
+	std::string old_time;
 public:
 	YGTimeField (YWidget *parent, const std::string &label)
 	: YTimeField (NULL, label),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ,
 	                   YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
+		// Same default as Qt
+		old_time = "00:00:00";
 		YGtkFieldEntry *field = YGTK_FIELD_ENTRY (getWidget());
 		ygtk_field_entry_add_field (field, ':');
 		ygtk_field_entry_add_field (field, ':');
@@ -102,8 +110,31 @@ public:
 		ygtk_field_entry_setup_field (field, 0, 2, "0123456789");
 		ygtk_field_entry_setup_field (field, 1, 2, "0123456789");
 		ygtk_field_entry_setup_field (field, 2, 2, "0123456789");
+ 
+		setValue ( old_time );
 
 		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
+	}
+
+	bool validTime(const std::string& input_time)
+	{
+		tm tm1;
+		std::stringstream ss;
+		ss << input_time;
+		char c; 
+          
+		if (!(ss >> tm1.tm_hour))
+			return false;
+		ss >> c;
+          
+		if (!(ss >> tm1.tm_min))
+			return false;
+		ss >> c;
+          
+		if (!(ss >> tm1.tm_sec))
+			return false;
+
+		return (tm1.tm_hour<=23 && tm1.tm_min <= 59 && tm1.tm_sec <= 59);
 	}
 
 	// YTimeField
@@ -111,6 +142,8 @@ public:
 	{
 		BlockEvents block (this);
 		if (time.empty()) return;
+		if (!validTime(time)) return;
+                
 		char hours[3], mins[3], secs[3];
 		sscanf (time.c_str(), "%2s:%2s:%2s", hours, mins, secs);
 
@@ -118,12 +151,19 @@ public:
 		ygtk_field_entry_set_field_text (entry, 0, hours);
 		ygtk_field_entry_set_field_text (entry, 1, mins);
 		ygtk_field_entry_set_field_text (entry, 2, secs);
+                
+		old_time = time;
 	}
 
 	virtual std::string value()
 	{
 		const gchar *hours, *mins, *secs;
 		YGtkFieldEntry *entry = YGTK_FIELD_ENTRY (getWidget());
+		if (!gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 0)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 1)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 2)))
+		return old_time;
+            
 		hours = ygtk_field_entry_get_field_text (entry, 0);
 		mins  = ygtk_field_entry_get_field_text (entry, 1);
 		secs  = ygtk_field_entry_get_field_text (entry, 2);
@@ -137,7 +177,22 @@ public:
 	// callbacks
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
 	                              YGTimeField *pThis)
-	{ pThis->emitEvent (YEvent::ValueChanged); }
+	{ 
+		if (!gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 0)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 1)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 2)))
+		return;
+                
+		if (pThis->validTime(pThis->value()))
+		{            
+			pThis->old_time = pThis->value();
+			pThis->emitEvent (YEvent::ValueChanged); 
+		}
+		else
+		{
+			pThis->setValue(pThis->old_time);
+		}
+	}
 
 	YGLABEL_WIDGET_IMPL (YTimeField)
 };
@@ -151,12 +206,15 @@ YTimeField *YGOptionalWidgetFactory::createTimeField (YWidget *parent, const std
 class YGDateField : public YDateField, public YGLabeledWidget
 {
 GtkWidget *m_calendar, *m_popup_calendar;
+std::string old_date;
 
 public:
 	YGDateField (YWidget *parent, const std::string &label)
 	: YDateField (NULL, label),
 	  YGLabeledWidget (this, parent, label, YD_HORIZ, YGTK_TYPE_FIELD_ENTRY, NULL)
 	{
+		// Same value as QT default
+		old_date = "2000-01-01";
 		ygtk_field_entry_add_field (getField(), '-');
 		ygtk_field_entry_add_field (getField(), '-');
 		ygtk_field_entry_add_field (getField(), '-');
@@ -172,6 +230,8 @@ public:
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (menu_button), popup);
 		gtk_widget_show (menu_button);
 		gtk_box_pack_start (GTK_BOX (getWidget()), menu_button, FALSE, TRUE, 6);
+                
+		setValue(old_date);
 
 		connect (getWidget(), "field-entry-changed", G_CALLBACK (value_changed_cb), this);
 		connect (m_calendar, "day-selected", G_CALLBACK (calendar_changed_cb), this);
@@ -184,11 +244,25 @@ public:
 	inline YGtkFieldEntry *getField()
 	{ return YGTK_FIELD_ENTRY (getWidget()); }
 
+	bool validDate(const std::string& input_date)
+	{
+		std::wstringstream ss;
+		wdate_input_facet * fac = new wdate_input_facet(L"%Y-%m-%d");
+		ss.imbue(std::locale(std::locale::classic(), fac));
+
+		date d;
+		ss << input_date.c_str();
+		ss >> d;
+		return d != date();
+	}
+        
 	// YDateField
 	virtual void setValue (const std::string &date)
 	{
 		BlockEvents block (this);
 		if (date.empty()) return;
+		if (!validDate(date)) return;
+
 		char year[5], month[3], day[3];
 		sscanf (date.c_str(), "%4s-%2s-%2s", year, month, day);
 
@@ -198,10 +272,16 @@ public:
 		ygtk_field_entry_set_field_text (getField(), 0, year);
 		ygtk_field_entry_set_field_text (getField(), 1, month);
 		ygtk_field_entry_set_field_text (getField(), 2, day);
+		old_date = date;
 	}
 
 	virtual std::string value()
 	{
+		if (gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (getField(), 0)) < 4 ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (getField(), 1)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (getField(), 2)))
+			return old_date;
+
 		const gchar *year, *month, *day;
 		year  = ygtk_field_entry_get_field_text (getField(), 0);
 		month = ygtk_field_entry_get_field_text (getField(), 1);
@@ -218,24 +298,40 @@ public:
 	static void value_changed_cb (YGtkFieldEntry *entry, gint field_nb,
 	                              YGDateField *pThis)
 	{
-		int year, month, day;
-		year  = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 0));
-		month = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 1));
-		day   = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 2));
+		if (gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 0)) < 4 ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 1)) ||
+		    !gtk_entry_get_text_length (ygtk_field_entry_get_field_widget (entry, 2)))
+			return;
 
-		if (day < 1 || day > 31 || month < 1 || month > 12)
-			return;	// avoid GtkCalendar warnings
+		std::string new_date = pThis->value();
+		bool changed = false;
 
-		g_signal_handlers_block_by_func (pThis->getCalendar(),
-		                                 (gpointer) calendar_changed_cb, pThis);
+		if (pThis->validDate(new_date))
+		{
+			changed = true;
+			pThis->old_date = new_date;
+		}
+		else
+		{
+			pThis->setValue(pThis->old_date);
+		}
 
-		gtk_calendar_select_month (pThis->getCalendar(), month-1, year);
-		gtk_calendar_select_day (pThis->getCalendar(), day);
+		if (changed)
+		{               
+			int year, month, day;
+			year  = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 0));
+ 			month = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 1));
+			day   = atoi (ygtk_field_entry_get_field_text (pThis->getField(), 2));
+                
+			g_signal_handlers_block_by_func (pThis->getCalendar(),
+						(gpointer) calendar_changed_cb, pThis);
+			gtk_calendar_select_month (pThis->getCalendar(), month-1, year);
+			gtk_calendar_select_day (pThis->getCalendar(), day);
+			g_signal_handlers_unblock_by_func (pThis->getCalendar(),
+						(gpointer) calendar_changed_cb, pThis);
 
-		g_signal_handlers_unblock_by_func (pThis->getCalendar(),
-		                                   (gpointer) calendar_changed_cb, pThis);
-
-		pThis->emitEvent (YEvent::ValueChanged);
+			pThis->emitEvent (YEvent::ValueChanged);
+		}
 	}
 
 	static void calendar_changed_cb (GtkCalendar *calendar, YGDateField *pThis)
@@ -257,6 +353,7 @@ public:
 		ygtk_field_entry_set_field_text (entry, 1, month_str);
 		ygtk_field_entry_set_field_text (entry, 2, day_str);
 
+		pThis->old_date = pThis->value();
 		g_signal_handlers_unblock_by_func (pThis->getField(),
 		                                   (gpointer) value_changed_cb, pThis);
 

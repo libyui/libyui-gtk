@@ -25,6 +25,13 @@ public:
 	: YImage (NULL, filename, animated),
 	  YGWidget (this, parent, YGTK_TYPE_IMAGE, NULL)
 	{
+		setImage( filename, animated );
+	}
+
+	virtual void setImage( const std::string & filename, bool animated )
+	{
+		YImage::setImage ( filename, animated );
+
 		YGtkImage *image = YGTK_IMAGE (getWidget());
 		const char *iconname = NULL;
 		if (endsWith (filename, "/msg_question.png"))
