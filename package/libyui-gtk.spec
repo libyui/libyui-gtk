@@ -17,7 +17,7 @@
 
 
 Name:           libyui-gtk
-Version:        2.44.5
+Version:        2.44.6
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
