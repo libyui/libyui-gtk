@@ -9,6 +9,7 @@
 #include "YGUtils.h"
 #include "YGWidget.h"
 #include <string.h>
+#include <libgen.h>
 
 #include <YLayoutBox.h>
 #include "ygtkratiobox.h"
@@ -104,13 +105,28 @@ public:
 			if (path[0] != '/')
 				path = std::string (THEMEDIR) + "/" + path;
 
+                        char *p = strdup(path.c_str());
+                        char *p1 = strdup(path.c_str());
+                        char *dname = dirname(p);
+                        char *fname = basename(p1);
+                        char *name = strtok (fname, ".");
+                        GtkIconTheme * theme = gtk_icon_theme_get_default ();
+                        gtk_icon_theme_add_resource_path (theme, dname);
+                        gtk_icon_theme_prepend_search_path (theme, dname);
+                        gtk_icon_theme_rescan_if_needed (theme);
 			GError *error = 0;
-			GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file (path.c_str(), &error);
+                        GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (theme,
+                                   name, // icon name
+                                   16, // icon size (default button size)
+                                   GTK_ICON_LOOKUP_FORCE_SIZE,  // flags
+                                   &error);
+                        free (p);
+                        free (p1);
 			if (pixbuf) {
 				GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
 				gtk_button_set_image (button, image);
 				// disregard gtk-button-images setting for explicitly set icons
-				gtk_widget_show (image);
+                                gtk_button_set_always_show_image (button, TRUE);
 				g_object_unref (G_OBJECT (pixbuf));
 			}
 			else
