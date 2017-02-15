@@ -84,8 +84,8 @@ This package has very few dependencies.
 
 %build
 
-export CFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations"
-export CXXFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations"
+export CFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations -fPIC"
+export CXXFLAGS="$RPM_OPT_FLAGS -DNDEBUG -Wno-error=deprecated-declarations -fPIC"
 
 ./bootstrap.sh %{_prefix}
 
@@ -97,12 +97,14 @@ cmake .. \
     -DPREFIX=%{_prefix} \
     -DDOC_DIR=%{_docdir} \
     -DLIB_DIR=%{_lib} \
+    -DENABLE_WERROR=OFF \
     -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
 %else
 cmake .. \
     -DPREFIX=%{_prefix} \
     -DDOC_DIR=%{_docdir} \
     -DLIB_DIR=%{_lib} \
+    -DENABLE_WERROR=OFF \
     -DCMAKE_BUILD_TYPE=RELEASE
 %endif
 
