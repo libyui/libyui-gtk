@@ -164,10 +164,6 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 		if (!gtk_widget_get_visible (child->widget))
 			continue;
 
-		//GtkRequisition min_child_req;
-		//GtkRequisition nat_child_req;
-		//gtk_widget_get_preferred_size (child->widget, &min_child_req, &nat_child_req);
-
 		gint child_length = (child->ratio * length) / ratios_sum;
 		if (!i->next)  // last takes rest (any residual length)
 			child_length = length - child_pos;
@@ -185,6 +181,11 @@ static void ygtk_ratio_box_size_allocate (GtkWidget     *widget,
 			child_alloc.width = width;
 			child_alloc.height = child_length;
 		}
+
+		GtkRequisition min_child_req;
+		GtkRequisition nat_child_req;
+		gtk_widget_get_preferred_size (child->widget, &min_child_req, &nat_child_req);
+
 		child_alloc.width = MAX (child_alloc.width, 1);
 		child_alloc.height = MAX (child_alloc.height, 1);
 
@@ -404,6 +405,11 @@ static void ygtk_adj_size_size_allocate (GtkWidget *widget,
 		child_alloc.y += border;
 		child_alloc.width -= border * 2;
 		child_alloc.height -= border * 2;
+
+		GtkRequisition min_child_req;
+		GtkRequisition nat_child_req;
+		gtk_widget_get_preferred_size (child, &min_child_req, &nat_child_req);
+
 		child_alloc.width = MAX (child_alloc.width, 1);
 		child_alloc.height = MAX (child_alloc.height, 1);
 		gtk_widget_size_allocate (child, &child_alloc);

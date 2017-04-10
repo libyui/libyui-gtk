@@ -128,6 +128,11 @@ static void ygtk_fixed_size_allocate (GtkWidget *widget, GtkAllocation *allocati
 		int y = child->y + allocation->y;
 		GtkAllocation child_alloc =
 			{ x, y, MAX (child->width, 1), MAX (child->height, 1) };
+
+		GtkRequisition min_child_req;
+		GtkRequisition nat_child_req;
+		gtk_widget_get_preferred_size (child->widget, &min_child_req, &nat_child_req);
+
 		gtk_widget_size_allocate (child->widget, &child_alloc);
 	}
 	GTK_WIDGET_CLASS (ygtk_fixed_parent_class)->size_allocate (widget, allocation);
