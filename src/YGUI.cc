@@ -45,9 +45,11 @@ YUI *createUI( bool withThreads )
 YGUI::YGUI (bool with_threads)
 	: YUI (with_threads), m_done_init (false), busy_timeout (0)
 {
+	yuiMilestone() << "This is libyui-gtk " << VERSION << std::endl;
+
 	m_no_border = m_fullscreen = m_swsingle = false;
 
-    YGUI::setTextdomain( TEXTDOMAIN );
+	YGUI::setTextdomain( TEXTDOMAIN );
 
 	// If we're running without threads, initialize Gtk stuff
 	// This enables standalone libyui use Gtk interface
