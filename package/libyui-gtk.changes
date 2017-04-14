@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Fri Apr 14 22:41:23 CEST 2017 - besser82@fedoraproject.org
+
+- Add milestone-greeter when creating UI
+- 2.44.9
+
+-------------------------------------------------------------------
 Mon Apr 10 11:50:00 CEST 2016 - besser82@fedoraproject.org
 
 - Fix warnings from GTK3-3.22 (gh#libyui/libyui-gtk#55)
