@@ -76,7 +76,15 @@ static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint 
 	gtk_widget_get_preferred_size(widget, &req, NULL);
 
 	GdkScreen *screen = gtk_widget_get_screen (widget);
-	gint monitor_num = gdk_screen_get_monitor_at_window (screen, gtk_widget_get_root_window (widget));
+
+#	if GTK_CHECK_VERSION (3, 12, 0)
+	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
+		gdk_screen_get_root_window (gtk_widget_get_screen (widget)));
+#	else
+	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
+		gtk_widget_get_root_window (widget));
+#	endif
+
 	GdkRectangle monitor;
 	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
 
