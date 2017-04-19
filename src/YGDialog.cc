@@ -127,17 +127,17 @@ public:
 		    	if (YGUI::ui()->isSwsingle())
 		    		height += YGUtils::getCharsHeight (m_widget, 10);
 
-				width = MIN (width, YUI::app()->displayWidth());
-				height = MIN (height, YUI::app()->displayHeight());
+			width = MIN (width, YUI::app()->displayWidth());
+			height = MIN (height, YUI::app()->displayHeight());
 
 		        gtk_window_set_default_size (window, width, height);
 		        gtk_window_resize(window, width, height);
 
-				if (YGUI::ui()->setFullscreen())
-					gtk_window_fullscreen (window);
-				else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
-					// maximize window for small displays
-					gtk_window_maximize (window);
+			if (YGUI::ui()->setFullscreen())
+				gtk_window_fullscreen (window);
+			else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
+				// maximize window for small displays
+				gtk_window_maximize (window);
 		    }
 
 		    gtk_window_set_role (window, "yast2");
