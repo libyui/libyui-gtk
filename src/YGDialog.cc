@@ -59,7 +59,11 @@ public:
 #		endif
 
 		g_object_ref_sink (G_OBJECT (m_widget));
+
+#		if GTK_CHECK_VERSION (3, 14, 0)
+#		else
 		gtk_window_set_has_resize_grip (GTK_WINDOW (m_widget), TRUE);
+#		endif
 
 		m_refcount = 0;
 		m_child = NULL;
@@ -324,8 +328,17 @@ YGDialog::YGDialog (YDialogType dialogType, YDialogColorMode colorMode)
             (colorMode == YDialogWarnColor ? "dialog-warning" : "dialog-information",
              GTK_ICON_SIZE_DIALOG);
 
-        gtk_misc_set_alignment (GTK_MISC (icon), 0.5, 0);
-        gtk_misc_set_padding   (GTK_MISC (icon), 0, 12);
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (icon, GTK_ALIGN_CENTER);
+	gtk_widget_set_valign (icon, GTK_ALIGN_START);
+	gtk_widget_set_margin_start  (icon, 0);
+	gtk_widget_set_margin_end    (icon, 0);
+	gtk_widget_set_margin_top    (icon, 12);
+	gtk_widget_set_margin_bottom (icon, 12);
+#	else
+	gtk_misc_set_alignment (GTK_MISC (icon), 0.5, 0);
+	gtk_misc_set_padding   (GTK_MISC (icon), 0, 12);
+#	endif
 
         gtk_box_pack_start (GTK_BOX (getWidget()), icon,    FALSE, FALSE, 12);
         gtk_box_pack_start (GTK_BOX (getWidget()), m_containee, TRUE, TRUE, 0);

@@ -15,7 +15,13 @@ public:
     : YLabel (NULL, text, heading, outputField),
       YGWidget (this, parent, GTK_TYPE_LABEL, NULL)
 	{
+#		if GTK_CHECK_VERSION (3, 14, 0)
+		gtk_widget_set_halign (getWidget(), GTK_ALIGN_START);
+		gtk_widget_set_valign (getWidget(), GTK_ALIGN_CENTER);
+#		else
 		gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
+#		endif
+
 		if (outputField) {
 			gtk_label_set_selectable (GTK_LABEL (getWidget()), TRUE);
 			gtk_label_set_single_line_mode (GTK_LABEL (getWidget()), TRUE);

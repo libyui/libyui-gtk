@@ -161,7 +161,14 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	char *label_str = ygutils_mapKBAccel (_("&Find:"));
 	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (label_str);
 	g_free (label_str);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
+#	endif
+
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
 
 	bottom_box = YGTK_HBOX_NEW(2);
@@ -439,7 +446,14 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 
 	header->title = gtk_label_new ("");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (header->title, GTK_ALIGN_START);
+	gtk_widget_set_valign (header->title, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
+#	endif
+
 	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
 	                       PANGO_SCALE_X_LARGE);
 	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };

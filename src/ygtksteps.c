@@ -140,10 +140,26 @@ gint ygtk_steps_append (YGtkSteps *steps, const gchar *text)
 	GtkWidget *label = gtk_label_new (text);
 	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
 	gtk_widget_override_color (label, GTK_STATE_NORMAL, &black);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_START);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+#	endif
+
 	int mark_width = 10;
 	pango_layout_get_pixel_size (steps->check_mark_layout, &mark_width, NULL);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_margin_start  (label, mark_width+12);
+	gtk_widget_set_margin_end    (label, mark_width+12);
+	gtk_widget_set_margin_top    (label, 0);
+	gtk_widget_set_margin_bottom (label, 0);
+#	else
 	gtk_misc_set_padding (GTK_MISC (label), mark_width+12, 0);
+#	endif
+
 	gtk_widget_show (label);
 	gtk_box_pack_start (GTK_BOX (steps), label, FALSE, TRUE, 0);
 	return ygtk_steps_total (steps)-1;
@@ -155,7 +171,13 @@ void ygtk_steps_append_heading (YGtkSteps *steps, const gchar *heading)
 	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
 	gtk_widget_override_color (label, GTK_STATE_NORMAL, &black);
 	g_object_set_data (G_OBJECT (label), "is-header", GINT_TO_POINTER (1));
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_START);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+#	endif
 
 	PangoAttrList *attrbs = pango_attr_list_new();
 	pango_attr_list_insert (attrbs, pango_attr_weight_new (PANGO_WEIGHT_BOLD));
