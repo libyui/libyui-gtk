@@ -109,9 +109,16 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 	gtk_widget_show (widget);
 
 	GdkWindow *window = gtk_widget_get_window (widget);
+
 	GdkDisplay *display = gdk_window_get_display (window);
+
+#	if GTK_CHECK_VERSION (3, 20, 0)
+	GdkSeat *seat = gdk_display_get_default_seat (display);
+	GdkDevice *pointer = gdk_seat_get_pointer (seat);
+#	else
 	GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
 	GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+#	endif
 
 	// grab this with your teeth
 	if (gdk_device_grab (pointer, window, GDK_OWNERSHIP_NONE, TRUE,

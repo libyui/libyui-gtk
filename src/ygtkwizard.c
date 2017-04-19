@@ -524,8 +524,15 @@ static gboolean ygtk_wizard_header_motion_notify_event (GtkWidget *widget, GdkEv
 		gdk_window_get_root_origin (event->window, &root_x, &root_y);
 
 		GdkDisplay *display = gdk_window_get_display (event->window);
+
+#		if GTK_CHECK_VERSION (3, 20, 0)
+		GdkSeat *seat = gdk_display_get_default_seat (display);
+		GdkDevice *pointer = gdk_seat_get_pointer (seat);
+#		else
 		GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
 		GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+#		endif
+
 		gdk_window_get_device_position (event->window, pointer, &pointer_x, &pointer_y, NULL);
 
 		gint x = pointer_x + root_x - header->press_x;
