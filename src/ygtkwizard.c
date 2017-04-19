@@ -491,7 +491,14 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 static gboolean ygtk_wizard_header_button_press_event (GtkWidget *widget, GdkEventButton *event)
 {
 	if (event->button == 1) {
+#		if GTK_CHECK_VERSION (3, 16, 0)
+		GdkCursor *cursor = gdk_cursor_new_for_display (
+						gdk_display_get_default (),
+						GDK_FLEUR);
+#		else
 		GdkCursor *cursor = gdk_cursor_new (GDK_FLEUR);
+#		endif
+
 		gdk_window_set_cursor (event->window, cursor);
 		g_object_unref (cursor);
 
