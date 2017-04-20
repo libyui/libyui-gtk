@@ -1,4 +1,38 @@
 -------------------------------------------------------------------
+Thu Apr 20 16:11:42 CEST 2017 - besser82@fedoraproject.org
+
+- Fix Werror=misleading-indentation
+- Fix all deprecated / obsoleted functions in GTK-3.12 (gh#libyui/libyui-gtk#42)
+  - Remove obsolete gtk_container_set_resize_mode()
+  - Replace gtk_widget_get_root_window()
+- Fix all deprecated / obsoleted functions in GTK-3.14 (gh#libyui/libyui-gtk#42)
+  - Remove gtk_tree_view_set_rules_hint()
+  - Remove gtk_window_set_has_resize_grip()
+  - Replace gtk_alignment_new()
+  - Replace gtk_alignment_set_padding()
+  - Replace gtk_arrow_new()
+  - Replace gtk_misc_set_alignment()
+  - Replace gtk_misc_set_padding()
+- Fix all deprecated / obsoleted functions in GDK-3.16 (gh#libyui/libyui-gtk#42)
+  - Replace gdk_cursor_new()
+- Fix all deprecated / obsoleted functions in GTK-3.16 (gh#libyui/libyui-gtk#42)
+  - Replace gtk_style_context_get_background_color()
+- Fix all deprecated / obsoleted functions in GDK-3.20 (gh#libyui/libyui-gtk#42)
+  - Replace gdk_device_manager_get_client_pointer()
+- Fix all deprecated / obsoleted functions in GTK-3.20 (gh#libyui/libyui-gtk#42)
+  - Replace gtk_button_set_focus_on_click()
+- Fix all deprecated / obsoleted functions in GDK-3.22 (gh#libyui/libyui-gtk#42)
+  - Replace gdk_screen_get_height()
+  - Replace gdk_screen_get_monitor_at_window()
+  - Replace gdk_screen_get_monitor_geometry()
+  - Replace gdk_screen_get_width()
+  - Replace gdk_visual_get_best_depth()
+- Fix all deprecated / obsoleted functions in GTK-3.22 (gh#libyui/libyui-gtk#42)
+  - Replace gtk_menu_popup()
+  - Replace gdk_display_get_device_manager()
+- 2.45.0
+
+-------------------------------------------------------------------
 Fri Apr 14 22:41:23 CEST 2017 - besser82@fedoraproject.org
 
 - Add milestone-greeter when creating UI
