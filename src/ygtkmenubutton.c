@@ -76,17 +76,22 @@ static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint 
 	gtk_widget_get_preferred_size(widget, &req, NULL);
 
 	GdkScreen *screen = gtk_widget_get_screen (widget);
+	GdkRectangle monitor;
 
-#	if GTK_CHECK_VERSION (3, 12, 0)
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	GdkMonitor *monitor_num = gdk_display_get_monitor_at_window (
+		gdk_screen_get_display (screen),
+		gdk_screen_get_root_window (screen));
+	gdk_monitor_get_geometry (monitor_num, &monitor);
+#	elif GTK_CHECK_VERSION (3, 12, 0)
 	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
-		gdk_screen_get_root_window (gtk_widget_get_screen (widget)));
+		gdk_screen_get_root_window (screen));
+	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
 #	else
 	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
 		gtk_widget_get_root_window (widget));
-#	endif
-
-	GdkRectangle monitor;
 	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
+#	endif
 
 	if (*x < monitor.x)
 		*x = monitor.x;
@@ -185,8 +190,20 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 	*y += (button_alloc.y-popup_height) + (button_alloc.height+popup_height)*button->yalign;
 
 	// GTK doesn't push up menus if they are near the bottom, but we will...
-	int screen_height;
-	screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
+#       if GTK_CHECK_VERSION (3, 22, 0)
+        GdkScreen *screen = gtk_widget_get_screen (widget);
+        GdkRectangle monitor;
+
+        GdkMonitor *monitor_num = gdk_display_get_monitor_at_window (
+                gdk_screen_get_display (screen),
+                gdk_screen_get_root_window (screen));
+        gdk_monitor_get_geometry (monitor_num, &monitor);
+
+	int screen_height = monitor.y;
+#       else
+	int screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
+#       endif
+
 	if (*y > screen_height - popup_height)
 		*y -= popup_height + button_alloc.height;
 }

@@ -624,12 +624,42 @@ static inline GdkScreen *getScreen ()
 // GTK doesn't seem to have some desktopWidth/Height like Qt, so we to report
 // a reduced display size to compensate for the panel, or the window frame
 int YGApplication::displayWidth()
-{ return gdk_screen_get_width (getScreen()) - 80; }
+{
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	GdkRectangle monitor;
+	gdk_monitor_get_geometry (
+		gdk_display_get_primary_monitor (
+			gdk_display_get_default()),
+		&monitor);
+	return monitor.x - 80;
+#	else
+	return gdk_screen_get_width (getScreen()) - 80;
+#	endif
+}
+
 int YGApplication::displayHeight()
-{ return gdk_screen_get_height (getScreen()) - 80; }
+{
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	GdkRectangle monitor;
+	gdk_monitor_get_geometry (
+		gdk_display_get_primary_monitor (
+			gdk_display_get_default()),
+		&monitor);
+	return monitor.y - 80;
+#	else
+	return gdk_screen_get_height (getScreen()) - 80;
+#	endif
+}
 
 int YGApplication::displayDepth()
-{ return gdk_visual_get_best_depth(); }
+{
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	return gdk_visual_get_depth (gdk_screen_get_system_visual (
+					gdk_screen_get_default ()));
+#	else
+	return gdk_visual_get_best_depth();
+#endif
+}
 
 long YGApplication::displayColors()
 { return 1L << displayDepth(); /*from yast-qt*/ }
