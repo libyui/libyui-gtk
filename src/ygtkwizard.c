@@ -643,7 +643,13 @@ static GtkWidget *create_help_button()
 	GtkWidget *button, *image;
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
+
+#	if GTK_CHECK_VERSION (3, 20, 0)
+	gtk_widget_set_focus_on_click (GTK_WIDGET (button), FALSE);
+#	else
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
+#endif
+
 	image = gtk_image_new_from_icon_name ("help-contents", GTK_ICON_SIZE_BUTTON);
         gtk_button_set_always_show_image(GTK_BUTTON (button), 1);
 	gtk_button_set_image (GTK_BUTTON (button), image);
