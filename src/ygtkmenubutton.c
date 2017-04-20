@@ -208,12 +208,15 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 		*y -= popup_height + button_alloc.height;
 }
 
+#if GTK_CHECK_VERSION (3, 22, 0)
+#else
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
                                            gboolean *push_in, gpointer data)
 {
 	ygtk_menu_button_get_popup_pos (YGTK_MENU_BUTTON (data), x, y);
 	*push_in = TRUE;
 }
+#endif
 
 static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 {
@@ -223,8 +226,15 @@ static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 
 	guint activate_time = gtk_get_current_event_time();
 	if (GTK_IS_MENU (popup))
-		gtk_menu_popup (GTK_MENU (popup), NULL, NULL, ygtk_menu_button_get_menu_pos,
+
+#		if GTK_CHECK_VERSION (3, 22, 0)
+		gtk_menu_popup_at_pointer (GTK_MENU (popup), NULL);
+#		else
+		gtk_menu_popup (GTK_MENU (popup), NULL, NULL,
+				ygtk_menu_button_get_menu_pos,
 		                button, 0, activate_time);
+#		endif
+
 	else {  // GTK_IS_WINDOW
 		gint x, y;
 		ygtk_menu_button_get_popup_pos (button, &x, &y);
