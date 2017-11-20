@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Mon Nov 20 15:09:20 UTC 2017 - lslezak@suse.cz
+
+- Bump the so version to 8 to be compatible with the base libyui
+
+-------------------------------------------------------------------
 Fri Apr 14 22:41:23 CEST 2017 - besser82@fedoraproject.org
 
 - Add milestone-greeter when creating UI

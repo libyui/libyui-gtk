@@ -17,7 +17,7 @@
 
 
 %define parent libyui-gtk
-%define so_version 7
+%define so_version 8
 
 Name:           %{parent}-doc
 Version:        2.44.9

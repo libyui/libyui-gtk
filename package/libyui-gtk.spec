@@ -21,7 +21,7 @@ Version:        2.44.9
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
-%define so_version 7
+%define so_version 8
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
