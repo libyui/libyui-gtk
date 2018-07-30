@@ -17,11 +17,11 @@
 
 
 Name:           libyui-gtk
-Version:        2.44.9
+Version:        2.44.10
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
-%define so_version 8
+%define so_version 9
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
