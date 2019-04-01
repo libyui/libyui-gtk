@@ -381,8 +381,6 @@ public:
 
 	void setSortable (bool sortable)
 	{
-		if (!sortable && !gtk_widget_get_realized (getWidget()))
-			return;
 		int n = 0;
 		GList *columns = gtk_tree_view_get_columns (getView());
 		for (GList *i = columns; i; i = i->next, n++) {
@@ -391,8 +389,6 @@ public:
 				break;
 			if (sortable) {
 				int index = (n*2)+1;
-				if (!sortable)
-					index = -1;
 				gtk_tree_sortable_set_sort_func (
 					GTK_TREE_SORTABLE (getModel()), index, tree_sort_cb,
 					GINT_TO_POINTER (index), NULL);
