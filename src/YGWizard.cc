@@ -69,6 +69,11 @@ class YGWizard : public YWizard, public YGWidget
 		inline GtkWidget *getWidget() { return m_widget; }
 		inline YGtkWizard *getWizard() { return YGTK_WIZARD (m_wizard->getWidget()); }
 
+                virtual void activate()
+                {
+                        gtk_button_clicked(GTK_BUTTON (getWidget()));
+                }
+
 		private:
 			GtkWidget *m_widget;
 			YGWizard *m_wizard;
@@ -170,10 +175,24 @@ public:
 		YGDialog::currentDialog()->setTitle (heading, false);
 	}
 
+        virtual std::string getDialogHeading()
+        {
+                #warning YGWizard::getDialogHeading() not implemented yet
+                yuiWarning() << "YGWizard::getDialogHeading() not implemented yet" << std::endl;
+                return std::string();
+        }
+
 	virtual void setDialogTitle (const std::string &title)
 	{
 		YGDialog::currentDialog()->setTitle (title, true);
 	}
+
+        virtual std::string getDialogTitle()
+        {
+                #warning YGWizard::getDialogTitle() not implemented yet
+                yuiWarning() << "YGWizard::getDialogTitle() not implemented yet" << std::endl;
+                return std::string();
+        }
 
 	virtual void addStepHeading (const std::string &text)
 	{
