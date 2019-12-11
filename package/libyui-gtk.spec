@@ -17,18 +17,18 @@
 
 
 Name:           libyui-gtk
-Version:        2.45.0
+Version:        2.46.0
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
-%define so_version 10
+%define so_version 11
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
 BuildRequires:  cmake >= 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  gtk3-devel
-BuildRequires:  libyui-devel >= 3.5.0
+BuildRequires:  libyui-devel >= 3.9.0
 BuildRequires:  pkg-config
 Provides:       yui_backend = %{so_version}
 
