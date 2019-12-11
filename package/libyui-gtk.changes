@@ -163,7 +163,7 @@ Mon Apr 29 08:38:47 CEST 2013 - tgoettlicher@suse.de
 -------------------------------------------------------------------
 Fri Apr 26 12:49:33 CEST 2013 - tgoettlicher@suse.de
 
-- fix for bnc #801311: Translation is missing 
+- fix for bnc #801311: Translation is missing
 - 2.42.5
 
 -------------------------------------------------------------------
@@ -184,14 +184,14 @@ Fri Jan 18 15:13:21 CET 2013 - anaselli@linux.it
 -------------------------------------------------------------------
 Thu Dec 27 21:45:30 CET 2012 - anaselli@linux.it
 
-- Fixed YGProgressBar setValue to refresh 
+- Fixed YGProgressBar setValue to refresh
 - Added percentage to YGProgressBar (same behavior of ncurses and
   qt implementation)
 
 -------------------------------------------------------------------
 Fri Nov  2 19:19:27 CET 2012 - anaselli@linux.it
 
-- Used YApplication::applicationTitle() and 
+- Used YApplication::applicationTitle() and
   YApplication::applicationIcon() to set title and icon
 - Reimplemented setApplicationTitle from YApplication
 - Fixed YAlignment::setBackgroundPixmap crash
@@ -940,7 +940,7 @@ Thu Sep 24 00:00:00 GMT 2009 - rpmcruz@alunos.dcc.fc.up.pt
 - complement our label mapping strategy with an array
 of translatable yast2 labels (bnc#446524)
 - always use black color on the text against the white
-background regardless style (bnc#471059). 
+background regardless style (bnc#471059).
 - don't show lock&remove options for patterns (bnc#489016).
 
 -------------------------------------------------------------------
@@ -1043,29 +1043,29 @@ Tue Sep 30 13:56:07 CEST 2008 - kmachalkova@suse.cz
 
 - Update to 2.17.1
   * YGDialog: support for setDialogTitle().
-  * ygtkfindentry: added support embed context menu which pairs the find icon to 
+  * ygtkfindentry: added support embed context menu which pairs the find icon to
     the menu item.
-  * YGPackageSelector: changed find entry check-based menu popup to 
+  * YGPackageSelector: changed find entry check-based menu popup to
     a criteria choice one.
   * ygtkfindentry: added auto-completion support.
-  * makes progress bar a bit smoother. 
+  * makes progress bar a bit smoother.
   * show download size in the progress bar.
-  * bnc #421794: clean any emitted event when destroyed. The new 
+  * bnc #421794: clean any emitted event when destroyed. The new
     libyui crashes when doing YWidget::isValid()
   * YGText: set MultiLineEdit wrap mode as WORD_CHAR.
   * YGDialog: only enable spy code for recent libyuis.
   * YGTable: expand tree's row when selected
   * YGPushButton: only enable role code for recent libyuis.
     Also moved helpButton support to set icon code.
-  * added support for YDialog::highlight() 
+  * added support for YDialog::highlight()
   * coupled dumpGtk and dumpYast trees into the same dialog
   * YGPackageSelector: fixed context menu for objects like Language
     that can't be locked.
   * YGUtils: added fallback to setStockIcon().
   * YGPushButton: use Role as a fallback to derive the stock icon.
-  * YGWizard: made the wizard button wrappers to change the button 
+  * YGWizard: made the wizard button wrappers to change the button
     label & etc through the YGtkWizard API
-  
+
 -------------------------------------------------------------------
 Thu Sep 11 08:35:23 CEST 2008 - jsrain@suse.cz
 
@@ -1079,26 +1079,26 @@ Tue Sep  9 13:36:25 CEST 2008 - visnov@suse.cz
 * fixed Pattern installed status.
 * got rid of patterns remove button.
 * clear search entry on UI change.
-* bug fix: not syncing icon properly when entry text was deleted by 
+* bug fix: not syncing icon properly when entry text was deleted by
   instruction as an insert is triggered.
 * redirect GTK log messages to libyui system.
 * enable html parsing warnings that go to libyui.
 * fixed repositories query (related to bnc #418781).
-* scaping the URL as some characters (like &) were confusing the Pango parser. 
+* scaping the URL as some characters (like &) were confusing the Pango parser.
   Use the FILE stock icon for the ISO.
 
 -------------------------------------------------------------------
 Mon Sep  8 22:32:59 EDT 2008 - jpr@novell.com
 
 - Update to 2.16.18
-* use "Software Manager" instead of "Package Selector" for 
+* use "Software Manager" instead of "Package Selector" for
   consistency (bnc #418781)
 * follow GNOME HIG for button layout
-* when filtering a repository, the most appropriate version wasn't 
+* when filtering a repository, the most appropriate version wasn't
   the one selected (bnc #418896)
 * catch null package repo (bnc #418781)
 * use title capitalization for group names (bnc #418676)
-* add ATK hooks so the screen reader does its job in pixbuf cell 
+* add ATK hooks so the screen reader does its job in pixbuf cell
   renderer (bnc #416554)
 * show bugzilla entries in patch description
 * ygtkrichtext glitches (bnc #396692, bnc #404817)
@@ -1117,13 +1117,13 @@ Mon Jul 21 20:36:09 EDT 2008 - jpr@novell.com
 * implement YTable's multiSelection flag
 * implement shortcutChanged() to set tab labels shortcuts
 * implement setHelpButton() set the help stock icon
-* remove the space for the expanders if the side navegation bar 
+* remove the space for the expanders if the side navegation bar
   is a plain list, as is the case for the firewall tool
 * tweaked some icons as suggested (bnc#404818)
-* don't always iuse the label "upgrade" if re-installs or 
+* don't always iuse the label "upgrade" if re-installs or
   downgrades (bnc#404382)
 * keyboard mnemonics for install/remove buttons (bnc#399256)
-* consider a pattern or a patch installed or not using 
+* consider a pattern or a patch installed or not using
   isSatisfied() like yast2-qt. Also made initial patterns loading
   faster. And removed some checks on patches that were causing them
   not to be displayed (bnc#402855)
@@ -1136,7 +1136,7 @@ Sun Jun 22 18:34:15 CEST 2008 - jpr@suse.de
 * fixed bnc#402316: run the dependency solver at the startup.
 * fixed bnc#402262: fix textdomain error when packaging.
 * fixed bnc#401767: popup menu install entry was using the remove
-                    icon, while the remove entry was using the 
+                    icon, while the remove entry was using the
 		    install icon.
 
 -------------------------------------------------------------------
@@ -1145,14 +1145,14 @@ Fri Jun 20 18:34:15 CEST 2008 - jpr@suse.de
 - Update to 2.16.15
 * fixed bnc#401336: unable to resize column in sysconfig editor
 * fixed bnc#386410: label widgets are set uppercase.
-* fixed bnc#401835: if radio buttons weren't set in a radio group, 
+* fixed bnc#401835: if radio buttons weren't set in a radio group,
                     then they'd crash when clicked
 * fixed bnc#401228: "Children widgets aren't disabled in gtk ui
 * fixed bnc#401285: HSpacing broken in gtk ui
-* fixed bnc#399465: for some package show empty software 
+* fixed bnc#399465: for some package show empty software
                     dependence window
 * fixed bnc#396692: glitches with breaklines and spaces around
-                    inline tag: for some package show empty 
+                    inline tag: for some package show empty
                     software dependence window
 
 -------------------------------------------------------------------
@@ -1162,9 +1162,9 @@ Sun Jun  8 10:34:15 CEST 2008 - coolo@suse.de
 * fixed bnc#395484: Wrong check that assumed error was set, crashing...
 * fixed bnc#396731: popup menu from the button up when near the bottom corner.
 * fixed bnc#396360: ignoring the alignment for the last column, so it aligns left
-* fixed bnc#396033: Some minor bug 
+* fixed bnc#396033: Some minor bug
 * fixed bnc#393143: cursor ownership was not judged properly
-* fixed bnc#398272: enable scroll bar on Filtered Repositories 
+* fixed bnc#398272: enable scroll bar on Filtered Repositories
 
 -------------------------------------------------------------------
 Tue Jun  3 07:46:59 CEST 2008 - coolo@suse.de
@@ -1200,7 +1200,7 @@ Mon May 12 13:50:49 CEST 2008 - mmichael@suse.de
 * fix i18n issues
 * remove size cropping bnc #388715
 * fix focus issue bnc #388718
-* repo filter fix bnc #386536 
+* repo filter fix bnc #386536
 
 -------------------------------------------------------------------
 Mon May 7 20:13:49 CEST 2008 - jpr@suse.de
@@ -1212,7 +1212,7 @@ Mon May 7 20:13:49 CEST 2008 - jpr@suse.de
 * allow for smaller windows bnc #381689, partly bnc #373159
 * Query items of DumbTab broken bnc #381195
 * support all radio buttons being disabled bnc #373160
-* property SelectedItems for widget MultiSelectionBox broken 
+* property SelectedItems for widget MultiSelectionBox broken
   bnc #381746
 * debug message on abort User and Group Administration bnc #384135)
 * scroll YLog text down properly
@@ -1258,7 +1258,7 @@ Wed Feb 27 16:37:02 CET 2008 - coolo@suse.de
 Mon Feb 25 16:24:12 CET 2008 - sh@suse.de
 
 - V 2.16.5
-- Added "Provides: yast2_ui_pkg" to .spec file (bnc #363958) 
+- Added "Provides: yast2_ui_pkg" to .spec file (bnc #363958)
 
 -------------------------------------------------------------------
 Thu Feb 21 12:22:22 CET 2008 - coolo@suse.de
@@ -1392,7 +1392,7 @@ Fri May 11 18:19:10 CEST 2007 - mmichael@suse.de
 -------------------------------------------------------------------
 Tue Apr 17 15:58:40 CEST 2007 - mmichael@suse.de
 
-- upgrade to yast2-gtk-2.15.2, fixes upgrade.ycp 
+- upgrade to yast2-gtk-2.15.2, fixes upgrade.ycp
 
 -------------------------------------------------------------------
 Fri Mar 16 13:36:04 CET 2007 - mmichael@suse.de
@@ -1402,7 +1402,7 @@ Fri Mar 16 13:36:04 CET 2007 - mmichael@suse.de
 -------------------------------------------------------------------
 Wed Feb  7 11:26:07 CET 2007 - mmichael@suse.de
 
-- update to yast2-gtk-2.15.0, fixes build and adds new Frame type 
+- update to yast2-gtk-2.15.0, fixes build and adds new Frame type
 
 -------------------------------------------------------------------
 Wed Aug 30 10:56:28 CEST 2006 - cthiel@suse.de
@@ -1418,5 +1418,3 @@ Mon Aug 28 11:34:13 CEST 2006 - cthiel@suse.de
 Wed Aug 23 18:20:30 CEST 2006 - mmichael@suse.de
 
 - import yast2-gtk into autobuild.
-
-
