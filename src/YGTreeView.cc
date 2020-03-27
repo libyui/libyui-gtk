@@ -337,6 +337,7 @@ protected:
 			gtk_widget_queue_draw (pThis->getWidget());
 	}
 
+
 	static void right_click_cb (YGtkTreeView *view, gboolean outreach, YGTreeView *pThis)
 	{ pThis->emitEvent (YEvent::ContextMenuActivated); }
 };
@@ -827,6 +828,15 @@ public:
 			}
 		}
 #endif
+
+	// NOTE copy of Qt one
+	void activate()
+        {
+            // send an activation event for this widget
+            if ( notify() )
+                YGUI::ui()->sendEvent( new YWidgetEvent( this,YEvent::Activated ) );
+        }
+
 
 	YGLABEL_WIDGET_IMPL (YTree)
 	YGSELECTION_WIDGET_IMPL (YTree)
