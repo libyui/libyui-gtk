@@ -64,6 +64,14 @@ public:
 		ygtk_menu_button_set_popup (YGTK_MENU_BUTTON (getWidget()), menu);
 	}
 
+        // NOTE copy of Qt one
+        void activateItem( YMenuItem * item )
+        {
+                if ( item )
+                    YGUI::ui()->sendEvent( new YMenuEvent( item ) );
+        }
+
+
 	YGWIDGET_IMPL_COMMON (YMenuButton)
 };
 

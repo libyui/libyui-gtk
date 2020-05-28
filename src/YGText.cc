@@ -273,6 +273,13 @@ public:
 	virtual unsigned int getMinSize (YUIDimension dim)
 	{ return shrinkable() ? 10 : 100; }
 
+        // NOTE copy of Qt one
+        void activateLink( const std::string & url )
+        {
+            YGUI::ui()->sendEvent( new YMenuEvent( url ) );
+        }
+
+
 	YGWIDGET_IMPL_COMMON (YRichText)
 };
 

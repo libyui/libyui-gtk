@@ -154,6 +154,15 @@ public:
 		pThis->syncTabPage();
 	}
 
+	// NOTE copy of Qt one
+	void activate()
+        {
+           // send an activation event for this widget
+           if ( notify() )
+               YGUI::ui()->sendEvent( new YWidgetEvent( this,YEvent::Activated ) );
+        }
+
+
 	YGWIDGET_IMPL_CONTAINER (YDumbTab)
 };
 
