@@ -161,7 +161,14 @@ static void ygtk_help_dialog_init (YGtkHelpDialog *dialog)
 	char *label_str = ygutils_mapKBAccel (_("&Find:"));
 	GtkWidget *bottom_box, *label = gtk_label_new_with_mnemonic (label_str);
 	g_free (label_str);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (label, GTK_ALIGN_START);
+	gtk_widget_set_valign (label, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (label), 0, .5);
+#	endif
+
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), dialog->search_entry);
 
 	bottom_box = YGTK_HBOX_NEW(2);
@@ -439,7 +446,14 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 
 	header->title = gtk_label_new ("");
 	gtk_label_set_ellipsize (GTK_LABEL (header->title), PANGO_ELLIPSIZE_END);
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (header->title, GTK_ALIGN_START);
+	gtk_widget_set_valign (header->title, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (header->title), 0, 0.5);
+#	endif
+
 	ygutils_setWidgetFont (header->title, PANGO_STYLE_NORMAL, PANGO_WEIGHT_BOLD,
 	                       PANGO_SCALE_X_LARGE);
 	GdkRGBA black = { 0.0, 0.0, 0.0, 1.0 };
@@ -477,7 +491,14 @@ static void ygtk_wizard_header_init (YGtkWizardHeader *header)
 static gboolean ygtk_wizard_header_button_press_event (GtkWidget *widget, GdkEventButton *event)
 {
 	if (event->button == 1) {
+#		if GTK_CHECK_VERSION (3, 16, 0)
+		GdkCursor *cursor = gdk_cursor_new_for_display (
+						gdk_display_get_default (),
+						GDK_FLEUR);
+#		else
 		GdkCursor *cursor = gdk_cursor_new (GDK_FLEUR);
+#		endif
+
 		gdk_window_set_cursor (event->window, cursor);
 		g_object_unref (cursor);
 
@@ -503,8 +524,15 @@ static gboolean ygtk_wizard_header_motion_notify_event (GtkWidget *widget, GdkEv
 		gdk_window_get_root_origin (event->window, &root_x, &root_y);
 
 		GdkDisplay *display = gdk_window_get_display (event->window);
+
+#		if GTK_CHECK_VERSION (3, 20, 0)
+		GdkSeat *seat = gdk_display_get_default_seat (display);
+		GdkDevice *pointer = gdk_seat_get_pointer (seat);
+#		else
 		GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
 		GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+#		endif
+
 		gdk_window_get_device_position (event->window, pointer, &pointer_x, &pointer_y, NULL);
 
 		gint x = pointer_x + root_x - header->press_x;
@@ -615,7 +643,13 @@ static GtkWidget *create_help_button()
 	GtkWidget *button, *image;
 	button = gtk_toggle_button_new();
 	gtk_button_set_label (GTK_BUTTON (button), _("Help"));
+
+#	if GTK_CHECK_VERSION (3, 20, 0)
+	gtk_widget_set_focus_on_click (GTK_WIDGET (button), FALSE);
+#	else
 	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
+#endif
+
 	image = gtk_image_new_from_icon_name ("help-contents", GTK_ICON_SIZE_BUTTON);
         gtk_button_set_always_show_image(GTK_BUTTON (button), 1);
 	gtk_button_set_image (GTK_BUTTON (button), image);

@@ -40,9 +40,12 @@ static void _gtk_widget_destroy (gpointer widget)
 static guint32 _popup_time = 0;
 static gint _popup_x = 0, _popup_y = 0;
 
+#if GTK_CHECK_VERSION (3, 22, 0)
+#else
 static void _ygtk_tree_view_menu_position_func (
 	GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer user_data)
 { *x = _popup_x; *y = _popup_y; }
+#endif
 
 void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu)
 {
@@ -52,8 +55,15 @@ void ygtk_tree_view_popup_menu (YGtkTreeView *view, GtkWidget *menu)
 	g_object_set_data_full (G_OBJECT (view), "popup", menu, _gtk_widget_destroy);
 
 	gtk_menu_attach_to_widget (GTK_MENU (menu), widget, NULL);
+
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	gtk_menu_popup_at_pointer (GTK_MENU (menu), NULL);
+#	else
 	gtk_menu_popup (GTK_MENU (menu), NULL, NULL,
-		_ygtk_tree_view_menu_position_func, widget,  3, _popup_time);
+			_ygtk_tree_view_menu_position_func,
+			widget,  3, _popup_time);
+#	endif
+
 	gtk_widget_show_all (menu);
 }
 

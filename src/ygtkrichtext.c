@@ -178,8 +178,14 @@ static void set_cursor_if_appropriate (GtkTextView *view, gint wx, gint wy)
 
 		GdkWindow *window = gtk_widget_get_window (widget);
 		GdkDisplay *display = gdk_window_get_display (window);
+
+#		if GTK_CHECK_VERSION (3, 20, 0)
+		GdkSeat *seat = gdk_display_get_default_seat (display);
+		GdkDevice *pointer = gdk_seat_get_pointer (seat);
+#		else
 		GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
 		GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+#		endif
 
 		gdk_window_get_device_position (window, pointer, &wx, &wy, NULL);
 

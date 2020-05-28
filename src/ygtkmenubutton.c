@@ -76,9 +76,22 @@ static void ygtk_popup_window_frame_position (GtkWidget *widget, gint *x,  gint 
 	gtk_widget_get_preferred_size(widget, &req, NULL);
 
 	GdkScreen *screen = gtk_widget_get_screen (widget);
-	gint monitor_num = gdk_screen_get_monitor_at_window (screen, gtk_widget_get_root_window (widget));
 	GdkRectangle monitor;
+
+#	if GTK_CHECK_VERSION (3, 22, 0)
+	GdkMonitor *monitor_num = gdk_display_get_monitor_at_window (
+		gdk_screen_get_display (screen),
+		gdk_screen_get_root_window (screen));
+	gdk_monitor_get_geometry (monitor_num, &monitor);
+#	elif GTK_CHECK_VERSION (3, 12, 0)
+	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
+		gdk_screen_get_root_window (screen));
 	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
+#	else
+	gint monitor_num = gdk_screen_get_monitor_at_window (screen,
+		gtk_widget_get_root_window (widget));
+	gdk_screen_get_monitor_geometry (screen, monitor_num, &monitor);
+#	endif
 
 	if (*x < monitor.x)
 		*x = monitor.x;
@@ -101,9 +114,16 @@ void ygtk_popup_window_popup (GtkWidget *widget, gint x, gint y, guint activate_
 	gtk_widget_show (widget);
 
 	GdkWindow *window = gtk_widget_get_window (widget);
+
 	GdkDisplay *display = gdk_window_get_display (window);
+
+#	if GTK_CHECK_VERSION (3, 20, 0)
+	GdkSeat *seat = gdk_display_get_default_seat (display);
+	GdkDevice *pointer = gdk_seat_get_pointer (seat);
+#	else
 	GdkDeviceManager *device_manager = gdk_display_get_device_manager (display);
 	GdkDevice *pointer = gdk_device_manager_get_client_pointer (device_manager);
+#	endif
 
 	// grab this with your teeth
 	if (gdk_device_grab (pointer, window, GDK_OWNERSHIP_NONE, TRUE,
@@ -170,18 +190,33 @@ static void ygtk_menu_button_get_popup_pos (YGtkMenuButton *button, gint *x, gin
 	*y += (button_alloc.y-popup_height) + (button_alloc.height+popup_height)*button->yalign;
 
 	// GTK doesn't push up menus if they are near the bottom, but we will...
-	int screen_height;
-	screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
+#       if GTK_CHECK_VERSION (3, 22, 0)
+        GdkScreen *screen = gtk_widget_get_screen (widget);
+        GdkRectangle monitor;
+
+        GdkMonitor *monitor_num = gdk_display_get_monitor_at_window (
+                gdk_screen_get_display (screen),
+                gdk_screen_get_root_window (screen));
+        gdk_monitor_get_geometry (monitor_num, &monitor);
+
+	int screen_height = monitor.y;
+#       else
+	int screen_height = gdk_screen_get_height (gtk_widget_get_screen (widget));
+#       endif
+
 	if (*y > screen_height - popup_height)
 		*y -= popup_height + button_alloc.height;
 }
 
+#if GTK_CHECK_VERSION (3, 22, 0)
+#else
 static void ygtk_menu_button_get_menu_pos (GtkMenu *menu, gint *x, gint *y,
                                            gboolean *push_in, gpointer data)
 {
 	ygtk_menu_button_get_popup_pos (YGTK_MENU_BUTTON (data), x, y);
 	*push_in = TRUE;
 }
+#endif
 
 static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 {
@@ -191,8 +226,15 @@ static void ygtk_menu_button_show_popup (YGtkMenuButton *button)
 
 	guint activate_time = gtk_get_current_event_time();
 	if (GTK_IS_MENU (popup))
-		gtk_menu_popup (GTK_MENU (popup), NULL, NULL, ygtk_menu_button_get_menu_pos,
+
+#		if GTK_CHECK_VERSION (3, 22, 0)
+		gtk_menu_popup_at_pointer (GTK_MENU (popup), NULL);
+#		else
+		gtk_menu_popup (GTK_MENU (popup), NULL, NULL,
+				ygtk_menu_button_get_menu_pos,
 		                button, 0, activate_time);
+#		endif
+
 	else {  // GTK_IS_WINDOW
 		gint x, y;
 		ygtk_menu_button_get_popup_pos (button, &x, &y);
@@ -245,7 +287,14 @@ void ygtk_menu_button_set_label (YGtkMenuButton *button, const gchar *label)
 		GtkWidget *hbox, *arrow;
 		hbox = YGTK_HBOX_NEW(4);
 		gtk_box_set_homogeneous (GTK_BOX (hbox), FALSE);
+
+#		if GTK_CHECK_VERSION (3, 14, 0)
+		arrow = gtk_image_new_from_icon_name ("pan-down-symbolic",
+						GTK_ICON_SIZE_BUTTON);
+#		else
 		arrow = gtk_arrow_new (GTK_ARROW_DOWN, GTK_SHADOW_IN);
+#		endif
+
 		button->label = gtk_label_new ("");
 		gtk_box_pack_start (GTK_BOX (hbox), button->label, TRUE, TRUE, 0);
 		gtk_box_pack_start (GTK_BOX (hbox), arrow, FALSE, TRUE, 0);

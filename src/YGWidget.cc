@@ -247,7 +247,14 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
 
 	// Create the label
 	m_label = gtk_label_new ("");
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (m_label, GTK_ALIGN_START);
+	gtk_widget_set_valign (m_label, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
+#	endif
+
 /*	if (label_ori == YD_HORIZ)
 		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);*/
 	gtk_widget_show (m_label);
@@ -277,7 +284,14 @@ YGLabeledWidget::YGLabeledWidget (YWidget *ywidget, YWidget *parent,
 
 	// Create the label
 	m_label = gtk_label_new ("");
+
+#	if GTK_CHECK_VERSION (3, 14, 0)
+	gtk_widget_set_halign (m_label, GTK_ALIGN_START);
+	gtk_widget_set_valign (m_label, GTK_ALIGN_CENTER);
+#	else
 	gtk_misc_set_alignment (GTK_MISC (m_label), 0.0, 0.5);
+#	endif
+
 /*	if (label_ori == YD_HORIZ)
 		gtk_label_set_line_wrap (GTK_LABEL (m_label), TRUE);*/
 	gtk_widget_show (m_label);

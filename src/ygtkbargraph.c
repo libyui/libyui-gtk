@@ -190,7 +190,13 @@ static gboolean ygtk_colored_label_on_draw (GtkWidget *widget, cairo_t *cr)
 	ctx = gtk_widget_get_style_context(widget);
 
 	GdkRGBA color;
+
+#	if GTK_CHECK_VERSION (3, 16, 0)
+	gtk_style_context_get (ctx, GTK_STATE_NORMAL,
+			       "background-color", &color, NULL);
+#	else
 	gtk_style_context_get_background_color(ctx, GTK_STATE_NORMAL, &color);
+#	endif
 
     cairo_save(cr);
     int width = gtk_widget_get_allocated_width (widget);
