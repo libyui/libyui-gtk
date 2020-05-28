@@ -355,7 +355,12 @@ public:
 	  YGTreeView (this, parent, std::string(), false)
 	{
 		gtk_tree_view_set_headers_visible (getView(), TRUE);
+
+#		if GTK_CHECK_VERSION (3, 14, 0)
+#		else
 		gtk_tree_view_set_rules_hint (getView(), columns() > 1);
+#		endif
+
 		ygtk_tree_view_set_empty_text (YGTK_TREE_VIEW (getView()), _("No entries."));
 		if (multiSelection)
 			gtk_tree_selection_set_mode (getSelection(), GTK_SELECTION_MULTIPLE);

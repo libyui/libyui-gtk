@@ -23,9 +23,20 @@ public:
 	: YGWidget (ywidget, parent,
 	            GTK_TYPE_FRAME, "shadow-type", GTK_SHADOW_NONE, NULL)
 	{
+#		if GTK_CHECK_VERSION (3, 14, 0)
+		m_containee = gtk_widget_new (GTK_TYPE_FRAME, NULL);
+
+		gtk_widget_set_margin_top    (m_containee, 0);
+		gtk_widget_set_margin_bottom (m_containee, 0);
+		gtk_widget_set_margin_start  (m_containee, CHILD_INDENTATION);
+		gtk_widget_set_margin_end    (m_containee, 0);
+#		else
 		m_containee = gtk_alignment_new (0, 0, 1, 1);
+
 		gtk_alignment_set_padding (GTK_ALIGNMENT (m_containee),
 			0, 0, CHILD_INDENTATION, 0);
+#		endif
+
 		gtk_widget_show (m_containee);
 		gtk_container_add (GTK_CONTAINER (getWidget()), m_containee);
 	}
