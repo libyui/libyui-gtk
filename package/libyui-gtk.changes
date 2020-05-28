@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Thu May 28 20:19:07 CEST 2020 - anaselli@linux.it
+
+- Added missing abstract methods (copy of Qt behavior)
+- Fixed trevis building
+- 2.48.0
+
+-------------------------------------------------------------------
 Thu May 28 18:09:47 CEST 2020 - besser82@fedoraproject.org
 
 - Fix Werror=misleading-indentation
@@ -33,7 +40,6 @@ Thu May 28 18:09:47 CEST 2020 - besser82@fedoraproject.org
 - 2.47.0
 
 -------------------------------------------------------------------
-
 Wed Dec 11 09:54:55 UTC 2019 - Rodion Iafarov <riafarov@suse.com>
 
 - Increase SO version to 11 (bsc#1132247)
