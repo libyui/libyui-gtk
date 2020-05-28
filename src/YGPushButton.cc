@@ -156,6 +156,11 @@ public:
 		}
 	}
 
+        virtual void activate()
+        {
+                gtk_button_clicked(GTK_BUTTON (getWidget()));
+        }
+
 	static bool hasIcon (YWidget *ywidget)
 	{
 		if (dynamic_cast <YPushButton *> (ywidget)) {

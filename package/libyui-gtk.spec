@@ -17,18 +17,18 @@
 
 
 Name:           libyui-gtk
-Version:        2.45.0
+Version:        2.47.0
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
-%define so_version 7
+%define so_version 11
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
 BuildRequires:  cmake >= 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  gtk3-devel
-BuildRequires:  libyui-devel >= 3.0.4
+BuildRequires:  libyui-devel >= 3.9.0
 BuildRequires:  pkg-config
 Provides:       yui_backend = %{so_version}
 
@@ -129,7 +129,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %dir %{_libdir}/yui
 %{_libdir}/yui/lib*.so.*
 %doc %dir %{_docdir}/%{bin_name}
-%doc %{_docdir}/%{bin_name}/COPYING*
+%license %{_docdir}/%{bin_name}/COPYING*
 
 %files devel
 %defattr(-,root,root)
