@@ -245,6 +245,7 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	guint timeout = 0;
 
 	if (timeout_ms > 0)
+		// timeout is automatically removed if callback returns FALSE
 		timeout = g_timeout_add (timeout_ms,
 			(GSourceFunc) user_input_timeout_cb, this);
 
@@ -258,9 +259,6 @@ YEvent *YGUI::waitInput (unsigned long timeout_ms, bool block)
 	YEvent *event = NULL;
 	if (pendingEvent())
 		event = m_event_handler.consumePendingEvent();
-
-	if (timeout)
-		g_source_remove (timeout);
 
 	if (block) {  // if YCP keeps working for more than X time, set busy cursor
 		if (busy_timeout)
