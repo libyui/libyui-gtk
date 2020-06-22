@@ -427,40 +427,45 @@ void YGDialog::busyCursor()
 
 void YGDialog::doSetSize (int width, int height)
 {
-	// libyui calls YDialog::setSize() to force a geometry recalculation as a
-	// result of changed layout properties
-	bool resize = false;
-	GtkWidget *window = m_window->getWidget();
+  //yuiDebug() << "layout pass " << layoutPass() << " (" << width << "x" << height << ")" << endl;
+  // libyui calls YDialog::setSize() to force a geometry recalculation as a
+  // result of changed layout properties
+  bool resize = false;
+  GtkWidget *window = m_window->getWidget();
 
-        gint w,h;
-        gtk_window_get_size(GTK_WINDOW (window), &w, &h);
-        
-        if (w < width || h < height) {
-            resize = true;
-            width  = MAX (width,  w),
-            height = MAX (height, h);
-        }                        
+  gint w,h;
+  gtk_window_get_size(GTK_WINDOW (window), &w, &h);
 
-	if (gtk_widget_get_realized (window)) {
-		gtk_widget_queue_resize (window);
-		width = MIN (width, YUI::app()->displayWidth());
-		height = MIN (height, YUI::app()->displayHeight());
-		if (isMainDialog()) {
-			GtkAllocation allocation;
-			gtk_widget_get_allocation(window, &allocation);
-			if (allocation.width < width || allocation.height < height) {
-				resize = true;
-				width = MAX (width, allocation.width),
-				height = MAX (height, allocation.height);
-			}
-		}
-		else
-			resize = true;
-	}
-	if (resize)
-		gtk_window_resize (GTK_WINDOW (window), width, height);
-	else
-		gtk_window_set_default_size (GTK_WINDOW (window), width, height);
+  if (w < width || h < height) {
+    resize = true;
+    width  = MAX (width,  w),
+    height = MAX (height, h);
+  }
+
+  if (gtk_widget_get_realized (window)) {
+    gtk_widget_queue_resize (window);
+    width = MIN (width, YUI::app()->displayWidth());
+    height = MIN (height, YUI::app()->displayHeight());
+    if (isMainDialog()) {
+      GtkAllocation allocation;
+      gtk_widget_get_allocation(window, &allocation);
+      if (allocation.width < width || allocation.height < height) {
+        resize = true;
+        width = MAX (width, allocation.width),
+        height = MAX (height, allocation.height);
+      }
+    }
+    else
+      resize = true;
+  }
+  int lpass = layoutPass();
+  if ( lpass == 0 )
+  {
+    if (resize)
+      gtk_window_resize (GTK_WINDOW (window), width, height);
+    else
+      gtk_window_set_default_size (GTK_WINDOW (window), width, height);
+  }
 }
 
 void YGDialog::highlight (YWidget *ywidget)
