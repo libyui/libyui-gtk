@@ -1,4 +1,11 @@
 -------------------------------------------------------------------
+Mon Jun 22 21:46:24 CEST 2020 - anaselli@linux.it
+
+- Implemented YLabel autowrap
+- fixed timeout warning using WaitForEvent with timeout
+- 2.49.0
+
+-------------------------------------------------------------------
 Thu May 28 20:19:07 CEST 2020 - anaselli@linux.it
 
 - Added missing abstract methods (copy of Qt behavior)
