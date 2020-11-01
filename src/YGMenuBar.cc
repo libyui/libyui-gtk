@@ -72,9 +72,6 @@ YGMenuBar::YGMenuBar(YWidget* parent)
 {
   YUI_CHECK_NEW ( d );
   d->menubar = getWidget();
-
-
-  //gtk_misc_set_alignment (GTK_MISC (getWidget()), 0.0, 0.5);
 }
 
 
