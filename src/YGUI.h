@@ -115,6 +115,9 @@ class YGWidgetFactory : public YWidgetFactory
 
 	virtual YRadioButtonGroup *createRadioButtonGroup (YWidget *parent);
 	virtual YReplacePoint *createReplacePoint (YWidget *parent);
+
+   virtual YMenuBar *createMenuBar ( YWidget * parent );
+
 };
 
 #include <YOptionalWidgetFactory.h>
