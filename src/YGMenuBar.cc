@@ -152,18 +152,28 @@ void YGMenuBar::doCreateMenu (GtkWidget *menu, YItemIterator begin, YItemIterato
       std::string action_name = YGUtils::mapKBAccel (yitem->label());
       if (yitem->hasIconName())
       {
-        GtkIconTheme * theme = gtk_icon_theme_get_default();
-        std::string ico = boost::filesystem::path(yitem->iconName()).stem().c_str();
+        // if extension is present we consider a full path name, theme icons don't have extensions
         GtkWidget *icon;
-        GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
-        if (gtk_icon_theme_has_icon (theme, ico.c_str()))
-        {
-          icon = gtk_image_new_from_icon_name (ico.c_str(), GTK_ICON_SIZE_MENU);
-        }
-        else
+        if (boost::filesystem::path(yitem->iconName()).has_extension())
         {
           icon = gtk_image_new_from_file(yitem->iconName().c_str());
         }
+        else
+        {
+          GtkIconTheme * theme = gtk_icon_theme_get_default();
+          std::string ico = boost::filesystem::path(yitem->iconName()).stem().c_str();
+          if (gtk_icon_theme_has_icon (theme, ico.c_str()))
+          {
+            icon = gtk_image_new_from_icon_name (ico.c_str(), GTK_ICON_SIZE_MENU);
+          }
+          else
+          {
+            // last chance, just to add an icon
+            icon = gtk_image_new_from_file(yitem->iconName().c_str());
+          }
+        }
+
+        GtkWidget *box = gtk_box_new (GTK_ORIENTATION_HORIZONTAL, 6);
         GtkWidget *label = gtk_label_new (action_name.c_str());
         entry = gtk_menu_item_new ();
 
