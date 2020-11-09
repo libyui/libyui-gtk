@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Mon Nov 09 12:01:24 CEST 2020 - anaselli@linux.it
+
+- Implemented YMenuBar
+- Icons loaded from theme if name does not contain extension,
+  with full pathname oherwise
+- 2.50.0
+
+-------------------------------------------------------------------
 Mon Jun 22 21:46:24 CEST 2020 - anaselli@linux.it
 
 - Implemented YLabel autowrap
