@@ -25,7 +25,7 @@ Source:         %{name}-%{version}.tar.bz2
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
-BuildRequires:  libboost_headers-devel
+BuildRequires:  libboost_filesystem-devel
 BuildRequires:  cmake >= 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  gtk3-devel
