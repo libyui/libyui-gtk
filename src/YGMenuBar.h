@@ -27,12 +27,9 @@
 
 
 #include <yui/YMenuBar.h>
-#include <yui/gtk/ygtktreeview.h>
-
-#include <yui/gtk/YGSelectionStore.h>
-#include <yui/gtk/YGWidget.h>
 
 #include <gtk/gtk.h>
+#include <gtk/gtktypes.h>
 
 
 class YGMenuBar : public YMenuBar, public YGWidget
