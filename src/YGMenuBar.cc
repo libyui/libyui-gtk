@@ -26,18 +26,18 @@
 #define YUILogComponent "gtk"
 
 #include <yui/YUILog.h>
-#include <YGUI.h>
-#include <yui/gtk/YGUtils.h>
-#include <yui/gtk/YGWidget.h>
+#include "YGUI.h"
+#include "YGUtils.h"
+#include "YGWidget.h"
 #include <YSelectionWidget.h>
-#include <yui/gtk/YGSelectionStore.h>
-#include <yui/gtk/ygtktreeview.h>
-#include <yui/gtk/ygtkratiobox.h>
+#include "YGSelectionStore.h"
+#include "ygtktreeview.h"
+#include "ygtkratiobox.h"
 #include <string.h>
 #include <yui/YMenuItem.h>
 #include <YTable.h>
 
-#include <yui/gtk/YGDialog.h>
+#include "YGDialog.h"
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtkmenubar.h>
 #include <gtk/gtk.h>
