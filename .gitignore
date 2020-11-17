@@ -104,6 +104,8 @@ tmp
 
 # KDE
 .directory
+*.kdev4
+.kdev4/
 
 # Subversion
 .svn/

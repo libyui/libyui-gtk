@@ -10,6 +10,7 @@ SET( ${TARGETLIB}_SOURCES
   YGIntField.cc
   YGLabel.cc
   YGLayout.cc
+  YGMenuBar.cc
   YGMenuButton.cc
   YGPackageSelectorPluginStub.cc
   YGProgressBar.cc
@@ -41,6 +42,7 @@ SET( ${TARGETLIB}_SOURCES
 
 SET( ${TARGETLIB}_HEADERS
   YGDialog.h
+  YGMenuBar.h
   ygdkmngloader.h
   YGi18n.h
   YGPackageSelectorPluginIf.h

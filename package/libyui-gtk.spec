@@ -17,14 +17,16 @@
 
 
 Name:           libyui-gtk
-Version:        2.49.0
+Version:        2.50.0
 Release:        0
 Source:         %{name}-%{version}.tar.bz2
 
-%define so_version 12
+%define so_version 14
 %define bin_name %{name}%{so_version}
 
 BuildRequires:  boost-devel
+BuildRequires:  libboost_filesystem-devel
+BuildRequires:  libboost_system-devel
 BuildRequires:  cmake >= 2.8
 BuildRequires:  gcc-c++
 BuildRequires:  gtk3-devel
