@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sun Jan 31 18:24:20 CET 2021 - anaselli@linux.it
+
+- Evaluate default size by using working area as in Qt. Issue #76
+- 2.51.0
+
+-------------------------------------------------------------------
 Mon Nov 09 12:01:24 CEST 2020 - anaselli@linux.it
 
 - Implemented YMenuBar
