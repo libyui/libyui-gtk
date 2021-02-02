@@ -124,31 +124,14 @@ public:
 		            gtk_window_set_decorated (window, FALSE);
 		    }
 
-			if (_main_window) {
-				// window default width is calculated as a proportion of a default
-				// char and pixel width to compensate for the fact that each widget's
-				// required size comes from a proportion of both parameters
-				int width = YGUtils::getCharsWidth (m_widget, DEFAULT_CHAR_WIDTH);
-				width += DEFAULT_PIXEL_WIDTH;
-				int height = YGUtils::getCharsHeight (m_widget, DEFAULT_CHAR_HEIGHT);
-				height += DEFAULT_PIXEL_HEIGHT;
-
-		    	if (YGUI::ui()->isSwsingle())
-		    		height += YGUtils::getCharsHeight (m_widget, 10);
-
-			width = MIN (width, YUI::app()->displayWidth());
-			height = MIN (height, YUI::app()->displayHeight());
-
-		        gtk_window_set_default_size (window, width, height);
-		        gtk_window_resize(window, width, height);
-
-			if (YGUI::ui()->setFullscreen())
-				gtk_window_fullscreen (window);
-			else if (YUI::app()->displayWidth() <= 800 || YUI::app()->displayHeight() <= 600)
-				// maximize window for small displays
-				gtk_window_maximize (window);
-		    }
-
+		    if (_main_window) {
+          int width = YUI::app()->defaultWidth();
+          int height = YUI::app()->defaultHeight();
+          gtk_window_set_default_size ( window, width, height );
+          gtk_window_resize( window, width, height );
+          if (YGUI::ui()->setFullscreen())
+            gtk_window_fullscreen (window);
+        }
 		    gtk_window_set_role (window, "yast2");
 		}
 

@@ -623,30 +623,21 @@ static inline GdkScreen *getScreen ()
 // a reduced display size to compensate for the panel, or the window frame
 int YGApplication::displayWidth()
 {
-#	if GTK_CHECK_VERSION (3, 22, 0)
-	GdkRectangle monitor;
-	gdk_monitor_get_geometry (
-		gdk_display_get_primary_monitor (
-			gdk_display_get_default()),
-		&monitor);
-	return monitor.x - 80;
-#	else
-	return gdk_screen_get_width (getScreen()) - 80;
-#	endif
+  GdkRectangle monitor;
+  gdk_monitor_get_geometry (
+    gdk_display_get_primary_monitor(gdk_display_get_default()),
+    &monitor);
+  return monitor.width;
+
 }
 
 int YGApplication::displayHeight()
 {
-#	if GTK_CHECK_VERSION (3, 22, 0)
-	GdkRectangle monitor;
-	gdk_monitor_get_geometry (
-		gdk_display_get_primary_monitor (
-			gdk_display_get_default()),
-		&monitor);
-	return monitor.y - 80;
-#	else
-	return gdk_screen_get_height (getScreen()) - 80;
-#	endif
+  GdkRectangle monitor;
+  gdk_monitor_get_geometry (
+    gdk_display_get_primary_monitor (gdk_display_get_default()),
+    &monitor);
+  return monitor.height;
 }
 
 int YGApplication::displayDepth()
@@ -662,10 +653,40 @@ int YGApplication::displayDepth()
 long YGApplication::displayColors()
 { return 1L << displayDepth(); /*from yast-qt*/ }
 
-// YCP uses defaultWidth/Height() to use their smaller YWizard impl; we
-// want to use a smaller default size than qt though, so assume a bigger size
-int YGApplication::defaultWidth() { return MIN (displayWidth(), 1024); }
-int YGApplication::defaultHeight() { return MIN (displayHeight(), 768); }
+// Get default size as in Qt as much as possible
+int YGApplication::defaultWidth()
+{
+  GdkRectangle availableSize = {0};
+  gdk_monitor_get_workarea(
+    gdk_display_get_primary_monitor(gdk_display_get_default()),
+    &availableSize);
+
+  int width = availableSize.width;
+  if ( displayWidth() >= 1024 )
+  {
+    // Scale down to 70% of screen size
+    width =  std::max( (int) (availableSize.width * 0.7), 800 ) ;
+  }
+
+  return width;
+}
+
+int YGApplication::defaultHeight()
+{
+    GdkRectangle availableSize = {0};
+  gdk_monitor_get_workarea(
+    gdk_display_get_primary_monitor(gdk_display_get_default()),
+    &availableSize);
+
+  int height = availableSize.height;
+  if ( displayWidth() >= 1024 )
+  {
+    // Scale down to 70% of screen size
+    height =  std::max( (int) (availableSize.height * 0.7), 600 ) ;
+  }
+
+  return height;
+}
 
 YWidgetFactory *YGUI::createWidgetFactory()
 { return new YGWidgetFactory; }
