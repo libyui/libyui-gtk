@@ -53,6 +53,7 @@ if ( BUILD_SRC )
   add_subdirectory( src )
 endif()
 
-if ( BUILD_DOC )
-  add_subdirectory( doc )
-endif()
+# TODO
+#if ( BUILD_DOC )
+#  add_subdirectory( doc )
+#endif()

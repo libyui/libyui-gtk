@@ -8,10 +8,16 @@ FIND_PACKAGE(PkgConfig REQUIRED)
 PKG_CHECK_MODULES(GTK3 REQUIRED gtk+-3.0)
 
 PKG_CHECK_MODULES(YUI REQUIRED libyui)
+pkg_get_variable(YUI_SO_VERSION libyui soversion)
+pkg_get_variable(YUI_SO_MAJOR libyui soversion_major)
+#pkg_get_variable(YUI_SO_MINOR libyui soversion_minor)
+#pkg_get_variable(YUI_SO_PATCH libyui soversion_patch)
 
-message(" " ${YUI_INCLUDE_DIRS}  ${YUI_LIBRARY_DIRS})
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-find_library(YUYU libyui)
+##### This is needed to be set for the libyui core
+SET( SONAME_MAJOR ${YUI_SO_MAJOR} )
+SET( SONAME ${YUI_SO_VERSION} )
 
 
 #
@@ -157,13 +163,8 @@ target_link_libraries( ${TARGETLIB}
 #  yui
   ${YUI_LIBRARIES}
   ${GTK3_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARY}
   )
-
-# Notice that we don't link against Qt5::Svg, but we need it at runtime:
-#
-# It's a plugin for Qt and will be used to load SVGs (like our icons) if
-# libQt5Svg is available. But we don't use it directly here, only via Qt
-# classes like QPixmap and QIcon. Qt loads the SVG plugin as needed.
 
 
 # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
