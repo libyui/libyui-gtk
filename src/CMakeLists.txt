@@ -9,7 +9,7 @@ PKG_CHECK_MODULES(GTK3 REQUIRED gtk+-3.0)
 
 PKG_CHECK_MODULES(YUI REQUIRED libyui)
 
-message(" " ${YUI_INCLUDE_DIRS}  ${YUI_LIBRARY_DIRS})
+message("YUI include: " ${YUI_INCLUDE_DIRS} " YUI library: " ${YUI_LIBRARY_DIRS})
 
 find_library(YUYU libyui)
 
@@ -165,11 +165,13 @@ target_link_libraries( ${TARGETLIB}
 # libQt5Svg is available. But we don't use it directly here, only via Qt
 # classes like QPixmap and QIcon. Qt loads the SVG plugin as needed.
 
+pkg_get_variable(SONAME libyui soversion)
+pkg_get_variable(SONAME_MAJOR libyui soversion_major)
 
 # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
 set_target_properties( ${TARGETLIB} PROPERTIES
-  VERSION       ${SONAME}           # From ../../VERSION.cmake
-  SOVERSION     ${SONAME_MAJOR}     # From ../../VERSION.cmake
+  VERSION       ${SONAME}
+  SOVERSION     ${SONAME_MAJOR}
   OUTPUT_NAME   ${TARGETLIB_BASE}
   )
 
