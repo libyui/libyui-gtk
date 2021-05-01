@@ -46,8 +46,19 @@ namespace YGUtils
 	/* Instead of setting GtkPaned::position in pixels, do so in percents. */
 	void setPaneRelPosition (GtkWidget *paned, gdouble rel);
 
-	/* Saves some code and standardizes the error. Returns NULL if failed.
-	   Don't forget to g_object_unref it! */
+  /*
+   *
+   * Load a pixbuf. This tries several locations:
+   *
+   * - The given pathname
+   * - The icon theme from the current desktop
+   * - The default icon if failing others
+   *
+   * If the icon does not have a filename extension it is retrieved by name from theme.
+   * Returns NULL if failed.
+   *
+   * Pixbuf need to to g_object_unref it to be removed.
+   */
 	GdkPixbuf *loadPixbuf (const std::string &fileneme);
 
 	/* Shifts colors in a GdkPixbuf. */

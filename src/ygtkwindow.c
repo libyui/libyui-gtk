@@ -5,7 +5,7 @@
 /* YGtkWindow widget */
 // check the header file for information about this widget
 
-#include <yui/Libyui_config.h>
+
 #include "ygtkwindow.h"
 #include <gtk/gtk.h>
 

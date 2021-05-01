@@ -5,7 +5,7 @@
 /* YGtkLinkLabel container */
 // check the header file for information about this container
 
-#include <yui/Libyui_config.h>
+
 #include <math.h>
 #include <gtk/gtk.h>
 #include "ygtklinklabel.h"
