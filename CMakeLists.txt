@@ -23,6 +23,7 @@ project( libyui-gtk )
 #   cmake -DBUILD_DOC=on -DBUILD_EXAMPLES=off ..
 
 option( BUILD_SRC         "Build in src/ subdirectory"                on )
+option( BUILD_PKGCONFIG   "Build pkg-config support files"            on  )
 option( BUILD_DOC         "Build class documentation"                 off )
 option( WERROR            "Treat all compiler warnings as errors"     off )
 
@@ -51,6 +52,10 @@ endif()
 
 if ( BUILD_SRC )
   add_subdirectory( src )
+endif()
+
+if ( BUILD_PKGCONFIG )
+  add_subdirectory( pkgconfig )
 endif()
 
 # TODO
