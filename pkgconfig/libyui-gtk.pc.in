@@ -11,10 +11,11 @@ datarootdir=${exec_prefix}/share
 datadir=${datarootdir}/libyui
 libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${exec_prefix}/include
+plugindir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@/yui
 
 Name: libyui-gtk
 Version: @VERSION@
 Description: libyui-gtk - Gtk plugin for libyui GUI-abstraction library
-Libs: -L${libdir} -lyui-gtk
+Libs: -L${plugindir} -lyui-gtk
 Libs.private: -ldl -lpthread
 Cflags: -I${includedir}/yui/gtk -I${includedir}/yui -I${includedir}
