@@ -58,7 +58,6 @@ if ( BUILD_PKGCONFIG )
   add_subdirectory( pkgconfig )
 endif()
 
-# TODO
-#if ( BUILD_DOC )
-#  add_subdirectory( doc )
-#endif()
+if ( BUILD_DOC )
+  add_subdirectory( doc )
+endif()
