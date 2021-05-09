@@ -1,4 +1,4 @@
-# CMakeLists.txt for libyui-qt/src
+# CMakeLists.txt for libyui-gtk/src
 
 include( ../VERSION.cmake )
 include( GNUInstallDirs )       # set CMAKE_INSTALL_INCLUDEDIR, ..._LIBDIR
@@ -170,11 +170,10 @@ target_link_libraries( ${TARGETLIB}
   ${Boost_FILESYSTEM_LIBRARY}
   )
 
-
 # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
 set_target_properties( ${TARGETLIB} PROPERTIES
-  VERSION       ${SONAME}           # From ../../VERSION.cmake
-  SOVERSION     ${SONAME_MAJOR}     # From ../../VERSION.cmake
+  VERSION       ${SONAME}
+  SOVERSION     ${SONAME_MAJOR}
   OUTPUT_NAME   ${TARGETLIB_BASE}
   )
 
