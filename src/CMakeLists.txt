@@ -123,22 +123,6 @@ add_library( ${TARGETLIB} SHARED
 # Include directories and compile options
 #
 
-##- set( LOCAL_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
-##-
-##- # Symlink ${YUI_INCLUDE_DIRS}
-##- # so the headers there can be included as <yui/YFoo.h>
-##- add_custom_target( local-include-dir
-##-   # check if the symlink already exists
-##-   COMMAND if [ ! -L "${LOCAL_INCLUDE_DIR}/yui" ]\; then
-##-       rm -rf ${LOCAL_INCLUDE_DIR}\;
-##-       mkdir  ${LOCAL_INCLUDE_DIR}\;
-##-       ln -s  ${YUI_INCLUDE_DIRS} ${LOCAL_INCLUDE_DIR}/yui\;
-##-     fi
-##-   )
-##-
-##- add_dependencies( ${TARGETLIB} local-include-dir )
-##- target_include_directories( ${TARGETLIB} BEFORE PUBLIC ${LOCAL_INCLUDE_DIR} )
-
 # Setup CMake to use GTK+, tell the compiler where to look for headers
 # and to the linker where to look for libraries
 INCLUDE_DIRECTORIES(${GTK3_INCLUDE_DIRS} ${YUI_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
