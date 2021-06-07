@@ -18,6 +18,7 @@
 #include "YGUtils.h"
 #include "YGDialog.h"
 #include <glib.h> 
+#include <boost/filesystem.hpp>
 
 static std::string askForFileOrDirectory (GtkFileChooserAction action,
 	const std::string &path, const std::string &filter, const std::string &title);
@@ -189,11 +190,33 @@ void YGUI::checkInit()
     
     g_object_unref (provider);
 
-	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (THEMEDIR "/icons/32x32/apps/yast.png");
-	if (pixbuf) {  // default window icon
-		gtk_window_set_default_icon (pixbuf);
-		g_object_unref (G_OBJECT (pixbuf));
-	}
+}
+
+
+GtkWidget* YGUI::loadIcon( const std::string & iconName ) const
+{
+  // if extension is present we consider a full path name, theme icons don't have extensions
+  GtkWidget *icon = NULL;
+  if (boost::filesystem::path(iconName).has_extension())
+  {
+    icon = gtk_image_new_from_file(iconName.c_str());
+  }
+  else
+  {
+    GtkIconTheme * theme = gtk_icon_theme_get_default();
+    std::string ico = boost::filesystem::path(iconName).stem().c_str();
+    if (gtk_icon_theme_has_icon (theme, ico.c_str()))
+    {
+      icon = gtk_image_new_from_icon_name (ico.c_str(), GTK_ICON_SIZE_MENU);
+    }
+    else
+    {
+      // last chance, just to add an icon
+      icon = gtk_image_new_from_file(iconName.c_str());
+    }
+  }
+
+  return icon;
 }
 
 static gboolean ycp_wakeup_fn (GIOChannel *source, GIOCondition condition,
@@ -376,11 +399,8 @@ void YGUI::askSaveLogs()
 
 //** YGApplication
 
-#define ICONDIR THEMEDIR "/icons/22x22/apps/"
-
 YGApplication::YGApplication()
 {
-	setIconBasePath (ICONDIR);
 }
 
 void YGApplication::makeScreenShot (const std::string &_filename)

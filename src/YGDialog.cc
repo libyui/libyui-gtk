@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include "YGUI.h"
 #include "YGDialog.h"
 #include "YGUtils.h"
@@ -14,6 +14,7 @@
 #include <string.h>
 #include "ygtkwindow.h"
 #include "YGMacros.h"
+#include <boost/filesystem.hpp>
 
 
 /* In the main dialog case, it doesn't necessarly have a window of its own. If
@@ -49,105 +50,97 @@ public:
 	YGWindowCloseFn m_canClose;
 	void *m_canCloseData;
 
-	YGWindow (bool _main_window, YGDialog *ydialog)
-	{
-		m_widget = ygtk_window_new();
+  YGWindow (bool _main_window, YGDialog *ydialog)
+  {
+      m_widget = ygtk_window_new();
 
-#		if GTK_CHECK_VERSION (3, 12, 0)
-#		else
-		gtk_container_set_resize_mode (GTK_CONTAINER (m_widget), GTK_RESIZE_PARENT);
-#		endif
+      g_object_ref_sink (G_OBJECT (m_widget));
 
-		g_object_ref_sink (G_OBJECT (m_widget));
+      m_refcount = 0;
+      m_child = NULL;
+      m_canClose = NULL;
+      m_busyCursor = NULL;
+      m_isBusy = false;
 
-#		if GTK_CHECK_VERSION (3, 14, 0)
-#		else
-		gtk_window_set_has_resize_grip (GTK_WINDOW (m_widget), TRUE);
-#		endif
+      {
+          std::stack<YDialog *> &stack = YDialog::_dialogStack;
+          YDialog *ylast = stack.size() ? stack.top() : 0;
+          if (ylast == ydialog) {
+              if (stack.size() > 1) {
+                  YDialog *t = ylast;
+                  stack.pop();
+                  ylast = stack.top();
+                  stack.push (t);
+              }
+              else
+                  ylast = NULL;
+          }
 
-		m_refcount = 0;
-		m_child = NULL;
-		m_canClose = NULL;
-		m_busyCursor = NULL;
-		m_isBusy = false;
+          GtkWindow *parent = NULL;
+          if (ylast) {
+              YGDialog *yglast = static_cast <YGDialog *> (ylast);
+              parent = GTK_WINDOW (yglast->m_window->getWidget());
+          }
+          GtkWindow *window = GTK_WINDOW (m_widget);
+          std::string dialogTitle = YUI::app()->applicationTitle();
+          gtk_window_set_title (window, dialogTitle.c_str());
 
-		{
-			std::stack<YDialog *> &stack = YDialog::_dialogStack;
-			YDialog *ylast = stack.size() ? stack.top() : 0;
-			if (ylast == ydialog) {
-				if (stack.size() > 1) {
-					YDialog *t = ylast;
-					stack.pop();
-					ylast = stack.top();
-					stack.push (t);
-				}
-				else
-					ylast = NULL;
-			}
+          if (parent) {
+              // if there is a parent, this would be a dialog
+              gtk_window_set_modal (window, TRUE);
+              gtk_window_set_transient_for (window, parent);
+              gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
+              AtkObject *peer = gtk_widget_get_accessible (GTK_WIDGET (window));
+              if (peer != NULL)
+                  atk_object_set_role (peer, ATK_ROLE_DIALOG);
+          }
+          else {
+              // if extension is present we consider a full path name, theme icons don't have extensions
+              std::string icon  = YUI::app()->applicationIcon();
+              if (boost::filesystem::path(icon).has_extension())
+              {
+                  GError *err = 0;
+                  if (!gtk_window_set_icon_from_file (window, icon.c_str(), &err))
+                  {
+                      yuiWarning() << "Could not load icon: " << icon << "\n"
+                                    "Reason: " << err->message << "\n";
+                  }
+              }
+              else
+              {
+                  gtk_window_set_icon_name (window, icon.c_str());
+              }
 
-			GtkWindow *parent = NULL;
-			if (ylast) {
-				YGDialog *yglast = static_cast <YGDialog *> (ylast);
-				parent = GTK_WINDOW (yglast->m_window->getWidget());
-			}
-		    GtkWindow *window = GTK_WINDOW (m_widget);
-			// to be back compatible
-		    std::string dialogTitle = "YaSt";
+              if (YGUI::ui()->unsetBorder())
+                  gtk_window_set_decorated (window, FALSE);
+          }
 
-#ifdef LIBYUI_VERSION_NUM
- #if LIBYUI_VERSION_AT_LEAST(2,42,3)	
-		    dialogTitle = YUI::app()->applicationTitle();
- #endif
-#endif
-		    if (parent) {
-		        // if there is a parent, this would be a dialog
-		        gtk_window_set_title (window, dialogTitle.c_str());
-		        gtk_window_set_modal (window, TRUE);
-		        gtk_window_set_transient_for (window, parent);
-		        gtk_window_set_type_hint (window, GDK_WINDOW_TYPE_HINT_DIALOG);
-				AtkObject *peer = gtk_widget_get_accessible (GTK_WIDGET (window));
-				if (peer != NULL)
-					atk_object_set_role (peer, ATK_ROLE_DIALOG);
-		    }
-		    else {
-						gtk_window_set_title (window, dialogTitle.c_str());
-#ifdef LIBYUI_VERSION_NUM
- #if LIBYUI_VERSION_AT_LEAST(2,42,3)	
-						GdkPixbuf *pixbuf = YGUtils::loadPixbuf (YUI::app()->applicationIcon());
-						if (pixbuf) {  // default window icon
-							gtk_window_set_default_icon (pixbuf);
-							g_object_unref (G_OBJECT (pixbuf));
-						}
- #endif
-#endif
-		        if (YGUI::ui()->unsetBorder())
-		            gtk_window_set_decorated (window, FALSE);
-		    }
+          if (_main_window) {
+              int width = YUI::app()->defaultWidth();
+              int height = YUI::app()->defaultHeight();
+              gtk_window_set_default_size ( window, width, height );
+              gtk_window_resize( window, width, height );
+              if (YGUI::ui()->setFullscreen())
+                  gtk_window_fullscreen (window);
+          }
+          // https://developer.gnome.org/gtk3/stable/GtkWindow.html#gtk-window-set-role
+          // If a window already has a unique title, you don’t need to set the role, since the WM can use the title to identify the window when restoring the session.
+          // gtk_window_set_role (window, "yast2");
+      }
 
-		    if (_main_window) {
-          int width = YUI::app()->defaultWidth();
-          int height = YUI::app()->defaultHeight();
-          gtk_window_set_default_size ( window, width, height );
-          gtk_window_resize( window, width, height );
-          if (YGUI::ui()->setFullscreen())
-            gtk_window_fullscreen (window);
-        }
-		    gtk_window_set_role (window, "yast2");
-		}
+      if (_main_window)
+          main_window = this;
 
-		if (_main_window)
-			main_window = this;
-
-		g_signal_connect (G_OBJECT (m_widget), "delete-event",
-		                  G_CALLBACK (close_window_cb), this);
-		g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
-		                        G_CALLBACK (key_pressed_cb), this);
-		g_signal_connect (G_OBJECT (m_widget), "focus-in-event",
-		                  G_CALLBACK (focus_in_event_cb), this);
-		// set busy cursor at start
-		g_signal_connect_after (G_OBJECT (m_widget), "realize",
-		                        G_CALLBACK (realize_cb), this);
-	}
+      g_signal_connect (G_OBJECT (m_widget), "delete-event",
+                        G_CALLBACK (close_window_cb), this);
+      g_signal_connect_after (G_OBJECT (m_widget), "key-press-event",
+                              G_CALLBACK (key_pressed_cb), this);
+      g_signal_connect (G_OBJECT (m_widget), "focus-in-event",
+                        G_CALLBACK (focus_in_event_cb), this);
+      // set busy cursor at start
+      g_signal_connect_after (G_OBJECT (m_widget), "realize",
+                              G_CALLBACK (realize_cb), this);
+  }
 
 	~YGWindow()
 	{
@@ -543,12 +536,22 @@ void ygdialog_setTitle (const gchar *title, gboolean sticky)
 
 void YGDialog::setIcon (const std::string &icon)
 {
-	GtkWindow *window = GTK_WINDOW (m_window->getWidget());
-	GdkPixbuf *pixbuf = YGUtils::loadPixbuf (icon);
-	if (pixbuf) {
-		gtk_window_set_icon (window, pixbuf);
-		g_object_unref (G_OBJECT (pixbuf));
-	}
+  GtkWindow *window = GTK_WINDOW (m_window->getWidget());
+
+  // if extension is present we consider a full path name, theme icons don't have extensions
+  if (boost::filesystem::path(icon).has_extension())
+  {
+    GError *err = 0;
+    if (!gtk_window_set_icon_from_file (window, icon.c_str(), &err))
+    {
+        yuiWarning() << "Could not load icon: " << icon << "\n"
+                        "Reason: " << err->message << "\n";
+    }
+  }
+  else
+  {
+    gtk_window_set_icon_name (window, icon.c_str());
+  }
 }
 
 typedef bool (*FindWidgetsCb) (YWidget *widget, void *data) ;

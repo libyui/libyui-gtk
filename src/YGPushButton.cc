@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include "YGUI.h"
 #include <YPushButton.h>
 #include "YGUtils.h"
@@ -89,51 +89,27 @@ public:
 			setStockIcon (label());
 	}
 
-	virtual void setIcon (const std::string &icon)
-	{
-		GtkButton *button = GTK_BUTTON (getWidget());
-		if (icon.empty()) {
-			m_customIcon = false;
-			// no need to worry about freeing the image, let it live with button
-			GtkWidget *image = gtk_button_get_image (button);
-			if (image)
-				gtk_widget_hide (image);
-		}
-		else {
-			m_customIcon = true;
-			std::string path (icon);
-			if (path[0] != '/')
-				path = std::string (THEMEDIR) + "/" + path;
+  virtual void setIcon (const std::string &icon)
+  {
+    GtkButton *button = GTK_BUTTON (getWidget());
+    if (icon.empty()) {
+        m_customIcon = false;
+        // no need to worry about freeing the image, let it live with button
+        GtkWidget *image = gtk_button_get_image (button);
+        if (image)
+            gtk_widget_hide (image);
+    }
+    else {
 
-                        char *p = strdup(path.c_str());
-                        char *p1 = strdup(path.c_str());
-                        char *dname = dirname(p);
-                        char *fname = basename(p1);
-                        char *name = strtok (fname, ".");
-                        GtkIconTheme * theme = gtk_icon_theme_get_default ();
-                        gtk_icon_theme_add_resource_path (theme, dname);
-                        gtk_icon_theme_prepend_search_path (theme, dname);
-                        gtk_icon_theme_rescan_if_needed (theme);
-			GError *error = 0;
-                        GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (theme,
-                                   name, // icon name
-                                   16, // icon size (default button size)
-                                   GTK_ICON_LOOKUP_FORCE_SIZE,  // flags
-                                   &error);
-                        free (p);
-                        free (p1);
-			if (pixbuf) {
-				GtkWidget *image = gtk_image_new_from_pixbuf (pixbuf);
-				gtk_button_set_image (button, image);
-				// disregard gtk-button-images setting for explicitly set icons
-                                gtk_button_set_always_show_image (button, TRUE);
-				g_object_unref (G_OBJECT (pixbuf));
-			}
-			else
-				yuiWarning() << "YGPushButton: Couldn't load icon image: " << path << std::endl
-				             << "Reason: " << error->message << std::endl;
-		}
-	}
+        GtkWidget *image = YGUI::ui()->loadIcon(icon);
+        if (image) {
+            gtk_button_set_image (button, image);
+            gtk_button_set_always_show_image (button, TRUE);
+        }
+        else
+          yuiWarning() << "YGPushButton: Couldn't load icon image: " << icon << std::endl;
+    }
+  }
 
 	virtual void setDefaultButton (bool isDefault)
 	{

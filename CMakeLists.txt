@@ -15,14 +15,15 @@
 # Show the complete compiler commands with all arguments:
 #   make VERBOSE=1
 
-cmake_minimum_required( VERSION 3.10 )
-project( libyui-qt )
+cmake_minimum_required( VERSION 3.17 )
+project( libyui-gtk )
 
 # Options usage:
 #
 #   cmake -DBUILD_DOC=on -DBUILD_EXAMPLES=off ..
 
 option( BUILD_SRC         "Build in src/ subdirectory"                on )
+option( BUILD_PKGCONFIG   "Build pkg-config support files"            on  )
 option( BUILD_DOC         "Build class documentation"                 off )
 option( WERROR            "Treat all compiler warnings as errors"     off )
 
@@ -51,6 +52,10 @@ endif()
 
 if ( BUILD_SRC )
   add_subdirectory( src )
+endif()
+
+if ( BUILD_PKGCONFIG )
+  add_subdirectory( pkgconfig )
 endif()
 
 if ( BUILD_DOC )

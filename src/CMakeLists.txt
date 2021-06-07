@@ -1,4 +1,4 @@
-# CMakeLists.txt for libyui-qt/src
+# CMakeLists.txt for libyui-gtk/src
 
 include( ../VERSION.cmake )
 include( GNUInstallDirs )       # set CMAKE_INSTALL_INCLUDEDIR, ..._LIBDIR
@@ -8,10 +8,17 @@ FIND_PACKAGE(PkgConfig REQUIRED)
 PKG_CHECK_MODULES(GTK3 REQUIRED gtk+-3.0)
 
 PKG_CHECK_MODULES(YUI REQUIRED libyui)
+pkg_get_variable(YUI_SO_VERSION libyui soversion)
+pkg_get_variable(YUI_SO_MAJOR libyui soversion_major)
+#pkg_get_variable(YUI_SO_MINOR libyui soversion_minor)
+#pkg_get_variable(YUI_SO_PATCH libyui soversion_patch)
 
-message("YUI include: " ${YUI_INCLUDE_DIRS} " YUI library: " ${YUI_LIBRARY_DIRS})
+message (STATUS "Using ${YUI_LIBRARY_DIRS}/libyui.so.${YUI_SO_VERSION}")
+find_package(Boost COMPONENTS system filesystem REQUIRED)
 
-find_library(YUYU libyui)
+##### This is needed to be set for the libyui core
+SET( SONAME_MAJOR ${YUI_SO_MAJOR} )
+SET( SONAME ${YUI_SO_VERSION} )
 
 
 #
@@ -116,26 +123,9 @@ add_library( ${TARGETLIB} SHARED
 # Include directories and compile options
 #
 
-set( LOCAL_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include )
-
-# Symlink ${YUI_INCLUDE_DIRS}
-# so the headers there can be included as <yui/YFoo.h>
-add_custom_target( local-include-dir
-  # check if the symlink already exists
-  COMMAND if [ ! -L "${LOCAL_INCLUDE_DIR}/yui" ]\; then
-      rm -rf ${LOCAL_INCLUDE_DIR}\;
-      mkdir  ${LOCAL_INCLUDE_DIR}\;
-      ln -s  ${YUI_INCLUDE_DIRS} ${LOCAL_INCLUDE_DIR}/yui\;
-    fi
-  )
-
-add_dependencies( ${TARGETLIB} local-include-dir )
-target_include_directories( ${TARGETLIB} BEFORE PUBLIC ${LOCAL_INCLUDE_DIR} )
-
 # Setup CMake to use GTK+, tell the compiler where to look for headers
 # and to the linker where to look for libraries
 INCLUDE_DIRECTORIES(${GTK3_INCLUDE_DIRS} ${YUI_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR})
-LINK_DIRECTORIES(${GTK3_LIBRARY_DIRS} ${YUI_LIBRARY_DIRS})
 
 
 # Make the version from ../../VERSION.cmake available as a #define
@@ -146,27 +136,23 @@ target_compile_definitions( ${TARGETLIB} PUBLIC VERSION="${VERSION}" )
 # Linking
 #
 
-# Find yui during a combined build
-target_link_directories( ${TARGETLIB} BEFORE PUBLIC ../../libyui/build/src )
+# https://cmake.org/cmake/help/latest/command/link_directories.html suggests to use target_link_libraries
+# and anyway LINK_DIRECTORIES command will apply only to targets created after it is called, so must be set
+# before add_library in the case.
+target_link_directories( ${TARGETLIB}
+  PUBLIC ${YUI_LIBRARY_DIRS}
+  PUBLIC ${GTK3_LIBRARY_DIRS}
+)
 
 
 # Libraries that are needed to build this shared lib
 #
 # If in doubt what is really needed, check with "ldd -u" which libs are unused.
 target_link_libraries( ${TARGETLIB}
-#  yui
   ${YUI_LIBRARIES}
   ${GTK3_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARY}
   )
-
-# Notice that we don't link against Qt5::Svg, but we need it at runtime:
-#
-# It's a plugin for Qt and will be used to load SVGs (like our icons) if
-# libQt5Svg is available. But we don't use it directly here, only via Qt
-# classes like QPixmap and QIcon. Qt loads the SVG plugin as needed.
-
-pkg_get_variable(SONAME libyui soversion)
-pkg_get_variable(SONAME_MAJOR libyui soversion_major)
 
 # https://cmake.org/cmake/help/latest/manual/cmake-properties.7.html#target-properties
 set_target_properties( ${TARGETLIB} PROPERTIES
