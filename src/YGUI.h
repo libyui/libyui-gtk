@@ -5,7 +5,7 @@
 #ifndef YGUI_H
 #define YGUI_H
 
-#include <yui/Libyui_config.h>
+
 #include <yui/YUI.h>
 #define YUILogComponent "gtk"
 #include <yui/YUILog.h>
@@ -24,6 +24,17 @@ public:
     void checkInit();  // called 1st time when execution thread kicks in
 
     static YGUI *ui() { return (YGUI *) YUI::ui(); }
+
+    /**
+     * Load an icon. This tries several locations:
+     *
+     * - The given pathname
+     * - The icon theme from the current desktop
+     * - The default icon if failing others
+     *
+     * If the icon does not have a filename extension it is retrieved by name from theme.
+     **/
+    GtkWidget* loadIcon( const std::string & iconName ) const;
 
 protected:
 	virtual YWidgetFactory *createWidgetFactory();

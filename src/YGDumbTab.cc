@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include "YGUI.h"
 #include "YGWidget.h"
 #include "YGUtils.h"
@@ -52,8 +52,7 @@ public:
 		label = gtk_label_new (YGUtils::mapKBAccel (item->label()).c_str());
 		gtk_label_set_use_underline (GTK_LABEL (label), TRUE);
 		if (item->hasIconName()) {
-			std::string path = iconFullPath (item->iconName());
-			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (path);
+			GdkPixbuf *pixbuf = YGUtils::loadPixbuf (item->iconName());
 			if (pixbuf) {
 				image = gtk_image_new_from_pixbuf (pixbuf);
 				g_object_unref (G_OBJECT (pixbuf));

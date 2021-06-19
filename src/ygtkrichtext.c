@@ -5,7 +5,7 @@
 /* YGtkRichText widget */
 // check the header file for information about this widget
 
-#include <yui/Libyui_config.h>
+
 #include "ygtkrichtext.h"
 #include <gtk/gtk.h>
 #include <string.h>

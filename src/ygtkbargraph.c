@@ -5,7 +5,7 @@
 /* YGtkBarGraph widget */
 // check the header file for information about this widget
 
-#include <yui/Libyui_config.h>
+
 #include "ygtkratiobox.h"
 #include "ygtkbargraph.h"
 #include <gtk/gtk.h>

@@ -3,7 +3,7 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include "YGUI.h"
 #include "YGUtils.h"
 #include "YGWidget.h"

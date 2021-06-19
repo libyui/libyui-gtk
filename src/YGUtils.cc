@@ -6,11 +6,12 @@
  */
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include <string.h>
 #include "YGUtils.h"
 #include "YGUI.h"
 #include "YGi18n.h"
+#include <boost/filesystem.hpp>
 
 static inline void skipSpace (const char *instr, int *i)
 { while (g_ascii_isspace (instr[*i])) (*i)++; }
@@ -533,17 +534,38 @@ void YGUtils::setPaneRelPosition (GtkWidget *paned, gdouble rel)
 void ygutils_setPaneRelPosition (GtkWidget *paned, gdouble rel)
 { YGUtils::setPaneRelPosition (paned, rel); }
 
+
 GdkPixbuf *YGUtils::loadPixbuf (const std::string &filename)
 {
-	GdkPixbuf *pixbuf = NULL;
-	if (!filename.empty()) {
-		GError *error = 0;
-		pixbuf = gdk_pixbuf_new_from_file (filename.c_str(), &error);
-		if (!pixbuf)
-			yuiWarning() << "Could not load icon: " << filename << "\n"
-			                "Reason: " << error->message << "\n";
-	}
-	return pixbuf;
+  GdkPixbuf *pixbuf = NULL;
+  if (!filename.empty())
+  {
+    GtkIconTheme *icon_theme = gtk_icon_theme_get_default ();
+    if (!boost::filesystem::path(filename).has_extension()
+      && gtk_icon_theme_has_icon(icon_theme, filename.c_str()))
+    {
+      pixbuf = gtk_icon_theme_load_icon (icon_theme,
+                                         filename.c_str(),
+                                         16, // icon size
+                                         GTK_ICON_LOOKUP_FORCE_SVG,  // flags
+                                         NULL);
+
+    }
+    else
+    {
+      GError *error = 0;
+      pixbuf = gdk_pixbuf_new_from_file (filename.c_str(), &error);
+      if (!pixbuf)
+      {
+        yuiWarning() << "Could not load icon: " << filename << "\n"
+                         "Reason: " << error->message << "\n";
+        g_warning ("Couldn’t load icon: %s", error->message);
+        g_error_free (error);
+      }
+    }
+  }
+
+  return pixbuf;
 }
 
 // Code from Banshee: shades a pixbuf a bit, used e.g. for hover effects

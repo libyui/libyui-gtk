@@ -3,12 +3,13 @@
  ********************************************************************/
 
 #define YUILogComponent "gtk"
-#include <yui/Libyui_config.h>
+
 #include <gtk/gtk.h>
 #include <YItem.h>
 #include <YSelectionWidget.h>
 #include "YGUtils.h"
 #include "YGSelectionStore.h"
+#include "YGUI.h"
 
 static inline int getYItemCol (GtkTreeModel *model)
 { return gtk_tree_model_get_n_columns (model) - 2; }
@@ -58,18 +59,17 @@ void YGSelectionStore::addRow (YItem *item, GtkTreeIter *iter, GtkTreeIter *pare
 
 void YGSelectionStore::setRowText (GtkTreeIter *iter, int iconCol, const std::string &icon, int labelCol, const std::string &label, const YSelectionWidget *widget)
 {
-	GdkPixbuf *pixbuf = 0;
-	if (!icon.empty()) {
-		std::string path (widget->iconFullPath (icon));
-		pixbuf = YGUtils::loadPixbuf (path);
-	}
+  GdkPixbuf *pixbuf = 0;
+  if (!icon.empty()) {
+     pixbuf = YGUtils::loadPixbuf (icon);
+  }
 
-	if (isTree)
-		gtk_tree_store_set (getTreeStore(), iter, iconCol, pixbuf,
-			labelCol, label.c_str(), -1);
-	else
-		gtk_list_store_set (getListStore(), iter, iconCol, pixbuf,
-			labelCol, label.c_str(), -1);
+  if (isTree)
+      gtk_tree_store_set (getTreeStore(), iter, iconCol, pixbuf,
+                          labelCol, label.c_str(), -1);
+  else
+      gtk_list_store_set (getListStore(), iter, iconCol, pixbuf,
+                          labelCol, label.c_str(), -1);
 }
 
 void YGSelectionStore::setRowMark (GtkTreeIter *iter, int markCol, bool mark)

@@ -9,7 +9,7 @@
   Textdomain "gtk"
  */
 
-#include <yui/Libyui_config.h>
+
 #include "ygtksteps.h"
 #include <gtk/gtk.h>
 #define YGI18N_C
