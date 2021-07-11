@@ -29,7 +29,7 @@ SET( SONAME_MAJOR ${YUI_SO_MAJOR} )
 SET( SONAME_MINOR ${YUI_SO_MINOR} )
 SET( SONAME_PATCH ${YUI_SO_PATCH} )
 
-set( PKGCONFIG_INSTALL_DIR ${DESTDIR}${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+set( PKGCONFIG_INSTALL_DIR ${DESTDIR}${CMAKE_INSTALL_FULL_LIBDIR}/pkgconfig )
 
 # Generate libyui-gtk.pc where some CMake variables are expanded from libyui-gtk.pc.in,
 # but only expand @VARIABLE@, not ${VARIABLE}
