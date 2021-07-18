@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Sun Jul 18 15:43:20 CET 2021 - anaselli@linux.it
+- Fixed YCheckBoxFrame disable status see issue #8
+- 2.51.2
+
+-------------------------------------------------------------------
 Sun Jul 11 15:27:20 CET 2021 - anaselli@linux.it
 - Fixed CMAKE_INSTALL_LIBDIR for pkgconfig 
 
