@@ -134,6 +134,8 @@ public:
 
 		setLabel (label);
 		setValue (checked);
+    doSetEnabled( checked );
+
 		connect (button, "toggled", G_CALLBACK (toggled_cb), this);
 	}
 
@@ -161,17 +163,18 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
-	// YGWidget
-	virtual void doSetEnabled (bool enabled)
-	{
-        GtkWidget *frame = getWidget();
-        if (enabled) {
-            gtk_widget_set_sensitive (frame, TRUE);
+    // YGWidget
+    virtual void doSetEnabled (bool enabled)
+    {
+        // we disable the frame only and not all the widget to allow checkbox access
+        gtk_widget_set_sensitive(getContainer(), enabled ? gtk_true() : gtk_false());
+        if (enabled)
+        {
             handleChildrenEnablement (value());
         }
-        else {
-            gtk_widget_set_sensitive (frame, FALSE);
-			YWidget::setChildrenEnabled (false);
+        else
+        {
+            YWidget::setChildrenEnabled (false);
         }
         YWidget::setEnabled (enabled);
     }
