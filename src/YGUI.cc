@@ -645,12 +645,30 @@ static inline GdkScreen *getScreen ()
 //
 // * For GTK3 get the GdkWindow out of the GtkWindow widget with gtk_widget_get_window(),
 //   and then use gdk_display_get_monitor_at_window()
+static inline GdkMonitor * getGdkMonitor()
+{
+  GdkMonitor * pMonitor = NULL;
+  GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());
+  if (widget) {
+    pMonitor = gdk_display_get_monitor_at_window (
+      gdk_display_get_default(),
+      gtk_widget_get_window(widget)
+    );
+  }
+  else {
+    // let's try default one
+    pMonitor = gdk_display_get_monitor_at_window (
+      gdk_display_get_default(),
+      gdk_get_default_root_window ()
+    );
+  }
+
+  return pMonitor;
+}
+
 int YGApplication::displayWidth()
 {
-  GdkMonitor * pMonitor = gdk_display_get_monitor_at_window (
-    gdk_display_get_default(),
-    gdk_get_default_root_window ()
-  );
+  GdkMonitor * pMonitor = getGdkMonitor();
 
   if (pMonitor)
   {
@@ -666,10 +684,7 @@ int YGApplication::displayWidth()
 
 int YGApplication::displayHeight()
 {
-  GdkMonitor * pMonitor = gdk_display_get_monitor_at_window (
-    gdk_display_get_default(),
-    gdk_get_default_root_window ()
-  );
+  GdkMonitor * pMonitor = getGdkMonitor();
 
   if (pMonitor)
   {
@@ -698,10 +713,7 @@ long YGApplication::displayColors()
 // Get default size as in Qt as much as possible
 int YGApplication::defaultWidth()
 {
-  GdkMonitor * pMonitor = gdk_display_get_monitor_at_window (
-    gdk_display_get_default(),
-    gdk_get_default_root_window ()
-  );
+  GdkMonitor * pMonitor = getGdkMonitor();
 
   GdkRectangle availableSize = {0};
 
@@ -722,10 +734,7 @@ int YGApplication::defaultWidth()
 
 int YGApplication::defaultHeight()
 {
-  GdkMonitor * pMonitor = gdk_display_get_monitor_at_window (
-    gdk_display_get_default(),
-    gdk_get_default_root_window ()
-  );
+  GdkMonitor * pMonitor = getGdkMonitor();
 
   GdkRectangle availableSize = {0};
 

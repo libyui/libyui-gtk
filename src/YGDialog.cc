@@ -372,10 +372,11 @@ YGDialog *YGDialog::currentDialog()
 
 GtkWindow *YGDialog::currentWindow()
 {
-	YGDialog *ydialog = YGDialog::currentDialog();
-	if (ydialog)
-		return GTK_WINDOW (ydialog->m_window->getWidget());
-	return NULL;
+  YGDialog *ydialog = YGDialog::currentDialog();
+  if (ydialog)
+    if (ydialog->m_window)
+      return GTK_WINDOW (ydialog->m_window->getWidget());
+  return NULL;
 }
 
 void YGDialog::setCloseCallback (YGWindowCloseFn canClose, void *canCloseData)
