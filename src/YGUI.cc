@@ -645,23 +645,29 @@ static inline GdkScreen *getScreen ()
 //
 // * For GTK3 get the GdkWindow out of the GtkWindow widget with gtk_widget_get_window(),
 //   and then use gdk_display_get_monitor_at_window()
+//
+//   The idea was to use YGDialog::currentWindow() but it next function is used in the YGDialog
+//   constructor and the pointer is not reliable and sometimes crashes (To be investigated more)
+//   Example of code is the next:
+//   GdkMonitor * pMonitor = NULL;
+//   GtkWindow* pWindow = YGDialog::currentWindow();
+//   GtkWidget *widget = NULL;
+//   if (pWindow)
+//   {
+//     widget = GTK_WIDGET (pWindow);
+//   }
+//   if (widget) {
+//     pMonitor = gdk_display_get_monitor_at_window (
+//       gdk_display_get_default(),
+//       gtk_widget_get_window(widget)
+//     );
+//   }
 static inline GdkMonitor * getGdkMonitor()
 {
-  GdkMonitor * pMonitor = NULL;
-  GtkWidget *widget = GTK_WIDGET (YGDialog::currentWindow());
-  if (widget) {
-    pMonitor = gdk_display_get_monitor_at_window (
-      gdk_display_get_default(),
-      gtk_widget_get_window(widget)
-    );
-  }
-  else {
-    // let's try default one
-    pMonitor = gdk_display_get_monitor_at_window (
-      gdk_display_get_default(),
-      gdk_get_default_root_window ()
-    );
-  }
+  GdkMonitor * pMonitor =  gdk_display_get_monitor_at_window (
+    gdk_display_get_default(),
+    gdk_get_default_root_window ()
+  );
 
   return pMonitor;
 }
@@ -726,7 +732,7 @@ int YGApplication::defaultWidth()
   if ( displayWidth() >= 1024 )
   {
     // Scale down to 70% of screen size
-    width =  std::max( (int) (availableSize.width * 0.7), 800 ) ;
+    width =  std::max( (int) (availableSize.width * 0.7), 1024 ) ;
   }
 
   return width;
@@ -744,10 +750,10 @@ int YGApplication::defaultHeight()
   }
 
   int height = availableSize.height;
-  if ( displayWidth() >= 1024 )
+  if ( displayHeight() >= 768 )
   {
     // Scale down to 70% of screen size
-    height =  std::max( (int) (availableSize.height * 0.7), 600 ) ;
+    height =  std::max( (int) (availableSize.height * 0.7), 768 ) ;
   }
 
   return height;
