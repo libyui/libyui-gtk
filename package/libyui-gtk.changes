@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Sun Sep 25 19:07:11 CEST 2022 - anaselli@linux.it
+- Changed displayWidth/displayHeight implementation For GTK3 
+  suggestion is to get the GdkWindow out of the GtkWindow widget
+  with gtk_widget_get_window(), and then use 
+  gdk_display_get_monitor_at_window()
+  This fixes dnfdragora bug https://github.com/manatools/dnfdragora/issues/207
+  when it runs on Gnome desktop.
+- 2.51.2
+
+-------------------------------------------------------------------
 Sun Jul 11 15:27:20 CET 2021 - anaselli@linux.it
 - Fixed CMAKE_INSTALL_LIBDIR for pkgconfig 
 
