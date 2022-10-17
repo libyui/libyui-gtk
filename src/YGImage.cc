@@ -10,6 +10,7 @@
 #include "YImage.h"
 #include "ygtkimage.h"
 #include <string.h>
+#include <boost/filesystem.hpp>
 
 static inline bool endsWith (const std::string &str1, const char *str2)
 {
@@ -48,7 +49,23 @@ public:
 			ygtk_image_set_from_pixbuf (image, pixbuf);
 		}
 		else
-			ygtk_image_set_from_file (image, filename.c_str(), animated);
+		{
+			if (animated)
+				ygtk_image_set_from_file (image, filename.c_str(), animated);
+			else {
+				if (boost::filesystem::path(filename).has_extension()) {
+					ygtk_image_set_from_file (image, filename.c_str(), animated);
+				}
+				else {
+					if (gtk_icon_theme_lookup_icon (gtk_icon_theme_get_default(), filename.c_str(), GTK_ICON_SIZE_DIALOG, GTK_ICON_LOOKUP_USE_BUILTIN)) {
+						GdkPixbuf *pixbuf = gtk_icon_theme_load_icon (gtk_icon_theme_get_default(), filename.c_str(), GTK_ICON_SIZE_DIALOG, GTK_ICON_LOOKUP_USE_BUILTIN,NULL);
+						ygtk_image_set_from_pixbuf (image, pixbuf);
+					}
+					else // last chance to find an image
+						ygtk_image_set_from_file (image, filename.c_str(), animated);
+				}
+			}
+		}
 	}
 
 	virtual void setAutoScale (bool scale)
