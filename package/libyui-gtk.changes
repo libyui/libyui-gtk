@@ -1,15 +1,25 @@
 -------------------------------------------------------------------
+Mon Oct 17 19:06:36 CEST 2022 - anaselli@linux.it
+
+- 2.52.3
+- YGImage when creating an image looks if the given image is not a pathname
+  and try to get it from theme (issue #87)
+- YGLayout fixing to show background picture (issue #86)
+
+-------------------------------------------------------------------
 Sun Sep 25 19:07:11 CEST 2022 - anaselli@linux.it
+
 - Changed displayWidth/displayHeight implementation For GTK3 
   suggestion is to get the GdkWindow out of the GtkWindow widget
   with gtk_widget_get_window(), and then use 
   gdk_display_get_monitor_at_window()
   This fixes dnfdragora bug https://github.com/manatools/dnfdragora/issues/207
   when it runs on Gnome desktop.
-- 2.51.2
+- 2.52.2
 
 -------------------------------------------------------------------
 Sun Jul 11 15:27:20 CET 2021 - anaselli@linux.it
+
 - Fixed CMAKE_INSTALL_LIBDIR for pkgconfig 
 
 -------------------------------------------------------------------
