@@ -1,5 +1,6 @@
 -------------------------------------------------------------------
 Tue Nov  1 11:13:47 CET 2022 - anaselli@linux.it
+- Implemented mising behavior https://github.com/libyui/libyui/issues/45
 - Fixed YCheckBoxFrame disable status see issue #8
 - 2.51.4
 

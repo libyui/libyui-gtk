@@ -163,20 +163,41 @@ public:
         gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), value);
     }
 
+    virtual void setAutoEnable( bool autoEnable )
+    {
+      YCheckBoxFrame::setAutoEnable(autoEnable);
+      bool val = value();
+      setValue(val);
+      doSetEnabled( val );
+    }
+
+    virtual void setInvertAutoEnable( bool invertAutoEnable  )
+    {
+      YCheckBoxFrame::setInvertAutoEnable(invertAutoEnable);
+      bool val = value();
+      setValue(val);
+      doSetEnabled( val );
+    }
+
+
     // YGWidget
     virtual void doSetEnabled (bool enabled)
     {
-        // we disable the frame only and not all the widget to allow checkbox access
-        gtk_widget_set_sensitive(getContainer(), enabled ? gtk_true() : gtk_false());
-        if (enabled)
+        if (autoEnable())
         {
-            handleChildrenEnablement (value());
+          bool en = invertAutoEnable() ? !enabled : enabled;
+          // we disable the frame only and not all the widget to allow checkbox access
+          gtk_widget_set_sensitive(getContainer(), en ? gtk_true() : gtk_false());
+          if (en)
+          {
+              handleChildrenEnablement ( value() );
+          }
+          else
+          {
+              YWidget::setChildrenEnabled (!value());
+          }
+          YWidget::setEnabled (en);
         }
-        else
-        {
-            YWidget::setChildrenEnabled (false);
-        }
-        YWidget::setEnabled (enabled);
     }
 
 	YGWIDGET_IMPL_CONTAINER (YCheckBoxFrame)
@@ -184,7 +205,7 @@ public:
 private:
     static void toggled_cb (GtkWidget *widget, YGCheckBoxFrame *pThis)
     {
-        pThis->setEnabled (true);
+        pThis->setEnabled (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)));
         if (pThis->notify())
             YGUI::ui()->sendEvent (new YWidgetEvent (pThis, YEvent::ValueChanged));
     }
