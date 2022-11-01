@@ -175,16 +175,11 @@ public:
 
   static gboolean draw_event_cb (GtkWidget *widget, cairo_t *cr, YGAlignment *pThis, int width, int height)
   {
-    gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
-    cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
-
-    cairo_rectangle (cr, 0, 0, width, height);
-    cairo_fill (cr);
-
-    gtk_container_propagate_draw (GTK_CONTAINER (widget),
-                                  gtk_bin_get_child(GTK_BIN (widget)), cr);
-    
-    return TRUE;
+      gdk_cairo_set_source_pixbuf (cr, pThis->m_background_pixbuf, 0, 0);
+      cairo_pattern_set_extend (cairo_get_source (cr), CAIRO_EXTEND_REPEAT);
+      cairo_rectangle (cr, 0, 0, width, height);
+      cairo_paint(cr);
+      return FALSE;
   }
 };
 

@@ -364,18 +364,19 @@ void YGDialog::present()
 
 YGDialog *YGDialog::currentDialog()
 {
-	YDialog *ydialog = YDialog::currentDialog (false);
-	if (ydialog)
-		return static_cast <YGDialog *> (ydialog);
-	return NULL;
+  YDialog *ydialog = YDialog::currentDialog (false);
+  if (ydialog)
+    return dynamic_cast <YGDialog *> (ydialog);
+  return NULL;
 }
 
 GtkWindow *YGDialog::currentWindow()
 {
-	YGDialog *ydialog = YGDialog::currentDialog();
-	if (ydialog)
-		return GTK_WINDOW (ydialog->m_window->getWidget());
-	return NULL;
+  YGDialog *ydialog = YGDialog::currentDialog();
+  if (ydialog)
+    if (ydialog->m_window && GTK_IS_WINDOW(ydialog->m_window->getWidget()))
+      return GTK_WINDOW (ydialog->m_window->getWidget());
+  return NULL;
 }
 
 void YGDialog::setCloseCallback (YGWindowCloseFn canClose, void *canCloseData)
