@@ -110,8 +110,7 @@ void YGUI::checkInit()
 {
 	if (m_done_init)
 		return;
-	m_done_init = true;
-
+	
 	// retrieve command line args from /proc/<pid>/cmdline
 	YCommandLine cmdLine;
 	int argc = cmdLine.argc();
@@ -189,7 +188,7 @@ void YGUI::checkInit()
        yuiMilestone() << "Style \"" << style << "\" not found. Ignoring style\n";
     
     g_object_unref (provider);
-
+    m_done_init = true;
 }
 
 

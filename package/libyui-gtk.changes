@@ -1,4 +1,10 @@
 -------------------------------------------------------------------
+Sat Mar 16 16:12:25 CET 2024 - anaselli@linux.it
+- Fixed dnfdragora bug 216 "The app is squashed when is opened" 
+  related to libyui-gtk only
+- 2.51.5
+
+-------------------------------------------------------------------
 Tue Nov  1 11:13:47 CET 2022 - anaselli@linux.it
 - Implemented mising behavior https://github.com/libyui/libyui/issues/45
 - Fixed YCheckBoxFrame disable status see issue #8
